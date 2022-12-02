@@ -209,15 +209,33 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     /**
      * Decodes the exception encoded in {@code buffer} and throws it.
      *
-     * @param buffer a native byte buffer containing an exception encoded by
-     *            {@link #encodeThrowable}
+     * @param errorOrBuffer an error code or a native byte buffer containing an exception encoded by
+     *            {@link #encodeThrowable}. Error code values and their meanings are:
+     *
+     *            <pre>
+     *             0: native memory for the buffer could not be allocated
+     *            -1: an OutOfMemoryError was thrown while encoding the exception
+     *            -2: some other throwable was thrown while encoding the exception
+     *            </pre>
      */
     @VMEntryPoint
-    static void decodeAndThrowThrowable(long buffer) throws Throwable {
+    static void decodeAndThrowThrowable(long errorOrBuffer) throws Throwable {
+        if (errorOrBuffer >= -2L && errorOrBuffer <= 0) {
+            String context = String.format("while encoding an exception to translate it from %s to %s",
+                            IS_IN_NATIVE_IMAGE ? "HotSpot" : "libjvmci",
+                            IS_IN_NATIVE_IMAGE ? "libjvmci" : "HotSpot");
+            if (errorOrBuffer == 0) {
+                throw new InternalError("native buffer could not be allocated " + context);
+            }
+            if (errorOrBuffer == -1L) {
+                throw new OutOfMemoryError("OutOfMemoryError occurred " + context);
+            }
+            throw new InternalError("unexpected problem occurred " + context);
+        }
         Unsafe unsafe = UnsafeAccess.UNSAFE;
-        int encodingLength = unsafe.getInt(buffer);
+        int encodingLength = unsafe.getInt(errorOrBuffer);
         byte[] encoding = new byte[encodingLength];
-        unsafe.copyMemory(null, buffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
+        unsafe.copyMemory(null, errorOrBuffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
         throw TranslatedException.decodeThrowable(encoding);
     }
 

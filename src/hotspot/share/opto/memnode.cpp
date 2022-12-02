@@ -2032,7 +2032,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         // (Folds up type checking code.)
         assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
         ciKlass *ss = klass->super_of_depth(depth);
-        return ss ? TypeKlassPtr::make(ss, Type::trust_interfaces) : TypePtr::NULL_PTR;
+        return ss ? TypeKlassPtr::make(ss) : TypePtr::NULL_PTR;
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
@@ -2063,7 +2063,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
           // (Folds up type checking code.)
           assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
           ciKlass *ss = klass->super_of_depth(depth);
-          return ss ? TypeKlassPtr::make(ss, Type::trust_interfaces) : TypePtr::NULL_PTR;
+          return ss ? TypeKlassPtr::make(ss) : TypePtr::NULL_PTR;
         }
       }
     }
@@ -2323,14 +2323,14 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
             // klass.  Users of this result need to do a null check on the returned klass.
             return TypePtr::NULL_PTR;
           }
-          return TypeKlassPtr::make(ciArrayKlass::make(t), Type::trust_interfaces);
+          return TypeKlassPtr::make(ciArrayKlass::make(t));
         }
         if (!t->is_klass()) {
           // a primitive Class (e.g., int.class) has NULL for a klass field
           return TypePtr::NULL_PTR;
         }
         // (Folds up the 1st indirection in aClassConstant.getModifiers().)
-        return TypeKlassPtr::make(t->as_klass(), Type::trust_interfaces);
+        return TypeKlassPtr::make(t->as_klass());
       }
       // non-constant mirror, so we can't tell what's going on
     }
@@ -2368,7 +2368,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       ciKlass* sup = tkls->is_instklassptr()->instance_klass()->super();
       // The field is Klass::_super.  Return its (constant) value.
       // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
-      return sup ? TypeKlassPtr::make(sup, Type::trust_interfaces) : TypePtr::NULL_PTR;
+      return sup ? TypeKlassPtr::make(sup) : TypePtr::NULL_PTR;
     }
   }
 
@@ -2387,7 +2387,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2488,7 +2488,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p)  return (p == NodeSentinel) ? NULL : p;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2520,7 +2520,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   Node* x = LoadINode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;

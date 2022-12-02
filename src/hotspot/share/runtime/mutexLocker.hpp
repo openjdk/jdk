@@ -58,7 +58,6 @@ extern Mutex*   SymbolArena_lock;                // a lock on the symbol table a
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
-extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute

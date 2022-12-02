@@ -120,6 +120,7 @@ java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
+java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
@@ -485,7 +486,6 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-jdk/internal/misc/TerminatingThreadLocal/TestTerminatingThreadLocal.java 8292051 generic-all
 
 ############################################################################
 
@@ -500,7 +500,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
-java/io/File/TempDirDoesNotExist.java                           8297528 windows-all
 
 ############################################################################
 
@@ -663,7 +662,6 @@ javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
-javax/swing/JRadioButton/4314194/bug4314194.java 8295006 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
@@ -692,7 +690,6 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 ############################################################################
 
 # core_svc
-tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
 
 ############################################################################
 
@@ -722,8 +719,6 @@ sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x
 ############################################################################
 
 # svc_tools
-
-sun/tools/jhsdb/BasicLauncherTest.java                          8228649 linux-ppc64,linux-ppc64le
 
 sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259,8293577 generic-all
