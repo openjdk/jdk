@@ -52,9 +52,13 @@ import jdk.internal.reflect.Reflection;
  * As such, this interface only supports reading {@code int}, {@code double},
  * and any other type that fits into a {@code long}.
  * <h2 id="safety">Safety considerations</h2>
- * The behavior of any attempts to access a value in the variable argument list, whether through one of the {@code nextVarg} overloads
- * or {@link #skip(MemoryLayout...)}, using a memory layout other than the layout of the accessed value, or any subsequent
- * accesses to the same variable argument list, is undefined.
+ * Accessing a value through a variable argument list using the wrong memory layout will result in undefined behavior.
+ * For instance, if a variable argument list currently points at a C {@code int} value, then accessing it using
+ * {@link #nextVarg(ValueLayout.OfLong)} is illegal, but, any such illegal accesses might not be detected by
+ * the implementation.
+ * This goes for accesses through one of the {@code nextVarg} overloads, and {@link #skip(MemoryLayout...)}.
+ * After an attempt to access a value using the wrong memory layout like this can result in the
+ * variable argument list being corrupted, and the behavior of any subsequent accesses is therefor undefined as well.
  * <p>
  * It is possible for clients to access elements outside the spatial bounds of a variable argument list.
  * Variable argument list implementations will try to detect out-of-bounds reads on a best-effort basis.
