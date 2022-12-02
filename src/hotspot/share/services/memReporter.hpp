@@ -67,10 +67,15 @@ class MemReporterBase : public StackObj {
 
   // Convert diff amount in bytes to current reporting scale
   inline long diff_in_current_scale(size_t s1, size_t s2) const {
-    long amount = (long)(s1 - s2);
-    long scale = (long)_scale;
-    amount = (amount > 0) ? (amount + scale / 2) : (amount - scale / 2);
-    return amount / scale;
+    size_t amount = s1 - s2;
+    if (s1 >= s2) {
+      assert((amount + _scale / 2) <= SIZE_MAX, "difference is gretaer than the upper limit.");
+      amount += _scale / 2;
+    } else {
+      assert(amount >= _scale / 2, "difference is less than the lower limit.");
+      amount -= _scale / 2;
+    }
+    return amount / _scale;
   }
 
   // Helper functions
