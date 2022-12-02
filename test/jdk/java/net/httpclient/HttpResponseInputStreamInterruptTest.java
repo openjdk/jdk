@@ -50,6 +50,8 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpResponseInputStreamInterruptTest {
@@ -162,10 +164,14 @@ public class HttpResponseInputStreamInterruptTest {
                 assertEquals(firstOutput, FIRST_MESSAGE);
 
                 // countdown on latch, and assert that an IOException is throw due to the interrupt
+                // and assert that the cause is a InterruptedException
                 interruptReadyLatch.countDown();
-                assertThrows(IOException.class, () -> response.body().readAllBytes(), "expected IOException");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                var thrown = assertThrows(IOException.class, () -> response.body().readAllBytes(), "expected IOException");
+                var cause = thrown.getCause();
+                assertTrue(cause instanceof InterruptedException, cause + " is not an InterruptedException");
+            } catch (Throwable t) {
+                t.printStackTrace();
+                fail();
             }
         });
     }
