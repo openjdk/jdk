@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
@@ -595,20 +597,23 @@ public class Console implements Flushable
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
+            @SuppressWarnings("removal")
             public Console console() {
                 if (cons == null) {
                     // Try loading providers
-                    var consModName =
-                            GetPropertyAction.privilegedGetProperty("jdk.console",
-                                    JdkConsoleProvider.DEFAULT_PROVIDER);
-                    cons = ServiceLoader.load(JdkConsoleProvider.class).stream()
-                       .map(ServiceLoader.Provider::get)
-                       .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                       .map(jcp -> jcp.console(istty))
-                       .filter(Objects::nonNull)
-                       .findAny()
-                       .map(jc -> (Console)new ProxyingConsole(jc))
-                       .orElse(istty ? new Console() : null);
+                    PrivilegedAction<Console> pa = () -> {
+                        var consModName = System.getProperty("jdk.console",
+                                JdkConsoleProvider.DEFAULT_PROVIDER);
+                        return ServiceLoader.load(JdkConsoleProvider.class).stream()
+                                .map(ServiceLoader.Provider::get)
+                                .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
+                                .map(jcp -> jcp.console(istty))
+                                .filter(Objects::nonNull)
+                                .findAny()
+                                .map(jc -> (Console)new ProxyingConsole(jc))
+                                .orElse(istty ? new Console() : null);
+                    };
+                    cons = AccessController.doPrivileged(pa);
                 }
                 return cons;
             }
