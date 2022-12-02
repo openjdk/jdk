@@ -56,7 +56,7 @@ Node* Opaque3Node::Identity(PhaseGVN* phase) {
 
 // Do not allow value-numbering
 uint Opaque3Node::hash() const { return NO_HASH; }
-bool Opaque3Node::cmp( const Node &n ) const {
+bool Opaque3Node::cmp(const Node &n) const {
   return (&n == this);          // Always fail except on self
 }
 

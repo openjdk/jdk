@@ -76,7 +76,7 @@ class OpaqueLoopStrideNode : public Opaque1Node {
 class Opaque3Node : public Node {
   int _opt; // what optimization it was used for
   virtual uint hash() const;
-  virtual bool cmp(const Node &n ) const;
+  virtual bool cmp(const Node &n) const;
   public:
   enum { RTM_OPT };
   Opaque3Node(Compile* C, Node* n, int opt) : Node(0, n), _opt(opt) {
