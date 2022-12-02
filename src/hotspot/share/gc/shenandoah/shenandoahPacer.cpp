@@ -248,7 +248,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   // active Java thread.
   JavaThread* current = JavaThread::current();
   if (current->is_attaching_via_jni() ||
-      current->is_active_Java_thread()) {
+      !current->is_active_Java_thread()) {
     return;
   }
 
