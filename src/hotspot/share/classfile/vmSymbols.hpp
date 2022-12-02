@@ -742,6 +742,9 @@
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
   template(serializeSavedPropertiesToByteArray_name,   "serializeSavedPropertiesToByteArray")                     \
+  template(encodeThrowable_name,                       "encodeThrowable")                                         \
+  template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
+  template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

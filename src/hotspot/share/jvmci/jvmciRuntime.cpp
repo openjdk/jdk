@@ -1381,13 +1381,6 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
   int properties_len = 0;
   jbyte* properties = NULL;
 
-  if (!JVMCIENV->is_hotspot()) {
-    properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
-    if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
-      return;
-    }
-  }
-
   MutexLocker locker(_lock);
   // Check again under _lock
   if (_init_state == fully_initialized) {
@@ -1452,6 +1445,11 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
 
     if (!JVMCIENV->is_hotspot()) {
+      Handle properties_exception;
+      properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
+      if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
+        return;
+      }
       JVMCIENV->copy_saved_properties(properties, properties_len, JVMCI_CHECK);
     }
   }

@@ -135,9 +135,12 @@ jbyte* JVMCIEnv::get_serialized_saved_properties(int& props_len, TRAPS) {
     // Copy serialized saved properties from HotSpot object into C heap
     props = NEW_C_HEAP_ARRAY(jbyte, props_len, mtJVMCI);
     memcpy(props, ba->byte_at_addr(0), props_len);
+
+    _serialized_saved_properties_len = props_len;
+    _serialized_saved_properties = props;
+  } else {
+    props_len = _serialized_saved_properties_len;
   }
-  _serialized_saved_properties_len = props_len;
-  _serialized_saved_properties = props;
   return props;
 }
 
@@ -315,16 +318,16 @@ class ExceptionTranslation: public StackObj {
   // Encodes the exception in `_from_env` into `buffer`.
   // Where N is the number of bytes needed for the encoding, returns N if N <= `buffer_size`
   // and the encoding was written to `buffer` otherwise returns -N.
-  virtual int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) = 0;
+  virtual int encode(JavaThread* THREAD, Klass* vmSupport, jlong buffer, int buffer_size) = 0;
 
   // Decodes the exception in `buffer` in `_to_env` and throws it.
-  virtual void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) = 0;
+  virtual void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) = 0;
 
  public:
   void doit(JavaThread* THREAD) {
-    // Resolve HotSpotJVMCIRuntime class explicitly as HotSpotJVMCI::compute_offsets
+    // Resolve VMSupport class explicitly as HotSpotJVMCI::compute_offsets
     // may not have been called.
-    Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, THREAD);
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
     guarantee(!HAS_PENDING_EXCEPTION, "");
 
     int buffer_size = 2048;
@@ -332,23 +335,23 @@ class ExceptionTranslation: public StackObj {
       ResourceMark rm;
       jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, buffer_size);
       if (buffer == 0L) {
-        decode(THREAD, runtimeKlass, 0L);
+        decode(THREAD, vmSupport, 0L);
         return;
       }
-      int res = encode(THREAD, runtimeKlass, buffer, buffer_size);
+      int res = encode(THREAD, vmSupport, buffer, buffer_size);
       if (_from_env != nullptr && !_from_env->is_hotspot() && _from_env->has_pending_exception()) {
         // Cannot get name of exception thrown by `encode` as that involves
         // calling into libjvmci which in turn can raise another exception.
         _from_env->clear_pending_exception();
-        decode(THREAD, runtimeKlass, -2L);
+        decode(THREAD, vmSupport, -2L);
         return;
       } else if (HAS_PENDING_EXCEPTION) {
         Symbol *ex_name = PENDING_EXCEPTION->klass()->name();
         CLEAR_PENDING_EXCEPTION;
         if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
-          decode(THREAD, runtimeKlass, -1L);
+          decode(THREAD, vmSupport, -1L);
         } else {
-          decode(THREAD, runtimeKlass, -2L);
+          decode(THREAD, vmSupport, -2L);
         }
         return;
       } else if (res < 0) {
@@ -357,9 +360,9 @@ class ExceptionTranslation: public StackObj {
           buffer_size = required_buffer_size;
         }
       } else {
-        decode(THREAD, runtimeKlass, buffer);
+        decode(THREAD, vmSupport, buffer);
         if (!_to_env->has_pending_exception()) {
-          _to_env->throw_InternalError("HotSpotJVMCIRuntime.decodeAndThrowThrowable should have thrown an exception");
+          _to_env->throw_InternalError("decodeAndThrowThrowable should have thrown an exception");
         }
         return;
       }
@@ -372,23 +375,23 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
  private:
   const Handle& _throwable;
 
-  int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) {
+  int encode(JavaThread* THREAD, Klass* vmSupport, jlong buffer, int buffer_size) {
     JavaCallArguments jargs;
     jargs.push_oop(_throwable);
     jargs.push_long(buffer);
     jargs.push_int(buffer_size);
     JavaValue result(T_INT);
     JavaCalls::call_static(&result,
-                            runtimeKlass,
+                            vmSupport,
                             vmSymbols::encodeThrowable_name(),
                             vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
     return result.get_jint();
   }
 
-  void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) {
+  void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) {
     JNIAccessMark jni(_to_env, THREAD);
-    jni()->CallStaticVoidMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                JNIJVMCI::HotSpotJVMCIRuntime::decodeAndThrowThrowable_method(),
+    jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
+                                JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
                                 buffer);
   }
  public:
@@ -401,19 +404,19 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
  private:
   jthrowable _throwable;
 
-  int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) {
+  int encode(JavaThread* THREAD, Klass* vmSupport, jlong buffer, int buffer_size) {
     JNIAccessMark jni(_from_env, THREAD);
-    return jni()->CallStaticIntMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                      JNIJVMCI::HotSpotJVMCIRuntime::encodeThrowable_method(),
+    return jni()->CallStaticIntMethod(JNIJVMCI::VMSupport::clazz(),
+                                      JNIJVMCI::VMSupport::encodeThrowable_method(),
                                       _throwable, buffer, buffer_size);
   }
 
-  void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) {
+  void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) {
     JavaCallArguments jargs;
     jargs.push_long(buffer);
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
-                            runtimeKlass,
+                            vmSupport,
                             vmSymbols::decodeAndThrowThrowable_name(),
                             vmSymbols::long_void_signature(), &jargs, THREAD);
   }
@@ -486,7 +489,8 @@ JVMCIEnv::~JVMCIEnv() {
 
     if (has_pending_exception()) {
       char message[256];
-      jio_snprintf(message, 256, "Uncaught exception exiting JVMCIEnv scope entered at %s:%d", _file, _line);
+      jio_snprintf(message, 256, "Uncaught exception exiting %s JVMCIEnv scope entered at %s:%d",
+          is_hotspot() ? "HotSpot" : "libjvmci", _file, _line);
       JVMCIRuntime::fatal_exception(this, message);
     }
 
