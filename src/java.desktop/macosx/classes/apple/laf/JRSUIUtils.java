@@ -37,62 +37,55 @@ public final class JRSUIUtils {
     /**
      * True if OSX is 10.5 exactly (ignoring patch versions).
      */
-    public static boolean isLeopard = currentMacOSXVersionMatchesGivenVersionRange(10, 5,
-            true, false, false);
+    public static final boolean isLeopard;
 
     /**
      * True if OSX is 10.6 or below.
      */
-    public static boolean isSnowLeopardOrBelow = currentMacOSXVersionMatchesGivenVersionRange(10, 6,
-            true, true, false);
+    public static final boolean isSnowLeopardOrBelow;
 
     /**
      * True if macOS is 10.16 or higher.
      */
-    public static boolean isBigSurOrAbove = currentMacOSXVersionMatchesGivenVersionRange(10, 16,
-            true, false, true);
+    public static final boolean isBigSurOrAbove;
 
-    // DENY
-    private JRSUIUtils() {}
-
-    /**
-     * Method for checking macOS version compatibility (ignores the patch).
-     *
-     * @param majorVersion major release (e.g. 10 for OSX)
-     * @param minorVersion minor release
-     * @param inclusive set to true to return true for an equal version
-     * @param matchBelow set to true to return true when the version is smaller
-     * @param matchAbove set to true to return true when the version is greater
-     * @return true if the running version matches
-     */
-    static boolean currentMacOSXVersionMatchesGivenVersionRange(
-            final int majorVersion, final int minorVersion, final boolean inclusive,
-            final boolean matchBelow, final boolean matchAbove) {
+    static {
         // split the "x.y.z" version number
         @SuppressWarnings("removal")
         String osVersion = AccessController.doPrivileged(new GetPropertyAction("os.version"));
         String[] fragments = osVersion.split("\\.");
 
-        if (fragments.length < 2) return false;
+        if (fragments.length < 2) {
+            isLeopard = false;
+            isSnowLeopardOrBelow = false;
+            isBigSurOrAbove = false;
+        } else {
+            boolean isBigSurOrAbove1;
+            boolean isSnowLeopardOrBelow1;
+            boolean isLeopard1;
 
-        // check if os.version matches the given version using the given match method
-        try {
-            int majorVers = Integer.parseInt(fragments[0]);
-            int minorVers = Integer.parseInt(fragments[1]);
+            try {
+                int majorVersion = Integer.parseInt(fragments[0]);
+                int minorVersion = Integer.parseInt(fragments[1]);
 
-            if (inclusive && majorVers == majorVersion && minorVers == minorVersion) return true;
-            if (matchBelow &&
-                    (majorVers < majorVersion ||
-                            (majorVers == majorVersion && minorVers < minorVersion))) return true;
-            if (matchAbove &&
-                    (majorVers > majorVersion ||
-                            (majorVers == majorVersion && minorVers > minorVersion))) return true;
+                isLeopard1 = majorVersion == 10 && minorVersion == 5; // exactly OSX 10.5
+                isSnowLeopardOrBelow1 = majorVersion < 10 || majorVersion == 10 && minorVersion <= 6; // OSX 10.6 or below
+                isBigSurOrAbove1 = majorVersion > 10 || majorVersion == 10 && minorVersion >= 16; // OSX 10.16 or above
+            } catch (NumberFormatException e) {
+                // was not an integer
+                isLeopard1 = false;
+                isSnowLeopardOrBelow1 = false;
+                isBigSurOrAbove1 = false;
+            }
 
-        } catch (NumberFormatException e) {
-            // was not an integer
+            isBigSurOrAbove = isBigSurOrAbove1;
+            isSnowLeopardOrBelow = isSnowLeopardOrBelow1;
+            isLeopard = isLeopard1;
         }
-        return false;
     }
+
+    // DENY
+    private JRSUIUtils() {}
 
     /**
      * Returns {@code JRSUIControlShouldScrollToClick();} from native code.
