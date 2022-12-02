@@ -55,11 +55,8 @@ public:
     return *this;
   }
 
-  OopHandle& assign_handle(const OopHandle& copy) {
-    // Assignment is used by RedefineClasses for java_mirror to temporarily
-    // replace the mirror in the scratch class.
-    _obj = copy._obj;
-    return *this;
+  void swap(OopHandle& copy) {
+    ::swap(_obj, copy._obj);
   }
 
   inline oop resolve() const;
