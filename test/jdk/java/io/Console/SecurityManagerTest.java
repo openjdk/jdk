@@ -29,9 +29,7 @@
  */
 public class SecurityManagerTest {
     public static void main(String... args) {
-        var con = System.console();
-        if (con == null) {
-            throw new RuntimeException("jline console could not be instantiated with the Security Manager");
-        }
+        System.console();
+        // consider it successful if ServiceConfigurationError was not thrown here
     }
 }

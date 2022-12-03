@@ -600,20 +600,25 @@ public class Console implements Flushable
             @SuppressWarnings("removal")
             public Console console() {
                 if (cons == null) {
-                    // Try loading providers
-                    PrivilegedAction<Console> pa = () -> {
-                        var consModName = System.getProperty("jdk.console",
-                                JdkConsoleProvider.DEFAULT_PROVIDER);
-                        return ServiceLoader.load(JdkConsoleProvider.class).stream()
-                                .map(ServiceLoader.Provider::get)
-                                .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                                .map(jcp -> jcp.console(istty))
-                                .filter(Objects::nonNull)
-                                .findAny()
-                                .map(jc -> (Console)new ProxyingConsole(jc))
-                                .orElse(istty ? new Console() : null);
-                    };
-                    cons = AccessController.doPrivileged(pa);
+                    try {
+                        // Try loading providers
+                        PrivilegedAction<Console> pa = () -> {
+                            var consModName = System.getProperty("jdk.console",
+                                    JdkConsoleProvider.DEFAULT_PROVIDER);
+                            return ServiceLoader.load(JdkConsoleProvider.class).stream()
+                                    .map(ServiceLoader.Provider::get)
+                                    .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
+                                    .map(jcp -> jcp.console(istty))
+                                    .filter(Objects::nonNull)
+                                    .findAny()
+                                    .map(jc -> (Console) new ProxyingConsole(jc))
+                                    .orElse(istty ? new Console() : null);
+                        };
+                        cons = AccessController.doPrivileged(pa);
+                    } catch (ServiceConfigurationError ignore) {
+                        // default to built-in Console
+                        cons = istty ? new Console() : null;
+                    }
                 }
                 return cons;
             }
