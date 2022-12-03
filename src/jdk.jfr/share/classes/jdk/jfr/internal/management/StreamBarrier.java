@@ -75,5 +75,4 @@ public final class StreamBarrier implements Closeable {
         activated = false;
         this.notifyAll();
     }
-
 }
