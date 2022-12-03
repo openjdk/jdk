@@ -39,7 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
 
   // LR is live.  It must be saved around calls.
 
@@ -285,13 +285,12 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?
-  __ stp(r10, r11, Address(__ pre(sp, -2 * wordSize)));
+  __ push(RegSet::of(r10), sp);
   __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
 
-  // Uses rscratch1 & rscratch2, so we must pass new temporaries.
-  __ resolve_weak_handle(r10, r11);
+  __ resolve_weak_handle(r10, rscratch1, rscratch2);
   __ mov(rscratch1, r10);
-  __ ldp(r10, r11, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::of(r10), sp);
   __ cbnz(rscratch1, method_live);
 
   __ bind(bad_call);

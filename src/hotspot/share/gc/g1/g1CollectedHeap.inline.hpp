@@ -213,6 +213,11 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
   return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
 }
 
+inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
+  Klass* k = obj->klass();
+  return k == Universe::fillerArrayKlassObj() || k == vmClasses::FillerObject_klass();
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
   return hr->is_obj_dead(obj, hr->parsable_bottom());
 }
@@ -233,7 +238,6 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
-  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
   return _region_attr.is_humongous_candidate(region);
 }
 

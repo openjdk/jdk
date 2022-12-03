@@ -109,6 +109,8 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline bool is_parent_null(oop chunk); // bypasses barriers for a faster test
   template<typename P>
   static inline void set_parent_raw(oop chunk, oop value);
+  template<DecoratorSet decorators>
+  static inline void set_parent_access(oop chunk, oop value);
 
   static inline int size(oop chunk);
   static inline void set_size(HeapWord* chunk, int value);
@@ -136,6 +138,8 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline oop cont_raw(oop chunk);
   template<typename P>
   static inline void set_cont_raw(oop chunk, oop value);
+  template<DecoratorSet decorators>
+  static inline void set_cont_access(oop chunk, oop value);
 };
 
 #endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_HPP

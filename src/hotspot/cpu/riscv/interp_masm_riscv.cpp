@@ -182,9 +182,12 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  int32_t offset = 0;
-  la_patchable(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
-  addi(xdispatch, xdispatch, offset);
+  ExternalAddress target((address)Interpreter::dispatch_table());
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(xdispatch, target, offset);
+    addi(xdispatch, xdispatch, offset);
+  });
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
@@ -280,11 +283,11 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Load pointer for resolved_references[] objArray
   ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result, tmp);
+  resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   shadd(result, index, result, index, LogBytesPerHeapOop);
-  load_heap_oop(result, Address(result, 0));
+  load_heap_oop(result, Address(result, 0), tmp, t1);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
@@ -368,12 +371,12 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister r) {
-  flw(r, esp, 0);
+  flw(r, Address(esp, 0));
   addi(esp, esp, wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
-  fld(r, esp, 0);
+  fld(r, Address(esp, 0));
   addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
@@ -783,7 +786,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg = x10;
     const Register tmp = c_rarg2;
@@ -816,7 +819,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     assert(lock_offset == 0,
            "displached header must be first word in BasicObjectLock");
 
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Test if the oopMark is an obvious stack pointer, i.e.,
     //  1) (mark & 7) == 0, and
@@ -833,7 +836,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     // Save the test result, for recursive case, the result is zero
     sd(swap_reg, Address(lock_reg, mark_offset));
-    beqz(swap_reg, done);
+    beqz(swap_reg, count);
 
     bind(slow_case);
 
@@ -841,6 +844,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
+
+    j(done);
+
+    bind(count);
+    increment(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -865,7 +873,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg   = x10;
     const Register header_reg = c_rarg2;  // Will contain the old oopMark
@@ -888,14 +896,19 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
                            BasicLock::displaced_header_offset_in_bytes()));
 
     // Test for recursion
-    beqz(header_reg, done);
+    beqz(header_reg, count);
 
     // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+
+    j(done);
+
+    bind(count);
+    decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
 
@@ -915,7 +928,7 @@ void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
 void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label set_mdp;
-  push_reg(0xc00, sp); // save x10, x11
+  push_reg(RegSet::of(x10, x11), sp); // save x10, x11
 
   // Test MDO to avoid the call if it is NULL.
   ld(x10, Address(xmethod, in_bytes(Method::method_data_offset())));
@@ -928,7 +941,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   add(x10, x11, x10);
   sd(x10, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
   bind(set_mdp);
-  pop_reg(0xc00, sp);
+  pop_reg(RegSet::of(x10, x11), sp);
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {

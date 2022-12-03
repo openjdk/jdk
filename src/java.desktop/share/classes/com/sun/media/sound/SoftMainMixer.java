@@ -46,7 +46,7 @@ import javax.sound.sampled.AudioSystem;
  */
 public final class SoftMainMixer {
 
-    // A private class thats contains a ModelChannelMixer and it's private buffers.
+    // A private class that contains a ModelChannelMixer and it's private buffers.
     // This becomes necessary when we want to have separate delay buffers for each channel mixer.
     private static class SoftChannelMixerContainer {
         ModelChannelMixer mixer;

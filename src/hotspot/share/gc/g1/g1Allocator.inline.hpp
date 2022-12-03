@@ -89,7 +89,7 @@ inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
 inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {
   assert(dest.is_valid(),
          "Allocation buffer index out of bounds: %s", dest.get_type_str());
-  assert(_alloc_buffers[dest.type()] != NULL,
+  assert(_dest_data[dest.type()]._alloc_buffer != nullptr,
          "Allocation buffer is NULL: %s", dest.get_type_str());
   return alloc_buffer(dest.type(), node_index);
 }
@@ -101,9 +101,9 @@ inline PLAB* G1PLABAllocator::alloc_buffer(region_type_t dest, uint node_index) 
   if (dest == G1HeapRegionAttr::Young) {
     assert(node_index < alloc_buffers_length(dest),
            "Allocation buffer index out of bounds: %u, %u", dest, node_index);
-    return _alloc_buffers[dest][node_index];
+    return _dest_data[dest]._alloc_buffer[node_index];
   } else {
-    return _alloc_buffers[dest][0];
+    return _dest_data[dest]._alloc_buffer[0];
   }
 }
 

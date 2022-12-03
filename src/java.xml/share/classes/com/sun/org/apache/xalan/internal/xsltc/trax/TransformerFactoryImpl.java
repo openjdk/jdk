@@ -1605,7 +1605,8 @@ public class TransformerFactoryImpl
             else {
                 URL url;
                 try {
-                    url = new URL(systemId);
+                    @SuppressWarnings("deprecation")
+                    URL _unused = url = new URL(systemId);
                 }
                 catch (MalformedURLException e) {
                     return null;

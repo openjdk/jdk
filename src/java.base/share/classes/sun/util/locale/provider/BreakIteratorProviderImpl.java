@@ -317,7 +317,15 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
         }
     }
 
-    // Implementation only for calling Grapheme.nextBoundary()
+    /**
+     * Implementation only for calling Grapheme.nextBoundary().
+     *
+     * This is a special-purpose CharSequence that represents characters in the
+     * index range [0..endIndex) of the underlying CharacterIterator, even if
+     * that CharacterIterator represents the subrange of some string. The calling
+     * code in GraphemeBreakIterator takes care to ensure that only valid indexes
+     * into the src are used.
+     */
     static final class CharacterIteratorCharSequence implements CharSequence {
         CharacterIterator src;
         CharacterIteratorCharSequence(CharacterIterator ci) {
@@ -326,7 +334,10 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
 
         @Override
         public int length() {
-            return src.getEndIndex() - src.getBeginIndex();
+            // Return the entire CharSequence length (0 to endIndex), not to
+            // be confused with the text range length (beginIndex to endIndex)
+            // of the underlying CharacterIterator.
+            return src.getEndIndex();
         }
 
         @Override

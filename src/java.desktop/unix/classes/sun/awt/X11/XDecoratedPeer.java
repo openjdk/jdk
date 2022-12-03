@@ -716,7 +716,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         reshape(dims, operation, userReshape);
     }
 
-    // This method gets overriden in XFramePeer & XDialogPeer.
+    // This method gets overridden in XFramePeer & XDialogPeer.
     abstract boolean isTargetUndecorated();
 
     /**
@@ -1204,7 +1204,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     public boolean requestWindowFocus(long time, boolean timeProvided) {
         focusLog.fine("Request for decorated window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
-        // If this is Window and its owner Frame is active we can be sure request succedded.
+        // If this is Window and its owner Frame is active we can be sure request succeeded.
         Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
 
@@ -1220,7 +1220,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         }
         if (toFocus == null || !toFocus.focusAllowedFor()) {
             // This might change when WM will have property to determine focus policy.
-            // Right now, because policy is unknown we can't be sure we succedded
+            // Right now, because policy is unknown we can't be sure we succeeded
             return false;
         }
         if (this == toFocus) {
@@ -1287,7 +1287,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
              * The fix is based on the empiric fact consisting in that the component
              * receives native mouse event nearly at the same time the Frame receives
              * WM_TAKE_FOCUS (when FocusIn is generated via XSetInputFocus call) but
-             * definetely before the Frame gets FocusIn event (when this method is called).
+             * definitely before the Frame gets FocusIn event (when this method is called).
              */
             postEvent(new InvocationEvent(target, new Runnable() {
                 public void run() {

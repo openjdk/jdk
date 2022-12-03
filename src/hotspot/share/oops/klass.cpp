@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -35,6 +34,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"

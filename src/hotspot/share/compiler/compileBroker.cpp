@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -39,6 +38,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -76,12 +76,12 @@
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/c2compiler.hpp"
 #endif
 
 #ifdef DTRACE_ENABLED
@@ -547,13 +547,12 @@ void CompileQueue::print(outputStream* st) {
 }
 
 void CompileQueue::print_tty() {
-  ResourceMark rm;
   stringStream ss;
   // Dump the compile queue into a buffer before locking the tty
   print(&ss);
   {
     ttyLocker ttyl;
-    tty->print("%s", ss.as_string());
+    tty->print("%s", ss.freeze());
   }
 }
 
@@ -1961,7 +1960,7 @@ void CompileBroker::init_compiler_thread_log() {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);
         }
-        CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file_name, fp, thread_id);
+        CompileLog* log = new(mtCompiler) CompileLog(file_name, fp, thread_id);
         if (log == NULL) {
           fclose(fp);
           return;
@@ -2023,7 +2022,6 @@ void CompileBroker::maybe_block() {
 // wrapper for CodeCache::print_summary()
 static void codecache_print(bool detailed)
 {
-  ResourceMark rm;
   stringStream s;
   // Dump code cache  into a buffer before locking the tty,
   {
@@ -2031,12 +2029,11 @@ static void codecache_print(bool detailed)
     CodeCache::print_summary(&s, detailed);
   }
   ttyLocker ttyl;
-  tty->print("%s", s.as_string());
+  tty->print("%s", s.freeze());
 }
 
 // wrapper for CodeCache::print_summary() using outputStream
 static void codecache_print(outputStream* out, bool detailed) {
-  ResourceMark rm;
   stringStream s;
 
   // Dump code cache into a buffer
@@ -2096,11 +2093,13 @@ CompilerDirectives* DirectivesStack::_bottom = NULL;
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   task->print_ul();
-  if (PrintCompilation) {
+  elapsedTimer time;
+
+  DirectiveSet* directive = task->directive();
+  if (directive->PrintCompilationOption) {
     ResourceMark rm;
     task->print_tty();
   }
-  elapsedTimer time;
 
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
@@ -2117,19 +2116,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool should_break = false;
   const int task_level = task->comp_level();
   AbstractCompiler* comp = task->compiler();
-
-  DirectiveSet* directive;
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
     // native.  The NoHandleMark before the transition should catch
     // any cases where this occurs in the future.
     methodHandle method(thread, task->method());
-    assert(!method->is_native(), "no longer compile natives");
 
-    // Look up matching directives
-    directive = DirectivesStack::getMatchingDirective(method, comp);
-    task->set_directive(directive);
+    assert(!method->is_native(), "no longer compile natives");
 
     // Update compile information when using perfdata.
     if (UsePerfData) {
@@ -2351,7 +2345,6 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
-      ResourceMark rm;
       stringStream s;
       // Dump code cache state into a buffer before locking the tty,
       // because log_state() will use locks causing lock conflicts.
@@ -2359,7 +2352,7 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
       // Lock to prevent tearing
       ttyLocker ttyl;
       xtty->begin_elem("code_cache_full");
-      xtty->print("%s", s.as_string());
+      xtty->print("%s", s.freeze());
       xtty->stamp();
       xtty->end_elem();
     }

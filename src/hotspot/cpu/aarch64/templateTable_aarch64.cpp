@@ -146,14 +146,14 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators) {
   assert(val == noreg || val == r0, "parameter is just for looks");
-  __ store_heap_oop(dst, val, r10, r1, r3, decorators);
+  __ store_heap_oop(dst, val, r10, r11, r3, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators) {
-  __ load_heap_oop(dst, src, r10, r1, decorators);
+  __ load_heap_oop(dst, src, r10, r11, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -309,12 +309,12 @@ void TemplateTable::sipush()
   __ asrw(r0, r0, 16);
 }
 
-void TemplateTable::ldc(bool wide)
+void TemplateTable::ldc(LdcType type)
 {
   transition(vtos, vtos);
   Label call_ldc, notFloat, notClass, notInt, Done;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
     __ get_unsigned_2_byte_index_at_bcp(r1, 1);
   } else {
     __ load_unsigned_byte(r1, at_bcp(1));
@@ -343,7 +343,7 @@ void TemplateTable::ldc(bool wide)
   __ br(Assembler::NE, notClass);
 
   __ bind(call_ldc);
-  __ mov(c_rarg1, wide);
+  __ mov(c_rarg1, is_ldc_wide(type) ? 1 : 0);
   call_VM(r0, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), c_rarg1);
   __ push_ptr(r0);
   __ verify_oop(r0);
@@ -376,7 +376,7 @@ void TemplateTable::ldc(bool wide)
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide)
+void TemplateTable::fast_aldc(LdcType type)
 {
   transition(vtos, atos);
 
@@ -384,7 +384,7 @@ void TemplateTable::fast_aldc(bool wide)
   Register tmp = r1;
   Register rarg = r2;
 
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
 
@@ -411,7 +411,7 @@ void TemplateTable::fast_aldc(bool wide)
     // Stash null_sentinel address to get its value later
     __ movptr(rarg, (uintptr_t)Universe::the_null_sentinel_addr());
     __ ldr(tmp, Address(rarg));
-    __ resolve_oop_handle(tmp);
+    __ resolve_oop_handle(tmp, r5, rscratch2);
     __ cmpoop(result, tmp);
     __ br(Assembler::NE, notNull);
     __ mov(result, 0);  // NULL object reference
@@ -2316,7 +2316,7 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
                                         ConstantPoolCacheEntry::f1_offset())));
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ldr(obj, Address(obj, mirror_offset));
-    __ resolve_oop_handle(obj);
+    __ resolve_oop_handle(obj, r5, rscratch2);
   }
 }
 

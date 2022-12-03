@@ -42,7 +42,7 @@ runs:
       run: |
         # Convert platform name to upper case
         platform_prefix="$(echo ${{ inputs.platform }} | tr [a-z-] [A-Z_])"
-        echo "::set-output name=value::$platform_prefix"
+        echo "value=$platform_prefix" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: 'Get URL configuration'
@@ -105,5 +105,5 @@ runs:
       id: path-name
       run: |
         # Export the path
-        echo '::set-output name=path::bootjdk/jdk'
+        echo 'path=bootjdk/jdk' >> $GITHUB_OUTPUT
       shell: bash

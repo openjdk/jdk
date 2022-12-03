@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include <new>
 #include "cds.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
@@ -112,7 +111,6 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
@@ -2463,7 +2461,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
   }
   if (log) {
     tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
-    tty->print_raw(st.as_string());
+    tty->print_raw(st.freeze());
     tty->print_cr("[WhiteBox::VerifyFrames] Done");
   }
 WB_END

@@ -58,7 +58,7 @@ public class OtherName implements GeneralNameInterface {
     private int myhash = -1;
 
     /**
-     * Create the OtherName object from a passed ObjectIdentfier and
+     * Create the OtherName object from a passed ObjectIdentifier and
      * byte array name value
      *
      * @param oid ObjectIdentifier of this OtherName object
@@ -128,7 +128,6 @@ public class OtherName implements GeneralNameInterface {
             if (extClass == null) {   // Unsupported OtherName
                 return null;
             }
-            Class<?>[] params = { Object.class };
             Constructor<?> cons;
             try {
                 cons = extClass.getConstructor(Object.class);
@@ -158,7 +157,6 @@ public class OtherName implements GeneralNameInterface {
         if (gni != null) {
             // This OtherName has a supported class
             gni.encode(out);
-            return;
         } else {
             // This OtherName has no supporting class
             DerOutputStream tmp = new DerOutputStream();
@@ -177,14 +175,13 @@ public class OtherName implements GeneralNameInterface {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof OtherName)) {
+        if (!(other instanceof OtherName otherOther)) {
             return false;
         }
-        OtherName otherOther = (OtherName)other;
         if (!(otherOther.oid.equals(oid))) {
             return false;
         }
-        GeneralNameInterface otherGNI = null;
+        GeneralNameInterface otherGNI;
         try {
             otherGNI = getGNI(otherOther.oid, otherOther.nameValue);
         } catch (IOException ioe) {

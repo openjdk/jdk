@@ -81,6 +81,7 @@ class ConstantPool : public Metadata {
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
+  friend class ClassPrelinker;       // CDS
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -695,7 +696,7 @@ class ConstantPool : public Metadata {
   // CDS support
   void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
-  void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 #endif
@@ -887,7 +888,7 @@ class ConstantPool : public Metadata {
 
  private:
   class SymbolHash: public CHeapObj<mtSymbol> {
-    ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+    ResourceHashtable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
    public:
     void add_if_absent(const Symbol* sym, u2 value) {

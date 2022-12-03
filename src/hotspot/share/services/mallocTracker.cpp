@@ -22,8 +22,9 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
+#include "precompiled.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -35,8 +36,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-
-#include "jvm_io.h"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 size_t MallocMemorySummary::_limits_per_category[mt_number_of_types] = { 0 };
@@ -174,7 +173,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, stack, mst_marker);
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, mst_marker);
   void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.

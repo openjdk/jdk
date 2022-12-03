@@ -361,9 +361,9 @@ public class PKCS10 {
         return(retval);
     }
 
-    private X500Name            subject;
-    private PublicKey           subjectPublicKeyInfo;
-    private String              sigAlg;
-    private PKCS10Attributes    attributeSet;
-    private byte[]              encoded;        // signed
+    private X500Name                subject;
+    private final PublicKey         subjectPublicKeyInfo;
+    private String                  sigAlg;
+    private final PKCS10Attributes  attributeSet;
+    private byte[]                  encoded;        // signed
 }

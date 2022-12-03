@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ public class G1HeapRegionTable extends VMObject {
         // Offset of &_base[index]
         long offset = index * VM.getVM().getAddressSize();
         Address regionAddr = arrayAddr.getAddressAt(offset);
-        return (HeapRegion) VMObjectFactory.newObject(HeapRegion.class,
-                                                      regionAddr);
+        return VMObjectFactory.newObject(HeapRegion.class, regionAddr);
     }
 
     public long length() {
@@ -139,6 +138,6 @@ public class G1HeapRegionTable extends VMObject {
         long biasedIndex = target.asLongValue() >>> shiftBy();
         long offset = biasedIndex * HeapRegion.getPointerSize();
         Address regionAddr = arrayAddr.getAddressAt(offset);
-        return (HeapRegion)VMObjectFactory.newObject(HeapRegion.class, regionAddr);
+        return VMObjectFactory.newObject(HeapRegion.class, regionAddr);
     }
 }

@@ -39,7 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
   // RA is live. It must be saved around calls.
 
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -193,6 +193,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     return;
   }
 
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
+
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
@@ -256,13 +258,13 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ beq(t0, t1, skip_barrier);
 
     int32_t offset = 0;
-    __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
     __ jalr(ra, t0, offset);
     __ j(skip_barrier);
 
     __ bind(local_guard);
 
-    assert(__ offset() % 4 == 0, "bad alignment");
+    MacroAssembler::assert_alignment(__ pc());
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
     __ bind(skip_barrier);
   } else {
@@ -290,15 +292,14 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?
-  __ push_reg(RegSet::of(x28, x29), sp);
+  __ push_reg(RegSet::of(x28), sp);
 
   __ ld(x28, Address(t0, ClassLoaderData::holder_offset()));
 
-  // Uses x28 & x29, so we must pass new temporaries.
-  __ resolve_weak_handle(x28, x29);
+  __ resolve_weak_handle(x28, t0, t1);
   __ mv(t0, x28);
 
-  __ pop_reg(RegSet::of(x28, x29), sp);
+  __ pop_reg(RegSet::of(x28), sp);
 
   __ bnez(t0, method_live);
 

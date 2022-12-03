@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,16 +335,13 @@ import sun.security.util.DerOutputStream;
 public class X400Address implements GeneralNameInterface {
 
     // Private data members
-    byte[] nameValue = null;
+    DerValue derValue;
 
     /**
      * Create the X400Address object from the specified byte array
      *
      * @param value value of the name as a byte array
      */
-    public X400Address(byte[] value) {
-        nameValue = value;
-    }
 
     /**
      * Create the X400Address object from the passed encoded Der value.
@@ -353,7 +350,7 @@ public class X400Address implements GeneralNameInterface {
      * @exception IOException on error.
      */
     public X400Address(DerValue derValue) throws IOException {
-        nameValue = derValue.toByteArray();
+        this.derValue = derValue;
     }
 
     /**
@@ -369,8 +366,8 @@ public class X400Address implements GeneralNameInterface {
      * @param out the DER stream to encode the X400Address to.
      * @exception IOException on encoding errors.
      */
+    @Override
     public void encode(DerOutputStream out) throws IOException {
-        DerValue derValue = new DerValue(nameValue);
         out.putDerValue(derValue);
     }
 

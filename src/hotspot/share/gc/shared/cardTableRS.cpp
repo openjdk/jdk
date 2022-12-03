@@ -431,7 +431,6 @@ void CardTableRS::verify() {
   // generational heaps.
   VerifyCTGenClosure blk(this);
   GenCollectedHeap::heap()->generation_iterate(&blk, false);
-  CardTable::verify();
 }
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :

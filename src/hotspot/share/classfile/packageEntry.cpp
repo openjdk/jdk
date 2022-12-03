@@ -80,7 +80,7 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
   if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
-    _qualified_exports = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
+    _qualified_exports = new (mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
   }
 
   // Determine, based on this newly established export to module m,
@@ -215,7 +215,7 @@ typedef ResourceHashtable<
   const PackageEntry*,
   PackageEntry*,
   557, // prime number
-  ResourceObj::C_HEAP> ArchivedPackageEntries;
+  AnyObj::C_HEAP> ArchivedPackageEntries;
 static ArchivedPackageEntries* _archived_packages_entries = NULL;
 
 PackageEntry* PackageEntry::allocate_archived_entry() const {
@@ -224,7 +224,7 @@ PackageEntry* PackageEntry::allocate_archived_entry() const {
   memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
 
   if (_archived_packages_entries == NULL) {
-    _archived_packages_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedPackageEntries();
+    _archived_packages_entries = new (mtClass)ArchivedPackageEntries();
   }
   assert(_archived_packages_entries->get(this) == NULL, "Each PackageEntry must not be shared across PackageEntryTables");
   _archived_packages_entries->put(this, archived_entry);
@@ -248,7 +248,7 @@ void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
 void PackageEntry::init_as_archived_entry() {
   Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
 
-  _name = ArchiveBuilder::get_relocated_symbol(_name);
+  _name = ArchiveBuilder::get_buffered_symbol(_name);
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;

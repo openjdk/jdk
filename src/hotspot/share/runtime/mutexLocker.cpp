@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -380,6 +383,16 @@ void mutex_init() {
 #endif
 }
 
+void MutexLocker::post_initialize() {
+  // Print mutex ranks if requested.
+  LogTarget(Info, vmmutex) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    print_lock_ranks(&ls);
+  }
+}
+
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {
   if (SafepointSynchronize::is_at_safepoint()) {
     _locked = false;
@@ -408,4 +421,40 @@ void print_owned_locks_on_error(outputStream* st) {
      }
   }
   if (none) st->print_cr("None");
+}
+
+void print_lock_ranks(outputStream* st) {
+  st->print_cr("VM Mutex/Monitor ranks: ");
+
+#ifdef ASSERT
+  // Be extra defensive and figure out the bounds on
+  // ranks right here. This also saves a bit of time
+  // in the #ranks*#mutexes loop below.
+  int min_rank = INT_MAX;
+  int max_rank = INT_MIN;
+  for (int i = 0; i < _num_mutex; i++) {
+    Mutex* m = _mutex_array[i];
+    int r = (int) m->rank();
+    if (min_rank > r) min_rank = r;
+    if (max_rank < r) max_rank = r;
+  }
+
+  // Print the listings rank by rank
+  for (int r = min_rank; r <= max_rank; r++) {
+    bool first = true;
+    for (int i = 0; i < _num_mutex; i++) {
+      Mutex* m = _mutex_array[i];
+      if (r != (int) m->rank()) continue;
+
+      if (first) {
+        st->cr();
+        st->print_cr("Rank \"%s\":", m->rank_name());
+        first = false;
+      }
+      st->print_cr("  %s", m->name());
+    }
+  }
+#else
+  st->print_cr("  Only known in debug builds.");
+#endif // ASSERT
 }

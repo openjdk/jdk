@@ -24,13 +24,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "jvm.h"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -40,6 +40,7 @@
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/init.hpp"
@@ -53,7 +54,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
-#include "runtime/flags/jvmFlag.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -347,7 +347,7 @@ static frame next_frame(frame fr, Thread* t) {
   }
 }
 
-void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
+void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info, char* buf, int buf_size) {
 
   // see if it's a valid frame
   if (fr.pc()) {
@@ -362,7 +362,8 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
         if (count == 1 && _lineno != 0) {
           // We have source information of the first frame for internal errors. There is no need to parse it from the symbols.
           st->print("  (%s:%d)", get_filename_only(), _lineno);
-        } else if (Decoder::get_source_info(fr.pc(), filename, sizeof(filename), &line_no, count != 1)) {
+        } else if (print_source_info &&
+                   Decoder::get_source_info(fr.pc(), filename, sizeof(filename), &line_no, count != 1)) {
           st->print("  (%s:%d)", filename, line_no);
         }
       }
@@ -534,6 +535,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
+
+  static bool print_native_stack_succeeded = false;
 
   BEGIN
 
@@ -832,7 +835,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing native stack")
+  STEP("printing native stack (with source info)")
 
    if (_verbose) {
      if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
@@ -842,9 +845,20 @@ void VMError::report(outputStream* st, bool _verbose) {
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
-       print_native_stack(st, fr, _thread, buf, sizeof(buf));
+       print_native_stack(st, fr, _thread, true, buf, sizeof(buf));
        _print_native_stack_used = true;
      }
+     print_native_stack_succeeded = true;
+   }
+
+  STEP("retry printing native stack (no source info)")
+
+   if (_verbose && !print_native_stack_succeeded) {
+     st->cr();
+     st->print_cr("Retrying call stack printing without source information...");
+     frame fr = _context ? os::fetch_frame_from_context(_context) : os::current_frame();
+     print_native_stack(st, fr, _thread, false, buf, sizeof(buf));
+     _print_native_stack_used = true;
    }
 
   STEP("printing Java stack")

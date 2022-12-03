@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             return 0;
         }
 
-        ClassData cd = (ClassData) classDataCache.get(klass);
+        ClassData cd = classDataCache.get(klass);
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(cd != null, "can not get class data for " + klass.getName().asString() + klass.getAddress());
         }
@@ -1073,7 +1073,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         out.writeInt(DUMMY_STACK_TRACE_ID);
         writeObjectID(klass.getJavaMirror());
 
-        ClassData cd = (ClassData) classDataCache.get(klass);
+        ClassData cd = classDataCache.get(klass);
 
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(cd != null, "can not get class data for " + klass.getName().asString() + klass.getAddress());

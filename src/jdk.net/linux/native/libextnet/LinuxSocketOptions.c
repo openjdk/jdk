@@ -54,9 +54,15 @@ static jint socketOptionSupported(jint level, jint optname) {
     jint one = 1;
     jint rv, s;
     socklen_t sz = sizeof (one);
-    s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    /* First try IPv6; fall back to IPv4. */
+    s = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (s < 0) {
-        return 0;
+        if (errno == EPFNOSUPPORT || errno == EAFNOSUPPORT) {
+            s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        }
+        if (s < 0) {
+            return 0;
+        }
     }
     rv = getsockopt(s, level, optname, (void *) &one, &sz);
     if (rv != 0 && errno == ENOPROTOOPT) {

@@ -258,9 +258,6 @@ void Universe::serialize(SerializeClosure* f) {
         }
         f->do_oop(&mirror_oop); // write to archive
       }
-      if (mirror_oop != NULL) { // may be null if archived heap is disabled
-        java_lang_Class::update_archived_primitive_mirror_native_pointers(mirror_oop);
-      }
     }
   }
 #endif
@@ -328,7 +325,7 @@ void Universe::genesis(TRAPS) {
         // Initialization of the fillerArrayKlass must come before regular
         // int-TypeArrayKlass so that the int-Array mirror points to the
         // int-TypeArrayKlass.
-        _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljava/internal/vm/FillerArray;", CHECK);
+        _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
         for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
           _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
         }

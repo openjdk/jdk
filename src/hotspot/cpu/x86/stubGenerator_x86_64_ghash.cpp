@@ -32,55 +32,48 @@
 
 #define __ _masm->
 
-// GHASH intrinsic stubs
-
-
-// Polynomial x^128+x^127+x^126+x^121+1
-address StubGenerator::generate_ghash_polynomial_addr() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "_ghash_poly_addr");
-  address start = __ pc();
-
-  __ emit_data64(0x0000000000000001, relocInfo::none);
-  __ emit_data64(0xc200000000000000, relocInfo::none);
-
-  return start;
+ATTRIBUTE_ALIGNED(16) uint64_t GHASH_SHUFFLE_MASK[] = {
+    0x0F0F0F0F0F0F0F0FUL, 0x0F0F0F0F0F0F0F0FUL,
+};
+static address ghash_shuffle_mask_addr() {
+  return (address)GHASH_SHUFFLE_MASK;
 }
-
-address StubGenerator::generate_ghash_shufflemask_addr() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "_ghash_shuffmask_addr");
-  address start = __ pc();
-
-  __ emit_data64(0x0f0f0f0f0f0f0f0f, relocInfo::none);
-  __ emit_data64(0x0f0f0f0f0f0f0f0f, relocInfo::none);
-
-  return start;
-}
-
 
 // byte swap x86 long
-address StubGenerator::generate_ghash_long_swap_mask() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "ghash_long_swap_mask");
-  address start = __ pc();
-
-  __ emit_data64(0x0f0e0d0c0b0a0908, relocInfo::none );
-  __ emit_data64(0x0706050403020100, relocInfo::none );
-
-return start;
+ATTRIBUTE_ALIGNED(16) uint64_t GHASH_LONG_SWAP_MASK[] = {
+    0x0F0E0D0C0B0A0908UL, 0x0706050403020100UL,
+};
+address StubGenerator::ghash_long_swap_mask_addr() {
+  return (address)GHASH_LONG_SWAP_MASK;
 }
 
 // byte swap x86 byte array
-address StubGenerator::generate_ghash_byte_swap_mask() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "ghash_byte_swap_mask");
-  address start = __ pc();
+ATTRIBUTE_ALIGNED(16) uint64_t GHASH_BYTE_SWAP_MASK[] = {
+  0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
+};
+address StubGenerator::ghash_byte_swap_mask_addr() {
+  return (address)GHASH_BYTE_SWAP_MASK;
+}
 
-  __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none );
-  __ emit_data64(0x0001020304050607, relocInfo::none );
+// Polynomial x^128+x^127+x^126+x^121+1
+ATTRIBUTE_ALIGNED(16) uint64_t GHASH_POLYNOMIAL[] = {
+    0x0000000000000001UL, 0xC200000000000000UL,
+};
+address StubGenerator::ghash_polynomial_addr() {
+  return (address)GHASH_POLYNOMIAL;
+}
 
-return start;
+
+// GHASH intrinsic stubs
+
+void StubGenerator::generate_ghash_stubs() {
+  if (UseGHASHIntrinsics) {
+    if (VM_Version::supports_avx()) {
+      StubRoutines::_ghash_processBlocks = generate_avx_ghash_processBlocks();
+    } else {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+    }
+  }
 }
 
 
@@ -110,7 +103,9 @@ address StubGenerator::generate_ghash_processBlocks() {
 
   __ enter();
 
-  __ movdqu(xmm_temp10, ExternalAddress(StubRoutines::x86::ghash_long_swap_mask_addr()));
+  __ push(rbx); // scratch
+
+  __ movdqu(xmm_temp10, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
 
   __ movdqu(xmm_temp0, Address(state, 0));
   __ pshufb(xmm_temp0, xmm_temp10);
@@ -118,7 +113,7 @@ address StubGenerator::generate_ghash_processBlocks() {
 
   __ bind(L_ghash_loop);
   __ movdqu(xmm_temp2, Address(data, 0));
-  __ pshufb(xmm_temp2, ExternalAddress(StubRoutines::x86::ghash_byte_swap_mask_addr()));
+  __ pshufb(xmm_temp2, ExternalAddress(ghash_byte_swap_mask_addr()), rbx /*rscratch*/);
 
   __ movdqu(xmm_temp1, Address(subkeyH, 0));
   __ pshufb(xmm_temp1, xmm_temp10);
@@ -208,6 +203,9 @@ address StubGenerator::generate_ghash_processBlocks() {
   __ bind(L_exit);
   __ pshufb(xmm_temp6, xmm_temp10);          // Byte swap 16-byte result
   __ movdqu(Address(state, 0), xmm_temp6);   // store the result
+
+  __ pop(rbx);
+
   __ leave();
   __ ret(0);
 
@@ -228,9 +226,11 @@ address StubGenerator::generate_avx_ghash_processBlocks() {
   const Register data = c_rarg2;
   const Register blocks = c_rarg3;
   __ enter();
+  __ push(rbx);
 
   avx_ghash(state, htbl, data, blocks);
 
+  __ pop(rbx);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
@@ -268,7 +268,7 @@ void StubGenerator::avx_ghash(Register input_state, Register htbl,
 
   // Shuffle the input state
   __ bind(BEGIN_PROCESS);
-  __ movdqu(lswap_mask, ExternalAddress(StubRoutines::x86::ghash_long_swap_mask_addr()));
+  __ movdqu(lswap_mask, ExternalAddress(ghash_long_swap_mask_addr()), rbx /*rscratch*/);
   __ movdqu(state, Address(input_state, 0));
   __ vpshufb(state, state, lswap_mask, Assembler::AVX_128bit);
 
@@ -284,7 +284,7 @@ void StubGenerator::avx_ghash(Register input_state, Register htbl,
   //Each block = 16 bytes.
   __ bind(PROCESS_8_BLOCKS);
   __ subl(blocks, 8);
-  __ movdqu(bswap_mask, ExternalAddress(StubRoutines::x86::ghash_byte_swap_mask_addr()));
+  __ movdqu(bswap_mask, ExternalAddress(ghash_byte_swap_mask_addr()), rbx /*rscratch*/);
   __ movdqu(data, Address(input_data, 16 * 7));
   __ vpshufb(data, data, bswap_mask, Assembler::AVX_128bit);
   //Loading 1*16 as calculated powers of H required starts at that location.
@@ -369,7 +369,7 @@ void StubGenerator::avx_ghash(Register input_state, Register htbl,
   // Since this is one block operation we will only use H * 2 i.e. the first power of H
   __ bind(ONE_BLK_INIT);
   __ movdqu(tmp0, Address(htbl, 1 * 16));
-  __ movdqu(bswap_mask, ExternalAddress(StubRoutines::x86::ghash_byte_swap_mask_addr()));
+  __ movdqu(bswap_mask, ExternalAddress(ghash_byte_swap_mask_addr()), rbx /*rscratch*/);
 
   //Do one (128 bit x 128 bit) carry-less multiplication at a time followed by a reduction.
   __ bind(PROCESS_1_BLOCK);
@@ -393,7 +393,7 @@ void StubGenerator::avx_ghash(Register input_state, Register htbl,
   gfmul(tmp0, state);
 
   __ bind(GENERATE_HTBL_1_BLK);
-  generateHtbl_one_block(htbl);
+  generateHtbl_one_block(htbl, rbx /*rscratch*/);
 
   __ bind(GENERATE_HTBL_8_BLKS);
   generateHtbl_eight_blocks(htbl);
@@ -472,23 +472,23 @@ void StubGenerator::schoolbookAAD(int i, Register htbl, XMMRegister data,
 
 // This method takes the subkey after expansion as input and generates 1 * 16 power of subkey H.
 // The power of H is used in reduction process for one block ghash
-void StubGenerator::generateHtbl_one_block(Register htbl) {
+void StubGenerator::generateHtbl_one_block(Register htbl, Register rscratch) {
   const XMMRegister t = xmm13;
 
   // load the original subkey hash
   __ movdqu(t, Address(htbl, 0));
   // shuffle using long swap mask
-  __ movdqu(xmm10, ExternalAddress(StubRoutines::x86::ghash_long_swap_mask_addr()));
+  __ movdqu(xmm10, ExternalAddress(ghash_long_swap_mask_addr()), rscratch);
   __ vpshufb(t, t, xmm10, Assembler::AVX_128bit);
 
   // Compute H' = GFMUL(H, 2)
   __ vpsrld(xmm3, t, 7, Assembler::AVX_128bit);
-  __ movdqu(xmm4, ExternalAddress(StubRoutines::x86::ghash_shufflemask_addr()));
+  __ movdqu(xmm4, ExternalAddress(ghash_shuffle_mask_addr()), rscratch);
   __ vpshufb(xmm3, xmm3, xmm4, Assembler::AVX_128bit);
   __ movl(rax, 0xff00);
   __ movdl(xmm4, rax);
   __ vpshufb(xmm4, xmm4, xmm3, Assembler::AVX_128bit);
-  __ movdqu(xmm5, ExternalAddress(StubRoutines::x86::ghash_polynomial_addr()));
+  __ movdqu(xmm5, ExternalAddress(ghash_polynomial_addr()), rscratch);
   __ vpand(xmm5, xmm5, xmm4, Assembler::AVX_128bit);
   __ vpsrld(xmm3, t, 31, Assembler::AVX_128bit);
   __ vpslld(xmm4, t, 1, Assembler::AVX_128bit);
@@ -532,23 +532,6 @@ void StubGenerator::generateHtbl_eight_blocks(Register htbl) {
 
   __ bind(GFMUL);
   gfmul(tmp0, t);
-}
-
-
-void StubGenerator::generate_ghash_stubs() {
-  if (UseGHASHIntrinsics) {
-    if (StubRoutines::x86::_ghash_long_swap_mask_addr == NULL) {
-      StubRoutines::x86::_ghash_long_swap_mask_addr = generate_ghash_long_swap_mask();
-    }
-    StubRoutines::x86::_ghash_byte_swap_mask_addr = generate_ghash_byte_swap_mask();
-    if (VM_Version::supports_avx()) {
-      StubRoutines::x86::_ghash_shuffmask_addr = generate_ghash_shufflemask_addr();
-      StubRoutines::x86::_ghash_poly_addr = generate_ghash_polynomial_addr();
-      StubRoutines::_ghash_processBlocks = generate_avx_ghash_processBlocks();
-    } else {
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-    }
-  }
 }
 
 #undef __

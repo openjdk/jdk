@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,58 +68,33 @@ final class LCMSTransform implements ColorTransform {
     }
 
     private volatile NativeTransform transform;
-    ICC_Profile[] profiles;
-    LCMSProfile[] lcmsProfiles;
-    int renderType;
-    int transformType;
+    private final LCMSProfile[] lcmsProfiles;
+    private final int renderingIntent;
 
-    private int numInComponents = -1;
-    private int numOutComponents = -1;
+    private final int numInComponents;
+    private final int numOutComponents;
 
-    public LCMSTransform(ICC_Profile profile, int renderType,
-                         int transformType)
-    {
-        /* Actually, it is not a complete transform but just part of it */
-        profiles = new ICC_Profile[1];
-        profiles[0] = profile;
-        lcmsProfiles = new LCMSProfile[1];
-        lcmsProfiles[0] = LCMS.getProfileID(profile);
-        this.renderType = (renderType == ColorTransform.Any)?
-                              ICC_Profile.icPerceptual : renderType;
-        this.transformType = transformType;
-
-        /* Note that ICC_Profile.getNumComponents() is quite expensive
-         * (it may results in a reading of the profile header).
-         * So, here we cache the number of components of input and
-         * output profiles for further usage.
-         */
-        numInComponents = profiles[0].getNumComponents();
-        numOutComponents = profiles[profiles.length - 1].getNumComponents();
-    }
-
-    public LCMSTransform (ColorTransform[] transforms) {
-        int size = 0;
-        for (int i=0; i < transforms.length; i++) {
-            size+=((LCMSTransform)transforms[i]).profiles.length;
+    /**
+     * Creates a transform based on the list of profiles and rendering intent.
+     * The first profile will be considered input, and the last profile will be
+     * considered output.
+     *
+     * @param  renderingIntent the desired rendering intent, could be ignored if
+     *         unsupported. If the {@link ColorTransform#Any} is passed then we
+     *         will try to use {@code ICC_Profile.icPerceptual} intent.
+     * @param  profiles the list of color profiles
+     */
+    LCMSTransform(int renderingIntent, ICC_Profile... profiles) {
+        lcmsProfiles = new LCMSProfile[profiles.length];
+        for (int i = 0; i < profiles.length; i++) {
+            lcmsProfiles[i] = LCMS.getProfileID(profiles[i]);
+            profiles[i].getNumComponents(); // force header initialization
         }
-        profiles = new ICC_Profile[size];
-        lcmsProfiles = new LCMSProfile[size];
-        int j = 0;
-        for (int i=0; i < transforms.length; i++) {
-            LCMSTransform curTrans = (LCMSTransform)transforms[i];
-            System.arraycopy(curTrans.profiles, 0, profiles, j,
-                             curTrans.profiles.length);
-            System.arraycopy(curTrans.lcmsProfiles, 0, lcmsProfiles, j,
-                             curTrans.lcmsProfiles.length);
-            j += curTrans.profiles.length;
-        }
-        renderType = ((LCMSTransform)transforms[0]).renderType;
-
-        /* Note that ICC_Profile.getNumComponents() is quite expensive
-         * (it may results in a reading of the profile header).
-         * So, here we cache the number of components of input and
-         * output profiles for further usage.
-         */
+        this.renderingIntent = (renderingIntent == ColorTransform.Any) ?
+                ICC_Profile.icPerceptual : renderingIntent;
+        // Note that ICC_Profile.getNumComponents() is quite expensive (it may
+        // result in a reading of the profile header). So, here we cache the
+        // number of components of input and output profiles for further usage.
         numInComponents = profiles[0].getNumComponents();
         numOutComponents = profiles[profiles.length - 1].getNumComponents();
     }
@@ -146,7 +121,7 @@ final class LCMSTransform implements ColorTransform {
                     tfm.outFormatter = out.pixelType;
                     tfm.isOutIntPacked = out.isIntPacked;
 
-                    tfm.ID = LCMS.createTransform(lcmsProfiles, renderType,
+                    tfm.ID = LCMS.createTransform(lcmsProfiles, renderingIntent,
                                                   tfm.inFormatter,
                                                   tfm.isInIntPacked,
                                                   tfm.outFormatter,
@@ -158,7 +133,6 @@ final class LCMSTransform implements ColorTransform {
         }
         LCMS.colorConvert(tfm.ID, in.width, in.height, in.offset,
                           in.nextRowOffset, out.offset, out.nextRowOffset,
-                          in.imageAtOnce, out.imageAtOnce,
                           in.dataArray, out.dataArray,
                           in.dataType, out.dataType);
         Reference.reachabilityFence(tfm); // prevent deallocation of "tfm.ID"

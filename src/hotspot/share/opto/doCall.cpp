@@ -62,7 +62,7 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
     out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
     stringStream ss;
     prof_klass->name()->print_symbol_on(&ss);
-    out->print("%s", ss.as_string());
+    out->print("%s", ss.freeze());
     out->cr();
   }
 }
@@ -597,7 +597,7 @@ void Parse::do_call() {
 
   if (receiver_constraint != NULL) {
     Node* receiver_node = stack(sp() - nargs);
-    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint));
+    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = NULL;
     Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
     if (bad_type_ctrl != NULL) {

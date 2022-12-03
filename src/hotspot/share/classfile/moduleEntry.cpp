@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/filemap.hpp"
@@ -32,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "jni.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -163,7 +163,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == NULL) {
       // Lazily create a module's reads list
-      _reads = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -383,7 +383,7 @@ typedef ResourceHashtable<
   const ModuleEntry*,
   ModuleEntry*,
   557, // prime number
-  ResourceObj::C_HEAP> ArchivedModuleEntries;
+  AnyObj::C_HEAP> ArchivedModuleEntries;
 static ArchivedModuleEntries* _archive_modules_entries = NULL;
 
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
@@ -392,7 +392,7 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
   if (_archive_modules_entries == NULL) {
-    _archive_modules_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedModuleEntries();
+    _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
   }
   assert(_archive_modules_entries->get(this) == NULL, "Each ModuleEntry must not be shared across ModuleEntryTables");
   _archive_modules_entries->put(this, archived_entry);
@@ -428,7 +428,7 @@ GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEnt
   GrowableArray<ModuleEntry*>* array = NULL;
   int length = (archived_array == NULL) ? 0 : archived_array->length();
   if (length > 0) {
-    array = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(length, mtModule);
+    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = archived_array->at(i);
       array->append(archived_entry);
@@ -450,15 +450,15 @@ void ModuleEntry::init_as_archived_entry() {
   _loader_data = NULL;  // re-init at runtime
   _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
   if (name() != NULL) {
-    _name = ArchiveBuilder::get_relocated_symbol(_name);
+    _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
   }
   _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
   if (_version != NULL) {
-    _version = ArchiveBuilder::get_relocated_symbol(_version);
+    _version = ArchiveBuilder::get_buffered_symbol(_version);
   }
   if (_location != NULL) {
-    _location = ArchiveBuilder::get_relocated_symbol(_location);
+    _location = ArchiveBuilder::get_buffered_symbol(_location);
   }
   JFR_ONLY(set_trace_id(0));// re-init at runtime
 
@@ -694,6 +694,7 @@ void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
   auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     f(entry);
   };
+  assert_lock_strong(Module_lock);
   _table.iterate_all(do_f);
 }
 
@@ -701,6 +702,7 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
   auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     closure->do_module(entry);
   };
+  assert_lock_strong(Module_lock);
   _table.iterate_all(do_f);
 }
 

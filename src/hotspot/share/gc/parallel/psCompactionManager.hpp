@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // type of TaskQueue.
   RegionTaskQueue              _region_stack;
 
+  GrowableArray<HeapWord*>*    _deferred_obj_array;
+
   static ParMarkBitMap* _mark_bitmap;
 
   // Contains currently free shadow regions. We use it in
@@ -128,6 +130,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
     return next_shadow_region();
   }
 
+  void push_deferred_object(HeapWord* addr);
+
   void reset_bitmap_query_cache() {
     _last_query_beg = NULL;
     _last_query_obj = NULL;
@@ -178,10 +182,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Check mark and maybe push on marking stack.
   template <typename T> inline void mark_and_push(T* p);
 
-  inline void follow_klass(Klass* klass);
-
-  void follow_class_loader(ClassLoaderData* klass);
-
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(uint index);
 
@@ -195,6 +195,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
+  void drain_deferred_objects();
 
   void follow_contents(oop obj);
   void follow_array(objArrayOop array, int index);

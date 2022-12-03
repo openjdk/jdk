@@ -327,7 +327,7 @@ public class JavaThread extends Thread {
   //
 
   public OSThread getOSThread() {
-    return (OSThread) VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
+    return VMObjectFactory.newObject(OSThread.class, osThreadField.getValue(addr));
   }
 
   public Address getStackBase() {

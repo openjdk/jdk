@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8289106
+ * @bug 8289106 8293627
  * @summary Tests of AccessFlag.locations(ClassFileFormatVersion)
  */
 
@@ -78,6 +78,7 @@ public class VersionedLocationsTest {
         testTwoStepAccessFlags();
         testSynthetic();
         testStrict();
+        testLatestMatch();
     }
 
     /**
@@ -269,4 +270,19 @@ public class VersionedLocationsTest {
             compareLocations(expected, STRICT, cffv);
         }
     }
+
+    private static void testLatestMatch() {
+        // Verify accessFlag.locations() and
+        // accessFlag.locations(ClassFileFormatVersion.latest()) are
+        // consistent
+        var LATEST = ClassFileFormatVersion.latest();
+        for (var accessFlag : AccessFlag.values()) {
+            var locationSet = accessFlag.locations();
+            var locationLatestSet = accessFlag.locations(LATEST);
+            if (!locationSet.equals(locationLatestSet)) {
+                throw new RuntimeException("Unequal location sets for " + accessFlag);
+            }
+        }
+    }
+
 }

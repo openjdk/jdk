@@ -85,7 +85,7 @@ void JvmtiTagMapTable::free_entry(JvmtiTagMapEntry* entry) {
 
 unsigned int JvmtiTagMapTable::compute_hash(oop obj) {
   assert(obj != NULL, "obj is null");
-  return Universe::heap()->hash_oop(obj);
+  return obj->identity_hash();
 }
 
 JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) {
@@ -113,6 +113,10 @@ JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) 
 }
 
 JvmtiTagMapEntry* JvmtiTagMapTable::find(oop obj) {
+  if (obj->fast_no_hash_check()) {
+    // Objects in the table all have a hashcode.
+    return NULL;
+  }
   unsigned int hash = compute_hash(obj);
   int index = hash_to_index(hash);
   return find(index, hash, obj);
@@ -219,49 +223,4 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
 
   log_info(jvmti, table) ("JvmtiTagMap entries counted %d removed %d",
                           oops_counted, oops_removed);
-}
-
-// Rehash oops in the table
-void JvmtiTagMapTable::rehash() {
-  ResourceMark rm;
-  GrowableArray<JvmtiTagMapEntry*> moved_entries;
-
-  int oops_counted = 0;
-  for (int i = 0; i < table_size(); ++i) {
-    JvmtiTagMapEntry** p = bucket_addr(i);
-    JvmtiTagMapEntry* entry = bucket(i);
-    while (entry != NULL) {
-      oops_counted++;
-      oop l = entry->object_no_keepalive();
-      if (l != NULL) {
-        // Check if oop has moved, ie its hashcode is different
-        // than the one entered in the table.
-        unsigned int new_hash = compute_hash(l);
-        if (entry->hash() != new_hash) {
-          *p = entry->next();
-          entry->set_hash(new_hash);
-          unlink_entry(entry);
-          moved_entries.push(entry);
-        } else {
-          p = entry->next_addr();
-        }
-      } else {
-        // Skip removed oops. They may still have to be posted.
-        p = entry->next_addr();
-      }
-      // get next entry
-      entry = *p;
-    }
-  }
-
-  int rehash_len = moved_entries.length();
-  // Now add back in the entries that were removed.
-  for (int i = 0; i < rehash_len; i++) {
-    JvmtiTagMapEntry* moved_entry = moved_entries.at(i);
-    int index = hash_to_index(moved_entry->hash());
-    Hashtable<WeakHandle, mtServiceability>::add_entry(index, moved_entry);
-  }
-
-  log_info(jvmti, table) ("JvmtiTagMap entries counted %d rehashed %d",
-                          oops_counted, rehash_len);
 }

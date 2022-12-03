@@ -59,36 +59,6 @@ JvmtiDeferredEvent* ServiceThread::_jvmti_event = NULL;
 // to add this field to the per-JavaThread event queue.  TODO: fix this sometime later
 JvmtiDeferredEventQueue ServiceThread::_jvmti_service_queue;
 
-// Defer releasing JavaThread OopHandle to the ServiceThread
-class OopHandleList : public CHeapObj<mtInternal> {
-  OopHandle      _handle;
-  OopHandleList* _next;
- public:
-   OopHandleList(OopHandle h, OopHandleList* next) : _handle(h), _next(next) {}
-   ~OopHandleList() {
-     _handle.release(JavaThread::thread_oop_storage());
-   }
-   OopHandleList* next() const { return _next; }
-};
-
-static OopHandleList* _oop_handle_list = NULL;
-
-static void release_oop_handles() {
-  OopHandleList* list;
-  {
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    list = _oop_handle_list;
-    _oop_handle_list = NULL;
-  }
-  assert(!SafepointSynchronize::is_at_safepoint(), "cannot be called at a safepoint");
-
-  while (list != NULL) {
-    OopHandleList* l = list;
-    list = l->next();
-    delete l;
-  }
-}
-
 void ServiceThread::initialize() {
   EXCEPTION_MARK;
 
@@ -152,7 +122,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (thread_id_table_work = ThreadIdTable::has_work()) |
               (protection_domain_table_work = ProtectionDomainCacheTable::has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
-              (oop_handles_to_release = (_oop_handle_list != NULL)) |
+              (oop_handles_to_release = JavaThread::has_oop_handles_to_release()) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
               (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
              ) == 0) {
@@ -215,7 +185,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (oop_handles_to_release) {
-      release_oop_handles();
+      JavaThread::release_oop_handles();
     }
 
     if (cldg_cleanup_work) {
@@ -260,11 +230,4 @@ void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
     MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     _jvmti_service_queue.nmethods_do(cf);
   }
-}
-
-void ServiceThread::add_oop_handle_release(OopHandle handle) {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  OopHandleList* new_head = new OopHandleList(handle, _oop_handle_list);
-  _oop_handle_list = new_head;
-  Service_lock->notify_all();
 }

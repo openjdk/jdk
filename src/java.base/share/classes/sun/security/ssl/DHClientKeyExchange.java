@@ -133,13 +133,14 @@ final class DHClientKeyExchange {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"DH ClientKeyExchange\": '{'\n" +
-                "  \"parameters\": '{'\n" +
-                "    \"dh_Yc\": '{'\n" +
-                "{0}\n" +
-                "    '}',\n" +
-                "  '}'\n" +
-                "'}'",
+                    """
+                            "DH ClientKeyExchange": '{'
+                              "parameters": '{'
+                                "dh_Yc": '{'
+                            {0}
+                                '}',
+                              '}'
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();

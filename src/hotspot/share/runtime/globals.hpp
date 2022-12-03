@@ -238,6 +238,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
+  product(bool, UsePolyIntrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for sun.security.util.math.intpoly")              \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
           "page size for the environment as the maximum)")                  \
@@ -676,12 +679,13 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
           "Print the class loader data graph at exit")                      \
                                                                             \
-  product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
-          "Dynamically resize system dictionaries as needed")               \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
+                                                                            \
+  product(bool, EnableWaitForParallelLoad, false,                           \
+          "(Deprecated) Enable legacy parallel classloading logic for "     \
+          "class loaders not registered as parallel capable")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
@@ -1294,6 +1298,9 @@ const int ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
+  product(bool, UseSystemMemoryBarrier, false, EXPERIMENTAL,                \
+          "Try to enable system memory barrier")                            \
+                                                                            \
   product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
           "result in more aggressive sweeping")                             \
@@ -1818,11 +1825,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, PauseAtExit, false, DIAGNOSTIC,                             \
           "Pause and wait for keypress on exit if a debugger is attached")  \
-                                                                            \
-  product(bool, ExtendedDTraceProbes,    false,                             \
-          "(Deprecated) Enable performance-impacting dtrace probes. "       \
-          "Use the combination of -XX:+DTraceMethodProbes, "                \
-          "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
           "Enable dtrace tool probes for method-entry and method-exit")     \

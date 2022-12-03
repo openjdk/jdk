@@ -285,9 +285,9 @@ public:
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
-  ControlDependency control_dependency() {return _control_dependency; }
-
-  bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
+  ControlDependency control_dependency() const { return _control_dependency; }
+  bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
+  bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -785,7 +785,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
+           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
            "bad oop alias idx");
   }
   virtual int Opcode() const;

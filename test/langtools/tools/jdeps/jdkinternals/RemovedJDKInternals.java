@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,9 +184,9 @@ public class RemovedJDKInternals {
     private static final Map<String, String> REPLACEMENTS = Map.of(
         "com.sun.image.codec.jpeg.JPEGCodec", "Use javax.imageio @since 1.4",
         "sun.misc.Service", "Use java.util.ServiceLoader @since 1.6",
-        "sun.misc.SoftCache", "Removed. See http://openjdk.java.net/jeps/260",
+        "sun.misc.SoftCache", "Removed. See https://openjdk.org/jeps/260",
         "sun.reflect.Reflection", "Use java.lang.StackWalker @since 9",
-        "sun.reflect.ReflectionFactory", "See http://openjdk.java.net/jeps/260"
+        "sun.reflect.ReflectionFactory", "See https://openjdk.org/jeps/260"
     );
 
     @Test

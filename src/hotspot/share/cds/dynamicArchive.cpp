@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -37,6 +37,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -56,10 +57,6 @@ public:
   DynamicArchiveBuilder(const char* archive_name) : _archive_name(archive_name) {}
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
-  }
-
-  template <typename T> T get_dumped_addr(T obj) {
-    return (T)ArchiveBuilder::get_dumped_addr((address)obj);
   }
 
   static int dynamic_dump_method_comparator(Method* a, Method* b) {
@@ -193,7 +190,7 @@ void DynamicArchiveBuilder::init_header() {
 
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    _header->set_base_region_crc(i, base_info->space_crc(i));
+    _header->set_base_region_crc(i, base_info->region_crc(i));
   }
 }
 
@@ -212,6 +209,7 @@ void DynamicArchiveBuilder::release_header() {
 
 void DynamicArchiveBuilder::post_dump() {
   ArchivePtrMarker::reset_map_and_vs();
+  ClassPrelinker::dispose();
 }
 
 void DynamicArchiveBuilder::sort_methods() {
@@ -428,7 +426,7 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
-    if (dynamic_header->base_region_crc(i) != base_info->space_crc(i)) {
+    if (dynamic_header->base_region_crc(i) != base_info->region_crc(i)) {
       FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }

@@ -510,7 +510,7 @@ Here is an example:
 -->
 
 <!-- This is identical to the HMTL3.2 body.content entity.
-     It differs from the HotJava body.content in that it doesnt
+     It differs from the HotJava body.content in that it doesn't
      have FRAMESET and NOFRAMES elements.
 -->
 <!ENTITY % bodytext "(%heading | %flow | ADDRESS)*">

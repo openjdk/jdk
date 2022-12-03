@@ -35,7 +35,7 @@
 
 // An entry in a linked list. It should use the same backing storage
 // as the linked list that contains this entry.
-template <class E> class LinkedListNode : public ResourceObj {
+template <class E> class LinkedListNode : public AnyObj {
  private:
   E                       _data;  // embedded content
   LinkedListNode<E>*      _next;  // next entry
@@ -79,7 +79,7 @@ template <class E> class LinkedListNode : public ResourceObj {
 // A linked list interface. It does not specify
 // any storage type it uses, so all methods involving
 // memory allocation or deallocation are pure virtual
-template <class E> class LinkedList : public ResourceObj {
+template <class E> class LinkedList : public AnyObj {
  protected:
   LinkedListNode<E>*    _head;
   NONCOPYABLE(LinkedList<E>);
@@ -132,12 +132,12 @@ template <class E> class LinkedList : public ResourceObj {
     return h;
   }
 
-  DEBUG_ONLY(virtual ResourceObj::allocation_type storage_type() = 0;)
+  DEBUG_ONLY(virtual AnyObj::allocation_type storage_type() = 0;)
 };
 
 // A linked list implementation.
 // The linked list can be allocated in various type of memory: C heap, arena and resource area, etc.
-template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
+template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
   MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
   class LinkedListImpl : public LinkedList<E> {
  protected:
@@ -325,21 +325,26 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
     return true;
   }
 
-  DEBUG_ONLY(ResourceObj::allocation_type storage_type() { return T; })
+  DEBUG_ONLY(AnyObj::allocation_type storage_type() { return T; })
  protected:
   // Create new linked list node object in specified storage
   LinkedListNode<E>* new_node(const E& e) const {
      switch(T) {
-       case ResourceObj::ARENA: {
+       case AnyObj::ARENA: {
          assert(_arena != NULL, "Arena not set");
          return new(_arena) LinkedListNode<E>(e);
        }
-       case ResourceObj::RESOURCE_AREA:
-       case ResourceObj::C_HEAP: {
+       case AnyObj::RESOURCE_AREA:
          if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-           return new(std::nothrow, T, F) LinkedListNode<E>(e);
+           return new(std::nothrow) LinkedListNode<E>(e);
          } else {
-           return new(T, F) LinkedListNode<E>(e);
+           return new LinkedListNode<E>(e);
+         }
+       case AnyObj::C_HEAP: {
+         if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+           return new(std::nothrow, F) LinkedListNode<E>(e);
+         } else {
+           return new(F) LinkedListNode<E>(e);
          }
        }
        default:
@@ -350,7 +355,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 
   // Delete linked list node object
   void delete_node(LinkedListNode<E>* node) {
-    if (T == ResourceObj::C_HEAP) {
+    if (T == AnyObj::C_HEAP) {
       delete node;
     }
   }
@@ -359,7 +364,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 // Sorted linked list. The linked list maintains sorting order specified by the comparison
 // function
 template <class E, int (*FUNC)(const E&, const E&),
-  ResourceObj::allocation_type T = ResourceObj::C_HEAP,
+  AnyObj::allocation_type T = AnyObj::C_HEAP,
   MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
   class SortedLinkedList : public LinkedListImpl<E, T, F, alloc_failmode> {
  public:

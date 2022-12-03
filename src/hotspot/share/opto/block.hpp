@@ -46,7 +46,7 @@ struct Tarjan;
 // Abstractly provides an infinite array of Block*'s, initialized to NULL.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Block_Array : public ResourceObj {
+class Block_Array : public ArenaObj {
   friend class VMStructs;
   uint _size;                   // allocated size, as opposed to formal limit
   debug_only(uint _limit;)      // limit to formal domain
@@ -89,7 +89,7 @@ public:
 };
 
 
-class CFGElement : public ResourceObj {
+class CFGElement : public AnyObj {
   friend class VMStructs;
  public:
   double _freq; // Execution frequency (estimate)
@@ -643,6 +643,8 @@ class PhaseCFG : public Phase {
   // Check that block b is in the home loop (or an ancestor) of n, if n is a
   // memory writer.
   void verify_memory_writer_placement(const Block* b, const Node* n) const NOT_DEBUG_RETURN;
+  // Check local dominator tree invariants.
+  void verify_dominator_tree() const NOT_DEBUG_RETURN;
   void verify() const NOT_DEBUG_RETURN;
 };
 

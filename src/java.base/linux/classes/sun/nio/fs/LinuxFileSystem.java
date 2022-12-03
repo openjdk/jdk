@@ -158,32 +158,4 @@ class LinuxFileSystem extends UnixFileSystem {
 
         return directCopy0(dst, src, addressToPollForCancel);
     }
-
-    // -- native methods --
-
-    private static native void init();
-
-    /**
-     * Copies data between file descriptors {@code src} and {@code dst} using
-     * a platform-specific function or system call possibly having kernel
-     * support.
-     *
-     * @param dst destination file descriptor
-     * @param src source file descriptor
-     * @param addressToPollForCancel address to check for cancellation
-     *        (a non-zero value written to this address indicates cancel)
-     *
-     * @return 0 on success, UNAVAILABLE if the platform function would block,
-     *         UNSUPPORTED_CASE if the call does not work with the given
-     *         parameters, or UNSUPPORTED if direct copying is not supported
-     *         on this platform
-     */
-    private static native int directCopy0(int dst, int src,
-                                          long addressToPollForCancel)
-        throws UnixException;
-
-    static {
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
-        init();
-    }
 }

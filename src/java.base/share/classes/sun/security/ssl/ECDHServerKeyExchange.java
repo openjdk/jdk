@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,20 +354,21 @@ final class ECDHServerKeyExchange {
         public String toString() {
             if (useExplicitSigAlgorithm) {
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"ECDH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\": '{'\n" +
-                    "    \"named group\": \"{0}\"\n" +
-                    "    \"ecdh public\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "  '}',\n" +
-                    "  \"digital signature\":  '{'\n" +
-                    "    \"signature algorithm\": \"{2}\"\n" +
-                    "    \"signature\": '{'\n" +
-                    "{3}\n" +
-                    "    '}',\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "ECDH ServerKeyExchange": '{'
+                                  "parameters": '{'
+                                    "named group": "{0}"
+                                    "ecdh public": '{'
+                                {1}
+                                    '}',
+                                  '}',
+                                  "digital signature":  '{'
+                                    "signature algorithm": "{2}"
+                                    "signature": '{'
+                                {3}
+                                    '}',
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -382,17 +383,18 @@ final class ECDHServerKeyExchange {
                 return messageFormat.format(messageFields);
             } else if (paramsSignature != null) {
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"ECDH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\":  '{'\n" +
-                    "    \"named group\": \"{0}\"\n" +
-                    "    \"ecdh public\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "  '}',\n" +
-                    "  \"signature\": '{'\n" +
-                    "{2}\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "ECDH ServerKeyExchange": '{'
+                                  "parameters":  '{'
+                                    "named group": "{0}"
+                                    "ecdh public": '{'
+                                {1}
+                                    '}',
+                                  '}',
+                                  "signature": '{'
+                                {2}
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -407,14 +409,15 @@ final class ECDHServerKeyExchange {
                 return messageFormat.format(messageFields);
             } else {    // anonymous
                 MessageFormat messageFormat = new MessageFormat(
-                    "\"ECDH ServerKeyExchange\": '{'\n" +
-                    "  \"parameters\":  '{'\n" +
-                    "    \"named group\": \"{0}\"\n" +
-                    "    \"ecdh public\": '{'\n" +
-                    "{1}\n" +
-                    "    '}',\n" +
-                    "  '}'\n" +
-                    "'}'",
+                        """
+                                "ECDH ServerKeyExchange": '{'
+                                  "parameters":  '{'
+                                    "named group": "{0}"
+                                    "ecdh public": '{'
+                                {1}
+                                    '}',
+                                  '}'
+                                '}'""",
                     Locale.ENGLISH);
 
                 HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -446,12 +449,10 @@ final class ECDHServerKeyExchange {
                         "neither an RSA or a EC key : " + keyAlgorithm);
             }
 
-            if (signer != null) {
-                if (key instanceof PublicKey) {
-                    signer.initVerify((PublicKey)(key));
-                } else {
-                    signer.initSign((PrivateKey)key);
-                }
+            if (key instanceof PublicKey) {
+                signer.initVerify((PublicKey)(key));
+            } else {
+                signer.initSign((PrivateKey)key);
             }
 
             return signer;

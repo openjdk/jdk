@@ -2118,7 +2118,6 @@ class JapaneseImperialCalendar extends Calendar {
      * @param fixedDate the fixed date representation of the date
      */
     private long getFixedDateJan1(LocalGregorianCalendar.Date date, long fixedDate) {
-        Era era = date.getEra();
         if (date.getEra() != null && date.getYear() == 1) {
             for (int eraIndex = getEraIndex(date); eraIndex > 0; eraIndex--) {
                 CalendarDate d = eras[eraIndex].getSinceDate();

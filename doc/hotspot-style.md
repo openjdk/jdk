@@ -55,13 +55,13 @@ suburbs of Rome the rules are a little different; these differences
 can be pointed out here.
 
 Proposed changes should be discussed on the
-[HotSpot Developers](mailto:hotspot-dev@openjdk.java.net) mailing
+[HotSpot Developers](mailto:hotspot-dev@openjdk.org) mailing
 list.  Changes are likely to be cautious and incremental, since HotSpot
 coders have been using these guidelines for years.
 
 Substantive changes are approved by
 [rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
-the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
+the [HotSpot Group](https://openjdk.org/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
 
 Editorial changes (changes that only affect the description of HotSpot
@@ -550,7 +550,7 @@ turned off.  Many Standard Library facilities implicitly or explicitly
 use exceptions.
 
 * `assert`.  An issue that is quickly encountered is the `assert` macro name
-collision ([JDK-8007770](https://bugs.openjdk.java.net/browse/JDK-8007770)).
+collision ([JDK-8007770](https://bugs.openjdk.org/browse/JDK-8007770)).
 Some mechanism for addressing this would be needed before much of the
 Standard Library could be used.  (Not all Standard Library implementations
 use assert in header files, but some do.)
@@ -661,7 +661,7 @@ be a constant expression. When `thread_local` must be used, use the Hotspot macr
 consideration.
 
 As was discussed in the review for
-[JDK-8230877](https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html),
+[JDK-8230877](https://mail.openjdk.org/pipermail/hotspot-dev/2019-September/039487.html),
 `thread_local` allows dynamic initialization and destruction
 semantics.  However, that support requires a run-time penalty for
 references to non-function-local `thread_local` variables defined in a
@@ -671,7 +671,7 @@ non-local `thread_local` variables also has the same ordering
 problems as for ordinary non-local variables. So we avoid use of
 `thread_local` in general, limiting its use to only those cases where dynamic
 initialization or destruction are essential. See
-[JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
+[JDK-8282469](https://bugs.openjdk.org/browse/JDK-8282469)
 for further discussion.
 
 ### nullptr

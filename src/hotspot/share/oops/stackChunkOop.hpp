@@ -71,6 +71,8 @@ public:
   inline bool is_parent_null() const;
   template<typename P>
   inline void set_parent_raw(oop value);
+  template<DecoratorSet decorators>
+  inline void set_parent_access(oop value);
 
   inline int stack_size() const;
 
@@ -96,6 +98,8 @@ public:
   inline void set_cont(oop value);
   template<typename P>
   inline void set_cont_raw(oop value);
+  template<DecoratorSet decorators>
+  inline void set_cont_access(oop value);
 
   inline int bottom() const;
 

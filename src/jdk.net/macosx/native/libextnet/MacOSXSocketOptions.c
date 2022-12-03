@@ -38,6 +38,10 @@
 #define IP_DONTFRAG             28
 #endif
 
+#ifndef IPV6_DONTFRAG
+#define IPV6_DONTFRAG           62
+#endif
+
 #include "jni_util.h"
 
 /*
@@ -48,9 +52,15 @@ DEF_STATIC_JNI_OnLoad
 static jint socketOptionSupported(jint sockopt) {
     jint one = 1;
     jint rv, s;
-    s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    /* First try IPv6; fall back to IPv4. */
+    s = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (s < 0) {
-        return 0;
+        if (errno == EPFNOSUPPORT || errno == EAFNOSUPPORT) {
+            s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        }
+        if (s < 0) {
+            return 0;
+        }
     }
     rv = setsockopt(s, IPPROTO_TCP, sockopt, (void *) &one, sizeof (one));
     if (rv != 0 && errno == ENOPROTOOPT) {

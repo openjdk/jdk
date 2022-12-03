@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -71,6 +71,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -1903,6 +1904,87 @@ public class JavacParserTest extends TestCase {
                 else
                     scan(node.getStatements(), p);
                 return null;
+            }
+        }.scan(cut, null);
+    }
+
+    @Test //JDK-8293897
+    void testImplicitFinalInTryWithResources() throws IOException {
+        String code = """
+                      package t;
+                      class Test {
+                          void test1() {
+                              try (AutoCloseable ac = null) {}
+                          }
+                          void test2() {
+                              try (@Ann AutoCloseable withAnnotation = null) {}
+                          }
+                          void test3() {
+                              try (final AutoCloseable withFinal = null) {}
+                          }
+                          void test4() {
+                              try (final @Ann AutoCloseable withAnnotationFinal = null) {}
+                          }
+                          @interface Ann {}
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees t = Trees.instance(ct);
+        SourcePositions sp = t.getSourcePositions();
+        new TreeScanner<Void, Void>() {
+            boolean modifiersHaveFinal;
+            boolean modifiersHaveSpan;
+
+            @Override
+            public Void visitVariable(VariableTree node, Void p) {
+                boolean prevModifiersHaveFinal = modifiersHaveFinal;
+                boolean prevModifiersHaveSpan = modifiersHaveSpan;
+                try {
+                    modifiersHaveFinal = node.getName().toString().contains("Final");
+                    modifiersHaveSpan = modifiersHaveFinal ||
+                                        node.getName().toString().contains("Annotation");
+                    return super.visitVariable(node, p);
+                } finally {
+                    modifiersHaveFinal = prevModifiersHaveFinal;
+                    modifiersHaveSpan = prevModifiersHaveSpan;
+                }
+            }
+            @Override
+            public Void visitClass(ClassTree node, Void p) {
+                boolean prevModifiersHaveSpan = modifiersHaveSpan;
+                try {
+                    modifiersHaveSpan = node.getKind() == Kind.ANNOTATION_TYPE;
+                    return super.visitClass(node, p);
+                } finally {
+                    modifiersHaveSpan = prevModifiersHaveSpan;
+                }
+            }
+            @Override
+            public Void visitModifiers(ModifiersTree node, Void p) {
+                if (modifiersHaveFinal) {
+                    if (!node.getFlags().contains(Modifier.FINAL)) {
+                        throw new AssertionError("Expected final missing.");
+                    }
+                } else {
+                    if (node.getFlags().contains(Modifier.FINAL)) {
+                        throw new AssertionError("Unexpected final modified.");
+                    }
+                }
+                long start = sp.getStartPosition(cut, node);
+                long end = sp.getEndPosition(cut, node);
+                if (modifiersHaveSpan) {
+                    if (start == (-1) || end == (-1)) {
+                        throw new AssertionError("Incorrect modifier span: " + start + "-" + end);
+                    }
+                } else {
+                    if (start != (-1) || end != (-1)) {
+                        throw new AssertionError("Incorrect modifier span: " + start + "-" + end);
+                    }
+                }
+                return super.visitModifiers(node, p);
             }
         }.scan(cut, null);
     }

@@ -25,8 +25,8 @@
  * @test
  * @summary Test ExecutorService.close, including default implementation
  * @library ../lib
- * @compile --enable-preview -source ${jdk.version} CloseTest.java
- * @run testng/othervm --enable-preview CloseTest
+ * @enablePreview
+ * @run testng CloseTest
  */
 
 import java.time.Duration;
@@ -81,14 +81,14 @@ public class CloseTest {
     @Test(dataProvider = "executors")
     public void testCloseWithRunningTasks(ExecutorService executor) throws Exception {
         Future<?> future = executor.submit(() -> {
-            Thread.sleep(Duration.ofSeconds(1));
+            Thread.sleep(Duration.ofMillis(100));
             return "foo";
         });
         executor.close();  // waits for task to complete
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
         assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        assertEquals(future.get(), "foo");
+        assertEquals(future.resultNow(), "foo");
     }
 
     /**
@@ -99,7 +99,7 @@ public class CloseTest {
         Phaser phaser = new Phaser(2);
         Future<?> future = executor.submit(() -> {
             phaser.arriveAndAwaitAdvance();
-            Thread.sleep(Duration.ofSeconds(1));
+            Thread.sleep(Duration.ofMillis(100));
             return "foo";
         });
         phaser.arriveAndAwaitAdvance();   // wait for task to start
@@ -110,7 +110,7 @@ public class CloseTest {
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
         assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        assertEquals(future.get(), "foo");
+        assertEquals(future.resultNow(), "foo");
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class ObjectValue extends ScopeValue {
   public int id() { return id; }
   public ScopeValue getKlass() { return klass; }
   public List<ScopeValue> getFieldsValue() { return fieldsValue; }
-  public ScopeValue getFieldAt(int i) { return (ScopeValue)fieldsValue.get(i); }
+  public ScopeValue getFieldAt(int i) { return fieldsValue.get(i); }
   public int fieldsSize() { return fieldsValue.size(); }
 
   // Field "value" is always NULL here since it is used
@@ -82,11 +82,11 @@ public class ObjectValue extends ScopeValue {
 
   void printFieldsOn(PrintStream tty) {
     if (fieldsValue.size() > 0) {
-      ((ScopeValue)fieldsValue.get(0)).printOn(tty);
+      fieldsValue.get(0).printOn(tty);
     }
     for (int i = 1; i < fieldsValue.size(); i++) {
       tty.print(", ");
-      ((ScopeValue)fieldsValue.get(i)).printOn(tty);
+      fieldsValue.get(i).printOn(tty);
     }
   }
 

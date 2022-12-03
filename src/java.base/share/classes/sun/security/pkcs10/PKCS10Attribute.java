@@ -25,7 +25,6 @@
 
 package sun.security.pkcs10;
 
-import java.io.OutputStream;
 import java.io.IOException;
 
 import sun.security.pkcs.PKCS9Attribute;
@@ -56,8 +55,8 @@ import sun.security.util.*;
  */
 public class PKCS10Attribute implements DerEncoder {
 
-    protected ObjectIdentifier  attributeId = null;
-    protected Object            attributeValue = null;
+    protected ObjectIdentifier  attributeId;
+    protected Object            attributeValue;
 
     /**
      * Constructs an attribute from a DER encoding.
@@ -108,9 +107,10 @@ public class PKCS10Attribute implements DerEncoder {
      *
      * @exception IOException on encoding errors.
      */
-    public void derEncode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         PKCS9Attribute attr = new PKCS9Attribute(attributeId, attributeValue);
-        attr.derEncode(out);
+        attr.encode(out);
     }
 
     /**

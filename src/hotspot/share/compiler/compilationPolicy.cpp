@@ -41,17 +41,14 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
-
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
-
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
 #endif
 
 jlong CompilationPolicy::_start_time = 0;
@@ -83,7 +80,7 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
   if (!can_be_compiled(m, comp_level)) return false;
 
   return !UseInterpreter ||                                              // must compile all methods
-         (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
+         (AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
 void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {

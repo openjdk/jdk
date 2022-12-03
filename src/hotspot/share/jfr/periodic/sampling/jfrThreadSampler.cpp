@@ -37,12 +37,14 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 
 enum JfrSampleType {
   NO_SAMPLE = 0,
@@ -297,14 +299,18 @@ static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
 void JfrThreadSampleClosure::commit_events(JfrSampleType type) {
   if (JAVA_SAMPLE == type) {
     assert(_added_java > 0 && _added_java <= MAX_NR_OF_JAVA_SAMPLES, "invariant");
-    for (uint i = 0; i < _added_java; ++i) {
-      _events[i].commit();
+    if (EventExecutionSample::is_enabled()) {
+      for (uint i = 0; i < _added_java; ++i) {
+        _events[i].commit();
+      }
     }
   } else {
     assert(NATIVE_SAMPLE == type, "invariant");
     assert(_added_native > 0 && _added_native <= MAX_NR_OF_NATIVE_SAMPLES, "invariant");
-    for (uint i = 0; i < _added_native; ++i) {
-      _events_native[i].commit();
+    if (EventNativeMethodSample::is_enabled()) {
+      for (uint i = 0; i < _added_native; ++i) {
+        _events_native[i].commit();
+      }
     }
   }
 }
@@ -382,6 +388,9 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
 
   bool ret = false;
   thread->set_trace_flag();  // Provides StoreLoad, needed to keep read of thread state from floating up.
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
+  }
   if (JAVA_SAMPLE == type) {
     if (thread_state_in_java(thread)) {
       ret = sample_thread_in_java(thread, frames, max_frames);

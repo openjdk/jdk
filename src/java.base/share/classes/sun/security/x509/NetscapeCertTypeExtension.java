@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.*;
 
 import sun.security.util.*;
@@ -40,26 +39,15 @@ import sun.security.util.*;
  * <p>This extension, if present, defines both the purpose
  * (e.g., encipherment, signature, certificate signing) and the application
  * (e.g., SSL, S/Mime or Object Signing of the key contained in the
- * certificate. This extension has been superseded by IETF PKIX extensions
+ * certificate). This extension has been superseded by IETF PKIX extensions
  * but is provided here for compatibility reasons.
  *
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
 
-public class NetscapeCertTypeExtension extends Extension
-implements CertAttrSet<String> {
+public class NetscapeCertTypeExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.NetscapeCertType";
-
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "NetscapeCertType";
     public static final String SSL_CLIENT = "ssl_client";
     public static final String SSL_SERVER = "ssl_server";
@@ -87,7 +75,7 @@ implements CertAttrSet<String> {
         }
     }
 
-    private static MapEntry[] mMapData = {
+    private static final MapEntry[] mMapData = {
         new MapEntry(SSL_CLIENT, 0),
         new MapEntry(SSL_SERVER, 1),
         new MapEntry(S_MIME, 2),
@@ -98,7 +86,7 @@ implements CertAttrSet<String> {
         new MapEntry(OBJECT_SIGNING_CA, 7),
     };
 
-    private static final Vector<String> mAttributeNames = new Vector<String>();
+    private static final Vector<String> mAttributeNames = new Vector<>();
     static {
         for (MapEntry entry : mMapData) {
             mAttributeNames.add(entry.mName);
@@ -111,7 +99,7 @@ implements CertAttrSet<String> {
                 return mMapData[i].mPosition;
         }
         throw new IOException("Attribute name [" + name
-                             + "] not recognized by CertAttrSet:NetscapeCertType.");
+                             + "] not recognized by NetscapeCertType.");
     }
 
     // Encode this extension value
@@ -200,11 +188,7 @@ implements CertAttrSet<String> {
     /**
      * Set the attribute value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Boolean))
-            throw new IOException("Attribute must be of type Boolean.");
-
-        boolean val = ((Boolean)obj).booleanValue();
+    public void set(String name, Boolean val) throws IOException {
         set(getPosition(name), val);
         encodeThis();
     }
@@ -212,16 +196,8 @@ implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Boolean get(String name) throws IOException {
-        return Boolean.valueOf(isSet(getPosition(name)));
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        set(getPosition(name), false);
-        encodeThis();
+    public boolean get(String name) throws IOException {
+        return isSet(getPosition(name));
     }
 
     /**
@@ -264,31 +240,23 @@ implements CertAttrSet<String> {
      * @param out the DerOutputStream to write the extension to.
      * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream  tmp = new DerOutputStream();
-
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         if (this.extensionValue == null) {
             this.extensionId = NetscapeCertType_Id;
             this.critical = true;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        return mAttributeNames.elements();
-    }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     /**
@@ -299,21 +267,20 @@ implements CertAttrSet<String> {
      */
     public boolean[] getKeyUsageMappedBits() {
         KeyUsageExtension keyUsage = new KeyUsageExtension();
-        Boolean val = Boolean.TRUE;
 
         try {
             if (isSet(getPosition(SSL_CLIENT)) ||
                 isSet(getPosition(S_MIME)) ||
                 isSet(getPosition(OBJECT_SIGNING)))
-                keyUsage.set(KeyUsageExtension.DIGITAL_SIGNATURE, val);
+                keyUsage.set(KeyUsageExtension.DIGITAL_SIGNATURE, true);
 
             if (isSet(getPosition(SSL_SERVER)))
-                keyUsage.set(KeyUsageExtension.KEY_ENCIPHERMENT, val);
+                keyUsage.set(KeyUsageExtension.KEY_ENCIPHERMENT, true);
 
             if (isSet(getPosition(SSL_CA)) ||
                 isSet(getPosition(S_MIME_CA)) ||
                 isSet(getPosition(OBJECT_SIGNING_CA)))
-                keyUsage.set(KeyUsageExtension.KEY_CERTSIGN, val);
+                keyUsage.set(KeyUsageExtension.KEY_CERTSIGN, true);
         } catch (IOException e) { }
         return keyUsage.getBits();
     }

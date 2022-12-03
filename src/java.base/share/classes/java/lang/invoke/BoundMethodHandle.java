@@ -158,21 +158,29 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     final int fieldCount() { return speciesData().fieldCount(); }
 
     @Override
-    Object internalProperties() {
-        return "\n& BMH="+internalValues();
+    Object internalProperties(int indentLevel) {
+        return "\n" + debugPrefix(indentLevel) + "& BMH=" + internalValues(indentLevel);
     }
 
     @Override
-    final String internalValues() {
+    final String internalValues(int indentLevel) {
+        String prefix = debugPrefix(indentLevel);
         int count = fieldCount();
-        if (count == 1) {
+        if (count == 1 && indentLevel < 0) {
             return "[" + arg(0) + "]";
         }
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < count; ++i) {
-            sb.append("\n  ").append(i).append(": ( ").append(arg(i)).append(" )");
+            Object theArg = arg(i);
+            sb.append("\n  ").append(prefix).append(i);
+            if (indentLevel >= 0 && theArg instanceof MethodHandle) {
+                sb.append(": MethodHandle = {").append(((MethodHandle)theArg).debugString(indentLevel+1));
+                sb.append("\n  ").append(prefix).append("}");
+            } else {
+                sb.append(": ( ").append(theArg).append(" )");
+            }
         }
-        return sb.append("\n]").toString();
+        return sb.append("\n").append(prefix).append("]").toString();
     }
 
     /*non-public*/

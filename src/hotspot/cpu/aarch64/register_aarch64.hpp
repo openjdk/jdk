@@ -296,11 +296,6 @@ public:
   enum {
     number_of_registers = 16,
     number_of_governing_registers = 8,
-    // p0-p7 are governing predicates for load/store and arithmetic, but p7 is
-    // preserved as an all-true predicate in OpenJDK. And since we don't support
-    // non-governing predicate registers allocation for non-temp register, the
-    // predicate registers to be saved are p0-p6.
-    number_of_saved_registers = number_of_governing_registers - 1,
     max_slots_per_register = 1
   };
 

@@ -50,7 +50,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class DNSName implements GeneralNameInterface {
-    private String name;
+    private final String name;
 
     private static final String alphaDigits =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -173,10 +173,8 @@ public class DNSName implements GeneralNameInterface {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof DNSName))
+        if (!(obj instanceof DNSName other))
             return false;
-
-        DNSName other = (DNSName)obj;
 
         // RFC5280 mandates that these names are
         // not case-sensitive
@@ -210,7 +208,7 @@ public class DNSName implements GeneralNameInterface {
      * <p>
      * RFC 5280:  DNSName restrictions are expressed as foo.bar.com.
      * Any DNSName that
-     * can be constructed by simply adding to the left hand side of the name
+     * can be constructed by simply adding to the left-hand side of the name
      * satisfies the name constraint. For example, www.foo.bar.com would
      * satisfy the constraint but foo1.bar.com would not.
      * <p>

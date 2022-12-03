@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class HmacDrbg extends AbstractHashDrbg {
             v = mac.doFinal(v);
             // Step 4.2 temp = temp || V.
             System.arraycopy(v, 0, result, pos,
-                    len > outLen ? outLen : len);
+                    Math.min(len, outLen));
 
             len -= outLen;
             if (len <= 0) {

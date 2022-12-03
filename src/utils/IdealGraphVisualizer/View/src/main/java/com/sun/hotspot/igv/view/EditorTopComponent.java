@@ -23,43 +23,24 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfContentByte;
-import com.lowagie.text.pdf.PdfGraphics2D;
-import com.lowagie.text.pdf.PdfTemplate;
-import com.lowagie.text.pdf.PdfWriter;
-import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.*;
-import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
+import com.sun.hotspot.igv.data.GraphDocument;
+import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.services.DiagramProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.KeyEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
-import org.apache.batik.dom.GenericDOMImplementation;
-import org.apache.batik.svggen.SVGGeneratorContext;
-import org.apache.batik.svggen.SVGGraphics2D;
-import org.openide.DialogDisplayer;
-import org.openide.NotifyDescriptor;
 import org.openide.actions.RedoAction;
 import org.openide.actions.UndoAction;
 import org.openide.awt.Toolbar;
@@ -72,86 +53,35 @@ import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.ProxyLookup;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
-import org.w3c.dom.DOMImplementation;
+import org.openide.windows.WindowManager;
 
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
+public final class EditorTopComponent extends TopComponent {
 
-    private DiagramViewer scene;
-    private InstanceContent content;
-    private InstanceContent graphContent;
-    private EnableSeaLayoutAction seaLayoutAction;
-    private EnableBlockLayoutAction blockLayoutAction;
-    private EnableCFGLayoutAction cfgLayoutAction;
-    private OverviewAction overviewAction;
-    private HideDuplicatesAction hideDuplicatesAction;
-    private PredSuccAction predSuccAction;
-    private ShowEmptyBlocksAction showEmptyBlocksAction;
-    private SelectionModeAction selectionModeAction;
-    private boolean notFirstTime;
-    private JComponent satelliteComponent;
-    private JPanel centerPanel;
-    private CardLayout cardLayout;
-    private RangeSlider rangeSlider;
-    private JToggleButton overviewButton;
-    private JToggleButton hideDuplicatesButton;
-    private JPanel topPanel;
-    private Toolbar quickSearchToolbar;
+    private final DiagramViewer scene;
+    private final InstanceContent graphContent;
+    private final JComponent satelliteComponent;
+    private final JPanel centerPanel;
+    private final CardLayout cardLayout;
+    private final Toolbar quickSearchToolbar;
     private static final JPanel quickSearchPresenter = (JPanel) ((Presenter.Toolbar) Utilities.actionsForPath("Actions/Search").get(0)).getToolbarPresenter();
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
-    private DiagramViewModel rangeSliderModel;
-    private ExportCookie exportCookie = new ExportCookie() {
 
-        @Override
-        public void export(File f) {
-
-            String lcFileName = f.getName().toLowerCase();
-            if (lcFileName.endsWith(".pdf")) {
-                exportToPDF(scene, f);
-            } else if (lcFileName.endsWith(".svg")) {
-                exportToSVG(scene, f);
-            } else {
-                NotifyDescriptor message = new NotifyDescriptor.Message("Unknown image file extension: expected either '.pdf' or '.svg'", NotifyDescriptor.ERROR_MESSAGE);
-                DialogDisplayer.getDefault().notifyLater(message);
-            }
-        }
-    };
-
-    private DiagramProvider diagramProvider = new DiagramProvider() {
-
-        @Override
-        public Diagram getDiagram() {
-            return getModel().getDiagramToView();
-        }
-
-        @Override
-        public ChangedEvent<DiagramProvider> getChangedEvent() {
-            return diagramChangedEvent;
-        }
-    };
-
-    private ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
-
-
-    private void updateDisplayName() {
-        setDisplayName(getDiagram().getName());
-        setToolTipText(getDiagram().getGraph().getGroup().getName());
-    }
-
-    public EditorTopComponent(Diagram diagram) {
+    public EditorTopComponent(InputGraph graph) {
+        initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
-        LookupHistory.init(DiagramProvider.class);
-        this.setFocusable(true);
-        FilterChain filterChain = null;
-        FilterChain sequence = null;
+        setFocusable(true);
+        FilterChain filterChain;
+        FilterChain sequence;
         FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
         if (provider == null) {
             filterChain = new FilterChain();
@@ -168,131 +98,116 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 PrevDiagramAction.get(PrevDiagramAction.class),
                 NextDiagramAction.get(NextDiagramAction.class),
                 null,
-                ShrinkDiffAction.get(ShrinkDiffAction.class),
+                ReduceDiffAction.get(ReduceDiffAction.class),
                 ExpandDiffAction.get(ExpandDiffAction.class),
                 null,
                 ExtractAction.get(ExtractAction.class),
-                ShowAllAction.get(HideAction.class),
+                HideAction.get(HideAction.class),
                 ShowAllAction.get(ShowAllAction.class),
                 null,
                 ZoomOutAction.get(ZoomOutAction.class),
                 ZoomInAction.get(ZoomInAction.class),
         };
 
-
         Action[] actionsWithSelection = new Action[]{
                 ExtractAction.get(ExtractAction.class),
-                ShowAllAction.get(HideAction.class),
+                HideAction.get(HideAction.class),
                 null,
                 ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
                 ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
-        initComponents();
+        JPanel container = new JPanel(new BorderLayout());
+        add(container, BorderLayout.NORTH);
 
-        ToolbarPool.getDefault().setPreferredIconSize(16);
-        Toolbar toolBar = new Toolbar();
-        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
-        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
-
-        JPanel container = new JPanel();
-        this.add(container, BorderLayout.NORTH);
-        container.setLayout(new BorderLayout());
-        container.add(BorderLayout.NORTH, toolBar);
-
-        rangeSliderModel = new DiagramViewModel(diagram.getGraph().getGroup(), filterChain, sequence);
-        rangeSlider = new RangeSlider();
-        rangeSlider.setModel(rangeSliderModel);
+        DiagramViewModel diagramViewModel = new DiagramViewModel(graph, filterChain, sequence);
+        RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
+        if (diagramViewModel.getGroup().getGraphs().size() == 1) {
+            rangeSlider.setVisible(false);
+        }
         JScrollPane pane = new JScrollPane(rangeSlider, ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         container.add(BorderLayout.CENTER, pane);
 
-        scene = new DiagramScene(actions, actionsWithSelection, rangeSliderModel);
-        content = new InstanceContent();
+        scene = new DiagramScene(actions, actionsWithSelection, diagramViewModel);
         graphContent = new InstanceContent();
-        this.associateLookup(new ProxyLookup(new Lookup[]{scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)}));
-        content.add(exportCookie);
-        content.add(rangeSliderModel);
-        content.add(diagramProvider);
+        InstanceContent content = new InstanceContent();
+        content.add(new ExportGraph());
+        content.add(diagramViewModel);
+        associateLookup(new ProxyLookup(scene.getLookup(), new AbstractLookup(graphContent), new AbstractLookup(content)));
 
-        rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
-        rangeSliderModel.selectGraph(diagram.getGraph());
-        rangeSliderModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
-                @Override
-                public void changed(DiagramViewModel source) {
-                    hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
-                    hideDuplicatesAction.setState(getModel().getHideDuplicates());
-                }
-            });
-
-        Group group = getDiagram().getGraph().getGroup();
+        Group group = diagramViewModel.getGroup();
         group.getChangedEvent().addListener(g -> closeOnRemovedOrEmptyGroup());
         if (group.getParent() instanceof GraphDocument) {
             final GraphDocument doc = (GraphDocument) group.getParent();
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
+        diagramViewModel.addTitleCallback(changedGraph -> {
+            setDisplayName(changedGraph.getDisplayName());
+            setToolTipText(diagramViewModel.getGroup().getDisplayName());
+        });
+
+        diagramViewModel.getGraphChangedEvent().addListener(model -> graphChanged(model));
+
+        cardLayout = new CardLayout();
+        centerPanel = new JPanel();
+        centerPanel.setLayout(cardLayout);
+        centerPanel.setBackground(Color.WHITE);
+        satelliteComponent = scene.createSatelliteView();
+        satelliteComponent.setSize(200, 200);
+        // needed to update when the satellite component is moved
+        satelliteComponent.addMouseMotionListener(new MouseMotionListener() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                centerPanel.repaint();
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {}
+        });
+        centerPanel.add(SCENE_STRING, scene.getComponent());
+        centerPanel.add(SATELLITE_STRING, satelliteComponent);
+        add(centerPanel, BorderLayout.CENTER);
+
+        ToolbarPool.getDefault().setPreferredIconSize(16);
+        Toolbar toolBar = new Toolbar();
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.addSeparator();
-        toolBar.add(ShrinkDiffAction.get(ShrinkDiffAction.class));
+        toolBar.add(ReduceDiffAction.get(ReduceDiffAction.class));
         toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
-        toolBar.add(ShowAllAction.get(HideAction.class));
+        toolBar.add(HideAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
-        toolBar.addSeparator();
-        toolBar.add(ShowAllAction.get(ZoomOutAction.class));
-        toolBar.add(ShowAllAction.get(ZoomInAction.class));
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
-        seaLayoutAction = new EnableSeaLayoutAction();
-        JToggleButton button = new JToggleButton(seaLayoutAction);
-        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
-        layoutButtons.add(button);
-        toolBar.add(button);
-        seaLayoutAction.addPropertyChangeListener(this);
+        JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
+        seaLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
+        layoutButtons.add(seaLayoutButton);
+        toolBar.add(seaLayoutButton);
 
-        blockLayoutAction = new EnableBlockLayoutAction();
-        button = new JToggleButton(blockLayoutAction);
-        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
-        layoutButtons.add(button);
-        toolBar.add(button);
-        blockLayoutAction.addPropertyChangeListener(this);
+        JToggleButton blockLayoutButton = new JToggleButton(new EnableBlockLayoutAction(this));
+        blockLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
+        layoutButtons.add(blockLayoutButton);
+        toolBar.add(blockLayoutButton);
 
-        cfgLayoutAction = new EnableCFGLayoutAction();
-        button = new JToggleButton(cfgLayoutAction);
-        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
-        layoutButtons.add(button);
-        toolBar.add(button);
-        cfgLayoutAction.addPropertyChangeListener(this);
+        EnableCFGLayoutAction cfgLayoutAction = new EnableCFGLayoutAction(this);
+        JToggleButton cfgLayoutButton = new JToggleButton(cfgLayoutAction);
+        cfgLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        layoutButtons.add(cfgLayoutButton);
+        toolBar.add(cfgLayoutButton);
 
         toolBar.addSeparator();
-        overviewAction = new OverviewAction();
-        overviewButton = new JToggleButton(overviewAction);
-        overviewButton.setSelected(false);
-        toolBar.add(overviewButton);
-        overviewAction.addPropertyChangeListener(this);
-
-        predSuccAction = new PredSuccAction();
-        button = new JToggleButton(predSuccAction);
-        button.setSelected(true);
-        toolBar.add(button);
-        predSuccAction.addPropertyChangeListener(this);
-
-        showEmptyBlocksAction = new ShowEmptyBlocksAction();
-        button = new JToggleButton(showEmptyBlocksAction);
-        button.setSelected(true);
-        button.setEnabled(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
-        toolBar.add(button);
-        showEmptyBlocksAction.addPropertyChangeListener(this);
-
-        hideDuplicatesAction = new HideDuplicatesAction();
-        hideDuplicatesButton = new JToggleButton(hideDuplicatesAction);
-        hideDuplicatesButton.setSelected(false);
-        toolBar.add(hideDuplicatesButton);
-        hideDuplicatesAction.addPropertyChangeListener(this);
+        toolBar.add(new JToggleButton(new OverviewAction(centerPanel)));
+        toolBar.add(new JToggleButton(new PredSuccAction()));
+        toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, true)));
+        toolBar.add(new JToggleButton(new HideDuplicatesAction()));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -303,11 +218,13 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
-        selectionModeAction = new SelectionModeAction();
-        button = new JToggleButton(selectionModeAction);
-        button.setSelected(false);
-        toolBar.add(button);
-        selectionModeAction.addPropertyChangeListener(this);
+
+        JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
+        globalSelectionButton.setHideActionText(true);
+        toolBar.add(globalSelectionButton);
+        toolBar.add(new JToggleButton(new SelectionModeAction()));
+        toolBar.addSeparator();
+        toolBar.add(new ZoomLevelAction(scene));
         toolBar.add(Box.createHorizontalGlue());
 
         quickSearchToolbar = new Toolbar();
@@ -321,145 +238,116 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         JPanel toolbarPanel = new JPanel(new GridLayout(1, 0));
         toolbarPanel.add(toolBar);
 
-        topPanel = new JPanel();
+        JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.LINE_AXIS));
         topPanel.add(toolbarPanel);
         topPanel.add(quickSearchToolbar);
         container.add(BorderLayout.NORTH, topPanel);
 
-        centerPanel = new JPanel();
-        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "showSatellite");
-        centerPanel.getActionMap().put("showSatellite",
-                new AbstractAction("showSatellite") {
-                    @Override public void actionPerformed(ActionEvent e) {
-                        EditorTopComponent.this.overviewButton.setSelected(true);
-                        EditorTopComponent.this.overviewAction.setState(true);
-                    }
-                });
-        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "showScene");
-        centerPanel.getActionMap().put("showScene",
-                new AbstractAction("showScene") {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        EditorTopComponent.this.overviewButton.setSelected(false);
-                        EditorTopComponent.this.overviewAction.setState(false);
-                    }
-                });
-
-
-        this.add(centerPanel, BorderLayout.CENTER);
-        cardLayout = new CardLayout();
-        centerPanel.setLayout(cardLayout);
-        centerPanel.add(SCENE_STRING, scene.getComponent());
-        centerPanel.setBackground(Color.WHITE);
-        satelliteComponent = scene.createSatelliteView();
-        satelliteComponent.setSize(200, 200);
-        centerPanel.add(SATELLITE_STRING, satelliteComponent);
-
-        scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
-
-            @Override
-            public void ancestorMoved(HierarchyEvent e) {
-            }
-
-            @Override
-            public void ancestorResized(HierarchyEvent e) {
-                if (!notFirstTime && scene.getComponent().getBounds().width > 0) {
-                    notFirstTime = true;
-                    SwingUtilities.invokeLater(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            EditorTopComponent.this.scene.initialize();
-                        }
-                    });
-                }
-            }
-        });
-
-        if (diagram.getGraph().getGroup().getGraphsCount() == 1) {
-            rangeSlider.setVisible(false);
-        }
-
-        updateDisplayName();
+        graphChanged(diagramViewModel);
     }
 
-    public DiagramViewModel getDiagramModel() {
-        return rangeSliderModel;
-    }
-
-    private void showSatellite() {
-        cardLayout.show(centerPanel, SATELLITE_STRING);
-        satelliteComponent.requestFocus();
-
-    }
-
-    private void showScene() {
-        cardLayout.show(centerPanel, SCENE_STRING);
-        scene.getComponent().requestFocus();
-    }
-
-    public void zoomOut() {
-        scene.zoomOut();
-    }
-
-    public void zoomIn() {
-        scene.zoomIn();
-    }
-
-    public void showPrevDiagram() {
-        int fp = getModel().getFirstPosition();
-        int sp = getModel().getSecondPosition();
-        if (fp != 0) {
-            fp--;
-            sp--;
-            getModel().setPositions(fp, sp);
-        }
+    private void graphChanged(DiagramViewModel model) {
+        setDisplayName(model.getGraph().getDisplayName());
+        setToolTipText(model.getGroup().getDisplayName());
+        graphContent.set(Collections.singletonList(new EditorInputGraphProvider(this)), null);
     }
 
     public DiagramViewModel getModel() {
-        return rangeSliderModel;
+        return scene.getModel();
     }
 
-    public FilterChain getFilterChain() {
-        return getModel().getFilterChain();
+    public void setSelectionMode(boolean enable) {
+        if (enable) {
+            scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
+        } else {
+            scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
+        }
+    }
+
+    public void showSatellite(boolean enable) {
+        if (enable) {
+            cardLayout.show(centerPanel, SATELLITE_STRING);
+            satelliteComponent.requestFocus();
+        } else {
+            cardLayout.show(centerPanel, SCENE_STRING);
+            scene.getComponent().requestFocus();
+        }
+    }
+
+    public void zoomOut() {
+        scene.zoomOut(null, DiagramScene.ZOOM_INCREMENT);
+    }
+
+    public void zoomIn() {
+        scene.zoomIn(null, DiagramScene.ZOOM_INCREMENT);
+    }
+
+    public void setZoomLevel(int percentage) {
+        scene.setZoomPercentage(percentage);
+    }
+
+    public static boolean isOpen(EditorTopComponent editor) {
+        return WindowManager.getDefault().isOpenedEditorTopComponent(editor);
     }
 
     public static EditorTopComponent getActive() {
-        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
+        TopComponent topComponent = getRegistry().getActivated();
+        if (topComponent instanceof EditorTopComponent) {
+            return (EditorTopComponent) topComponent;
+        }
+        return null;
     }
 
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
-     */
-        // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
-        private void initComponents() {
-                jCheckBox1 = new javax.swing.JCheckBox();
-
-                org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, "jCheckBox1");
-                jCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-                jCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
-
-                setLayout(new java.awt.BorderLayout());
-
-        }// </editor-fold>//GEN-END:initComponents
-        // Variables declaration - do not modify//GEN-BEGIN:variables
-        private javax.swing.JCheckBox jCheckBox1;
-        // End of variables declaration//GEN-END:variables
+    public static EditorTopComponent findEditorForGraph(InputGraph graph) {
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            List<TopComponent> l = new ArrayList<>();
+            l.add(m.getSelectedTopComponent());
+            l.addAll(Arrays.asList(manager.getOpenedTopComponents(m)));
+            for (TopComponent t : l) {
+                if (t instanceof EditorTopComponent) {
+                    EditorTopComponent etc = (EditorTopComponent) t;
+                    if (etc.getModel().getGroup().getGraphs().contains(graph)) {
+                        return etc;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     @Override
     public int getPersistenceType() {
         return TopComponent.PERSISTENCE_NEVER;
     }
 
-    @Override
-    public void componentClosed() {
-        super.componentClosed();
-        rangeSliderModel.close();
+    private void closeOnRemovedOrEmptyGroup() {
+        Group group = getModel().getGroup();
+        if (!group.getParent().getElements().contains(group) ||
+            group.getGraphs().isEmpty()) {
+            close();
+        }
+    }
+
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
+        scene.addSelectedNodes(nodes, showIfHidden);
+    }
+
+    public void centerSelectedNodes() {
+        scene.centerSelectedFigures();
+    }
+
+    public void clearSelectedNodes() {
+        scene.clearSelectedNodes();
+    }
+
+    public Rectangle getSceneBounds() {
+        return scene.getBounds();
+    }
+
+    public void paintScene(Graphics2D generator) {
+        scene.paint(generator);
     }
 
     @Override
@@ -467,189 +355,17 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         return PREFERRED_ID;
     }
 
-    private void closeOnRemovedOrEmptyGroup() {
-        Group group = getDiagram().getGraph().getGroup();
-        if (!group.getParent().getElements().contains(group) ||
-            group.getGraphs().isEmpty()) {
-            close();
-        }
-    }
-
-    private ChangedListener<DiagramViewModel> diagramChangedListener = new ChangedListener<DiagramViewModel>() {
-
-        @Override
-        public void changed(DiagramViewModel source) {
-            updateDisplayName();
-            Collection<Object> list = new ArrayList<>();
-            list.add(new EditorInputGraphProvider(EditorTopComponent.this));
-            graphContent.set(list, null);
-            diagramProvider.getChangedEvent().fire();
-        }
-
-    };
-
-    public boolean showPredSucc() {
-        return (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
-    }
-
-    public void setSelection(PropertyMatcher matcher) {
-
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(getModel().getDiagramToView().getFigures());
-        List<Figure> list = selector.selectMultiple(matcher);
-        setSelectedFigures(list);
-    }
-
-    public void setSelectedFigures(List<Figure> list) {
-        scene.setSelection(list);
-        scene.centerFigures(list);
-    }
-
-    public void setSelectedNodes(Set<InputNode> nodes) {
-
-        List<Figure> list = new ArrayList<>();
-        Set<Integer> ids = new HashSet<>();
-        for (InputNode n : nodes) {
-            ids.add(n.getId());
-        }
-
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
-            for (InputNode n : f.getSource().getSourceNodes()) {
-                if (ids.contains(n.getId())) {
-                    list.add(f);
-                    break;
-                }
-            }
-        }
-
-        setSelectedFigures(list);
-    }
-
-    public void setSelectedNodes(InputBlock b) {
-        List<Figure> list = new ArrayList<>();
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (f.getBlock() == b) {
-                list.add(f);
-            }
-        }
-        setSelectedFigures(list);
-    }
-
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getSource() == this.predSuccAction) {
-            boolean b = (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
-            this.getModel().setShowNodeHull(b);
-        } else if (evt.getSource() == this.showEmptyBlocksAction) {
-            boolean b = (Boolean) showEmptyBlocksAction.getValue(ShowEmptyBlocksAction.STATE);
-            this.getModel().setShowEmptyBlocks(b);
-        } else if (evt.getSource() == this.overviewAction) {
-            boolean b = (Boolean) overviewAction.getValue(OverviewAction.STATE);
-            if (b) {
-                showSatellite();
-            } else {
-                showScene();
-            }
-        } else if (evt.getSource() == this.seaLayoutAction) {
-            boolean b = seaLayoutAction.isSelected();
-            this.getModel().setShowSea(b);
-            this.showEmptyBlocksAction.setEnabled(false);
-        } else if (evt.getSource() == this.blockLayoutAction) {
-            boolean b = blockLayoutAction.isSelected();
-            this.getModel().setShowBlocks(b);
-            this.showEmptyBlocksAction.setEnabled(false);
-        } else if (evt.getSource() == this.cfgLayoutAction) {
-            boolean b = cfgLayoutAction.isSelected();
-            this.getModel().setShowCFG(b);
-            this.showEmptyBlocksAction.setEnabled(true);
-        } else if (evt.getSource() == this.hideDuplicatesAction) {
-            boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
-            this.getModel().setHideDuplicates(b);
-        } else if (evt.getSource() == this.selectionModeAction) {
-            boolean b = (Boolean) selectionModeAction.getValue(SelectionModeAction.STATE);
-            if (b) {
-                scene.setInteractionMode(DiagramViewer.InteractionMode.SELECTION);
-            } else {
-                scene.setInteractionMode(DiagramViewer.InteractionMode.PANNING);
-            }
-        } else {
-            assert false : "Unknown event source";
-        }
-    }
-
-    public void extract() {
-        getModel().showOnly(getModel().getSelectedNodes());
-    }
-
-    public void hideNodes() {
-        Set<Integer> selectedNodes = this.getModel().getSelectedNodes();
-        HashSet<Integer> nodes = new HashSet<>(getModel().getHiddenNodes());
-        nodes.addAll(selectedNodes);
-        this.getModel().showNot(nodes);
-    }
-
-    public void expandPredecessors() {
-        Set<Figure> oldSelection = getModel().getSelectedFigures();
-        Set<Figure> figures = new HashSet<>();
-
-        for (Figure f : this.getDiagramModel().getDiagramToView().getFigures()) {
-            boolean ok = false;
-            if (oldSelection.contains(f)) {
-                ok = true;
-            } else {
-                for (Figure pred : f.getSuccessors()) {
-                    if (oldSelection.contains(pred)) {
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-
-            if (ok) {
-                figures.add(f);
-            }
-        }
-
-        getModel().showAll(figures);
-    }
-
-    public void expandSuccessors() {
-        Set<Figure> oldSelection = getModel().getSelectedFigures();
-        Set<Figure> figures = new HashSet<>();
-
-        for (Figure f : this.getDiagramModel().getDiagramToView().getFigures()) {
-            boolean ok = false;
-            if (oldSelection.contains(f)) {
-                ok = true;
-            } else {
-                for (Figure succ : f.getPredecessors()) {
-                    if (oldSelection.contains(succ)) {
-                        ok = true;
-                        break;
-                    }
-                }
-            }
-
-            if (ok) {
-                figures.add(f);
-            }
-        }
-
-        getModel().showAll(figures);
-    }
-
-    public void showAll() {
-        getModel().showNot(new HashSet<Integer>());
-    }
-
-    public Diagram getDiagram() {
-        return getDiagramModel().getDiagramToView();
+    public void componentClosed() {
+        super.componentClosed();
+        getModel().close();
+        LookupHistory.terminate(InputGraphProvider.class);
     }
 
     @Override
     protected void componentHidden() {
         super.componentHidden();
         scene.componentHidden();
-
     }
 
     @Override
@@ -676,50 +392,23 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         return scene.getUndoRedo();
     }
 
-    @Override
-    protected Object writeReplace() throws ObjectStreamException {
-        throw new NotSerializableException();
-    }
+    /** This method is called from within the constructor to
+     * initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is
+     * always regenerated by the Form Editor.
+     */
+    // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
+    private void initComponents() {
+        jCheckBox1 = new javax.swing.JCheckBox();
 
-    private static void exportToPDF(DiagramViewer scene, File f) {
-        int width = scene.getBounds().width;
-        int height = scene.getBounds().height;
-        com.lowagie.text.Document document = new Document(new Rectangle(width, height));
-        PdfWriter writer = null;
-        try {
-            writer = PdfWriter.getInstance(document, new FileOutputStream(f));
-            writer.setCloseStream(true);
-            document.open();
-            PdfContentByte contentByte = writer.getDirectContent();
-            PdfTemplate template = contentByte.createTemplate(width, height);
-            PdfGraphics2D pdfGenerator = new PdfGraphics2D(contentByte, width, height);
-            scene.paint(pdfGenerator);
-            pdfGenerator.dispose();
-            contentByte.addTemplate(template, 0, 0);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (document.isOpen()) {
-                document.close();
-            }
-            if (writer != null) {
-                writer.close();
-            }
-        }
-    }
+        org.openide.awt.Mnemonics.setLocalizedText(jCheckBox1, "jCheckBox1");
+        jCheckBox1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        jCheckBox1.setMargin(new java.awt.Insets(0, 0, 0, 0));
 
-    private static void exportToSVG(DiagramViewer scene, File f) {
-        DOMImplementation dom = GenericDOMImplementation.getDOMImplementation();
-        org.w3c.dom.Document document = dom.createDocument("http://www.w3.org/2000/svg", "svg", null);
-        SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
-        ctx.setEmbeddedFontsOn(true);
-        SVGGraphics2D svgGenerator = new SVGGraphics2D(ctx, true);
-        scene.paint(svgGenerator);
-        try (FileOutputStream os = new FileOutputStream(f)) {
-            Writer out = new OutputStreamWriter(os, StandardCharsets.UTF_8);
-            svgGenerator.stream(out, true);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        setLayout(new java.awt.BorderLayout());
+
+    }// </editor-fold>//GEN-END:initComponents
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JCheckBox jCheckBox1;
+    // End of variables declaration//GEN-END:variables
 }

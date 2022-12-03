@@ -34,12 +34,6 @@
 // a description of how to extend it, see the stubRoutines.hpp file.
 
 address StubRoutines::x86::_verify_mxcsr_entry = NULL;
-address StubRoutines::x86::_key_shuffle_mask_addr = NULL;
-address StubRoutines::x86::_counter_shuffle_mask_addr = NULL;
-address StubRoutines::x86::_ghash_long_swap_mask_addr = NULL;
-address StubRoutines::x86::_ghash_byte_swap_mask_addr = NULL;
-address StubRoutines::x86::_ghash_poly_addr = NULL;
-address StubRoutines::x86::_ghash_shuffmask_addr = NULL;
 address StubRoutines::x86::_upper_word_mask_addr = NULL;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = NULL;
 address StubRoutines::x86::_k256_adr = NULL;
@@ -77,7 +71,6 @@ address StubRoutines::x86::_shuffle_base64 = NULL;
 address StubRoutines::x86::_avx2_shuffle_base64 = NULL;
 address StubRoutines::x86::_avx2_input_mask_base64 = NULL;
 address StubRoutines::x86::_avx2_lut_base64 = NULL;
-address StubRoutines::x86::_counter_mask_addr = NULL;
 address StubRoutines::x86::_lookup_lo_base64 = NULL;
 address StubRoutines::x86::_lookup_hi_base64 = NULL;
 address StubRoutines::x86::_lookup_lo_base64url = NULL;
@@ -87,7 +80,6 @@ address StubRoutines::x86::_join_0_1_base64 = NULL;
 address StubRoutines::x86::_join_1_2_base64 = NULL;
 address StubRoutines::x86::_join_2_3_base64 = NULL;
 address StubRoutines::x86::_decoding_table_base64 = NULL;
-address StubRoutines::x86::_ghash_poly512_addr = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 

@@ -337,13 +337,6 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_key_shuffle_mask();
 
-  address generate_counter_shuffle_mask();
-
-  // This mask is used for incrementing counter value(linc0, linc4, etc.)
-  address generate_counter_mask_addr();
-
-  address generate_ghash_polynomial512_addr();
-
   void roundDec(XMMRegister xmm_reg);
   void roundDeclast(XMMRegister xmm_reg);
   void roundEnc(XMMRegister key, int rnum);
@@ -351,17 +344,19 @@ class StubGenerator: public StubCodeGenerator {
   void roundDec(XMMRegister key, int rnum);
   void lastroundDec(XMMRegister key, int rnum);
   void gfmul_avx512(XMMRegister ghash, XMMRegister hkey);
-  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl);
+  void generateHtbl_48_block_zmm(Register htbl, Register avx512_subkeyHtbl, Register rscratch);
   void ghash16_encrypt16_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx,
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
   // Load key and shuffle operation
-  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg);
+  void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
 
   // Utility routine for loading a 128-bit key word in little endian format
   // can optionally specify that the shuffle mask is already in an xmmregister
-  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask = xnoreg);
+  void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
 
   // Utility routine for increase 128bit counter (iv in CTR mode)
   void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
@@ -376,17 +371,15 @@ class StubGenerator: public StubCodeGenerator {
   void schoolbookAAD(int i, Register subkeyH, XMMRegister data, XMMRegister tmp0,
                      XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3);
   void gfmul(XMMRegister tmp0, XMMRegister t);
-  void generateHtbl_one_block(Register htbl);
+  void generateHtbl_one_block(Register htbl, Register rscratch);
   void generateHtbl_eight_blocks(Register htbl);
   void avx_ghash(Register state, Register htbl, Register data, Register blocks);
 
-  address generate_ghash_polynomial_addr();
-
-  address generate_ghash_shufflemask_addr();
-
-  address generate_ghash_long_swap_mask(); // byte swap x86 long
-
-  address generate_ghash_byte_swap_mask(); // byte swap x86 byte array
+  // Used by GHASH and AES stubs.
+  address ghash_polynomial_addr();
+  address ghash_shufflemask_addr();
+  address ghash_long_swap_mask_addr(); // byte swap x86 long
+  address ghash_byte_swap_mask_addr(); // byte swap x86 byte array
 
   // Single and multi-block ghash operations
   address generate_ghash_processBlocks();
@@ -394,6 +387,26 @@ class StubGenerator: public StubCodeGenerator {
   // Ghash single and multi block operations using AVX instructions
   address generate_avx_ghash_processBlocks();
 
+  // Poly1305 multiblock using IFMA instructions
+  address generate_poly1305_processBlocks();
+  void poly1305_process_blocks_avx512(const Register input, const Register length,
+                                      const Register A0, const Register A1, const Register A2,
+                                      const Register R0, const Register R1, const Register C1);
+  void poly1305_multiply_scalar(const Register a0, const Register a1, const Register a2,
+                                const Register r0, const Register r1, const Register c1, bool only128,
+                                const Register t0, const Register t1, const Register t2,
+                                const Register mulql, const Register mulqh);
+  void poly1305_multiply8_avx512(const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+                                 const XMMRegister R0, const XMMRegister R1, const XMMRegister R2, const XMMRegister R1P, const XMMRegister R2P,
+                                 const XMMRegister P0L, const XMMRegister P0H, const XMMRegister P1L, const XMMRegister P1H, const XMMRegister P2L, const XMMRegister P2H,
+                                 const XMMRegister TMP, const Register rscratch);
+  void poly1305_limbs(const Register limbs, const Register a0, const Register a1, const Register a2, const Register t0, const Register t1);
+  void poly1305_limbs_out(const Register a0, const Register a1, const Register a2, const Register limbs, const Register t0, const Register t1);
+  void poly1305_limbs_avx512(const XMMRegister D0, const XMMRegister D1,
+                             const XMMRegister L0, const XMMRegister L1, const XMMRegister L2, bool padMSG,
+                             const XMMRegister TMP, const Register rscratch);
+
+  // BASE64 stubs
 
   address base64_shuffle_addr();
   address base64_avx2_shuffle_addr();

@@ -628,6 +628,10 @@ void GenCollectedHeap::do_collection(bool           full,
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph
     ClassLoaderDataGraph::purge(/*at_safepoint*/true);
     DEBUG_ONLY(MetaspaceUtils::verify();)
+
+    // Need to clear claim bits for the next mark.
+    ClassLoaderDataGraph::clear_claimed_marks();
+
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
     update_full_collections_completed();
@@ -813,29 +817,7 @@ bool GenCollectedHeap::no_allocs_since_save_marks() {
 }
 
 // public collection interfaces
-
 void GenCollectedHeap::collect(GCCause::Cause cause) {
-  if ((cause == GCCause::_wb_young_gc) ||
-      (cause == GCCause::_gc_locker)) {
-    // Young collection for WhiteBox or GCLocker.
-    collect(cause, YoungGen);
-  } else {
-#ifdef ASSERT
-  if (cause == GCCause::_scavenge_alot) {
-    // Young collection only.
-    collect(cause, YoungGen);
-  } else {
-    // Stop-the-world full collection.
-    collect(cause, OldGen);
-  }
-#else
-    // Stop-the-world full collection.
-    collect(cause, OldGen);
-#endif
-  }
-}
-
-void GenCollectedHeap::collect(GCCause::Cause cause, GenerationType max_generation) {
   // The caller doesn't have the Heap_lock
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
@@ -852,6 +834,14 @@ void GenCollectedHeap::collect(GCCause::Cause cause, GenerationType max_generati
   if (GCLocker::should_discard(cause, gc_count_before)) {
     return;
   }
+
+  bool should_run_young_gc =  (cause == GCCause::_wb_young_gc)
+                           || (cause == GCCause::_gc_locker)
+                DEBUG_ONLY(|| (cause == GCCause::_scavenge_alot));
+
+  const GenerationType max_generation = should_run_young_gc
+                                      ? YoungGen
+                                      : OldGen;
 
   VM_GenCollectFull op(gc_count_before, full_gc_count_before,
                        cause, max_generation);
@@ -1076,7 +1066,7 @@ void GenCollectedHeap::verify(VerifyOption option /* ignored */) {
   log_debug(gc, verify)("%s", _old_gen->name());
   _old_gen->verify();
 
-  log_debug(gc, verify)("%s", _old_gen->name());
+  log_debug(gc, verify)("%s", _young_gen->name());
   _young_gen->verify();
 
   log_debug(gc, verify)("RemSet");

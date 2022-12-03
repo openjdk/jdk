@@ -566,7 +566,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   if (_states[worker_id] == NULL) {
     _states[worker_id] =
       new G1ParScanThreadState(_g1h, rdcqs(),
-                               _preserved_marks_set->get(worker_id),
+                               _preserved_marks_set.get(worker_id),
                                worker_id, _n_workers,
                                _young_cset_length, _optional_cset_length,
                                _evac_failure_regions);
@@ -623,14 +623,13 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the marking bitmap
-    // and later use it to handle all failed objects.
-    _g1h->mark_evac_failure_object(old);
-
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);
     }
+
+    // Mark the failing object in the marking bitmap and later use the bitmap to handle
+    // evacuation failure recovery.
+    _g1h->mark_evac_failure_object(_worker_id, old, word_sz);
 
     _preserved_marks->push_if_necessary(old, m);
 
@@ -688,15 +687,13 @@ void G1ParScanThreadState::update_numa_stats(uint node_index) {
 }
 
 G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
-                                                 G1RedirtyCardsQueueSet* rdcqs,
-                                                 PreservedMarksSet* preserved_marks_set,
                                                  uint n_workers,
                                                  size_t young_cset_length,
                                                  size_t optional_cset_length,
                                                  G1EvacFailureRegions* evac_failure_regions) :
     _g1h(g1h),
-    _rdcqs(rdcqs),
-    _preserved_marks_set(preserved_marks_set),
+    _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
+    _preserved_marks_set(true /* in_c_heap */),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length + 1, mtGC)),
     _young_cset_length(young_cset_length),
@@ -704,6 +701,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _n_workers(n_workers),
     _flushed(false),
     _evac_failure_regions(evac_failure_regions) {
+  _preserved_marks_set.init(n_workers);
   for (uint i = 0; i < n_workers; ++i) {
     _states[i] = NULL;
   }
@@ -714,4 +712,6 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+  _preserved_marks_set.assert_empty();
+  _preserved_marks_set.reclaim();
 }

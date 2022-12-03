@@ -118,9 +118,6 @@ public class TestOldGenCollectionUsage {
         if (collectionCount <= 0) {
             throw new RuntimeException("Collection count <= 0");
         }
-        if (collectionTime <= 0) {
-            throw new RuntimeException("Collector has not run");
-        }
 
         MixedGCProvoker.provokeMixedGC(liveOldObjects);
 

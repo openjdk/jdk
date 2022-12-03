@@ -344,7 +344,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
     public abstract boolean canSourceSendExposures(int x, int y, int w, int h);
 
     /**
-     * CopyArea is implemented using the "old" X11 GC, therefor clip and
+     * CopyArea is implemented using the "old" X11 GC, therefore clip and
      * needExposures have to be validated against that GC. Pictures and GCs
      * don't share state.
      */
@@ -393,7 +393,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     /**
-     * Returns the XRender SurfaceType which is able to fullfill the specified
+     * Returns the XRender SurfaceType which is able to fulfill the specified
      * transparency requirement.
      */
     public static SurfaceType getPixmapSurfaceType(int transparency) {
