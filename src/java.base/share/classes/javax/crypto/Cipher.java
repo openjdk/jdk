@@ -326,7 +326,8 @@ public class Cipher {
 
         // check if the transformation contains algorithms with "/" in their
         // name which can cause the parsing logic to go wrong
-        int sha512Idx = transformation.indexOf(SHA512TRUNCATED);
+        int sha512Idx = transformation.toUpperCase(Locale.ENGLISH).indexOf
+                (SHA512TRUNCATED);
         int startIdx = (sha512Idx == -1? 0 :
             sha512Idx + SHA512TRUNCATED.length());
         int endIdx = transformation.indexOf('/', startIdx);
