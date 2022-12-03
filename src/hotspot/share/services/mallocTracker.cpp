@@ -47,7 +47,7 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
     size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
-    if (old_sz == size) {
+    if (old_sz == peak_sz) {
       // I won
       _peak_count = cnt;
       break;
