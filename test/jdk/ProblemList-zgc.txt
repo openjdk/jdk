@@ -92,3 +92,5 @@ java/util/stream/test/org/openjdk/tests/java/util/stream/ToListOpTest.java 82972
 java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java 8297235 generic-x64
 java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpTest.java 8297235 generic-x64
 java/util/stream/test/org/openjdk/tests/java/util/stream/mapMultiOpTest.java 8297235 generic-x64
+
+jdk/internal/vm/Continuation/Fuzz.java#default 8298058 generic-x64
