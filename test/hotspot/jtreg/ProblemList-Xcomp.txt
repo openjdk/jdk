@@ -39,4 +39,4 @@ serviceability/jvmti/VMObjectAlloc/VMObjectAllocTest.java 8288430 generic-all
 
 gc/cslocker/TestCSLocker.java 8293289 generic-x64
 
-compiler/c1/TestPrintC1Statistics.java 8298053 generic-x64
+compiler/c1/TestPrintC1Statistics.java 8298053 linux-aarch64
