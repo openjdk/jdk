@@ -108,7 +108,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         out.putOctetString(privBytes);
         Arrays.fill(privBytes, (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
@@ -130,7 +130,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         out.putOctetString(sOctets);
         Arrays.fill(sOctets, (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
@@ -142,7 +142,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     // see JCA doc
     public BigInteger getS() {
         if (s == null) {
-            byte[] arrCopy = arrayS.clone();
+            byte[] arrCopy = privKeyMaterial.clone();
             ArrayUtil.reverse(arrCopy);
             s = new BigInteger(1, arrCopy);
             Arrays.fill(arrCopy, (byte)0);
@@ -150,15 +150,11 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         return s;
     }
 
-    private byte[] getArrayS0() {
-        if (arrayS == null) {
-            arrayS = ECUtil.sArray(getS(), params);
-        }
-        return arrayS;
-    }
-
     public byte[] getArrayS() {
-        return getArrayS0().clone();
+        if (privKeyMaterial == null) {
+            privKeyMaterial = ECUtil.sArray(getS(), params);
+        }
+        return privKeyMaterial.clone();
     }
 
     // see JCA doc
@@ -167,8 +163,20 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     }
 
     private void parseKeyBits() throws InvalidKeyException {
+        ArrayUtil.reverse(privKeyMaterial);
+        AlgorithmParameters algParams = this.algid.getParameters();
+        if (algParams == null) {
+            throw new InvalidKeyException("EC domain parameters must be "
+                + "encoded in the algorithm identifier");
+        }
         try {
-            DerInputStream in = new DerInputStream(key);
+            params = algParams.getParameterSpec(ECParameterSpec.class);
+        } catch (InvalidParameterSpecException e) {
+            throw new InvalidKeyException("Invalid EC private key", e);
+        }
+        /*
+        try {
+            DerInputStream in = new DerInputStream(privKeyMaterial);
             DerValue derValue = in.getDerValue();
             if (derValue.tag != DerValue.tag_Sequence) {
                 throw new IOException("Not a SEQUENCE");
@@ -200,6 +208,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         } catch (IOException | InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC private key", e);
         }
+        */
     }
 
     @Override
@@ -207,7 +216,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         ECParameterSpec ecParams = getParams();
         ECOperations ops = ECOperations.forParameters(ecParams)
                 .orElseThrow(ProviderException::new);
-        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS0());
+        MutablePoint pub = ops.multiply(ecParams.getGenerator(), getArrayS());
         AffinePoint affPub = pub.asAffine();
         ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
                 affPub.getY().asBigInteger());

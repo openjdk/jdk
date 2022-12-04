@@ -569,7 +569,9 @@ public final class KeyUtil {
                     }
 
                 }
+
             } else if (value.tag == DerValue.tag_Sequence) {
+                // Public Key
                 return AlgorithmId.parse(value);
             }
 

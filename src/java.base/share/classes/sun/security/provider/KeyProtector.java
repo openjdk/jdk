@@ -27,10 +27,18 @@ package sun.security.provider;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import javax.crypto.EncryptedPrivateKeyInfo;
+import java.util.*;
 import java.security.*;
 import java.util.Arrays;
 
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
+import sun.security.pkcs.PKCS8Key;
+//import sun.security.pkcs.EncryptedPrivateKeyInfo;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.x509.AlgorithmId;
+import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.KnownOIDs;
 import sun.security.util.ObjectIdentifier;
@@ -205,9 +213,14 @@ final class KeyProtector {
 
         // wrap the protected private key in a PKCS#8-style
         // EncryptedPrivateKeyInfo, and returns its encoding
+
         AlgorithmId encrAlg = new AlgorithmId(ObjectIdentifier.of
                 (KnownOIDs.JAVASOFT_JDKKeyProtector));
-        return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
+        try {
+            return new EncryptedPrivateKeyInfo(encrAlg.getParameters(), encrKey).getEncoded();
+        } catch (Exception e) {
+            throw new KeyStoreException(e);
+        }
     }
 
     /*
@@ -224,11 +237,17 @@ final class KeyProtector {
         int encrKeyLen; // the length of the encrypted key
 
         // do we support the algorithm?
-        AlgorithmId encrAlg = encrInfo.getAlgorithm();
+
+        AlgorithmId encrAlg;
+        try {
+            encrAlg = AlgorithmId.get(encrInfo.getAlgName());
+        } catch (NoSuchAlgorithmException e) {
+            throw new UnrecoverableKeyException(e.toString());
+        }
         if (!(encrAlg.getOID().toString().equals
-                (KnownOIDs.JAVASOFT_JDKKeyProtector.value()))) {
+            (KnownOIDs.JAVASOFT_JDKKeyProtector.value()))) {
             throw new UnrecoverableKeyException("Unsupported key protection "
-                                                + "algorithm");
+                + "algorithm");
         }
 
         byte[] protectedKey = encrInfo.getEncryptedData();

@@ -34,7 +34,7 @@ import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
+import javax.crypto.EncryptedPrivateKeyInfo;
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.util.Debug;
 import sun.security.util.IOUtils;

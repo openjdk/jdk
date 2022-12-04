@@ -99,7 +99,7 @@ public final class RSAPrivateCrtKeyImpl
             }
         case "PKCS#1":
             try {
-                BigInteger[] comps = parseASN1(encoded);
+                BigInteger[] comps = parsePKCS1(encoded);
                 if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
                     (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
                     (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
@@ -235,7 +235,7 @@ public final class RSAPrivateCrtKeyImpl
         Arrays.fill(nbytes[6], (byte) 0);
         Arrays.fill(nbytes[7], (byte) 0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
@@ -310,7 +310,7 @@ public final class RSAPrivateCrtKeyImpl
     // utility method for parsing DER encoding of RSA private keys in PKCS#1
     // format as defined in RFC 8017 Appendix A.1.2, i.e. SEQ of version, n,
     // e, d, p, q, pe, qe, and coeff, and return the parsed components.
-    private static BigInteger[] parseASN1(byte[] raw) throws IOException {
+    private static BigInteger[] parsePKCS1(byte[] raw) throws IOException {
         DerValue derValue = new DerValue(raw);
         try {
             if (derValue.tag != DerValue.tag_Sequence) {
@@ -343,7 +343,7 @@ public final class RSAPrivateCrtKeyImpl
 
     private void parseKeyBits() throws InvalidKeyException {
         try {
-            BigInteger[] comps = parseASN1(key);
+            BigInteger[] comps = parsePKCS1(privKeyMaterial);
             n = comps[0];
             e = comps[1];
             d = comps[2];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public final class EdDSAPrivateKeyImpl
 
         DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
-            this.key = val.toByteArray();
+            this.privKeyMaterial = val.toByteArray();
         } finally {
             val.clear();
         }
@@ -68,7 +68,7 @@ public final class EdDSAPrivateKeyImpl
         paramSpec = new NamedParameterSpec(params.getName());
 
         try {
-            DerInputStream derStream = new DerInputStream(key);
+            DerInputStream derStream = new DerInputStream(privKeyMaterial);
             h = derStream.getOctetString();
         } catch (IOException ex) {
             throw new InvalidKeyException(ex);
@@ -100,6 +100,6 @@ public final class EdDSAPrivateKeyImpl
 
     @Override
     public Optional<byte[]> getBytes() {
-        return Optional.of(getKey());
+        return Optional.of(privKeyMaterial);
     }
 }

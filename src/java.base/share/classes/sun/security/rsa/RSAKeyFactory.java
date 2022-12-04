@@ -25,6 +25,7 @@
 
 package sun.security.rsa;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -33,6 +34,7 @@ import java.security.spec.*;
 import java.util.Arrays;
 
 import sun.security.action.GetPropertyAction;
+import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAUtil.KeyType;
 
 /**
@@ -334,6 +336,17 @@ public class RSAKeyFactory extends KeyFactorySpi {
             } catch (ProviderException e) {
                 throw new InvalidKeySpecException(e);
             }
+        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
+            PKCS8Key p8key = null;
+            try {
+                //p8key = (PKCS8Key) RSAPrivateKeyImpl.parseKey(
+                    //((PKCS8EncodedKeySpec)keySpec).getEncoded());
+                p8key = new PKCS8Key(((PKCS8EncodedKeySpec)keySpec).getEncoded());
+            } catch (Exception e) {
+                throw new GeneralSecurityException(e);
+            }
+            return RSAPublicKeyImpl.newKey(type, "X.509",
+                p8key.getPubKeyEncoded());
         } else {
             throw new InvalidKeySpecException("Only RSAPublicKeySpec "
                 + "and X509EncodedKeySpec supported for RSA public keys");
@@ -343,8 +356,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
     // internal implementation of generatePrivate. See JCA doc
     private PrivateKey generatePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
-        if (keySpec instanceof PKCS8EncodedKeySpec ||
-                keySpec instanceof PEMEncodedKeySpec) {
+        if (keySpec instanceof PKCS8EncodedKeySpec) {
             byte[] encoded = ((EncodedKeySpec)keySpec).getEncoded();
             try {
                 return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
