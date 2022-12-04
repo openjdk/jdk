@@ -373,6 +373,7 @@ class ClassLoader: AllStatic {
 #endif
 
   static char* lookup_vm_options();
+  static bool has_jvmci_module();
 
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);

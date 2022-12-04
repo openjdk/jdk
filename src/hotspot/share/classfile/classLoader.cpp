@@ -1415,6 +1415,23 @@ char* ClassLoader::lookup_vm_options() {
   return options;
 }
 
+// Returns true if jdk.internal.vm.ci is present on the file system.
+bool ClassLoader::has_jvmci_module() {
+  assert(JImageOpen != NULL, "jimage library should have been opened");
+  if (JImage_file == NULL) {
+    const char *home = Arguments::get_java_home();
+    const char file_sep = os::file_separator()[0];
+    size_t len = strlen(home) + strlen("jdk.internal.vm.ci") + 2;
+    char path[len];
+    jio_snprintf(path, len, "%s%cmodules%cjdk.internal.vm.ci", home, file_sep, file_sep);
+    struct stat st;
+    return os::stat(path, &st) == 0;
+  }
+  jlong size;
+  const char *jimage_version = get_jimage_version_string();
+  return (*JImageFindResource)(JImage_file, "jdk.internal.vm.ci", jimage_version, "module-info.class", &size) != 0;
+}
+
 #if INCLUDE_CDS
 void ClassLoader::initialize_shared_path(JavaThread* current) {
   if (Arguments::is_dumping_archive()) {
