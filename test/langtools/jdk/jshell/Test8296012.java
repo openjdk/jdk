@@ -25,6 +25,7 @@
  * @test
  * @bug 8296012
  * @summary jshell crashes on mismatched record pattern
+ * @requires vm.continuations
  * @build KullaTesting TestingInputStream
  * @run testng Test8296012
  */
@@ -42,6 +43,6 @@ public class Test8296012 extends KullaTesting {
 
     @org.testng.annotations.BeforeMethod
     public void setUp() {
-        super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("-XX:+UnlockExperimentalVMOptions", "-XX:+VMContinuations", "--enable-preview"));
+        super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
     }
 }
