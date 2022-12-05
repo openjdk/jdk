@@ -41,52 +41,52 @@ import java.io.IOException;
  * @key headful
  * @bug 8003173 7019055
  * @summary Full-screen windows should have the proper insets.
- * @run main FullScreenInsets
+ * @requires (os.family != "linux")
  */
+
 public final class FullScreenInsets {
 
     private static boolean passed = true;
     private static Robot robot = null;
     private static int deviceCount = 0;
-    private static final float TOLERANCE = 10;
+    private static final float TOLERANCE = 2;
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws IOException, AWTException {
         final GraphicsEnvironment ge = GraphicsEnvironment
                 .getLocalGraphicsEnvironment();
         final GraphicsDevice[] devices = ge.getScreenDevices();
         System.out.println("No. of Screen Devices: "+ devices.length + "\n");
 
-        final Frame wGreen = new Frame();
+        final Window wGreen = new Frame();
         wGreen.setBackground(Color.GREEN);
-        wGreen.setUndecorated(true);
         wGreen.setSize(300, 300);
         wGreen.setVisible(true);
         sleep();
         final Insets iGreen = wGreen.getInsets();
         final Dimension sGreen = wGreen.getSize();
 
-        final Frame wRed = new Frame();
+        final Window wRed = new Frame();
         wRed.setBackground(Color.RED);
-        wRed.setUndecorated(true);
         wRed.setSize(300, 300);
         wRed.setVisible(true);
         sleep();
-        final Insets iRed = wGreen.getInsets();
-        final Dimension sRed = wGreen.getSize();
+        final Insets iRed = wRed.getInsets();
+        final Dimension sRed = wRed.getSize();
 
         for (final GraphicsDevice device : devices) {
             if (!device.isFullScreenSupported()) {
                 continue;
             }
+            Rectangle expectedBounds = device.getDefaultConfiguration().getBounds();
             System.out.println("Testing on Screen Device# "+ deviceCount++);
             device.setFullScreenWindow(wGreen);
             sleep();
-            testWindowBounds(device.getFullScreenWindow().getBounds(), wGreen);
+            testWindowBounds(expectedBounds, wGreen);
             testColor(wGreen, Color.GREEN, "GREEN_" + deviceCount + ".png");
 
             device.setFullScreenWindow(wRed);
             sleep();
-            testWindowBounds(device.getFullScreenWindow().getBounds(), wRed);
+            testWindowBounds(expectedBounds, wRed);
             testColor(wRed, Color.RED, "RED_" + deviceCount + ".png");
 
             device.setFullScreenWindow(null);
@@ -119,16 +119,19 @@ public final class FullScreenInsets {
         }
     }
 
-    private static void testWindowBounds(Rectangle expectedBounds, final Window w) {
-        if (!expectedBounds.equals(w.getBounds())) {
+    private static void testWindowBounds(final Rectangle expectedSize, final Window w) {
+        if (w.getWidth() != expectedSize.getWidth()
+                || w.getHeight() != expectedSize.getHeight()) {
             System.out.println(" Wrong window bounds:" +
-                               " Expected: " + expectedBounds +
-                               " Actual: " + w.getBounds());
+                    " Expected: width = " + expectedSize.getWidth()
+                    + ", height = " + expectedSize.getHeight() + " Actual: "
+                    + w.getSize());
             passed = false;
         }
     }
 
-    private static void testColor(final Window w, final Color color, final String filename) throws IOException {
+    private static void testColor(final Window w, final Color color, final String filename)
+            throws IOException {
         final Robot r;
         float[] expectedRGB = color.getRGBColorComponents(null);
         try {
@@ -139,10 +142,11 @@ public final class FullScreenInsets {
             return;
         }
         final BufferedImage bimg = r.createScreenCapture(w.getBounds());
-        // vertical scan - at the right end
+        // vertical scan - at the far right side
         int x = bimg.getWidth() - 1;
         for (int y= 0; y < bimg.getHeight() - 1; y++) {
-            float[] actualRGB = new Color(bimg.getRGB(x, y)).getRGBColorComponents(null);
+            float[] actualRGB = new Color(bimg.getRGB(x, y))
+                    .getRGBColorComponents(null);
             if (checkColor(actualRGB, expectedRGB)) {
                 System.out.println(
                         "Vertical Scan: Incorrect pixel at " + x + "x" + y + " : " +
@@ -153,10 +157,11 @@ public final class FullScreenInsets {
                 break;
             }
         }
-        // horizontal scan - at the bottom end
+        // horizontal scan - at the far bottom side
         int y = bimg.getHeight() - 1;
         for (x= 0; x < bimg.getWidth() - 1; x++) {
-            float[] actualRGB = new Color(bimg.getRGB(x, y)).getRGBColorComponents(null);
+            float[] actualRGB = new Color(bimg.getRGB(x, y))
+                    .getRGBColorComponents(null);
             if (checkColor(actualRGB, expectedRGB)) {
                 System.out.println(
                         "Horizontal Scan: Incorrect pixel at " + x + "x" + y + " : " +
@@ -174,8 +179,8 @@ public final class FullScreenInsets {
 
     private static boolean checkColor(float[] actualRGB, float[] expectedRGB) {
         return (Math.abs(actualRGB[0] - expectedRGB[0]) > TOLERANCE
-                || Math.abs(actualRGB[1] - expectedRGB[1]) > TOLERANCE ||
-                Math.abs(actualRGB[2] - expectedRGB[2]) > TOLERANCE);
+                || Math.abs(actualRGB[1] - expectedRGB[1]) > TOLERANCE
+                || Math.abs(actualRGB[2] - expectedRGB[2]) > TOLERANCE);
     }
 
     private static void sleep() {
