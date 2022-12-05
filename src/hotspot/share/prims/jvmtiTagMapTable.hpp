@@ -42,15 +42,14 @@ class JvmtiTagMapKeyClosure;
 // Its get_hash() and equals() methods are also used for getting the hash
 // value of a Key and comparing two Keys, respectively.
 class JvmtiTagMapKey : public CHeapObj<mtInternal> {
-   WeakHandle _wh;
-   oop _obj; // temporarily hold obj while searching
+  WeakHandle _wh;
+  oop _obj; // temporarily hold obj while searching
+ public:
+  JvmtiTagMapKey(oop obj);
+  JvmtiTagMapKey(const JvmtiTagMapKey& src);
+  JvmtiTagMapKey& operator=(JvmtiTagMapKey const&) = delete;
 
-  public:
-   JvmtiTagMapKey(oop obj);
-   JvmtiTagMapKey(const JvmtiTagMapKey& src);
-   JvmtiTagMapKey& operator=(JvmtiTagMapKey const&) = delete;
-
-   ~JvmtiTagMapKey();
+  ~JvmtiTagMapKey();
 
   void resolve();
   oop object() const;
@@ -68,30 +67,28 @@ class JvmtiTagMapKey : public CHeapObj<mtInternal> {
   }
 };
 
-  typedef
-  ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
-                               AnyObj::C_HEAP, mtInternal,
-                               JvmtiTagMapKey::get_hash,
-                               JvmtiTagMapKey::equals> ResizableResourceHT;
+typedef
+ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
+                              AnyObj::C_HEAP, mtInternal,
+                              JvmtiTagMapKey::get_hash,
+                              JvmtiTagMapKey::equals> ResizableResourceHT;
 
 class JvmtiTagMapTable : public CHeapObj<mtInternal> {
-  enum Constants {
-    _table_size  = 1007
-  };
+ enum Constants {
+  _table_size  = 1007
+ };
 
-private:
-
+ private:
   void resize_if_needed();
-  ResizableResourceHT  _table;
+  ResizableResourceHT _table;
 
-public:
+ public:
   JvmtiTagMapTable();
   ~JvmtiTagMapTable();
 
   jlong find(oop obj);
   bool add(oop obj, jlong tag);
   bool update(oop obj, jlong tag);
-
 
   bool remove(oop obj);
 
@@ -107,7 +104,7 @@ public:
 
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapKeyClosure {
-  public:
+ public:
   virtual bool do_entry(JvmtiTagMapKey& key , jlong& value) = 0;
 };
 

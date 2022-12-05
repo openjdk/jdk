@@ -170,7 +170,9 @@ void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
 // not tagged
 //
 static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
-  return tag_map->hashmap()->find(o); }
+  return tag_map->hashmap()->find(o);
+}
+
 // A CallbackWrapper is a support class for querying and tagging an object
 // around a callback to a profiler. The constructor does pre-callback
 // work to get the tag value, klass tag value, ... and the destructor
@@ -197,7 +199,7 @@ class CallbackWrapper : public StackObj {
   jlong _klass_tag;
 
  protected:
-  JvmtiTagMap* tag_map() const      { return _tag_map; }
+  JvmtiTagMap* tag_map() const { return _tag_map; }
 
   // invoked post-callback to tag, untag, or update the tag of an object
   void inline post_callback_tag_update(oop o, JvmtiTagMapTable* hashmap,
@@ -218,8 +220,7 @@ class CallbackWrapper : public StackObj {
     _hashmap = tag_map->hashmap();
 
     // get object tag
-    _obj_tag  = _hashmap->find(_o);
-
+    _obj_tag = _hashmap->find(_o);
 
     // get the class and the class's tag value
     assert(vmClasses::Class_klass()->is_mirror_instance_klass(), "Is not?");
@@ -308,7 +309,7 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
       _referrer_hashmap = tag_map->hashmap();
 
       // get object tag
-      _referrer_obj_tag  = _referrer_hashmap->find(_referrer);
+      _referrer_obj_tag = _referrer_hashmap->find(_referrer);
 
       _referrer_tag_p = &_referrer_obj_tag;
 
@@ -327,10 +328,10 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
 
   // address of referrer tag
   // (for a self reference this will return the same thing as obj_tag_p())
-  inline jlong* referrer_tag_p()        { return _referrer_tag_p; }
+  inline jlong* referrer_tag_p() { return _referrer_tag_p; }
 
   // referrer's class tag
-  inline jlong referrer_klass_tag()     { return _referrer_klass_tag; }
+  inline jlong referrer_klass_tag() { return _referrer_klass_tag; }
 };
 
 // tag an object
@@ -351,7 +352,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
 
   //see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
-  jlong found_tag  = hashmap->find(o);
+  jlong found_tag = hashmap->find(o);
 
   // if the object is not already tagged then we tag it
   if (found_tag == 0) {
@@ -439,7 +440,7 @@ ClassFieldMap::ClassFieldMap() {
 }
 
 ClassFieldMap::~ClassFieldMap() {
-  for (int i=0; i<_fields->length(); i++) {
+  for (int i = 0; i < _fields->length(); i++) {
     delete _fields->at(i);
   }
   delete _fields;
@@ -506,12 +507,12 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
 //
 class JvmtiCachedClassFieldMap : public CHeapObj<mtInternal> {
  private:
-   enum {
+  enum {
      initial_class_count = 200
-   };
+  };
   ClassFieldMap* _field_map;
 
-  ClassFieldMap* field_map() const          { return _field_map; }
+  ClassFieldMap* field_map() const { return _field_map; }
 
   JvmtiCachedClassFieldMap(ClassFieldMap* field_map);
   ~JvmtiCachedClassFieldMap();
@@ -564,7 +565,6 @@ class ClassFieldMapCacheMark : public StackObj {
 };
 
 bool ClassFieldMapCacheMark::_is_active;
-
 
 // record that the given InstanceKlass is caching a field map
 void JvmtiCachedClassFieldMap::add_to_class_list(InstanceKlass* ik) {
