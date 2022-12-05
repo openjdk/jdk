@@ -1040,7 +1040,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
            if (AwtWindow::IsResizing()) {
                return 0;
            }
-          // Create an artifical MouseExit message if the mouse left to
+          // Create an artificial MouseExit message if the mouse left to
           // a non-java window (bad mouse!)
           POINT pt;
           AwtToolkit& tk = AwtToolkit::GetInstance();
@@ -1082,9 +1082,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
       // Special awt message to call Imm APIs.
       // ImmXXXX() API must be used in the main thread.
-      // In other thread these APIs does not work correctly even if
-      // it returs with no error. (This restriction is not documented)
-      // So we must use thse messages to call these APIs in main thread.
+      // In other threads these APIs do not work correctly even if
+      // it returns with no error. (This restriction is not documented)
+      // So we must use these messages to call these APIs in main thread.
       case WM_AWT_CREATECONTEXT: {
           AwtToolkit& tk = AwtToolkit::GetInstance();
           tk.m_inputMethodData = reinterpret_cast<LRESULT>(
@@ -1177,7 +1177,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       }
       case WM_AWT_ENDCOMPOSITION: {
           /*right now we just cancel the composition string
-          may need to commit it in the furture
+          may need to commit it in the future
           Changed to commit it according to the flag 10/29/98*/
           ImmNotifyIME((HIMC)wParam, NI_COMPOSITIONSTR,
                        (lParam ? CPS_COMPLETE : CPS_CANCEL), 0);
@@ -1603,7 +1603,7 @@ void AwtToolkit::QuitMessageLoop(int status) {
 
     /*
      * Fix for 4623377.
-     * Modal loop may not exit immediatelly after WM_CANCELMODE, so it still can
+     * Modal loop may not exit immediately after WM_CANCELMODE, so it still can
      * eat WM_QUIT message and the nested message loop will never exit.
      * The fix is to use AwtToolkit instance variables instead of WM_QUIT to
      * guarantee that we exit from the nested message loop when any possible
@@ -3200,8 +3200,8 @@ BOOL AwtToolkit::TICloseTouchInputHandle(HTOUCHINPUT hTouchInput) {
 }
 
 /*
- * The fuction intended for access to an IME API. It posts IME message to the queue and
- * waits untill the message processing is completed.
+ * The function intended for access to an IME API. It posts IME message to the queue and
+ * waits until the message processing is completed.
  *
  * On Windows 10 the IME may process the messages send via SenMessage() from other threads
  * when the IME is called by TranslateMessage(). This may cause an reentrancy issue when

@@ -2295,7 +2295,7 @@ Version 1.4.0beta58 [May 14, 2009]
   Clarified usage of sig_bit versus sig_bit_p in example.c (Vincent Torri)
 
 Version 1.4.0beta59 [May 15, 2009]
-  Reformated sources in libpng style (3-space intentation, comment format)
+  Reformated sources in libpng style (3-space indentation, comment format)
   Fixed typo in libpng docs (PNG_FILTER_AVE should be PNG_FILTER_AVG)
   Added sections about the git repository and our coding style to the
     documentation
@@ -3886,7 +3886,7 @@ Version 1.6.0beta06 [January 24, 2012]
 Version 1.6.0beta07 [January 28, 2012]
   Eliminated Intel icc/icl compiler warnings. The Intel (GCC derived)
     compiler issues slightly different warnings from those issued by the
-    current vesions of GCC. This eliminates those warnings by
+    current versions of GCC. This eliminates those warnings by
     adding/removing casts and small code rewrites.
   Updated configure.ac from autoupdate: added --enable-werror option.
     Also some layout regularization and removal of introduced tab characters
@@ -6102,6 +6102,12 @@ Version 1.6.37 [April 14, 2019]
     (Contributed by Miguel Ojeda)
   Added makefiles for AddressSanitizer-enabled builds.
   Cleaned up various makefiles.
+
+Version 1.6.38 [September 14, 2022]
+  Added configurations and scripts for continuous integration.
+  Fixed various errors in the handling of tRNS, hIST and eXIf.
+  Implemented many stability improvements across all platforms.
+  Updated the internal documentation.
 
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net.
 Subscription is required; visit

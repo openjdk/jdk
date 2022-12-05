@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,11 @@
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 
-class InterpreterMacroAssembler;
+enum class NMethodPatchingType {
+  stw_instruction_and_data_patch,
+  conc_instruction_and_data_patch,
+  conc_data_patch
+};
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
 public:
@@ -57,6 +61,8 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
 
   virtual void barrier_stubs_init() {}
+
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Register tmp);
   virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);

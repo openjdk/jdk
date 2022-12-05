@@ -252,6 +252,7 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.ActiveSetting + "#threshold", "0 ns");
         settingValues.put(EventNames.ActiveRecording + "#stackTrace", "false");
         settingValues.put(EventNames.ActiveRecording + "#threshold", "0 ns");
+        settingValues.put(EventNames.InitialSecurityProperty + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaExceptionThrow + "#threshold", "0 ns");
         settingValues.put(EventNames.JavaErrorThrow + "#threshold", "0 ns");
         settingValues.put(EventNames.SecurityProperty + "#threshold", "0 ns");

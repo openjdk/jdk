@@ -236,8 +236,9 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
 
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
+  CodeSection* insts_section = __ code()->insts();
   // constants section size is aligned according to the align_at_start settings of the next section
-  int consts_size = CodeSection::align_at_start(consts_section->size(), CodeBuffer::SECT_INSTS);
+  int consts_size = insts_section->align_at_start(consts_section->size());
   assert(constant_table.size() == consts_size, "must be: %d == %d", constant_table.size(), consts_size);
 
   // Materialize the constant table base.

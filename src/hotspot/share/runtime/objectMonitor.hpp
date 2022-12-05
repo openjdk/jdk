@@ -246,6 +246,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   intptr_t  is_entered(JavaThread* current) const;
 
+  // Returns true if this OM has an owner, false otherwise.
+  bool      has_owner() const;
   void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.

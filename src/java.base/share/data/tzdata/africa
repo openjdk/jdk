@@ -120,22 +120,6 @@ Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 16
 			0:00	Algeria	WE%sT	1981 May
 			1:00	-	CET
 
-# Angola
-# Benin
-# See Africa/Lagos.
-
-# Botswana
-# See Africa/Maputo.
-
-# Burkina Faso
-# See Africa/Abidjan.
-
-# Burundi
-# See Africa/Maputo.
-
-# Cameroon
-# See Africa/Lagos.
-
 # Cape Verde / Cabo Verde
 #
 # From Paul Eggert (2018-02-16):
@@ -150,9 +134,6 @@ Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1912 Jan 01  2:00u # Praia
 			-2:00	-	-02	1975 Nov 25  2:00
 			-1:00	-	-01
 
-# Central African Republic
-# See Africa/Lagos.
-
 # Chad
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
@@ -160,33 +141,29 @@ Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
 			1:00	1:00	WAST	1980 Mar  8
 			1:00	-	WAT
 
-# Comoros
-# See Africa/Nairobi.
+# Burkina Faso
+# Côte d'Ivoire (Ivory Coast)
+# The Gambia
+# Ghana
+# Guinea
+# Iceland
+# Mali
+# Mauritania
+# St Helena
+# Senegal
+# Sierra Leone
+# Togo
 
-# Democratic Republic of the Congo
-# See Africa/Lagos for the western part and Africa/Maputo for the eastern.
+# The other parts of the St Helena territory are similar:
+#	Tristan da Cunha: on GMT, say Whitman and the CIA
+#	Ascension: on GMT, say the USNO (1995-12-21) and the CIA
+#	Gough (scientific station since 1955; sealers wintered previously):
+#		on GMT, says the CIA
+#	Inaccessible, Nightingale: uninhabited
 
-# Republic of the Congo
-# See Africa/Lagos.
-
-# Côte d'Ivoire / Ivory Coast
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Abidjan	-0:16:08 -	LMT	1912
 			 0:00	-	GMT
-Link Africa/Abidjan Africa/Accra	# Ghana
-Link Africa/Abidjan Africa/Bamako	# Mali
-Link Africa/Abidjan Africa/Banjul	# The Gambia
-Link Africa/Abidjan Africa/Conakry	# Guinea
-Link Africa/Abidjan Africa/Dakar	# Senegal
-Link Africa/Abidjan Africa/Freetown	# Sierra Leone
-Link Africa/Abidjan Africa/Lome		# Togo
-Link Africa/Abidjan Africa/Nouakchott	# Mauritania
-Link Africa/Abidjan Africa/Ouagadougou	# Burkina Faso
-Link Africa/Abidjan Atlantic/Reykjavik	# Iceland
-Link Africa/Abidjan Atlantic/St_Helena	# St Helena
-
-# Djibouti
-# See Africa/Nairobi.
 
 ###############################################################################
 
@@ -382,33 +359,6 @@ Rule	Egypt	2014	only	-	Sep	lastThu	24:00	0	-
 Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 			2:00	Egypt	EE%sT
 
-# Equatorial Guinea
-# See Africa/Lagos.
-
-# Eritrea
-# See Africa/Nairobi.
-
-# Eswatini (formerly Swaziland)
-# See Africa/Johannesburg.
-
-# Ethiopia
-# See Africa/Nairobi.
-#
-# Unfortunately tzdb records only Western clock time in use in Ethiopia,
-# as the tzdb format is not up to properly recording a common Ethiopian
-# timekeeping practice that is based on solar time.  See:
-# Mortada D. If you have a meeting in Ethiopia, you'd better double
-# check the time. PRI's The World. 2015-01-30 15:15 -05.
-# https://www.pri.org/stories/2015-01-30/if-you-have-meeting-ethiopia-you-better-double-check-time
-
-# Gabon
-# See Africa/Lagos.
-
-# The Gambia
-# Ghana
-# Guinea
-# See Africa/Abidjan.
-
 # Guinea-Bissau
 #
 # From Paul Eggert (2018-02-16):
@@ -421,7 +371,16 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 			-1:00	-	-01	1975
 			 0:00	-	GMT
 
+# Comoros
+# Djibouti
+# Eritrea
+# Ethiopia
 # Kenya
+# Madagascar
+# Mayotte
+# Somalia
+# Tanzania
+# Uganda
 
 # From P Chan (2020-10-24):
 #
@@ -464,6 +423,14 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 # The 1908-05-01 announcement does not give an effective date,
 # so just say "1908 May".
 
+# From Paul Eggert (2018-09-11):
+# Unfortunately tzdb records only Western clock time in use in Ethiopia,
+# as the tzdb format is not up to properly recording a common Ethiopian
+# timekeeping practice that is based on solar time.  See:
+# Mortada D. If you have a meeting in Ethiopia, you'd better double
+# check the time. PRI's The World. 2015-01-30 15:15 -05.
+# https://www.pri.org/stories/2015-01-30/if-you-have-meeting-ethiopia-you-better-double-check-time
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
 			2:30	-	+0230	1928 Jun 30 24:00
@@ -471,18 +438,6 @@ Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
 			2:30	-	+0230	1936 Dec 31 24:00
 			2:45	-	+0245	1942 Jul 31 24:00
 			3:00	-	EAT
-Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
-Link Africa/Nairobi Africa/Asmara	 # Eritrea
-Link Africa/Nairobi Africa/Dar_es_Salaam # Tanzania
-Link Africa/Nairobi Africa/Djibouti
-Link Africa/Nairobi Africa/Kampala	 # Uganda
-Link Africa/Nairobi Africa/Mogadishu	 # Somalia
-Link Africa/Nairobi Indian/Antananarivo	 # Madagascar
-Link Africa/Nairobi Indian/Comoro
-Link Africa/Nairobi Indian/Mayotte
-
-# Lesotho
-# See Africa/Johannesburg.
 
 # Liberia
 #
@@ -562,16 +517,6 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 			2:00	-	EET	2012 Nov 10  2:00
 			1:00	Libya	CE%sT	2013 Oct 25  2:00
 			2:00	-	EET
-
-# Madagascar
-# See Africa/Nairobi.
-
-# Malawi
-# See Africa/Maputo.
-
-# Mali
-# Mauritania
-# See Africa/Abidjan.
 
 # Mauritius
 
@@ -665,12 +610,6 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 			4:00 Mauritius	+04/+05
 # Agalega Is, Rodriguez
 # no information; probably like Indian/Mauritius
-
-# Mayotte
-# See Africa/Nairobi.
-
-# Morocco
-# See Africa/Ceuta for Spanish Morocco.
 
 # From Alex Krivenyshev (2008-05-09):
 # Here is an article that Morocco plan to introduce Daylight Saving Time between
@@ -1160,7 +1099,14 @@ Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
 			 1:00	Morocco	+01/+00
 
+# Botswana
+# Burundi
+# Democratic Republic of the Congo (eastern)
+# Malawi
 # Mozambique
+# Rwanda
+# Zambia
+# Zimbabwe
 #
 # Shanks gives 1903-03-01 for the transition to CAT.
 # Perhaps the 1911-05-26 Portuguese decree
@@ -1170,14 +1116,6 @@ Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Maputo	2:10:20 -	LMT	1903 Mar
 			2:00	-	CAT
-Link Africa/Maputo Africa/Blantyre	# Malawi
-Link Africa/Maputo Africa/Bujumbura	# Burundi
-Link Africa/Maputo Africa/Gaborone	# Botswana
-Link Africa/Maputo Africa/Harare	# Zimbabwe
-Link Africa/Maputo Africa/Kigali	# Rwanda
-Link Africa/Maputo Africa/Lubumbashi	# E Dem. Rep. of Congo
-Link Africa/Maputo Africa/Lusaka	# Zambia
-
 
 # Namibia
 
@@ -1256,9 +1194,16 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 #			2:00	-	CAT
 # End of rearguard section.
 
-# Niger
-# See Africa/Lagos.
 
+# Angola
+# Benin
+# Cameroon
+# Central African Republic
+# Democratic Republic of the Congo (western)
+# Republic of the Congo
+# Equatorial Guinea
+# Gabon
+# Niger
 # Nigeria
 
 # From P Chan (2020-12-03):
@@ -1324,32 +1269,6 @@ Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
 			0:13:35	-	LMT	1914 Jan  1
 			0:30	-	+0030	1919 Sep  1
 			1:00	-	WAT
-Link Africa/Lagos Africa/Bangui		# Central African Republic
-Link Africa/Lagos Africa/Brazzaville	# Rep. of the Congo
-Link Africa/Lagos Africa/Douala		# Cameroon
-Link Africa/Lagos Africa/Kinshasa	# Dem. Rep. of the Congo (west)
-Link Africa/Lagos Africa/Libreville	# Gabon
-Link Africa/Lagos Africa/Luanda		# Angola
-Link Africa/Lagos Africa/Malabo		# Equatorial Guinea
-Link Africa/Lagos Africa/Niamey		# Niger
-Link Africa/Lagos Africa/Porto-Novo	# Benin
-
-# Réunion
-# See Asia/Dubai.
-#
-# The Crozet Islands also observe Réunion time; see the 'antarctica' file.
-
-# Rwanda
-# See Africa/Maputo.
-
-# St Helena
-# See Africa/Abidjan.
-# The other parts of the St Helena territory are similar:
-#	Tristan da Cunha: on GMT, say Whitman and the CIA
-#	Ascension: on GMT, say the USNO (1995-12-21) and the CIA
-#	Gough (scientific station since 1955; sealers wintered previously):
-#		on GMT, says the CIA
-#	Inaccessible, Nightingale: uninhabited
 
 # São Tomé and Príncipe
 
@@ -1378,19 +1297,10 @@ Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
 			 1:00	-	WAT	2019 Jan  1 02:00
 			 0:00	-	GMT
 
-# Senegal
-# See Africa/Abidjan.
-
-# Seychelles
-# See Asia/Dubai.
-
-# Sierra Leone
-# See Africa/Abidjan.
-
-# Somalia
-# See Africa/Nairobi.
-
+# Eswatini (Swaziland)
+# Lesotho
 # South Africa
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	SA	1942	1943	-	Sep	Sun>=15	2:00	1:00	-
 Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
@@ -1398,8 +1308,6 @@ Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
 Zone Africa/Johannesburg 1:52:00 -	LMT	1892 Feb 8
 			1:30	-	SAST	1903 Mar
 			2:00	SA	SAST
-Link Africa/Johannesburg Africa/Maseru	# Lesotho
-Link Africa/Johannesburg Africa/Mbabane	# Eswatini
 #
 # Marion and Prince Edward Is
 # scientific station since 1947
@@ -1447,12 +1355,6 @@ Zone	Africa/Juba	2:06:28 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
 			3:00	-	EAT	2021 Feb  1 00:00
 			2:00	-	CAT
-
-# Tanzania
-# See Africa/Nairobi.
-
-# Togo
-# See Africa/Abidjan.
 
 # Tunisia
 
@@ -1551,10 +1453,3 @@ Rule	Tunisia	2006	2008	-	Oct	lastSun	 2:00s	0	-
 Zone	Africa/Tunis	0:40:44 -	LMT	1881 May 12
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
 			1:00	Tunisia	CE%sT
-
-# Uganda
-# See Africa/Nairobi.
-
-# Zambia
-# Zimbabwe
-# See Africa/Maputo.

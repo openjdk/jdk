@@ -80,7 +80,7 @@ class ClassPathDirEntry: public ClassPathEntry {
   ClassPathDirEntry(const char* dir) {
     _dir = copy_path(dir);
   }
-  virtual ~ClassPathDirEntry() {}
+  virtual ~ClassPathDirEntry();
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
 

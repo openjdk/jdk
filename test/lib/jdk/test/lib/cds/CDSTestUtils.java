@@ -28,7 +28,11 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.CopyOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -760,5 +764,21 @@ public class CDSTestUtils {
         }
         System.out.println(" ]");
         return new ProcessBuilder(args);
+    }
+
+    public static Path copyFile(String srcFile, String destDir) throws Exception {
+        int idx = srcFile.lastIndexOf(File.separator);
+        String jarName = srcFile.substring(idx + 1);
+        Path srcPath = Paths.get(jarName);
+        Path newPath = Paths.get(destDir);
+        Path newDir;
+        if (!Files.exists(newPath)) {
+            newDir = Files.createDirectories(newPath);
+        } else {
+            newDir = newPath;
+        }
+        Path destPath = newDir.resolve(jarName);
+        Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
+        return destPath;
     }
 }

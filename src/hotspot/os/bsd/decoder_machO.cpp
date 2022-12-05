@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 
 #ifdef __APPLE__
-#include "jvm.h"
 #include "decoder_machO.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 
 #include <cxxabi.h>

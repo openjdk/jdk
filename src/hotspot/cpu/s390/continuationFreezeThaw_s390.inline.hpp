@@ -91,6 +91,11 @@ void ThawBase::patch_chunk_pd(intptr_t* sp) {
   Unimplemented();
 }
 
+template <typename ConfigT>
+inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
+  Unimplemented();
+}
+
 inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   Unimplemented();
 }

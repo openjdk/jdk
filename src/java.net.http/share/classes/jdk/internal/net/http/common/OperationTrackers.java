@@ -59,6 +59,8 @@ public final class OperationTrackers {
         long getOutstandingWebSocketOperations();
         // number of TCP connections still opened
         long getOutstandingTcpConnections();
+        // number of body subscribers not yet completed or canceled
+        long getOutstandingSubscribers();
         // Whether the facade returned to the
         // user is still referenced
         boolean isFacadeReferenced();

@@ -28,9 +28,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/globals.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
 class  FileMapInfo;
@@ -146,7 +146,10 @@ private:
                            int num_loaded_regions, uintptr_t buffer);
   static void init_loaded_heap_relocation(LoadedArchiveHeapRegion* reloc_info,
                                           int num_loaded_regions);
-  static void fill_failed_loaded_region();
+  static void patch_native_pointers();
+  static void finish_loaded_heap();
+  static void verify_loaded_heap();
+  static void fill_failed_loaded_heap();
 
   static bool is_in_loaded_heap(uintptr_t o) {
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);

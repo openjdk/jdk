@@ -44,7 +44,6 @@ final class SocketChannelImplInstrumentor {
     private SocketChannelImplInstrumentor() {
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int read(ByteBuffer dst) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.SOCKET_READ;
@@ -86,7 +85,6 @@ final class SocketChannelImplInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.SOCKET_READ;
@@ -128,7 +126,6 @@ final class SocketChannelImplInstrumentor {
         return bytesRead;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public int write(ByteBuffer buf) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.SOCKET_WRITE;
@@ -168,7 +165,6 @@ final class SocketChannelImplInstrumentor {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         EventConfiguration eventConfiguration = EventConfigurations.SOCKET_WRITE;

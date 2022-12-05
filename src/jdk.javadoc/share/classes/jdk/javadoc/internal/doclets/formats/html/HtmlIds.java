@@ -79,6 +79,7 @@ public class HtmlIds {
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
     static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum-constant-summary");
+    static final HtmlId EXTERNAL_SPECS = HtmlId.of("external-specs");
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
