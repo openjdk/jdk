@@ -193,11 +193,6 @@ void assert_lock_strong(const Mutex* lock) {
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
 }
-
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread) {
-  if (thread->is_handshake_safe_for(Thread::current())) return;
-  assert_locked_or_safepoint(lock);
-}
 #endif
 
 static void add_mutex(Mutex* var) {

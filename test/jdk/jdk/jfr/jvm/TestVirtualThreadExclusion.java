@@ -42,8 +42,9 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestVirtualThreadExclusion.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.jvm.TestVirtualThreadExclusion
+ * @enablePreview
+ * @compile TestVirtualThreadExclusion.java LatchedThread.java
+ * @run main/othervm jdk.jfr.jvm.TestVirtualThreadExclusion
  */
 
 /**
