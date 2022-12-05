@@ -990,13 +990,14 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
   size_t dels = 0;
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
-  for (dels = 0; rem_n != nullptr; ++dels) {
+  while (rem_n != nullptr) {
     if (eval_f(rem_n->value())) {
       if (dels < num_del) {
         ndel[dels] = rem_n;
       } else {
         extra.append(rem_n);
       }
+      ++dels;
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
       rem_n = next_node;
