@@ -220,7 +220,5 @@ public class CustomFSVLinkTest {
         public File getLinkLocation(File file) throws FileNotFoundException {
             return delegate.getLinkLocation(file);
         }
-
     }
-
 }
