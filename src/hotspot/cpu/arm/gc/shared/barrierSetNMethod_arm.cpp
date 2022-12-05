@@ -102,8 +102,14 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   assert(frame.cb() == nm, "must be");
   frame = frame.sender(&reg_map);
 
-  // Don't insert logging here as it causes a cryptic error with C2,
-  // likely because some registers got clobbered
+  LogTarget(Trace, nmethod, barrier) out;
+  if (out.is_enabled()) {
+    ResourceMark mark;
+    log_trace(nmethod, barrier)("deoptimize(nmethod: %s(%p), return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
+                                nm->method()->name_and_sig_as_C_string(),
+                                nm, *(address *) return_address_ptr, nm->is_osr_method(), thread,
+                                thread->name(), frame.sp(), nm->verified_entry_point());
+  }
 
   new_frame->sp = frame.sp();
   new_frame->fp = frame.fp();

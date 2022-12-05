@@ -2924,6 +2924,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const RegisterSet saved_regs = RegisterSet(R0, R10);
     __ push(saved_regs);
+    __ fpush(FloatRegisterSet(D0, 16));
 
     __ mov(c_rarg0, Rtemp);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), c_rarg0);
@@ -2932,6 +2933,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mov(Rtemp, R0);
 
+    __ fpop(FloatRegisterSet(D0, 16));
     __ pop(saved_regs);
 
     __ cbnz(Rtemp, deoptimize_label);
