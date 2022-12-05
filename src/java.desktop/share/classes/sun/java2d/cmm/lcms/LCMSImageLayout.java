@@ -25,6 +25,7 @@
 
 package sun.java2d.cmm.lcms;
 
+import java.awt.color.CMMException;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -83,9 +84,7 @@ final class LCMSImageLayout {
 
     private int dataArrayLength; /* in bytes */
 
-    private LCMSImageLayout(int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    private LCMSImageLayout(int np, int pixelType, int pixelSize) {
         this.pixelType = pixelType;
         width = np;
         height = 1;
@@ -94,9 +93,7 @@ final class LCMSImageLayout {
         offset = 0;
     }
 
-    private LCMSImageLayout(int width, int height, int pixelType,
-                            int pixelSize)
-            throws ImageLayoutException
+    private LCMSImageLayout(int width, int height, int pixelType, int pixelSize)
     {
         this.pixelType = pixelType;
         this.width = width;
@@ -107,9 +104,7 @@ final class LCMSImageLayout {
     }
 
 
-    public LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    public LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_BYTE;
         dataArray = data;
@@ -118,9 +113,7 @@ final class LCMSImageLayout {
         verify();
     }
 
-    public LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    public LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_SHORT;
         dataArray = data;
@@ -129,9 +122,7 @@ final class LCMSImageLayout {
         verify();
     }
 
-    public LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    public LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_INT;
         dataArray = data;
@@ -141,7 +132,6 @@ final class LCMSImageLayout {
     }
 
     public LCMSImageLayout(double[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
     {
         this(np, pixelType, pixelSize);
         dataType = DT_DOUBLE;
@@ -157,7 +147,7 @@ final class LCMSImageLayout {
     /* This method creates a layout object for given image.
      * Returns null if the image is not supported by current implementation.
      */
-    public static LCMSImageLayout createImageLayout(BufferedImage image) throws ImageLayoutException {
+    public static LCMSImageLayout createImageLayout(BufferedImage image) {
         LCMSImageLayout l = new LCMSImageLayout();
 
         switch (image.getType()) {
@@ -320,10 +310,10 @@ final class LCMSImageLayout {
         }
     }
 
-    private void verify() throws ImageLayoutException {
+    private void verify() {
         checkIndex(offset, dataArrayLength);
         if (nextPixelOffset != getBytesPerPixel(pixelType)) {
-            throw new ImageLayoutException("Invalid image layout");
+            throw new CMMException("Invalid image layout");
         }
 
         int lastScanOffset = safeMult(nextRowOffset, (height - 1));
@@ -333,26 +323,18 @@ final class LCMSImageLayout {
         checkIndex(off, dataArrayLength);
     }
 
-    private static int checkIndex(long index, int length)
-            throws ImageLayoutException
-    {
+    private static int checkIndex(long index, int length) {
         if (index < 0 || index >= length) {
-            throw new ImageLayoutException("Invalid image layout");
+            throw new CMMException("Invalid image layout");
         }
         return (int) index;
     }
 
-    private static int safeMult(int a, int b) throws ImageLayoutException {
+    private static int safeMult(int a, int b) {
         long res = (long) a * b;
         return checkIndex(res, Integer.MAX_VALUE);
     }
 
-    @SuppressWarnings("serial") // JDK-implementation class
-    public static class ImageLayoutException extends Exception {
-        public ImageLayoutException(String message) {
-            super(message);
-        }
-    }
     public static LCMSImageLayout createImageLayout(Raster r) {
         LCMSImageLayout l = new LCMSImageLayout();
         if (r instanceof ByteComponentRaster &&
