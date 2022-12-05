@@ -62,7 +62,6 @@ class G1Analytics: public CHeapObj<mtGC> {
 
   G1PhaseDependentSeq _pending_cards_seq;
   G1PhaseDependentSeq _rs_length_seq;
-  G1PhaseDependentSeq _rs_length_diff_seq;
 
   TruncatedSeq _constant_other_time_ms_seq;
   TruncatedSeq _young_other_cost_per_region_ms_seq;

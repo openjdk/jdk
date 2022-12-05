@@ -31,7 +31,7 @@
  * @compile -XDignore.symbol.file AsmClasses.java
  * @compile test-classes/ClassInLoader.java test-classes/A.java test-classes/B.java ../share/ThreadPrint.java
  * @run main/othervm ParallelSuperTest
- * @run main/othervm ParallelSuperTest -parallel
+ * @run main/othervm -XX:+EnableWaitForParallelLoad ParallelSuperTest -parallel
  * @run main/othervm ParallelSuperTest -parallel -parallelCapable
  */
 

@@ -590,26 +590,25 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
     return;
   }
 
-  // Grab a lock here to prevent multiple
-  // MethodData*s from being created.
-  MutexLocker ml(THREAD, MethodData_lock);
-  if (method->method_data() == NULL) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CompileBroker::log_metaspace_failure();
-      ClassLoaderDataGraph::set_metaspace_oom(true);
-      return;   // return the exception (which is cleared)
-    }
+  ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
+  MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CompileBroker::log_metaspace_failure();
+    ClassLoaderDataGraph::set_metaspace_oom(true);
+    return;   // return the exception (which is cleared)
+  }
 
-    method->set_method_data(method_data);
-    if (PrintMethodData && (Verbose || WizardMode)) {
-      ResourceMark rm(THREAD);
-      tty->print("build_profiling_method_data for ");
-      method->print_name(tty);
-      tty->cr();
-      // At the end of the run, the MDO, full of data, will be dumped.
-    }
+  if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
+    MetadataFactory::free_metadata(loader_data, method_data);
+    return;
+  }
+
+  if (PrintMethodData && (Verbose || WizardMode)) {
+    ResourceMark rm(THREAD);
+    tty->print("build_profiling_method_data for ");
+    method->print_name(tty);
+    tty->cr();
+    // At the end of the run, the MDO, full of data, will be dumped.
   }
 }
 

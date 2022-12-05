@@ -167,27 +167,25 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String idealIndependentRegex = START + "Allocate" + MID + END;
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
-        allocNodes(ALLOC, idealIndependentRegex, optoRegex);
+        String optoRegex = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        allocNodes(ALLOC, "Allocate", optoRegex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         optoOnly(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String idealIndependentRegex = START + "AllocateArray" + MID + END;
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
-        allocNodes(ALLOC_ARRAY, idealIndependentRegex, optoRegex);
+        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
@@ -595,6 +593,11 @@ public class IRNode {
         afterBarrierExpansionToBeforeMatching(MACRO_LOGIC_V, "MacroLogicV");
     }
 
+    public static final String MAX = PREFIX + "MAX" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX, "Max(I|L)");
+    }
+
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_I, "MaxI");
@@ -613,6 +616,11 @@ public class IRNode {
     public static final String MEMBAR_STORESTORE = PREFIX + "MEMBAR_STORESTORE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_STORESTORE, "MemBarStoreStore");
+    }
+
+    public static final String MIN = PREFIX + "MIN" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN, "Min(I|L)");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
@@ -752,6 +760,16 @@ public class IRNode {
     public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
     static {
         beforeMatchingNameRegex(ROUND_VF, "RoundVF");
+    }
+
+    public static final String ROTATE_LEFT = PREFIX + "ROTATE_LEFT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROTATE_LEFT, "RotateLeft");
+    }
+
+    public static final String ROTATE_RIGHT = PREFIX + "ROTATE_RIGHT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROTATE_RIGHT, "RotateRight");
     }
 
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
@@ -1182,10 +1200,11 @@ public class IRNode {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
     }
 
-    private static void allocNodes(String irNode, String idealRegex, String optoRegex) {
+    private static void allocNodes(String irNode, String irNodeName, String optoRegex) {
+        String idealIndependentRegex = START + irNodeName + "\\b" + MID + END;
         Map<PhaseInterval, String> intervalToRegexMap = new HashMap<>();
         intervalToRegexMap.put(new PhaseInterval(CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.PHASEIDEALLOOP_ITERATIONS),
-                               idealRegex);
+                               idealIndependentRegex);
         intervalToRegexMap.put(new PhaseInterval(CompilePhase.PRINT_OPTO_ASSEMBLY), optoRegex);
         MultiPhaseRangeEntry entry = new MultiPhaseRangeEntry(CompilePhase.PRINT_OPTO_ASSEMBLY, intervalToRegexMap);
         IR_NODE_MAPPINGS.put(irNode, entry);

@@ -21,6 +21,8 @@
  * questions.
  */
 
+import jdk.test.lib.Utils;
+
 import sun.management.jmxremote.ConnectorBootstrap;
 
 import java.io.File;

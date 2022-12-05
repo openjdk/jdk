@@ -76,7 +76,7 @@ public:
 private:
   // Must be C_HEAP allocated -- we don't want nested resource allocations.
   typedef ResizeableResourceHashtable<int, InstanceKlass*,
-                                      ResourceObj::C_HEAP, mtClassShared> ID2KlassTable;
+                                      AnyObj::C_HEAP, mtClassShared> ID2KlassTable;
 
   enum {
     _unspecified      = -999,

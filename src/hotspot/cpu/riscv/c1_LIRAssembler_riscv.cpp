@@ -1202,7 +1202,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   if (op->fast_check()) {
     // get object class
     // not a safepoint as obj null check happens earlier
-    __ load_klass(t0, obj);
+    __ load_klass(t0, obj, t1);
     __ bne(t0, k_RInfo, *failure_target, /* is_far */ true);
     // successful cast, fall through to profile or jump
   } else {

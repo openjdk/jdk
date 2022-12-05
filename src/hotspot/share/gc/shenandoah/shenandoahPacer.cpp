@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahPacer.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadSMR.hpp"
 
@@ -241,7 +242,13 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   // Threads that are attaching should not block at all: they are not
   // fully initialized yet. Blocking them would be awkward.
   // This is probably the path that allocates the thread oop itself.
-  if (JavaThread::current()->is_attaching_via_jni()) {
+  //
+  // Thread which is not an active Java thread should also not block.
+  // This can happen during VM init when main thread is still not an
+  // active Java thread.
+  JavaThread* current = JavaThread::current();
+  if (current->is_attaching_via_jni() ||
+      !current->is_active_Java_thread()) {
     return;
   }
 
