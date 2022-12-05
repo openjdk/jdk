@@ -239,7 +239,9 @@ public final class ParseUtil {
         if (!path.endsWith("/") && file.isDirectory()) {
             path = path + "/";
         }
-        return new URL("file", "", path);
+        @SuppressWarnings("deprecation")
+        var result = new URL("file", "", path);
+        return result;
     }
 
     public static java.net.URI toURI(URL url) {

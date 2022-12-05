@@ -835,11 +835,11 @@ button.page-search-header {
 span#page-search-link {
     text-decoration: underline;
 }
-.module-graph span {
+.module-graph span, .sealed-graph span {
     display:none;
     position:absolute;
 }
-.module-graph:hover span {
+.module-graph:hover span, .sealed-graph:hover span {
     display:block;
     margin: -100px 0 0 100px;
     z-index: 1;

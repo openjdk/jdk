@@ -145,10 +145,6 @@ bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-uint32_t ZCollectedHeap::hash_oop(oop obj) const {
-  return _heap.hash_oop(ZOop::to_address(obj));
-}
-
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
   const uintptr_t addr = _heap.alloc_tlab(size_in_bytes);

@@ -58,7 +58,6 @@ public class SplitFilter extends AbstractFilter {
                     OutputSlot os = c.getOutputSlot();
                     if (f.getInputNode() != null) {
                         os.getSource().addSourceNode(f.getInputNode());
-                        os.setAssociatedNode(f.getInputNode());
                         os.setColor(f.getColor());
                     }
 
@@ -75,7 +74,6 @@ public class SplitFilter extends AbstractFilter {
                     InputSlot is = c.getInputSlot();
                     if (f.getInputNode() != null) {
                         is.getSource().addSourceNode(f.getInputNode());
-                        is.setAssociatedNode(f.getInputNode());
                         is.setColor(f.getColor());
                     }
 

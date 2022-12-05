@@ -345,10 +345,9 @@ void VM_Version::initialize() {
   }
 
   if (UseSHA && VM_Version::supports_sha512()) {
-    // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
-    // }
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    }
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);

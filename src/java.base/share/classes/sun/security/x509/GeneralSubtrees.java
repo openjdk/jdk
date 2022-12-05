@@ -253,7 +253,7 @@ public class GeneralSubtrees implements Cloneable {
                 newName = new GeneralName(new DNSName(""));
                 break;
             case GeneralNameInterface.NAME_X400:
-                newName = new GeneralName(new X400Address((byte[])null));
+                newName = new GeneralName(new X400Address(null));
                 break;
             case GeneralNameInterface.NAME_DIRECTORY:
                 newName = new GeneralName(new X500Name(""));

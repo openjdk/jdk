@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/heapShared.hpp"
@@ -45,6 +44,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
@@ -965,11 +965,11 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
   GrowableArray<Klass*>* mirror_list =
-    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, mtClass);
+    new (mtClass) GrowableArray<Klass*>(40, mtClass);
   set_fixup_mirror_list(mirror_list);
 
   GrowableArray<Klass*>* module_list =
-    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, mtModule);
+    new (mtModule) GrowableArray<Klass*>(500, mtModule);
   set_fixup_module_field_list(module_list);
 }
 
@@ -1920,8 +1920,8 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
       // Pick minimum length that will cover most cases
       int init_length = 64;
-      _methods = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-      _bcis = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(init_length, mtInternal);
+      _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
+      _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
@@ -1995,10 +1995,6 @@ int java_lang_ThreadGroup::_parent_offset;
 int java_lang_ThreadGroup::_name_offset;
 int java_lang_ThreadGroup::_maxPriority_offset;
 int java_lang_ThreadGroup::_daemon_offset;
-int java_lang_ThreadGroup::_ngroups_offset;
-int java_lang_ThreadGroup::_groups_offset;
-int java_lang_ThreadGroup::_nweaks_offset;
-int java_lang_ThreadGroup::_weaks_offset;
 
 oop  java_lang_ThreadGroup::parent(oop java_thread_group) {
   assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
@@ -2026,37 +2022,11 @@ bool java_lang_ThreadGroup::is_daemon(oop java_thread_group) {
   return java_thread_group->bool_field(_daemon_offset) != 0;
 }
 
-int java_lang_ThreadGroup::ngroups(oop java_thread_group) {
-  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
-  return java_thread_group->int_field(_ngroups_offset);
-}
-
-objArrayOop java_lang_ThreadGroup::groups(oop java_thread_group) {
-  oop groups = java_thread_group->obj_field(_groups_offset);
-  assert(groups == NULL || groups->is_objArray(), "just checking"); // Todo: Add better type checking code
-  return objArrayOop(groups);
-}
-
-int java_lang_ThreadGroup::nweaks(oop java_thread_group) {
-  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
-  return java_thread_group->int_field(_nweaks_offset);
-}
-
-objArrayOop java_lang_ThreadGroup::weaks(oop java_thread_group) {
-  oop weaks = java_thread_group->obj_field(_weaks_offset);
-  assert(weaks == NULL || weaks->is_objArray(), "just checking");
-  return objArrayOop(weaks);
-}
-
 #define THREADGROUP_FIELDS_DO(macro) \
   macro(_parent_offset,      k, vmSymbols::parent_name(),      threadgroup_signature,         false); \
   macro(_name_offset,        k, vmSymbols::name_name(),        string_signature,              false); \
   macro(_maxPriority_offset, k, vmSymbols::maxPriority_name(), int_signature,                 false); \
-  macro(_daemon_offset,      k, vmSymbols::daemon_name(),      bool_signature,                false); \
-  macro(_ngroups_offset,     k, vmSymbols::ngroups_name(),     int_signature,                 false); \
-  macro(_groups_offset,      k, vmSymbols::groups_name(),      threadgroup_array_signature,   false); \
-  macro(_nweaks_offset,      k, vmSymbols::nweaks_name(),      int_signature,                 false); \
-  macro(_weaks_offset,       k, vmSymbols::weaks_name(),       weakreference_array_signature, false);
+  macro(_daemon_offset,      k, vmSymbols::daemon_name(),      bool_signature,                false);
 
 void java_lang_ThreadGroup::compute_offsets() {
   assert(_parent_offset == 0, "offsets should be initialized only once");

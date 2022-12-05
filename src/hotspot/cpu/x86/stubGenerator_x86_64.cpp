@@ -2519,7 +2519,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Decode all bytes within our merged input
     __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
     __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
-    __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
+    __ evporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
 
     // Check for error.  Compare (decoded | initial) to all invalid.
     // If any bytes have their high-order bit set, then we have an error.
@@ -3335,19 +3335,19 @@ void StubGenerator::generate_libm_stubs() {
       StubRoutines::_dcos = generate_libmCos(); // from stubGenerator_x86_64_cos.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-      StubRoutines::_dtan = generate_libmTan();
+      StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
-      StubRoutines::_dexp = generate_libmExp();
+      StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
-      StubRoutines::_dpow = generate_libmPow();
+      StubRoutines::_dpow = generate_libmPow(); // from stubGenerator_x86_64_pow.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-      StubRoutines::_dlog = generate_libmLog();
+      StubRoutines::_dlog = generate_libmLog(); // from stubGenerator_x86_64_log.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
-      StubRoutines::_dlog10 = generate_libmLog10();
+      StubRoutines::_dlog10 = generate_libmLog10(); // from stubGenerator_x86_64_log.cpp
     }
   }
 }
@@ -3709,6 +3709,10 @@ void StubGenerator::generate_initial() {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
+  if (UsePolyIntrinsics) {
+    StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+  }
+
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
     StubRoutines::x86::generate_CRC32C_table(supports_clmul);
@@ -3719,6 +3723,8 @@ void StubGenerator::generate_initial() {
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
+
+  generate_libm_stubs();
 }
 
 void StubGenerator::generate_phase1() {

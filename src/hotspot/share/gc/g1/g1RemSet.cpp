@@ -705,7 +705,12 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
       size_t first_scan_idx = scan.find_next_dirty();
       while (first_scan_idx != claim.size()) {
-        assert(*_ct->byte_for_index(region_card_base_idx + first_scan_idx) <= 0x1, "is %d at region %u idx " SIZE_FORMAT, *_ct->byte_for_index(region_card_base_idx + first_scan_idx), region_idx, first_scan_idx);
+#ifdef ASSERT
+        {
+          CardTable::CardValue value = *_ct->byte_for_index(region_card_base_idx + first_scan_idx);
+          assert(value == CardTable::dirty_card_val(), "is %d at region %u idx " SIZE_FORMAT, value, region_idx, first_scan_idx);
+        }
+#endif
 
         size_t const last_scan_idx = scan.find_next_non_dirty();
         size_t const len = last_scan_idx - first_scan_idx;

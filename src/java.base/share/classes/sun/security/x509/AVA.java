@@ -27,7 +27,6 @@ package sun.security.x509;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.text.Normalizer;
 import java.util.*;
@@ -617,13 +616,6 @@ public class AVA implements DerEncoder {
         return toRFC2253CanonicalString().hashCode();
     }
 
-    /*
-     * AVAs are encoded as a SEQUENCE of two elements.
-     */
-    public void encode(DerOutputStream out) throws IOException {
-        derEncode(out);
-    }
-
     /**
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
@@ -633,14 +625,13 @@ public class AVA implements DerEncoder {
      *
      * @exception IOException on encoding error.
      */
-    public void derEncode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) throws IOException {
         DerOutputStream         tmp = new DerOutputStream();
-        DerOutputStream         tmp2 = new DerOutputStream();
 
         tmp.putOID(oid);
         value.encode(tmp);
-        tmp2.write(DerValue.tag_Sequence, tmp);
-        out.write(tmp2.toByteArray());
+        out.write(DerValue.tag_Sequence, tmp);
     }
 
     private String toKeyword(int format, Map<String, String> oidMap) {

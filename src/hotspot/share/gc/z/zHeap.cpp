@@ -225,6 +225,14 @@ void ZHeap::mark_start() {
   // Verification
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 
+  if (ZHeap::heap()->has_alloc_stalled()) {
+    // If there are stalled allocations, ensure that regardless of the
+    // cause of the GC, we have to clear soft references, as we are just
+    // about to increment the sequence number, and all previous allocations
+    // will throw if not presented with enough memory.
+    ZHeap::heap()->set_soft_reference_policy(true);
+  }
+
   // Flip address view
   flip_to_marked();
 
@@ -428,9 +436,6 @@ void ZHeap::relocate_start() {
 
   // Update statistics
   ZStatHeap::set_at_relocate_start(_page_allocator.stats());
-
-  // Notify JVMTI
-  JvmtiTagMap::set_needs_rehashing();
 }
 
 void ZHeap::relocate() {

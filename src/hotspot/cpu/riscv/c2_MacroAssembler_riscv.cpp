@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
@@ -1328,26 +1329,27 @@ void C2_MacroAssembler::minmax_FD(FloatRegister dst, FloatRegister src1, FloatRe
                                   bool is_double, bool is_min) {
   assert_different_registers(dst, src1, src2);
 
-  Label Done;
-  fsflags(zr);
+  Label Done, Compare;
+
+  is_double ? fclass_d(t0, src1)
+            : fclass_s(t0, src1);
+  is_double ? fclass_d(t1, src2)
+            : fclass_s(t1, src2);
+  orr(t0, t0, t1);
+  andi(t0, t0, 0b1100000000); //if src1 or src2 is quiet or signaling NaN then return NaN
+  beqz(t0, Compare);
+  is_double ? fadd_d(dst, src1, src2)
+            : fadd_s(dst, src1, src2);
+  j(Done);
+
+  bind(Compare);
   if (is_double) {
     is_min ? fmin_d(dst, src1, src2)
            : fmax_d(dst, src1, src2);
-    // Checking NaNs
-    flt_d(zr, src1, src2);
   } else {
     is_min ? fmin_s(dst, src1, src2)
            : fmax_s(dst, src1, src2);
-    // Checking NaNs
-    flt_s(zr, src1, src2);
   }
-
-  frflags(t0);
-  beqz(t0, Done);
-
-  // In case of NaNs
-  is_double ? fadd_d(dst, src1, src2)
-            : fadd_s(dst, src1, src2);
 
   bind(Done);
 }
@@ -1673,8 +1675,55 @@ void C2_MacroAssembler::reduce_minmax_FD_v(FloatRegister dst,
 
   bind(L_NaN);
   vfmv_s_f(tmp2, src1);
-  vfredsum_vs(tmp1, src2, tmp2);
+  vfredusum_vs(tmp1, src2, tmp2);
 
   bind(L_done);
   vfmv_f_s(dst, tmp1);
+}
+
+bool C2_MacroAssembler::in_scratch_emit_size() {
+  if (ciEnv::current()->task() != NULL) {
+    PhaseOutput* phase_output = Compile::current()->output();
+    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+      return true;
+    }
+  }
+  return MacroAssembler::in_scratch_emit_size();
+}
+
+void C2_MacroAssembler::rvv_reduce_integral(Register dst, VectorRegister tmp,
+                                            Register src1, VectorRegister src2,
+                                            BasicType bt, int opc) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+
+  Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+  vsetvli(t0, x0, sew);
+
+  vmv_s_x(tmp, src1);
+
+  switch (opc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+      vredsum_vs(tmp, src2, tmp);
+      break;
+    case Op_AndReductionV:
+      vredand_vs(tmp, src2, tmp);
+      break;
+    case Op_OrReductionV:
+      vredor_vs(tmp, src2, tmp);
+      break;
+    case Op_XorReductionV:
+      vredxor_vs(tmp, src2, tmp);
+      break;
+    case Op_MaxReductionV:
+      vredmax_vs(tmp, src2, tmp);
+      break;
+    case Op_MinReductionV:
+      vredmin_vs(tmp, src2, tmp);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  vmv_x_s(dst, tmp);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,45 @@
 
 package javax.swing.plaf.metal;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.BasicBorders;
-import javax.swing.text.JTextComponent;
-
-import java.awt.Component;
-import java.awt.Insets;
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Stroke;
 import java.awt.Window;
+import java.awt.geom.AffineTransform;
+
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicBorders;
+import javax.swing.text.JTextComponent;
 
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
-
 
 /**
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
@@ -217,16 +239,28 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
-        private static final int corner = 14;
+        private static final int CORNER = 14;
 
         /**
          * Constructs a {@code InternalFrameBorder}.
          */
         public InternalFrameBorder() {}
 
-        public void paintBorder(Component c, Graphics g, int x, int y,
-                          int w, int h) {
+        /**
+         * Rounds a double to the nearest integer. It rounds 0.5 down,
+         * for example 1.5 is rounded to 1.0.
+         *
+         * @param d number to be rounded
+         * @return the rounded value
+         */
+        private static int roundHalfDown(double d) {
+            double decP = (Math.ceil(d) - d);
+            return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
+        }
 
+
+        public void paintBorder(Component c, Graphics g, int x, int y,
+                                int w, int h) {
             Color background;
             Color highlight;
             Color shadow;
@@ -241,41 +275,93 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
 
-              g.setColor(background);
-              // Draw outermost lines
-              g.drawLine( 1, 0, w-2, 0);
-              g.drawLine( 0, 1, 0, h-2);
-              g.drawLine( w-1, 1, w-1, h-2);
-              g.drawLine( 1, h-1, w-2, h-1);
+            Graphics2D g2d = (Graphics2D) g;
+            AffineTransform at = g2d.getTransform();
+            Stroke oldStk = g2d.getStroke();
+            Color oldColor = g2d.getColor();
+            int stkWidth = 1;
 
-              // Draw the bulk of the border
-              for (int i = 1; i < 5; i++) {
-                  g.drawRect(x+i,y+i,w-(i*2)-1, h-(i*2)-1);
-              }
+            // if m01 or m10 is non-zero, then there is a rotation or shear
+            // skip resetting the transform
+            boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
 
-              if (c instanceof JInternalFrame &&
-                               ((JInternalFrame)c).isResizable()) {
-                  g.setColor(highlight);
-                  // Draw the Long highlight lines
-                  g.drawLine( corner+1, 3, w-corner, 3);
-                  g.drawLine( 3, corner+1, 3, h-corner);
-                  g.drawLine( w-2, corner+1, w-2, h-corner);
-                  g.drawLine( corner+1, h-2, w-corner, h-2);
+            int xtranslation;
+            int ytranslation;
+            int width;
+            int height;
 
-                  g.setColor(shadow);
-                  // Draw the Long shadow lines
-                  g.drawLine( corner, 2, w-corner-1, 2);
-                  g.drawLine( 2, corner, 2, h-corner-1);
-                  g.drawLine( w-3, corner, w-3, h-corner-1);
-                  g.drawLine( corner, h-3, w-corner-1, h-3);
-              }
+            if (resetTransform) {
+                g2d.setTransform(new AffineTransform());
+                stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
 
-          }
+                double xx = at.getScaleX() * x + at.getTranslateX();
+                double yy = at.getScaleY() * y + at.getTranslateY();
+                xtranslation = roundHalfDown(xx);
+                ytranslation = roundHalfDown(yy);
+                width = roundHalfDown(at.getScaleX() * w + xx) - xtranslation;
+                height = roundHalfDown(at.getScaleY() * h + yy) - ytranslation;
+            } else {
+                width = w;
+                height = h;
+                xtranslation = x;
+                ytranslation = y;
+            }
+            g2d.translate(xtranslation, ytranslation);
 
-          public Insets getBorderInsets(Component c, Insets newInsets) {
-              newInsets.set(5, 5, 5, 5);
-              return newInsets;
-          }
+            // scaled border
+            int thickness = (int) Math.ceil(4 * at.getScaleX());
+
+            g.setColor(background);
+            // Draw the bulk of the border
+            for (int i = 0; i <= thickness; i++) {
+                g.drawRect(i, i, width - (i * 2), height - (i * 2));
+            }
+
+            if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
+                // set new stroke to draw shadow and highlight lines
+                g2d.setStroke(new BasicStroke((float) stkWidth));
+
+                // midpoint at which highlight & shadow lines
+                // are positioned on the border
+                int midPoint = thickness / 2;
+                int offset = ((at.getScaleX() - stkWidth) >= 0 && stkWidth % 2 != 0) ? 1 : 0;
+                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
+                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
+                // scaled corner
+                int corner = (int) Math.round(CORNER * at.getScaleX());
+
+                // Draw the Long highlight lines
+                g.setColor(highlight);
+                g.drawLine(corner + 1, loc2, width - corner, loc2); //top
+                g.drawLine(loc2, corner + 1, loc2, height - corner); //left
+                g.drawLine((width - offset) - loc1, corner + 1,
+                        (width - offset) - loc1, height - corner); //right
+                g.drawLine(corner + 1, (height - offset) - loc1,
+                        width - corner, (height - offset) - loc1); //bottom
+
+                // Draw the Long shadow lines
+                g.setColor(shadow);
+                g.drawLine(corner, loc1, width - corner - 1, loc1);
+                g.drawLine(loc1, corner, loc1, height - corner - 1);
+                g.drawLine((width - offset) - loc2, corner,
+                        (width - offset) - loc2, height - corner - 1);
+                g.drawLine(corner, (height - offset) - loc2,
+                        width - corner - 1, (height - offset) - loc2);
+            }
+
+            // restore previous transform
+            g2d.translate(-xtranslation, -ytranslation);
+            if (resetTransform) {
+                g2d.setColor(oldColor);
+                g2d.setTransform(at);
+                g2d.setStroke(oldStk);
+            }
+        }
+
+        public Insets getBorderInsets(Component c, Insets newInsets) {
+            newInsets.set(4, 4, 4, 4);
+            return newInsets;
+        }
     }
 
     /**

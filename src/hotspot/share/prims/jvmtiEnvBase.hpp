@@ -332,9 +332,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
  protected:
   // helper methods for creating arrays of global JNI Handles from local Handles
   // allocated into environment specific storage
-  jobject * new_jobjectArray(int length, Handle *handles);
   jthread * new_jthreadArray(int length, Handle *handles);
-  jthreadGroup * new_jthreadGroupArray(int length, Handle *handles);
+  jthreadGroup * new_jthreadGroupArray(int length, objArrayHandle groups);
 
   // convert to a jni jclass from a non-null Klass*
   jclass get_jni_class_non_null(Klass* k);
@@ -378,7 +377,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jvmtiError get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p);
 
   // enumerates the subgroups in the given thread group
-  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **group_objs_p);
+  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p);
 
   // JVMTI API helper functions which are called when target thread is suspended
   // or at safepoint / thread local handshake.
