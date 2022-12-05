@@ -38,11 +38,22 @@ private:
   static void c2_initialize();
 #endif // COMPILER2
 
+// VM modes (satp.mode) privileged ISA 1.10
+enum VM_MODE {
+  VM_MBARE = 0,
+  VM_SV39  = 8,
+  VM_SV48  = 9,
+  VM_SV57  = 10,
+  VM_SV64  = 11
+};
+
 protected:
   static const char* _uarch;
+  static const char* _vm_mode;
   static uint32_t _initial_vector_length;
   static void get_os_cpu_info();
   static uint32_t get_current_vector_length();
+  static VM_MODE get_satp_mode();
 
 public:
   // Initialization

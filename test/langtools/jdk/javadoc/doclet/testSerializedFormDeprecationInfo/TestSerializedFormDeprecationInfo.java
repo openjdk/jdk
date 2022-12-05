@@ -99,7 +99,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     <dd><code>java.io.IOException</code> - on error</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -115,7 +115,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>

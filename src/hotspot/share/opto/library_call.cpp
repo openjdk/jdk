@@ -3663,7 +3663,7 @@ bool LibraryCallKit::inline_Class_cast() {
       // Don't use intrinsic when class is not loaded.
       return false;
     } else {
-      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass(), Type::trust_interfaces), tp->as_klass_type());
+      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass()), tp->as_klass_type());
       if (static_res == Compile::SSC_always_true) {
         // isInstance() is true - fold the code.
         set_result(obj);
@@ -7231,7 +7231,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
                                                       BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
-  const TypeOopPtr* xtype = aklass->cast_to_exactness(false)->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
@@ -7841,8 +7841,15 @@ bool LibraryCallKit::inline_blackhole() {
   assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
   assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
 
+  // Blackhole node pinches only the control, not memory. This allows
+  // the blackhole to be pinned in the loop that computes blackholed
+  // values, but have no other side effects, like breaking the optimizations
+  // across the blackhole.
+
+  Node* bh = _gvn.transform(new BlackholeNode(control()));
+  set_control(_gvn.transform(new ProjNode(bh, TypeFunc::Control)));
+
   // Bind call arguments as blackhole arguments to keep them alive
-  Node* bh = insert_mem_bar(Op_Blackhole);
   uint nargs = callee()->arg_size();
   for (uint i = 0; i < nargs; i++) {
     bh->add_req(argument(i));

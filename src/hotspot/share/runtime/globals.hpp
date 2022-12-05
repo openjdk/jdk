@@ -455,10 +455,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
-  develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena). "  \
-          "Used to help diagnose memory stomping bugs.")                    \
-                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space")                                 \
                                                                             \
@@ -516,6 +512,9 @@ const int ObjectAlignmentInBytes = 8;
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
+                                                                            \
+  product(bool, ErrorLogSecondaryErrorDetails, false, DIAGNOSTIC,           \
+          "If enabled, show details on secondary crashes in the error log") \
                                                                             \
   develop(intx, TraceDwarfLevel, 0,                                         \
           "Debug levels for the dwarf parser")                              \
