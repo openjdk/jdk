@@ -69,15 +69,14 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 #undef __
 
 int CompiledStaticCall::to_interp_stub_size() {
-  // (lui, addi, slli, addi, slli, addi) + (lui, addi, slli, addi, slli) + jalr
-  return 12 * NativeInstruction::instruction_size;
+  return MacroAssembler::static_call_stub_size();
 }
 
 int CompiledStaticCall::to_trampoline_stub_size() {
   // Somewhat pessimistically, we count 4 instructions here (although
   // there are only 3) because we sometimes emit an alignment nop.
   // Trampoline stubs are always word aligned.
-  return NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size;
+  return MacroAssembler::trampoline_stub_size();
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
