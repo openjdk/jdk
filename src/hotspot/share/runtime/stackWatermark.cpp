@@ -166,7 +166,7 @@ StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t
     _iterator(NULL),
     _lock(Mutex::stackwatermark, "StackWatermark_lock"),
     _kind(kind),
-    _linked_watermark(NULL) {
+    _linked_watermarks() {
 }
 
 StackWatermark::~StackWatermark() {
@@ -250,9 +250,15 @@ void StackWatermark::process_one() {
   }
 }
 
-void StackWatermark::link_watermark(StackWatermark* watermark) {
-  assert(watermark == NULL || _linked_watermark == NULL, "nesting not supported");
-  _linked_watermark = watermark;
+void StackWatermark::push_linked_watermark(StackWatermark* watermark) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  _linked_watermarks.push(watermark);
+}
+
+void StackWatermark::pop_linked_watermark() {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  assert(_linked_watermarks.length() > 0, "Mismatched push and pop?");
+  _linked_watermarks.pop();
 }
 
 uintptr_t StackWatermark::watermark() {
@@ -288,12 +294,30 @@ bool StackWatermark::processing_completed_acquire() const {
   return processing_completed(Atomic::load_acquire(&_state));
 }
 
+void StackWatermark::process_linked_watermarks() {
+  _lock.lock_without_safepoint_check();
+  if (_linked_watermarks.is_empty()) {
+    _lock.unlock();
+    return;
+  }
+  ResourceMark rm;
+  GrowableArray<StackWatermark*> watermarks(_linked_watermarks.length());
+  for (StackWatermark* watermark : _linked_watermarks) {
+    watermarks.push(watermark);
+  }
+  _lock.unlock();
+
+  // finish_processing must be called without the lock held, so we
+  // copy the growable array to a temporary snapshot of the list, so
+  // we can poke said watermarks without holding the lock
+  for (StackWatermark* watermark : watermarks) {
+    watermark->finish_processing(NULL /* context */);
+  }
+}
+
 void StackWatermark::on_safepoint() {
   start_processing();
-  StackWatermark* linked_watermark = _linked_watermark;
-  if (linked_watermark != NULL) {
-    linked_watermark->finish_processing(NULL /* context */);
-  }
+  process_linked_watermarks();
 }
 
 void StackWatermark::start_processing() {
