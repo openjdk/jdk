@@ -1074,6 +1074,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
+        /** If this block contains record pattern, it is necessary to catch
+         *  exceptions from the deconstructors and wrap them.
+         * The {@code patternMatchingCatch} keeps the list of the deconstructor
+         * invocations, and the additional catch block that wraps the exceptions.
+         */
+        public PatternMatchingCatch patternMatchingCatch;
         protected JCBlock(long flags, List<JCStatement> stats) {
             this.stats = stats;
             this.flags = flags;
@@ -1098,6 +1104,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Tag getTag() {
             return BLOCK;
         }
+
+        public record PatternMatchingCatch(JCCatch handler, Set<JCMethodInvocation> calls2Handle) {}
     }
 
     /**
@@ -2218,6 +2226,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCInstanceOf extends JCExpression implements InstanceOfTree {
         public JCExpression expr;
         public JCTree pattern;
+        /**{@code true} if this instanceof test should have
+         * value {@code true} when the {@code expr} is {@code null}.*/
+        public boolean allowNull;
         protected JCInstanceOf(JCExpression expr, JCTree pattern) {
             this.expr = expr;
             this.pattern = pattern;
