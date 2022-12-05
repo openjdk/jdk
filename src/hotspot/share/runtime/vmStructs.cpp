@@ -1570,7 +1570,6 @@
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
-  declare_c2_type(Opaque2Node, Node)                                      \
   declare_c2_type(PartialSubtypeCheckNode, Node)                          \
   declare_c2_type(MoveI2FNode, Node)                                      \
   declare_c2_type(MoveL2DNode, Node)                                      \
