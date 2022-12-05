@@ -55,7 +55,7 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
     /**
      * Constructor
      */
-    public KeepAliveStream(InputStream is, long expected, HttpClient hc)  {
+    public KeepAliveStream(InputStream is, long expected, HttpClient hc) {
         super(is, expected);
         this.hc = hc;
     }
