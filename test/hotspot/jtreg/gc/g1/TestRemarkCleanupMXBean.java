@@ -28,7 +28,7 @@ package gc.g1;
  * @bug 8297247
  * @summary Test that Remark and Cleanup are correctly reported by
  *          a GarbageCollectorMXBean
- * @requires vm.gc.G1 & vm.compMode != "Xcomp"
+ * @requires vm.gc.G1
  * @library /test/lib /
  * @build   jdk.test.whitebox.WhiteBox
  * @modules java.base/jdk.internal.misc

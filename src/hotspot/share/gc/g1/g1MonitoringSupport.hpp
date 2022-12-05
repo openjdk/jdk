@@ -240,7 +240,7 @@ class G1MonitoringScope : public StackObj {
   G1MonitoringSupport* _monitoring_support;
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
-public:
+protected:
   G1MonitoringScope(G1MonitoringSupport* monitoring_support,
                     CollectorCounters* collection_counters,
                     GCMemoryManager* gc_memory_manager,
@@ -251,18 +251,15 @@ public:
 class G1YoungGCMonitoringScope : public G1MonitoringScope {
 public:
   G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
-  ~G1YoungGCMonitoringScope() { }
 };
 
 class G1FullGCMonitoringScope : public G1MonitoringScope {
 public:
   G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support);
-  ~G1FullGCMonitoringScope() { }
 };
 
 class G1ConcGCMonitoringScope : public G1MonitoringScope {
 public:
   G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
-  ~G1ConcGCMonitoringScope() { }
 };
 #endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP
