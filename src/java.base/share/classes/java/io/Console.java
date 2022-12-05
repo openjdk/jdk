@@ -595,7 +595,7 @@ public class Console implements Flushable
 
         CHARSET = cs;
 
-        cons = instantiateConsoleole(istty);
+        cons = instantiateConsole(istty);
 
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
@@ -606,7 +606,7 @@ public class Console implements Flushable
     }
 
     @SuppressWarnings("removal")
-    private static Console instantiateConsoleole(boolean istty) {
+    private static Console instantiateConsole(boolean istty) {
         try {
             // Try loading providers
             PrivilegedAction<Console> pa = () -> {
