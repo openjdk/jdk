@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * Note: This runs the Arena portion of the gtests with UseMallocOnly
- * (restricted to debug since UseMallocOnly is debug-only)
- */
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
-/* @test
- * @bug 8271242
- * @summary Run arena tests with UseMallocOnly
- * @requires vm.debug
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=Arena* -XX:+UseMallocOnly
- */
+// we use 'int' here to make sure the native code doesn't touch any of the bits
+// the important part is that our Java code performs argument normalization
+EXPORT int test(void (*cb)(int), int x) {
+    cb(x); // check upcall arg normalization
+    return x; // check return value normalization
+}
+
+EXPORT int int_identity(int x) {
+    return x;
+}

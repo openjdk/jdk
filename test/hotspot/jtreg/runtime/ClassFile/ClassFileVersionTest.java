@@ -42,7 +42,7 @@ public class ClassFileVersionTest {
      * compilation. If a particular class becomes non-preview, any
      * currently preview class can be substituted in.
      */
-    private static final Class<?> PREVIEW_API = java.lang.foreign.MemoryAddress.class;
+    private static final Class<?> PREVIEW_API = java.lang.foreign.MemorySegment.class;
     static Method m;
 
     public static void testIt(String className, int expectedResult) throws Exception {
