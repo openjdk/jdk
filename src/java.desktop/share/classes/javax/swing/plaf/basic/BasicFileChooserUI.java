@@ -1408,26 +1408,42 @@ public class BasicFileChooserUI extends FileChooserUI {
     private void changeDirectory(File dir) {
         JFileChooser fc = getFileChooser();
         // Traverse shortcuts on Windows
-        if (dir != null && FilePane.usesShellFolder(fc)) {
-            try {
-                ShellFolder shellFolder = ShellFolder.getShellFolder(dir);
+        if (dir != null) {
+            if (FilePane.usesShellFolder(fc)) {
+                try {
+                    ShellFolder shellFolder = ShellFolder.getShellFolder(dir);
 
-                if (shellFolder.isLink()) {
-                    File linkedTo = shellFolder.getLinkLocation();
+                    if (shellFolder.isLink()) {
+                        File linkedTo = shellFolder.getLinkLocation();
 
-                    // If linkedTo is null we try to use dir
+                        // If linkedTo is null we try to use dir
+                        if (linkedTo != null) {
+                            if (fc.isTraversable(linkedTo)) {
+                                dir = linkedTo;
+                            } else {
+                                return;
+                            }
+                        } else {
+                            dir = shellFolder;
+                        }
+                    }
+                } catch (FileNotFoundException ex) {
+                    return;
+                }
+            } else if ( fc.getFileSystemView().isLink(dir)) {
+                try {
+                    File linkedTo = fc.getFileSystemView().getLinkLocation(dir);
+
                     if (linkedTo != null) {
                         if (fc.isTraversable(linkedTo)) {
                             dir = linkedTo;
                         } else {
                             return;
                         }
-                    } else {
-                        dir = shellFolder;
                     }
+                } catch (FileNotFoundException ex) {
+                    return;
                 }
-            } catch (FileNotFoundException ex) {
-                return;
             }
         }
         fc.setCurrentDirectory(dir);
