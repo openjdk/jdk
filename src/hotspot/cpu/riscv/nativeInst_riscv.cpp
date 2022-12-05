@@ -450,10 +450,8 @@ int NativePostCallNop::displacement() const {
 }
 
 void NativePostCallNop::patch(jint diff) {
-#ifdef ASSERT
   assert(diff != 0, "must be");
   assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
-#endif
 
   MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
 }
