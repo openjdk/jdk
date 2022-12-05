@@ -75,8 +75,26 @@ public class TestCompareUnsigned {
 
     @Test
     @IR(counts = {IRNode.CMP_U3, "1"})
-    public int compareIntWith42(int x) {
+    public int compareIntWithImm1(int x) {
         return Integer.compareUnsigned(x, 42);
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_U3, "1"})
+    public int compareIntWithImm2(int x) {
+        return Integer.compareUnsigned(x, 42 << 12);
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_U3, "1"})
+    public int compareIntWithImm3(int x) {
+        return Integer.compareUnsigned(x, 42 << 24);
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_U3, "1"})
+    public int compareIntWithImm4(int x) {
+        return Integer.compareUnsigned(x, Integer.MIN_VALUE);
     }
 
     @Test
@@ -87,13 +105,42 @@ public class TestCompareUnsigned {
 
     @Test
     @IR(counts = {IRNode.CMP_UL3, "1"})
-    public int compareLongWith42(long x) {
+    public int compareLongWithImm1(long x) {
         return Long.compareUnsigned(x, 42);
     }
 
+    @Test
+    @IR(counts = {IRNode.CMP_UL3, "1"})
+    public int compareLongWithImm2(long x) {
+        return Long.compareUnsigned(x, 42 << 12);
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_UL3, "1"})
+    public int compareLongWithImm3(long x) {
+        return Long.compareUnsigned(x, 42 << 24);
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_UL3, "1"})
+    public int compareLongWithImm4(long x) {
+        return Long.compareUnsigned(x, Integer.MIN_VALUE);
+    }
+
+    @Test
+    @IR(counts = {IRNode.CMP_UL3, "1"})
+    public int compareLongWithImm5(long x) {
+        return Long.compareUnsigned(x, Long.MIN_VALUE);
+    }
+
     @Run(test = {"lessThanInt", "lessThanLong",
-                 "compareInt", "compareIntWith42",
-                 "compareLong", "compareLongWith42"})
+                 "compareInt",
+                 "compareIntWithImm1", "compareIntWithImm2",
+                 "compareIntWithImm3", "compareIntWithImm4",
+                 "compareLong",
+                 "compareLongWithImm1", "compareLongWithImm2",
+                 "compareLongWithImm3", "compareLongWithImm4",
+                 "compareLongWithImm5"})
     public void runTests() {
         var random = Utils.getRandomInstance();
         for (int i = 0; i < 1000; i++) {
@@ -103,7 +150,10 @@ public class TestCompareUnsigned {
             Asserts.assertEquals(compareInt(x, x), 0);
             Asserts.assertEquals(lessThanInt(x, y), expectedResult(x, y) < 0 ? TRUE_VALUE : FALSE_VALUE);
             Asserts.assertEquals(compareInt(x, y), expectedResult(x, y));
-            Asserts.assertEquals(compareIntWith42(x), expectedResult(x, 42));
+            Asserts.assertEquals(compareIntWithImm1(x), expectedResult(x, 42));
+            Asserts.assertEquals(compareIntWithImm2(x), expectedResult(x, 42 << 12));
+            Asserts.assertEquals(compareIntWithImm3(x), expectedResult(x, 42 << 24));
+            Asserts.assertEquals(compareIntWithImm4(x), expectedResult(x, Integer.MIN_VALUE));
         }
         for (int i = 0; i < 1000; i++) {
             long x = random.nextLong();
@@ -112,7 +162,11 @@ public class TestCompareUnsigned {
             Asserts.assertEquals(compareLong(x, x), 0);
             Asserts.assertEquals(lessThanLong(x, y), expectedResult(x, y) < 0 ? TRUE_VALUE : FALSE_VALUE);
             Asserts.assertEquals(compareLong(x, y), expectedResult(x, y));
-            Asserts.assertEquals(compareLongWith42(x), expectedResult(x, 42));
+            Asserts.assertEquals(compareLongWithImm1(x), expectedResult(x, 42));
+            Asserts.assertEquals(compareLongWithImm2(x), expectedResult(x, 42 << 12));
+            Asserts.assertEquals(compareLongWithImm3(x), expectedResult(x, 42 << 24));
+            Asserts.assertEquals(compareLongWithImm4(x), expectedResult(x, Integer.MIN_VALUE));
+            Asserts.assertEquals(compareLongWithImm5(x), expectedResult(x, Long.MIN_VALUE));
         }
     }
 }

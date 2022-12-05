@@ -9674,17 +9674,12 @@ instruct cmpU3_reg_imm(iRegINoSp dst, iRegI src1, immIAddSub src2, rFlagsReg fla
 
   ins_cost(INSN_COST * 3);
   format %{
-      "cmpw $src1, $src2\n\t"
+      "subsw zr, $src1, $src2\n\t"
       "csetw $dst, ne\n\t"
       "cnegw $dst, lo\t# CmpU3(imm)"
   %}
   ins_encode %{
-    int32_t con = (int32_t)$src2$$constant;
-    if (con < 0) {
-      __ addsw(zr, $src1$$Register, -con);
-    } else {
-      __ subsw(zr, $src1$$Register, con);
-    }
+    __ subsw(zr, $src1$$Register, (int32_t)$src2$$constant);
     __ csetw($dst$$Register, Assembler::NE);
     __ cnegw($dst$$Register, $dst$$Register, Assembler::LO);
   %}
@@ -9721,17 +9716,12 @@ instruct cmpUL3_reg_imm(iRegINoSp dst, iRegL src1, immLAddSub src2, rFlagsReg fl
 
   ins_cost(INSN_COST * 3);
   format %{
-      "cmp $src1, $src2\n\t"
+      "subs zr, $src1, $src2\n\t"
       "csetw $dst, ne\n\t"
       "cnegw $dst, lo\t# CmpUL3(imm)"
   %}
   ins_encode %{
-    int32_t con = (int32_t)$src2$$constant;
-    if (con < 0) {
-      __ adds(zr, $src1$$Register, -con);
-    } else {
-      __ subs(zr, $src1$$Register, con);
-    }
+    __ subs(zr, $src1$$Register, (int32_t)$src2$$constant);
     __ csetw($dst$$Register, Assembler::NE);
     __ cnegw($dst$$Register, $dst$$Register, Assembler::LO);
   %}
@@ -9768,17 +9758,12 @@ instruct cmpL3_reg_imm(iRegINoSp dst, iRegL src1, immLAddSub src2, rFlagsReg fla
 
   ins_cost(INSN_COST * 3);
   format %{
-      "cmp $src1, $src2\n\t"
+      "subs zr, $src1, $src2\n\t"
       "csetw $dst, ne\n\t"
       "cnegw $dst, lt\t# CmpL3(imm)"
   %}
   ins_encode %{
-    int32_t con = (int32_t)$src2$$constant;
-    if (con < 0) {
-      __ adds(zr, $src1$$Register, -con);
-    } else {
-      __ subs(zr, $src1$$Register, con);
-    }
+    __ subs(zr, $src1$$Register, (int32_t)$src2$$constant);
     __ csetw($dst$$Register, Assembler::NE);
     __ cnegw($dst$$Register, $dst$$Register, Assembler::LT);
   %}
