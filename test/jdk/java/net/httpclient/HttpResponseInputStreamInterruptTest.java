@@ -80,30 +80,26 @@ public class HttpResponseInputStreamInterruptTest {
     }
 
     @Test
-    public void test() {
-        try {
-            // create client and interrupter threads
-            Thread clientThread = createClientThread(interruptReadyLatch, port);
-            Thread interrupterThread = new Thread(() -> {
-                try {
-                    // wait until the clientThread is just about to read the second message sent by the server
-                    // then interrupt the thread to cause an error to be thrown
-                    interruptReadyLatch.await();
-                    clientThread.interrupt();
-                    interruptDoneLatch.countDown();
-                } catch (InterruptedException e) {
-                    System.out.println("interrupterThread failed");
-                    throw new RuntimeException(e);
-                }
-            });
+    public void test() throws Exception {
+        // create client and interrupter threads
+        Thread clientThread = createClientThread(interruptReadyLatch, port);
+        Thread interrupterThread = new Thread(() -> {
+            try {
+                // wait until the clientThread is just about to read the second message sent by the server
+                // then interrupt the thread to cause an error to be thrown
+                interruptReadyLatch.await();
+                clientThread.interrupt();
+                interruptDoneLatch.countDown();
+            } catch (InterruptedException e) {
+                System.out.println("interrupterThread failed");
+                throw new RuntimeException(e);
+            }
+        });
 
-            // Start the threads then wait until clientThread completes
-            clientThread.start();
-            interrupterThread.start();
-            clientThread.join();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        // Start the threads then wait until clientThread completes
+        clientThread.start();
+        interrupterThread.start();
+        clientThread.join();
     }
 
     static class Handler implements HttpHandler {
