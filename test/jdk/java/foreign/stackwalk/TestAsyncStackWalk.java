@@ -78,15 +78,14 @@
  *   TestAsyncStackWalk
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
-import java.lang.foreign.MemorySession;
 import jdk.test.whitebox.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -116,17 +115,16 @@ public class TestAsyncStackWalk extends NativeTestHelper {
     static boolean didStackWalk;
 
     public static void main(String[] args) throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), session);
-            MemoryAddress stubAddress = stub.address();
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena.scope());
             invocations = 0;
             didStackWalk = false;
-            payload(stubAddress);
+            payload(stub);
             assertTrue(didStackWalk);
         }
     }
 
-    static void payload(MemoryAddress cb) throws Throwable {
+    static void payload(MemorySegment cb) throws Throwable {
         MH_asyncStackWalk.invoke(cb);
     }
 

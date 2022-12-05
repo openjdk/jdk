@@ -98,8 +98,6 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
-bool DeoptimizationMarker::_is_active = false;
-
 Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
                                          int  caller_adjustment,
                                          int  caller_actual_parameters,
@@ -126,20 +124,11 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
   assert(exec_mode >= 0 && exec_mode < Unpack_LIMIT, "Unexpected exec_mode");
 }
 
-
 Deoptimization::UnrollBlock::~UnrollBlock() {
   FREE_C_HEAP_ARRAY(intptr_t, _frame_sizes);
   FREE_C_HEAP_ARRAY(intptr_t, _frame_pcs);
   FREE_C_HEAP_ARRAY(intptr_t, _register_block);
 }
-
-
-intptr_t* Deoptimization::UnrollBlock::value_addr_at(int register_number) const {
-  assert(register_number < RegisterMap::reg_count, "checking register number");
-  return &_register_block[register_number * 2];
-}
-
-
 
 int Deoptimization::UnrollBlock::size_of_frames() const {
   // Account first for the adjustment of the initial frame
@@ -149,7 +138,6 @@ int Deoptimization::UnrollBlock::size_of_frames() const {
   }
   return result;
 }
-
 
 void Deoptimization::UnrollBlock::print() {
   ResourceMark rm;
@@ -163,7 +151,6 @@ void Deoptimization::UnrollBlock::print() {
   st.cr();
   tty->print_raw(st.freeze());
 }
-
 
 // In order to make fetch_unroll_info work properly with escape
 // analysis, the method was changed from JRT_LEAF to JRT_BLOCK_ENTRY.
@@ -744,6 +731,7 @@ static bool falls_through(Bytecodes::Code bc) {
 
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))
+  assert(thread == JavaThread::current(), "pre-condition");
 
   // We are already active in the special DeoptResourceMark any ResourceObj's we
   // allocate will be freed at the end of the routine.
@@ -932,7 +920,6 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
 
 void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
   ResourceMark rm;
-  DeoptimizationMarker dm;
 
   // Make the dependent methods not entrant
   if (nmethod_only != NULL) {
@@ -1654,7 +1641,6 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
     return;
   }
   ResourceMark rm;
-  DeoptimizationMarker dm;
   deoptimize_single_frame(thread, fr, reason);
 }
 
@@ -1733,6 +1719,7 @@ void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id) {
 // JVMTI PopFrame support
 JRT_LEAF(void, Deoptimization::popframe_preserve_args(JavaThread* thread, int bytes_to_save, void* start_address))
 {
+  assert(thread == JavaThread::current(), "pre-condition");
   thread->popframe_preserve_args(in_ByteSize(bytes_to_save), start_address);
 }
 JRT_END
