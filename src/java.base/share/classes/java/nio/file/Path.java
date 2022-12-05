@@ -257,53 +257,55 @@ public interface Path
      * determined by the position of a period character ('.', U+002E FULL STOP)
      * within the file name string. If the file name element is {@code null},
      * or if the file name string does not contain a period character, or if
-     * the only period in the file name string is its first character, then
-     * the extension is {@code null}. Otherwise, the extension is the substring
-     * after the last period in the file name string. If this last period is
-     * also the last character in the file name string, then the  extension is
-     * {@linkplain String#isEmpty empty}.
+     * the only period in the file name string is its first character,  then
+     * the extension is {@linkplain String#isEmpty empty}. Otherwise, the
+     * extension is the substring starting with the last period in the file
+     * name string. If this last period is also the last character in the file
+     * name string, then the extension contains only a single period character.
+     *
+     * @apiNote
+     * The returned extension generally includes the period separator character.
+     * For example, the extension which would be returned for a path with file
+     * name "photograph.jpg" is ".jpg".
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
      * int lastPeriod = fileName.lastIndexOf('.');
      * if (lastPeriod <= 0)
-     *     return null;
-     * return (lastPeriod == fileName.length() - 1)
-     *     ? ""
-     *     : fileName.substring(lastPeriod + 1);
+     *     return "";
+     * else if (lastPeriod == fileName.length() - 1)
+     *     return ".";
+     * else
+     *     return fileName.substring(lastPeriod);
      * }</pre>
      *
-     * @return  the file name extension of this path, which might be the
-     *          empty string, or {@code null} if no extension is found
+     * @return  the non-{@code null} file name extension of this path, which
+     *          might contain only a single period character, or an empty string
+     *          if no extension is found
      *
      * @since 20
      */
     default String getExtension() {
+        // empty extension if the file name is null
         Path fileName = getFileName();
         if (fileName == null)
-            return null;
+            return "";
 
+        // locate the last dot in the file name string
         String fileNameString = fileName.toString();
-        int length = fileNameString.length();
+        int lastDot = fileNameString.lastIndexOf('.');
 
-        // An empty or unity length file name string has a null extension
-        if (length > 1) {
-            int lastPeriodIndex = fileNameString.lastIndexOf('.');
+        // empty  extension if no dot or the last dot is the first character
+        if (lastDot <= 0)
+            return "";
 
-            // Indeterminate if there is no period character or
-            // only the first character is a period character
-            if (lastPeriodIndex > 0) {
-                if (lastPeriodIndex == length - 1) {
-                    // empty string
-                    return "";
-                } else {
-                    return fileNameString.substring(lastPeriodIndex + 1);
-                }
-            }
-        }
+        // the extension is "." if the last dot is the last character
+        if (lastDot == fileNameString.length() - 1) // lastDot > 0
+            return ".";
 
-        return null;
+        // the extension is the substring starting at the index of the last dot
+        return fileNameString.substring(lastDot);
     }
 
     /**
