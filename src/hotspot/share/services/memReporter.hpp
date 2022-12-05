@@ -67,6 +67,10 @@ class MemReporterBase : public StackObj {
 
   // Convert diff amount in bytes to current reporting scale
   inline long diff_in_current_scale(size_t s1, size_t s2) const {
+    // Since size_t is unsigned, the amount >= 0 is always true.
+    // Therefore, shifting the amount half the scale down/up is
+    // decided based on the s1 and s2. Thus, s1 >= s2 means amount >= 0,
+    // and amount >= _scale/2 is equivalent to (amount - _scale / 2) >= 0.
     size_t amount = s1 - s2;
     if (s1 >= s2) {
       assert((amount + _scale / 2) <= SIZE_MAX, "difference is gretaer than the upper limit.");
