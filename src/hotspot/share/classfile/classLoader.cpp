@@ -1415,15 +1415,16 @@ char* ClassLoader::lookup_vm_options() {
   return options;
 }
 
-// Returns true if jdk.internal.vm.ci is present on the file system.
-bool ClassLoader::has_jvmci_module() {
+// Determines if the `module_name` module is resolvable.
+bool ClassLoader::is_module_resolvable(const char* module_name) {
   assert(JImageOpen != NULL, "jimage library should have been opened");
   if (JImage_file == NULL) {
     const char *home = Arguments::get_java_home();
     const char file_sep = os::file_separator()[0];
-    size_t len = strlen(home) + strlen("jdk.internal.vm.ci") + 2;
+    // 10 represents the length of "modules" + 2 file separators + \0
+    size_t len = strlen(home) + strlen(module_name) + 10;
     char path[len];
-    jio_snprintf(path, len, "%s%cmodules%cjdk.internal.vm.ci", home, file_sep, file_sep);
+    jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
     struct stat st;
     return os::stat(path, &st) == 0;
   }

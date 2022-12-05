@@ -373,7 +373,9 @@ class ClassLoader: AllStatic {
 #endif
 
   static char* lookup_vm_options();
-  static bool has_jvmci_module();
+
+  // Determines if the `module_name` module is resolvable.
+  static bool is_module_resolvable(const char* module_name);
 
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);
