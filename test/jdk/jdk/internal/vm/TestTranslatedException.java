@@ -23,14 +23,11 @@
 
 /*
  * @test
- * @requires vm.jvmci
  * @modules java.base/jdk.internal.vm
  *          java.base/jdk.internal.misc
- * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @run testng/othervm
  *      jdk.internal.vm.test.TestTranslatedException
  */
-
 package jdk.internal.vm.test;
 
 import java.io.ByteArrayOutputStream;

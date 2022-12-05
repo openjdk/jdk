@@ -1422,8 +1422,7 @@ char* ClassLoader::lookup_vm_options() {
   return options;
 }
 
-// Determines if the `module_name` module is resolvable.
-bool ClassLoader::is_module_resolvable(const char* module_name) {
+bool ClassLoader::is_module_observable(const char* module_name) {
   assert(JImageOpen != NULL, "jimage library should have been opened");
   if (JImage_file == NULL) {
     struct stat st;
