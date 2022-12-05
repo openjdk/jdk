@@ -539,7 +539,7 @@ public interface JavaLangAccess {
                                        Continuation continuation);
 
     /**
-     * Returns the class file format version of the class.
+     * Return the class file format version of the class.
      */
     int classFileFormatVersion(Class<?> klass);
 

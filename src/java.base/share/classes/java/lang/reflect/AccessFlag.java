@@ -511,7 +511,6 @@ public enum AccessFlag {
     /**
      * {@return an unmodifiable set of access flags for the given mask value
      * appropriate for the class file format version and location}
-     * Mask bits not supported for the location are ignored.
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
