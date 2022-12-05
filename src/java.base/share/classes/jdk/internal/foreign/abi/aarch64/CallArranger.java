@@ -27,7 +27,6 @@ package jdk.internal.foreign.abi.aarch64;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.ABIDescriptor;
@@ -35,6 +34,7 @@ import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
@@ -42,7 +42,7 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64CallArranger;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64CallArranger;
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -92,15 +92,8 @@ public abstract class CallArranger {
         r10  // return buffer addr reg
     );
 
-    // record
-    public static class Bindings {
-        public final CallingSequence callingSequence;
-        public final boolean isInMemoryReturn;
-
-        Bindings(CallingSequence callingSequence, boolean isInMemoryReturn) {
-            this.callingSequence = callingSequence;
-            this.isInMemoryReturn = isInMemoryReturn;
-        }
+    public record Bindings(CallingSequence callingSequence,
+                           boolean isInMemoryReturn) {
     }
 
     public static final CallArranger LINUX = new LinuxAArch64CallArranger();
@@ -122,6 +115,10 @@ public abstract class CallArranger {
     protected CallArranger() {}
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
+        return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
+    }
+
+    public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(C, forUpcall);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
@@ -129,7 +126,7 @@ public abstract class CallArranger {
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
-            csb.addArgumentBindings(MemoryAddress.class, AArch64.C_POINTER,
+            csb.addArgumentBindings(MemorySegment.class, AArch64.C_POINTER,
                     argCalc.getIndirectBindings());
         } else if (cDesc.returnLayout().isPresent()) {
             Class<?> carrier = mt.returnType();
@@ -140,7 +137,7 @@ public abstract class CallArranger {
         for (int i = 0; i < mt.parameterCount(); i++) {
             Class<?> carrier = mt.parameterType(i);
             MemoryLayout layout = cDesc.argumentLayouts().get(i);
-            if (varArgsOnStack() && SharedUtils.isVarargsIndex(cDesc, i)) {
+            if (varArgsOnStack() && options.isVarargsIndex(i)) {
                 argCalc.storageCalculator.adjustForVarArgs();
             }
             csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout));
@@ -149,8 +146,8 @@ public abstract class CallArranger {
         return new Bindings(csb.build(), returnInMemory);
     }
 
-    public MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
-        Bindings bindings = getBindings(mt, cDesc, false);
+    public MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(C, bindings.callingSequence).getBoundMethodHandle();
 
@@ -161,7 +158,7 @@ public abstract class CallArranger {
         return handle;
     }
 
-    public MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, MemorySession session) {
+    public MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope session) {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
@@ -214,7 +211,7 @@ public abstract class CallArranger {
         }
 
         VMStorage stackAlloc(MemoryLayout layout) {
-            return stackAlloc(layout.byteSize(), SharedUtils.alignment(layout, true));
+            return stackAlloc(layout.byteSize(), layout.byteAlignment());
         }
 
         VMStorage[] regAlloc(int type, int count) {
@@ -353,7 +350,7 @@ public abstract class CallArranger {
                 case STRUCT_REFERENCE: {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
-                            .unboxAddress(MemorySegment.class);
+                            .unboxAddress();
                     VMStorage storage = storageCalculator.nextStorage(
                         StorageClasses.INTEGER, AArch64.C_POINTER);
                     bindings.vmStore(storage, long.class);
@@ -384,7 +381,7 @@ public abstract class CallArranger {
                     break;
                 }
                 case POINTER: {
-                    bindings.unboxAddress(carrier);
+                    bindings.unboxAddress();
                     VMStorage storage =
                         storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmStore(storage, long.class);
@@ -418,7 +415,7 @@ public abstract class CallArranger {
         List<Binding> getIndirectBindings() {
             return Binding.builder()
                 .vmLoad(INDIRECT_RESULT, long.class)
-                .boxAddress()
+                .boxAddressRaw(Long.MAX_VALUE)
                 .build();
         }
 
@@ -427,11 +424,11 @@ public abstract class CallArranger {
             TypeClass argumentClass = TypeClass.classifyLayout(layout);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
-                case STRUCT_REGISTER: {
+                case STRUCT_REGISTER -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     VMStorage[] regs = storageCalculator.regAlloc(
-                        StorageClasses.INTEGER, layout);
+                            StorageClasses.INTEGER, layout);
                     if (regs != null) {
                         int regIndex = 0;
                         long offset = 0;
@@ -448,23 +445,20 @@ public abstract class CallArranger {
                     } else {
                         spillStructBox(bindings, layout);
                     }
-                    break;
                 }
-                case STRUCT_REFERENCE: {
+                case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
                     VMStorage storage = storageCalculator.nextStorage(
-                        StorageClasses.INTEGER, AArch64.C_POINTER);
+                            StorageClasses.INTEGER, AArch64.C_POINTER);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddress()
-                            .toSegment(layout);
-                    break;
+                            .boxAddress(layout);
                 }
-                case STRUCT_HFA: {
+                case STRUCT_HFA -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
-                    GroupLayout group = (GroupLayout)layout;
+                    GroupLayout group = (GroupLayout) layout;
                     VMStorage[] regs = storageCalculator.regAlloc(
-                        StorageClasses.VECTOR, group.memberLayouts().size());
+                            StorageClasses.VECTOR, group.memberLayouts().size());
                     if (regs != null) {
                         long offset = 0;
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
@@ -480,29 +474,24 @@ public abstract class CallArranger {
                     } else {
                         spillStructBox(bindings, layout);
                     }
-                    break;
                 }
-                case POINTER: {
+                case POINTER -> {
                     VMStorage storage =
-                        storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                            storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddress();
-                    break;
+                            .boxAddressRaw(Utils.pointeeSize(layout));
                 }
-                case INTEGER: {
+                case INTEGER -> {
                     VMStorage storage =
-                        storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
+                            storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmLoad(storage, carrier);
-                    break;
                 }
-                case FLOAT: {
+                case FLOAT -> {
                     VMStorage storage =
-                        storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
+                            storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
                     bindings.vmLoad(storage, carrier);
-                    break;
                 }
-                default:
-                    throw new UnsupportedOperationException("Unhandled class " + argumentClass);
+                default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);
             }
             return bindings.build();
         }
