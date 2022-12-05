@@ -43,7 +43,6 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
 // shareable so the RO region may not actually be read only
 size_t MemReporterBase::readonly_total(FileMapInfo* info) const {
   size_t total = 0;
-  FileMapRegion* r;
   if (info!= NULL) {
     FileMapRegion* r = info->region_at(MetaspaceShared::ro);
     if (r->read_only()) {
@@ -53,7 +52,7 @@ size_t MemReporterBase::readonly_total(FileMapInfo* info) const {
   return total;
 }
 
-void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only = 0) const {
+void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
                   amount_in_current_scale(reserved), scale,
