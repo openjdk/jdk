@@ -160,26 +160,9 @@ inline ObjectMonitor* ObjectMonitor::next_om() const {
   return Atomic::load(&_next_om);
 }
 
-// Get _next_om field with acquire semantics.
-inline ObjectMonitor* ObjectMonitor::next_om_acquire() const {
-  return Atomic::load_acquire(&_next_om);
-}
-
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
   Atomic::store(&_next_om, new_value);
-}
-
-// Set _next_om field to new_value with release semantics.
-inline void ObjectMonitor::release_set_next_om(ObjectMonitor* new_value) {
-  Atomic::release_store(&_next_om, new_value);
-}
-
-// Try to set _next_om field to new_value if the current value matches
-// old_value. Otherwise, does not change the _next_om field. Returns
-// the prior value of the _next_om field.
-inline ObjectMonitor* ObjectMonitor::try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value) {
-  return Atomic::cmpxchg(&_next_om, old_value, new_value);
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

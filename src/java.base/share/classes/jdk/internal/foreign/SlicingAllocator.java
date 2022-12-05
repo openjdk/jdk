@@ -25,8 +25,13 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public final class SlicingAllocator implements SegmentAllocator {
 

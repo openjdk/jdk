@@ -773,8 +773,6 @@ class InterpreterFrameClosure : public OffsetClosure {
       }
     }
   }
-
-  int max_locals()  { return _max_locals; }
 };
 
 

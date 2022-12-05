@@ -25,34 +25,13 @@
 
 package javacserver;
 
-import java.util.Arrays;
-
-import javacserver.client.ClientMain;
-import javacserver.server.ServerMain;
-
-import static javacserver.options.Option.STARTSERVER;
+import javacserver.client.Client;
 
 /**
- * The application entry point of the smart javac wrapper tool.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * The application entry point of the javacserver build tool.
  */
 public class Main {
-
-    public static void main(String... args)  {
-        System.exit(go(args));
-    }
-
-    public static int go(String[] args) {
-
-        // Server or client mode?
-        boolean serverMode = Arrays.asList(args)
-                                   .stream()
-                                   .anyMatch(arg -> arg.startsWith(STARTSERVER.arg));
-
-        return serverMode ? ServerMain.run(args) : ClientMain.run(args);
+    public static void main(String... args) {
+        Client.main(args);
     }
 }

@@ -67,13 +67,9 @@ address StubRoutines::_throw_delayed_StackOverflowError_entry   = NULL;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = NULL;
 address StubRoutines::_atomic_xchg_entry                        = NULL;
-address StubRoutines::_atomic_xchg_long_entry                   = NULL;
-address StubRoutines::_atomic_store_entry                       = NULL;
 address StubRoutines::_atomic_cmpxchg_entry                     = NULL;
-address StubRoutines::_atomic_cmpxchg_byte_entry                = NULL;
 address StubRoutines::_atomic_cmpxchg_long_entry                = NULL;
 address StubRoutines::_atomic_add_entry                         = NULL;
-address StubRoutines::_atomic_add_long_entry                    = NULL;
 address StubRoutines::_fence_entry                              = NULL;
 
 // Compiled code entry points default values

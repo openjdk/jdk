@@ -838,6 +838,15 @@ public class TreeInfo {
             return tree;
     }
 
+    /** Skip parens and return the enclosed expression
+     */
+    public static JCPattern skipParens(JCPattern tree) {
+        while (tree.hasTag(PARENTHESIZEDPATTERN)) {
+            tree = ((JCParenthesizedPattern) tree).pattern;
+        }
+        return tree;
+    }
+
     /** Return the types of a list of trees.
      */
     public static List<Type> types(List<? extends JCTree> trees) {
