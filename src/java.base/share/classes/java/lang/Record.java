@@ -115,7 +115,7 @@ public abstract class Record {
      * <li> If the component is of a reference type, the component is
      * considered equal if and only if {@link
      * java.util.Objects#equals(Object,Object)
-     * Objects.equals(this.c, r.c} would return {@code true}.
+     * Objects.equals(this.c, r.c)} would return {@code true}.
      *
      * <li> If the component is of a primitive type, using the
      * corresponding primitive wrapper class {@code PW} (the
