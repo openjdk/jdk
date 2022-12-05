@@ -1332,38 +1332,43 @@ public:
                                                      G1GCPhaseTimes::MergeRS :
                                                      G1GCPhaseTimes::OptMergeRS;
 
-    // We schedule flushing the remembered sets of humongous fast reclaim candidates
-    // onto the card table first to allow the remaining parallelized tasks hide it.
-    if (_initial_evacuation &&
-        g1h->has_humongous_reclaim_candidates() &&
-        !_fast_reclaim_handled &&
-        !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
-
-      G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeER, worker_id);
-
-      G1FlushHumongousCandidateRemSets cl(_scan_state);
-      g1h->heap_region_iterate(&cl);
-
-      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
-        p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged(i), i);
-      }
-    }
-
-    // Merge remembered sets of current candidates.
     {
+      // Merge remset of ...
       G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, !_initial_evacuation /* allow_multiple_record */);
-      G1MergeCardSetStats stats;
-      {
-        G1MergeCardSetClosure merge(_scan_state);
-        G1ClearBitmapClosure clear(g1h);
-        G1CombinedClosure combined(&merge, &clear);
 
-        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
-        stats = merge.stats();
+      {
+        // 1. eager-reclaim candidates
+        if (_initial_evacuation &&
+            g1h->has_humongous_reclaim_candidates() &&
+            !_fast_reclaim_handled &&
+            !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
+
+          G1GCParPhaseTimesTracker subphase_x(p, G1GCPhaseTimes::MergeER, worker_id);
+
+          G1FlushHumongousCandidateRemSets cl(_scan_state);
+          g1h->heap_region_iterate(&cl);
+
+          for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
+            p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged(i), i);
+          }
+        }
       }
 
-      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
-        p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
+      {
+        // 2. collection set
+        G1MergeCardSetStats stats;
+        {
+          G1MergeCardSetClosure merge(_scan_state);
+          G1ClearBitmapClosure clear(g1h);
+          G1CombinedClosure combined(&merge, &clear);
+
+          g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
+          stats = merge.stats();
+        }
+
+        for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
+          p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
+        }
       }
     }
 
