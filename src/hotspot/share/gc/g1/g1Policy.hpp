@@ -210,10 +210,10 @@ private:
 
   // Updates the internal young gen maximum and target and desired lengths.
   // If no parameters are passed, predict pending cards and the RS length using
-  // the prediction model. Request one eden region when not revising young length
-  // at mutator time.
+  // the prediction model. If after_gc is set, make sure that there is one eden region
+  // available (if there is enough space) to guarantee some progress.
   void update_young_length_bounds();
-  void update_young_length_bounds(size_t pending_cards, size_t rs_length, bool need_one_eden_region);
+  void update_young_length_bounds(size_t pending_cards, size_t rs_length, bool after_gc);
 
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
@@ -241,7 +241,7 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length, bool need_one_eden_region) const;
+  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length, bool after_gc) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
   // The GCLocker might cause us to need more regions than the target. Calculate
