@@ -142,7 +142,7 @@ static const char * fatal_non_utf8_class_name2 = "\"";
 // When in VM state:
 static void ReportJNIWarning(JavaThread* thr, const char *msg) {
   tty->print_cr("WARNING in native method: %s", msg);
-  thr->print_stack();
+  thr->print_jni_stack();
 }
 
 // When in NATIVE state:
