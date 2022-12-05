@@ -733,7 +733,7 @@
      </Event>
 
   <Event name="OSInformation" category="Operating System" label="OS Information"
-         description="Description of the OS the JVM runs on, for example a uname-like output"
+         description="Description of the OS the JVM runs on, for example, a uname-like output"
          period="endChunk">
     <Field type="string" name="osVersion" label="OS Version" />
   </Event>
@@ -750,7 +750,7 @@
   </Event>
 
   <Event name="InitialEnvironmentVariable" category="Operating System" label="Initial Environment Variable"
-         description="Key and value pairs for environment variables at JVM startup"
+         description="Key-value pairs for environment variables at JVM startup"
          period="endChunk">
     <Field type="string" name="key" label="Key" />
     <Field type="string" name="value" label="Value" />
