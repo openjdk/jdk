@@ -22,38 +22,47 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMJFRREPORTER_HPP
-#define SHARE_SERVICES_MEMJFRREPORTER_HPP
+#ifndef SHARE_SERVICES_MEMSNAPSHOT_HPP
+#define SHARE_SERVICES_MEMSNAPSHOT_HPP
 
 #include "memory/allocation.hpp"
-#include "services/memSnapshot.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
 
-// The MemJFRReporter and MemJFRBaseline classes are only to be used from the
-// thread sending periodic JFR events. So no synchronization is needed.
-class MemJFRReporter : public AllStatic {
-private:
-  static void send_type_event(const Ticks& starttime, const char* tag, size_t reserved, size_t committed);
- public:
-  static void send_total_event();
-  static void send_type_events();
+struct MemSnapshotPair {
+  size_t reserved;
+  size_t committed;
 };
 
-// Helper class to avoid taking multiple NMT baselines for
-// the two JFR events that are using the same data.
-class MemJFRSnapshot : public AllStatic {
-private:
-  // The baseline age threshold in millie seconds. If older
-  // that this we will make a new baseline.
-  static const uint64_t BaselineAgeThreshold = 50;
+struct MemSnapshotOptions {
+  bool update_thread_stacks;
+  bool include_malloc;
+  bool include_vm;
+};
 
-  static Ticks _snapshot_timestamp;
-  static MemSnapshot* _snapshot;
+class MemSnapshot : public CHeapObj<mtNMT> {
+private:
+  size_t _malloc_snapshot[mt_number_of_types];
+  size_t _malloc_total;
+  MemSnapshotPair _vm_snapshot[mt_number_of_types];
+  MemSnapshotPair _vm_total;
+
+  MemSnapshotOptions _snapshot_options;
+
+  void walk_thread_stacks();
+  void update_malloc_snapshot();
+  void update_vm_snapshot();
 
 public:
-  static MemSnapshot* get_snapshot();
-  static Ticks get_timestamp();
+  static const MemSnapshotOptions OptionsAll;
+  static const MemSnapshotOptions OptionsNoTS;
+
+  MemSnapshot(MemSnapshotOptions options = OptionsAll);
+  void snap();
+
+  size_t total_reserved() const;
+  size_t total_committed() const;
+  size_t reserved(MEMFLAGS flag) const;
+  size_t committed(MEMFLAGS flag) const;
 };
 
-#endif //SHARE_SERVICES_MEMJFRREPORTER_HPP
+#endif // SHARE_SERVICES_MEMSNAPSHOT_HPP

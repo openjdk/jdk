@@ -627,9 +627,9 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsage) {
-  MemJFRReporter::sendTypeEvents();
+  MemJFRReporter::send_type_events();
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
-  MemJFRReporter::sendTotalEvent();
+  MemJFRReporter::send_total_event();
 }

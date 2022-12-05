@@ -25,53 +25,52 @@
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "services/memJfrReporter.hpp"
-#include "services/memReporter.hpp"
+#include "services/memSnapshot.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-Ticks MemJFRBaseline::_baseline_timestamp;
-MemBaseline MemJFRBaseline::_baseline;
+Ticks MemJFRSnapshot::_snapshot_timestamp;
+MemSnapshot* MemJFRSnapshot::_snapshot = nullptr;
 
-MemBaseline& MemJFRBaseline::getBaseline() {
-  Tickspan since_baselined = Ticks::now() - _baseline_timestamp;
-  if (since_baselined.milliseconds() > BaselineAgeThreshold ||
-      _baseline.baseline_type() == MemBaseline::Not_baselined) {
-    // Summary only baseline.
-    _baseline.baseline(true);
-    _baseline_timestamp.stamp();
+MemSnapshot* MemJFRSnapshot::get_snapshot() {
+  Tickspan since_baselined = Ticks::now() - _snapshot_timestamp;
+
+  if (_snapshot == nullptr) {
+    // No previous snapshot taken, create one.
+    _snapshot = new MemSnapshot(MemSnapshot::OptionsNoTS);
+  } else if (since_baselined.milliseconds() < BaselineAgeThreshold) {
+    // There is a recent enough snapshot, return it.
+    return _snapshot;
   }
 
-  return _baseline;
+  // Refresh existing snapshot.
+  _snapshot->snap();
+  _snapshot_timestamp.stamp();
+
+  return _snapshot;
 }
 
-Ticks MemJFRBaseline::getTimestamp() {
-  return _baseline_timestamp;
+Ticks MemJFRSnapshot::get_timestamp() {
+  return _snapshot_timestamp;
 }
 
-void MemJFRReporter::sendTotalEvent() {
+void MemJFRReporter::send_total_event() {
   if (!MemTracker::enabled()) {
     return;
   }
 
-  MemBaseline& usage = MemJFRBaseline::getBaseline();
-  Ticks timestamp = MemJFRBaseline::getTimestamp();
-
-  const size_t malloced_memory = usage.malloc_memory_snapshot()->total();
-  const size_t reserved_memory = usage.virtual_memory_snapshot()->total_reserved();
-  const size_t committed_memory = usage.virtual_memory_snapshot()->total_committed();
-
-  const size_t reserved = malloced_memory + reserved_memory;
-  const size_t committed = malloced_memory + committed_memory;
+  MemSnapshot* usage = MemJFRSnapshot::get_snapshot();
+  Ticks timestamp = MemJFRSnapshot::get_timestamp();
 
   EventNativeMemoryUsageTotal event;
   event.set_starttime(timestamp);
-  event.set_reserved(reserved);
-  event.set_committed(committed);
+  event.set_reserved(usage->total_reserved());
+  event.set_committed(usage->total_committed());
   event.commit();
 }
 
-void MemJFRReporter::sendTypeEvent(const Ticks& starttime, const char* type, size_t reserved, size_t committed) {
+void MemJFRReporter::send_type_event(const Ticks& starttime, const char* type, size_t reserved, size_t committed) {
   EventNativeMemoryUsage event;
   event.set_starttime(starttime);
   event.set_type(type);
@@ -80,39 +79,20 @@ void MemJFRReporter::sendTypeEvent(const Ticks& starttime, const char* type, siz
   event.commit();
 }
 
-void MemJFRReporter::sendTypeEvents() {
+void MemJFRReporter::send_type_events() {
   if (!MemTracker::enabled()) {
     return;
   }
 
-  MemBaseline& usage = MemJFRBaseline::getBaseline();
-  Ticks timestamp = MemJFRBaseline::getTimestamp();
+  MemSnapshot* usage = MemJFRSnapshot::get_snapshot();
+  Ticks timestamp = MemJFRSnapshot::get_timestamp();
 
   for (int index = 0; index < mt_number_of_types; index ++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
-    MallocMemory* malloc_memory = usage.malloc_memory(flag);
-    VirtualMemory* virtual_memory = usage.virtual_memory(flag);
-
-    size_t reserved = MemReporterBase::reserved_total(malloc_memory, virtual_memory);
-    size_t committed = MemReporterBase::committed_total(malloc_memory, virtual_memory);
-
-    // Some special cases to get accounting correct
-    if (flag == mtThread) {
-      // Count thread's native stack in "Thread" category
-      if (ThreadStackTracker::track_as_vm()) {
-        VirtualMemory* thread_stack_usage = usage.virtual_memory(mtThreadStack);
-        reserved += thread_stack_usage->reserved();
-        committed += thread_stack_usage->committed();
-      } else {
-        MallocMemory* thread_stack_usage = usage.malloc_memory(mtThreadStack);
-        reserved += thread_stack_usage->malloc_size();
-        committed += thread_stack_usage->malloc_size();
-      }
-    } else if (flag == mtNMT) {
-      // Count malloc headers in "NMT" category
-      reserved += usage.malloc_memory_snapshot()->malloc_overhead();
-      committed += usage.malloc_memory_snapshot()->malloc_overhead();
+    if (flag == mtNone) {
+      // Skip mtNone since it is not really used.
+      continue;
     }
-    sendTypeEvent(timestamp, NMTUtil::flag_to_name(flag), reserved, committed);
+    send_type_event(timestamp, NMTUtil::flag_to_name(flag), usage->reserved(flag), usage->committed(flag));
   }
 }
