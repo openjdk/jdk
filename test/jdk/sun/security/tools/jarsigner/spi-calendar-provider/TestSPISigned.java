@@ -72,7 +72,7 @@ public class TestSPISigned {
                 if (!"SPI".equals(provProp)) {
                    throw new RuntimeException("Test failed! Expected -Djava.locale.providers=SPI to be set for test run");
                 }
-                doRunTest(SIGNED_JAR);
+                doRunTest();
             } else {
                throw new RuntimeException("Test failed! Expected 'run-test' arg for test run");
             }
@@ -100,7 +100,7 @@ public class TestSPISigned {
         }
     }
 
-    private static void doRunTest(Path signedLocalJar) {
+    private static void doRunTest() {
         Locale locale = new Locale("xx", "YY");
         Calendar kcal = Calendar.getInstance(locale);
         try {
