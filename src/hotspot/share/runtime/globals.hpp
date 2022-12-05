@@ -323,6 +323,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAESCTRIntrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
+  product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for the vectorized version of ChaCha20")          \
+                                                                            \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \
                                                                             \
@@ -452,10 +455,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
-  develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena). "  \
-          "Used to help diagnose memory stomping bugs.")                    \
-                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space")                                 \
                                                                             \
@@ -513,6 +512,9 @@ const int ObjectAlignmentInBytes = 8;
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
+                                                                            \
+  product(bool, ErrorLogSecondaryErrorDetails, false, DIAGNOSTIC,           \
+          "If enabled, show details on secondary crashes in the error log") \
                                                                             \
   develop(intx, TraceDwarfLevel, 0,                                         \
           "Debug levels for the dwarf parser")                              \
@@ -1985,9 +1987,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  develop(bool, TraceOptimizedUpcallStubs, false,                           \
-                "Trace optimized upcall stub generation")                   \
 
 // end of RUNTIME_FLAGS
 

@@ -1999,8 +1999,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 return inputStream;
             } while (redirects < maxRedirects);
 
-            throw new ProtocolException("Server redirected too many " +
-                                        " times ("+ redirects + ")");
+            throw new ProtocolException("Server redirected too many times (" +
+                    redirects + ")");
         } catch (RuntimeException e) {
             disconnectInternal();
             rememberedException = e;

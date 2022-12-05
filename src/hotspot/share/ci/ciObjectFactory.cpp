@@ -167,7 +167,6 @@ void ciObjectFactory::init_shared_objects() {
       assert (obj->is_metadata(), "what else would it be?");
       if (obj->is_loaded() && obj->is_instance_klass()) {
         obj->as_instance_klass()->compute_nonstatic_fields();
-        obj->as_instance_klass()->transitive_interfaces();
       }
     }
   }

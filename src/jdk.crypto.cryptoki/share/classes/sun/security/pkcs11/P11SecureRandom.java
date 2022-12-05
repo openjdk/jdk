@@ -47,6 +47,7 @@ import sun.security.pkcs11.wrapper.*;
  */
 final class P11SecureRandom extends SecureRandomSpi {
 
+    @Serial
     private static final long serialVersionUID = -8939510236124553291L;
 
     // token instance

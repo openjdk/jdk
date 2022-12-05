@@ -532,6 +532,12 @@ class methodHandle;
   do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, ghash_processBlocks_signature, F_R) \
    do_name(processMultipleBlocks_name, "processMultipleBlocks")                                                         \
                                                                                                                         \
+  /* support for com.sun.crypto.provider.ChaCha20Cipher */                                                              \
+  do_class(com_sun_crypto_provider_chacha20cipher,      "com/sun/crypto/provider/ChaCha20Cipher")                       \
+  do_intrinsic(_chacha20Block, com_sun_crypto_provider_chacha20cipher, chacha20Block_name, chacha20Block_signature, F_S) \
+   do_name(chacha20Block_name,                                 "implChaCha20Block")                                         \
+   do_signature(chacha20Block_signature, "([I[B)I")                                                                    \
+                                                                                                                        \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \
