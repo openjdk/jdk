@@ -420,7 +420,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   if (TraceOptoParse) {
     tty->print_raw("Parsing method ");
-    parse_method->dump_name_as_ascii(tty);
+    parse_method->print_name(tty);
     tty->print_cr(" {");
   }
 #endif
