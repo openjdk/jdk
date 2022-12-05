@@ -64,13 +64,13 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number=427, title="Pattern Matching for switch", status="Third Preview")
+        @JEP(number=433, title="Pattern Matching for switch", status="Fourth Preview")
         SWITCH_PATTERN_MATCHING(),
-        @JEP(number=405, title="Record Patterns")
+        @JEP(number=432, title="Record Patterns", status="Second Preview")
         RECORD_PATTERNS,
         @JEP(number=425, title="Virtual Threads")
         VIRTUAL_THREADS,
-        @JEP(number=424, title="Foreign Function & Memory API")
+        @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
         FOREIGN,
         /**
          * A key for testing.

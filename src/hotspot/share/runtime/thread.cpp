@@ -368,14 +368,6 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
   return false;
 }
 
-ThreadPriority Thread::get_priority(const Thread* const thread) {
-  ThreadPriority priority;
-  // Can return an error!
-  (void)os::get_priority(thread, priority);
-  assert(MinPriority <= priority && priority <= MaxPriority, "non-Java priority found");
-  return priority;
-}
-
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
   debug_only(check_for_dangling_thread_pointer(thread);)
   // Can return an error!

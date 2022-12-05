@@ -22,12 +22,12 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SegmentAllocator;
 
 import java.lang.foreign.SymbolLookup;
@@ -42,51 +42,51 @@ public class CallOverheadHelper extends CLayouts {
 
     static final MethodHandle func;
     static final MethodHandle func_v;
-    static Addressable func_addr;
+    static MemorySegment func_addr;
     static final MethodHandle identity;
     static final MethodHandle identity_v;
-    static Addressable identity_addr;
+    static MemorySegment identity_addr;
     static final MethodHandle identity_struct;
     static final MethodHandle identity_struct_v;
-    static Addressable identity_struct_addr;
+    static MemorySegment identity_struct_addr;
     static final MethodHandle identity_struct_3;
     static final MethodHandle identity_struct_3_v;
-    static Addressable identity_struct_3_addr;
+    static MemorySegment identity_struct_3_addr;
     static final MethodHandle identity_memory_address;
     static final MethodHandle identity_memory_address_v;
-    static Addressable identity_memory_address_addr;
+    static MemorySegment identity_memory_address_addr;
     static final MethodHandle identity_memory_address_3;
     static final MethodHandle identity_memory_address_3_v;
-    static Addressable identity_memory_address_3_addr;
+    static MemorySegment identity_memory_address_3_addr;
     static final MethodHandle args1;
     static final MethodHandle args1_v;
-    static Addressable args1_addr;
+    static MemorySegment args1_addr;
     static final MethodHandle args2;
     static final MethodHandle args2_v;
-    static Addressable args2_addr;
+    static MemorySegment args2_addr;
     static final MethodHandle args3;
     static final MethodHandle args3_v;
-    static Addressable args3_addr;
+    static MemorySegment args3_addr;
     static final MethodHandle args4;
     static final MethodHandle args4_v;
-    static Addressable args4_addr;
+    static MemorySegment args4_addr;
     static final MethodHandle args5;
     static final MethodHandle args5_v;
-    static Addressable args5_addr;
+    static MemorySegment args5_addr;
     static final MethodHandle args10;
     static final MethodHandle args10_v;
-    static Addressable args10_addr;
+    static MemorySegment args10_addr;
 
     static final MemoryLayout POINT_LAYOUT = MemoryLayout.structLayout(
             C_INT, C_INT
     );
 
-    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.openShared());
-    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.openConfined());
+    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openShared().scope());
+    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, Arena.openConfined().scope());
 
-    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.openImplicit());
+    static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, SegmentScope.auto());
 
-    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, MemorySession.openImplicit()));
+    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, SegmentScope.auto()));
 
     static {
         System.loadLibrary("CallOverheadJNI");
@@ -94,64 +94,64 @@ public class CallOverheadHelper extends CLayouts {
         System.loadLibrary("CallOverhead");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         {
-            func_addr = loaderLibs.lookup("func").orElseThrow();
+            func_addr = loaderLibs.find("func").orElseThrow();
             MethodType mt = MethodType.methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             func_v = abi.downcallHandle(fd);
             func = insertArguments(func_v, 0, func_addr);
         }
         {
-            identity_addr = loaderLibs.lookup("identity").orElseThrow();
+            identity_addr = loaderLibs.find("identity").orElseThrow();
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
             identity_v = abi.downcallHandle(fd);
             identity = insertArguments(identity_v, 0, identity_addr);
         }
-        identity_struct_addr = loaderLibs.lookup("identity_struct").orElseThrow();
+        identity_struct_addr = loaderLibs.find("identity_struct").orElseThrow();
         identity_struct_v = abi.downcallHandle(
                 FunctionDescriptor.of(POINT_LAYOUT, POINT_LAYOUT));
         identity_struct = insertArguments(identity_struct_v, 0, identity_struct_addr);
 
-        identity_struct_3_addr = loaderLibs.lookup("identity_struct_3").orElseThrow();
+        identity_struct_3_addr = loaderLibs.find("identity_struct_3").orElseThrow();
         identity_struct_3_v = abi.downcallHandle(
                 FunctionDescriptor.of(POINT_LAYOUT, POINT_LAYOUT, POINT_LAYOUT, POINT_LAYOUT));
         identity_struct_3 = insertArguments(identity_struct_3_v, 0, identity_struct_3_addr);
 
-        identity_memory_address_addr = loaderLibs.lookup("identity_memory_address").orElseThrow();
+        identity_memory_address_addr = loaderLibs.find("identity_memory_address").orElseThrow();
         identity_memory_address_v = abi.downcallHandle(
                 FunctionDescriptor.of(C_POINTER, C_POINTER));
         identity_memory_address = insertArguments(identity_memory_address_v, 0, identity_memory_address_addr);
 
-        identity_memory_address_3_addr = loaderLibs.lookup("identity_memory_address_3").orElseThrow();
+        identity_memory_address_3_addr = loaderLibs.find("identity_memory_address_3").orElseThrow();
         identity_memory_address_3_v = abi.downcallHandle(
                 FunctionDescriptor.of(C_POINTER, C_POINTER, C_POINTER, C_POINTER));
         identity_memory_address_3 = insertArguments(identity_memory_address_3_v, 0, identity_memory_address_3_addr);
 
-        args1_addr = loaderLibs.lookup("args1").orElseThrow();
+        args1_addr = loaderLibs.find("args1").orElseThrow();
         args1_v = abi.downcallHandle(
                 FunctionDescriptor.ofVoid(C_LONG_LONG));
         args1 = insertArguments(args1_v, 0, args1_addr);
 
-        args2_addr = loaderLibs.lookup("args2").orElseThrow();
+        args2_addr = loaderLibs.find("args2").orElseThrow();
         args2_v = abi.downcallHandle(
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE));
         args2 = insertArguments(args2_v, 0, args2_addr);
 
-        args3_addr = loaderLibs.lookup("args3").orElseThrow();
+        args3_addr = loaderLibs.find("args3").orElseThrow();
         args3_v = abi.downcallHandle(
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG));
         args3 = insertArguments(args3_v, 0, args3_addr);
 
-        args4_addr = loaderLibs.lookup("args4").orElseThrow();
+        args4_addr = loaderLibs.find("args4").orElseThrow();
         args4_v = abi.downcallHandle(
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE));
         args4 = insertArguments(args4_v, 0, args4_addr);
 
-        args5_addr = loaderLibs.lookup("args5").orElseThrow();
+        args5_addr = loaderLibs.find("args5").orElseThrow();
         args5_v = abi.downcallHandle(
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG));
         args5 = insertArguments(args5_v, 0, args5_addr);
 
-        args10_addr = loaderLibs.lookup("args10").orElseThrow();
+        args10_addr = loaderLibs.find("args10").orElseThrow();
         args10_v = abi.downcallHandle(
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG,
                                           C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE));
