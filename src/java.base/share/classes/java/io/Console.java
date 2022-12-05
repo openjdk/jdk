@@ -595,36 +595,40 @@ public class Console implements Flushable
 
         CHARSET = cs;
 
+        cons = instantiateConsoleole(istty);
+
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
-            @SuppressWarnings("removal")
             public Console console() {
-                if (cons == null) {
-                    try {
-                        // Try loading providers
-                        PrivilegedAction<Console> pa = () -> {
-                            var consModName = System.getProperty("jdk.console",
-                                    JdkConsoleProvider.DEFAULT_PROVIDER);
-                            return ServiceLoader.load(JdkConsoleProvider.class).stream()
-                                    .map(ServiceLoader.Provider::get)
-                                    .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                                    .map(jcp -> jcp.console(istty))
-                                    .filter(Objects::nonNull)
-                                    .findAny()
-                                    .map(jc -> (Console) new ProxyingConsole(jc))
-                                    .orElse(istty ? new Console() : null);
-                        };
-                        cons = AccessController.doPrivileged(pa);
-                    } catch (ServiceConfigurationError ignore) {
-                        // default to built-in Console
-                        cons = istty ? new Console() : null;
-                    }
-                }
                 return cons;
             }
         });
     }
-    private static Console cons;
+
+    @SuppressWarnings("removal")
+    private static Console instantiateConsoleole(boolean istty) {
+        try {
+            // Try loading providers
+            PrivilegedAction<Console> pa = () -> {
+                var consModName = System.getProperty("jdk.console",
+                        JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+                return ServiceLoader.load(JdkConsoleProvider.class).stream()
+                        .map(ServiceLoader.Provider::get)
+                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
+                        .map(jcp -> jcp.console(istty))
+                        .filter(Objects::nonNull)
+                        .findAny()
+                        .map(jc -> (Console) new ProxyingConsole(jc))
+                        .orElse(istty ? new Console() : null);
+            };
+            return AccessController.doPrivileged(pa);
+        } catch (ServiceConfigurationError ignore) {
+            // default to built-in Console
+            return istty ? new Console() : null;
+        }
+    }
+
+    private static final Console cons;
     private static native boolean istty();
 
     Console() {

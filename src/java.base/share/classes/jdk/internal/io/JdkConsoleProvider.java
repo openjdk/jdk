@@ -35,9 +35,9 @@ package jdk.internal.io;
  */
 public interface JdkConsoleProvider {
     /**
-     * The default provider of JdkConsole.
+     * The module name of the JdkConsole default provider.
      */
-    String DEFAULT_PROVIDER = "jdk.internal.le";
+    String DEFAULT_PROVIDER_MODULE_NAME = "jdk.internal.le";
 
     /**
      * {@return the Console instance, or {@code null} if not available}

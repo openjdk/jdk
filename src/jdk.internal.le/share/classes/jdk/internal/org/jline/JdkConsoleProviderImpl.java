@@ -64,7 +64,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             return terminal.reader();
         }
 
-        public synchronized JdkConsole format(String fmt, Object ...args) {
+        public JdkConsole format(String fmt, Object ... args) {
             writer().format(fmt, args).flush();
             return this;
         }
@@ -73,7 +73,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             return format(format, args);
         }
 
-        public synchronized String readLine(String fmt, Object ... args) {
+        public String readLine(String fmt, Object ... args) {
             try {
                 return jline.readLine(fmt.formatted(args));
             } catch (EndOfFileException eofe) {
@@ -85,7 +85,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             return readLine("");
         }
 
-        public synchronized char[] readPassword(String fmt, Object ... args) {
+        public char[] readPassword(String fmt, Object ... args) {
             try {
                 return jline.readLine(fmt.formatted(args), '\0').toCharArray();
             } catch (EndOfFileException eofe) {

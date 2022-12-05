@@ -59,7 +59,7 @@ final class ProxyingConsole extends Console {
      * {@inheritDoc}
      */
     @Override
-    public Console format(String fmt, Object ...args) {
+    public Console format(String fmt, Object ... args) {
         delegate.format(fmt, args);
         return this;
     }

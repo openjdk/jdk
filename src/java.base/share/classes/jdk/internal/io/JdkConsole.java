@@ -30,14 +30,14 @@ import java.nio.charset.Charset;
 
 /**
  * Delegate interface for custom Console implementations.
- * Methods defined here are duplicating ones in Console class.
+ * Methods defined here duplicates the ones in Console class.
  * Providers should implement jdk.internal.io.JdkConsoleProvider
  * to instantiate an implementation of this interface.
  */
 public interface JdkConsole {
     PrintWriter writer();
     Reader reader();
-    JdkConsole format(String fmt, Object ...args);
+    JdkConsole format(String fmt, Object ... args);
     JdkConsole printf(String format, Object ... args);
     String readLine(String fmt, Object ... args);
     String readLine();
