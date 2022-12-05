@@ -3128,6 +3128,9 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
     return NULL;  // CodeBuffer::expand failed
   }
 
+  // We are always 4-byte aligned here.
+  assert_alignment(pc());
+
   // Create a trampoline stub relocation which relates this trampoline stub
   // with the call instruction at insts_call_instruction_offset in the
   // instructions code-section.
