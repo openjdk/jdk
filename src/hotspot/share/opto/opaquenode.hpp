@@ -70,20 +70,16 @@ class OpaqueLoopStrideNode : public Opaque1Node {
   virtual int Opcode() const;
 };
 
-//------------------------------Opaque2Node------------------------------------
-// A node to prevent unwanted optimizations.  Allows constant folding.  Stops
-// value-numbering, most Ideal calls or Identity functions.  This Node is
-// specifically designed to prevent the pre-increment value of a loop trip
-// counter from being live out of the bottom of the loop (hence causing the
-// pre- and post-increment values both being live and thus requiring an extra
-// temp register and an extra move).  If we "accidentally" optimize through
-// this kind of a Node, we'll get slightly pessimal, but correct, code.  Thus
-// it's OK to be slightly sloppy on optimizations here.
-class Opaque2Node : public Node {
-  virtual uint hash() const ;                  // { return NO_HASH; }
-  virtual bool cmp( const Node &n ) const;
+//------------------------------Opaque3Node------------------------------------
+// A node to prevent unwanted optimizations. Will be optimized only during
+// macro nodes expansion.
+class Opaque3Node : public Node {
+  int _opt; // what optimization it was used for
+  virtual uint hash() const;
+  virtual bool cmp(const Node &n) const;
   public:
-  Opaque2Node( Compile* C, Node *n ) : Node(0,n) {
+  enum { RTM_OPT };
+  Opaque3Node(Compile* C, Node* n, int opt) : Node(0, n), _opt(opt) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -91,17 +87,6 @@ class Opaque2Node : public Node {
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
-};
-
-//------------------------------Opaque3Node------------------------------------
-// A node to prevent unwanted optimizations. Will be optimized only during
-// macro nodes expansion.
-class Opaque3Node : public Opaque2Node {
-  int _opt; // what optimization it was used for
-  public:
-  enum { RTM_OPT };
-  Opaque3Node(Compile* C, Node *n, int opt) : Opaque2Node(C, n), _opt(opt) {}
-  virtual int Opcode() const;
   bool rtm_opt() const { return (_opt == RTM_OPT); }
 };
 

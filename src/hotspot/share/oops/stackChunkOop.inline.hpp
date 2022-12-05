@@ -28,8 +28,11 @@
 #include "oops/stackChunkOop.hpp"
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetStackChunk.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -47,8 +50,6 @@ inline stackChunkOop stackChunkOopDesc::cast(oop obj) {
 }
 
 inline stackChunkOop stackChunkOopDesc::parent() const         { return stackChunkOopDesc::cast(jdk_internal_vm_StackChunk::parent(as_oop())); }
-template<typename P>
-inline bool stackChunkOopDesc::is_parent_null() const          { return jdk_internal_vm_StackChunk::is_parent_null<P>(as_oop()); }
 inline void stackChunkOopDesc::set_parent(stackChunkOop value) { jdk_internal_vm_StackChunk::set_parent(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_parent_raw(oop value)       { jdk_internal_vm_StackChunk::set_parent_raw<P>(this, value); }
@@ -85,16 +86,10 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
-inline oop stackChunkOopDesc::cont() const              { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
-template<typename P>
-inline oop stackChunkOopDesc::cont() const              {
-  oop obj = jdk_internal_vm_StackChunk::cont_raw<P>(as_oop());
-  obj = (oop)NativeAccess<>::oop_load(&obj);
-  return obj;
-}
+inline oop stackChunkOopDesc::cont() const                { return jdk_internal_vm_StackChunk::cont(as_oop()); }
 inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
-inline void stackChunkOopDesc::set_cont_raw(oop value)    {  jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+inline void stackChunkOopDesc::set_cont_raw(oop value)    { jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
 template<DecoratorSet decorators>
 inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
@@ -226,11 +221,17 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
 inline frame stackChunkOopDesc::relativize(frame fr)   const { relativize_frame(fr);   return fr; }
 inline frame stackChunkOopDesc::derelativize(frame fr) const { derelativize_frame(fr); return fr; }
 
-inline BitMapView stackChunkOopDesc::bitmap() const {
+inline void* stackChunkOopDesc::gc_data() const {
   int stack_sz = stack_size();
+  assert(stack_sz != 0, "stack should not be empty");
 
-  // The bitmap is located after the stack.
-  HeapWord* bitmap_addr = start_of_stack() + stack_sz;
+  // The gc data is located after the stack.
+  return start_of_stack() + stack_sz;
+}
+
+inline BitMapView stackChunkOopDesc::bitmap() const {
+  HeapWord* bitmap_addr = static_cast<HeapWord*>(gc_data());
+  int stack_sz = stack_size();
   size_t bitmap_size_in_bits = InstanceStackChunkKlass::bitmap_size_in_bits(stack_sz);
 
   BitMapView bitmap((BitMap::bm_word_t*)bitmap_addr, bitmap_size_in_bits);
@@ -345,6 +346,11 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   if (to != nullptr)
 #endif
   memcpy(to, from, size << LogBytesPerWord);
+}
+
+template <typename OopT>
+inline oop stackChunkOopDesc::load_oop(OopT* addr) {
+  return BarrierSet::barrier_set()->barrier_set_stack_chunk()->load_oop(this, addr);
 }
 
 inline intptr_t* stackChunkOopDesc::relative_base() const {
