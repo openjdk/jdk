@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,11 @@ int awt_parseImage(JNIEnv *env, jobject jimage, BufImageS_t **imagePP,
     }
 
     /* Parse the color model */
+    ColorModelS_t *cmP = &imageP->cmodel;
     if ((status = awt_parseColorModel(env, jcmodel, imageP->imageType,
-                                      &imageP->cmodel)) <= 0) {
+                                      cmP)) <= 0) {
         awt_freeParsedRaster(&imageP->raster, FALSE);
+        if (cmP->nBits != NULL) free(cmP->nBits);
         free((void *)imageP);
         return 0;
     }
@@ -454,6 +456,7 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
 
     int i;
     static jobject s_jdefCM = NULL;
+    cmP->nBits = NULL; // initialize this before first return
 
     if (JNU_IsNull(env, jcmodel)) {
         JNU_ThrowNullPointerException(env, "null ColorModel object");
@@ -485,7 +488,6 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
         return -1;
     }
 
-    cmP->nBits = NULL;
     if (SAFE_TO_ALLOC_2(cmP->numComponents, sizeof(jint))) {
         cmP->nBits = (jint *)malloc(cmP->numComponents * sizeof(jint));
     }
@@ -533,6 +535,11 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
             CHECK_NULL_RETURN(jcm, -1);
             defCM = (*env)->CallStaticObjectMethod(env, jcm,
                                                    g_CMgetRGBdefaultMID, NULL);
+            if ((*env)->ExceptionCheck(env)) {
+                (*env)->ExceptionClear(env);
+                JNU_ThrowNullPointerException(env, "Unable to find default CM");
+                return -1;
+            }
             s_jdefCM = (*env)->NewGlobalRef(env, defCM);
             if (defCM == NULL || s_jdefCM == NULL) {
                 (*env)->ExceptionClear(env);
