@@ -1639,7 +1639,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (mismatch != 0) {
                 // Clear output data
                 dst.reset();
-                // If this is no an in-place array, zero the dst buffer
+                // If this is not an in-place array, zero the dst buffer
                 if (!inPlaceArray) {
                     if (dst.hasArray()) {
                         int ofs = dst.arrayOffset() + dst.position();
