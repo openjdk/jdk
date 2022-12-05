@@ -41,7 +41,7 @@ import java.util.Set;
 /**
  * Unimplemented.
  */
-public final class SctpMultiChannelImpl
+public class SctpMultiChannelImpl
         extends SctpMultiChannel {
 
     public SctpMultiChannelImpl(SelectorProvider provider) {

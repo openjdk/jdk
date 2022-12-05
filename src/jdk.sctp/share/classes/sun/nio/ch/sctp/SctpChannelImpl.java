@@ -40,7 +40,7 @@ import java.util.Set;
 /**
  * Unimplemented.
  */
-public final class SctpChannelImpl
+public class SctpChannelImpl
         extends SctpChannel {
 
     public SctpChannelImpl(SelectorProvider provider) {

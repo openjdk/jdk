@@ -41,19 +41,17 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import com.sun.nio.sctp.SctpStandardSocketOptions;
-import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.NativeThread;
 import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
-import sun.nio.ch.Util;
 
 /**
  * An implementation of SctpServerChannel
  */
-public final class SctpServerChannelImpl extends SctpServerChannel
+public class SctpServerChannelImpl extends SctpServerChannel
     implements SelChImpl
 {
     private final FileDescriptor fd;

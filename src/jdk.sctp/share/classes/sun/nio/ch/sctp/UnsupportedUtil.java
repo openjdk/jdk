@@ -25,6 +25,11 @@
 
 package sun.nio.ch.sctp;
 
+/**
+ * Utility class used by implementations on platforms <em>not</em> supporting SCTP.
+ * <p>
+ * This class is not present on the "unix" platform because unix can support SCTP.
+ */
 public final class UnsupportedUtil {
 
     private static final String MESSAGE = "SCTP not supported on this platform";
