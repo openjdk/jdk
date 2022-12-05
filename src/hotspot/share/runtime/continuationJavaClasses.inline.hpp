@@ -33,28 +33,12 @@
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/atomic.hpp"
 
-inline oop jdk_internal_vm_ContinuationScope::name(oop ref) {
-  return ref->obj_field(_name_offset);
-}
-
 inline oop jdk_internal_vm_Continuation::scope(oop continuation) {
   return continuation->obj_field(_scope_offset);
 }
 
-inline oop jdk_internal_vm_Continuation::target(oop continuation) {
-  return continuation->obj_field(_target_offset);
-}
-
 inline oop jdk_internal_vm_Continuation::parent(oop continuation) {
   return continuation->obj_field(_parent_offset);
-}
-
-inline oop jdk_internal_vm_Continuation::yieldInfo(oop continuation) {
-  return continuation->obj_field(_yieldInfo_offset);
-}
-
-inline void jdk_internal_vm_Continuation::set_yieldInfo(oop continuation, oop value) {
-  continuation->obj_field_put(_yieldInfo_offset, value);
 }
 
 inline stackChunkOop jdk_internal_vm_Continuation::tail(oop continuation) {
