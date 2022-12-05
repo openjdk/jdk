@@ -39,6 +39,8 @@ import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.StubLocations;
+import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.windows.CallArranger;
 import org.testng.annotations.Test;
 
@@ -50,10 +52,14 @@ import static jdk.internal.foreign.PlatformLayouts.Win64.*;
 import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.Binding.copy;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
 
 import static org.testng.Assert.*;
 
 public class TestWindowsCallArranger extends CallArrangerTestBase {
+
+    private static final short STACK_SLOT_SIZE = 8;
+    private static final VMStorage TARGET_ADDRESS_STORAGE = StubLocations.TARGET_ADDRESS.storage(StorageType.PLACEHOLDER);
 
     @Test
     public void testEmpty() {
@@ -67,7 +73,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) }
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) }
         });
         checkReturnBindings(callingSequence, new Binding[]{});
     }
@@ -84,7 +90,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(rcx, int.class) },
             { vmStore(rdx, int.class) },
             { vmStore(r8, int.class) },
@@ -106,7 +112,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(xmm0, double.class) },
             { vmStore(xmm1, double.class) },
             { vmStore(xmm2, double.class) },
@@ -130,15 +136,15 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(rcx, long.class) },
             { vmStore(rdx, long.class) },
             { vmStore(xmm2, float.class) },
             { vmStore(xmm3, float.class) },
-            { vmStore(stackStorage(0), long.class) },
-            { vmStore(stackStorage(1), long.class) },
-            { vmStore(stackStorage(2), float.class) },
-            { vmStore(stackStorage(3), float.class) }
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 8), long.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 16), float.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 24), float.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -161,7 +167,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(rcx, int.class) },
             { vmStore(rdx, int.class) },
             {
@@ -170,13 +176,13 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
                 vmStore(r8, long.class)
             },
             { vmStore(r9, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), double.class) },
-            { vmStore(stackStorage(2), double.class) },
-            { vmStore(stackStorage(3), double.class) },
-            { vmStore(stackStorage(4), int.class) },
-            { vmStore(stackStorage(5), int.class) },
-            { vmStore(stackStorage(6), int.class) }
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 0), int.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 8), double.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 16), double.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 24), double.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 32), int.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 40), int.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 48), int.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -190,7 +196,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
                 C_INT, C_DOUBLE, C_INT, C_DOUBLE, C_DOUBLE);
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(
                 ADDRESS, C_INT, C_DOUBLE, C_INT, C_DOUBLE, C_DOUBLE);
-        CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false, LinkerOptions.of(firstVariadicArg(2)));
+        CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false, LinkerOptions.forDowncall(fd, firstVariadicArg(2)));
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
@@ -198,12 +204,12 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fdExpected);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(rcx, int.class) },
             { vmStore(xmm1, double.class) },
             { vmStore(r8, int.class) },
             { dup(), vmStore(r9, double.class), vmStore(xmm3, double.class) },
-            { vmStore(stackStorage(0), double.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 0), double.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -232,7 +238,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { bufferLoad(0, long.class), vmStore(rcx, long.class) }
         });
 
@@ -262,7 +268,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             {
                 copy(struct),
                 unboxAddress(),
@@ -293,7 +299,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { unboxAddress(), vmStore(rcx, long.class) }
         });
 
@@ -314,7 +320,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
         });
 
         checkReturnBindings(callingSequence,
@@ -338,7 +344,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), FunctionDescriptor.ofVoid(ADDRESS, C_POINTER));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { unboxAddress(), vmStore(rcx, long.class) }
         });
 
@@ -367,23 +373,23 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(r10, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { copy(struct), unboxAddress(), vmStore(rcx, long.class) },
             { vmStore(rdx, int.class) },
             { vmStore(xmm2, double.class) },
             { unboxAddress(), vmStore(r9, long.class) },
-            { copy(struct), unboxAddress(), vmStore(stackStorage(0), long.class) },
-            { vmStore(stackStorage(1), int.class) },
-            { vmStore(stackStorage(2), double.class) },
-            { unboxAddress(), vmStore(stackStorage(3), long.class) },
-            { copy(struct), unboxAddress(), vmStore(stackStorage(4), long.class) },
-            { vmStore(stackStorage(5), int.class) },
-            { vmStore(stackStorage(6), double.class) },
-            { unboxAddress(), vmStore(stackStorage(7), long.class) },
-            { copy(struct), unboxAddress(), vmStore(stackStorage(8), long.class) },
-            { vmStore(stackStorage(9), int.class) },
-            { vmStore(stackStorage(10), double.class) },
-            { unboxAddress(), vmStore(stackStorage(11), long.class) },
+            { copy(struct), unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 8), int.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 16), double.class) },
+            { unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 24), long.class) },
+            { copy(struct), unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 32), long.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 40), int.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 48), double.class) },
+            { unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 56), long.class) },
+            { copy(struct), unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 64), long.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 72), int.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 80), double.class) },
+            { unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 88), long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});

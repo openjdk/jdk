@@ -35,7 +35,7 @@ import java.nio.ByteOrder;
 import static java.lang.foreign.ValueLayout.*;
 import static org.testng.Assert.*;
 
-public class MemoryLayoutTypeRetentionTest extends NativeTestHelper {
+public class MemoryLayoutTypeRetentionTest {
 
     // These tests check both compile-time and runtime properties.
     // withName() et al. should return the same type as the original object.

@@ -53,7 +53,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkHasNaturalAlignment(function);
-        LinkerOptions optionSet = LinkerOptions.of(options);
+        LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();

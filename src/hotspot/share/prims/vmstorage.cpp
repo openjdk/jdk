@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,10 @@
  * questions.
  */
 
-#ifndef SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
-#define SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
+#include "precompiled.hpp"
+#include "prims/vmstorage.hpp"
 
-#include "prims/foreignGlobals.hpp"
-
-#include "classfile/javaClasses.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "oops/objArrayOop.hpp"
-#include "oops/oopCast.inline.hpp"
-
-template<typename T>
-void ForeignGlobals::parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int)) {
-  objArrayOop subarray = oop_cast<objArrayOop>(jarray->obj_at((int) type_index));
-  int subarray_length = subarray->length();
-  for (int i = 0; i < subarray_length; i++) {
-    oop storage = subarray->obj_at(i);
-    jint index = jdk_internal_foreign_abi_VMStorage::index_or_offset(storage);
-    array.push(converter(index));
-  }
+void VMStorage::print_on(outputStream* os) const {
+  os->print("{type=%d, index=%d, %s=%d}", static_cast<int8_t>(_type), _index_or_offset,
+    is_stack() ? "size" : "segment_mask", _segment_mask_or_size);
 }
-
-inline const char* null_safe_string(const char* str) {
-  return str == nullptr ? "NULL" : str;
-}
-
-#endif // SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
