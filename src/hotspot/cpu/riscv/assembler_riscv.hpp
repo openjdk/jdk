@@ -30,7 +30,6 @@
 #include "asm/register.hpp"
 #include "assembler_riscv.inline.hpp"
 #include "metaprogramming/enableIf.hpp"
-
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
