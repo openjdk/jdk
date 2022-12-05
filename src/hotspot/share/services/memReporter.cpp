@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "cds/filemap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -40,19 +39,29 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
-void MemReporterBase::print_total(size_t reserved, size_t committed) const {
+// There can be upto two CDS archives which can contain readonly data. On Windows, pages are not
+// shareable so the RO region may not actually be read only
+size_t MemReporterBase::readonly_total(FileMapInfo* info) const {
+  size_t total = 0;
+  FileMapRegion* r;
+  if (info!= NULL) {
+    FileMapRegion* r = info->region_at(MetaspaceShared::ro);
+    if (r->read_only()) {
+      total = r->used();
+    }
+  }
+  return total;
+}
+
+void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only = 0) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
                   amount_in_current_scale(reserved), scale,
                   amount_in_current_scale(committed), scale);
-}
-
-void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only) const {
-  const char* scale = current_scale();
-  output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s, readonly=" SIZE_FORMAT "%s",
-                  amount_in_current_scale(reserved), scale,
-                  amount_in_current_scale(committed), scale,
-                  amount_in_current_scale(read_only), scale);
+  if (read_only > 0) {
+    output()->print(", readonly=" SIZE_FORMAT "%s",
+                    amount_in_current_scale(read_only), scale);
+  }
 }
 
 void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
@@ -114,13 +123,8 @@ void MemSummaryReporter::report() {
 
   size_t total_reserved_amount = total_malloced_bytes + total_mmap_reserved_bytes;
   size_t total_committed_amount = total_malloced_bytes + total_mmap_committed_bytes;
-
-  size_t read_only_bytes = 0;
-  FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
-  // Region will be read-write on windows, otherwise this is a sanity check
-  if (!MetaspaceShared::use_windows_memory_mapping())
-    assert(r->read_only(), "Region should be read only");
-  read_only_bytes = r->used();
+  size_t read_only_bytes = readonly_total(FileMapInfo::current_info()); // static archive
+  read_only_bytes += readonly_total(FileMapInfo::dynamic_info()); // dynamic archive
 
   // Overall total
   out->print_cr("\nNative Memory Tracking:\n");

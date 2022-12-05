@@ -67,9 +67,9 @@ public class SummarySanityCheck {
 
     // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
     Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB\\)");
-    // Match 'Total: reserved=<reserved>KB, committed=<committed>KB'
+    // Match 'Total: reserved=<reserved>KB, committed=<committed>KB, readonly=<readonly>KB'
     Pattern totalMemoryPattern = Pattern.compile("Total\\:\\sreserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB,\\sreadonly=(?<readonly>\\d+)KB");
-    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
+    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB, readonly<readonly>KB)
     Pattern mtSharedPattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB,\\sreadonly=(?<readonly>\\d+)KB\\)");
 
     for (int i = 0; i < lines.length; i++) {
@@ -80,6 +80,10 @@ public class SummarySanityCheck {
           totalCommitted = Long.parseLong(totalMemoryMatcher.group("committed"));
           totalReserved = Long.parseLong(totalMemoryMatcher.group("reserved"));
           totalReadonly = Long.parseLong(totalMemoryMatcher.group("readonly"));
+
+          if (totalReadonly > totalCommitted) {
+            throwTestException("Total readonly was more than committed");
+          }
         } else {
           throwTestException("Failed to match the expected groups in 'Total' memory part");
         }
@@ -97,9 +101,9 @@ public class SummarySanityCheck {
                 + typeReserved + ") for mtType: " + typeMatcher.group("typename"));
           }
           // Make sure readonly is always less or equals
-          if (typeShared > typeReserved) {
-            throwTestException("Readonly (" + typeShared + ") was more than Reserved ("
-                + typeReserved + ") for mtType: " + typeMatcher.group("typename"));
+          if (typeShared > typeCommitted) {
+            throwTestException("Readonly (" + typeShared + ") was more than Committed ("
+                + typeCommitted + ") for mtType: " + typeMatcher.group("typename"));
           }
 
            // Add to total and compare them in the end
