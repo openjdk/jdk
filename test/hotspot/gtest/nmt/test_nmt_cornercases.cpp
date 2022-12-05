@@ -33,7 +33,7 @@
 
 // Check NMT header for integrity, as well as expected type and size.
 static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
-  MallocHeader* hdr = MallocHeader::assert_block_integrity(payload);
+  const MallocHeader* hdr = MallocHeader::assert_block_integrity(payload);
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->flags(), type);
 }

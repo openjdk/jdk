@@ -114,7 +114,9 @@ class MallocHeader {
   uint16_t get_footer() const       { return build_footer(footer_address()[0], footer_address()[1]); }
   void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
- public:
+  template<typename IN, typename OUT>
+  inline static OUT assert_block_integrity_internal(IN memblock);
+public:
 
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
 
@@ -136,7 +138,8 @@ class MallocHeader {
 
   // If block is broken, print out a report to tty (optionally with
   // hex dump surrounding the broken block), then trigger a fatal error
-  inline static MallocHeader* assert_block_integrity(const void* memblock);
+  inline static const MallocHeader* assert_block_integrity(const void* memblock);
+  inline static MallocHeader* assert_block_integrity(void* memblock);
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms
