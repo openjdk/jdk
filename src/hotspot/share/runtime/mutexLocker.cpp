@@ -369,7 +369,7 @@ void mutex_init() {
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock);
-  defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock); // used for JNI critical regions
+  defl(JNICritical_lock            , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
 #if INCLUDE_JVMCI
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   defl(JVMCI_lock                  , PaddedMonitor, JVMCIRuntime_lock);
