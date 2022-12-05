@@ -27,6 +27,7 @@ package sun.awt;
 
 import javax.accessibility.AccessibleContext;
 import java.awt.*;
+import java.awt.color.ICC_Profile;
 import java.awt.event.FocusEvent.Cause;
 import java.awt.dnd.DragSourceContext;
 import java.awt.dnd.DropTargetContext;
@@ -50,6 +51,8 @@ import java.util.ResourceBundle;
 import java.util.Vector;
 import javax.accessibility.AccessibleBundle;
 
+import sun.java2d.cmm.Profile;
+
 /**
  * The AWTAccessor utility class.
  * The main purpose of this class is to enable accessing
@@ -65,6 +68,16 @@ public final class AWTAccessor {
      * and interfaces.
      */
     private AWTAccessor() {
+    }
+
+    /*
+     * An interface of accessor for the java.awt.color.ICC_Profile class.
+     */
+    public interface ICC_ProfileAccessor {
+        /*
+         * Activates and returns the deferred standard profiles.
+         */
+        Profile cmmProfile(ICC_Profile profile);
     }
 
     /*
@@ -831,6 +844,7 @@ public final class AWTAccessor {
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
+    private static ICC_ProfileAccessor iccProfileAccessor;
     private static ComponentAccessor componentAccessor;
     private static ContainerAccessor containerAccessor;
     private static WindowAccessor windowAccessor;
@@ -862,6 +876,25 @@ public final class AWTAccessor {
     private static AccessibleBundleAccessor accessibleBundleAccessor;
     private static DragSourceContextAccessor dragSourceContextAccessor;
     private static DropTargetContextAccessor dropTargetContextAccessor;
+
+    /*
+     * Set an accessor object for the java.awt.color.ICC_Profile class.
+     */
+    public static void setICC_ProfileAccessor(ICC_ProfileAccessor ipa) {
+        iccProfileAccessor = ipa;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.color.ICC_Profile class.
+     */
+    public static ICC_ProfileAccessor getICC_ProfileAccessor() {
+        var access = iccProfileAccessor;
+        if (access == null) {
+            ensureClassInitialized(ICC_Profile.class);
+            access = iccProfileAccessor;
+        }
+        return access;
+    }
 
     /*
      * Set an accessor object for the java.awt.Component class.

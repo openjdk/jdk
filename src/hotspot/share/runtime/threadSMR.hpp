@@ -122,8 +122,6 @@ class ThreadsSMRSupport : AllStatic {
   static uint                  _to_delete_list_cnt;
   static uint                  _to_delete_list_max;
 
-  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
-  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
   static void add_deleted_thread_times(uint add_value);
   static void add_tlh_times(uint add_value);
   static void clear_delete_notify();
@@ -139,7 +137,6 @@ class ThreadsSMRSupport : AllStatic {
   static void update_deleted_thread_time_max(uint new_value);
   static void update_java_thread_list_max(uint new_value);
   static void update_tlh_time_max(uint new_value);
-  static void verify_hazard_ptr_scanned(Thread *self, ThreadsList *threads);
   static ThreadsList* xchg_java_thread_list(ThreadsList* new_list);
 
  public:
@@ -274,17 +271,6 @@ public:
     }
   }
 
-  // Constructor that transfers ownership of the pointer.
-  SafeThreadsListPtr(SafeThreadsListPtr& other) :
-    _previous(other._previous),
-    _thread(other._thread),
-    _list(other._list),
-    _has_ref_count(other._has_ref_count),
-    _needs_release(other._needs_release)
-  {
-    other._needs_release = false;
-  }
-
   ~SafeThreadsListPtr() {
     if (_needs_release) {
       release_stable_list();
@@ -332,11 +318,6 @@ public:
   inline Iterator begin();
   inline Iterator end();
 
-  template <class T>
-  void threads_do(T *cl) const {
-    return list()->threads_do(cl);
-  }
-
   bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p);
 
   bool includes(JavaThread* p) {
@@ -376,10 +357,6 @@ public:
 
   uint length() const {
     return _list->length();
-  }
-
-  ThreadsList *list() const {
-    return _list;
   }
 
   JavaThread *next() {

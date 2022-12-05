@@ -33,6 +33,7 @@ public:
   static Address address_bad_mask_from_jni_env(Register env);
 };
 
+// Needs to be included after definition of ZBarrierSetAssemblerBase
 #include CPU_HEADER(gc/z/zBarrierSetAssembler)
 
 #endif // SHARE_GC_Z_ZBARRIERSETASSEMBLER_HPP

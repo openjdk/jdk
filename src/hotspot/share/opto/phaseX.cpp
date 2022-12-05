@@ -1847,6 +1847,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_counted_loop_phi(worklist, parent, use);
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
+  push_cast_ii(worklist, parent, use);
 }
 
 
@@ -1950,6 +1951,22 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
   }
 }
 
+// CastII::Value() optimizes CmpI/If patterns if the right input of the CmpI has a constant type. If the CastII input is
+// the same node as the left input into the CmpI node, the type of the CastII node can be improved accordingly. Add the
+// CastII node back to the worklist to re-apply Value() to either not miss this optimization or to undo it because it
+// cannot be applied anymore. We could have optimized the type of the CastII before but now the type of the right input
+// of the CmpI (i.e. 'parent') is no longer constant. The type of the CastII must be widened in this case.
+void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  if (use->Opcode() == Op_CmpI && use->in(2) == parent) {
+    Node* other_cmp_input = use->in(1);
+    for (DUIterator_Fast imax, i = other_cmp_input->fast_outs(imax); i < imax; i++) {
+      Node* cast_ii = other_cmp_input->fast_out(i);
+      if (cast_ii->is_CastII()) {
+        push_if_not_bottom_type(worklist, cast_ii);
+      }
+    }
+  }
+}
 
 //------------------------------do_transform-----------------------------------
 // Top level driver for the recursive transformer
@@ -2099,7 +2116,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   case Op_CountedLoop:
   case Op_Conv2B:
   case Op_Opaque1:
-  case Op_Opaque2:
     _worklist.push(n);
     break;
   default:

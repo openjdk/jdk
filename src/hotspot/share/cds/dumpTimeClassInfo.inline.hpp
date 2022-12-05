@@ -27,6 +27,7 @@
 #define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
 
 #include "cds/dumpTimeClassInfo.hpp"
+
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlass.hpp"

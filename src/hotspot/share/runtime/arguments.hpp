@@ -86,7 +86,6 @@ public:
   ModulePatchPath(const char* module_name, const char* path);
   ~ModulePatchPath();
 
-  inline void set_path(const char* path) { _path->set_value(path); }
   inline const char* module_name() const { return _module_name; }
   inline char* path_string() const { return _path->value(); }
 };
@@ -174,7 +173,6 @@ public:
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
-  void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path,
@@ -592,8 +590,6 @@ class Arguments : AllStatic {
   static const char* PropertyList_get_readable_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
   static int  PropertyList_readable_count(SystemProperty* pl);
-  static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
-  static char* PropertyList_get_value_at(SystemProperty* pl,int index);
 
   static bool is_internal_module_property(const char* option);
 
@@ -618,12 +614,10 @@ class Arguments : AllStatic {
 
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
   static char* get_boot_class_path() { return _boot_class_path->value(); }
-  static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
   static bool has_jimage() { return _has_jimage; }
 
   static char* get_java_home()    { return _java_home->value(); }
   static char* get_dll_dir()      { return _sun_boot_library_path->value(); }
-  static char* get_ext_dirs()     { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
