@@ -184,11 +184,14 @@ int JavaCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage
 class ComputeMoveOrder: public StackObj {
   class MoveOperation;
 
+  // segment_mask_or_size is not taken into account since
+  // VMStorages that differ only in mask or size can still
+  // conflict
   static inline unsigned hash(const VMStorage& vms) {
-    // segment_mask_or_size is not taken into account since
-    // VMStorages that differ only in mask or size can still
-    // conflict
     return static_cast<unsigned int>(vms.type()) ^ vms.index_or_offset();
+  }
+  static inline bool equals(const VMStorage& a, const VMStorage& b) {
+    return a.type() == b.type() && a.index_or_offset() == b.index_or_offset();
   }
 
   using KillerTable = ResourceHashtable<
@@ -197,7 +200,7 @@ class ComputeMoveOrder: public StackObj {
     AnyObj::RESOURCE_AREA,
     mtInternal,
     ComputeMoveOrder::hash,
-    ::operator==
+    ComputeMoveOrder::equals
     >;
 
   class MoveOperation: public ResourceObj {
