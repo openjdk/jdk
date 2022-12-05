@@ -211,24 +211,7 @@ void DowncallStubGenerator::generate() {
   __ call(_abi._target_addr_reg);
   // this call is assumed not to have killed r15_thread
 
-  if (!_needs_return_buffer) {
-    // FIXME: this assumes we return in rax/xmm0, which might not be the case
-    // Unpack native results.
-    switch (_ret_bt) {
-      case T_BOOLEAN: __ c2bool(rax);            break;
-      case T_CHAR   : __ movzwl(rax, rax);       break;
-      case T_BYTE   : __ sign_extend_byte (rax); break;
-      case T_SHORT  : __ sign_extend_short(rax); break;
-      case T_INT    : /* nothing to do */        break;
-      case T_DOUBLE :
-      case T_FLOAT  :
-        // Result is in xmm0 we'll save as needed
-        break;
-      case T_VOID: break;
-      case T_LONG: break;
-      default       : ShouldNotReachHere();
-    }
-  } else {
+  if (_needs_return_buffer) {
     assert(ret_buf_addr_rsp_offset != -1, "no return buffer addr spill");
     __ movptr(rscratch1, Address(rsp, ret_buf_addr_rsp_offset));
     int offset = 0;

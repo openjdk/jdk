@@ -23,101 +23,69 @@
  *  questions.
  *
  */
-package java.lang.foreign;
+package jdk.internal.foreign.layout;
 
-import java.util.Objects;
-import java.util.Optional;
 import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-abstract non-sealed class AbstractLayout implements MemoryLayout {
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.UnionLayout;
+import java.lang.foreign.ValueLayout;
+import java.util.Objects;
+import java.util.Optional;
 
-    private final long size;
-    final long alignment;
+public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & MemoryLayout>
+        permits AbstractGroupLayout, PaddingLayoutImpl, SequenceLayoutImpl, ValueLayouts.AbstractValueLayout {
+
+    private final long bitSize;
+    private final long bitAlignment;
     private final Optional<String> name;
     @Stable
-    long cachedSize;
+    private long byteSize;
 
-    public AbstractLayout(long size, long alignment, Optional<String> name) {
-        this.size = size;
-        this.alignment = alignment;
+    AbstractLayout(long bitSize, long bitAlignment, Optional<String> name) {
+        this.bitSize = bitSize;
+        this.bitAlignment = bitAlignment;
         this.name = name;
     }
 
-    @Override
-    public AbstractLayout withName(String name) {
+    public final L withName(String name) {
         Objects.requireNonNull(name);
-        return dup(alignment, Optional.of(name));
+        return dup(bitAlignment, Optional.of(name));
     }
 
-    @Override
     public final Optional<String> name() {
         return name;
     }
 
-    abstract AbstractLayout dup(long alignment, Optional<String> name);
-
-    @Override
-    public AbstractLayout withBitAlignment(long alignmentBits) {
-        checkAlignment(alignmentBits);
-        return dup(alignmentBits, name);
+    public final L withBitAlignment(long bitAlignment) {
+        checkAlignment(bitAlignment);
+        return dup(bitAlignment, name);
     }
 
-    void checkAlignment(long alignmentBitCount) {
-        if (((alignmentBitCount & (alignmentBitCount - 1)) != 0L) || //alignment must be a power of two
-                (alignmentBitCount < 8)) { //alignment must be greater than 8
-            throw new IllegalArgumentException("Invalid alignment: " + alignmentBitCount);
-        }
-    }
-
-    static void checkSize(long size) {
-        checkSize(size, false);
-    }
-
-    static void checkSize(long size, boolean includeZero) {
-        if (size < 0 || (!includeZero && size == 0)) {
-            throw new IllegalArgumentException("Invalid size for layout: " + size);
-        }
-    }
-
-    @Override
     public final long bitAlignment() {
-        return alignment;
+        return bitAlignment;
     }
 
-    @Override
     @ForceInline
-    public long byteSize() {
-        if (cachedSize == 0) {
-            cachedSize = Utils.bitsToBytesOrThrow(bitSize(),
+    public final long byteSize() {
+        if (byteSize == 0) {
+            byteSize = Utils.bitsToBytesOrThrow(bitSize(),
                     () -> new UnsupportedOperationException("Cannot compute byte size; bit size is not a multiple of 8"));
         }
-        return cachedSize;
+        return byteSize;
     }
 
-    @Override
-    public long bitSize() {
-        return size;
+    public final long bitSize() {
+        return bitSize;
     }
 
-    String decorateLayoutString(String s) {
-        if (name().isPresent()) {
-            s = String.format("%s(%s)", s, name().get());
-        }
-        if (!hasNaturalAlignment()) {
-            s = alignment + "%" + s;
-        }
-        return s;
-    }
-
-    boolean hasNaturalAlignment() {
-        return size == alignment;
-    }
-
-    @Override
-    public boolean isPadding() {
-        return this instanceof PaddingLayout;
+    public boolean hasNaturalAlignment() {
+        return bitSize == bitAlignment;
     }
 
     // the following methods have to copy the same Javadoc as in MemoryLayout, or subclasses will just show
@@ -128,7 +96,7 @@ abstract non-sealed class AbstractLayout implements MemoryLayout {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(name, size, alignment);
+        return Objects.hash(name, bitSize, bitAlignment);
     }
 
     /**
@@ -141,8 +109,8 @@ abstract non-sealed class AbstractLayout implements MemoryLayout {
      *     and {@linkplain ValueLayout#carrier() carrier}</li>
      *     <li>two sequence layouts are considered equal if they have the same element count (see {@link SequenceLayout#elementCount()}), and
      *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal</li>
-     *     <li>two group layouts are considered equal if they are of the same kind (see {@link GroupLayout#isStruct()},
-     *     {@link GroupLayout#isUnion()}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
+     *     <li>two group layouts are considered equal if they are of the same type (see {@link StructLayout},
+     *     {@link UnionLayout}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
      * </ul>
      *
      * @param other the object to be compared for equality with this layout.
@@ -154,14 +122,35 @@ abstract non-sealed class AbstractLayout implements MemoryLayout {
             return true;
         }
 
-        return other instanceof AbstractLayout otherLayout &&
+        return other instanceof AbstractLayout<?> otherLayout &&
                 name.equals(otherLayout.name) &&
-                size == otherLayout.size &&
-                alignment == otherLayout.alignment;
+                bitSize == otherLayout.bitSize &&
+                bitAlignment == otherLayout.bitAlignment;
     }
 
     /**
      * {@return the string representation of this layout}
      */
     public abstract String toString();
+
+    abstract L dup(long alignment, Optional<String> name);
+
+    String decorateLayoutString(String s) {
+        if (name().isPresent()) {
+            s = String.format("%s(%s)", s, name().get());
+        }
+        if (!hasNaturalAlignment()) {
+            s = bitAlignment + "%" + s;
+        }
+        return s;
+    }
+
+    private static void checkAlignment(long alignmentBitCount) {
+        if (((alignmentBitCount & (alignmentBitCount - 1)) != 0L) || //alignment must be a power of two
+                (alignmentBitCount < 8)) { //alignment must be greater than 8
+            throw new IllegalArgumentException("Invalid alignment: " + alignmentBitCount);
+        }
+    }
+
+
 }
