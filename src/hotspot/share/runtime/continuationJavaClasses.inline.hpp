@@ -88,11 +88,6 @@ inline void jdk_internal_vm_StackChunk::set_parent(oop chunk, oop value) {
 }
 
 template<typename P>
-inline bool jdk_internal_vm_StackChunk::is_parent_null(oop chunk) {
-  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_parent_offset)) == NULL;
-}
-
-template<typename P>
 inline void jdk_internal_vm_StackChunk::set_parent_raw(oop chunk, oop value) {
   RawAccess<>::oop_store(chunk->field_addr<P>(_parent_offset), value);
 }
@@ -108,11 +103,6 @@ inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
 
 inline void jdk_internal_vm_StackChunk::set_cont(oop chunk, oop value) {
   chunk->obj_field_put(_cont_offset, value);
-}
-
-template<typename P>
-inline oop jdk_internal_vm_StackChunk::cont_raw(oop chunk) {
-  return (oop)RawAccess<>::oop_load(chunk->field_addr<P>(_cont_offset));
 }
 
 template<typename P>

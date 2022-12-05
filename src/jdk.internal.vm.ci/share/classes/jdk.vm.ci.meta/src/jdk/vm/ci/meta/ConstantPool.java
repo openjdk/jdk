@@ -50,6 +50,24 @@ public interface ConstantPool {
     void loadReferencedType(int cpi, int opcode);
 
     /**
+     * Ensures that the type referenced by the specified constant pool entry is loaded. This can be
+     * used to compile time resolve a type. It works for field, method, or type constant pool
+     * entries.
+     *
+     * @param cpi the index of the constant pool entry that references the type
+     * @param opcode the opcode of the instruction that references the type
+     * @param initialize if {@code true}, the referenced type is either guaranteed to be initialized
+     *            upon return or an initialization exception is thrown
+     */
+    default void loadReferencedType(int cpi, int opcode, boolean initialize) {
+        if (initialize) {
+            loadReferencedType(cpi, opcode);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Looks up the type referenced by the constant pool entry at {@code cpi} as referenced by the
      * {@code opcode} bytecode instruction.
      *

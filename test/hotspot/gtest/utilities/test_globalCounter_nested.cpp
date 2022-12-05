@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalCounter.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/spinYield.hpp"
 #include "threadHelper.inline.hpp"

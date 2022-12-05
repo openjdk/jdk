@@ -27,6 +27,11 @@ import jdk.jfr.api.consumer.recordingstream.TestStart.StartEvent;
 class EventProducer extends Thread {
     private final Object lock = new Object();
     private boolean killed = false;
+
+    public EventProducer() {
+        super("Event Producer");
+    }
+
     public void run() {
         while (true) {
             StartEvent s = new StartEvent();
