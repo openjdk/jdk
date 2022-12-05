@@ -948,6 +948,53 @@ void java_lang_Class::allocate_fixup_lists() {
   set_fixup_module_field_list(module_list);
 }
 
+void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
+                                      Handle& mirror, Handle& comp_mirror, TRAPS) {
+  // Allocate mirror (java.lang.Class instance)
+  oop mirror_oop = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(k, CHECK);
+  mirror = Handle(THREAD, mirror_oop);
+
+  // Setup indirection from mirror->klass
+  set_klass(mirror(), k);
+
+  InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
+  assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
+
+  set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
+
+  // It might also have a component mirror.  This mirror must already exist.
+  if (k->is_array_klass()) {
+    if (k->is_typeArray_klass()) {
+      BasicType type = TypeArrayKlass::cast(k)->element_type();
+      comp_mirror = Handle(THREAD, Universe::java_mirror(type));
+    } else {
+      assert(k->is_objArray_klass(), "Must be");
+      Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
+      assert(element_klass != NULL, "Must have an element klass");
+      comp_mirror = Handle(THREAD, element_klass->java_mirror());
+    }
+    assert(comp_mirror() != NULL, "must have a mirror");
+
+    // Two-way link between the array klass and its component mirror:
+    // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
+    set_component_mirror(mirror(), comp_mirror());
+    // See below for ordering dependencies between field array_klass in component mirror
+    // and java_mirror in this klass.
+  } else {
+    assert(k->is_instance_klass(), "Must be");
+
+    initialize_mirror_fields(k, mirror, protection_domain, classData, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // If any of the fields throws an exception like OOM remove the klass field
+      // from the mirror so GC doesn't follow it after the klass has been deallocated.
+      // This mirror looks like a primitive type, which logically it is because it
+      // it represents no class.
+      set_klass(mirror(), NULL);
+      return;
+    }
+  }
+}
+
 void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
                                     Handle module, Handle protection_domain,
                                     Handle classData, TRAPS) {
@@ -963,50 +1010,10 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (vmClasses::Class_klass_loaded()) {
-    // Allocate mirror (java.lang.Class instance)
-    oop mirror_oop = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(k, CHECK);
-    Handle mirror(THREAD, mirror_oop);
+    Handle mirror;
     Handle comp_mirror;
 
-    // Setup indirection from mirror->klass
-    set_klass(mirror(), k);
-
-    InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
-    assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
-
-    set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
-
-    // It might also have a component mirror.  This mirror must already exist.
-    if (k->is_array_klass()) {
-      if (k->is_typeArray_klass()) {
-        BasicType type = TypeArrayKlass::cast(k)->element_type();
-        comp_mirror = Handle(THREAD, Universe::java_mirror(type));
-      } else {
-        assert(k->is_objArray_klass(), "Must be");
-        Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
-        assert(element_klass != NULL, "Must have an element klass");
-        comp_mirror = Handle(THREAD, element_klass->java_mirror());
-      }
-      assert(comp_mirror() != NULL, "must have a mirror");
-
-      // Two-way link between the array klass and its component mirror:
-      // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
-      set_component_mirror(mirror(), comp_mirror());
-      // See below for ordering dependencies between field array_klass in component mirror
-      // and java_mirror in this klass.
-    } else {
-      assert(k->is_instance_klass(), "Must be");
-
-      initialize_mirror_fields(k, mirror, protection_domain, classData, THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        // If any of the fields throws an exception like OOM remove the klass field
-        // from the mirror so GC doesn't follow it after the klass has been deallocated.
-        // This mirror looks like a primitive type, which logically it is because it
-        // it represents no class.
-        set_klass(mirror(), NULL);
-        return;
-      }
-    }
+    allocate_mirror(k, /*is_scratch=*/false, protection_domain, classData, mirror, comp_mirror, CHECK);
 
     // set the classLoader field in the java_lang_Class instance
     assert(class_loader() == k->class_loader(), "should be same");
@@ -1036,7 +1043,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
 #if INCLUDE_CDS_JAVA_HEAP
 // The "scratch mirror" stores the states of the mirror object that can be
-// determined at dump time. At runtime, more information is added to it by 
+// determined at dump time. At runtime, more information is added to it by
 // java_lang_Class::restore_archived_mirror().
 //
 // Essentially, /*dumptime*/create_scratch_mirror() + /*runtime*/restore_archived_mirror()

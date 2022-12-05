@@ -249,6 +249,8 @@ class java_lang_Class : AllStatic {
   static void compute_offsets();
 
   // Instance creation
+  static void allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
+                              Handle& mirror, Handle& comp_mirror, TRAPS); // returns mirror and comp_mirror
   static void create_mirror(Klass* k, Handle class_loader, Handle module,
                             Handle protection_domain, Handle classData, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
