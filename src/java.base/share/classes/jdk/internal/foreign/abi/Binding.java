@@ -25,6 +25,7 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.NativeMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
@@ -367,7 +368,28 @@ public interface Binding {
     }
 
     static Binding cast(Class<?> fromType, Class<?> toType) {
-        return new Cast(fromType, toType);
+        if (fromType == int.class) {
+            if (toType == boolean.class) {
+                return Cast.INT_TO_BOOLEAN;
+            } else if (toType == byte.class) {
+                return Cast.INT_TO_BYTE;
+            } else if (toType == short.class) {
+                return Cast.INT_TO_SHORT;
+            } else if (toType == char.class) {
+                return Cast.INT_TO_CHAR;
+            }
+        } else if (toType == int.class) {
+            if (fromType == boolean.class) {
+                return Cast.BOOLEAN_TO_INT;
+            } else if (fromType == byte.class) {
+                return Cast.BYTE_TO_INT;
+            } else if (fromType == short.class) {
+                return Cast.SHORT_TO_INT;
+            } else if (fromType == char.class) {
+                return Cast.CHAR_TO_INT;
+            }
+        }
+        throw new IllegalArgumentException("Unknown conversion: " + fromType + " -> " + toType);
     }
 
 
@@ -713,7 +735,40 @@ public interface Binding {
      *   value onto the stack.
      *
      */
-    record Cast(Class<?> fromType, Class<?> toType) implements Binding {
+    enum Cast implements Binding {
+        INT_TO_BOOLEAN(int.class, boolean.class) {
+            @Override
+            public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
+                                  BindingInterpreter.LoadFunc loadFunc, Context context) {
+                // implement least significant byte non-zero test
+                int arg = (int) stack.pop();
+                boolean result = Utils.byteToBoolean((byte) arg);
+                stack.push(result);
+            }
+        },
+        INT_TO_BYTE(int.class, byte.class),
+        INT_TO_CHAR(int.class, char.class),
+        INT_TO_SHORT(int.class, short.class),
+        BOOLEAN_TO_INT(boolean.class, int.class),
+        BYTE_TO_INT(byte.class, int.class),
+        CHAR_TO_INT(char.class, int.class),
+        SHORT_TO_INT(short.class, int.class);
+
+        private final Class<?> fromType;
+        private final Class<?> toType;
+
+        Cast(Class<?> fromType, Class<?> toType) {
+            this.fromType = fromType;
+            this.toType = toType;
+        }
+
+        public Class<?> fromType() {
+            return fromType;
+        }
+
+        public Class<?> toType() {
+            return toType;
+        }
 
         @Override
         public Tag tag() {
