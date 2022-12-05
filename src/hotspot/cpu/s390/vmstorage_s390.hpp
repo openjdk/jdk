@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,32 @@
  * questions.
  */
 
-#ifndef SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
-#define SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
+#ifndef CPU_S390_VMSTORAGE_S390_INLINE_HPP
+#define CPU_S390_VMSTORAGE_S390_INLINE_HPP
 
-#include "prims/foreignGlobals.hpp"
+#include <cstdint>
 
-#include "classfile/javaClasses.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "oops/objArrayOop.hpp"
-#include "oops/oopCast.inline.hpp"
+#include "asm/register.hpp"
 
-template<typename T>
-void ForeignGlobals::parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int)) {
-  objArrayOop subarray = oop_cast<objArrayOop>(jarray->obj_at((int) type_index));
-  int subarray_length = subarray->length();
-  for (int i = 0; i < subarray_length; i++) {
-    oop storage = subarray->obj_at(i);
-    jint index = jdk_internal_foreign_abi_VMStorage::index_or_offset(storage);
-    array.push(converter(index));
-  }
+enum class StorageType : int8_t {
+  STACK = 0,
+  PLACEHOLDER = 1,
+// special locations used only by native code
+  FRAME_DATA = PLACEHOLDER + 1,
+  INVALID = -1
+};
+
+// need to define this before constructing VMStorage (below)
+constexpr inline bool VMStorage::is_reg(StorageType type) {
+   return false;
+}
+constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK; }
+constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
+constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::FRAME_DATA; }
+
+inline VMStorage as_VMStorage(VMReg reg) {
+  ShouldNotReachHere();
+  return VMStorage::invalid();
 }
 
-inline const char* null_safe_string(const char* str) {
-  return str == nullptr ? "NULL" : str;
-}
-
-#endif // SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
+#endif // CPU_S390_VMSTORAGE_S390_INLINE_HPP

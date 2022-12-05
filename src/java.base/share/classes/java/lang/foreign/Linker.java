@@ -27,12 +27,17 @@ package java.lang.foreign;
 
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code from foreign functions.
@@ -282,7 +287,8 @@ public sealed interface Linker permits AbstractLinker {
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     sealed interface Option
-            permits LinkerOptions.FirstVariadicArg {
+            permits LinkerOptions.LinkerOptionImpl,
+                    Option.CaptureCallState {
 
         /**
          * {@return a linker option used to denote the index of the first variadic argument layout in a
@@ -291,6 +297,72 @@ public sealed interface Linker permits AbstractLinker {
          */
         static Option firstVariadicArg(int index) {
             return new LinkerOptions.FirstVariadicArg(index);
+        }
+
+        /**
+         * {@return A linker option used to save portions of the execution state immediately after
+         *          calling a foreign function associated with a downcall method handle,
+         *          before it can be overwritten by the Java runtime, or read through conventional means}
+         * <p>
+         * A downcall method handle linked with this option will feature an additional {@link MemorySegment}
+         * parameter directly following the target address parameter. This memory segment must be a
+         * native segment into which the captured state is written.
+         *
+         * @param capturedState the names of the values to save.
+         * @see CaptureCallState#supported()
+         */
+        static CaptureCallState captureCallState(String... capturedState) {
+            Set<CapturableState> set = Stream.of(capturedState)
+                    .map(CapturableState::forName)
+                    .collect(Collectors.toSet());
+            return new LinkerOptions.CaptureCallStateImpl(set);
+        }
+
+        /**
+         * A linker option for saving portions of the execution state immediately
+         * after calling a foreign function associated with a downcall method handle,
+         * before it can be overwritten by the runtime, or read through conventional means.
+         * <p>
+         * Execution state is captured by a downcall method handle on invocation, by writing it
+         * to a native segment provided by the user to the downcall method handle.
+         * <p>
+         * The native segment should have the layout {@linkplain CaptureCallState#layout associated}
+         * with the particular {@code CaptureCallState} instance used to link the downcall handle.
+         * <p>
+         * Captured state can be retrieved from this native segment by constructing var handles
+         * from the {@linkplain #layout layout} associated with the {@code CaptureCallState} instance.
+         * <p>
+         * The following example demonstrates the use of this linker option:
+         * {@snippet lang = "java":
+         * MemorySegment targetAddress = ...
+         * CaptureCallState ccs = Linker.Option.captureCallState("errno");
+         * MethodHandle handle = Linker.nativeLinker().downcallHandle(targetAddress, FunctionDescriptor.ofVoid(), ccs);
+         *
+         * VarHandle errnoHandle = ccs.layout().varHandle(PathElement.groupElement("errno"));
+         * try (Arena arena = Arena.openConfined()) {
+         *     MemorySegment capturedState = arena.allocate(ccs.layout());
+         *     handle.invoke(capturedState);
+         *     int errno = errnoHandle.get(capturedState);
+         *     // use errno
+         * }
+         * }
+         */
+        sealed interface CaptureCallState extends Option
+                                          permits LinkerOptions.CaptureCallStateImpl {
+            /**
+             * {@return A struct layout that represents the layout of the native segment passed
+             *          to a downcall handle linked with this {@code CapturedCallState} instance}
+             */
+            StructLayout layout();
+
+            /**
+             * {@return the names of the state that can be capture by this implementation}
+             */
+            static Set<String> supported() {
+                return Arrays.stream(CapturableState.values())
+                             .map(CapturableState::stateName)
+                             .collect(Collectors.toSet());
+            }
         }
     }
 }
