@@ -33,7 +33,7 @@ public class NonLocalRegistryBase {
                     + "output. Enter the hostname or IP address of the different "
                     + "host below and continue the test.";
     static final String message = "Enter the hostname or IP address here and submit:";
-    static final int TIMEOUT_MS = 3600000;
+    static final int TIMEOUT_MS = 1200000;
 
     /**
      * Check the exception chain for the expected AccessException and message.
