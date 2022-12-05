@@ -210,15 +210,19 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     return;
   }
 
+  // The are no GCs that require memory barrier on arm32 now
+#ifndef PRODUCT
+  NMethodPatchingType patching_type = nmethod_patching_type();
+  assert(patching_type == NMethodPatchingType::stw_instruction_and_data_patch, "Unsupported patching type");
+#endif
+
   Label skip, guard;
   Address thread_disarmed_addr(Rthread, in_bytes(bs_nm->thread_disarmed_offset()));
 
   __ block_comment("nmethod_barrier begin");
   __ ldr_label(tmp0, guard);
 
-  // Subsequent loads of oops must occur after load of guard value.
-  // BarrierSetNMethod::disarm sets guard with release semantics.
-  __ membar(MacroAssembler::LoadLoad, tmp1);
+  // No memory barrier here
   __ ldr(tmp1, thread_disarmed_addr);
   __ cmp(tmp0, tmp1);
   __ b(skip, eq);

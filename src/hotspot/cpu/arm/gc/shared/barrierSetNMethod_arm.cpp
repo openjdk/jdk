@@ -62,11 +62,10 @@ public:
 // Check the first instruction of the nmethod entry barrier
 // to make sure that the offsets are not skewed.
 void NativeNMethodBarrier::verify() const {
-  uint32_t* addr = (uint32_t*) instruction_address();
-  uint32_t inst = *addr;
-
-  if (inst != 0xf57ff05f) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", (intptr_t)(addr), inst);
+  NativeInstruction *ni = (NativeInstruction *) instruction_address();
+  if (!ni->is_ldr()) {
+    uint32_t *addr = (uint32_t *) ni;
+    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", (intptr_t) addr, (uint32_t) *addr);
     fatal("not an ldr instruction.");
   }
 }
