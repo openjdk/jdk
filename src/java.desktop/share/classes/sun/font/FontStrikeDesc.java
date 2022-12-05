@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ public class FontStrikeDesc {
         return hashCode;
     }
 
-    public boolean equals(Object obj) {
-        return this == obj || obj instanceof FontStrikeDesc desc
+    public boolean equals(Object o) {
+        return this == o || o instanceof FontStrikeDesc desc
                 && valuemask == desc.valuemask
                 && Objects.equals(glyphTx, desc.glyphTx)
                 && Objects.equals(devTx, desc.devTx);
