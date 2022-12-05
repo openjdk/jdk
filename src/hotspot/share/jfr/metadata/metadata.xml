@@ -733,7 +733,7 @@
      </Event>
 
   <Event name="OSInformation" category="Operating System" label="OS Information"
-         description="Description of the OS the JVM runs on, e.g. for example a uname-like output"
+         description="Description of the OS the JVM runs on, for example a uname-like output"
          period="endChunk">
     <Field type="string" name="osVersion" label="OS Version" />
   </Event>
