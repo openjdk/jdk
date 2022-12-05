@@ -28,6 +28,8 @@ package sun.font;
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
+import java.util.Objects;
+
 import static sun.awt.SunHints.*;
 
 /*
@@ -85,17 +87,10 @@ public class FontStrikeDesc {
     }
 
     public boolean equals(Object obj) {
-        try {
-            FontStrikeDesc desc = (FontStrikeDesc)obj;
-            return (desc.valuemask == this.valuemask &&
-                    desc.glyphTx.equals(this.glyphTx) &&
-                    desc.devTx.equals(this.devTx));
-        } catch (Exception e) {
-            /* class cast or NP exceptions should not happen often, if ever,
-             * and I am hoping that this is faster than an instanceof check.
-             */
-            return false;
-        }
+        return this == obj || obj instanceof FontStrikeDesc desc
+                && valuemask == desc.valuemask
+                && Objects.equals(glyphTx, desc.glyphTx)
+                && Objects.equals(devTx, desc.devTx);
     }
 
     FontStrikeDesc() {

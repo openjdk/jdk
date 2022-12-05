@@ -32,6 +32,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Objects;
 
 // Right now this class is final to avoid a problem with native code.
 // For some reason the JNI IsInstanceOf was not working correctly
@@ -281,11 +282,10 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
     }
 
     public boolean equals(Object o) {
-         if (!super.equals(o)) {
-             return false;
-         }
-
-         return ((Font2D)o).getStyle() == this.getStyle();
+        return o instanceof CFont other
+                && Objects.equals(fullName, other.fullName)
+                && Objects.equals(platName, other.platName)
+                && getStyle() == other.getStyle();
     }
 
     public int hashCode() {

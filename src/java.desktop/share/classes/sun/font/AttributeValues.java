@@ -540,10 +540,6 @@ public final class AttributeValues implements Cloneable {
 
     // internal utilities
 
-    private static boolean equals(Object lhs, Object rhs) {
-        return lhs == null ? rhs == null : lhs.equals(rhs);
-    }
-
     private void update(EAttribute a) {
         defined |= a.mask;
         if (i_validate(a)) {
