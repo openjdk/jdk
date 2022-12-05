@@ -2435,6 +2435,7 @@ public:
       break;
     default:
       ShouldNotReachHere();
+      Rm = 0;  // unreachable
     }
 
     starti;
