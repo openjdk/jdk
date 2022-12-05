@@ -69,7 +69,6 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   static StubCodeDesc* next(StubCodeDesc* desc)  { return desc->_next; }
 
   static StubCodeDesc* desc_for(address pc);     // returns the code descriptor for the code containing pc or NULL
-  static const char*   name_for(address pc);     // returns the name of the code containing pc or NULL
 
   StubCodeDesc(const char* group, const char* name, address begin, address end = NULL) {
     assert(!_frozen, "no modifications allowed");
