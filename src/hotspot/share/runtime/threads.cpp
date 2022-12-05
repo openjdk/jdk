@@ -246,12 +246,6 @@ void Threads::java_threads_do(ThreadClosure* tc) {
   }
 }
 
-void Threads::java_threads_and_vm_thread_do(ThreadClosure* tc) {
-  assert_locked_or_safepoint(Threads_lock);
-  java_threads_do(tc);
-  tc->do_thread(VMThread::vm_thread());
-}
-
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system).
 void Threads::threads_do(ThreadClosure* tc) {
   assert_locked_or_safepoint(Threads_lock);

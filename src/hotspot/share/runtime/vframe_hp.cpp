@@ -535,10 +535,3 @@ jvmtiDeferredLocalVariable::jvmtiDeferredLocalVariable(int index, BasicType type
   _type = type;
   _value = value;
 }
-
-
-#ifndef PRODUCT
-void compiledVFrame::verify() const {
-  Unimplemented();
-}
-#endif // PRODUCT
