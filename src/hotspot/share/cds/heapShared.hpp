@@ -247,6 +247,7 @@ private:
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
   static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
+  static void check_default_subgraph_classes();
 
   static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
@@ -269,8 +270,16 @@ private:
 
   static SeenObjectsTable *_seen_objects_table;
 
+  // The "default subgraph" is the root of all archived objects that do not belong to any
+  // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
+  //    - interned strings
+  //    - Klass::java_mirror()
+  //    - ConstantPool::resolved_references()
+  static KlassSubGraphInfo* _default_subgraph_info;
+
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
+  static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == NULL, "must be");
@@ -374,6 +383,13 @@ private:
   static ResourceBitMap calculate_ptrmap(MemRegion region); // marks all the native pointers
   static void add_to_dumped_interned_strings(oop string);
 
+  // Scratch objects for archiving Klass::java_mirror()
+  static oop scratch_java_mirror(BasicType t);
+  static oop scratch_java_mirror(Klass* k);
+  static oop scratch_java_mirror_locked(Klass* k);
+  static void set_scratch_java_mirror(Klass* k, oop mirror);
+  static void unset_scratch_java_mirror(Klass* k);
+
   // We use the HeapShared::roots() array to make sure that objects stored in the
   // archived heap regions are not prematurely collected. These roots include:
   //
@@ -403,6 +419,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void init_scratch_java_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void run_full_gc_in_vm_thread() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_heap_region(int idx) {

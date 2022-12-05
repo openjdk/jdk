@@ -478,6 +478,9 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
         CDS_JAVA_HEAP_ONLY(_archived_basic_type_mirror_indices[i] = -1);
       }
     }
+    if (DumpSharedSpaces) {
+      HeapShared::init_scratch_java_mirrors(CHECK);
+    }
 }
 
 void Universe::fixup_mirrors(TRAPS) {

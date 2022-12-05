@@ -806,18 +806,6 @@ static void initialize_static_string_field(fieldDescriptor* fd, Handle mirror, T
   mirror()->obj_field_put(fd->offset(), string);
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
-static void initialize_static_string_field_for_dump(fieldDescriptor* fd, Handle mirror) {
-  DEBUG_ONLY(assert_valid_static_string_field(fd);)
-  assert(DumpSharedSpaces, "must be");
-  assert(HeapShared::is_archived_object_during_dumptime(mirror()), "must be");
-  // Archive the String field and update the pointer.
-  oop s = mirror()->obj_field(fd->offset());
-  oop archived_s = StringTable::create_archived_string(s);
-  mirror()->obj_field_put(fd->offset(), archived_s);
-}
-#endif
-
 static void initialize_static_primitive_field(fieldDescriptor* fd, Handle mirror) {
   assert(fd->has_initial_value(), "caller should have checked this");
   BasicType t = fd->field_type();
@@ -863,19 +851,6 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
     }
   }
 }
-
-#if INCLUDE_CDS_JAVA_HEAP
-static void initialize_static_field_for_dump(fieldDescriptor* fd, Handle mirror) {
-  assert(mirror.not_null() && fd->is_static(), "just checking");
-  if (fd->has_initial_value()) {
-    if (fd->field_type() != T_OBJECT) {
-      initialize_static_primitive_field(fd, mirror);
-    } else {
-      initialize_static_string_field_for_dump(fd, mirror);
-    }
-  }
-}
-#endif
 
 void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
   assert(InstanceMirrorKlass::offset_of_static_fields() != 0, "must have been computed already");
@@ -1050,6 +1025,9 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       // concurrently doesn't expect a k to have a null java_mirror.
       release_set_array_klass(comp_mirror(), k);
     }
+    if (DumpSharedSpaces) {
+      create_scratch_mirror(k, CHECK);
+    }
   } else {
     assert(fixup_mirror_list() != NULL, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
@@ -1057,191 +1035,75 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-// Clears mirror fields. Static final fields with initial values are reloaded
-// from constant pool. The object identity hash is in the object header and is
-// not affected.
-class ResetMirrorField: public FieldClosure {
- private:
-  Handle _m;
-
- public:
-  ResetMirrorField(Handle mirror) : _m(mirror) {}
-
-  void do_field(fieldDescriptor* fd) {
-    assert(DumpSharedSpaces, "dump time only");
-    assert(_m.not_null(), "Mirror cannot be NULL");
-
-    if (fd->is_static() && fd->has_initial_value()) {
-      initialize_static_field_for_dump(fd, _m);
-      return;
-    }
-
-    BasicType ft = fd->field_type();
-    switch (ft) {
-      case T_BYTE:
-        _m()->byte_field_put(fd->offset(), 0);
-        break;
-      case T_CHAR:
-        _m()->char_field_put(fd->offset(), 0);
-        break;
-      case T_DOUBLE:
-        _m()->double_field_put(fd->offset(), 0);
-        break;
-      case T_FLOAT:
-        _m()->float_field_put(fd->offset(), 0);
-        break;
-      case T_INT:
-        _m()->int_field_put(fd->offset(), 0);
-        break;
-      case T_LONG:
-        _m()->long_field_put(fd->offset(), 0);
-        break;
-      case T_SHORT:
-        _m()->short_field_put(fd->offset(), 0);
-        break;
-      case T_BOOLEAN:
-        _m()->bool_field_put(fd->offset(), false);
-        break;
-      case T_ARRAY:
-      case T_OBJECT: {
-        // It might be useful to cache the String field, but
-        // for now just clear out any reference field
-        oop o = _m()->obj_field(fd->offset());
-        _m()->obj_field_put(fd->offset(), NULL);
-        break;
-      }
-      default:
-        ShouldNotReachHere();
-        break;
-     }
-  }
-};
-
-void java_lang_Class::archive_basic_type_mirrors() {
-  assert(HeapShared::can_write(), "must be");
-
-  for (int t = T_BOOLEAN; t < T_VOID+1; t++) {
-    BasicType bt = (BasicType)t;
-    if (!is_reference_type(bt)) {
-      oop m = Universe::java_mirror(bt);
-      assert(m != NULL, "sanity");
-      // Update the field at _array_klass_offset to point to the relocated array klass.
-      oop archived_m = HeapShared::archive_object(m);
-      assert(archived_m != NULL, "sanity");
-
-      // Clear the fields. Just to be safe
-      Klass *k = m->klass();
-      Handle archived_mirror_h(Thread::current(), archived_m);
-      ResetMirrorField reset(archived_mirror_h);
-      InstanceKlass::cast(k)->do_nonstatic_fields(&reset);
-
-      log_trace(cds, heap, mirror)(
-        "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
-        type2name(bt), p2i(m), p2i(archived_m));
-
-      Universe::set_archived_basic_type_mirror_index(bt, HeapShared::append_root(archived_m));
-    }
-  }
-}
+// The "scratch mirror" stores the states of the mirror object that can be
+// determined at dump time. At runtime, more information is added to it by 
+// java_lang_Class::restore_archived_mirror().
 //
-// After the mirror object is successfully archived, the archived
-// klass is set with _has_archived_raw_mirror flag.
+// Essentially, /*dumptime*/create_scratch_mirror() + /*runtime*/restore_archived_mirror()
+// produces the same result as /*runtime*/create_mirror().
 //
-// The _has_archived_raw_mirror flag is cleared at runtime when the
-// archived mirror is restored. If archived java heap data cannot
-// be used at runtime, new mirror object is created for the shared
-// class. The _has_archived_raw_mirror is cleared also during the process.
-oop java_lang_Class::archive_mirror(Klass* k) {
-  assert(HeapShared::can_write(), "must be");
-
-  // Mirror is already archived
-  if (k->has_archived_mirror_index()) {
-    assert(k->archived_java_mirror() != NULL, "no archived mirror");
-    return k->archived_java_mirror();
+// Note: we archive the "scratch mirror" instead of k->java_mirror(), because the
+// later may contain dumptime-specific information that cannot be archived (e.g., ClassLoaderData*).
+void java_lang_Class::create_scratch_mirror(Klass* k, TRAPS) {
+  if (k->class_loader() != NULL &&
+      k->class_loader() != SystemDictionary::java_platform_loader() &&
+      k->class_loader() != SystemDictionary::java_system_loader()) {
+    // We only archive the mirrors of classes loaded by the built-in loaders
+    return;
   }
 
-  // No mirror
-  oop mirror = k->java_mirror();
-  if (mirror == NULL) {
-    return NULL;
-  }
+  Handle protection_domain, classData; // set to NULL. Will be reinitialized at runtime
+  oop mirror_oop = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(k, CHECK);
+  Handle mirror(THREAD, mirror_oop);
+  Handle comp_mirror;
 
-  if (k->is_instance_klass()) {
-    InstanceKlass *ik = InstanceKlass::cast(k);
-    assert(ik->signers() == NULL, "class with signer should have been excluded");
+  // Setup indirection from mirror->klass
+  set_klass(mirror(), k);
 
-    if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
-          ik->is_shared_app_class())) {
-      // Archiving mirror for classes from non-builtin loaders is not
-      // supported.
-      return NULL;
-    }
-  }
+  InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
+  assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
 
-  // Now start archiving the mirror object
-  oop archived_mirror = HeapShared::archive_object(mirror);
-  if (archived_mirror == NULL) {
-    return NULL;
-  }
+  set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
-  archived_mirror = process_archived_mirror(k, mirror, archived_mirror);
-  if (archived_mirror == NULL) {
-    return NULL;
-  }
-
-  k->set_archived_java_mirror(archived_mirror);
-
-  ResourceMark rm;
-  log_trace(cds, heap, mirror)(
-    "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
-    k->external_name(), p2i(mirror), p2i(archived_mirror));
-
-  return archived_mirror;
-}
-
-// The process is based on create_mirror().
-oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
-                                             oop archived_mirror) {
-  // Clear nonstatic fields in archived mirror. Some of the fields will be set
-  // to archived metadata and objects below.
-  Klass *c = archived_mirror->klass();
-  Handle archived_mirror_h(Thread::current(), archived_mirror);
-  ResetMirrorField reset(archived_mirror_h);
-  InstanceKlass::cast(c)->do_nonstatic_fields(&reset);
-
+  // It might also have a component mirror.  This mirror must already exist.
   if (k->is_array_klass()) {
-    oop archived_comp_mirror;
     if (k->is_typeArray_klass()) {
-      // The primitive type mirrors are already archived. Get the archived mirror.
-      oop comp_mirror = component_mirror(mirror);
-      archived_comp_mirror = HeapShared::find_archived_heap_object(comp_mirror);
-      assert(archived_comp_mirror != NULL, "Must be");
+      BasicType type = TypeArrayKlass::cast(k)->element_type();
+      comp_mirror = Handle(THREAD, HeapShared::scratch_java_mirror(type));
     } else {
       assert(k->is_objArray_klass(), "Must be");
       Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
       assert(element_klass != NULL, "Must have an element klass");
-      archived_comp_mirror = archive_mirror(element_klass);
-      if (archived_comp_mirror == NULL) {
-        return NULL;
-      }
+      comp_mirror = Handle(THREAD, HeapShared::scratch_java_mirror(element_klass));
     }
-    set_component_mirror(archived_mirror, archived_comp_mirror);
+    assert(comp_mirror() != NULL, "must have a mirror");
+
+    // Two-way link between the array klass and its component mirror:
+    // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
+    set_component_mirror(mirror(), comp_mirror());
+    // See below for ordering dependencies between field array_klass in component mirror
+    // and java_mirror in this klass.
   } else {
     assert(k->is_instance_klass(), "Must be");
 
-    // Reset local static fields in the mirror
-    InstanceKlass::cast(k)->do_local_static_fields(&reset);
-
-    set_protection_domain(archived_mirror, NULL);
-    set_signers(archived_mirror, NULL);
-    set_source_file(archived_mirror, NULL);
+    initialize_mirror_fields(k, mirror, protection_domain, classData, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // If any of the fields throws an exception like OOM remove the klass field
+      // from the mirror so GC doesn't follow it after the klass has been deallocated.
+      // This mirror looks like a primitive type, which logically it is because it
+      // it represents no class.
+      set_klass(mirror(), NULL);
+      return;
+    }
   }
 
-  // clear class loader and mirror_module_field
-  set_class_loader(archived_mirror, NULL);
-  set_module(archived_mirror, NULL);
+  if (comp_mirror() != NULL) {
+    // Set after k->java_mirror() is published, because compiled code running
+    // concurrently doesn't expect a k to have a null java_mirror.
+    release_set_array_klass(comp_mirror(), k);
+  }
 
-  return archived_mirror;
+  HeapShared::set_scratch_java_mirror(k, mirror());
 }
 
 // Returns true if the mirror is updated, false if no archived mirror

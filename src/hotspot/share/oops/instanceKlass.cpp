@@ -692,6 +692,12 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_annotations(NULL);
 
   SystemDictionaryShared::handle_class_unloading(this);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (DumpSharedSpaces) {
+    HeapShared::unset_scratch_java_mirror(this);
+  }
+#endif
 }
 
 bool InstanceKlass::is_record() const {
