@@ -237,45 +237,30 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Submits the runContinuation task to the scheduler with a lazy submit if possible.
-     * For the default scheduler, and calling it on a worker thread, the task will be
-     * pushed to the local queue without signalling.
-     *
+     * Submits the runContinuation task to the scheduler with a lazy submit.
      * @throws RejectedExecutionException
      * @see ForkJoinPool#lazySubmit(ForkJoinTask)
      */
-    private void lazySubmitRunContinuation() {
-        if (scheduler instanceof ForkJoinPool pool) {
-            try {
-                pool.lazySubmit(ForkJoinTask.adapt(runContinuation));
-            } catch (RejectedExecutionException ree) {
-                submitFailed(ree);
-                throw ree;
-            }
-        } else {
-            // custom scheduler
-            submitRunContinuation();
+    private void lazySubmitRunContinuation(ForkJoinPool pool) {
+        try {
+            pool.lazySubmit(ForkJoinTask.adapt(runContinuation));
+        } catch (RejectedExecutionException ree) {
+            submitFailed(ree);
+            throw ree;
         }
     }
 
     /**
-     * Submits the runContinuation task to the scheduler as an external submit. For
-     * the default scheduler this means the task is pushed to a submission queue rather
-     * than the local task queue.
+     * Submits the runContinuation task to the scheduler as an external submit.
      * @throws RejectedExecutionException
      * @see ForkJoinPool#externalSubmit(ForkJoinTask)
      */
-    private void externalSubmitRunContinuation() {
-        if (scheduler instanceof ForkJoinPool pool) {
-            try {
-                pool.externalSubmit(ForkJoinTask.adapt(runContinuation));
-            } catch (RejectedExecutionException ree) {
-                submitFailed(ree);
-                throw ree;
-            }
-        } else {
-            // custom scheduler
-            submitRunContinuation();
+    private void externalSubmitRunContinuation(ForkJoinPool pool) {
+        try {
+            pool.externalSubmit(ForkJoinTask.adapt(runContinuation));
+        } catch (RejectedExecutionException ree) {
+            submitFailed(ree);
+            throw ree;
         }
     }
 
@@ -455,7 +440,12 @@ final class VirtualThread extends BaseVirtualThread {
             // may have been unparked while parking
             if (parkPermit && compareAndSetState(PARKED, RUNNABLE)) {
                 // lazy submit to continue on the current thread as carrier if possible
-                lazySubmitRunContinuation();
+                if (currentThread() instanceof CarrierThread ct) {
+                    lazySubmitRunContinuation(ct.getPool());
+                } else {
+                    submitRunContinuation();
+                }
+
             }
         } else if (s == YIELDING) {   // Thread.yield
             setState(RUNNABLE);
@@ -465,7 +455,7 @@ final class VirtualThread extends BaseVirtualThread {
 
             // external submit if there are no tasks in the local task queue
             if (currentThread() instanceof CarrierThread ct && ct.getQueuedTaskCount() == 0) {
-                externalSubmitRunContinuation();
+                externalSubmitRunContinuation(ct.getPool());
             } else {
                 submitRunContinuation();
             }
