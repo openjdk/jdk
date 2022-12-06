@@ -797,7 +797,7 @@ public class TreeInfo {
             if (this.sym.getKind() == ElementKind.RECORD_COMPONENT) {
                 if (thatSym != null && thatSym.getKind() == ElementKind.FIELD && (thatSym.flags_field & RECORD) != 0) {
                     RecordComponent rc = thatSym.enclClass().getRecordComponent((VarSymbol)thatSym);
-                    return checkMatch(rc.ast, rc);
+                    return checkMatch(rc.declarationFor(), rc);
                 }
             }
             return false;

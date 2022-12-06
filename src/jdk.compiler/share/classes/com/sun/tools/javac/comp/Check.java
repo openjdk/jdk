@@ -3008,7 +3008,7 @@ public class Check {
 
                     JCVariableDecl fieldAST = (JCVariableDecl) declarationTree;
                     for (JCAnnotation fieldAnnot : fieldAST.mods.annotations) {
-                        for (JCAnnotation rcAnnot : rc.ast.mods.annotations) {
+                        for (JCAnnotation rcAnnot : rc.declarationFor().mods.annotations) {
                             if (rcAnnot.pos == fieldAnnot.pos) {
                                 rcAnnot.setType(fieldAnnot.type);
                                 break;

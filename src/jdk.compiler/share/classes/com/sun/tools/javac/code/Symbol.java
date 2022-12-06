@@ -1794,7 +1794,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         private final boolean isVarargs;
 
-        public JCVariableDecl ast;
+        private JCVariableDecl ast;
 
         /**
          * Construct a record component, given its flags, name, type and owner.
@@ -1823,6 +1823,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public List<JCAnnotation> getOriginalAnnos() { return this.ast == null ? List.nil() : this.ast.mods.annotations; }
+
+        public JCVariableDecl declarationFor() { return this.ast; }
 
         public boolean isVarargs() {
             return isVarargs;
