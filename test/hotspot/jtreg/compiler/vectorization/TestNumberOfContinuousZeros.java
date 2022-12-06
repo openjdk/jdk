@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,32 @@
 
 /**
 * @test
-* @summary Test vectorization of popcount for Long
+* @key randomness
+* @summary Test vectorization of numberOfTrailingZeros/numberOfLeadingZeros for Long
 * @requires vm.compiler2.enabled
-* @requires ((os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64") & vm.cpu.features ~= ".*avx512bw.*") |
-*           os.simpleArch == "aarch64"
+* @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
+*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*" & (vm.opt.UseSVE == "null" | vm.opt.UseSVE > 0))
 * @library /test/lib /
-* @run driver compiler.vectorization.TestPopCountVectorLong
+* @run driver compiler.vectorization.TestNumberOfContinuousZeros
 */
 
 package compiler.vectorization;
+
 import compiler.lib.ir_framework.*;
 import java.util.Random;
+import jdk.test.lib.Asserts;
 
-
-public class TestPopCountVectorLong {
+public class TestNumberOfContinuousZeros {
     private long[] input;
     private int[] output;
     private static final int LEN = 1024;
     private Random rng;
 
     public static void main(String args[]) {
-        TestFramework.run(TestPopCountVectorLong.class);
+        TestFramework.run();
     }
 
-    public TestPopCountVectorLong() {
+    public TestNumberOfContinuousZeros() {
         input = new long[LEN];
         output = new int[LEN];
         rng = new Random(42);
@@ -55,22 +57,31 @@ public class TestPopCountVectorLong {
         }
     }
 
-    @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
-    @IR(counts = {IRNode.POPCOUNT_VL, ">= 1"}) // At least one PopCountVL node is generated if vectorization is successful
-    public void vectorizeBitCount() {
+    @Test
+    @IR(counts = {IRNode.COUNTTRAILINGZEROS_VL, "> 0"})
+    public void vectorizeNumberOfTrailingZeros() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = Long.bitCount(input[i]);
+            output[i] = Long.numberOfTrailingZeros(input[i]);
         }
-        checkResult();
     }
 
-    public void checkResult() {
+    @Test
+    @IR(counts = {IRNode.COUNTLEADINGZEROS_VL, "> 0"})
+    public void vectorizeNumberOfLeadingZeros() {
         for (int i = 0; i < LEN; ++i) {
-            int expected = Long.bitCount(input[i]);
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
-            }
+            output[i] = Long.numberOfLeadingZeros(input[i]);
+        }
+    }
+
+    @Run(test = {"vectorizeNumberOfTrailingZeros", "vectorizeNumberOfLeadingZeros"})
+    public void checkResult() {
+        vectorizeNumberOfTrailingZeros();
+        for (int i = 0; i < LEN; ++i) {
+            Asserts.assertEquals(output[i], Long.numberOfTrailingZeros(input[i]));
+        }
+        vectorizeNumberOfLeadingZeros();
+        for (int i = 0; i < LEN; ++i) {
+            Asserts.assertEquals(output[i], Long.numberOfLeadingZeros(input[i]));
         }
     }
 }
