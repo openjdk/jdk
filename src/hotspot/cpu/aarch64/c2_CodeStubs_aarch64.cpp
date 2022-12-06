@@ -30,6 +30,10 @@
 
 #define __ masm.
 
+int C2SafepointPollStub::size() const {
+  return 20;
+}
+
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
@@ -44,6 +48,10 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ far_jump(callback_addr);
 }
 
+int C2EntryBarrierStub::size() const {
+  return 24;
+}
+
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
@@ -53,6 +61,10 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(guard());
   __ relocate(entry_guard_Relocation::spec());
   __ emit_int32(0);   // nmethod guard value
+}
+
+int C2CheckLockStackStub::size() const {
+  return 20;
 }
 
 void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
