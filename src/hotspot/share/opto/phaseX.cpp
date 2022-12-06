@@ -1777,6 +1777,7 @@ void PhaseCCP::analyze() {
   // Push root onto worklist
   Unique_Node_List worklist;
   worklist.push(C->root());
+  DEBUG_ONLY(Unique_Node_List worklist_verify;)
 
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
@@ -1785,6 +1786,7 @@ void PhaseCCP::analyze() {
   // This loop is the meat of CCP.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
+    DEBUG_ONLY(worklist_verify.push(n);)
     if (n->is_SafePoint()) {
       // Make sure safepoints are processed by PhaseCCP::transform even if they are
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
@@ -1798,7 +1800,55 @@ void PhaseCCP::analyze() {
       push_child_nodes_to_worklist(worklist, n);
     }
   }
+  DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
+
+#ifdef ASSERT
+// For every node n on verify list, check if type(n) == n->Value()
+// We have a list of exceptions, see comments in code.
+void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
+  bool failure = false;
+  while (worklist_verify.size()) {
+    Node* n = worklist_verify.pop();
+    const Type* told = type(n);
+    const Type* tnew = n->Value(this);
+    if (told != tnew) {
+      // Check special cases that are ok
+      if (told->isa_int() && tnew->isa_int() ) {
+        const TypeInt *t0 = told->is_int();
+        const TypeInt *t1 = tnew->is_int();
+        if (t0->_lo == t1->_lo && t0->_hi == t1->_hi) {
+          continue; // ignore int widen
+        }
+      } else if (told->isa_long() && tnew->isa_long() ) {
+        const TypeLong *t0 = told->is_long();
+        const TypeLong *t1 = tnew->is_long();
+        if (t0->_lo == t1->_lo && t0->_hi == t1->_hi) {
+          continue; // ignore long widen
+        }
+      }
+      if (n->is_Load()) {
+        // MemNode::can_see_stored_value looks up through many memory nodes,
+        // which means we would need to notify modifications from far up in
+        // the inputs all the way down to the LoadNode. We don't do that.
+        continue;
+      }
+      tty->print_cr("Missed optimization (PhaseCCP):");
+      n->dump_bfs(1, 0, "");
+      tty->print_cr("Current type:");
+      told->dump_on(tty);
+      tty->print_cr("");
+      tty->print_cr("Optimized type:");
+      tnew->dump_on(tty);
+      tty->print_cr("");
+      failure = true;
+    }
+  }
+  // If you get this assert, check if the node was notified of changes in
+  // the inputs. See PhaseCCP::push_child_nodes_to_worklist
+  assert(!failure, "Missed optimization opportunity in PhaseCCP");
+}
+#endif
 
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
