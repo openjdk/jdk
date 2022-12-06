@@ -67,6 +67,7 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
 #include <limits>
 
 #define DEFAULT_JAVA_LAUNCHER  "generic"
@@ -4160,38 +4161,6 @@ const char* Arguments::PropertyList_get_readable_value(SystemProperty *pl, const
     }
   }
   return NULL;
-}
-
-const char* Arguments::PropertyList_get_key_at(SystemProperty *pl, int index) {
-  int count = 0;
-  const char* ret_val = NULL;
-
-  while(pl != NULL) {
-    if(count >= index) {
-      ret_val = pl->key();
-      break;
-    }
-    count++;
-    pl = pl->next();
-  }
-
-  return ret_val;
-}
-
-char* Arguments::PropertyList_get_value_at(SystemProperty* pl, int index) {
-  int count = 0;
-  char* ret_val = NULL;
-
-  while(pl != NULL) {
-    if(count >= index) {
-      ret_val = pl->value();
-      break;
-    }
-    count++;
-    pl = pl->next();
-  }
-
-  return ret_val;
 }
 
 void Arguments::PropertyList_add(SystemProperty** plist, SystemProperty *new_p) {

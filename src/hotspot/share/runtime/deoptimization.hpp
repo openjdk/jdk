@@ -227,14 +227,9 @@ class Deoptimization : AllStatic {
                 int unpack_kind);
     ~UnrollBlock();
 
-    // Returns where a register is located.
-    intptr_t* value_addr_at(int register_number) const;
-
     // Accessors
     intptr_t* frame_sizes()  const { return _frame_sizes; }
     int number_of_frames()  const { return _number_of_frames; }
-    address*  frame_pcs()   const { return _frame_pcs ; }
-    int  unpack_kind()   const { return _unpack_kind; }
 
     // Returns the total size of frames
     int size_of_frames() const;
@@ -250,8 +245,6 @@ class Deoptimization : AllStatic {
     static int frame_sizes_offset_in_bytes()               { return offset_of(UnrollBlock, _frame_sizes);               }
     static int total_frame_sizes_offset_in_bytes()         { return offset_of(UnrollBlock, _total_frame_sizes);         }
     static int frame_pcs_offset_in_bytes()                 { return offset_of(UnrollBlock, _frame_pcs);                 }
-    static int register_block_offset_in_bytes()            { return offset_of(UnrollBlock, _register_block);            }
-    static int return_type_offset_in_bytes()               { return offset_of(UnrollBlock, _return_type);               }
     static int counter_temp_offset_in_bytes()              { return offset_of(UnrollBlock, _counter_temp);              }
     static int initial_info_offset_in_bytes()              { return offset_of(UnrollBlock, _initial_info);              }
     static int unpack_kind_offset_in_bytes()               { return offset_of(UnrollBlock, _unpack_kind);               }
@@ -471,15 +464,6 @@ class Deoptimization : AllStatic {
 
  public:
   static void update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason);
-};
-
-
-class DeoptimizationMarker : StackObj {  // for profiling
-  static bool _is_active;
-public:
-  DeoptimizationMarker()  { _is_active = true; }
-  ~DeoptimizationMarker() { _is_active = false; }
-  static bool is_active() { return _is_active; }
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP

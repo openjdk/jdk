@@ -36,7 +36,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
-
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif

@@ -288,7 +288,7 @@
  *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
  *
- * @run main/othervm -Xmx8g
+ * @run main/othervm/timeout=180 -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large

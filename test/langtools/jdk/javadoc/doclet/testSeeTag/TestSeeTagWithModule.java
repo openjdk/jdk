@@ -74,7 +74,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../../m1/module-summary.html"><code>m1</code></a></li>
                     <li><a href="../../../../m1/module-summary.html"><code>m1</code></a></li>
                     <li><a href="../../../../m1/com/m1/lib/package-summary.html"><code>com.m1.lib</code></a></li>
@@ -109,7 +109,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a></li>
                     <li><a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a></li>
                     <li><a href="../../../../../out1/m1/com/m1/lib/package-summary.html" class="external-link"><code>m1/com.m1.lib</code></a></li>
@@ -142,7 +142,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../com.ex1/com/ex1/package-summary.html"><code>com.ex1</code></a></li>
                     <li><a href="../../../com.ex1/module-summary.html"><code>com.ex1</code></a></li>
                     <li><a href="../../../com.ex1/com/ex1/package-summary.html"><code>com.ex1</code></a></li>
@@ -171,7 +171,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1</code></a></li>
                     <li><a href="../../../../out1/com.ex1/module-summary.html" class="external-link"><code>com.ex1</code></a></li>
                     <li><a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1/com.ex1</code></a></li>

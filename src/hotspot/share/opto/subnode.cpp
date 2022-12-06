@@ -69,15 +69,6 @@ Node* SubNode::Identity(PhaseGVN* phase) {
     if (in(1)->in(1) == in(2)) {
       return in(1)->in(2);
     }
-
-    // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
-    // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
-    // are originally used, although the optimizer sometimes jiggers things).
-    // This folding through an O2 removes a loop-exit use of a loop-varying
-    // value and generally lowers register pressure in and around the loop.
-    if (in(1)->in(2)->Opcode() == Op_Opaque2 && in(1)->in(2)->in(1) == in(2)) {
-      return in(1)->in(1);
-    }
   }
 
   return ( phase->type( in(2) )->higher_equal( zero ) ) ? in(1) : this;
@@ -1047,7 +1038,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
 
   // return the ConP(Foo.klass)
   assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
-  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
+  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass()));
 }
 
 //------------------------------Ideal------------------------------------------

@@ -52,11 +52,13 @@ public:
   virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
 };
 
-class PCIterateMarkAndPushClosure: public MetadataVisitingOopIterateClosure {
+class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 private:
   ParCompactionManager* _compaction_manager;
 public:
-  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) : MetadataVisitingOopIterateClosure(rp), _compaction_manager(cm) { }
+  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) :
+    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
+    _compaction_manager(cm) { }
 
   template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
   virtual void do_oop(oop* p)                     { do_oop_nv(p); }
@@ -162,10 +164,12 @@ inline void ParCompactionManager::update_contents(oop obj) {
 
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
+  PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
+
   if (obj->is_objArray()) {
+    cl.do_klass(obj->klass());
     follow_array(objArrayOop(obj), 0);
   } else {
-    PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
     obj->oop_iterate(&cl);
   }
 }
