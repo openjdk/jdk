@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/memSnapshot.hpp"
 #include "services/nmtCommon.hpp"
+#include "services/nmtUsage.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"

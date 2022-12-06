@@ -26,7 +26,7 @@
 #define SHARE_SERVICES_MEMJFRREPORTER_HPP
 
 #include "memory/allocation.hpp"
-#include "services/memSnapshot.hpp"
+#include "services/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 

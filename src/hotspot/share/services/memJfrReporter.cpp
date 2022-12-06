@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "services/memJfrReporter.hpp"
-#include "services/memSnapshot.hpp"
 #include "services/memTracker.hpp"
+#include "services/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
