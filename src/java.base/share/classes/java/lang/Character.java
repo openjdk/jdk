@@ -9477,7 +9477,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointBefore(char[] a, int index, int start) {
-        if (index <= start || start < 0 || start >= a.length) {
+        if (index <= start || start < 0 || index >= a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointBeforeImpl(a, index, start);
