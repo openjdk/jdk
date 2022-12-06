@@ -48,7 +48,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava) {
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
-  if (has_last_Java_frame() && frame_anchor()->walkable()) {
+  if (ucontext == NULL && (has_last_Java_frame() && frame_anchor()->walkable())) {
+    fprintf(stderr, "Has last java frame\n");
     *fr_addr = pd_last_frame();
     return true;
   }
@@ -57,6 +58,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
   // we try to glean some information out of the ucontext
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
+
     ucontext_t* uc = (ucontext_t*) ucontext;
 
     intptr_t* ret_fp;

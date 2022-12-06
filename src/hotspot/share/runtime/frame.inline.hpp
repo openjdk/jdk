@@ -53,6 +53,7 @@ inline bool frame::is_stub_frame() const {
 }
 
 inline bool frame::is_first_frame() const {
+  // not safe for potentially broken frames, check safe_for_sender first
   return (is_entry_frame() && entry_frame_is_first())
       // Upcall stub frames entry frames are only present on certain platforms
       || (is_upcall_stub_frame() && upcall_stub_frame_is_first());

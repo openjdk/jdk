@@ -332,7 +332,7 @@ void StackWalker::advance() {
 
 bool StackWalker::checkFrame() {
   ST_LOG("_frame.is_first_frame() %d !_frame.safe_for_sender(_thread) %d\n", _frame.is_first_frame(), !_frame.safe_for_sender(_thread));
-  if (_frame.is_first_frame() || !_frame.safe_for_sender(_thread)) {
+  if (!_frame.safe_for_sender(_thread) || _frame.is_first_frame()) {
     if (_skip_c_frames) {
       set_state(STACKWALKER_END);
       return false;
