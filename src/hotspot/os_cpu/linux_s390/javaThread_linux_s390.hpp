@@ -36,8 +36,10 @@
   frame pd_last_frame();
 
  public:
-  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava);
+  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava,
+    bool forceUContextUsage = false);
 
-  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
+  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava,
+    bool forceUContextUsage = false);
 
 #endif // OS_CPU_LINUX_S390_JAVATHREAD_LINUX_S390_HPP

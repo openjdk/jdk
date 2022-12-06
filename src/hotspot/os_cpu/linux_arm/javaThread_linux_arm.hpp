@@ -53,11 +53,13 @@ public:
   static ByteSize in_top_frame_unsafe_section_offset() { return byte_offset_of(JavaThread, _in_top_frame_unsafe_section); }
   bool in_top_frame_unsafe_section() { return _in_top_frame_unsafe_section == this; }
 
-  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava);
+  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava,
+    bool forceUContextUsage = false);
 
-  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
+  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava,
+    bool forceUContextUsage = false);
 private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
+  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool forceUContextUsage);
 public:
 
 #endif // OS_CPU_LINUX_ARM_JAVATHREAD_LINUX_ARM_HPP

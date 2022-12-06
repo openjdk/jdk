@@ -45,13 +45,14 @@
   }
 
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
-    bool isInJava);
+    bool isInJava, bool forceUContextUsage = false);
 
-   bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
+   bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava,
+     bool forceUContextUsage = false);
 
   static ByteSize windows_saved_rsi_offset() { return byte_offset_of(JavaThread, _windows_saved_rsi); }
   static ByteSize windows_saved_rdi_offset() { return byte_offset_of(JavaThread, _windows_saved_rdi); }
 private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
+  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool forceUContextUsage);
 
 #endif // OS_CPU_WINDOWS_X86_JAVATHREAD_WINDOWS_X86_HPP

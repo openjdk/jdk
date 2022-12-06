@@ -141,12 +141,16 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
   case _thread_in_Java_trans:
     {
       frame ret_frame;
-      if (!thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, true)) {
-        trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
-        return;
+      bool include_c_frames = (options & ASGST_INCLUDE_C_FRAMES) != 0;
+      if (!thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, true, include_c_frames)) {
+        // check without forced ucontext again
+        if (!include_c_frames || !thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, true, false)) {
+          trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
+          return;
+        }
       }
       fill_call_trace_given_top(thread, trace, depth, ret_frame,
-        (options & ASGST_INCLUDE_C_FRAMES) == 0);
+        !include_c_frames);
     }
     break;
   default:

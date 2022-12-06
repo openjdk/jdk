@@ -96,7 +96,8 @@
  public:
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr,
                                            void* ucontext,
-                                           bool isInJava) {
+                                           bool isInJava,
+                                           bool forceUContextUsage = false) {
     ShouldNotCallThis();
     return false;
   }

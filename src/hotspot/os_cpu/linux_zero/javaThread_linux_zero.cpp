@@ -38,8 +38,10 @@ void JavaThread::cache_global_variables() {
 
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
                                          void* ucontext,
-                                         bool isInJava) {
-  if (has_last_Java_frame()) {
+                                         bool isInJava,
+                                         bool forceUContextUsage) {
+  if (ucontext == NULL ||
+      (!forceUContextUsage && has_last_Java_frame())) {
     *fr_addr = pd_last_frame();
     return true;
   }
@@ -69,6 +71,7 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr,
                                     void* ucontext,
-                                    bool isInJava) {
-  return pd_get_top_frame_for_signal_handler(fr_addr, ucontext, isInJava);
+                                    bool isInJava,
+                                    bool forceUContextUsage) {
+  return pd_get_top_frame_for_signal_handler(fr_addr, ucontext, isInJava, forceUContextUsage);
 }
