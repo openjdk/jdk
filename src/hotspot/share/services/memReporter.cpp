@@ -69,7 +69,9 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const 
   out->print(")");
 
   size_t pk_amount = c->peak_size();
-  if (pk_amount > amount) { // Only print if historic peak is larger than what we see now
+  if (pk_amount == amount) {
+    out->print_raw(" (peak)");
+  } else if (pk_amount > amount) {
     size_t pk_count = c->peak_count();
     out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
         amount_in_current_scale(pk_amount), scale, pk_count);
@@ -105,7 +107,9 @@ void MemReporterBase::print_arena_line(const MemoryCounter* c) const {
     amount_in_current_scale(amount), scale, count);
 
   size_t pk_amount = c->peak_size();
-  if (pk_amount > amount) { // Only print if historic peak is larger than what we see now
+  if (pk_amount == amount) {
+    out->print_raw(" (peak)");
+  } else if (pk_amount > amount) {
     size_t pk_count = c->peak_count();
     out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
         amount_in_current_scale(pk_amount), scale, pk_count);
