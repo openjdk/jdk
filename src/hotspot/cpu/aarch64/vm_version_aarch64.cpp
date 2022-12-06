@@ -345,10 +345,9 @@ void VM_Version::initialize() {
   }
 
   if (UseSHA && VM_Version::supports_sha512()) {
-    // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
-    // }
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    }
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
@@ -365,6 +364,17 @@ void VM_Version::initialize() {
   } else if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          UseChaCha20Intrinsics = true;
+      }
+  } else if (UseChaCha20Intrinsics) {
+      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          warning("ChaCha20 intrinsic requires ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {

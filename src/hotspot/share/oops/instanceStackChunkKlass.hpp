@@ -50,45 +50,51 @@ class MemRegion;
 
 Chunk layout:
 
-                   +-------------------+
-                   |                   |
-                   |  oop bitmap       |
-                   |                   |
-                   | ----------------- |
-                   |                   |
-                   |  [empty]          |
-                   |                   |
-                  -|===================|
-                /  |                   |
-               |   | caller stack args |  argsize
-               |   |                   |  words
-               |   | ----------------- |
-               |   |                   |
-         ^     |   | frame             |
-         |     |   |                   |
-         |   size  | ----------------- |
-         |   words |                   |
-         |     |   | frame             |
-         |     |   |                   |
- Address |     |   | ----------------- |
-         |     |   |                   |
-         |     |   | frame             |
-         |     |   |                   |
-         |     |   | callee stack args |
-         |     |   | ----------------- |<--\
-         |     |   | pc                |   |
-         |     |   | rbp               |   |
-         |     |   |                   |   |
-         |     |   | [empty]           |   |
-         |     \   |                   |   |
-                 - |===================|   |
-                   | int maxSize       |   |
-                   | long pc           |   |
-            header | byte flags        |   |
-                   | int argsize       |   |
-                   | int sp            +---/
-                   | int size          |
-                   +-------------------+
+                   +--------------------------------+
+                   |                                |
+                   |  oop bitmap                    |
+                   |                                |
+                   | ------------------------------ |
+                   |                                |
+                   |  [empty]                       |
+                   |                                |
+                  -|================================|
+                /  |                                |
+               |   | caller stack args              |   argsize
+               |   | [metadata at frame top (1)]    | + frame::metadata_words_at_top
+               |   | ------------------------------ |   words
+               |   | [metadata at frame bottom (2)] |
+         ^     |   | frame                          |
+         |     |   |                                |
+         |   size  | ------------------------------ |
+         |   words |                                |
+         |     |   | frame                          |
+         |     |   |                                |
+ Address |     |   | ------------------------------ |
+         |     |   |                                |
+         |     |   | frame                          |
+         |     |   |                                |
+         |     |   | callee stack args              |
+         |     |   | [metadata at frame top (1)]    |<--\
+         |     |   | ------------------------------ |   |
+         |     |   | [metadata at frame bottom (2)  |   |
+         |     |   |  i.e. rbp, pc]                 |   |
+         |     |   |                                |   |
+         |     |   | [empty]                        |   |
+         |     \   |                                |   |
+                 - |================================|   |
+                   | int maxSize                    |   |
+                   | long pc                        |   |
+            header | byte flags                     |   |
+                   | int argsize                    |   |
+                   | int sp                         +---/
+                   | int size                       |
+                   +--------------------------------+
+
+ (1) Metadata at frame top (see frame::metadata_words_at_top)
+     Used on ppc64, empty on x86_64, aarch64
+ (2) Metadata at the frame bottom (see frame::metadata_words_at_bottom)
+     Used on x86_64 (saved rbp, ret.addr.), aarch64, empty on ppc64
 
 ************************************************/
 

@@ -198,12 +198,8 @@ private:
 public:
   JvmtiVirtualThreadEventMark(JavaThread *thread) :
     JvmtiEventMark(thread) {
-    JvmtiThreadState* state = thread->jvmti_thread_state();
-    if (state != NULL && state->is_virtual()) {
-      _jthread = to_jobject(thread->vthread());
-    } else {
-      _jthread = to_jobject(thread->threadObj());
-    }
+    assert(thread->vthread() != NULL || thread->threadObj() == NULL, "sanity check");
+    _jthread = to_jobject(thread->vthread());
   };
   jthread jni_thread() { return (jthread)_jthread; }
 };
@@ -383,6 +379,10 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   if (Continuations::enabled()) {
     // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
     java_lang_VirtualThread::set_notify_jvmti_events(true);
+    if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
+      ThreadInVMfromNative __tiv(JavaThread::current());
+      java_lang_VirtualThread::init_static_notify_jvmti_events();
+    }
   }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
@@ -3124,7 +3124,7 @@ JvmtiDynamicCodeEventCollector::~JvmtiDynamicCodeEventCollector() {
 // register a stub
 void JvmtiDynamicCodeEventCollector::register_stub(const char* name, address start, address end) {
  if (_code_blobs == NULL) {
-   _code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(1, mtServiceability);
+   _code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(1, mtServiceability);
  }
  _code_blobs->append(new JvmtiCodeBlobDesc(name, start, end));
 }
@@ -3153,7 +3153,7 @@ void JvmtiObjectAllocEventCollector::generate_call_for_allocated() {
 void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   assert(is_enabled(), "Object alloc event collector is not enabled");
   if (_allocated == NULL) {
-    _allocated = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
+    _allocated = new (mtServiceability) GrowableArray<OopHandle>(1, mtServiceability);
   }
   _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }

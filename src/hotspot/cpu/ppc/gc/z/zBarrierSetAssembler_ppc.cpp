@@ -540,15 +540,15 @@ class ZSetupArguments {
 
       if (_ref != R4_ARG2) {
         // Calculate address first as the address' base register might clash with R4_ARG2
-        __ add(R4_ARG2, (intptr_t) _ref_addr.disp(), _ref_addr.base());
+        __ addi(R4_ARG2, _ref_addr.base(), _ref_addr.disp());
         __ mr_if_needed(R3_ARG1, _ref);
       } else if (_ref_addr.base() != R3_ARG1) {
         __ mr(R3_ARG1, _ref);
-        __ add(R4_ARG2, (intptr_t) _ref_addr.disp(), _ref_addr.base()); // Clobbering _ref
+        __ addi(R4_ARG2, _ref_addr.base(), _ref_addr.disp()); // Clobbering _ref
       } else {
         // Arguments are provided in inverse order (i.e. _ref == R4_ARG2, _ref_addr == R3_ARG1)
         __ mr(R0, _ref);
-        __ add(R4_ARG2, (intptr_t) _ref_addr.disp(), _ref_addr.base());
+        __ addi(R4_ARG2, _ref_addr.base(), _ref_addr.disp());
         __ mr(R3_ARG1, R0);
       }
     }

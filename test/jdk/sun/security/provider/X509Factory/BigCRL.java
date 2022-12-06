@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.PrivateKey;
 import java.security.cert.X509CRLEntry;
-import java.util.Arrays;
 import java.util.Date;
 import sun.security.x509.*;
 import java.security.cert.CertificateFactory;
@@ -55,10 +54,8 @@ public class BigCRL {
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);
-        X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
-                X509CertImpl.NAME + "." + X509CertImpl.INFO);
-        X500Name owner = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "."
-                + X509CertInfo.DN_NAME);
+        X509CertInfo signerCertInfo = signerCertImpl.getInfo();
+        X500Name owner = signerCertInfo.getSubject();
 
         Date date = new Date();
         PrivateKey privateKey = (PrivateKey)
@@ -67,13 +64,14 @@ public class BigCRL {
 
         X509CRLEntry[] badCerts = new X509CRLEntry[n];
         CRLExtensions ext = new CRLExtensions();
-        ext.set("Reason", new CRLReasonCodeExtension(1));
+        ext.setExtension("Reason", new CRLReasonCodeExtension(1));
         for (int i = 0; i < n; i++) {
             badCerts[i] = new X509CRLEntryImpl(
                     BigInteger.valueOf(i), date, ext);
         }
-        X509CRLImpl crl = new X509CRLImpl(owner, date, date, badCerts);
-        crl.sign(privateKey, sigAlgName);
+        X509CRLImpl crl = X509CRLImpl.newSigned(
+                new X509CRLImpl.TBSCertList(owner, date, date, badCerts),
+                privateKey, sigAlgName);
         byte[] data = crl.getEncodedInternal();
 
         // Make sure the CRL is big enough

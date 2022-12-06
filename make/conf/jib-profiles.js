@@ -1078,17 +1078,6 @@ var getJibProfilesDependencies = function (input, common) {
         environment_path: common.boot_jdk_home + "/bin"
     }
 
-    var pandoc_version;
-    if (input.build_cpu == "aarch64") {
-        if (input.build_os == "macosx") {
-            pandoc_version = "2.14.0.2+1.0";
-        } else {
-            pandoc_version = "2.5+1.0";
-        }
-    } else {
-        pandoc_version = "2.3.1+1.0";
-    }
-
     var makeRevision = "4.0+1.0";
     var makeBinSubDir = "/bin";
     var makeModule = "gnumake-" + input.build_platform;
@@ -1202,7 +1191,7 @@ var getJibProfilesDependencies = function (input, common) {
         pandoc: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: pandoc_version,
+            revision: "2.19.2+1.0",
             module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"

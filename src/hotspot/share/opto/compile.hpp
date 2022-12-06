@@ -327,7 +327,7 @@ class Compile : public Phase {
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
-  int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
+  bool                  _do_aliasing;           // True if we intend to do aliasing
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
@@ -616,7 +616,7 @@ class Compile : public Phase {
   void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              use_cmove() const           { return _use_cmove; }
   void          set_use_cmove(bool z)           { _use_cmove = z; }
-  int               AliasLevel() const           { return _AliasLevel; }
+  bool              do_aliasing() const          { return _do_aliasing; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
   bool              print_inlining() const       { return _print_inlining; }
@@ -1103,9 +1103,7 @@ class Compile : public Phase {
 
  private:
   // Phase control:
-  void Init(int aliaslevel);                     // Prepare for a single compilation
-  int  Inline_Warm();                            // Find more inlining work.
-  void Finish_Warm();                            // Give up on further inlines.
+  void Init(bool aliasing);                      // Prepare for a single compilation
   void Optimize();                               // Given a graph, optimize it
   void Code_Gen();                               // Generate code from a graph
 
@@ -1165,6 +1163,9 @@ class Compile : public Phase {
   // The option no_dead_code enables stronger checks that the
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
+
+  // Verify bi-directional correspondence of edges
+  void verify_bidirectional_edges(Unique_Node_List &visited);
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
