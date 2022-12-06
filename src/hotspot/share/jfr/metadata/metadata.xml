@@ -608,7 +608,7 @@
   </Type>
 
   <Event name="CompilerInlining" category="Java Virtual Machine, Compiler, Optimization" label="Method Inlining"
-         description="Event describing result of a method inlining attempt"
+         description="Describes the result of a method inlining attempt"
          thread="true" startTime="false">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="Method" name="caller" label="Caller Method" />
@@ -634,7 +634,7 @@
   </Event>
 
   <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization"
-         description="Event describing detection of an uncommon situation in a compiled method which may lead to deoptimization of the method"
+         description="Describes the detection of an uncommon situation in a compiled method which may lead to deoptimization of the method"
          thread="true" stackTrace="true" startTime="false">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
@@ -901,9 +901,7 @@
       description="Module to which the package is qualifiedly exported. If null or N/A, the package is unqualifiedly exported" />
   </Event>
 
-  <Event name="CompilerStatistics" category="Java Virtual Machine, Compiler" label="Compiler Statistics"
-         description="Event for sampling JIT compiler statistics"
-         thread="false" period="everyChunk" startTime="false">
+  <Event name="CompilerStatistics" category="Java Virtual Machine, Compiler" label="Compiler Statistics" thread="false" period="everyChunk" startTime="false">
     <Field type="int" name="compileCount" label="Compiled Methods" />
     <Field type="int" name="bailoutCount" label="Bailouts" />
     <Field type="int" name="invalidatedCount" label="Invalidated Compilations" />
@@ -917,9 +915,7 @@
     <Field type="long" contentType="millis" name="totalTimeSpent" label="Total time" />
   </Event>
 
-  <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration"
-         description="Event for sampling JIT compiler configuration"
-         thread="false" period="endChunk" startTime="false">
+  <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="int" name="threadCount" label="Thread Count" />
     <Field type="boolean" name="tieredCompilation" label="Tiered Compilation" />
   </Event>
