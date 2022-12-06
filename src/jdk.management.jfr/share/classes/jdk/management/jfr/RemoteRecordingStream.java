@@ -60,6 +60,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.StreamBarrier;
 import jdk.management.jfr.DiskRepository.DiskChunk;
 import jdk.jfr.internal.management.EventByteStream;
 
@@ -557,6 +558,75 @@ public final class RemoteRecordingStream implements EventStream {
         } catch (Exception e) {
             ManagementSupport.logDebug(e.getMessage());
             close();
+        }
+    }
+
+    /**
+     * Stops the recording stream.
+     * <p>
+     * Stops a started stream and waits until all events in the recording have
+     * been consumed.
+     * <p>
+     * Invoking this method in an action, for example in the
+     * {@link #onEvent(Consumer)} method, could block the stream indefinitely.
+     * To stop the stream abruptly, use the {@link #close} method.
+     * <p>
+     * The following code snippet illustrates how this method can be used in
+     * conjunction with the {@link #startAsync()} method to monitor what happens
+     * during a test method:
+     * <p>
+     * {@snippet :
+     *   AtomicLong bytesWritten = new AtomicLong();
+     *   try (var r = new RemoteRecordingStream(connection)) {
+     *     r.setMaxSize(Long.MAX_VALUE);
+     *     r.enable("jdk.FileWrite").withoutThreshold();
+     *     r.onEvent(event ->
+     *       bytesWritten.addAndGet(event.getLong("bytesWritten"))
+     *     );
+     *     r.startAsync();
+     *     testFoo();
+     *     r.stop();
+     *     if (bytesWritten.get() > 1_000_000L) {
+     *       r.dump(Path.of("file-write-events.jfr"));
+     *       throw new AssertionError("testFoo() writes too much data to disk");
+     *     }
+     *   }
+     * }
+     * @return {@code true} if recording is stopped, {@code false} otherwise
+     *
+     * @throws IllegalStateException if the recording is not started or is already stopped
+     *
+     * @since 20
+     */
+    public boolean stop() {
+        synchronized (lock) {
+            if (closed) {
+                throw new IllegalStateException("Event stream is closed");
+            }
+            if (!started) {
+                throw new IllegalStateException("Event stream must be started before it can stopped");
+            }
+            try {
+                boolean stopped = false;
+                try (StreamBarrier pb = ManagementSupport.activateStreamBarrier(stream)) {
+                    try (StreamBarrier rb = repository.activateStreamBarrier()) {
+                        stopped = mbean.stopRecording(recordingId);
+                        ManagementSupport.setCloseOnComplete(stream, false);
+                        long stopTime = getRecordingInfo(mbean.getRecordings(), recordingId).getStopTime();
+                        pb.setStreamEnd(stopTime);
+                        rb.setStreamEnd(stopTime);
+                    }
+                }
+                try {
+                    stream.awaitTermination();
+                } catch (InterruptedException e) {
+                    // OK
+                }
+                return stopped;
+            } catch (Exception e) {
+                ManagementSupport.logDebug(e.getMessage());
+                return false;
+            }
         }
     }
 

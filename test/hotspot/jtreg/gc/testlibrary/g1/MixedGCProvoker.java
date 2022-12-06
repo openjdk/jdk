@@ -73,8 +73,7 @@ public class MixedGCProvoker {
     }
 
     /**
-     * Provoke at least one mixed gc by starting a marking cycle, waiting for its end and triggering two GCs.
-     * @param liveOldObjects The objects supposed to survive this marking cycle.
+     * Provoke a concurrent mark cycle, and wait for it to end.
      */
     public static void provokeMixedGC(List<byte[]> liveOldObjects) {
         getWhiteBox().g1RunConcurrentGC();

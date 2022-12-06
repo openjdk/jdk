@@ -383,7 +383,6 @@ void JavaThread::check_for_valid_safepoint_state() {
 JavaThread::JavaThread() :
   // Initialize fields
 
-  _in_asgct(false),
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
@@ -981,30 +980,6 @@ bool JavaThread::is_lock_owned(address adr) const {
   return false;
 }
 
-bool JavaThread::is_lock_owned_current(address adr) const {
-  address stack_end = _stack_base - _stack_size;
-  const ContinuationEntry* ce = vthread_continuation();
-  address stack_base = ce != nullptr ? (address)ce->entry_sp() : _stack_base;
-  if (stack_base > adr && adr >= stack_end) {
-    return true;
-  }
-
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
-    if (chunk->contains(adr)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool JavaThread::is_lock_owned_carrier(address adr) const {
-  assert(is_vthread_mounted(), "");
-  address stack_end = _stack_base - _stack_size;
-  address stack_base = (address)vthread_continuation()->entry_sp();
-  return stack_base > adr && adr >= stack_end;
-}
-
 oop JavaThread::exception_oop() const {
   return Atomic::load(&_exception_oop);
 }
@@ -1382,6 +1357,17 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (jvmti_thread_state() != NULL) {
     jvmti_thread_state()->oops_do(f, cf);
   }
+
+  // The continuation oops are really on the stack. But there is typically at most
+  // one of those per thread, so we handle them here in the oops_do_no_frames part
+  // so that we don't have to sprinkle as many stack watermark checks where these
+  // oops are used. We just need to make sure the thread has started processing.
+  ContinuationEntry* entry = _cont_entry;
+  while (entry != nullptr) {
+    f->do_oop((oop*)entry->cont_addr());
+    f->do_oop((oop*)entry->chunk_addr());
+    entry = entry->parent();
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
@@ -1458,10 +1444,6 @@ const char* _get_thread_state_name(JavaThreadState _thread_state) {
 
 void JavaThread::print_thread_state_on(outputStream *st) const {
   st->print_cr("   JavaThread state: %s", _get_thread_state_name(_thread_state));
-}
-
-const char* JavaThread::thread_state_name() const {
-  return _get_thread_state_name(_thread_state);
 }
 
 // Called by Threads::print() for VM_PrintThreads operation
@@ -1896,11 +1878,6 @@ javaVFrame* JavaThread::last_java_vframe(const frame f, RegisterMap *reg_map) {
     if (vf->is_java_frame()) return javaVFrame::cast(vf);
   }
   return NULL;
-}
-
-oop JavaThread::get_continuation() const {
-  assert(threadObj() != nullptr, "must be set");
-  return java_lang_Thread::continuation(threadObj());
 }
 
 Klass* JavaThread::security_get_caller_class(int depth) {

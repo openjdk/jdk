@@ -169,10 +169,18 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseL:
     return (is_integral_type(bt) ? Op_ReverseV : 0);
   case Op_ReverseBytesS:
-  case Op_ReverseBytesI:
-  case Op_ReverseBytesL:
   case Op_ReverseBytesUS:
-    return (is_integral_type(bt) ? Op_ReverseBytesV : 0);
+    // Subword operations in superword usually don't have precise info
+    // about signedness. But the behavior of reverseBytes for short and
+    // char are exactly the same.
+    return ((bt == T_SHORT || bt == T_CHAR) ? Op_ReverseBytesV : 0);
+  case Op_ReverseBytesI:
+    // There is no reverseBytes() in Byte class but T_BYTE may appear
+    // in VectorAPI calls. We still use ReverseBytesI for T_BYTE to
+    // ensure vector intrinsification succeeds.
+    return ((bt == T_INT || bt == T_BYTE) ? Op_ReverseBytesV : 0);
+  case Op_ReverseBytesL:
+    return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
     // Not implemented. Returning 0 temporarily
     return 0;
@@ -333,17 +341,6 @@ bool VectorNode::is_muladds2i(Node* n) {
     return true;
   }
   return false;
-}
-
-bool VectorNode::is_type_transition_long_to_int(Node* n) {
-  switch(n->Opcode()) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-       return true;
-    default:
-       return false;
-  }
 }
 
 bool VectorNode::is_roundopD(Node* n) {
