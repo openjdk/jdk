@@ -219,6 +219,24 @@ public class ArgsEnvVar extends TestHelper {
     }
 
     @Test
+    public void NoOptionsDuplication() {
+        if (System.getProperty("os.family") == "windows") {
+           /* This test has no value on windows */
+           return;
+        }
+        env.put(JDK_JAVA_OPTIONS, "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005");
+        String testJdk = System.getProperty("test.jdk");
+        String libraryPath = "/usr/bin:" + testJdk + "/lib/server:" + testJdk + "/lib/client";
+        env.put("LD_LIBRARY_PATH", libraryPath);
+        TestResult tr = doExec(env, javaCmd, "-version");
+        tr.notContains("ERROR: Cannot load this JVM TI agent twice");
+        if (!tr.testStatus) {
+            System.out.println(tr);
+            throw new RuntimeException("test fails");
+        }
+    }
+
+    @Test
     public void noWildcard() {
         env.put(JDK_JAVA_OPTIONS, "-cp *");
         TestResult tr = doExec(env, javaCmd, "-jar", "test.jar");

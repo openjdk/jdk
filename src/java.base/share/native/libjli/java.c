@@ -339,6 +339,35 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
     return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
 }
+
+/*
+ * It's required to set or update LD_LIBRARY_PATH by the launcher in some cases:
+ * LD_LIBRARY_PATH contains libjvm.so of different version, linker doesn't
+ * support $ORIGIN or not able to solve dependency between libjvm and libjava.
+ * Runtime linker respects LD_LIBRARY_PATH variable only at the time of runtime
+ * image loading, so launcher has to re-execute itself if LD_LIBRARY_PATH
+ * was altered.
+ *
+ * All required logic is held within CreateExecutionEnvironment, this function is
+ * just a shell, that allows us to check for re-execution before any argument
+ * processing, environment variable or optionfile expansion.
+ */
+
+JNIEXPORT void JNICALL
+JLI_ReExecLauncher(int argc, char **argv) {
+    char jvmpath[MAXPATHLEN];
+    char jrepath[MAXPATHLEN];
+    char jvmcfg[MAXPATHLEN];
+
+    JLI_SetTraceLauncher();
+    JLI_TraceLauncher("Launcher journey begins.\n");
+
+    CreateExecutionEnvironment(&argc, &argv,
+                               jrepath, sizeof(jrepath),
+                               jvmpath, sizeof(jvmpath),
+                               jvmcfg,  sizeof(jvmcfg));
+}
+
 /*
  * Always detach the main thread so that it appears to have ended when
  * the application's main method exits.  This will invoke the

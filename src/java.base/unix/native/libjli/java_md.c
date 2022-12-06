@@ -174,11 +174,13 @@ ContainsLibJVM(const char *env) {
     /* the usual suspects */
     char clientPattern[] = "lib/client";
     char serverPattern[] = "lib/server";
+    char minimalPattern[] = "lib/minimal";
     char *envpath;
     char *path;
     char* save_ptr = NULL;
     jboolean clientPatternFound;
     jboolean serverPatternFound;
+    jboolean minimalPatternFound;
 
     /* fastest path */
     if (env == NULL) {
@@ -188,7 +190,8 @@ ContainsLibJVM(const char *env) {
     /* to optimize for time, test if any of our usual suspects are present. */
     clientPatternFound = JLI_StrStr(env, clientPattern) != NULL;
     serverPatternFound = JLI_StrStr(env, serverPattern) != NULL;
-    if (clientPatternFound == JNI_FALSE && serverPatternFound == JNI_FALSE) {
+    minimalPatternFound = JLI_StrStr(env, serverPattern) != NULL;
+    if (clientPatternFound == JNI_FALSE && serverPatternFound == JNI_FALSE && minimalPatternFound == JNI_FALSE) {
         return JNI_FALSE;
     }
 
@@ -342,7 +345,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /**
      * Update execution environment and re-exec the launcher
-     *
      */
 
     /*
@@ -399,6 +401,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                     (runpath[JLI_StrLen(newpath)] == 0 ||
                     runpath[JLI_StrLen(newpath)] == ':')) {
                 JLI_MemFree(new_runpath);
+                JLI_TraceLauncher("LD_LIBRARY_PATH is already correct, will not EXEC");
                 return;
             }
         }

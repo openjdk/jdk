@@ -62,6 +62,11 @@ main(int argc, char **argv)
     char** jargv;
     const jboolean const_javaw = JNI_FALSE;
 #endif /* JAVAW */
+
+#if !defined(WINDOWS) && !defined(MACOSX)
+   JLI_ReExecLauncher(argc, argv);
+#endif
+
     {
         int i, main_jargc, extra_jargc;
         JLI_List list;
@@ -163,6 +168,7 @@ main(int argc, char **argv)
         margv = args->elements;
     }
 #endif /* WIN32 */
+
     return JLI_Launch(margc, margv,
                    jargc, (const char**) jargv,
                    0, NULL,

@@ -100,6 +100,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         jint     ergo_class                     /* ergnomics policy */
 );
 
+JNIEXPORT void JNICALL
+JLI_ReExecLauncher(int argc, char **argv);
+
 /*
  * Prototypes for launcher functions in the system specific java_md.c.
  */
