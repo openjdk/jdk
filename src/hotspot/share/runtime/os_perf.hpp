@@ -40,13 +40,12 @@ class CPUInformation : public CHeapObj<mtInternal> {
   const char* _name;
 
  public:
-  CPUInformation() {
-    _no_of_sockets = 0;
-    _no_of_cores = 0;
-    _no_of_hw_threads = 0;
-    _description = NULL;
-    _name = NULL;
-  }
+  CPUInformation() :
+    _no_of_sockets(0),
+    _no_of_cores(0),
+    _no_of_hw_threads(0),
+    _description(NULL),
+    _name(NULL) {}
 
   int number_of_sockets(void) const {
     return _no_of_sockets;
@@ -98,21 +97,19 @@ class SystemProcess : public CHeapObj<mtInternal> {
   SystemProcess* _next;
 
  public:
-  SystemProcess() {
-    _pid  = 0;
-    _name = NULL;
-    _path = NULL;
-    _command_line = NULL;
-    _next = NULL;
-  }
+  SystemProcess() :
+    _pid (0),
+    _name(NULL),
+    _path(NULL),
+    _command_line(NULL),
+    _next(NULL) {}
 
-  SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) {
-    _pid = pid;
-    _name = name;
-    _path = path;
-    _command_line = command_line;
-    _next = next;
-  }
+  SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) :
+    _pid(pid),
+    _name(name),
+    _path(path),
+    _command_line(command_line),
+    _next(next) {}
 
   void set_next(SystemProcess* sys_process) {
     _next = sys_process;
