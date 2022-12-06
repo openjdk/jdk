@@ -102,9 +102,6 @@ public class VMSupport {
         for (var e : VM.getSavedProperties().entrySet()) {
             props.put(e.getKey(), e.getValue());
         }
-        if (props.get("oome") != null) {
-            throw new OutOfMemoryError("forced OOME");
-        }
         return serializePropertiesToByteArray(props, false);
     }
 
