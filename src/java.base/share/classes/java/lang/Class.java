@@ -1342,7 +1342,6 @@ public final class Class<T> implements java.io.Serializable,
      * <li> its {@code ABSTRACT} and {@code FINAL} flags are present
      * <li> its {@code INTERFACE} flag is absent, even when the
      *      component type is an interface
-     * <li> its class file format version is that of the component class
      * </ul>
      * If this {@code Class} object represents a primitive type or
      * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
