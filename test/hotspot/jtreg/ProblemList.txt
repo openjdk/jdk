@@ -84,7 +84,6 @@ gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293,8298073 macosx-x64,macosx-aarch64
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
-
 #############################################################################
 
 # :hotspot_runtime
