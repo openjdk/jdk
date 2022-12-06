@@ -34,9 +34,13 @@ import jdk.internal.io.JdkConsole;
  */
 final class ProxyingConsole extends Console {
     private final JdkConsole delegate;
+    private final Object readLock;
+    private final Object writeLock;
 
     ProxyingConsole(JdkConsole delegate) {
         this.delegate = delegate;
+        readLock = new Object();
+        writeLock = new Object();
     }
 
     /**
@@ -60,7 +64,9 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Console format(String fmt, Object ... args) {
-        delegate.format(fmt, args);
+        synchronized (writeLock) {
+            delegate.format(fmt, args);
+        }
         return this;
     }
 
@@ -69,7 +75,9 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Console printf(String format, Object ... args) {
-        delegate.printf(format, args);
+        synchronized (writeLock) {
+            delegate.printf(format, args);
+        }
         return this;
     }
 
@@ -78,7 +86,11 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public String readLine(String fmt, Object ... args) {
-        return delegate.readLine(fmt, args);
+        synchronized (writeLock) {
+            synchronized (readLock) {
+                return delegate.readLine(fmt, args);
+            }
+        }
     }
 
     /**
@@ -86,7 +98,9 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public String readLine() {
-        return delegate.readLine();
+        synchronized (readLock) {
+            return delegate.readLine();
+        }
     }
 
     /**
@@ -94,7 +108,11 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public char[] readPassword(String fmt, Object ... args) {
-        return delegate.readPassword(fmt, args);
+        synchronized (writeLock) {
+            synchronized (readLock) {
+                return delegate.readPassword(fmt, args);
+            }
+        }
     }
 
     /**
@@ -102,7 +120,9 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public char[] readPassword() {
-        return delegate.readPassword();
+        synchronized (readLock) {
+            return delegate.readPassword();
+        }
     }
 
     /**
