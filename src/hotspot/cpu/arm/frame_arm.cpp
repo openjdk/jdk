@@ -105,6 +105,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       if (!fp_safe) {
         return false;
       }
+      // check that the accessed stack slots are safe too
+      if (SafeFetchN(this->fp() + return_addr_offset, 0) == 0 ||
+          SafeFetchN(this->fp() + sender_sp_offset, 0) == 0 ||
+          SafeFetchN(this->fp() + interpreter_frame_sender_sp_offset, 0) == 0 ||
+          SafeFetchN(this->fp() + link_offset, 0) == 0
+         ) return false;
 
       sender_pc = (address) this->fp()[return_addr_offset];
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
