@@ -56,16 +56,15 @@ void MemSnapshot::update_malloc_snapshot() {
   // Thread critical needed keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
   ThreadCritical tc;
-  MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
+  const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
   size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_types; i++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    MallocMemory* mm = ms->by_type(flag);
+    const MallocMemory* mm = ms->by_type(flag);
     _malloc_snapshot[i] = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
-  assert(total_arena_size == ms->total_arena(), "Mismatch in accounting");
 
   // Total malloc size.
   _malloc_total = ms->total();
@@ -79,30 +78,34 @@ void MemSnapshot::update_malloc_snapshot() {
 }
 
 void MemSnapshot::update_vm_snapshot() {
-  VirtualMemorySnapshot* vms = VirtualMemorySummary::as_snapshot();
+  const VirtualMemorySnapshot* vms = VirtualMemorySummary::as_snapshot();
 
+  // Reset total to allow recalculation.
+  _vm_total.committed = 0;
+  _vm_total.reserved = 0;
   for (int i = 0; i < mt_number_of_types; i++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    VirtualMemory* vm = vms->by_type(flag);
+    const VirtualMemory* vm = vms->by_type(flag);
+
     _vm_snapshot[i].reserved = vm->reserved();
     _vm_snapshot[i].committed = vm->committed();
+    _vm_total.reserved += vm->reserved();
+    _vm_total.committed += vm->committed();
   }
-
-  // Total virtual memory size.
-  _vm_total.reserved = vms->total_reserved();
-  _vm_total.committed = vms->total_committed();
 }
 
 void MemSnapshot::snap() {
-  if (_snapshot_options.update_thread_stacks) {
-    walk_thread_stacks();
-  }
-
   if (_snapshot_options.include_malloc) {
     update_malloc_snapshot();
   }
 
   if (_snapshot_options.include_vm) {
+    // Thread stacks only makes sense if virtual memory
+    // is also included. It must be executed before the
+    // over all usage is calculated.
+    if (_snapshot_options.update_thread_stacks) {
+      walk_thread_stacks();
+    }
     update_vm_snapshot();
   }
 }

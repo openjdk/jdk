@@ -44,7 +44,7 @@ private:
 // the two JFR events that are using the same data.
 class MemJFRSnapshot : public AllStatic {
 private:
-  // The baseline age threshold in millie seconds. If older
+  // The baseline age threshold in milliseconds. If older
   // that this we will make a new baseline.
   static const uint64_t BaselineAgeThreshold = 50;
 
