@@ -136,7 +136,7 @@ public class KeepAliveStreamFinalizer {
 
     public static void clientHttpCalls(InetSocketAddress address) throws Exception {
         try {
-            System.out.println("http server listen on: " + address.getPort());
+            System.err.println("http server listen on: " + address.getPort());
             String hostAddr = address.getAddress().getHostAddress();
             if (hostAddr.indexOf(':') > -1) hostAddr = "[" + hostAddr + "]";
             String baseURLStr = "https://" + hostAddr + ":" + address.getPort() + "/";
@@ -150,7 +150,7 @@ public class KeepAliveStreamFinalizer {
             // now perform up to 3 requests; with the broken KeepAliveStream finalizer,
             // the second request usually attempts to use a finalized socket
             for (int i = 0; i < 3; i++) {
-                System.out.println("Request #" + (i + 1));
+                System.err.println("Request #" + (i + 1));
                 doRequest(testUrl);
                 System.gc();
                 Thread.sleep(100);
@@ -164,7 +164,7 @@ public class KeepAliveStreamFinalizer {
     static class CheckFinalizeSocket extends SSLSocket {
         private volatile boolean finalized;
         public void finalize() throws Throwable {
-            System.out.println("In finalize");
+            System.err.println("In finalize");
             super.finalize();
             finalized = true;
         }
@@ -172,7 +172,7 @@ public class KeepAliveStreamFinalizer {
         @Override
         public InputStream getInputStream() throws IOException {
             if (finalized) {
-                System.out.println(failureReason = "getInputStream called after finalize");
+                System.err.println(failureReason = "getInputStream called after finalize");
                 Thread.dumpStack();
             }
             return super.getInputStream();
@@ -181,7 +181,7 @@ public class KeepAliveStreamFinalizer {
         @Override
         public OutputStream getOutputStream() throws IOException {
             if (finalized) {
-                System.out.println(failureReason = "getOutputStream called after finalize");
+                System.err.println(failureReason = "getOutputStream called after finalize");
                 Thread.dumpStack();
             }
             return super.getOutputStream();
@@ -190,7 +190,7 @@ public class KeepAliveStreamFinalizer {
         @Override
         public synchronized void close() throws IOException {
             if (finalized) {
-                System.out.println(failureReason = "close called after finalize");
+                System.err.println(failureReason = "close called after finalize");
                 Thread.dumpStack();
             }
             super.close();
