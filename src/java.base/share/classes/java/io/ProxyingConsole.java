@@ -36,11 +36,15 @@ final class ProxyingConsole extends Console {
     private final JdkConsole delegate;
     private final Object readLock;
     private final Object writeLock;
+    private final Reader reader;
+    private final PrintWriter printWriter;
 
     ProxyingConsole(JdkConsole delegate) {
         this.delegate = delegate;
         readLock = new Object();
         writeLock = new Object();
+        reader = new WrappingReader(delegate.reader(), readLock);
+        printWriter = new WrappingWriter(delegate.writer(), writeLock);
     }
 
     /**
@@ -48,7 +52,7 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public PrintWriter writer() {
-        return delegate.writer();
+        return printWriter;
     }
 
     /**
@@ -56,7 +60,7 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Reader reader() {
-        return delegate.reader();
+        return reader;
     }
 
     /**
@@ -139,5 +143,55 @@ final class ProxyingConsole extends Console {
     @Override
     public Charset charset() {
         return delegate.charset();
+    }
+
+    private class WrappingReader extends Reader {
+        private final Reader r;
+        private final Object lock;
+
+        WrappingReader(Reader r, Object lock) {
+            this.r = r;
+            this.lock = lock;
+        }
+
+        @Override
+        public int read(char[] cbuf, int off, int len) throws IOException {
+            synchronized (lock) {
+                return r.read(cbuf, off, len);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            r.close();
+        }
+    }
+
+    private class WrappingWriter extends PrintWriter {
+        private final PrintWriter pw;
+        private final Object lock;
+
+        public WrappingWriter(PrintWriter pw, Object lock) {
+            super(pw);
+            this.pw = pw;
+            this.lock = lock;
+        }
+
+        @Override
+        public void write(char[] cbuf, int off, int len) {
+            synchronized (lock) {
+                pw.write(cbuf, off, len);
+            }
+        }
+
+        @Override
+        public void flush() {
+            pw.flush();
+        }
+
+        @Override
+        public void close() {
+            pw.close();
+        }
     }
 }
