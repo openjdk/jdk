@@ -1955,7 +1955,7 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
-      if(!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
         return false;
       }
     }
