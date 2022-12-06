@@ -64,7 +64,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         if (isIllegalType(type.returnType()))
             return true;
 
-        for (Class<?> pType : type.parameterArray()) {
+        for (Class<?> pType : type.ptypes()) {
             if (isIllegalType(pType))
                 return true;
         }

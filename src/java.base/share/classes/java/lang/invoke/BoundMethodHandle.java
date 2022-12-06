@@ -356,15 +356,16 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
         private boolean verifyTHAargs(MemberName transform, int whichtm, List<?> args, List<?> fields) {
             assert(transform == Specializer.BMH_TRANSFORMS.get(whichtm));
-            assert(args.size() == transform.getMethodType().parameterCount());
+            MethodType tType = transform.getMethodType();
+            assert(args.size() == tType.parameterCount());
             assert(fields.size() == this.fieldCount());
             final int MH_AND_LF = 2;
             if (whichtm == Specializer.TN_COPY_NO_EXTEND) {
-                assert(transform.getMethodType().parameterCount() == MH_AND_LF);
+                assert(tType.parameterCount() == MH_AND_LF);
             } else if (whichtm < ARG_TYPE_LIMIT) {
-                assert(transform.getMethodType().parameterCount() == MH_AND_LF+1);
+                assert(tType.parameterCount() == MH_AND_LF+1);
                 final BasicType type = basicType((byte) whichtm);
-                assert(transform.getParameterTypes()[MH_AND_LF] == type.basicTypeClass());
+                assert(tType.parameterType(MH_AND_LF) == type.basicTypeClass());
             } else {
                 return false;
             }
