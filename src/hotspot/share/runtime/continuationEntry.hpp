@@ -30,6 +30,8 @@
 #include "runtime/continuation.hpp"
 #include "utilities/sizes.hpp"
 
+#include CPU_HEADER(continuationEntry)
+
 class CompiledMethod;
 class JavaThread;
 class OopMap;
@@ -37,6 +39,7 @@ class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
+  ContinuationEntryPD _pd;
 #ifdef ASSERT
 private:
   static const int COOKIE_VALUE = 0x1234;
@@ -66,6 +69,8 @@ private:
   oopDesc* _cont;
   oopDesc* _chunk;
   int _flags;
+  // Size in words of the stack arguments of the bottom frame on stack if compiled 0 otherwise.
+  // The caller (if there is one) is the still frozen top frame in the StackChunk.
   int _argsize;
   intptr_t* _parent_cont_fastpath;
 #ifdef _LP64
@@ -84,8 +89,6 @@ public:
   static ByteSize pin_count_offset(){ return byte_offset_of(ContinuationEntry, _pin_count); }
   static ByteSize parent_cont_fastpath_offset()      { return byte_offset_of(ContinuationEntry, _parent_cont_fastpath); }
   static ByteSize parent_held_monitor_count_offset() { return byte_offset_of(ContinuationEntry, _parent_held_monitor_count); }
-
-  static void setup_oopmap(OopMap* map);
 
 public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
@@ -126,9 +129,12 @@ public:
   void flush_stack_processing(JavaThread* thread) const;
 
   inline intptr_t* bottom_sender_sp() const;
-  inline oop cont_oop() const;
-  inline oop scope() const;
-  inline static oop cont_oop_or_null(const ContinuationEntry* ce);
+  inline oop cont_oop(const JavaThread* thread) const;
+  inline oop scope(const JavaThread* thread) const;
+  inline static oop cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread);
+
+  oop* cont_addr() { return (oop*)&_cont; }
+  oop* chunk_addr() { return (oop*)&_chunk; }
 
   bool is_virtual_thread() const { return _flags != 0; }
 

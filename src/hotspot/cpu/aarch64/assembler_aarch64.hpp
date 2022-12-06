@@ -2322,6 +2322,40 @@ public:
     }
   }
 
+  // Single-structure load/store method (all addressing variants)
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Address a,
+             int op1, int op2, int regs) {
+    int expectedImmediate = (regVariant_to_elemBits(T) >> 3) * regs;
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    Register Xn = a.base();
+    int Rm;
+
+    switch (a.getMode()) {
+    case Address::base_plus_offset:
+      guarantee(a.offset() == 0, "no offset allowed here");
+      Rm = 0;
+      break;
+    case Address::post:
+      guarantee(a.offset() == expectedImmediate, "bad offset");
+      op1 |= 0b100;
+      Rm = 0b11111;
+      break;
+    case Address::post_reg:
+      op1 |= 0b100;
+      Rm = a.index()->encoding();
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1, 29, 21), f(Rm, 20, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
+  }
+
  public:
 
 #define INSN1(NAME, op1, op2)                                           \
@@ -2373,6 +2407,66 @@ public:
   INSN2(ld2r, 0b001101011, 0b1100);
   INSN3(ld3r, 0b001101010, 0b1110);
   INSN4(ld4r, 0b001101011, 0b1110);
+
+#undef INSN1
+#undef INSN2
+#undef INSN3
+#undef INSN4
+
+// Handle common single-structure ld/st parameter sanity checks
+// for all variations (1 to 4) of SIMD reigster inputs.  This
+// method will call the routine that generates the opcode.
+template<typename R, typename... Rx>
+  void ldst_sstr(SIMD_RegVariant T, int index, const Address &a,
+            int op1, int op2, R firstReg, Rx... otherRegs) {
+    const FloatRegister vtSet[] = { firstReg, otherRegs... };
+    const int regCount = sizeof...(otherRegs) + 1;
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||
+              (T == H && index <= 7) || (T == S && index <= 3) ||
+              (T == D && index <= 1)), "invalid index");
+    assert(regCount >= 1 && regCount <= 4, "illegal register count");
+
+    // Check to make sure when multiple SIMD registers are used
+    // that they are in successive order.
+    for (int i = 0; i < regCount - 1; i++) {
+      assert(vtSet[i]->successor() == vtSet[i + 1],
+             "Registers must be ordered");
+    }
+
+    ld_st(firstReg, T, index, a, op1, op2, regCount);
+  }
+
+// Define a set of INSN1/2/3/4 macros to handle single-structure
+// load/store instructions.
+#define INSN1(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, SIMD_RegVariant T, int index,             \
+            const Address &a) {                                         \
+    ldst_sstr(T, index, a, op1, op2, Vt);                               \
+ }
+
+#define INSN2(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, SIMD_RegVariant T,     \
+            int index, const Address &a) {                              \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2);                          \
+  }
+
+#define INSN3(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            SIMD_RegVariant T, int index, const Address &a) {           \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3);                     \
+  }
+
+#define INSN4(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            FloatRegister Vt4, SIMD_RegVariant T, int index,            \
+            const Address &a) {                                         \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3, Vt4);                \
+  }
+
+  INSN1(st1, 0b001101000, 0b0000);
+  INSN2(st2, 0b001101001, 0b0000);
+  INSN3(st3, 0b001101000, 0b0010);
+  INSN4(st4, 0b001101001, 0b0010);
 
 #undef INSN1
 #undef INSN2
@@ -2749,6 +2843,7 @@ public:
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
   INSN(usra, 1, 0b000101, /* isSHR = */ true);
   INSN(ssra, 0, 0b000101, /* isSHR = */ true);
+  INSN(sli,  1, 0b010101, /* isSHR = */ false);
 
 #undef INSN
 
@@ -3846,6 +3941,17 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
 
   INSN(sve_bext, 0b00);
   INSN(sve_bdep, 0b01);
+#undef INSN
+
+// SVE2 bitwise ternary operations
+#define INSN(NAME, opc)                                               \
+  void NAME(FloatRegister Zdn, FloatRegister Zm, FloatRegister Zk) {  \
+    starti;                                                           \
+    f(0b00000100, 31, 24), f(opc, 23, 21), rf(Zm, 16);                \
+    f(0b001110, 15, 10), rf(Zk, 5), rf(Zdn, 0);                       \
+  }
+
+  INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
