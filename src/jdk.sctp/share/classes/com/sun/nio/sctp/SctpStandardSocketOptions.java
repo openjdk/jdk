@@ -48,9 +48,10 @@ public final class SctpStandardSocketOptions {
      * <P> It is implementation specific whether or not this option is
      * supported.
      */
-    public static final SctpSocketOption<Boolean> SCTP_DISABLE_FRAGMENTS = new
-        SctpStdSocketOption<>("SCTP_DISABLE_FRAGMENTS", Boolean.class,
-        SctpStdSocketOption.SCTP_DISABLE_FRAGMENTS);
+    public static final SctpSocketOption<Boolean> SCTP_DISABLE_FRAGMENTS =
+            new SctpStdSocketOption<>("SCTP_DISABLE_FRAGMENTS",
+                    Boolean.class,
+                    SctpStdSocketOption.SCTP_DISABLE_FRAGMENTS);
 
     /**
      * Enables or disables explicit message completion.
@@ -67,9 +68,10 @@ public final class SctpStandardSocketOptions {
      * option is disabled. It is implementation specific whether or not this
      * option is supported.
      */
-    public static final SctpSocketOption<Boolean> SCTP_EXPLICIT_COMPLETE = new
-        SctpStdSocketOption<>("SCTP_EXPLICIT_COMPLETE", Boolean.class,
-        SctpStdSocketOption.SCTP_EXPLICIT_COMPLETE);
+    public static final SctpSocketOption<Boolean> SCTP_EXPLICIT_COMPLETE =
+            new SctpStdSocketOption<>("SCTP_EXPLICIT_COMPLETE",
+                    Boolean.class,
+                    SctpStdSocketOption.SCTP_EXPLICIT_COMPLETE);
 
     /**
      * Fragmented interleave controls how the presentation of messages occur
@@ -158,8 +160,8 @@ public final class SctpStandardSocketOptions {
      */
     public static final SctpSocketOption
         <SctpStandardSocketOptions.InitMaxStreams> SCTP_INIT_MAXSTREAMS =
-        new SctpStdSocketOption<>(
-        "SCTP_INIT_MAXSTREAMS", SctpStandardSocketOptions.InitMaxStreams.class);
+            new SctpStdSocketOption<>("SCTP_INIT_MAXSTREAMS",
+                    SctpStandardSocketOptions.InitMaxStreams.class);
 
     /**
      * Enables or disables a Nagle-like algorithm.
@@ -170,8 +172,9 @@ public final class SctpStandardSocketOptions {
      * improve network efficiency.
      */
     public static final SctpSocketOption<Boolean> SCTP_NODELAY =
-        new SctpStdSocketOption<>("SCTP_NODELAY", Boolean.class,
-        SctpStdSocketOption.SCTP_NODELAY);
+            new SctpStdSocketOption<>("SCTP_NODELAY",
+                    Boolean.class,
+                    SctpStdSocketOption.SCTP_NODELAY);
 
     /**
      * Requests that the local SCTP stack use the given peer address as
@@ -191,8 +194,8 @@ public final class SctpStandardSocketOptions {
      * set or queried directly.
      */
     public static final SctpSocketOption<SocketAddress> SCTP_PRIMARY_ADDR =
-            new SctpStdSocketOption<>
-            ("SCTP_PRIMARY_ADDR", SocketAddress.class);
+            new SctpStdSocketOption<>("SCTP_PRIMARY_ADDR",
+                    SocketAddress.class);
 
     /**
      * Requests that the peer mark the enclosed address as the association
@@ -216,8 +219,8 @@ public final class SctpStandardSocketOptions {
      * option is supported.
      */
     public static final SctpSocketOption<SocketAddress> SCTP_SET_PEER_PRIMARY_ADDR =
-            new SctpStdSocketOption<>
-            ("SCTP_SET_PEER_PRIMARY_ADDR", SocketAddress.class);
+            new SctpStdSocketOption<>("SCTP_SET_PEER_PRIMARY_ADDR",
+                    SocketAddress.class);
 
     /**
      * The size of the socket send buffer.
@@ -245,8 +248,9 @@ public final class SctpStandardSocketOptions {
      * dependent.
      */
     public static final SctpSocketOption<Integer> SO_SNDBUF =
-        new SctpStdSocketOption<>("SO_SNDBUF", Integer.class,
-        SctpStdSocketOption.SO_SNDBUF);
+            new SctpStdSocketOption<>("SO_SNDBUF",
+                    Integer.class,
+                    SctpStdSocketOption.SO_SNDBUF);
 
     /**
      * The size of the socket receive buffer.
@@ -272,8 +276,9 @@ public final class SctpStandardSocketOptions {
      * dependent.
      */
     public static final SctpSocketOption<Integer> SO_RCVBUF =
-        new SctpStdSocketOption<>("SO_RCVBUF", Integer.class,
-        SctpStdSocketOption.SO_RCVBUF);
+            new SctpStdSocketOption<>("SO_RCVBUF",
+                    Integer.class,
+                    SctpStdSocketOption.SO_RCVBUF);
 
     /**
      * Linger on close if data is present.
@@ -303,8 +308,9 @@ public final class SctpStandardSocketOptions {
      * its maximum value.
      */
     public static final SctpSocketOption<Integer> SO_LINGER =
-        new SctpStdSocketOption<>("SO_LINGER", Integer.class,
-        SctpStdSocketOption.SO_LINGER);
+            new SctpStdSocketOption<>("SO_LINGER",
+                    Integer.class,
+                    SctpStdSocketOption.SO_LINGER);
 
     /**
      * This class is used to set the maximum number of inbound/outbound streams
