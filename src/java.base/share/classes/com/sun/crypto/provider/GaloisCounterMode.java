@@ -1633,7 +1633,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                     } else {
                         NIO_ACCESS.acquireSession(dst);
                         try {
-                            Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
+                            Unsafe.getUnsafe().setMemory(
+                                ((DirectBuffer)dst).address(),
                                 len + dst.position(), (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);
