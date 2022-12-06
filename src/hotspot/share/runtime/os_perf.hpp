@@ -106,6 +106,14 @@ class SystemProcess : public CHeapObj<mtInternal> {
     _next = NULL;
   }
 
+  SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) {
+    _pid = pid;
+    _name = name;
+    _path = path;
+    _command_line = command_line;
+    _next = next;
+  }
+
   void set_next(SystemProcess* sys_process) {
     _next = sys_process;
   }
