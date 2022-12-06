@@ -84,7 +84,7 @@ public:
 //  ----------  <-- watermark (callee SP from the snapshot, SP at the
 //                             point of unwinding, might be above or below
 //                             due to frame resizing)
-class StackWatermark : public CHeapObj<mtInternal> {
+class StackWatermark : public CHeapObj<mtThread> {
   friend class StackWatermarkFramesIterator;
 protected:
   volatile uint32_t _state;
@@ -94,7 +94,7 @@ protected:
   StackWatermarkFramesIterator* _iterator;
   Mutex _lock;
   StackWatermarkKind _kind;
-  GrowableArrayCHeap<StackWatermark*, mtInternal> _linked_watermarks;
+  GrowableArrayCHeap<StackWatermark*, mtThread> _linked_watermarks;
 
   void process_one();
 
