@@ -227,7 +227,6 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     if (amount_in_current_scale(malloc_memory->malloc_size()) > 0
         DEBUG_ONLY(|| amount_in_current_scale(malloc_memory->malloc_peak_size()) > 0)) {
       // We don't know how many arena chunks are in used, so don't report the count
-      size_t count = (flag == mtChunk) ? 0 : malloc_memory->malloc_count();
       print_malloc_line(malloc_memory->malloc_counter());
     }
 
