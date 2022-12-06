@@ -235,22 +235,6 @@ final class MemberName implements Member, Cloneable {
         return (isInvocable() ? getMethodType() : getFieldType());
     }
 
-    /** Utility method to produce the signature of this member,
-     *  used within the class file format to describe its type.
-     */
-    public String getSignature() {
-        if (type == null) {
-            expandFromVM();
-            if (type == null) {
-                return null;
-            }
-        }
-        if (isInvocable())
-            return BytecodeDescriptor.unparse(getMethodType());
-        else
-            return BytecodeDescriptor.unparse(getFieldType());
-    }
-
     /** Return the modifier flags of this member.
      *  @see java.lang.reflect.Modifier
      */
@@ -646,6 +630,10 @@ final class MemberName implements Member, Cloneable {
     public MemberName(Field fld) {
         this(fld, false);
     }
+    static {
+        // the following MemberName constructor relies on these ranges matching up
+        assert((REF_putStatic - REF_getStatic) == (REF_putField - REF_getField));
+    }
     @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Field fld, boolean makeSetter) {
         Objects.requireNonNull(fld);
@@ -654,7 +642,6 @@ final class MemberName implements Member, Cloneable {
         assert(isResolved() && this.clazz != null);
         this.name = fld.getName();
         this.type = fld.getType();
-        // assert((REF_putStatic - REF_getStatic) == (REF_putField - REF_getField));
         byte refKind = this.getReferenceKind();
         assert(refKind == (isStatic() ? REF_getStatic : REF_getField));
         if (makeSetter) {
