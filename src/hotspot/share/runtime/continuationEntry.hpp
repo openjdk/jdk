@@ -103,8 +103,6 @@ public:
   static address compiled_entry();
   static address interpreted_entry();
 
-  static CompiledMethod* enter_special() { return _enter_special; }
-
   int argsize() const { return _argsize; }
   void set_argsize(int value) { _argsize = value; }
 

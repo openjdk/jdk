@@ -732,11 +732,15 @@
     <Field type="long" name="pid" label="Process Identifier" />
      </Event>
 
-  <Event name="OSInformation" category="Operating System" label="OS Information" period="endChunk">
+  <Event name="OSInformation" category="Operating System" label="OS Information"
+         description="Description of the OS the JVM runs on, for example, a uname-like output"
+         period="endChunk">
     <Field type="string" name="osVersion" label="OS Version" />
   </Event>
 
-  <Event name="VirtualizationInformation" category="Operating System" label="Virtualization Information" period="endChunk">
+  <Event name="VirtualizationInformation" category="Operating System" label="Virtualization Information"
+         description="Description of the virtualization technology the JVM runs on"
+         period="endChunk">
     <Field type="string" name="name" label="Name" />
   </Event>
 
@@ -745,7 +749,9 @@
     <Field type="string" name="value" label="Value" />
   </Event>
 
-  <Event name="InitialEnvironmentVariable" category="Operating System" label="Initial Environment Variable" period="endChunk">
+  <Event name="InitialEnvironmentVariable" category="Operating System" label="Initial Environment Variable"
+         description="Key-value pairs for environment variables at JVM startup"
+         period="endChunk">
     <Field type="string" name="key" label="Key" />
     <Field type="string" name="value" label="Value" />
   </Event>

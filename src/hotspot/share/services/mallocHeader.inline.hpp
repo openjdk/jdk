@@ -55,9 +55,7 @@ inline void MallocHeader::assert_block_integrity() const {
   char msg[256];
   address corruption = NULL;
   if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      print_block_on_error(tty, (address)this);
-    }
+    print_block_on_error(tty, corruption != NULL ? corruption : (address)this);
     fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
   }
 }

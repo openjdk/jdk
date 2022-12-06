@@ -2852,6 +2852,10 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Submits a ForkJoinTask for execution.
      *
+     * @implSpec
+     * This method is equivalent to {@link #externalSubmit(ForkJoinTask)}
+     * when called from a thread that is not in this pool.
+     *
      * @param task the task to submit
      * @param <T> the type of the task's result
      * @return the task
@@ -2899,6 +2903,31 @@ public class ForkJoinPool extends AbstractExecutorService {
     // Added mainly for possible use in Loom
 
     /**
+     * Submits the given task as if submitted from a non-{@code ForkJoinTask}
+     * client. The task is added to a scheduling queue for submissions to the
+     * pool even when called from a thread in the pool.
+     *
+     * @implSpec
+     * This method is equivalent to {@link #submit(ForkJoinTask)} when called
+     * from a thread that is not in this pool.
+     *
+     * @return the task
+     * @param task the task to submit
+     * @param <T> the type of the task's result
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
+     * @since 20
+     */
+    public <T> ForkJoinTask<T> externalSubmit(ForkJoinTask<T> task) {
+        U.storeStoreFence();  // ensure safely publishable
+        task.markPoolSubmission();
+        WorkQueue q = submissionQueue(true);
+        q.push(task, this, true);
+        return task;
+    }
+
+    /**
      * Submits the given task without guaranteeing that it will
      * eventually execute in the absence of available active threads.
      * In some contexts, this method may reduce contention and
@@ -2909,6 +2938,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param task the task
      * @param <T> the type of the task's result
      * @return the task
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
      * @since 19
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
@@ -3267,6 +3299,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * granularities.
      *
      * @return the number of queued tasks
+     * @see ForkJoinWorkerThread#getQueuedTaskCount()
      */
     public long getQueuedTaskCount() {
         WorkQueue[] qs; WorkQueue q;

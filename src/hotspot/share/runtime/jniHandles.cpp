@@ -252,15 +252,6 @@ bool JNIHandles::is_weak_global_handle(jobject handle) {
   return is_jweak(handle) && is_storage_handle(weak_global_handles(), jweak_ptr(handle));
 }
 
-size_t JNIHandles::global_handle_memory_usage() {
-  return global_handles()->total_memory_usage();
-}
-
-size_t JNIHandles::weak_global_handle_memory_usage() {
-  return weak_global_handles()->total_memory_usage();
-}
-
-
 // We assume this is called at a safepoint: no lock is needed.
 void JNIHandles::print_on(outputStream* st) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -538,19 +529,4 @@ bool JNIHandleBlock::chain_contains(jobject handle) const {
     }
   }
   return false;
-}
-
-
-size_t JNIHandleBlock::length() const {
-  size_t result = 1;
-  for (JNIHandleBlock* current = _next; current != NULL; current = current->_next) {
-    result++;
-  }
-  return result;
-}
-
-// This method is not thread-safe, i.e., must be called while holding a lock on the
-// structure.
-size_t JNIHandleBlock::memory_usage() const {
-  return length() * sizeof(JNIHandleBlock);
 }
