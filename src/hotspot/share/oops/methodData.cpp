@@ -1211,7 +1211,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     // Holds Compile_lock
-    _extra_data_lock(Mutex::safepoint-2, "MDOExtraData_lock"),
+    _extra_data_lock(new Mutex(Mutex::safepoint-2, "MDOExtraData_lock")),
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
@@ -1453,7 +1453,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   }
 
   if (create_if_missing && dp < end) {
-    MutexLocker ml(&_extra_data_lock);
+    MutexLocker ml(_extra_data_lock);
     // Check again now that we have the lock. Another thread may
     // have added extra data entries.
     ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
@@ -1820,4 +1820,13 @@ void MethodData::clean_weak_method_links() {
   CleanExtraDataMethodClosure cl;
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
+}
+
+void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
+  assert(_extra_data_lock == NULL, "memory leak");
+}
+
+void MethodData::release_C_heap_structures() {
+  delete _extra_data_lock;
+  _extra_data_lock = NULL;
 }
