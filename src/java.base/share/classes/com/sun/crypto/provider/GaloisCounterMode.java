@@ -982,6 +982,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
                     return dst;
                 }
+
             } else if (!src.isDirect() && !dst.isDirect()) {
                 // if src is read only, then we need a copy
                 if (!src.isReadOnly()) {
@@ -1623,7 +1624,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             if (mismatch != 0) {
                 // Clear output data
-                dst.reset();             
+                dst.reset();
                 // If this is an in-place array, don't zero the src
                 if (!inPlaceArray) {
                     if (dst.hasArray()) {
@@ -1632,8 +1633,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     } else {
                         NIO_ACCESS.acquireSession(dst);
                         try {
-                            Unsafe.getUnsafe().setMemory(
-                                ((DirectBuffer) dst).address(),
+                            Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
                                 len + dst.position(), (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);
