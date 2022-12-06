@@ -132,7 +132,6 @@ class Space: public CHeapObj<mtGC> {
 
   // Testers
   bool is_empty() const              { return used() == 0; }
-  bool not_empty() const             { return used() > 0; }
 
   // Returns true iff the given the space contains the
   // given address as part of an allocated object. For
@@ -285,15 +284,6 @@ public:
   }
 
   void do_MemRegion(MemRegion mr) override;
-
-  void set_min_done(HeapWord* min_done) {
-    _min_done = min_done;
-  }
-#ifndef PRODUCT
-  void set_last_bottom(HeapWord* last_bottom) {
-    _last_bottom = last_bottom;
-  }
-#endif
 };
 
 // A structure to represent a point at which objects are being copied
@@ -396,13 +386,6 @@ public:
   // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
-
-  // Return a size with adjustments as required of the space.
-  virtual size_t adjust_object_size_v(size_t size) const { return size; }
-
-  void set_first_dead(HeapWord* value) { _first_dead = value; }
-  void set_end_of_live(HeapWord* value) { _end_of_live = value; }
-
 protected:
   // Used during compaction.
   HeapWord* _first_dead;
