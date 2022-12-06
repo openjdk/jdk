@@ -125,12 +125,7 @@ public class CustomFSVLinkTest {
         public Icon getSystemIcon(File f) {
             return delegate.getSystemIcon(f);
         }
-        /*
-                @Override
-                public Icon getSystemIcon(File f, int width, int height) {
-                    return delegate.getSystemIcon(f, width, height);
-                }
-        */
+
         @Override
         public boolean isParent(File folder, File file) {
             return delegate.isParent(folder, file);
