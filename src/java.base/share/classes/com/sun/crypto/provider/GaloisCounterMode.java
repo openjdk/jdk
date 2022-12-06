@@ -577,22 +577,20 @@ abstract class GaloisCounterMode extends CipherSpi {
     }
 
     /**
-     * Wrapper method around Combined AES-GCM intrinsic that splits
+     * Wrapper function around Combined AES-GCM intrinsic method that splits
      * large chunks of data into 1MB sized chunks. This is to place
      * an upper limit on the number of blocks encrypted in the intrinsic.
      *
-     * For decrypting in-place byte[], calling methods must set ct to null
-     * to avoid combined intrinsic, call GHASH directly before GCTR to avoid
-     * a bad tag exception. This check is not performed here because it would
-     * impose a check for every operation which is less efficient.
-     *
-     * The value of ctOfs is irrelevant if ct is null.
+     * The combined intrinsic is not used when decrypting in-place heap
+     * bytebuffers because 'ct' will be the same as 'in' and overwritten by
+     * GCTR before GHASH calculates the encrypted tag.
      */
     private static int implGCMCrypt(byte[] in, int inOfs, int inLen, byte[] ct,
                                     int ctOfs, byte[] out, int outOfs,
                                     GCTR gctr, GHASH ghash) {
 
         int len = 0;
+        // Loop if input length is greater than the SPLIT_LEN
         if (inLen > SPLIT_LEN && ct != null) {
             int partlen;
             while (inLen >= SPLIT_LEN) {
@@ -603,6 +601,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
         }
 
+        // Finish any remaining data
         if (inLen > 0) {
             if (ct == null) {
                 ghash.update(in, inOfs + len, inLen);
@@ -693,9 +692,9 @@ abstract class GaloisCounterMode extends CipherSpi {
         byte[] originalOut = null;
         int originalOutOfs = 0;
 
-        // True if op is in-place array decryption with the input & output
-        // offset the same or the input greater.  This is to avoid the combined
-        // intrinsic.
+        // True if ops is an in-place array decryption with the offset between
+        // input & output the same or the input greater.  This is to
+        // avoid the AVX512 intrinsic.
         boolean inPlaceArray = false;
 
         GCMEngine(SymmetricCipher blockCipher) {
@@ -761,31 +760,13 @@ abstract class GaloisCounterMode extends CipherSpi {
             int len;
 
             if (src.hasArray() && dst.hasArray()) {
-                byte[] array;
-                if (encryption) {
-                    array = dst.array();
-                    int ofs = dst.arrayOffset() + dst.position();
-                    len = GaloisCounterMode.implGCMCrypt(src.array(),
-                        src.arrayOffset() + src.position(), srcLen,
-                        array, ofs, array, ofs, gctr, ghash);
-                } else {
-                    array = src.array();
-                    // Don't use 'inPlaceArray' here as the src maybe ibuffer
-                    // eventhough doFinal() may have been given in-place heap
-                    // bytebuffers
-                    if (array == dst.array()) {
-                        len = GaloisCounterMode.implGCMCrypt(array,
-                            src.arrayOffset() + src.position(), srcLen,
-                            null, 0, array, dst.arrayOffset() + dst.position(),
-                            gctr, ghash);
-                    } else {
-                        int ofs = src.arrayOffset() + src.position();
-                        len = GaloisCounterMode.implGCMCrypt(array, ofs, srcLen,
-                            array, ofs, dst.array(),
-                            dst.arrayOffset() + dst.position(), gctr, ghash);
-                    }
-                }
-
+                ByteBuffer ct = (encryption ? dst : src);
+                len = GaloisCounterMode.implGCMCrypt(src.array(),
+                    src.arrayOffset() + src.position(), srcLen,
+                    inPlaceArray ? null : ct.array(),
+                    ct.arrayOffset() + ct.position(),
+                    dst.array(), dst.arrayOffset() + dst.position(),
+                    gctr, ghash);
                 src.position(src.position() + len);
                 dst.position(dst.position() + len);
                 return len;
@@ -1001,7 +982,6 @@ abstract class GaloisCounterMode extends CipherSpi {
                     ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
                     return dst;
                 }
-
             } else if (!src.isDirect() && !dst.isDirect()) {
                 // if src is read only, then we need a copy
                 if (!src.isReadOnly()) {
@@ -1016,8 +996,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     // the same as the output offset, the same buffer can be
                     // used.
                     // Set 'inPlaceArray' true for decryption operations to
-                    // avoid the combined intrinsic.  Creating a temp buffer to
-                    // use with the combined intrinsic degrades performance.
+                    // avoid the AVX512 combined intrinsic
                     if (src.position() + src.arrayOffset() >=
                         dst.position() + dst.arrayOffset()) {
                         inPlaceArray = (!encryption);
@@ -1645,7 +1624,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (mismatch != 0) {
                 // Clear output data
                 dst.reset();
-                // If this is not an in-place array, zero the dst buffer
+                // If this is an in-place array, don't zero the src
                 if (!inPlaceArray) {
                     if (dst.hasArray()) {
                         int ofs = dst.arrayOffset() + dst.position();
@@ -1654,7 +1633,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                         NIO_ACCESS.acquireSession(dst);
                         try {
                             Unsafe.getUnsafe().setMemory(
-                                ((DirectBuffer)dst).address(),
+                                ((DirectBuffer) dst).address(),
                                 len + dst.position(), (byte) 0);
                         } finally {
                             NIO_ACCESS.releaseSession(dst);
