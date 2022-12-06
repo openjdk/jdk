@@ -78,14 +78,19 @@ public class TestSPISigned {
             }
         } else {
             // Set up signed jar with custom calendar data provider
+            //
+            // 1. Create jar with custom CalendarDataProvider
             JarUtils.createJarFile(UNSIGNED_JAR, PROVIDER_DIR);
             JarUtils.updateJarFile(UNSIGNED_JAR, META_INF_DIR);
-            Files.copy(UNSIGNED_JAR, SIGNED_JAR);
-            Path src = Path.of(System.getProperty("test.src"));
-            Path srcOneUp = src.resolve("..");
-            String ksArgs = "-keystore " + srcOneUp.resolve("JarSigning.keystore")
-                + " -storepass bbbbbb";
-            SecurityTools.jarsigner(ksArgs + " " + SIGNED_JAR + " c");
+            // create signer's keypair
+            SecurityTools.keytool("-genkeypair -keyalg RSA -keystore ks " +
+                                  "-storepass changeit -dname CN=test -alias test")
+                     .shouldHaveExitValue(0);
+            // sign jar
+            SecurityTools.jarsigner("-keystore ks -storepass changeit " +
+                                "-signedjar " + SIGNED_JAR + " " + UNSIGNED_JAR + " test")
+                     .shouldHaveExitValue(0);
+            // run test, which must not throw a NPE
             List<String> testRun = new ArrayList<>();
             testRun.add("-Djava.locale.providers=SPI");
             testRun.add("-cp");
