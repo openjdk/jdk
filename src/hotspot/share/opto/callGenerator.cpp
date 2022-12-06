@@ -805,7 +805,7 @@ CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, 
 
 //------------------------PredictedCallGenerator------------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
-class PredictedCallGenerator : public CallGenerator {
+class PredictedCallGenerator : public InlineCallGenerator {
   ciKlass*       _predicted_receiver;
   CallGenerator* _if_missed;
   CallGenerator* _if_hit;
@@ -817,7 +817,7 @@ public:
                          CallGenerator* if_missed,
                          CallGenerator* if_hit, bool exact_check,
                          float hit_prob)
-    : CallGenerator(if_missed->method())
+    : InlineCallGenerator(if_missed->method())
   {
     // The call profile data may predict the hit_prob as extreme as 0 or 1.
     // Remove the extremes values from the range.
