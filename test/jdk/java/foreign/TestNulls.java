@@ -32,12 +32,14 @@
  */
 
 import java.lang.foreign.*;
+
 import jdk.internal.ref.CleanerFactory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.NoInjection;
 import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -79,8 +81,8 @@ import static org.testng.Assert.fail;
 public class TestNulls {
 
     static final Class<?>[] CLASSES = new Class<?>[] {
+            Arena.class,
             MemorySegment.class,
-            MemoryAddress.class,
             MemoryLayout.class,
             MemoryLayout.PathElement.class,
             SequenceLayout.class,
@@ -95,19 +97,19 @@ public class TestNulls {
             ValueLayout.OfDouble.class,
             ValueLayout.OfAddress.class,
             GroupLayout.class,
-            Addressable.class,
             Linker.class,
             VaList.class,
             VaList.Builder.class,
             FunctionDescriptor.class,
             SegmentAllocator.class,
-            MemorySession.class,
+            SegmentScope.class,
             SymbolLookup.class
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
-            "java.lang.foreign.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
+            "java.lang.foreign.MemorySegment/ofAddress(long,long,java.lang.foreign.SegmentScope,java.lang.Runnable)/3/0",
+            "java.lang.foreign.MemorySegment.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
+            "java.lang.foreign.MemorySegment.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
             "java.lang.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.SequenceLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.ValueLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
@@ -162,8 +164,6 @@ public class TestNulls {
         addDefaultMapping(Charset.class, Charset.defaultCharset());
         addDefaultMapping(Consumer.class, x -> {});
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
-        addDefaultMapping(MemoryAddress.class, MemoryAddress.ofLong(1));
-        addDefaultMapping(Addressable.class, MemoryAddress.ofLong(1));
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(ValueLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);
@@ -183,7 +183,8 @@ public class TestNulls {
         addDefaultMapping(Linker.class, Linker.nativeLinker());
         addDefaultMapping(VaList.class, VaListHelper.vaList);
         addDefaultMapping(VaList.Builder.class, VaListHelper.vaListBuilder);
-        addDefaultMapping(MemorySession.class, MemorySession.openShared());
+        addDefaultMapping(Arena.class, Arena.openConfined());
+        addDefaultMapping(SegmentScope.class, SegmentScope.auto());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
@@ -198,7 +199,7 @@ public class TestNulls {
             vaList = VaList.make(b -> {
                 builderRef.set(b);
                 b.addVarg(JAVA_LONG, 42L);
-            }, MemorySession.openImplicit());
+            }, SegmentScope.auto());
             vaListBuilder = builderRef.get();
         }
     }
