@@ -232,7 +232,6 @@ class TimeInstant : public Rep<TimeSource> {
   friend class ObjectSample;
   friend class EventEmitter;
   friend class JfrPeriodicEventSet;
-
   // GC unit tests
   friend class TimePartitionsTest;
   friend class GCTimerTest;
