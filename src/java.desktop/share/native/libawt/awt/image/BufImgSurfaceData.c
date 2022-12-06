@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,12 +367,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
         if (JNU_IsNull(env, colorData)) {
             jlong pData = ptr_to_jlong(cData);
             colorData = (*env)->NewObjectA(env, clsICMCD, initICMCDmID, (jvalue *)&pData);
-
-            if ((*env)->ExceptionCheck(env))
-            {
-                free(cData);
-                return (ColorData*)NULL;
-            }
+            JNU_CHECK_EXCEPTION_FREE_RETURN(env, cData, NULL);
 
             (*env)->SetObjectField(env, bisdo->icm, colorDataID, colorData);
             Disposer_AddRecord(env, colorData, BufImg_Dispose_ICMColorData, pData);

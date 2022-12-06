@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,9 +259,25 @@ JNU_GetStaticFieldByName(JNIEnv *env,
         }                                       \
     } while (0)                                 \
 
+#define JNU_CHECK_EXCEPTION_FREE(env, x)        \
+    do {                                        \
+        if ((env)->ExceptionCheck()) {          \
+            free (x);                           \
+            return;                             \
+        }                                       \
+    } while (0)                                 \
+
 #define JNU_CHECK_EXCEPTION_RETURN(env, y)      \
     do {                                        \
         if ((env)->ExceptionCheck()) {          \
+            return (y);                         \
+        }                                       \
+    } while (0)
+
+#define JNU_CHECK_EXCEPTION_FREE_RETURN(env, x, y) \
+    do {                                        \
+        if ((env)->ExceptionCheck()) {          \
+            free (x);                           \
             return (y);                         \
         }                                       \
     } while (0)
@@ -273,9 +289,25 @@ JNU_GetStaticFieldByName(JNIEnv *env,
         }                                       \
     } while (0)                                 \
 
+#define JNU_CHECK_EXCEPTION_FREE(env, x)        \
+    do {                                        \
+        if ((*env)->ExceptionCheck(env)) {      \
+            free (x);                           \
+            return;                             \
+        }                                       \
+    } while (0)                                 \
+
 #define JNU_CHECK_EXCEPTION_RETURN(env, y)      \
     do {                                        \
         if ((*env)->ExceptionCheck(env)) {      \
+            return (y);                         \
+        }                                       \
+    } while (0)
+
+#define JNU_CHECK_EXCEPTION_FREE_RETURN(env, x, y) \
+    do {                                        \
+        if ((*env)->ExceptionCheck(env)) {      \
+            free (x);                           \
             return (y);                         \
         }                                       \
     } while (0)

@@ -1622,10 +1622,7 @@ jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *
     ckParamPtr->source = jLongToCKULong(jSource);
     jByteArrayToCKByteArray(env, jSourceData, (CK_BYTE_PTR*) &(ckParamPtr->pSourceData),
             &(ckParamPtr->ulSourceDataLen));
-    if ((*env)->ExceptionCheck(env)) {
-        free(ckParamPtr);
-        return NULL;
-    }
+    JNU_CHECK_EXCEPTION_FREE_RETURN(env, ckParamPtr, NULL);
 
     if (pLength!= NULL) {
         *pLength = sizeof(CK_RSA_PKCS_OAEP_PARAMS);

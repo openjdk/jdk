@@ -160,15 +160,9 @@ jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec) {
     if (result != NULL) {
         while (cnt-- > 0) {
             js = (*env)->NewStringUTF(env, tab[cnt]);
-            if ((*env)->ExceptionCheck(env)) {
-                free(tab);
-                return NULL;
-            }
+            JNU_CHECK_EXCEPTION_FREE_RETURN(env, tab, NULL);
             (*env)->SetObjectArrayElement(env, result, cnt, js);
-            if ((*env)->ExceptionCheck(env)) {
-                free(tab);
-                return NULL;
-            }
+            JNU_CHECK_EXCEPTION_FREE_RETURN(env, tab, NULL);
             (*env)->DeleteLocalRef(env, js);
         }
     }

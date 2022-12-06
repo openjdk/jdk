@@ -811,10 +811,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1InitToken
     if ((*env)->ExceptionCheck(env)) { return; }
     /* ckLabelLength <= 32 !!! */
     jCharArrayToCKUTF8CharArray(env, jLabel, &ckpLabel, &ckLabelLength);
-    if ((*env)->ExceptionCheck(env)) {
-        free(ckpPin);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, ckpPin);
 
     rv = (*ckpFunctions->C_InitToken)(ckSlotID, ckpPin, ckPinLength, ckpLabel);
     TRACE1("InitToken return code: %d", rv);
@@ -891,10 +888,7 @@ jcharArray jNewPin)
     jCharArrayToCKCharArray(env, jOldPin, &ckpOldPin, &ckOldPinLength);
     if ((*env)->ExceptionCheck(env)) { return; }
     jCharArrayToCKCharArray(env, jNewPin, &ckpNewPin, &ckNewPinLength);
-    if ((*env)->ExceptionCheck(env)) {
-        free(ckpOldPin);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, ckpOldPin);
 
     rv = (*ckpFunctions->C_SetPIN)(ckSessionHandle, ckpOldPin, ckOldPinLength,
                                    ckpNewPin, ckNewPinLength);

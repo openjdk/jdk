@@ -606,13 +606,9 @@ void initGSSBuffer(JNIEnv *env, jbyteArray jbytes,
       return;
     } else {
       (*env)->GetByteArrayRegion(env, jbytes, 0, len, value);
-      if ((*env)->ExceptionCheck(env)) {
-        free(value);
-        return;
-      } else {
-        cbytes->length = len;
-        cbytes->value = value;
-      }
+      JNU_CHECK_EXCEPTION_FREE(env, value);
+      cbytes->length = len;
+      cbytes->value = value;
     }
   } else {
     cbytes->length = 0;

@@ -528,10 +528,7 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
         return;
     }
     (*env)->GetBooleanArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
-    if ((*env)->ExceptionCheck(env)) {
-        free(jpTemp);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, jpTemp);
 
     *ckpArray = (CK_BBOOL*) calloc (*ckpLength, sizeof(CK_BBOOL));
     if (*ckpArray == NULL) {
@@ -570,10 +567,7 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
         return;
     }
     (*env)->GetByteArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
-    if ((*env)->ExceptionCheck(env)) {
-        free(jpTemp);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, jpTemp);
 
     /* if CK_BYTE is the same size as jbyte, we save an additional copy */
     if (sizeof(CK_BYTE) == sizeof(jbyte)) {
@@ -617,10 +611,7 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
         return;
     }
     (*env)->GetLongArrayRegion(env, jArray, 0, *ckpLength, jTemp);
-    if ((*env)->ExceptionCheck(env)) {
-        free(jTemp);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, jTemp);
 
     *ckpArray = (CK_ULONG_PTR) calloc(*ckpLength, sizeof(CK_ULONG));
     if (*ckpArray == NULL) {
@@ -659,10 +650,7 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
         return;
     }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
-    if ((*env)->ExceptionCheck(env)) {
-        free(jpTemp);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, jpTemp);
 
     *ckpArray = (CK_CHAR_PTR) calloc (*ckpLength, sizeof(CK_CHAR));
     if (*ckpArray == NULL) {
@@ -701,10 +689,7 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
         return;
     }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jTemp);
-    if ((*env)->ExceptionCheck(env)) {
-        free(jTemp);
-        return;
-    }
+    JNU_CHECK_EXCEPTION_FREE(env, jTemp);
 
     *ckpArray = (CK_UTF8CHAR_PTR) calloc(*ckpLength, sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
