@@ -142,7 +142,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rFla
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct zXChgP(memory mem, rRegP newval, rFlagsReg cr) %{
+instruct zXChgP(indirect mem, rRegP newval, rFlagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(KILL cr);
@@ -150,7 +150,7 @@ instruct zXChgP(memory mem, rRegP newval, rFlagsReg cr) %{
   format %{ "xchgq    $newval, $mem" %}
 
   ins_encode %{
-    __ xchgptr($newval$$Register, $mem$$Address);
+    __ xchgptr($newval$$Register, Address($mem$$Register, 0));
     z_load_barrier(_masm, this, Address(noreg, 0), $newval$$Register, noreg /* tmp */, barrier_data());
   %}
 
