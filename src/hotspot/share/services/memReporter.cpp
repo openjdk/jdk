@@ -70,7 +70,7 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const 
 
   size_t pk_amount = c->peak_size();
   if (pk_amount == amount) {
-    out->print_raw(" (peak)");
+    out->print_raw(" (at peak)");
   } else if (pk_amount > amount) {
     size_t pk_count = c->peak_count();
     out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
@@ -108,7 +108,7 @@ void MemReporterBase::print_arena_line(const MemoryCounter* c) const {
 
   size_t pk_amount = c->peak_size();
   if (pk_amount == amount) {
-    out->print_raw(" (peak)");
+    out->print_raw(" (at peak)");
   } else if (pk_amount > amount) {
     size_t pk_count = c->peak_count();
     out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
