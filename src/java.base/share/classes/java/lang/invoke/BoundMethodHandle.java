@@ -33,9 +33,6 @@ import java.util.List;
 
 import static java.lang.invoke.LambdaForm.BasicType;
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.LambdaForm.BasicType.V_TYPE_NUM;
-import static java.lang.invoke.LambdaForm.BasicType.V_TYPE_NUM;
-import static java.lang.invoke.LambdaForm.BasicType.V_TYPE_NUM;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
@@ -60,22 +57,6 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     //
     // BMH API and internals
     //
-
-    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
-        // for some type signatures, there exist pre-defined concrete BMH classes
-        try {
-            return switch (xtype) {
-                case L_TYPE -> bindSingle(type, form, x);  // Use known fast path.
-                case I_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(I_TYPE_NUM).factory().invokeBasic(type, form, ValueConversions.widenSubword(x));
-                case J_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(J_TYPE_NUM).factory().invokeBasic(type, form, (long) x);
-                case F_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(F_TYPE_NUM).factory().invokeBasic(type, form, (float) x);
-                case D_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(D_TYPE_NUM).factory().invokeBasic(type, form, (double) x);
-                default -> throw newInternalError("unexpected xtype: " + xtype);
-            };
-        } catch (Throwable t) {
-            throw uncaughtException(t);
-        }
-    }
 
     /*non-public*/
     LambdaFormEditor editor() {
