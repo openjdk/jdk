@@ -124,6 +124,9 @@ source %{
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
+          // Specially, the current vector implementation of Op_AddReductionVD/F works for
+          // Vector API only. If re-enabling them for superword, precision loss will happen
+          // because current generated code does not add elements sequentially from beginning to end.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
           opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
           opcode == Op_MulVL) {
@@ -1808,23 +1811,29 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(I, iRegIorL2I)
 REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
 // reduction addF
+// Specially, the current vector implementation of Op_AddReductionVF works for
+// Vector API only because of the non-sequential order of element addition.
+instruct reduce_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
+  predicate(UseSVE == 0 && Matcher::vector_length(n->in(2)) == 2);
+  match(Set dst (AddReductionVF fsrc vsrc));
+  effect(TEMP_DEF dst);
+  format %{ "reduce_add2F_neon $dst, $fsrc, $vsrc" %}
+  ins_encode %{
+    __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
+    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
-instruct reduce_addF_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
-  predicate(UseSVE == 0);
+instruct reduce_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+  predicate(UseSVE == 0 && Matcher::vector_length(n->in(2)) == 4);
   match(Set dst (AddReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_addF_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
+  format %{ "reduce_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
   ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ fadds($dst$$FloatRegister, $fsrc$$FloatRegister, $vsrc$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 1);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $tmp$$FloatRegister);
-    if (length_in_bytes == 16) {
-      __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 2);
-      __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $tmp$$FloatRegister);
-      __ ins($tmp$$FloatRegister, __ S, $vsrc$$FloatRegister, 0, 3);
-      __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $tmp$$FloatRegister);
-    }
+    __ faddp($tmp$$FloatRegister, __ T4S, $vsrc$$FloatRegister, $vsrc$$FloatRegister);
+    __ faddp($dst$$FloatRegister, $tmp$$FloatRegister, __ S);
+    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1847,16 +1856,16 @@ dnl
 REDUCE_ADD_FP_SVE(F, S)
 
 // reduction addD
-
-instruct reduce_addD_neon(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
+// Specially, the current vector implementation of Op_AddReductionVD works for
+// Vector API only because of the non-sequential order of element addition.
+instruct reduce_addD_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
   predicate(UseSVE == 0);
   match(Set dst (AddReductionVD dsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_addD_neon $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}
+  effect(TEMP_DEF dst);
+  format %{ "reduce_addD_neon $dst, $dsrc, $vsrc\t# 2D" %}
   ins_encode %{
-    __ faddd($dst$$FloatRegister, $dsrc$$FloatRegister, $vsrc$$FloatRegister);
-    __ ins($tmp$$FloatRegister, __ D, $vsrc$$FloatRegister, 0, 1);
-    __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $tmp$$FloatRegister);
+    __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
+    __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
