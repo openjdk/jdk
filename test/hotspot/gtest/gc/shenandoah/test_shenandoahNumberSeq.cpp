@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
+#include <iostream>
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
-#include <iostream>
-using namespace std;
 
 class ShenandoahNumberSeqTest: public ::testing::Test {
  protected:
@@ -43,14 +43,14 @@ class BasicShenandoahNumberSeqTest: public ShenandoahNumberSeqTest {
     for (int i = 0; i < 7; i++) {
       seq.add(100);
     }
-    cout << " p0 = " << seq.percentile(0);
-    cout << " p10 = " << seq.percentile(10);
-    cout << " p20 = " << seq.percentile(20);
-    cout << " p30 = " << seq.percentile(30);
-    cout << " p50 = " << seq.percentile(50);
-    cout << " p80 = " << seq.percentile(80);
-    cout << " p90 = " << seq.percentile(90);
-    cout << " p100 = " << seq.percentile(100);
+    std::cout << " p0 = " << seq.percentile(0);
+    std::cout << " p10 = " << seq.percentile(10);
+    std::cout << " p20 = " << seq.percentile(20);
+    std::cout << " p30 = " << seq.percentile(30);
+    std::cout << " p50 = " << seq.percentile(50);
+    std::cout << " p80 = " << seq.percentile(80);
+    std::cout << " p90 = " << seq.percentile(90);
+    std::cout << " p100 = " << seq.percentile(100);
   }
 };
 
