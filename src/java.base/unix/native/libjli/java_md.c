@@ -46,11 +46,6 @@
 #define LD_LIBRARY_PATH "LD_LIBRARY_PATH"
 #endif
 
-/* help jettison the LD_LIBRARY_PATH settings in the future */
-#ifndef SETENV_REQUIRED
-#define SETENV_REQUIRED
-#endif
-
 /*
  * Flowchart of launcher execs and options processing on unix
  *
@@ -161,7 +156,6 @@ GetExecName() {
     return execname;
 }
 
-#ifdef SETENV_REQUIRED
 static jboolean
 JvmExists(const char *path) {
     char tmp[PATH_MAX + 1];
@@ -289,7 +283,6 @@ RequiresSetenv(const char *jvmpath) {
     }
     return JNI_FALSE;
 }
-#endif /* SETENV_REQUIRED */
 
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
@@ -300,7 +293,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     char * jvmtype = NULL;
     char **argv = *pargv;
 
-#ifdef SETENV_REQUIRED
     jboolean mustsetenv = JNI_FALSE;
     char *runpath = NULL; /* existing effective LD_LIBRARY_PATH setting */
     char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
@@ -308,7 +300,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     char* lastslash = NULL;
     char** newenvp = NULL; /* current environment */
     size_t new_runpath_size;
-#endif  /* SETENV_REQUIRED */
 
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
@@ -342,75 +333,73 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
      * we seem to have everything we need, so without further ado
      * we return back, otherwise proceed to set the environment.
      */
-#ifdef SETENV_REQUIRED
     mustsetenv = RequiresSetenv(jvmpath);
     JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 
     if (mustsetenv == JNI_FALSE) {
         return;
     }
-#else
-    return;
-#endif /* SETENV_REQUIRED */
 
-#ifdef SETENV_REQUIRED
-    if (mustsetenv) {
+    /**
+     * Update execution environment and re-exec the launcher
+     *
+     */
+
+    /*
+     * We will set the LD_LIBRARY_PATH as follows:
+     *
+     *     o          $JVMPATH (directory portion only)
+     *     o          $JRE/lib
+     *     o          $JRE/../lib
+     *
+     * followed by the user's previous effective LD_LIBRARY_PATH, if
+     * any.
+     */
+
+    runpath = getenv(LD_LIBRARY_PATH);
+
+    /* runpath contains current effective LD_LIBRARY_PATH setting */
+    { /* New scope to declare local variable */
+        char *new_jvmpath = JLI_StringDup(jvmpath);
+        new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
+                2 * JLI_StrLen(jrepath) +
+                JLI_StrLen(new_jvmpath) + 52;
+        new_runpath = JLI_MemAlloc(new_runpath_size);
+        newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
+
+
         /*
-         * We will set the LD_LIBRARY_PATH as follows:
-         *
-         *     o          $JVMPATH (directory portion only)
-         *     o          $JRE/lib
-         *     o          $JRE/../lib
-         *
-         * followed by the user's previous effective LD_LIBRARY_PATH, if
-         * any.
+         * Create desired LD_LIBRARY_PATH value for target data model.
          */
+        {
+            /* remove the name of the .so from the JVM path */
+            lastslash = JLI_StrRChr(new_jvmpath, '/');
+            if (lastslash)
+                *lastslash = '\0';
 
-        runpath = getenv(LD_LIBRARY_PATH);
+            sprintf(new_runpath, LD_LIBRARY_PATH "="
+                    "%s:"
+                    "%s/lib:"
+                    "%s/../lib",
+                    new_jvmpath,
+                    jrepath,
+                    jrepath
+                    );
 
-        /* runpath contains current effective LD_LIBRARY_PATH setting */
-        { /* New scope to declare local variable */
-            char *new_jvmpath = JLI_StringDup(jvmpath);
-            new_runpath_size = ((runpath != NULL) ? JLI_StrLen(runpath) : 0) +
-                    2 * JLI_StrLen(jrepath) +
-                    JLI_StrLen(new_jvmpath) + 52;
-            new_runpath = JLI_MemAlloc(new_runpath_size);
-            newpath = new_runpath + JLI_StrLen(LD_LIBRARY_PATH "=");
-
+            JLI_MemFree(new_jvmpath);
 
             /*
-             * Create desired LD_LIBRARY_PATH value for target data model.
+             * Check to make sure that the prefix of the current path is the
+             * desired environment variable setting, though the RequiresSetenv
+             * checks if the desired runpath exists, this logic does a more
+             * comprehensive check.
              */
-            {
-                /* remove the name of the .so from the JVM path */
-                lastslash = JLI_StrRChr(new_jvmpath, '/');
-                if (lastslash)
-                    *lastslash = '\0';
-
-                sprintf(new_runpath, LD_LIBRARY_PATH "="
-                        "%s:"
-                        "%s/lib:"
-                        "%s/../lib",
-                        new_jvmpath,
-                        jrepath,
-                        jrepath
-                        );
-
-                JLI_MemFree(new_jvmpath);
-
-                /*
-                 * Check to make sure that the prefix of the current path is the
-                 * desired environment variable setting, though the RequiresSetenv
-                 * checks if the desired runpath exists, this logic does a more
-                 * comprehensive check.
-                 */
-                if (runpath != NULL &&
-                        JLI_StrNCmp(newpath, runpath, JLI_StrLen(newpath)) == 0 &&
-                        (runpath[JLI_StrLen(newpath)] == 0 ||
-                        runpath[JLI_StrLen(newpath)] == ':')) {
-                    JLI_MemFree(new_runpath);
-                    return;
-                }
+            if (runpath != NULL &&
+                    JLI_StrNCmp(newpath, runpath, JLI_StrLen(newpath)) == 0 &&
+                    (runpath[JLI_StrLen(newpath)] == 0 ||
+                    runpath[JLI_StrLen(newpath)] == ':')) {
+                JLI_MemFree(new_runpath);
+                return;
             }
         }
 
@@ -442,26 +431,17 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
         newenvp = environ;
     }
-#endif /* SETENV_REQUIRED */
     {
         char *newexec = execname;
         JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
         (void) fflush(stdout);
         (void) fflush(stderr);
-#ifdef SETENV_REQUIRED
-        if (mustsetenv) {
-            execve(newexec, argv, newenvp);
-        } else {
-            execv(newexec, argv);
-        }
-#else /* !SETENV_REQUIRED */
-        execv(newexec, argv);
-#endif /* SETENV_REQUIRED */
+
+        execve(newexec, argv, newenvp);
         JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
     }
     exit(1);
 }
-
 
 static jboolean
 GetJVMPath(const char *jrepath, const char *jvmtype,
