@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,20 +45,23 @@ import java.util.zip.GZIPOutputStream;
 final class TranslatedException extends Exception {
 
     /**
-     * The value returned by {@link #encodeThrowable(Throwable)} when encoding fails due to an
-     * {@link OutOfMemoryError}.
+     * The value returned by {@link #encodeThrowable(Throwable)} when encoding
+     * fails due to an {@link OutOfMemoryError}.
      */
     private static final byte[] FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES;
 
     /**
-     * The value returned by {@link #encodeThrowable(Throwable)} when encoding fails for any reason
-     * other than {@link OutOfMemoryError}.
+     * The value returned by {@link #encodeThrowable(Throwable)} when encoding
+     * fails for any reason other than {@link OutOfMemoryError}.
      */
     private static final byte[] FALLBACK_ENCODED_THROWABLE_BYTES;
     static {
         try {
-            FALLBACK_ENCODED_THROWABLE_BYTES = encodeThrowable(new TranslatedException("error during encoding", "<unknown>"), false);
-            FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES = encodeThrowable(new OutOfMemoryError(), false);
+            FALLBACK_ENCODED_THROWABLE_BYTES =
+                encodeThrowable(new TranslatedException("error during encoding",
+                                                        "<unknown>"), false);
+            FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES =
+                encodeThrowable(new OutOfMemoryError(), false);
         } catch (IOException e) {
             throw new InternalError(e);
         }
@@ -74,7 +78,8 @@ final class TranslatedException extends Exception {
     }
 
     /**
-     * No need to record an initial stack trace since it will be manually overwritten.
+     * No need to record an initial stack trace since
+     * it will be manually overwritten.
      */
     @SuppressWarnings("sync-override")
     @Override
@@ -122,7 +127,8 @@ final class TranslatedException extends Exception {
         try {
             Class<?> cls = Class.forName(className);
             if (cause != null) {
-                // Handle known exception types whose cause must be set in the constructor
+                // Handle known exception types whose cause must
+                // be set in the constructor
                 if (cls == InvocationTargetException.class) {
                     return new InvocationTargetException(cause, message);
                 }
@@ -131,9 +137,11 @@ final class TranslatedException extends Exception {
                 }
             }
             if (message == null) {
-                return initCause((Throwable) cls.getConstructor().newInstance(), cause);
+                Constructor<?> cons = cls.getConstructor();
+                return initCause((Throwable) cons.newInstance(), cause);
             }
-            return initCause((Throwable) cls.getDeclaredConstructor(String.class).newInstance(message), cause);
+            Constructor<?> cons = cls.getDeclaredConstructor(String.class);
+            return initCause((Throwable) cons.newInstance(message), cause);
         } catch (Throwable translationFailure) {
             debugPrintStackTrace(translationFailure);
             return initCause(new TranslatedException(message, className), cause);
@@ -162,7 +170,8 @@ final class TranslatedException extends Exception {
         }
     }
 
-    private static byte[] encodeThrowable(Throwable throwable, boolean withCauseAndStack) throws IOException {
+    private static byte[] encodeThrowable(Throwable throwable,
+                                          boolean withCauseAndStack) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(baos))) {
             List<Throwable> throwables = new ArrayList<>();
@@ -226,7 +235,8 @@ final class TranslatedException extends Exception {
      *            {@link #encodeThrowable}
      */
     static Throwable decodeThrowable(byte[] encodedThrowable) {
-        try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(encodedThrowable)))) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(encodedThrowable);
+        try (DataInputStream dis = new DataInputStream(new GZIPInputStream(bais))) {
             Throwable cause = null;
             Throwable throwable = null;
             StackTraceElement[] myStack = getMyStackTrace();
@@ -246,7 +256,13 @@ final class TranslatedException extends Exception {
                     String methodName = emptyAsNull(dis.readUTF());
                     String fileName = emptyAsNull(dis.readUTF());
                     int lineNumber = dis.readInt();
-                    StackTraceElement ste = new StackTraceElement(classLoaderName, moduleName, moduleVersion, className, methodName, fileName, lineNumber);
+                    StackTraceElement ste = new StackTraceElement(classLoaderName,
+                                                                  moduleName,
+                                                                  moduleVersion,
+                                                                  className,
+                                                                  methodName,
+                                                                  fileName,
+                                                                  lineNumber);
 
                     if (ste.isNativeMethod()) {
                         // Best effort attempt to weave stack traces from two heaps into
@@ -276,7 +292,8 @@ final class TranslatedException extends Exception {
             return throwable;
         } catch (Throwable translationFailure) {
             debugPrintStackTrace(translationFailure);
-            return new TranslatedException("Error decoding exception: " + encodedThrowable, translationFailure.getClass().getName());
+            return new TranslatedException("Error decoding exception: " + encodedThrowable,
+                                           translationFailure.getClass().getName());
         }
     }
 }
