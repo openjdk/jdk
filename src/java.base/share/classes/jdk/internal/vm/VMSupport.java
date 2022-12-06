@@ -58,38 +58,35 @@ public class VMSupport {
     /**
      * Writes the given properties list to a byte array and return it. The stream written
      * to the byte array is ISO 8859-1 encoded.
-     *
-     * @param filter if true, then entries in {@code p} with a key or value that is not a
-     *               String are filtered out. Otherwise, the caller guarantees {@code p}
-     *               only contains String keys and values.
      */
-    private static byte[] serializePropertiesToByteArray(Properties p, boolean filter) throws IOException {
+    private static byte[] serializePropertiesToByteArray(Properties p) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
-
-        Properties props;
-        if (filter) {
-            props = new Properties();
-
-            // stringPropertyNames() returns a snapshot of the property keys
-            Set<String> keyset = p.stringPropertyNames();
-            for (String key : keyset) {
-                String value = p.getProperty(key);
-                props.put(key, value);
-            }
-        } else {
-            props = p;
-        }
-
-        props.store(out, null);
+        p.store(out, null);
         return out.toByteArray();
     }
 
+    /**
+     * @returns a Properties object containing only the entries in {@code p}
+     *          whose key and value are both Strings
+     */
+    private static Properties onlyStrings(Properties p) {
+        Properties props = new Properties();
+
+        // stringPropertyNames() returns a snapshot of the property keys
+        Set<String> keyset = p.stringPropertyNames();
+        for (String key : keyset) {
+            String value = p.getProperty(key);
+            props.put(key, value);
+        }
+        return props;
+    }
+
     public static byte[] serializePropertiesToByteArray() throws IOException {
-        return serializePropertiesToByteArray(System.getProperties(), true);
+        return serializePropertiesToByteArray(onlyStrings(System.getProperties()));
     }
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
-        return serializePropertiesToByteArray(getAgentProperties(), true);
+        return serializePropertiesToByteArray(onlyStrings(getAgentProperties()));
     }
 
     /**
@@ -102,7 +99,7 @@ public class VMSupport {
         for (var e : VM.getSavedProperties().entrySet()) {
             props.put(e.getKey(), e.getValue());
         }
-        return serializePropertiesToByteArray(props, false);
+        return serializePropertiesToByteArray(props);
     }
 
     /*
