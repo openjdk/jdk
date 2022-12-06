@@ -134,7 +134,7 @@ void MemSummaryReporter::report() {
   }
 
   out->print("Total: ");
-  print_total(total_reserved_amount, total_committed_amount, read_only_bytes);
+  print_total(total_reserved_amount, total_committed_amount);
   out->cr();
   out->print_cr("       malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT,
                 amount_in_current_scale(total_malloced_bytes), current_scale(),
