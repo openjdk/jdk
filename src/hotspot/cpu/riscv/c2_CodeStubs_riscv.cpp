@@ -32,7 +32,8 @@
 #define __ masm.
 
 int C2SafepointPollStub::size() const {
-  return 20;
+  // the max size this stub can emit
+  return 13 * 4;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
@@ -51,15 +52,11 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
 }
 
 int C2EntryBarrierStub::size() const {
-  return 8 * 4 + 4;  // 4 bytes for alignment margin
+  // the max size this stub can emit; 4 bytes for alignment
+  return 8 * 4 + 4;
 }
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
-  Assembler::IncompressibleRegion ir(&masm); // Fixed length
-
-  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
-  int alignment_bytes = __ align(4);
-
   __ bind(entry());
 
   int32_t offset = 0;
@@ -67,18 +64,11 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ jalr(ra, t0, offset);
   __ j(continuation());
 
+  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on RISC-V
+  __ align(4);
   __ bind(guard());
   __ relocate(entry_guard_Relocation::spec());
-  __ assert_alignment(__ pc());
   __ emit_int32(0);  // nmethod guard value
-  // make sure the stub with a fixed code size
-  if (alignment_bytes == 2) {
-    assert(UseRVC, "bad alignment");
-    __ c_nop();
-  } else {
-    assert(alignment_bytes == 0, "bad alignment");
-    __ nop();
-  }
 }
 
 #undef __

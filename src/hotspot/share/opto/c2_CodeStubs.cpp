@@ -49,6 +49,6 @@ void C2CodeStubList::emit(CodeBuffer& cb) {
     stub->emit(masm);
 
     DEBUG_ONLY(int actual_size = cb.insts_size() - size_before;)
-    assert(size == actual_size, "Expected stub size (%d) must match actual stub size (%d)", size, actual_size);
+    assert(size >= actual_size, "Expected stub size (%d) must be larger than or equal to actual stub size (%d)", size, actual_size);
   }
 }

@@ -31,6 +31,7 @@
 #define __ masm.
 
 int C2SafepointPollStub::size() const {
+  // the max size this stub can emit
   return 20;
 }
 
