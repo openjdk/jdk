@@ -1969,13 +1969,11 @@ void Assembler::vcvtph2ps(XMMRegister dst, XMMRegister src, int vector_len) {
   emit_int16(0x13, (0xC0 | encode));
 }
 
-void Assembler::vcvtph2ps(XMMRegister dst, KRegister mask, Address src, int vector_len) {
-  assert(VM_Version::supports_avx512vl() || VM_Version::supports_f16c(), "");
+void Assembler::vcvtph2ps(XMMRegister dst, Address src, int vector_len) {
+  assert(VM_Version::supports_evex() || VM_Version::supports_f16c(), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /*uses_vl */ true);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_HVM, /* input_size_in_bits */ EVEX_64bit);
-  attributes.reset_is_clear_context();
-  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_HVM, /* input_size_in_bits */ EVEX_NObit);
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x13);
   emit_operand(dst, src, 0);

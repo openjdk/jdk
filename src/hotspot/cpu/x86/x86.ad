@@ -3722,7 +3722,7 @@ instruct vconvHF2F_reg_mem(vec dst, memory mem) %{
   format %{ "vcvtph2ps $dst,$mem" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ vcvtph2ps($dst$$XMMRegister, k0, $mem$$Address, vlen_enc);
+    __ vcvtph2ps($dst$$XMMRegister, $mem$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
