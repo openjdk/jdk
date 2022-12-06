@@ -210,10 +210,8 @@ final class TranslatedException extends Exception {
         StackTraceElement[] stack = ex.getStackTrace();
         for (int i = 0; i < stack.length; i++) {
             StackTraceElement e = stack[i];
-            boolean isNativeMethodInCompilerToVM = e.getLineNumber() == -1 && e.getClassName().equals("jdk.vm.ci.hotspot.CompilerToVM");
-            if (e.isNativeMethod() || isNativeMethodInCompilerToVM) {
-                StackTraceElement[] res = Arrays.copyOfRange(stack, i, stack.length);
-                return res;
+            if (e.isNativeMethod()) {
+                return Arrays.copyOfRange(stack, i, stack.length);
             }
         }
         // This should never happen but since this is exception handling
