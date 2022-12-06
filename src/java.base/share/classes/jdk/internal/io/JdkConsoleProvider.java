@@ -24,6 +24,8 @@
  */
 package jdk.internal.io;
 
+import java.nio.charset.Charset;
+
 /**
  * Service provider interface for JdkConsole implementations.
  * The provider used for instantiating JdkConsole instance can be
@@ -42,6 +44,7 @@ public interface JdkConsoleProvider {
     /**
      * {@return the Console instance, or {@code null} if not available}
      * @param isTTY indicates if the jvm is attached to a terminal
+     * @param charset charset of the platform console
      */
-    JdkConsole console(boolean isTTY);
+    JdkConsole console(boolean isTTY, Charset charset);
 }

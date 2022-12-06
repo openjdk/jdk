@@ -47,32 +47,38 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
     /**
      * {@inheritDoc}
      */
-    public JdkConsole console(boolean isTTY) {
-        return new JdkConsoleImpl();
+    @Override
+    public JdkConsole console(boolean isTTY, Charset charset) {
+        return new JdkConsoleImpl(charset);
     }
 
     /**
      * An implementation of JdkConsole, which act as a delegate for the
      * public Console class.
      */
-    public static class JdkConsoleImpl implements JdkConsole {
+    private static class JdkConsoleImpl implements JdkConsole {
+        @Override
         public PrintWriter writer() {
             return terminal.writer();
         }
 
+        @Override
         public Reader reader() {
             return terminal.reader();
         }
 
+        @Override
         public JdkConsole format(String fmt, Object ... args) {
             writer().format(fmt, args).flush();
             return this;
         }
 
+        @Override
         public JdkConsole printf(String format, Object ... args) {
             return format(format, args);
         }
 
+        @Override
         public String readLine(String fmt, Object ... args) {
             try {
                 return jline.readLine(fmt.formatted(args));
@@ -81,10 +87,12 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             }
         }
 
+        @Override
         public String readLine() {
             return readLine("");
         }
 
+        @Override
         public char[] readPassword(String fmt, Object ... args) {
             try {
                 return jline.readLine(fmt.formatted(args), '\0').toCharArray();
@@ -93,14 +101,17 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             }
         }
 
+        @Override
         public char[] readPassword() {
             return readPassword("");
         }
 
+        @Override
         public void flush() {
             terminal.flush();
         }
 
+        @Override
         public Charset charset() {
             return terminal.encoding();
         }
@@ -108,9 +119,9 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         private final LineReader jline;
         private final Terminal terminal;
 
-        public JdkConsoleImpl() {
+        public JdkConsoleImpl(Charset charset) {
             try {
-                terminal = TerminalBuilder.builder().build();
+                terminal = TerminalBuilder.builder().encoding(charset).build();
                 jline = LineReaderBuilder.builder().terminal(terminal).build();
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);

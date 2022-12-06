@@ -612,17 +612,17 @@ public class Console implements Flushable
             PrivilegedAction<Console> pa = () -> {
                 var consModName = System.getProperty("jdk.console",
                         JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
-                return ServiceLoader.load(JdkConsoleProvider.class).stream()
+                return ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class).stream()
                         .map(ServiceLoader.Provider::get)
                         .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                        .map(jcp -> jcp.console(istty))
+                        .map(jcp -> jcp.console(istty, CHARSET))
                         .filter(Objects::nonNull)
                         .findAny()
                         .map(jc -> (Console) new ProxyingConsole(jc))
                         .orElse(istty ? new Console() : null);
             };
             return AccessController.doPrivileged(pa);
-        } catch (ServiceConfigurationError ignore) {
+        } catch (Throwable ignore) {
             // default to built-in Console
             return istty ? new Console() : null;
         }
