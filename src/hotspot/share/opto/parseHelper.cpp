@@ -407,3 +407,23 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 void PEAState::merge(const PEAState& incoming) {
 
 }
+
+#ifndef PRODUCT
+void PEAState::print_on(outputStream* os) {
+  os->print_cr("PEAState:");
+
+  _state.iterate([&](ObjID obj, ObjectState* state) {
+    os->print("Obj#%d(%s)  aliases = [", obj->_idx, state->is_virtual() ? "Virt" : "Mat");
+
+    _alias.iterate([&](Node* node, ObjID obj2) {
+      if (obj == obj2){
+        os->print("%d, ", node->_idx);
+      }
+      return true;
+    });
+
+    os->print_cr("]");
+    return true;
+  });
+}
+#endif

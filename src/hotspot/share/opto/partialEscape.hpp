@@ -93,6 +93,10 @@ class PEAState {
   void merge(const PEAState& merge);
 
   EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
+
+#ifndef PRODUCT
+  void print_on(outputStream* os);
+#endif
 };
 
 #endif // SHARE_OPTO_PARTIAL_ESCAPE_HPP
