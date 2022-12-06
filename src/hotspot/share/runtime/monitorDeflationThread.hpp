@@ -41,7 +41,6 @@ class MonitorDeflationThread : public JavaThread {
 
   // Hide this thread from external view.
   bool is_hidden_from_external_view() const { return true; }
-  bool is_monitor_deflation_thread() const { return true; }
 };
 
 #endif // SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP

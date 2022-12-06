@@ -27,6 +27,7 @@
 #include "gc/g1/g1CardSetMemory.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -53,7 +54,9 @@ bool G1MonotonicArenaFreeMemoryTask::calculate_return_infos(jlong deadline) {
   // Ignore the deadline in this step as it is very short.
 
   G1MonotonicArenaMemoryStats used = _total_used;
-  G1MonotonicArenaMemoryStats free = G1MonotonicArenaFreePool::free_list_sizes();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1MonotonicArenaFreePool* freelist_pool = g1h->card_set_freelist_pool();
+  G1MonotonicArenaMemoryStats free = freelist_pool->memory_sizes();
 
   _return_info = new G1ReturnMemoryProcessorSet(used.num_pools());
   for (uint i = 0; i < used.num_pools(); i++) {
@@ -69,7 +72,7 @@ bool G1MonotonicArenaFreeMemoryTask::calculate_return_infos(jlong deadline) {
     _return_info->append(new G1ReturnMemoryProcessor(return_to_vm_size));
   }
 
-  G1MonotonicArenaFreePool::update_unlink_processors(_return_info);
+  freelist_pool->update_unlink_processors(_return_info);
   return false;
 }
 
