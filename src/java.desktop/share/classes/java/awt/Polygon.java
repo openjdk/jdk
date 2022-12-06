@@ -105,8 +105,8 @@ public class Polygon implements Shape, java.io.Serializable {
      * The bounds of this {@code Polygon}.
      * <p>
      * The value of this field is updated by the implementation which
-     * may set it to null and will reevaluate it as needed. Application
-     * sub-classes should never access this field.
+     * may set it to {@code null} and will reevaluate it as needed.
+     * Application sub-classes should never access this field.
      *
      * @serial
      * @see #getBoundingBox()
