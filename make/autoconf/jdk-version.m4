@@ -70,16 +70,12 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(HOTSPOT_VM_DISTRO)
 
   # Note: UTIL_ARG_WITH treats empty strings as valid values when OPTIONAL is false!
-  # That said, it allows for using the RESULT of an option as its own DEFAULT, which
-  # is pretty convenient...
-
-  # Outer [ ] to quote m4.
-  [ DEFAULT_USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
 
   # Setup username (for use in adhoc version strings etc)
+  # Outer [ ] to quote m4.
   UTIL_ARG_WITH(NAME: build-user, TYPE: string,
     RESULT: USERNAME,
-    DEFAULT: $DEFAULT_USERNAME,
+    DEFAULT: [ `$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ],
     DESC: [build username to use in version strings],
     IF_GIVEN: [
       if test "x$USERNAME" = x; then
@@ -91,7 +87,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Set the JDK RC name
   # Otherwise calculate from "branding.conf" included above.
   UTIL_ARG_WITH(NAME: jdk-rc-name, TYPE: string,
-    DEFAULT: [$PRODUCT_NAME $JDK_RC_PLATFORM_NAME],
+    DEFAULT: $PRODUCT_NAME $JDK_RC_PLATFORM_NAME,
     DESC: [Set JDK RC name. This is used for FileDescription and ProductName
        properties of MS Windows binaries.],
     DEFAULT_DESC: [not specified],
@@ -110,7 +106,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: vendor-name, TYPE: string,
     RESULT: COMPANY_NAME,
     DEFAULT: $DEFAULT_COMPANY_NAME,
-    DESC: [Set vendor name. Among othersCOMMA used to set the 'java.vendor'
+    DESC: [Set vendor name. Among others, used to set the 'java.vendor'
        and 'java.vm.vendor' system properties.],
     DEFAULT_DESC: [not specified],
     IF_GIVEN: [
