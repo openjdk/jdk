@@ -445,7 +445,7 @@ void NativePostCallNop::make_deopt() {
 }
 
 int NativePostCallNop::displacement() const {
-  // Discard the high 32 bit
+  // Discard the high 32 bits
   return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
 }
 
