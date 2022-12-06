@@ -101,7 +101,6 @@ int awt_parseImage(JNIEnv *env, jobject jimage, BufImageS_t **imagePP,
     if ((status = awt_parseColorModel(env, jcmodel, imageP->imageType,
                                       cmP)) <= 0) {
         awt_freeParsedRaster(&imageP->raster, FALSE);
-        if (cmP->nBits != NULL) free(cmP->nBits);
         free((void *)imageP);
         return 0;
     }
@@ -456,7 +455,7 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
 
     int i;
     static jobject s_jdefCM = NULL;
-    cmP->nBits = NULL; // initialize this before first return
+    cmP->nBits = NULL;
 
     if (JNU_IsNull(env, jcmodel)) {
         JNU_ThrowNullPointerException(env, "null ColorModel object");
@@ -510,7 +509,9 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
     cmP->csType = (*env)->GetIntField(env, cmP->jcmodel, g_CMcsTypeID);
 
     cmP->cmType = getColorModelType(env, jcmodel);
-    JNU_CHECK_EXCEPTION_RETURN(env, -1);
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
 
     cmP->isDefaultCM = FALSE;
     cmP->isDefaultCompatCM = FALSE;
@@ -532,19 +533,21 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
         if (s_jdefCM == NULL) {
             jobject defCM;
             jclass jcm = (*env)->FindClass(env, "java/awt/image/ColorModel");
-            CHECK_NULL_RETURN(jcm, -1);
+            if (jcm == NULL) {
+                goto cleanup;
+            }
             defCM = (*env)->CallStaticObjectMethod(env, jcm,
                                                    g_CMgetRGBdefaultMID, NULL);
             if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionClear(env);
                 JNU_ThrowNullPointerException(env, "Unable to find default CM");
-                return -1;
+                goto cleanup;
             }
             s_jdefCM = (*env)->NewGlobalRef(env, defCM);
             if (defCM == NULL || s_jdefCM == NULL) {
                 (*env)->ExceptionClear(env);
                 JNU_ThrowNullPointerException(env, "Unable to find default CM");
-                return -1;
+                goto cleanup;
             }
         }
         cmP->isDefaultCM = ((*env)->IsSameObject(env, s_jdefCM, jcmodel));
@@ -556,12 +559,12 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
         if (cmP->csType != java_awt_color_ColorSpace_TYPE_RGB ||
             !cmP->is_sRGB)
         {
-            return -1;
+            goto cleanup;
         }
 
         for (i = 0; i < cmP->numComponents; i++) {
             if (cmP->nBits[i] != 8) {
-                return -1;
+                goto cleanup;
             }
         }
     }
@@ -579,7 +582,7 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
                                                                  cmP->jrgb,
                                                                  NULL);
             if (rgb == NULL) {
-                return -1;
+                goto cleanup;
             }
             for (i=0; i < cmP->mapSize; i++) {
                 if ((rgb[i]&0xff000000) == 0) {
@@ -597,6 +600,10 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
     }
 
     return 1;
+
+cleanup:
+    free(cmP->nBits);
+    return -1;
 }
 
 void awt_freeParsedRaster(RasterS_t *rasterP, int freeRasterP) {
