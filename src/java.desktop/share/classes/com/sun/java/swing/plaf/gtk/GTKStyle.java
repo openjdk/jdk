@@ -286,18 +286,6 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 }
             }
         }
-
-        if ((c instanceof JCheckBox) && (state & SynthConstants.DISABLED) != 0) {
-            if (UIManager.getColor("CheckBox.disabledText") != null) {
-                return UIManager.getColor("CheckBox.disabledText");
-            }
-        } else if ((c instanceof JRadioButton) &&
-                (state & SynthConstants.DISABLED) != 0) {
-            if (UIManager.getColor("RadioButton.disabledText") != null) {
-                return UIManager.getColor("RadioButton.disabledText");
-            }
-        }
-
         return getColorForState(context, type);
     }
 
