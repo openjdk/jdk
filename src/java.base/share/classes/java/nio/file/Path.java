@@ -264,25 +264,21 @@ public interface Path
      * name string, then the extension contains only a single period character.
      *
      * @apiNote
-     * The returned extension generally includes the period separator character.
-     * For example, the extension which would be returned for a path with file
-     * name "photograph.jpg" is ".jpg".
+     * Unless no extension is found, in which case an empty string is returned,
+     * the returned extension includes the period separator character. For
+     * example, the extension which would be returned for a path with file name
+     * "photograph.jpg" is ".jpg".
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
      * int lastPeriod = fileName.lastIndexOf('.');
-     * if (lastPeriod <= 0)
-     *     return "";
-     * else if (lastPeriod == fileName.length() - 1)
-     *     return ".";
-     * else
-     *     return fileName.substring(lastPeriod);
+     * return lastPeriod <= 0 ? return "" : fileName.substring(lastPeriod);
      * }</pre>
      *
-     * @return  the non-{@code null} file name extension of this path, which
-     *          might contain only a single period character, or an empty string
-     *          if no extension is found
+     * @return  the non-{@code null} file extension of this path's file name,
+     *          possibly only a single period character, or an empty string if
+     *          no extension is found
      *
      * @since 20
      */
@@ -299,10 +295,6 @@ public interface Path
         // empty  extension if no dot or the last dot is the first character
         if (lastDot <= 0)
             return "";
-
-        // the extension is "." if the last dot is the last character
-        if (lastDot == fileNameString.length() - 1) // lastDot > 0
-            return ".";
 
         // the extension is the substring starting at the index of the last dot
         return fileNameString.substring(lastDot);
