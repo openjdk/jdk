@@ -30,6 +30,7 @@ package com.sun.tools.javac.tree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -46,6 +47,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
 
+import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;
 
 import java.util.function.Predicate;
@@ -791,6 +793,12 @@ public class TreeInfo {
             if (thatSym == this.sym && (filter == null || filter.test(that))) {
                 result = that;
                 return true;
+            }
+            if (this.sym.getKind() == ElementKind.RECORD_COMPONENT) {
+                if (thatSym != null && thatSym.getKind() == ElementKind.FIELD && (thatSym.flags_field & RECORD) != 0) {
+                    RecordComponent rc = thatSym.enclClass().getRecordComponent((VarSymbol)thatSym);
+                    return checkMatch(rc.declarationFor(), rc);
+                }
             }
             return false;
         }
