@@ -113,13 +113,13 @@ class LineBreakPanel extends JPanel implements ActionListener {
 public class LineBreakWithTracking {
 
   private static final String INSTRUCTIONS = """
-     This manual test verifies that LineBreakMeasurer measures the lines' 
+     This manual test verifies that LineBreakMeasurer measures the lines'
      breaks correctly taking into account the TextAttribute.TRACKING value.
-     The test string includes Latin, Arabic, CJK and Hebrew. 
-            
+     The test string includes Latin, Arabic, CJK and Hebrew.
+
      You should choose a tracking value from the menu and resize the window.
      If the text lines break exactly to the wrapping width:
-     no room for one more word exists and 
+     no room for one more word exists and
      the text lines are not too long for given wrapping width, -
      then press PASS, otherwise - FAIL.
      """;
