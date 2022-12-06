@@ -152,37 +152,35 @@ public class StdLibTest extends NativeTestHelper {
 
     static class StdLibHelper {
 
-        final static MethodHandle strcat = abi.downcallHandle(abi.defaultLookup().lookup("strcat").get(),
-                FunctionDescriptor.of(C_POINTER, C_POINTER, C_POINTER))
-                .asType(MethodType.methodType(MemoryAddress.class, MemorySegment.class, MemorySegment.class)); // exact signature match
+        final static MethodHandle strcat = abi.downcallHandle(abi.defaultLookup().find("strcat").get(),
+                FunctionDescriptor.of(C_POINTER, C_POINTER, C_POINTER));
 
-
-        final static MethodHandle strcmp = abi.downcallHandle(abi.defaultLookup().lookup("strcmp").get(),
+        final static MethodHandle strcmp = abi.downcallHandle(abi.defaultLookup().find("strcmp").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
 
-        final static MethodHandle puts = abi.downcallHandle(abi.defaultLookup().lookup("puts").get(),
+        final static MethodHandle puts = abi.downcallHandle(abi.defaultLookup().find("puts").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER));
 
-        final static MethodHandle strlen = abi.downcallHandle(abi.defaultLookup().lookup("strlen").get(),
+        final static MethodHandle strlen = abi.downcallHandle(abi.defaultLookup().find("strlen").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER));
 
-        final static MethodHandle gmtime = abi.downcallHandle(abi.defaultLookup().lookup("gmtime").get(),
+        final static MethodHandle gmtime = abi.downcallHandle(abi.defaultLookup().find("gmtime").get(),
                 FunctionDescriptor.of(C_POINTER, C_POINTER));
 
-        final static MethodHandle qsort = abi.downcallHandle(abi.defaultLookup().lookup("qsort").get(),
+        final static MethodHandle qsort = abi.downcallHandle(abi.defaultLookup().find("qsort").get(),
                 FunctionDescriptor.ofVoid(C_POINTER, C_LONG_LONG, C_LONG_LONG, C_POINTER));
 
         final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER);
 
         final static MethodHandle qsortCompar;
 
-        final static MethodHandle rand = abi.downcallHandle(abi.defaultLookup().lookup("rand").get(),
+        final static MethodHandle rand = abi.downcallHandle(abi.defaultLookup().find("rand").get(),
                 FunctionDescriptor.of(C_INT));
 
-        final static MethodHandle vprintf = abi.downcallHandle(abi.defaultLookup().lookup("vprintf").get(),
+        final static MethodHandle vprintf = abi.downcallHandle(abi.defaultLookup().find("vprintf").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
 
-        final static Addressable printfAddr = abi.defaultLookup().lookup("printf").get();
+        final static MemorySegment printfAddr = abi.defaultLookup().find("printf").get();
 
         final static FunctionDescriptor printfBase = FunctionDescriptor.of(C_INT, C_POINTER);
 
@@ -190,48 +188,48 @@ public class StdLibTest extends NativeTestHelper {
             try {
                 //qsort upcall handle
                 qsortCompar = MethodHandles.lookup().findStatic(StdLibTest.StdLibHelper.class, "qsortCompare",
-                        Linker.upcallType(qsortComparFunction));
+                        qsortComparFunction.toMethodType());
             } catch (ReflectiveOperationException ex) {
                 throw new IllegalStateException(ex);
             }
         }
 
         String strcat(String s1, String s2) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment buf = session.allocate(s1.length() + s2.length() + 1);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment buf = arena.allocate(s1.length() + s2.length() + 1);
                 buf.setUtf8String(0, s1);
-                MemorySegment other = session.allocateUtf8String(s2);
-                return ((MemoryAddress)strcat.invokeExact(buf, other)).getUtf8String(0);
+                MemorySegment other = arena.allocateUtf8String(s2);
+                return ((MemorySegment)strcat.invokeExact(buf, other)).getUtf8String(0);
             }
         }
 
         int strcmp(String s1, String s2) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment ns1 = session.allocateUtf8String(s1);
-                MemorySegment ns2 = session.allocateUtf8String(s2);
-                return (int)strcmp.invoke(ns1, ns2);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment ns1 = arena.allocateUtf8String(s1);
+                MemorySegment ns2 = arena.allocateUtf8String(s2);
+                return (int)strcmp.invokeExact(ns1, ns2);
             }
         }
 
         int puts(String msg) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment s = session.allocateUtf8String(msg);
-                return (int)puts.invoke(s);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment s = arena.allocateUtf8String(msg);
+                return (int)puts.invokeExact(s);
             }
         }
 
         int strlen(String msg) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment s = session.allocateUtf8String(msg);
-                return (int)strlen.invoke(s);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment s = arena.allocateUtf8String(msg);
+                return (int)strlen.invokeExact(s);
             }
         }
 
         Tm gmtime(long arg) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment time = session.allocate(8);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment time = arena.allocate(8);
                 time.set(C_LONG_LONG, 0, arg);
-                return new Tm((MemoryAddress)gmtime.invoke(time));
+                return new Tm((MemorySegment)gmtime.invokeExact(time));
             }
         }
 
@@ -242,8 +240,8 @@ public class StdLibTest extends NativeTestHelper {
 
             static final long SIZE = 56;
 
-            Tm(MemoryAddress addr) {
-                this.base = MemorySegment.ofAddress(addr, SIZE, MemorySession.global());
+            Tm(MemorySegment addr) {
+                this.base = addr.asSlice(0, SIZE);
             }
 
             int sec() {
@@ -277,20 +275,20 @@ public class StdLibTest extends NativeTestHelper {
 
         int[] qsort(int[] arr) throws Throwable {
             //init native array
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment nativeArr = session.allocateArray(C_INT, arr);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment nativeArr = arena.allocateArray(C_INT, arr);
 
                 //call qsort
-                Addressable qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, session);
+                MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena.scope());
 
-                qsort.invoke(nativeArr, (long)arr.length, C_INT.byteSize(), qsortUpcallStub);
+                qsort.invokeExact(nativeArr, (long)arr.length, C_INT.byteSize(), qsortUpcallStub);
 
                 //convert back to Java array
                 return nativeArr.toArray(C_INT);
             }
         }
 
-        static int qsortCompare(MemoryAddress addr1, MemoryAddress addr2) {
+        static int qsortCompare(MemorySegment addr1, MemorySegment addr2) {
             return addr1.get(C_INT, 0) -
                    addr2.get(C_INT, 0);
         }
@@ -300,32 +298,34 @@ public class StdLibTest extends NativeTestHelper {
         }
 
         int printf(String format, List<PrintfArg> args) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment formatStr = session.allocateUtf8String(format);
-                return (int)specializedPrintf(args).invoke(formatStr,
-                        args.stream().map(a -> a.nativeValue(session)).toArray());
+            try (var arena = Arena.openConfined()) {
+                MemorySegment formatStr = arena.allocateUtf8String(format);
+                return (int)specializedPrintf(args).invokeExact(formatStr,
+                        args.stream().map(a -> a.nativeValue(arena)).toArray());
             }
         }
 
         int vprintf(String format, List<PrintfArg> args) throws Throwable {
-            try (MemorySession session = MemorySession.openConfined()) {
-                MemorySegment formatStr = session.allocateUtf8String(format);
-                VaList vaList = VaList.make(b -> args.forEach(a -> a.accept(b, session)), session);
-                return (int)vprintf.invoke(formatStr, vaList);
+            try (var arena = Arena.openConfined()) {
+                MemorySegment formatStr = arena.allocateUtf8String(format);
+                VaList vaList = VaList.make(b -> args.forEach(a -> a.accept(b, arena)), arena.scope());
+                return (int)vprintf.invokeExact(formatStr, vaList.segment());
             }
         }
 
         private MethodHandle specializedPrintf(List<PrintfArg> args) {
             //method type
-            MethodType mt = MethodType.methodType(int.class, MemoryAddress.class);
+            MethodType mt = MethodType.methodType(int.class, MemorySegment.class);
             FunctionDescriptor fd = printfBase;
             List<MemoryLayout> variadicLayouts = new ArrayList<>(args.size());
             for (PrintfArg arg : args) {
                 mt = mt.appendParameterTypes(arg.carrier);
                 variadicLayouts.add(arg.layout);
             }
+            Linker.Option varargIndex = Linker.Option.firstVariadicArg(fd.argumentLayouts().size());
             MethodHandle mh = abi.downcallHandle(printfAddr,
-                    fd.asVariadic(variadicLayouts.toArray(new MemoryLayout[args.size()])));
+                    fd.appendArgumentLayouts(variadicLayouts.toArray(new MemoryLayout[args.size()])),
+                    varargIndex);
             return mh.asSpreader(1, Object[].class, args.size());
         }
     }
@@ -384,26 +384,24 @@ public class StdLibTest extends NativeTestHelper {
                 .toArray(Object[][]::new);
     }
 
-    enum PrintfArg implements BiConsumer<VaList.Builder, MemorySession> {
+    enum PrintfArg implements BiConsumer<VaList.Builder, Arena> {
 
-        INTEGRAL(int.class, C_INT, "%d", session -> 42, 42, VaList.Builder::addVarg),
-        STRING(MemoryAddress.class, C_POINTER, "%s", session -> {
-            var segment = MemorySegment.allocateNative(4, session);
-            segment.setUtf8String(0, "str");
-            return segment.address();
+        INTEGRAL(int.class, C_INT, "%d", arena -> 42, 42, VaList.Builder::addVarg),
+        STRING(MemorySegment.class, C_POINTER, "%s", arena -> {
+            return arena.allocateUtf8String("str");
         }, "str", VaList.Builder::addVarg),
-        CHAR(byte.class, C_CHAR, "%c", session -> (byte) 'h', 'h', (builder, layout, value) -> builder.addVarg(C_INT, (int)value)),
-        DOUBLE(double.class, C_DOUBLE, "%.4f", session ->1.2345d, 1.2345d, VaList.Builder::addVarg);
+        CHAR(byte.class, C_CHAR, "%c", arena -> (byte) 'h', 'h', (builder, layout, value) -> builder.addVarg(C_INT, (int)value)),
+        DOUBLE(double.class, C_DOUBLE, "%.4f", arena ->1.2345d, 1.2345d, VaList.Builder::addVarg);
 
         final Class<?> carrier;
         final ValueLayout layout;
         final String format;
-        final Function<MemorySession, ?> nativeValueFactory;
+        final Function<Arena, ?> nativeValueFactory;
         final Object javaValue;
         @SuppressWarnings("rawtypes")
         final VaListBuilderCall builderCall;
 
-        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String format, Function<MemorySession, Z> nativeValueFactory, Object javaValue, VaListBuilderCall<Z, L> builderCall) {
+        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String format, Function<Arena, Z> nativeValueFactory, Object javaValue, VaListBuilderCall<Z, L> builderCall) {
             this.carrier = carrier;
             this.layout = layout;
             this.format = format;
@@ -414,16 +412,16 @@ public class StdLibTest extends NativeTestHelper {
 
         @Override
         @SuppressWarnings("unchecked")
-        public void accept(VaList.Builder builder, MemorySession session) {
-            builderCall.build(builder, layout, nativeValueFactory.apply(session));
+        public void accept(VaList.Builder builder, Arena arena) {
+            builderCall.build(builder, layout, nativeValueFactory.apply(arena));
         }
 
         interface VaListBuilderCall<V, L> {
             void build(VaList.Builder builder, L layout, V value);
         }
 
-        public Object nativeValue(MemorySession session) {
-            return nativeValueFactory.apply(session);
+        public Object nativeValue(Arena arena) {
+            return nativeValueFactory.apply(arena);
         }
     }
 

@@ -105,27 +105,27 @@ public enum Source {
     JDK15("15"),
 
     /**
-      * 16, tbd
+      * 16, records and pattern matching for instanceof
       */
     JDK16("16"),
 
     /**
-      * 17, tbd
+      * 17, sealed classes, restoration of always-strict floating-point
       */
     JDK17("17"),
 
     /**
-      * 18, tbd
+      * 18, no major changes
       */
     JDK18("18"),
 
     /**
-      * 19, tbd
+      * 19, no major changes
       */
     JDK19("19"),
 
     /**
-      * 20, tbd
+      * 20, no major changes
       */
     JDK20("20");
 

@@ -2244,6 +2244,12 @@ public final class System {
         // SecurityManager
         Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
 
+        // Emit a warning if java.io.tmpdir is set via the command line
+        // to a directory that doesn't exist
+        if (SystemProps.isBadIoTmpdir()) {
+            System.err.println("WARNING: java.io.tmpdir directory does not exist");
+        }
+
         String smProp = System.getProperty("java.security.manager");
         boolean needWarning = false;
         if (smProp != null) {
@@ -2431,11 +2437,11 @@ public final class System {
             public Module addEnableNativeAccess(Module m) {
                 return m.implAddEnableNativeAccess();
             }
-            public void addEnableNativeAccessAllUnnamed() {
-                Module.implAddEnableNativeAccessAllUnnamed();
+            public void addEnableNativeAccessToAllUnnamed() {
+                Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public boolean isEnableNativeAccess(Module m) {
-                return m.implIsEnableNativeAccess();
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName) {
+                m.ensureNativeAccess(owner, methodName);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();

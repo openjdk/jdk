@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,9 @@ final class WDataTransferer extends DataTransferer {
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
-            return new URL(new String(bytes, charset));
+            @SuppressWarnings("deprecation")
+            var result = new URL(new String(bytes, charset));
+            return result;
         }
 
         return super.translateBytes(bytes , flavor, format,

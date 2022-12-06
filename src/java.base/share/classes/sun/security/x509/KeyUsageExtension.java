@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import sun.security.util.*;
 
@@ -42,19 +41,9 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class KeyUsageExtension extends Extension
-implements CertAttrSet<String> {
+public class KeyUsageExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.KeyUsage";
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "KeyUsage";
     public static final String DIGITAL_SIGNATURE = "digital_signature";
     public static final String NON_REPUDIATION = "non_repudiation";
@@ -70,7 +59,7 @@ implements CertAttrSet<String> {
     private boolean[] bitString;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream os = new DerOutputStream();
         os.putTruncatedUnalignedBitString(new BitArray(this.bitString));
         this.extensionValue = os.toByteArray();
@@ -105,7 +94,7 @@ implements CertAttrSet<String> {
      *
      * @param bitString the bits to be set for the extension.
      */
-    public KeyUsageExtension(byte[] bitString) throws IOException {
+    public KeyUsageExtension(byte[] bitString) {
         this.bitString =
             new BitArray(bitString.length*8,bitString).toBooleanArray();
         this.extensionId = PKIXExtensions.KeyUsage_Id;
@@ -119,7 +108,7 @@ implements CertAttrSet<String> {
      *
      * @param bitString the bits to be set for the extension.
      */
-    public KeyUsageExtension(boolean[] bitString) throws IOException {
+    public KeyUsageExtension(boolean[] bitString) {
         this.bitString = bitString;
         this.extensionId = PKIXExtensions.KeyUsage_Id;
         this.critical = true;
@@ -132,7 +121,7 @@ implements CertAttrSet<String> {
      *
      * @param bitString the bits to be set for the extension.
      */
-    public KeyUsageExtension(BitArray bitString) throws IOException {
+    public KeyUsageExtension(BitArray bitString) {
         this.bitString = bitString.toBooleanArray();
         this.extensionId = PKIXExtensions.KeyUsage_Id;
         this.critical = true;
@@ -184,11 +173,7 @@ implements CertAttrSet<String> {
     /**
      * Set the attribute value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Boolean)) {
-            throw new IOException("Attribute must be of type Boolean.");
-        }
-        boolean val = ((Boolean)obj).booleanValue();
+    public void set(String name, boolean val) throws IOException {
         if (name.equalsIgnoreCase(DIGITAL_SIGNATURE)) {
             set(0,val);
         } else if (name.equalsIgnoreCase(NON_REPUDIATION)) {
@@ -209,7 +194,7 @@ implements CertAttrSet<String> {
             set(8,val);
         } else {
           throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:KeyUsage.");
+                                + " KeyUsage.");
         }
         encodeThis();
     }
@@ -217,59 +202,31 @@ implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Boolean get(String name) throws IOException {
+    public boolean get(String name) throws IOException {
         if (name.equalsIgnoreCase(DIGITAL_SIGNATURE)) {
-            return Boolean.valueOf(isSet(0));
+            return isSet(0);
         } else if (name.equalsIgnoreCase(NON_REPUDIATION)) {
-            return Boolean.valueOf(isSet(1));
+            return isSet(1);
         } else if (name.equalsIgnoreCase(KEY_ENCIPHERMENT)) {
-            return Boolean.valueOf(isSet(2));
+            return isSet(2);
         } else if (name.equalsIgnoreCase(DATA_ENCIPHERMENT)) {
-            return Boolean.valueOf(isSet(3));
+            return isSet(3);
         } else if (name.equalsIgnoreCase(KEY_AGREEMENT)) {
-            return Boolean.valueOf(isSet(4));
+            return isSet(4);
         } else if (name.equalsIgnoreCase(KEY_CERTSIGN)) {
-            return Boolean.valueOf(isSet(5));
+            return isSet(5);
         } else if (name.equalsIgnoreCase(CRL_SIGN)) {
-            return Boolean.valueOf(isSet(6));
+            return isSet(6);
         } else if (name.equalsIgnoreCase(ENCIPHER_ONLY)) {
-            return Boolean.valueOf(isSet(7));
+            return isSet(7);
         } else if (name.equalsIgnoreCase(DECIPHER_ONLY)) {
-            return Boolean.valueOf(isSet(8));
+            return isSet(8);
         } else {
           throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:KeyUsage.");
+                                + " KeyUsage.");
         }
     }
 
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DIGITAL_SIGNATURE)) {
-            set(0,false);
-        } else if (name.equalsIgnoreCase(NON_REPUDIATION)) {
-            set(1,false);
-        } else if (name.equalsIgnoreCase(KEY_ENCIPHERMENT)) {
-            set(2,false);
-        } else if (name.equalsIgnoreCase(DATA_ENCIPHERMENT)) {
-            set(3,false);
-        } else if (name.equalsIgnoreCase(KEY_AGREEMENT)) {
-            set(4,false);
-        } else if (name.equalsIgnoreCase(KEY_CERTSIGN)) {
-            set(5,false);
-        } else if (name.equalsIgnoreCase(CRL_SIGN)) {
-            set(6,false);
-        } else if (name.equalsIgnoreCase(ENCIPHER_ONLY)) {
-            set(7,false);
-        } else if (name.equalsIgnoreCase(DECIPHER_ONLY)) {
-            set(8,false);
-        } else {
-          throw new IOException("Attribute name not recognized by"
-                                + " CertAttrSet:KeyUsage.");
-        }
-        encodeThis();
-    }
 
     /**
      * Returns a printable representation of the KeyUsage.
@@ -315,10 +272,9 @@ implements CertAttrSet<String> {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
        if (this.extensionValue == null) {
            this.extensionId = PKIXExtensions.KeyUsage_Id;
            this.critical = true;
@@ -327,24 +283,6 @@ implements CertAttrSet<String> {
        super.encode(out);
     }
 
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DIGITAL_SIGNATURE);
-        elements.addElement(NON_REPUDIATION);
-        elements.addElement(KEY_ENCIPHERMENT);
-        elements.addElement(DATA_ENCIPHERMENT);
-        elements.addElement(KEY_AGREEMENT);
-        elements.addElement(KEY_CERTSIGN);
-        elements.addElement(CRL_SIGN);
-        elements.addElement(ENCIPHER_ONLY);
-        elements.addElement(DECIPHER_ONLY);
-
-        return (elements.elements());
-    }
 
 
     public boolean[] getBits() {
@@ -352,9 +290,10 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

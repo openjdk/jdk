@@ -2105,11 +2105,13 @@ public class StyleSheet extends StyleContext {
                         tmpstr = st.nextToken();
                     if (st.hasMoreTokens())
                         tmpstr = st.nextToken();
+                    @SuppressWarnings("deprecation")
                     URL u = new URL(tmpstr);
                     img = new ImageIcon(u);
                 } catch (MalformedURLException e) {
                     if (tmpstr != null && ss != null && ss.getBase() != null) {
                         try {
+                            @SuppressWarnings("deprecation")
                             URL u = new URL(ss.getBase(), tmpstr);
                             img = new ImageIcon(u);
                         } catch (MalformedURLException murle) {

@@ -24,13 +24,15 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 
 import jdk.internal.foreign.MemorySessionImpl;
 
-public class UpcallStubs {
+public final class UpcallStubs {
+
+    private UpcallStubs() {
+    }
 
     private static void freeUpcallStub(long stubAddress) {
         if (!freeUpcallStub0(stubAddress)) {
@@ -48,13 +50,13 @@ public class UpcallStubs {
         registerNatives();
     }
 
-    static MemorySegment makeUpcall(long entry, MemorySession session) {
-        MemorySessionImpl.toSessionImpl(session).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+    static MemorySegment makeUpcall(long entry, SegmentScope session) {
+        ((MemorySessionImpl) session).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 freeUpcallStub(entry);
             }
         });
-        return MemorySegment.ofAddress(MemoryAddress.ofLong(entry), 0, session);
+        return MemorySegment.ofAddress(entry, 0, session);
     }
 }

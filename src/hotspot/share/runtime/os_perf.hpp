@@ -31,29 +31,6 @@
 
 #define FUNCTIONALITY_NOT_IMPLEMENTED -8
 
-class EnvironmentVariable : public CHeapObj<mtInternal> {
- public:
-  char* _key;
-  char* _value;
-
-  EnvironmentVariable() {
-    _key = NULL;
-    _value = NULL;
-  }
-
-  ~EnvironmentVariable() {
-    FREE_C_HEAP_ARRAY(char, _key);
-    FREE_C_HEAP_ARRAY(char, _value);
-  }
-
-  EnvironmentVariable(char* key, char* value) {
-    _key = key;
-    _value = value;
-  }
-
-};
-
-
 class CPUInformation : public CHeapObj<mtInternal> {
  private:
   int   _no_of_sockets;
@@ -129,14 +106,6 @@ class SystemProcess : public CHeapObj<mtInternal> {
     _next = NULL;
   }
 
-  SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) {
-    _pid = pid;
-    _name = name;
-    _path = path;
-    _command_line = command_line;
-    _next = next;
-  }
-
   void set_next(SystemProcess* sys_process) {
     _next = sys_process;
   }
@@ -201,7 +170,6 @@ class NetworkInterface : public ResourceObj {
   _next(next) {
     assert(name != NULL, "invariant");
     const size_t length = strlen(name);
-    assert(allocated_on_res_area(), "invariant");
     _name = NEW_RESOURCE_ARRAY(char, length + 1);
     strncpy(_name, name, length + 1);
     assert(strncmp(_name, name, length) == 0, "invariant");

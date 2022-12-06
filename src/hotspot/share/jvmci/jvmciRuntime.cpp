@@ -410,6 +410,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::monitorenter(JavaThread* current, oopDesc* o
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* current, oopDesc* obj, BasicLock* lock))
+  assert(current == JavaThread::current(), "pre-condition");
   assert(current->last_Java_sp(), "last_Java_sp must be set");
   assert(oopDesc::is_oop(obj), "invalid lock object pointer dected");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
@@ -417,6 +418,7 @@ JRT_END
 
 // Object.notify() fast path, caller does slow path
 JRT_LEAF(jboolean, JVMCIRuntime::object_notify(JavaThread* current, oopDesc* obj))
+  assert(current == JavaThread::current(), "pre-condition");
 
   // Very few notify/notifyAll operations find any threads on the waitset, so
   // the dominant fast-path is to simply return.
@@ -433,6 +435,7 @@ JRT_END
 
 // Object.notifyAll() fast path, caller does slow path
 JRT_LEAF(jboolean, JVMCIRuntime::object_notifyAll(JavaThread* current, oopDesc* obj))
+  assert(current == JavaThread::current(), "pre-condition");
 
   if (!SafepointSynchronize::is_synchronizing() ) {
     if (ObjectSynchronizer::quick_notify(obj, current, true)) {
