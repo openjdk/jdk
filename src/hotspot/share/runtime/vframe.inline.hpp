@@ -70,8 +70,6 @@ inline int vframeStreamCommon::decode_offset() const {
 
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
 
-inline bool vframeStreamCommon::is_entry_frame() const       { return _frame.is_entry_frame(); }
-
 inline void vframeStreamCommon::next() {
   // handle frames with inlining
   if (_mode == compiled_mode    && fill_in_compiled_inlined_sender()) return;
