@@ -347,13 +347,22 @@ final class MemberName implements Member, Cloneable {
         return this;
     }
 
+    private boolean matchingFlagsSet(int mask, int flags) {
+        return (this.flags & mask) == flags;
+    }
+    private boolean allFlagsSet(int flags) {
+        return (this.flags & flags) == flags;
+    }
+    private boolean anyFlagSet(int flags) {
+        return (this.flags & flags) != 0;
+    }
+
     /** Utility method to query if this member is a method handle invocation (invoke or invokeExact).
      */
     public boolean isMethodHandleInvoke() {
         final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
         final int negs = Modifier.STATIC;
-        if ((flags & (bits | negs)) == bits &&
-            clazz == MethodHandle.class) {
+        if (matchingFlagsSet(bits | negs, bits) && clazz == MethodHandle.class) {
             return isMethodHandleInvokeName(name);
         }
         return false;
@@ -367,8 +376,7 @@ final class MemberName implements Member, Cloneable {
     public boolean isVarHandleMethodInvoke() {
         final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
         final int negs = Modifier.STATIC;
-        if ((flags & (bits | negs)) == bits &&
-            clazz == VarHandle.class) {
+        if (matchingFlagsSet(bits | negs, bits) && clazz == VarHandle.class) {
             return isVarHandleMethodInvokeName(name);
         }
         return false;
@@ -429,15 +437,15 @@ final class MemberName implements Member, Cloneable {
     static final int ENUM      = 0x00004000;
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isBridge() {
-        return (flags & (IS_METHOD | BRIDGE)) == (IS_METHOD | BRIDGE);
+        return allFlagsSet(IS_METHOD | BRIDGE);
     }
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isVarargs() {
-        return (flags & VARARGS) == VARARGS && isInvocable();
+        return allFlagsSet(VARARGS) && isInvocable();
     }
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isSynthetic() {
-        return (flags & SYNTHETIC) == SYNTHETIC;
+        return allFlagsSet(SYNTHETIC);
     }
 
     static final String CONSTRUCTOR_NAME = "<init>";  // the ever-popular
@@ -460,35 +468,35 @@ final class MemberName implements Member, Cloneable {
 
     /** Utility method to query whether this member is a method or constructor. */
     public boolean isInvocable() {
-        return (flags & IS_INVOCABLE) != 0;
+        return anyFlagSet(IS_INVOCABLE);
     }
     /** Query whether this member is a method. */
     public boolean isMethod() {
-        return (flags & IS_METHOD) == IS_METHOD;
+        return allFlagsSet(IS_METHOD);
     }
     /** Query whether this member is a constructor. */
     public boolean isConstructor() {
-        return (flags & IS_CONSTRUCTOR) == IS_CONSTRUCTOR;
+        return allFlagsSet(IS_CONSTRUCTOR);
     }
     /** Query whether this member is a field. */
     public boolean isField() {
-        return (flags & IS_FIELD) == IS_FIELD;
+        return allFlagsSet(IS_FIELD);
     }
     /** Query whether this member is a type. */
     public boolean isType() {
-        return (flags & IS_TYPE) == IS_TYPE;
+        return allFlagsSet(IS_TYPE);
     }
     /** Utility method to query whether this member is neither public, private, nor protected. */
     public boolean isPackage() {
-        return (flags & ALL_ACCESS) == 0;
+        return !anyFlagSet(ALL_ACCESS);
     }
     /** Query whether this member has a CallerSensitive annotation. */
     public boolean isCallerSensitive() {
-        return (flags & CALLER_SENSITIVE) == CALLER_SENSITIVE;
+        return allFlagsSet(CALLER_SENSITIVE);
     }
     /** Query whether this member is a trusted final field. */
     public boolean isTrustedFinalField() {
-        return (flags & (TRUSTED_FINAL | IS_FIELD)) == (TRUSTED_FINAL | IS_FIELD);
+        return allFlagsSet(TRUSTED_FINAL | IS_FIELD);
     }
 
     /**
@@ -508,8 +516,7 @@ final class MemberName implements Member, Cloneable {
         this.name = name;
         this.type = type;
         this.flags = flags;
-        assert((flags & ALL_KINDS) != 0);
-        assert(this.resolution == null);  // nobody should have touched this yet
+        assert(anyFlagSet(ALL_KINDS) && this.resolution == null);  // nobody should have touched this yet
         //assert(referenceKindIsConsistent());  // do this after resolution
     }
 
