@@ -25,43 +25,50 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
+#include <iostream>
+using namespace std;
 
-static const double epsilon = 0.0001;
-
-template<typename T>
-class ShenandoahNumberSeqTest : public ::testing::Test {
+class ShenandoahNumberSeqTest: public ::testing::Test {
+ protected:
   HdrSeq seq;
-
- public:
-  void initialize_seq(double newSeq[]);
-  bool test_seq(double v_percentile, double v_value);
 };
 
-class BasicShenandoahNumberSeqTest : public ShenandoahNumberSeqTest {
+class BasicShenandoahNumberSeqTest: public ShenandoahNumberSeqTest {
  protected:
+  const double err = 0.5;
   BasicShenandoahNumberSeqTest() {
+    seq.add(0);
     seq.add(1);
     seq.add(10);
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 7; i++) {
       seq.add(100);
     }
+    cout << " p0 = " << seq.percentile(0);
+    cout << " p10 = " << seq.percentile(10);
+    cout << " p20 = " << seq.percentile(20);
+    cout << " p30 = " << seq.percentile(30);
+    cout << " p50 = " << seq.percentile(50);
+    cout << " p80 = " << seq.percentile(80);
+    cout << " p90 = " << seq.percentile(90);
+    cout << " p100 = " << seq.percentile(100);
   }
 };
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, maximum_test) {
-  ASSERT_EQ(100, seq.maximum());
-  ASSERT_EQ(100, seq.percentile(100));
+  EXPECT_EQ(seq.maximum(), 100);
 }
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, minimum_test) {
-  ASSERT_EQ(1, seq.minimum());
-  ASSERT_EQ(1, seq.percentile(0));
+  EXPECT_EQ(0, seq.percentile(0));
 }
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, percentile_test) {
-  ASSERT_EQ(100, seq.percentile(75));
-  ASSERT_EQ(100, seq.percentile(50));
-  ASSERT_EQ(100, seq.percentile(25));
-  ASSERT_EQ(10, seq.percentile(20));
-  ASSERT_EQ(1, seq.percentile(10));
+  EXPECT_NEAR(0, seq.percentile(10), err);
+  EXPECT_NEAR(1, seq.percentile(20), err);
+  EXPECT_NEAR(10, seq.percentile(30), err);
+  EXPECT_NEAR(100, seq.percentile(40), err);
+  EXPECT_NEAR(100, seq.percentile(50), err);
+  EXPECT_NEAR(100, seq.percentile(75), err);
+  EXPECT_NEAR(100, seq.percentile(90), err);
+  EXPECT_NEAR(100, seq.percentile(100), err);
 }
