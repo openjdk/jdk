@@ -388,7 +388,6 @@ public:
 
 protected:
   inline void init_rest();
-  void freeze_fast_init_cont_data(intptr_t* frame_sp);
   void throw_stack_overflow_on_humongous_chunk();
 
   // fast path
@@ -1721,7 +1720,6 @@ protected:
   // fast path
   inline void prefetch_chunk_pd(void* start, int size_words);
   void patch_return(intptr_t* sp, bool is_last);
-  void patch_chunk_pd(intptr_t* sp); // TODO remove
 
   // slow path
   NOINLINE intptr_t* thaw_slow(stackChunkOop chunk, bool return_barrier);
@@ -1803,8 +1801,6 @@ public:
     assert(_base - 1 <= top() + total_size() + frame::metadata_words_at_bottom, "missed entry frame");
   }
 
-  int thaw_size() const { return _thaw_size; }
-  int argsize() const { return _argsize; }
   int entry_frame_extension() const { return _argsize + (_argsize > 0 ? frame::metadata_words_at_top : 0); }
 
   // top and bottom stack pointers
@@ -1865,7 +1861,6 @@ void ThawBase::patch_return(intptr_t* sp, bool is_last) {
 
   address pc = !is_last ? StubRoutines::cont_returnBarrier() : _cont.entryPC();
   *(address*)(sp - frame::sender_sp_ret_address_offset()) = pc;
-  // patch_chunk_pd(sp); -- TODO: If not needed - remove method; it's not used elsewhere
 }
 
 template <typename ConfigT>

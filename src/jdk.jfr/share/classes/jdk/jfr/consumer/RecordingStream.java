@@ -394,7 +394,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following code snippet illustrates how this method can be used in
      * conjunction with the {@link #startAsync()} method to monitor what happens
      * during a test method:
-     * <p>
+     *
      * {@snippet class="Snippets" region="RecordingStreamStop"}
      *
      * @return {@code true} if recording is stopped, {@code false} otherwise

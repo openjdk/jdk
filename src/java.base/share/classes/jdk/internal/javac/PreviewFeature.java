@@ -70,7 +70,7 @@ public @interface PreviewFeature {
         RECORD_PATTERNS,
         @JEP(number=425, title="Virtual Threads")
         VIRTUAL_THREADS,
-        @JEP(number=424, title="Foreign Function & Memory API")
+        @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
         FOREIGN,
         /**
          * A key for testing.

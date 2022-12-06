@@ -4131,17 +4131,17 @@ int jdk_internal_foreign_abi_ABIDescriptor::_outputStorage_offset;
 int jdk_internal_foreign_abi_ABIDescriptor::_volatileStorage_offset;
 int jdk_internal_foreign_abi_ABIDescriptor::_stackAlignment_offset;
 int jdk_internal_foreign_abi_ABIDescriptor::_shadowSpace_offset;
-int jdk_internal_foreign_abi_ABIDescriptor::_targetAddrStorage_offset;
-int jdk_internal_foreign_abi_ABIDescriptor::_retBufAddrStorage_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_scratch1_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_scratch2_offset;
 
 #define ABIDescriptor_FIELDS_DO(macro) \
-  macro(_inputStorage_offset,      k, "inputStorage",      jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
-  macro(_outputStorage_offset,     k, "outputStorage",     jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
-  macro(_volatileStorage_offset,   k, "volatileStorage",   jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
-  macro(_stackAlignment_offset,    k, "stackAlignment",    int_signature, false); \
-  macro(_shadowSpace_offset,       k, "shadowSpace",       int_signature, false); \
-  macro(_targetAddrStorage_offset, k, "targetAddrStorage", jdk_internal_foreign_abi_VMStorage_signature, false); \
-  macro(_retBufAddrStorage_offset, k, "retBufAddrStorage", jdk_internal_foreign_abi_VMStorage_signature, false);
+  macro(_inputStorage_offset,    k, "inputStorage",    jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_outputStorage_offset,   k, "outputStorage",   jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_volatileStorage_offset, k, "volatileStorage", jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_stackAlignment_offset,  k, "stackAlignment",  int_signature, false); \
+  macro(_shadowSpace_offset,     k, "shadowSpace",     int_signature, false); \
+  macro(_scratch1_offset,        k, "scratch1",        jdk_internal_foreign_abi_VMStorage_signature, false); \
+  macro(_scratch2_offset,        k, "scratch2",        jdk_internal_foreign_abi_VMStorage_signature, false);
 
 bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
@@ -4178,22 +4178,24 @@ jint jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(oop entry) {
   return entry->int_field(_shadowSpace_offset);
 }
 
-oop jdk_internal_foreign_abi_ABIDescriptor::targetAddrStorage(oop entry) {
-  return entry->obj_field(_targetAddrStorage_offset);
+oop jdk_internal_foreign_abi_ABIDescriptor::scratch1(oop entry) {
+  return entry->obj_field(_scratch1_offset);
 }
 
-oop jdk_internal_foreign_abi_ABIDescriptor::retBufAddrStorage(oop entry) {
-  return entry->obj_field(_retBufAddrStorage_offset);
+oop jdk_internal_foreign_abi_ABIDescriptor::scratch2(oop entry) {
+  return entry->obj_field(_scratch2_offset);
 }
 
 int jdk_internal_foreign_abi_VMStorage::_type_offset;
-int jdk_internal_foreign_abi_VMStorage::_index_offset;
+int jdk_internal_foreign_abi_VMStorage::_indexOrOffset_offset;
+int jdk_internal_foreign_abi_VMStorage::_segmentMaskOrSize_offset;
 int jdk_internal_foreign_abi_VMStorage::_debugName_offset;
 
 #define VMStorage_FIELDS_DO(macro) \
-  macro(_type_offset,      k, "type",      int_signature, false); \
-  macro(_index_offset,     k, "index",     int_signature, false); \
-  macro(_debugName_offset, k, "debugName", string_signature, false); \
+  macro(_type_offset,              k, "type",              byte_signature, false); \
+  macro(_indexOrOffset_offset,     k, "indexOrOffset",     int_signature, false); \
+  macro(_segmentMaskOrSize_offset, k, "segmentMaskOrSize", short_signature, false); \
+  macro(_debugName_offset,         k, "debugName",         string_signature, false); \
 
 bool jdk_internal_foreign_abi_VMStorage::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
@@ -4210,12 +4212,16 @@ void jdk_internal_foreign_abi_VMStorage::serialize_offsets(SerializeClosure* f) 
 }
 #endif
 
-jint jdk_internal_foreign_abi_VMStorage::type(oop entry) {
-  return entry->int_field(_type_offset);
+jbyte jdk_internal_foreign_abi_VMStorage::type(oop entry) {
+  return entry->byte_field(_type_offset);
 }
 
-jint jdk_internal_foreign_abi_VMStorage::index(oop entry) {
-  return entry->int_field(_index_offset);
+jint jdk_internal_foreign_abi_VMStorage::index_or_offset(oop entry) {
+  return entry->int_field(_indexOrOffset_offset);
+}
+
+jshort jdk_internal_foreign_abi_VMStorage::segment_mask_or_size(oop entry) {
+  return entry->short_field(_segmentMaskOrSize_offset);
 }
 
 oop jdk_internal_foreign_abi_VMStorage::debugName(oop entry) {

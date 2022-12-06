@@ -1056,9 +1056,8 @@ void G1YoungCollector::collect() {
   // JFR
   G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
   // JStat/MXBeans
-  G1MonitoringScope ms(monitoring_support(),
-                       false /* full_gc */,
-                       collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
+  G1YoungGCMonitoringScope ms(monitoring_support(),
+                              collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
   // Create the heap printer before internal pause timing to have
   // heap information printed as last part of detailed GC log.
   G1HeapPrinterMark hpm(_g1h);
