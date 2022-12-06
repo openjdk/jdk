@@ -870,7 +870,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   if (_resolved_indy_info) {
     it->push(&_resolved_indy_info);
     for (int i = 0; i < resolved_indy_info_length(); i++) {
-      resolved_indy_info(i)->metaspace_pointers_do(it); // Maybe we need this?
+      //resolved_indy_info(i)->metaspace_pointers_do(it); TALK ABOUT THIS
     }
   }
 }

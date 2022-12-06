@@ -14,5 +14,5 @@ void ResolvedIndyInfo::print_on(outputStream* st) const {
 }
 
 void ResolvedIndyInfo::metaspace_pointers_do(MetaspaceClosure* it) {
-        it->push(&_method);
+    it->push(&_method);
 }
