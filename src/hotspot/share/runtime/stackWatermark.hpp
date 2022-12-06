@@ -94,7 +94,7 @@ protected:
   StackWatermarkFramesIterator* _iterator;
   Mutex _lock;
   StackWatermarkKind _kind;
-  GrowableArrayCHeap<StackWatermark*, mtGC> _linked_watermarks;
+  GrowableArrayCHeap<StackWatermark*, mtInternal> _linked_watermarks;
 
   void process_one();
 
@@ -118,6 +118,7 @@ protected:
   virtual bool process_on_iteration() { return true; }
 
   void process_linked_watermarks();
+
   bool processing_started(uint32_t state) const;
   bool processing_completed(uint32_t state) const;
 

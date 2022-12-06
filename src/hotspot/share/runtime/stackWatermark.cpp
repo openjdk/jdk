@@ -317,6 +317,9 @@ void StackWatermark::process_linked_watermarks() {
 
 void StackWatermark::on_safepoint() {
   start_processing();
+  // If the thread waking up from a safepoint expected certain other
+  // stack watermarks (potentially from different threads) are processed,
+  // then we have to perform processing of said linked watermarks here.
   process_linked_watermarks();
 }
 
