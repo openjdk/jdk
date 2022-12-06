@@ -48,10 +48,10 @@
 #ifdef ASSERT
 #ifdef _LP64
 // Two low bits are not usable.
-static const void* POISON_PTR = (void*)UCONST64(0xfbadbadbadbadbac);
+static void* const POISON_PTR = (void*)UCONST64(0xfbadbadbadbadbac);
 #else
 // Two low bits are not usable.
-static const void* POISON_PTR = (void*)0xffbadbac;
+static void* const POISON_PTR = (void*)0xffbadbac;
 #endif
 #endif
 
@@ -521,11 +521,11 @@ inline void ConcurrentHashTable<CONFIG, F>::
       write_synchonize_on_visible_epoch(thread);
     }
     for (size_t node_it = 0; node_it < nd; node_it++) {
-      Node* ndel = node_it < BULK_DELETE_LIMIT ? ndel_stack[node_it] : extra.at(node_it - BULK_DELETE_LIMIT);
+      Node*& ndel = node_it < BULK_DELETE_LIMIT ? ndel_stack[node_it] : extra.at(node_it - BULK_DELETE_LIMIT);
       del_f(ndel->value());
       Node::destroy_node(_context, ndel);
       JFR_ONLY(safe_stats_remove();)
-      DEBUG_ONLY(ndel = (Node*)POISON_PTR;)
+      DEBUG_ONLY(ndel = static_cast<Node*>(POISON_PTR);)
     }
     cs_context = GlobalCounter::critical_section_begin(thread);
   }
