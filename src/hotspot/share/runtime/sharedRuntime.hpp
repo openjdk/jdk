@@ -562,6 +562,8 @@ class SharedRuntime: AllStatic {
   static int64_t _nof_inlined_interface_calls;    // total # of inlined interface calls
 
  public: // for compiler
+  static address partial_subtype_ctr_addr()             { return (address)&_partial_subtype_ctr; }
+
   static address nof_normal_calls_addr()                { return (address)&_nof_normal_calls; }
   static address nof_inlined_calls_addr()               { return (address)&_nof_inlined_calls; }
   static address nof_static_calls_addr()                { return (address)&_nof_static_calls; }

@@ -604,7 +604,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -616,10 +616,12 @@ public:
                                      Register temp_reg,
                                      Register temp2_reg,
                                      Label* L_success,
-                                     Label* L_failure,
-                                     bool set_cond_codes = false);
+                                     Label* L_failure);
 
-  // Simplified, combined version, good for typical uses.
+  void scan(Register value, Register position, Register counter,
+            Label& L_success, Label& L_failure, Label& L_fallthrough);
+
+    // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
