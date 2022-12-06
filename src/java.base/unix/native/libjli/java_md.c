@@ -309,18 +309,24 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /* Check to see if the jvmpath exists */
     /* Find out where the JRE is that we will be using. */
-    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
-        JLI_ReportErrorMessage(JRE_ERROR1);
-        exit(2);
-    }
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-            jrepath, FILESEP, FILESEP);
-    /* Find the specified JVM type */
-    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-        JLI_ReportErrorMessage(CFG_ERROR7);
-        exit(1);
+    if (jrepath[0] == '\0') {
+        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
+            JLI_ReportErrorMessage(JRE_ERROR1);
+            exit(2);
+        }
     }
 
+    if (jvmcfg[0] == '\0') {
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                jrepath, FILESEP, FILESEP);
+        /* Find the specified JVM type */
+        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+            JLI_ReportErrorMessage(CFG_ERROR7);
+            exit(1);
+        }
+    }
+
+    /* Always repeat this step because arguments can affect choice */
     jvmpath[0] = '\0';
     jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
     if (JLI_StrCmp(jvmtype, "ERROR") == 0) {

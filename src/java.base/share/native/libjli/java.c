@@ -176,6 +176,9 @@ static int  KnownVMIndex(const char* name);
 static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
+static char jvmpath[MAXPATHLEN];
+static char jrepath[MAXPATHLEN];
+static char jvmcfg[MAXPATHLEN];
 
 #define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.Main"
 
@@ -243,9 +246,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     int ret;
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
-    char jvmpath[MAXPATHLEN];
-    char jrepath[MAXPATHLEN];
-    char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
     _launcher_name = lname;
@@ -355,12 +355,23 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 JNIEXPORT void JNICALL
 JLI_ReExecLauncher(int argc, char **argv) {
-    char jvmpath[MAXPATHLEN];
-    char jrepath[MAXPATHLEN];
-    char jvmcfg[MAXPATHLEN];
+
+    /**
+     * Fast path for the most common case
+     */
+#if !defined (MUSL_LIBC) && !defined(AIX)
+    if (getenv("LD_LIBRARY_PATH") == NULL) {
+        return;
+    }
+#endif
 
     JLI_SetTraceLauncher();
     JLI_TraceLauncher("Launcher journey begins.\n");
+
+    /* Init static variables */
+    jrepath[0] = '\0';
+    jvmpath[0] = '\0';
+    jvmcfg[0] = '\0';
 
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
