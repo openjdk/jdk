@@ -48,7 +48,7 @@ class YieldQueuing {
         var list = new CopyOnWriteArrayList<String>();
 
         var threadsStarted = new AtomicBoolean();
-        
+
         var threadA = Thread.ofVirtual().unstarted(() -> {
             // pin thread until task for B is in submission queue
             while (!threadsStarted.get()) {
@@ -92,7 +92,7 @@ class YieldQueuing {
             while (!threadsStarted.get()) {
                 Thread.onSpinWait();
             }
-            
+
             list.add("A");
             LockSupport.park();   // B should run
             list.add("A");

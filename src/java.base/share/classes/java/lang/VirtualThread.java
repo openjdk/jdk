@@ -464,10 +464,10 @@ final class VirtualThread extends BaseVirtualThread {
             if (notifyJvmtiEvents) notifyJvmtiUnmountEnd(false);
 
             // external submit if there are no tasks in the local task queue
-            if (currentThread() instanceof CarrierThread ct && ct.getQueuedTaskCount() > 0) {
-                submitRunContinuation();
-            } else {
+            if (currentThread() instanceof CarrierThread ct && ct.getQueuedTaskCount() == 0) {
                 externalSubmitRunContinuation();
+            } else {
+                submitRunContinuation();
             }
         }
     }
