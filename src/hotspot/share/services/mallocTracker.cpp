@@ -56,7 +56,7 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
     }
   }
 }
-#endif
+#endif // ASSERT
 
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
