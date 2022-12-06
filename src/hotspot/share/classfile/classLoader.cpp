@@ -1433,7 +1433,7 @@ bool ClassLoader::is_module_observable(const char* module_name) {
   }
   jlong size;
   const char *jimage_version = get_jimage_version_string();
-  return (*JImageFindResource)(JImage_file, "jdk.internal.vm.ci", jimage_version, "module-info.class", &size) != 0;
+  return (*JImageFindResource)(JImage_file, module_name, jimage_version, "module-info.class", &size) != 0;
 }
 
 #if INCLUDE_CDS
