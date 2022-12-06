@@ -3006,6 +3006,16 @@ public class Check {
                             Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
                     ).collect(List.collector()));
 
+                    JCVariableDecl fieldAST = (JCVariableDecl) declarationTree;
+                    for (JCAnnotation fieldAnnot : fieldAST.mods.annotations) {
+                        for (JCAnnotation rcAnnot : rc.declarationFor().mods.annotations) {
+                            if (rcAnnot.pos == fieldAnnot.pos) {
+                                rcAnnot.setType(fieldAnnot.type);
+                                break;
+                            }
+                        }
+                    }
+
                     /* At this point, we used to carry over any type annotations from the VARDEF to the record component, but
                      * that is problematic, since we get here only when *some* annotation is applied to the SE5 (declaration)
                      * annotation location, inadvertently failing to carry over the type annotations when the VarDef has no
