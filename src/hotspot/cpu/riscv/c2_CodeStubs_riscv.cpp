@@ -31,8 +31,7 @@
 
 #define __ masm.
 
-int C2SafepointPollStub::size() const {
-  // the max size this stub can emit
+int C2SafepointPollStub::max_size() const {
   return 13 * 4;
 }
 
@@ -51,8 +50,8 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ far_jump(callback_addr);
 }
 
-int C2EntryBarrierStub::size() const {
-  // the max size this stub can emit; 4 bytes for alignment
+int C2EntryBarrierStub::max_size() const {
+  // 4 bytes for alignment
   return 8 * 4 + 4;
 }
 

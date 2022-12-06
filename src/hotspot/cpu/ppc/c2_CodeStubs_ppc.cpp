@@ -30,7 +30,7 @@
 
 #define __ masm.
 
-int C2SafepointPollStub::size() const {
+int C2SafepointPollStub::max_size() const {
   return 0;
 }
 
