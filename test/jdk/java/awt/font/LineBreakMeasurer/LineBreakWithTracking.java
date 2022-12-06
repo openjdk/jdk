@@ -22,13 +22,13 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 8165943
-  @summary LineBreakMeasurer does not measure correctly if TextAttribute.TRACKING is set
-  @compile LineBreakWithTracking.java
-  @run main/manual LineBreakWithTracking
-*/
+ * @test
+ * @bug 8165943
+ * @summary LineBreakMeasurer does not measure correctly if TextAttribute.TRACKING is set
+ * @library ../../regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual LineBreakWithTracking
+ */
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,6 +42,7 @@ import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
 import java.text.AttributedString;
 import java.util.Hashtable;
+import java.lang.reflect.InvocationTargetException;
 
 class LineBreakPanel extends JPanel implements ActionListener {
 
@@ -71,8 +72,8 @@ class LineBreakPanel extends JPanel implements ActionListener {
     Graphics2D g2d = (Graphics2D)g;
 
     if (lineMeasurer == null) {
-      Float regular = new Float(16.0);
-      Float big = new Float(24.0);
+      Float regular = Float.valueOf(16.0f);
+      Float big = Float.valueOf(24.0f);
 
       Hashtable map = new Hashtable();
       map.put(TextAttribute.SIZE, (float)18.0);
@@ -111,6 +112,18 @@ class LineBreakPanel extends JPanel implements ActionListener {
 
 public class LineBreakWithTracking {
 
+  private static final String INSTRUCTIONS = """
+     This manual test verifies that LineBreakMeasurer measures the lines' 
+     breaks correctly taking into account the TextAttribute.TRACKING value.
+     The test string includes Latin, Arabic, CJK and Hebrew. 
+            
+     You should choose a tracking value from the menu and resize the window.
+     If the text lines break exactly to the wrapping width:
+     no room for one more word exists and 
+     the text lines are not too long for given wrapping width, -
+     then press PASS, otherwise - FAIL.
+     """;
+
   public void createGUI(JFrame frame) {
 
     LineBreakPanel panel = new LineBreakPanel();
@@ -132,39 +145,21 @@ public class LineBreakWithTracking {
     }
     menuBar.add(menu);
 
-    JButton btn = new JButton("Pass");
-    btn.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
-        System.exit(0);
-      }
-    });
-    menuBar.add(btn);
-
-    btn = new JButton("Fail");
-    btn.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e){
-        System.exit(1);
-      }
-    });
-    menuBar.add(btn);
-
     frame.setJMenuBar(menuBar);
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException, InvocationTargetException {
 
     JFrame frame = new JFrame("LineBreakMeasurer with Tracking");
+    frame.setSize(new Dimension(640, 480));
 
     LineBreakWithTracking controller = new LineBreakWithTracking();
     controller.createGUI(frame);
 
-    frame.addWindowListener(new WindowAdapter() {
-      public void windowClosing(WindowEvent e) {
-        System.exit(1);
-      }
-    });
-
-    frame.setSize(new Dimension(640, 480));
+    PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
+    PassFailJFrame.addTestWindow(frame);
+    PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
     frame.setVisible(true);
+    passFailJFrame.awaitAndCheck();
   }
 }
