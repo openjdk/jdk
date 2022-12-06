@@ -1629,7 +1629,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 if (!inPlaceArray) {
                     if (dst.hasArray()) {
                         int ofs = dst.arrayOffset() + dst.position();
-                        Arrays.fill(dst.array(), ofs, ofs + len, (byte) 0);
+                        Arrays.fill(dst.array(), ofs, ofs + len,
+                            (byte) 0);
                     } else {
                         NIO_ACCESS.acquireSession(dst);
                         try {
