@@ -139,6 +139,7 @@ public class TestFramework {
                     "UseAVX",
                     "UseSSE",
                     "UseSVE",
+                    "UseZbb",
                     "Xlog",
                     "LogCompilation"
             )
