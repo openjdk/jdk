@@ -649,21 +649,25 @@ void Parse::do_call() {
   assert(jvms == this->jvms(), "still operating on the right JVMS");
   assert(jvms_in_sync(),       "jvms must carry full info into CG");
 
-  if (DoPartialEscapeAnalysis && !cg->is_inline() && !cg->is_late_inline()) {
-    PEAState& state = block()->state();
-    // TODO: Should we query BCEA to make an enger inlining decision here?
-    // Because callee require a concrete object pointer as an argument,
-    // we have nothing to do but matertialize it.
-    //
-    // BCEscapeAnalyzer* bcea = cg->method()->get_bcea();
-    Node* ctrl = control();
+  PEAState* caller_state = nullptr;
+  if (DoPartialEscapeAnalysis) {
+    if (cg->is_inline()) {
+      static_cast<InlineCallGenerator* >(cg)->set_caller_state(&block()->state());
+    } else { // TODO: what about late inline?
+      PEAState& state = block()->state();
+      // TODO: Should we query BCEA to make an enger inlining decision here?
+      // Because callee require a concrete object pointer as an argument,
+      // we have nothing to do but matertialize it.
+      //
+      // BCEscapeAnalyzer* bcea = cg->method()->get_bcea();
+      Node* ctrl = control();
 
-    uint nargs = cg->method()->arg_size();
-    for (uint i=0; i < nargs; ++i) {
-      Node* arg = argument(i);
-      AllocateNode* alloc = state.is_alias(arg);
+      uint nargs = cg->method()->arg_size();
+      for (uint i=0; i < nargs; ++i) {
+        Node* arg = argument(i);
+        AllocateNode* alloc = state.is_alias(arg);
 
-      if (alloc != nullptr && state.get_object_state(alloc)->is_virtual()) {
+       if (alloc != nullptr && state.get_object_state(alloc)->is_virtual()) {
           EscapedState* es = state.materialize(this, alloc);
           Node* objx = es->get_materialized_value();
           set_argument(i, objx);
@@ -673,6 +677,7 @@ void Parse::do_call() {
           allocx->extract_projections(&projs, false, false);
           ctrl = projs.fallthrough_catchproj;
           // serialize objects using ctrl
+        }
       }
     }
   }

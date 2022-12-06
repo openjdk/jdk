@@ -337,6 +337,7 @@ class Parse : public GraphKit {
   // Variables which characterize this compilation as a whole:
 
   JVMState*     _caller;        // JVMS which carries incoming args & state.
+  PEAState*     _caller_state;  // current PEA state of caller
   float         _expected_uses; // expected number of calls to this code
   float         _prof_factor;   // discount applied to my profile counts
   int           _depth;         // Inline tree depth, for debug printouts
@@ -372,7 +373,7 @@ class Parse : public GraphKit {
 
  public:
   // Constructor
-  Parse(JVMState* caller, ciMethod* parse_method, float expected_uses);
+  Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAState* caller_state = nullptr);
 
 #ifndef PRODUCT
   ~Parse() {

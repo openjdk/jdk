@@ -388,11 +388,12 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
 //------------------------------Parse------------------------------------------
 // Main parser constructor.
-Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
+Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAState* caller_state)
   : _exits(caller)
 {
   // Init some variables
   _caller = caller;
+  _caller_state = caller_state;
   _method = parse_method;
   _expected_uses = expected_uses;
   _depth = 1 + (caller->has_method() ? caller->depth() : 0);
@@ -612,7 +613,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   assert(entry_block->start() == (is_osr_parse() ? osr_bci() : 0), "");
   set_map_clone(entry_map);
   merge_common(entry_block, entry_block->next_path_num());
-
+  if (_caller_state) {
+    entry_block->state() = *_caller_state;
+  }
 #ifndef PRODUCT
   BytecodeParseHistogram *parse_histogram_obj = new (C->env()->arena()) BytecodeParseHistogram(this, C);
   set_parse_histogram( parse_histogram_obj );

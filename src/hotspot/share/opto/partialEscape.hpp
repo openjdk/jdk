@@ -43,11 +43,13 @@ class ObjectState {
 class VirtualState: public ObjectState {
   int _lockCount;
   Node** _entries;
+  DEBUG_ONLY(uint _nfields);
 
  public:
   VirtualState(uint nfields);
   bool is_virtual() const override { return true; }
   Node* get_materialized_value() override { return nullptr; }
+  void update_field(int idx, Node* val);
 };
 
 class EscapedState: public ObjectState {

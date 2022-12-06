@@ -226,16 +226,32 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   }
 
   // if val is a valid object and the current path isn't dead
-  if (DoPartialEscapeAnalysis && is_obj && !val->is_top() && !stopped()) {
-    // val is escaped if obj is escaped or is not trackable.
+  if (DoPartialEscapeAnalysis && !stopped()) {
     PEAState& state = block()->state();
-    AllocateNode* src_alloc = state.is_alias(val);
+    AllocateNode* src_alloc;
     AllocateNode* dst_alloc;
-    if (src_alloc != nullptr && state.get_object_state(src_alloc)->is_virtual()
-        // put_static_field or unknown dst or dst has materialized.
-        && (!is_field || !(dst_alloc=state.is_alias(obj)) || !state.get_object_state(dst_alloc)->is_virtual())) {
+
+    // val is escaped if obj is escaped or is not trackable.
+    if (is_obj && !val->is_top()) {
+      src_alloc = state.is_alias(val);
+      if (src_alloc != nullptr && state.get_object_state(src_alloc)->is_virtual()
+          // put_static_field or unknown dst or dst has materialized.
+          && (!is_field || !(dst_alloc=state.is_alias(obj)) || !state.get_object_state(dst_alloc)->is_virtual())) {
         EscapedState* escaped = state.materialize(this, src_alloc);
         val = escaped->get_materialized_value();
+      }
+    }
+
+    if (is_field && (dst_alloc = state.is_alias(obj)) && state.get_object_state(dst_alloc)->is_virtual()) {
+      ciInstanceKlass* holder = field->holder();
+      auto virt = static_cast<VirtualState*>(state.get_object_state(dst_alloc));
+
+      for (int i=0; i < holder->nof_nonstatic_fields(); ++i) {
+        if (field->offset() == holder->nonstatic_field_at(i)->offset()) {
+          virt->update_field(i, val);
+          break;
+        }
+      }
     }
   }
 

@@ -318,6 +318,17 @@ void Parse::dump_map_adr_mem() const {
 VirtualState::VirtualState(uint nfields): _lockCount(0) {
   Compile* C = Compile::current();
   _entries = NEW_ARENA_ARRAY(C->parser_arena(), Node*, nfields);
+  // only track explicit stores.
+  // see IntializeNode semantics in memnode.cpp
+  for (uint i = 0; i < nfields; ++i) {
+    _entries[i] = nullptr;
+  }
+  DEBUG_ONLY(_nfields = nfields);
+}
+
+void VirtualState::update_field(int idx, Node* val) {
+  assert(idx >= 0 && (uint)idx < _nfields, "sanity check");
+  _entries[idx] = val;
 }
 
 void PEAState::add_new_allocation(Node* obj) {

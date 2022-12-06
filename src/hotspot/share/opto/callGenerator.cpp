@@ -96,7 +96,7 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
     return NULL;  // bailing out of the compile; do not try to parse
   }
 
-  Parse parser(jvms, method(), _expected_uses);
+  Parse parser(jvms, method(), _expected_uses, _caller_state);
   // Grab signature for matching/allocation
   GraphKit& exits = parser.exits();
 

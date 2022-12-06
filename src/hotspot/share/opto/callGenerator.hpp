@@ -28,6 +28,7 @@
 #include "compiler/compileBroker.hpp"
 #include "opto/callnode.hpp"
 #include "opto/compile.hpp"
+#include "opto/partialEscape.hpp"
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
@@ -193,10 +194,14 @@ class CallGenerator : public ResourceObj {
 //------------------------InlineCallGenerator----------------------------------
 class InlineCallGenerator : public CallGenerator {
  protected:
-  InlineCallGenerator(ciMethod* method) : CallGenerator(method) {}
+  PEAState* _caller_state;
+  InlineCallGenerator(ciMethod* method) : CallGenerator(method), _caller_state(nullptr) {}
 
  public:
   virtual bool      is_inline() const           { return true; }
+  void set_caller_state(PEAState* state) {
+    _caller_state = state;
+  }
 };
 
 #endif // SHARE_OPTO_CALLGENERATOR_HPP
