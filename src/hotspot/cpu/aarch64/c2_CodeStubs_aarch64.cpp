@@ -30,6 +30,10 @@
 
 #define __ masm.
 
+int C2SafepointPollStub::size() const {
+  return 20;
+}
+
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
@@ -42,6 +46,10 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ adr(rscratch1, safepoint_pc);
   __ str(rscratch1, Address(rthread, JavaThread::saved_exception_pc_offset()));
   __ far_jump(callback_addr);
+}
+
+int C2EntryBarrierStub::size() const {
+  return 24;
 }
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
