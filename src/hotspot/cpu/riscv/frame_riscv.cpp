@@ -38,6 +38,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -249,8 +250,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  // Will the pc we fetch be non-zero (which we'll find at the oldest frame)
-  if ((address)this->fp()[return_addr_offset] == nullptr) { return false; }
+  // Will the pc we fetch be non-zero (which we'll find at the oldest frame) and readable?
+
+  if (SafeFetchN(this->fp() + return_addr_offset, 0) == 0) return false;
 
   return true;
 }

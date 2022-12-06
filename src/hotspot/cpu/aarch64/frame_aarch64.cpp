@@ -37,6 +37,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -262,10 +263,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  // Will the pc we fetch be non-zero (which we'll find at the oldest frame)
+  // Will the pc we fetch be non-zero (which we'll find at the oldest frame) and readable
 
-  if ( (address) this->fp()[return_addr_offset] == NULL) return false;
-
+  if (SafeFetchN(this->fp() + return_addr_offset, 0) == 0) return false;
 
   // could try and do some more potential verification of native frame if we could think of some...
 
