@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import jdk.jfr.Event;
@@ -42,7 +43,6 @@ public final class RequestEngine {
 
     private static final JVM jvm = JVM.getJVM();
     private static final ReentrantLock lock = new ReentrantLock();
-
     static final class RequestHook {
         private final Runnable hook;
         private final PlatformEventType type;
@@ -62,13 +62,13 @@ public final class RequestEngine {
             this(null, eventType, null);
         }
 
-        private void execute() {
+        private void execute(long timestamp) {
             try {
                 if (accessControllerContext == null) { // native
                     if (type.isJDK()) {
                         hook.run();
                     } else {
-                        emitJVMEvent(type);
+                        emitJVMEvent(type, timestamp);
                     }
                     if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
                         Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Executed periodic hook for " + type.getLogName());
@@ -82,13 +82,13 @@ public final class RequestEngine {
             }
         }
 
-        private void emitJVMEvent(PlatformEventType type) {
+        private void emitJVMEvent(PlatformEventType type, long timestamp) {
             try {
                 // There should only be one thread in native at a time.
                 // ReentrantLock is used to avoid JavaMonitorBlocked event
                 // from synchronized block.
                 lock.lock();
-                jvm.emitEvent(type.getId(), JVM.counterTime(), 0);
+                jvm.emitEvent(type.getId(), timestamp, 0);
             } finally {
                 lock.unlock();
             }
@@ -191,20 +191,21 @@ public final class RequestEngine {
     }
 
     private static void doChunk(Predicate<PlatformEventType> predicate) {
+        long timestamp = JVM.counterTime();
         for (RequestHook requestHook : entries) {
             PlatformEventType s = requestHook.type;
             if (s.isEnabled() && predicate.test(s)) {
-                requestHook.execute();
+                requestHook.execute(timestamp);
             }
         }
     }
 
     static long doPeriodic() {
-        return run_requests(entries);
+        return run_requests(entries, JVM.counterTime());
     }
 
     // code copied from native impl.
-    private static long run_requests(Collection<RequestHook> entries) {
+    private static long run_requests(Collection<RequestHook> entries, long timestamp) {
         long last = lastTimeMillis;
         // Bug 9000556 - current time millis has rather lame resolution
         // The use of os::elapsed_counter() is deliberate here, we don't
@@ -249,7 +250,7 @@ public final class RequestEngine {
                 // Bug 9000556 - don't try to compensate
                 // for wait > period
                 r_delta = 0;
-                he.execute();
+                he.execute(timestamp);
             }
 
             // calculate time left

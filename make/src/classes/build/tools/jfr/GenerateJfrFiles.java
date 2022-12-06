@@ -575,7 +575,8 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("class JfrPeriodicEventSet : public AllStatic {");
             out.write(" public:");
-            out.write("  static void requestEvent(JfrEventId id) {");
+            out.write("  static void requestEvent(JfrEventId id, jlong timestamp) {");
+            out.write("    _timestamp = Ticks(timestamp);");
             out.write("    switch(id) {");
             out.write("  ");
             for (TypeElement e : metadata.getPeriodicEvents()) {
@@ -595,6 +596,8 @@ public class GenerateJfrFiles {
                 out.write("  static void request" + e.name + "(void);");
                 out.write("");
             }
+            out.write(" static Ticks timestamp(void);");
+            out.write(" static Ticks _timestamp;");
             out.write("};");
             out.write("");
             out.write("#endif // INCLUDE_JFR");

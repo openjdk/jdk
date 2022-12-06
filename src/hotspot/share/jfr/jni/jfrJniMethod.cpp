@@ -238,8 +238,8 @@ JVM_ENTRY_NO_ENV(void, jfr_mark_chunk_final(JNIEnv * env, jobject jvm))
   JfrRepository::mark_chunk_final();
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, jfr_emit_event(JNIEnv* env, jobject jvm, jlong eventTypeId, jlong timeStamp, jlong when))
-  JfrPeriodicEventSet::requestEvent((JfrEventId)eventTypeId);
+JVM_ENTRY_NO_ENV(jboolean, jfr_emit_event(JNIEnv* env, jobject jvm, jlong event_type_id, jlong timestamp, jlong when))
+  JfrPeriodicEventSet::requestEvent((JfrEventId)event_type_id, timestamp);
   return thread->has_pending_exception() ? JNI_FALSE : JNI_TRUE;
 JVM_END
 
