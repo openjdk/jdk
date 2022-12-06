@@ -104,11 +104,4 @@ inline CodeBlob* frame::get_cb() const {
   return _cb;
 }
 
-inline int frame::num_oops() const {
-  assert(!is_interpreted_frame(), "interpreted");
-  assert(oop_map() != NULL, "");
-  return oop_map()->num_oops() ;
-}
-
-
 #endif // SHARE_RUNTIME_FRAME_INLINE_HPP

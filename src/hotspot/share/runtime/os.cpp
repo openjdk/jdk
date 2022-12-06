@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -33,8 +32,8 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "logging/log.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -175,7 +174,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
 
   // Compute the time zone offset.
   //    localtime_pd() sets timezone to the difference (in seconds)
-  //    between UTC and and local time.
+  //    between UTC and local time.
   //    ISO 8601 says we need the difference between local time and UTC,
   //    we change the sign of the localtime_pd() result.
   const time_t local_to_UTC = -(UTC_to_local);

@@ -25,11 +25,11 @@
  * @test
  * @bug 8262891
  * @summary Check errors reported for guarded patterns.
- * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
+ * @enablePreview
+ * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics GuardsErrors.java
  */
 
 //TODO: tests and error recovery for misplaced guards
-
 public class GuardsErrors {
 
     void typeTestPatternSwitchTest(Object o, int check) {

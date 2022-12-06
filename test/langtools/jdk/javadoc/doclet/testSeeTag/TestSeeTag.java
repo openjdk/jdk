@@ -58,7 +58,7 @@ public class TestSeeTag extends JavadocTester {
                 <dl class="notes">
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list-long">
+                <ul class="tag-list-long">
                 <li><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a></li>
                 <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
                 <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
@@ -78,7 +78,7 @@ public class TestSeeTag extends JavadocTester {
                 <dl class="notes">
                 <dt>See Also:</dt>
                 <dd>
-                <ul class="see-list-long">
+                <ul class="tag-list-long">
                 <li><code>Serializable</code></li>
                 <li><a href="Test.html" title="class in pkg"><code>See tag with very long label text</code></a></li>
                 </ul>
@@ -102,7 +102,7 @@ public class TestSeeTag extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><code>Object</code></li>
                     <li>
                     <details class="invalid-tag">
@@ -142,7 +142,7 @@ public class TestSeeTag extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><span class="invalid-tag">invalid input: '&lt;'</span></li>
                     </ul>
                     </dd>
@@ -212,7 +212,7 @@ public class TestSeeTag extends JavadocTester {
         checkOrder("p/C.html",
                 "<section class=\"detail\" id=\"noComma()\">",
                 """
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#noArgs()"><code>no args</code></a></li>
                     <li><a href="#oneArg(int)"><code>one arg</code></a></li>
                     <li><a href="#twoArgs(int,int)"><code>two args</code></a></li>
@@ -220,7 +220,7 @@ public class TestSeeTag extends JavadocTester {
 
                 "<section class=\"detail\" id=\"commaInDescription()\">",
                 """
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><a href="#noArgs()"><code>no args</code></a></li>
                     <li><a href="#oneArg(int)"><code>one arg</code></a></li>
                     <li><a href="#twoArgs(int,int)"><code>two args with a comma , in the description</code></a></li>
@@ -228,7 +228,7 @@ public class TestSeeTag extends JavadocTester {
 
                 "<section class=\"detail\" id=\"commaInDefaultDescription()\">",
                 """
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><a href="#noArgs()"><code>noArgs()</code></a></li>
                     <li><a href="#oneArg(int)"><code>oneArg(int)</code></a></li>
                     <li><a href="#twoArgs(int,int)"><code>twoArgs(int, int)</code></a></li>

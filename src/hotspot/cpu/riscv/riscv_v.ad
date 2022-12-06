@@ -74,7 +74,6 @@ source %{
       case Op_VectorCastL2X:
       case Op_VectorCastS2X:
       case Op_VectorInsert:
-      case Op_VectorLoadConst:
       case Op_VectorLoadMask:
       case Op_VectorLoadShuffle:
       case Op_VectorMaskCmp:
@@ -359,8 +358,8 @@ instruct vdivD(vReg dst, vReg src1, vReg src2) %{
 // vector integer max/min
 
 instruct vmax(vReg dst, vReg src1, vReg src2) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() != T_FLOAT &&
-            n->bottom_type()->is_vect()->element_basic_type() != T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n) != T_FLOAT &&
+            Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (MaxV src1 src2));
   ins_cost(VEC_COST);
   format %{ "vmax.vv $dst, $src1, $src2\t#@vmax" %}
@@ -375,8 +374,8 @@ instruct vmax(vReg dst, vReg src1, vReg src2) %{
 %}
 
 instruct vmin(vReg dst, vReg src1, vReg src2) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() != T_FLOAT &&
-            n->bottom_type()->is_vect()->element_basic_type() != T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n) != T_FLOAT &&
+            Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (MinV src1 src2));
   ins_cost(VEC_COST);
   format %{ "vmin.vv $dst, $src1, $src2\t#@vmin" %}
@@ -393,7 +392,7 @@ instruct vmin(vReg dst, vReg src1, vReg src2) %{
 // vector float-point max/min
 
 instruct vmaxF(vReg dst, vReg src1, vReg src2) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (MaxV src1 src2));
   effect(TEMP_DEF dst);
   ins_cost(VEC_COST);
@@ -407,7 +406,7 @@ instruct vmaxF(vReg dst, vReg src1, vReg src2) %{
 %}
 
 instruct vmaxD(vReg dst, vReg src1, vReg src2) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (MaxV src1 src2));
   effect(TEMP_DEF dst);
   ins_cost(VEC_COST);
@@ -421,7 +420,7 @@ instruct vmaxD(vReg dst, vReg src1, vReg src2) %{
 %}
 
 instruct vminF(vReg dst, vReg src1, vReg src2) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (MinV src1 src2));
   effect(TEMP_DEF dst);
   ins_cost(VEC_COST);
@@ -435,7 +434,7 @@ instruct vminF(vReg dst, vReg src1, vReg src2) %{
 %}
 
 instruct vminD(vReg dst, vReg src1, vReg src2) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (MinV src1 src2));
   effect(TEMP_DEF dst);
   ins_cost(VEC_COST);
@@ -1053,7 +1052,7 @@ instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
 // vector float max reduction
 
 instruct vreduce_maxF(fRegF dst, fRegF src1, vReg src2, vReg tmp1, vReg tmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT);
   match(Set dst (MaxReductionV src1 src2));
   ins_cost(VEC_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
@@ -1068,7 +1067,7 @@ instruct vreduce_maxF(fRegF dst, fRegF src1, vReg src2, vReg tmp1, vReg tmp2) %{
 %}
 
 instruct vreduce_maxD(fRegD dst, fRegD src1, vReg src2, vReg tmp1, vReg tmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE);
   match(Set dst (MaxReductionV src1 src2));
   ins_cost(VEC_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
@@ -1085,7 +1084,7 @@ instruct vreduce_maxD(fRegD dst, fRegD src1, vReg src2, vReg tmp1, vReg tmp2) %{
 // vector float min reduction
 
 instruct vreduce_minF(fRegF dst, fRegF src1, vReg src2, vReg tmp1, vReg tmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT);
   match(Set dst (MinReductionV src1 src2));
   ins_cost(VEC_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
@@ -1100,7 +1099,7 @@ instruct vreduce_minF(fRegF dst, fRegF src1, vReg src2, vReg tmp1, vReg tmp2) %{
 %}
 
 instruct vreduce_minD(fRegD dst, fRegD src1, vReg src2, vReg tmp1, vReg tmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE);
   match(Set dst (MinReductionV src1 src2));
   ins_cost(VEC_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
@@ -1117,7 +1116,7 @@ instruct vreduce_minD(fRegD dst, fRegD src1, vReg src2, vReg tmp1, vReg tmp2) %{
 // vector Math.rint, floor, ceil
 
 instruct vroundD(vReg dst, vReg src, immI rmode) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (RoundDoubleModeV src rmode));
   format %{ "vroundD $dst, $src, $rmode" %}
   ins_encode %{
@@ -1672,7 +1671,7 @@ instruct vlslL_imm(vReg dst, vReg src, immI shift) %{
 %}
 
 instruct vshiftcntB(vReg dst, iRegIorL2I cnt) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "vmv.v.x $dst, $cnt\t#@vshiftcntB" %}
@@ -1684,8 +1683,8 @@ instruct vshiftcntB(vReg dst, iRegIorL2I cnt) %{
 %}
 
 instruct vshiftcntS(vReg dst, iRegIorL2I cnt) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
-            n->bottom_type()->is_vect()->element_basic_type() == T_CHAR);
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT ||
+            Matcher::vector_element_basic_type(n) == T_CHAR);
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "vmv.v.x $dst, $cnt\t#@vshiftcntS" %}
@@ -1697,7 +1696,7 @@ instruct vshiftcntS(vReg dst, iRegIorL2I cnt) %{
 %}
 
 instruct vshiftcntI(vReg dst, iRegIorL2I cnt) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  predicate(Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "vmv.v.x $dst, $cnt\t#@vshiftcntI" %}
@@ -1709,7 +1708,7 @@ instruct vshiftcntI(vReg dst, iRegIorL2I cnt) %{
 %}
 
 instruct vshiftcntL(vReg dst, iRegIorL2I cnt) %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "vmv.v.x $dst, $cnt\t#@vshiftcntL" %}
@@ -2076,4 +2075,21 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
   %}
 
   ins_pipe(pipe_class_memory);
+%}
+
+// Vector Load Const
+instruct vloadcon(vReg dst, immI0 src) %{
+  match(Set dst (VectorLoadConst src));
+  ins_cost(VEC_COST);
+  format %{ "vloadcon $dst\t# generate iota indices" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli(t0, x0, sew);
+    __ vid_v(as_VectorRegister($dst$$reg));
+    if (is_floating_point_type(bt)) {
+      __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+    }
+  %}
+  ins_pipe(pipe_slow);
 %}

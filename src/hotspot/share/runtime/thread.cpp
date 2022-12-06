@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -366,14 +366,6 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
 
   // The target JavaThread is not protected by a TLH so it is not safe to query:
   return false;
-}
-
-ThreadPriority Thread::get_priority(const Thread* const thread) {
-  ThreadPriority priority;
-  // Can return an error!
-  (void)os::get_priority(thread, priority);
-  assert(MinPriority <= priority && priority <= MaxPriority, "non-Java priority found");
-  return priority;
 }
 
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {

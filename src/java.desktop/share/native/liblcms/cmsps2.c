@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -504,7 +504,7 @@ void Emit1Gamma(cmsIOHANDLER* m, cmsToneCurve* Table, const char* name)
     _cmsIOPrintf(m, "/lcms2gammatable [");
 
     for (i=0; i < Table->nEntries; i++) {
-        if (i % 10 == 0)
+    if (i % 10 == 0)
             _cmsIOPrintf(m, "\n  ");
         _cmsIOPrintf(m, "%d ", Table->Table16[i]);
     }
@@ -583,7 +583,7 @@ void EmitNGamma(cmsIOHANDLER* m, cmsUInt32Number n, cmsToneCurve* g[], const cha
         }
         else {
             snprintf(buffer, sizeof(buffer), "%s%d", nameprefix, (int) i);
-            buffer[sizeof(buffer)-1] = '\0';
+        buffer[sizeof(buffer)-1] = '\0';
             Emit1Gamma(m, g[i], buffer);
         }
     }

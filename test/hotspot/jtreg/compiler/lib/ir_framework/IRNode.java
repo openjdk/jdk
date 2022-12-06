@@ -593,6 +593,11 @@ public class IRNode {
         afterBarrierExpansionToBeforeMatching(MACRO_LOGIC_V, "MacroLogicV");
     }
 
+    public static final String MAX = PREFIX + "MAX" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX, "Max(I|L)");
+    }
+
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_I, "MaxI");
@@ -611,6 +616,11 @@ public class IRNode {
     public static final String MEMBAR_STORESTORE = PREFIX + "MEMBAR_STORESTORE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_STORESTORE, "MemBarStoreStore");
+    }
+
+    public static final String MIN = PREFIX + "MIN" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN, "Min(I|L)");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
@@ -704,6 +714,16 @@ public class IRNode {
         superWordNodes(POPCOUNT_VL, "PopCountVL");
     }
 
+    public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
+    }
+
+    public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
+    }
+
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
     static {
         String regex = START + "PopulateIndex" + MID + END;
@@ -750,6 +770,16 @@ public class IRNode {
     public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
     static {
         beforeMatchingNameRegex(ROUND_VF, "RoundVF");
+    }
+
+    public static final String ROTATE_LEFT = PREFIX + "ROTATE_LEFT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROTATE_LEFT, "RotateLeft");
+    }
+
+    public static final String ROTATE_RIGHT = PREFIX + "ROTATE_RIGHT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROTATE_RIGHT, "RotateRight");
     }
 
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
