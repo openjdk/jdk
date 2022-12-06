@@ -48,12 +48,16 @@ import jdk.test.whitebox.WhiteBox;
  * @test
  * @summary Verifies that the stack walking of AsyncGetStackTrace is save in a high-frequency signal sampler with randomly modifed stack and frame pointers
  * It is an adaptation of ASGSTStabilityTest.java to additionally fuzz the stack and frame pointers.
+ *
+ * It is known to fail at frame::verify_deopt_original_pc in debug builds, but this should be ignored.
+ *
  * @library /test/jdk/lib/testlibrary /test/lib
  * @compile ASGSTFuzzingTest.java
  * @key stress
  * @requires os.family == "linux"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest akka-uct 1
  */
 
