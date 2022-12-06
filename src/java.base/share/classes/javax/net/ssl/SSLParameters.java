@@ -908,7 +908,7 @@ public class SSLParameters {
      *        ignore unknown named group scheme names while establishing the
      *        SSL/TLS/DTLS connections.
      * @throws IllegalArgumentException if any element in the
-     *        {@code namedGroups} array is {@code null} or
+     *        {@code namedGroups} array is a duplicate, {@code null} or
      *        {@linkplain String#isBlank() blank}.
      *
      * @see #getNamedGroups
@@ -920,11 +920,18 @@ public class SSLParameters {
 
         if (namedGroups != null) {
             tempGroups = namedGroups.clone();
+            Set<String> groupsSet = new HashSet<>();
             for (String namedGroup : tempGroups) {
                 if (namedGroup == null || namedGroup.isBlank()) {
                     throw new IllegalArgumentException(
                         "An element of namedGroups is null or blank");
                 }
+
+                if (groupsSet.contains(namedGroup)) {
+                    throw new IllegalArgumentException(
+                        "Duplicate element of namedGroups: " + namedGroup);
+                }
+                groupsSet.add(namedGroup);
             }
         }
 
