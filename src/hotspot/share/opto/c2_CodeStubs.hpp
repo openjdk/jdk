@@ -87,12 +87,10 @@ public:
 };
 
 class C2CheckLockStackStub : public C2CodeStub {
-private:
-  static volatile int _stub_size;
 public:
   C2CheckLockStackStub() : C2CodeStub() {}
 
-  int size() { return stub_size(&_stub_size); }
+  int size() const;
   void emit(C2_MacroAssembler& masm);
 };
 
