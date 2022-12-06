@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import jdk.jfr.Event;
@@ -43,6 +42,7 @@ public final class RequestEngine {
 
     private static final JVM jvm = JVM.getJVM();
     private static final ReentrantLock lock = new ReentrantLock();
+
     static final class RequestHook {
         private final Runnable hook;
         private final PlatformEventType type;
