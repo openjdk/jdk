@@ -229,6 +229,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 // Update ctrl and control inputs of all data nodes starting from 'node' to 'new_ctrl' which have 'old_ctrl' as
 // current ctrl.
 void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl) {
+  ResourceMark rm;
   Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(node, old_ctrl);
   for (uint j = 0; j < nodes_with_same_ctrl.size(); j++) {
     Node* next = nodes_with_same_ctrl[j];
@@ -258,6 +259,7 @@ Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const Pro
 // Clone all nodes with the same ctrl as 'old_ctrl' starting from 'node' by following its inputs. Rewire the cloned nodes
 // to 'new_ctrl'. Returns the clone of 'node'.
 Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl) {
+  ResourceMark rm;
   DEBUG_ONLY(uint last_idx = C->unique();)
   Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(node, old_ctrl);
   Dict old_new_mapping = clone_nodes(nodes_with_same_ctrl); // Cloned but not rewired, yet
