@@ -30,29 +30,30 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-Ticks MemJFRSnapshot::_snapshot_timestamp;
-MemSnapshot* MemJFRSnapshot::_snapshot = nullptr;
+Ticks MemJFRCurrentUsage::_timestamp;
+NMTUsage* MemJFRCurrentUsage::_usage = nullptr;
 
-MemSnapshot* MemJFRSnapshot::get_snapshot() {
-  Tickspan since_baselined = Ticks::now() - _snapshot_timestamp;
 
-  if (_snapshot == nullptr) {
-    // No previous snapshot taken, create one.
-    _snapshot = new MemSnapshot(MemSnapshot::OptionsNoTS);
-  } else if (since_baselined.milliseconds() < BaselineAgeThreshold) {
-    // There is a recent enough snapshot, return it.
-    return _snapshot;
+NMTUsage* MemJFRCurrentUsage::get_usage() {
+  Tickspan since_baselined = Ticks::now() - _timestamp;
+
+  if (_usage == nullptr) {
+    // First time, create a new NMTUsage.
+    _usage = new NMTUsage(NMTUsage::OptionsNoTS);
+  } else if (since_baselined.milliseconds() < AgeThreshold) {
+    // There is recent enough usage information, return it.
+    return _usage;
   }
 
-  // Refresh existing snapshot.
-  _snapshot->snap();
-  _snapshot_timestamp.stamp();
+  // Refresh the usage information.
+  _usage->refresh();
+  _timestamp.stamp();
 
-  return _snapshot;
+  return _usage;
 }
 
-Ticks MemJFRSnapshot::get_timestamp() {
-  return _snapshot_timestamp;
+Ticks MemJFRCurrentUsage::get_timestamp() {
+  return _timestamp;
 }
 
 void MemJFRReporter::send_total_event() {
@@ -60,8 +61,8 @@ void MemJFRReporter::send_total_event() {
     return;
   }
 
-  MemSnapshot* usage = MemJFRSnapshot::get_snapshot();
-  Ticks timestamp = MemJFRSnapshot::get_timestamp();
+  NMTUsage* usage = MemJFRCurrentUsage::get_usage();
+  Ticks timestamp = MemJFRCurrentUsage::get_timestamp();
 
   EventNativeMemoryUsageTotal event;
   event.set_starttime(timestamp);
@@ -84,8 +85,8 @@ void MemJFRReporter::send_type_events() {
     return;
   }
 
-  MemSnapshot* usage = MemJFRSnapshot::get_snapshot();
-  Ticks timestamp = MemJFRSnapshot::get_timestamp();
+  NMTUsage* usage = MemJFRCurrentUsage::get_usage();
+  Ticks timestamp = MemJFRCurrentUsage::get_timestamp();
 
   for (int index = 0; index < mt_number_of_types; index ++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);

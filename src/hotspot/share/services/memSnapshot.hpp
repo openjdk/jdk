@@ -22,42 +22,42 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMSNAPSHOT_HPP
-#define SHARE_SERVICES_MEMSNAPSHOT_HPP
+#ifndef SHARE_SERVICES_NMTUSAGE_HPP
+#define SHARE_SERVICES_NMTUSAGE_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-struct MemSnapshotPair {
+struct NMTUsagePair {
   size_t reserved;
   size_t committed;
 };
 
-struct MemSnapshotOptions {
+struct NMTUsageOptions {
   bool update_thread_stacks;
   bool include_malloc;
   bool include_vm;
 };
 
-class MemSnapshot : public CHeapObj<mtNMT> {
+class NMTUsage : public CHeapObj<mtNMT> {
 private:
-  size_t _malloc_snapshot[mt_number_of_types];
+  size_t _malloc_by_type[mt_number_of_types];
   size_t _malloc_total;
-  MemSnapshotPair _vm_snapshot[mt_number_of_types];
-  MemSnapshotPair _vm_total;
+  NMTUsagePair _vm_by_type[mt_number_of_types];
+  NMTUsagePair _vm_total;
 
-  MemSnapshotOptions _snapshot_options;
+  NMTUsageOptions _usage_options;
 
   void walk_thread_stacks();
-  void update_malloc_snapshot();
-  void update_vm_snapshot();
+  void update_malloc_usage();
+  void update_vm_usage();
 
 public:
-  static const MemSnapshotOptions OptionsAll;
-  static const MemSnapshotOptions OptionsNoTS;
+  static const NMTUsageOptions OptionsAll;
+  static const NMTUsageOptions OptionsNoTS;
 
-  MemSnapshot(MemSnapshotOptions options = OptionsAll);
-  void snap();
+  NMTUsage(NMTUsageOptions options = OptionsAll);
+  void refresh();
 
   size_t total_reserved() const;
   size_t total_committed() const;
@@ -65,4 +65,4 @@ public:
   size_t committed(MEMFLAGS flag) const;
 };
 
-#endif // SHARE_SERVICES_MEMSNAPSHOT_HPP
+#endif // SHARE_SERVICES_NMTUSAGE_HPP

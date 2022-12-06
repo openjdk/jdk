@@ -31,18 +31,18 @@
 #include "services/virtualMemoryTracker.hpp"
 
 // Enabled all options for snapshot.
-const MemSnapshotOptions MemSnapshot::OptionsAll = { true, true, true };
-// Skip expensive thread stacks for snapshot.
-const MemSnapshotOptions MemSnapshot::OptionsNoTS = { false, true, true };
+const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };
+// Skip expensive thread stacks when refreshing usage.
+const NMTUsageOptions NMTUsage::OptionsNoTS = { false, true, true };
 
-MemSnapshot::MemSnapshot(MemSnapshotOptions options) :
-    _malloc_snapshot(),
+NMTUsage::NMTUsage(NMTUsageOptions options) :
+    _malloc_by_type(),
     _malloc_total(),
-    _vm_snapshot(),
+    _vm_by_type(),
     _vm_total(),
-    _snapshot_options(options) { }
+    _usage_options(options) { }
 
-void MemSnapshot::walk_thread_stacks() {
+void NMTUsage::walk_thread_stacks() {
   // If backed by virtual memory, snapping the thread stacks involves walking
   // them to to figure out how much memory is committed if they are backed by
   // virtual memory. This needs ot happen before we take the snapshot of the
@@ -52,7 +52,7 @@ void MemSnapshot::walk_thread_stacks() {
   }
 }
 
-void MemSnapshot::update_malloc_snapshot() {
+void NMTUsage::update_malloc_usage() {
   // Thread critical needed keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
   ThreadCritical tc;
@@ -62,7 +62,7 @@ void MemSnapshot::update_malloc_snapshot() {
   for (int i = 0; i < mt_number_of_types; i++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(i);
     const MallocMemory* mm = ms->by_type(flag);
-    _malloc_snapshot[i] = mm->malloc_size() + mm->arena_size();
+    _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
 
@@ -70,14 +70,14 @@ void MemSnapshot::update_malloc_snapshot() {
   _malloc_total = ms->total();
 
   // Adjustment due to mtChunk double counting.
-  _malloc_snapshot[NMTUtil::flag_to_index(mtChunk)] -= total_arena_size;
+  _malloc_by_type[NMTUtil::flag_to_index(mtChunk)] -= total_arena_size;
   _malloc_total -= total_arena_size;
 
   // Adjust mtNMT to include malloc overhead.
-  _malloc_snapshot[NMTUtil::flag_to_index(mtNMT)] += ms->malloc_overhead();
+  _malloc_by_type[NMTUtil::flag_to_index(mtNMT)] += ms->malloc_overhead();
 }
 
-void MemSnapshot::update_vm_snapshot() {
+void NMTUsage::update_vm_usage() {
   const VirtualMemorySnapshot* vms = VirtualMemorySummary::as_snapshot();
 
   // Reset total to allow recalculation.
@@ -87,43 +87,43 @@ void MemSnapshot::update_vm_snapshot() {
     MEMFLAGS flag = NMTUtil::index_to_flag(i);
     const VirtualMemory* vm = vms->by_type(flag);
 
-    _vm_snapshot[i].reserved = vm->reserved();
-    _vm_snapshot[i].committed = vm->committed();
+    _vm_by_type[i].reserved = vm->reserved();
+    _vm_by_type[i].committed = vm->committed();
     _vm_total.reserved += vm->reserved();
     _vm_total.committed += vm->committed();
   }
 }
 
-void MemSnapshot::snap() {
-  if (_snapshot_options.include_malloc) {
-    update_malloc_snapshot();
+void NMTUsage::refresh() {
+  if (_usage_options.include_malloc) {
+    update_malloc_usage();
   }
 
-  if (_snapshot_options.include_vm) {
+  if (_usage_options.include_vm) {
     // Thread stacks only makes sense if virtual memory
     // is also included. It must be executed before the
     // over all usage is calculated.
-    if (_snapshot_options.update_thread_stacks) {
+    if (_usage_options.update_thread_stacks) {
       walk_thread_stacks();
     }
-    update_vm_snapshot();
+    update_vm_usage();
   }
 }
 
-size_t MemSnapshot::total_reserved() const {
+size_t NMTUsage::total_reserved() const {
   return _malloc_total + _vm_total.reserved;
 }
 
-size_t MemSnapshot::total_committed() const {
+size_t NMTUsage::total_committed() const {
   return _malloc_total + _vm_total.reserved;
 }
 
-size_t MemSnapshot::reserved(MEMFLAGS flag) const {
+size_t NMTUsage::reserved(MEMFLAGS flag) const {
   int index = NMTUtil::flag_to_index(flag);
-  return _malloc_snapshot[index] + _vm_snapshot[index].reserved;
+  return _malloc_by_type[index] + _vm_by_type[index].reserved;
 }
 
-size_t MemSnapshot::committed(MEMFLAGS flag) const {
+size_t NMTUsage::committed(MEMFLAGS flag) const {
   int index = NMTUtil::flag_to_index(flag);
-  return _malloc_snapshot[index] + _vm_snapshot[index].committed;
+  return _malloc_by_type[index] + _vm_by_type[index].committed;
 }

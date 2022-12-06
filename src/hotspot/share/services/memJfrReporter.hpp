@@ -30,7 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-// The MemJFRReporter and MemJFRBaseline classes are only to be used from the
+// The MemJFRReporter and MemJFRCurrentUsage classes are only to be used from the
 // thread sending periodic JFR events. So no synchronization is needed.
 class MemJFRReporter : public AllStatic {
 private:
@@ -40,19 +40,18 @@ private:
   static void send_type_events();
 };
 
-// Helper class to avoid taking multiple NMT baselines for
-// the two JFR events that are using the same data.
-class MemJFRSnapshot : public AllStatic {
+// Helper class to avoid refreshing the NMTUsage to often and allow
+// the two JFR events to use the same data.
+class MemJFRCurrentUsage : public AllStatic {
 private:
-  // The baseline age threshold in milliseconds. If older
-  // that this we will make a new baseline.
-  static const uint64_t BaselineAgeThreshold = 50;
+  // The age threshold in milliseconds. If older that this refresh the usage.
+  static const uint64_t AgeThreshold = 50;
 
-  static Ticks _snapshot_timestamp;
-  static MemSnapshot* _snapshot;
+  static Ticks _timestamp;
+  static NMTUsage* _usage;
 
 public:
-  static MemSnapshot* get_snapshot();
+  static NMTUsage* get_usage();
   static Ticks get_timestamp();
 };
 
