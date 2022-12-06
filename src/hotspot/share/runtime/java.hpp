@@ -126,15 +126,6 @@ class JDK_Version {
   // Performs a full ordering comparison using all fields (patch, build, etc.)
   int compare(const JDK_Version& other) const;
 
-  /**
-   * Performs comparison using only the major version, returning negative
-   * if the major version of 'this' is less than the parameter, 0 if it is
-   * equal, and a positive value if it is greater.
-   */
-  int compare_major(int version) const {
-      return major_version() - version;
-  }
-
   void to_string(char* buffer, size_t buflen) const;
 
   static const char* java_version() {

@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_constants.h"
-#include "jvm_io.h"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -475,9 +475,15 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
+  case vmIntrinsics::_chacha20Block:
+    if (!UseChaCha20Intrinsics) return true;
+    break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
     if (!UseBASE64Intrinsics) return true;
+    break;
+  case vmIntrinsics::_poly1305_processBlocks:
+    if (!UsePolyIntrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:

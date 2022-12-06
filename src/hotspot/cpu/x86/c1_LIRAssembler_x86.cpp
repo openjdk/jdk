@@ -3447,7 +3447,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ incrementl(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)));
+    __ incrementl(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)), rscratch1);
   }
 #endif
 
