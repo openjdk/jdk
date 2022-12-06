@@ -1522,12 +1522,6 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
-  // Reorganize offset computations to lower register pressure.
-  // Mostly prevent loop-fallout uses of the pre-incremented trip counter
-  // (which are then alive with the post-incremented trip counter
-  // forcing an extra register move)
-  void reorg_offsets( IdealLoopTree *loop );
-
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);

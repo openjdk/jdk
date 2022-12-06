@@ -27,8 +27,8 @@
 #define GTEST_METASPACE_METASPACEGTESTCOMMON_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
 /////////////////////////////////////////////////////////////////////

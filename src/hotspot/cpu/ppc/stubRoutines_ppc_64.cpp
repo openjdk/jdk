@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 

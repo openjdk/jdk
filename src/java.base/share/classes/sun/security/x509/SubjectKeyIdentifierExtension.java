@@ -57,7 +57,7 @@ public class SubjectKeyIdentifierExtension extends Extension {
     private KeyIdentifier id;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (id == null) {
             this.extensionValue = null;
             return;
@@ -72,8 +72,7 @@ public class SubjectKeyIdentifierExtension extends Extension {
      * The criticality is set to False.
      * @param octetString the octet string identifying the key identifier.
      */
-    public SubjectKeyIdentifierExtension(byte[] octetString)
-    throws IOException {
+    public SubjectKeyIdentifierExtension(byte[] octetString) {
         id = new KeyIdentifier(octetString);
 
         this.extensionId = PKIXExtensions.SubjectKey_Id;
@@ -110,10 +109,9 @@ public class SubjectKeyIdentifierExtension extends Extension {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.SubjectKey_Id;
             critical = false;

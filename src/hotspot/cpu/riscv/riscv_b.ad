@@ -525,3 +525,17 @@ instruct ornL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
 
   ins_pipe(ialu_reg_reg);
 %}
+
+// AndI 0b0..010..0 + ConvI2B
+instruct convI2Bool_andI_reg_immIpowerOf2(iRegINoSp dst, iRegIorL2I src, immIpowerOf2 mask) %{
+  predicate(UseZbs);
+  match(Set dst (Conv2B (AndI src mask)));
+  ins_cost(ALU_COST);
+
+  format %{ "bexti  $dst, $src, $mask\t#@convI2Bool_andI_reg_immIpowerOf2" %}
+  ins_encode %{
+    __ bexti($dst$$Register, $src$$Register, exact_log2((juint)($mask$$constant)));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}

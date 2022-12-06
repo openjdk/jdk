@@ -25,18 +25,18 @@
 
 #ifdef LINUX
 
-#include <sys/mman.h>
-
+#include "os_linux.hpp"
+#include "prims/jniCheck.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "concurrentTestRunner.inline.hpp"
-#include "os_linux.hpp"
-#include "unittest.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
-
+#include "concurrentTestRunner.inline.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
+
+#include <sys/mman.h>
+
 
 namespace {
   static void small_page_write(void* addr, size_t size) {
@@ -437,28 +437,14 @@ TEST(os_linux, addr_to_function_valid) {
   ASSERT_TRUE(offset >= 0);
 }
 
-#ifndef PRODUCT
-// Test valid address of method JNI_CreateJavaVM in jni.cpp. We should get "jni.cpp" in the buffer and a valid line number.
+#if !defined(__clang_major__) || (__clang_major__ >= 5) // DWARF does not support Clang versions older than 5.0.
+// Test valid address of method ReportJNIFatalError in jniCheck.hpp. We should get "jniCheck.hpp" in the buffer and a valid line number.
 TEST_VM(os_linux, decoder_get_source_info_valid) {
   char buf[128] = "";
   int line = -1;
-  address valid_function_pointer = (address)JNI_CreateJavaVM;
+  address valid_function_pointer = (address)ReportJNIFatalError;
   ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, sizeof(buf), &line));
-  ASSERT_TRUE(strcmp(buf, "jni.cpp") == 0);
-  ASSERT_TRUE(line > 0);
-}
-
-// Same test as "decoder_get_source_info_valid" but with a too-small output buffer. Everything should work the same except
-// that the output buffer truncates "jni.cpp" such that we find "jni.cp" instead. The line number must be found as before.
-TEST_VM(os_linux, decoder_get_source_info_valid_truncated) {
-  char buf[128] = "";
-  int line = -1;
-  memset(buf, 'X', sizeof(buf));
-  address valid_function_pointer = (address)JNI_CreateJavaVM;
-  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 7, &line));
-  ASSERT_TRUE(buf[7 - 1] == '\0');
-  ASSERT_TRUE(buf[7] == 'X');
-  ASSERT_TRUE(strcmp(buf, "jni.cp") == 0);
+  ASSERT_TRUE(strcmp(buf, "jniCheck.hpp") == 0);
   ASSERT_TRUE(line > 0);
 }
 
@@ -473,12 +459,33 @@ TEST_VM(os_linux, decoder_get_source_info_invalid) {
     line = 12;
     // We should return false but do not crash or fail in any way.
     ASSERT_FALSE(Decoder::get_source_info(addr, buf, sizeof(buf), &line));
-    // buffer should contain "", offset should contain -1
-    ASSERT_TRUE(buf[0] == '\0');
-    ASSERT_TRUE(line == -1);
+    ASSERT_TRUE(buf[0] == '\0'); // Should contain "" on error
+    ASSERT_TRUE(line == -1); // Should contain -1 on error
   }
 }
-#endif // NOT PRODUCT
+
+// Test with valid address but a too small buffer to store the entire filename. Should find generic <OVERFLOW> message
+// and a valid line number.
+TEST_VM(os_linux, decoder_get_source_info_valid_overflow) {
+  char buf[11] = "";
+  int line = -1;
+  address valid_function_pointer = (address)ReportJNIFatalError;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 11, &line));
+  ASSERT_TRUE(strcmp(buf, "<OVERFLOW>") == 0);
+  ASSERT_TRUE(line > 0);
+}
+
+// Test with valid address but a too small buffer that can neither store the entire filename nor the generic <OVERFLOW>
+// message. We should find "L" as filename and a valid line number.
+TEST_VM(os_linux, decoder_get_source_info_valid_overflow_minimal) {
+  char buf[2] = "";
+  int line = -1;
+  address valid_function_pointer = (address)ReportJNIFatalError;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 2, &line));
+  ASSERT_TRUE(strcmp(buf, "L") == 0); // Overflow message does not fit, so we fall back to "L:line_number"
+  ASSERT_TRUE(line > 0); // Line should correctly be found and returned
+}
+#endif // clang
 
 #ifdef __GLIBC__
 TEST_VM(os_linux, glibc_mallinfo_wrapper) {
