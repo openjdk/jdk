@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
@@ -91,6 +93,8 @@ abstract class GaloisCounterMode extends CipherSpi {
     private static final int SPLIT_LEN = 1048576;  // 1MB
 
     static final byte[] EMPTY_BUF = new byte[0];
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private boolean initialized = false;
 
@@ -956,6 +960,8 @@ abstract class GaloisCounterMode extends CipherSpi {
          */
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
+                // The use of DirectBuffer::address below need not be guarded as
+                // no access is made to actual memory.
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
@@ -1645,8 +1651,14 @@ abstract class GaloisCounterMode extends CipherSpi {
                         int ofs = dst.arrayOffset() + dst.position();
                         Arrays.fill(dst.array(), ofs, ofs + len, (byte) 0);
                     } else {
-                        Unsafe.getUnsafe().setMemory(((DirectBuffer) dst).address(),
-                            len + dst.position(), (byte) 0);
+                        NIO_ACCESS.acquireSession(dst);
+                        try {
+                            Unsafe.getUnsafe().setMemory(
+                                ((DirectBuffer)dst).address(),
+                                len + dst.position(), (byte) 0);
+                        } finally {
+                            NIO_ACCESS.releaseSession(dst);
+                        }
                     }
                 }
                 throw new AEADBadTagException("Tag mismatch");
