@@ -252,15 +252,6 @@ bool JNIHandles::is_weak_global_handle(jobject handle) {
   return is_jweak(handle) && is_storage_handle(weak_global_handles(), jweak_ptr(handle));
 }
 
-size_t JNIHandles::global_handle_memory_usage() {
-  return global_handles()->total_memory_usage();
-}
-
-size_t JNIHandles::weak_global_handle_memory_usage() {
-  return weak_global_handles()->total_memory_usage();
-}
-
-
 // We assume this is called at a safepoint: no lock is needed.
 void JNIHandles::print_on(outputStream* st) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -356,7 +347,6 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
   block->_top = 0;
   block->_next = NULL;
   block->_pop_frame_link = NULL;
-  block->_planned_capacity = block_size_in_oops;
   // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
   debug_only(block->_last = NULL);
   debug_only(block->_free_list = NULL);
@@ -539,35 +529,4 @@ bool JNIHandleBlock::chain_contains(jobject handle) const {
     }
   }
   return false;
-}
-
-
-size_t JNIHandleBlock::length() const {
-  size_t result = 1;
-  for (JNIHandleBlock* current = _next; current != NULL; current = current->_next) {
-    result++;
-  }
-  return result;
-}
-
-class CountJNIHandleClosure: public OopClosure {
-private:
-  int _count;
-public:
-  CountJNIHandleClosure(): _count(0) {}
-  virtual void do_oop(oop* ooph) { _count++; }
-  virtual void do_oop(narrowOop* unused) { ShouldNotReachHere(); }
-  int count() { return _count; }
-};
-
-const size_t JNIHandleBlock::get_number_of_live_handles() {
-  CountJNIHandleClosure counter;
-  oops_do(&counter);
-  return counter.count();
-}
-
-// This method is not thread-safe, i.e., must be called while holding a lock on the
-// structure.
-size_t JNIHandleBlock::memory_usage() const {
-  return length() * sizeof(JNIHandleBlock);
 }

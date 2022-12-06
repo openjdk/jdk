@@ -608,10 +608,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
+  case vmIntrinsics::_chacha20Block:
+    return inline_chacha20Block();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
     return inline_base64_decodeBlock();
+  case vmIntrinsics::_poly1305_processBlocks:
+    return inline_poly1305_processBlocks();
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
@@ -6895,6 +6899,36 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
   return true;
 }
 
+//------------------------------inline_chacha20Block
+bool LibraryCallKit::inline_chacha20Block() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseChaCha20Intrinsics, "need ChaCha20 intrinsics support");
+
+  stubAddr = StubRoutines::chacha20Block();
+  stubName = "chacha20Block";
+
+  Node* state          = argument(0);
+  Node* result         = argument(1);
+
+  state = must_be_not_null(state, true);
+  result = must_be_not_null(result, true);
+
+  Node* state_start  = array_element_address(state, intcon(0), T_INT);
+  assert(state_start, "state is NULL");
+  Node* result_start  = array_element_address(result, intcon(0), T_BYTE);
+  assert(result_start, "result is NULL");
+
+  Node* cc20Blk = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::chacha20Block_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state_start, result_start);
+  // return key stream length (int)
+  Node* retvalue = _gvn.transform(new ProjNode(cc20Blk, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
 bool LibraryCallKit::inline_base64_encodeBlock() {
   address stubAddr;
   const char *stubName;
@@ -6959,6 +6993,42 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
                                  src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
+  return true;
+}
+
+bool LibraryCallKit::inline_poly1305_processBlocks() {
+  address stubAddr;
+  const char *stubName;
+  assert(UsePolyIntrinsics, "need Poly intrinsics support");
+  assert(callee()->signature()->size() == 5, "poly1305_processBlocks has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::poly1305_processBlocks();
+  stubName = "poly1305_processBlocks";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* input = argument(1);
+  Node* input_offset = argument(2);
+  Node* len = argument(3);
+  Node* alimbs = argument(4);
+  Node* rlimbs = argument(5);
+
+  input = must_be_not_null(input, true);
+  alimbs = must_be_not_null(alimbs, true);
+  rlimbs = must_be_not_null(rlimbs, true);
+
+  Node* input_start = array_element_address(input, input_offset, T_BYTE);
+  assert(input_start, "input array is NULL");
+  Node* acc_start = array_element_address(alimbs, intcon(0), T_LONG);
+  assert(acc_start, "acc array is NULL");
+  Node* r_start = array_element_address(rlimbs, intcon(0), T_LONG);
+  assert(r_start, "r array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::poly1305_processBlocks_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 input_start, len, acc_start, r_start);
   return true;
 }
 
@@ -7771,8 +7841,15 @@ bool LibraryCallKit::inline_blackhole() {
   assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
   assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
 
+  // Blackhole node pinches only the control, not memory. This allows
+  // the blackhole to be pinned in the loop that computes blackholed
+  // values, but have no other side effects, like breaking the optimizations
+  // across the blackhole.
+
+  Node* bh = _gvn.transform(new BlackholeNode(control()));
+  set_control(_gvn.transform(new ProjNode(bh, TypeFunc::Control)));
+
   // Bind call arguments as blackhole arguments to keep them alive
-  Node* bh = insert_mem_bar(Op_Blackhole);
   uint nargs = callee()->arg_size();
   for (uint i = 0; i < nargs; i++) {
     bh->add_req(argument(i));

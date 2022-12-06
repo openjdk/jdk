@@ -37,6 +37,7 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
+import java.lang.ref.Reference;
 import java.util.Objects;
 import java.util.Spliterator;
 
@@ -779,6 +780,7 @@ public abstract sealed class Buffer
         // setup access to this package in SharedSecrets
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
+
                 @Override
                 public BufferPool getDirectBufferPool() {
                     return Bits.BUFFER_POOL;
@@ -824,16 +826,34 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Runnable acquireSession(Buffer buffer, boolean async) {
-                    var session = buffer.session();
-                    if (session == null) {
-                        return null;
+                public void acquireSession(Buffer buffer) {
+                    var scope = buffer.session();
+                    if (scope != null) {
+                        scope.acquire0();
                     }
-                    if (async && session.ownerThread() != null) {
-                        throw new IllegalStateException("Confined session not supported");
+                }
+
+                @Override
+                public void releaseSession(Buffer buffer) {
+                    try {
+                        var scope = buffer.session();
+                        if (scope != null) {
+                            scope.release0();
+                        }
+                    } finally {
+                        Reference.reachabilityFence(buffer);
                     }
-                    session.acquire0();
-                    return session::release0;
+                }
+
+                @Override
+                public boolean isThreadConfined(Buffer buffer) {
+                    var scope = buffer.session();
+                    return scope != null && scope.ownerThread() != null;
+                }
+
+                @Override
+                public boolean hasSession(Buffer buffer) {
+                    return buffer.session() != null;
                 }
 
                 @Override
