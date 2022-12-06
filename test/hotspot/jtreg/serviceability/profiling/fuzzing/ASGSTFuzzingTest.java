@@ -58,7 +58,9 @@ import jdk.test.whitebox.WhiteBox;
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest akka-uct 1
+ * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest akka-uct 5
+ * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest finagle-chirper 60
+ * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest finagle-http 60
  */
 
 public class ASGSTFuzzingTest {

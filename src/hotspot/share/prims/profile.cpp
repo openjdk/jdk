@@ -71,7 +71,7 @@ static void fill_call_trace_given_top(JavaThread* thd,
       };
     } else {
       trace->frames[count] = {.non_java_frame = {
-          st.base_frame()->is_stub_frame() ? ASGST_FRAME_STUB : ASGST_FRAME_CPP,
+          (uint8_t)(st.base_frame()->is_stub_frame() ? ASGST_FRAME_STUB : ASGST_FRAME_CPP),
           st.base_frame()->pc()
         }
       };
