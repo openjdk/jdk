@@ -481,13 +481,17 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
   }
 
   public int getLineBreakIndex(int start, float width) {
+    final float epsilon = 0.005f;
+
     float[] charinfo = getCharinfo();
     int length = source.getLength();
 
-    width += advTracking;
+    if (advTracking > 0) {
+      width += advTracking;
+    }
 
     --start;
-    while (width >= 0 && ++start < length) {
+    while (width >= -epsilon && ++start < length) {
       int cidx = l2v(start) * numvals + advx;
       if (cidx >= charinfo.length) {
           break; // layout bailed for some reason
