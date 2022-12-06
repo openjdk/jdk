@@ -258,7 +258,6 @@ protected:
                                 // alternatively, the lowest address that
                                 // shouldn't be done again.  NULL means infinity.)
   NOT_PRODUCT(HeapWord* _last_bottom;)
-  NOT_PRODUCT(HeapWord* _last_explicit_min_done;)
 
   // Get the actual top of the area on which the closure will
   // operate, given where the top is assumed to be (the end of the
@@ -283,14 +282,12 @@ public:
     _cl(cl), _sp(sp), _precision(precision), _boundary(boundary),
     _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
-    NOT_PRODUCT(_last_explicit_min_done = NULL);
   }
 
   void do_MemRegion(MemRegion mr) override;
 
   void set_min_done(HeapWord* min_done) {
     _min_done = min_done;
-    NOT_PRODUCT(_last_explicit_min_done = _min_done);
   }
 #ifndef PRODUCT
   void set_last_bottom(HeapWord* last_bottom) {
