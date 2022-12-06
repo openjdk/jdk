@@ -96,6 +96,7 @@ public class bug4314194 {
             // set "synth" properties
             UIManager.getDefaults().put("CheckBox[Disabled].textForeground", checkboxColor);
             // for some reason the RadioButton[Disabled] does not work
+            // see https://bugs.openjdk.org/browse/JDK-8298149
             //UIManager.getDefaults().put("RadioButton[Disabled].textForeground", radioButtonColor);
             UIManager.getDefaults().put("RadioButton[Enabled].textForeground", radioButtonColor);
         } else {
