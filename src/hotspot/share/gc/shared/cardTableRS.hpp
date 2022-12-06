@@ -29,10 +29,10 @@
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
 
+class ContiguousSpace;
 class DirtyCardToOopClosure;
 class Generation;
 class Space;
-class ContiguousSpace;
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
 
