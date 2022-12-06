@@ -196,7 +196,6 @@ class HandleArea: public Arena {
   // Handle allocation
  private:
   oop* real_allocate_handle(oop obj) {
-    // Ignore UseMallocOnly by allocating only in arena.
     oop* handle = (oop*)internal_amalloc(oopSize);
     *handle = obj;
     return handle;

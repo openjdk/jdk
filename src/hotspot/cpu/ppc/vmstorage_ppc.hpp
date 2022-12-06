@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,32 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8007475
- * @summary Test memory stomp in stack map test
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseMallocOnly StackMapFrameTest
- */
-public class StackMapFrameTest {
+#ifndef CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
+#define CPU_PPC_VMSTORAGE_PPC_INLINE_HPP
 
-  public static void foo() {
-    Object o = new Object();
-  }
+#include <cstdint>
 
-  public static void main(String args[]) {
-    for (int i = 0; i < 25000; i++) {
-      foo();
-    }
-  }
+#include "asm/register.hpp"
+
+enum class StorageType : int8_t {
+  STACK = 0,
+  PLACEHOLDER = 1,
+// special locations used only by native code
+  FRAME_DATA = PLACEHOLDER + 1,
+  INVALID = -1
+};
+
+// need to define this before constructing VMStorage (below)
+constexpr inline bool VMStorage::is_reg(StorageType type) {
+   return false;
 }
+constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK; }
+constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
+constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::FRAME_DATA; }
+
+inline VMStorage as_VMStorage(VMReg reg) {
+  ShouldNotReachHere();
+  return VMStorage::invalid();
+}
+
+#endif // CPU_PPC_VMSTORAGE_PPC_INLINE_HPP

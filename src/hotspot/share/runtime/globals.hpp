@@ -455,10 +455,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
-  develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena). "  \
-          "Used to help diagnose memory stomping bugs.")                    \
-                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space")                                 \
                                                                             \
@@ -1991,9 +1987,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  develop(bool, TraceOptimizedUpcallStubs, false,                           \
-                "Trace optimized upcall stub generation")                   \
 
 // end of RUNTIME_FLAGS
 

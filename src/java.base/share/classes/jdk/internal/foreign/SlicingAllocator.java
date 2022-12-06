@@ -25,14 +25,33 @@
 
 package jdk.internal.foreign;
 
-import jdk.internal.vm.annotation.ForceInline;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 
-import java.lang.foreign.MemorySession;
+public final class SlicingAllocator implements SegmentAllocator {
 
-public interface Scoped {
-    @ForceInline
-    default MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session());
+    private final MemorySegment segment;
+    private final long maxAlign;
+
+    private long sp = 0L;
+
+    public SlicingAllocator(MemorySegment segment) {
+        this.segment = segment;
+        this.maxAlign = ((AbstractMemorySegmentImpl)segment).maxAlignMask();
     }
-    MemorySession session();
+
+    MemorySegment trySlice(long byteSize, long byteAlignment) {
+        long min = segment.address();
+        long start = Utils.alignUp(min + sp, byteAlignment) - min;
+        MemorySegment slice = segment.asSlice(start, byteSize);
+        sp = start + byteSize;
+        return slice;
+    }
+
+    @Override
+    public MemorySegment allocate(long byteSize, long byteAlignment) {
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment, maxAlign);
+        // try to slice from current segment first...
+        return trySlice(byteSize, byteAlignment);
+    }
 }
