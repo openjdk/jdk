@@ -260,9 +260,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_SignumD:
     return Op_SignumVD;
   case Op_ConvHF2F:
-    return Op_HF2FV;
+    return Op_VectorCastH2F;
   case Op_ConvF2HF:
-    return Op_F2HFV;
+    return Op_VectorCastF2H;
 
   default:
     assert(!VectorNode::is_convert_opcode(sopc),
@@ -703,8 +703,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_CompressM: assert(n1 == NULL, ""); return new CompressMNode(n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
-  case Op_HF2FV: return new HF2FVNode(n1, vt);
-  case Op_F2HFV: return new F2HFVNode(n1, vt);
+  case Op_VectorCastH2F: return new VectorCastH2FNode(n1, vt);
+  case Op_VectorCastF2H: return new VectorCastF2HNode(n1, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;

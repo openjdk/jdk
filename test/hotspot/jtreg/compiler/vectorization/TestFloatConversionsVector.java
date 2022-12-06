@@ -51,6 +51,7 @@ public class TestFloatConversionsVector {
   }
 
   @Test
+  @IR(counts = {IRNode.VECTOR_CAST_F2H, "> 0"})
   public void test_float_float16(short[] sout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           sout[i] = Float.floatToFloat16(finp[i]);
@@ -72,6 +73,7 @@ public class TestFloatConversionsVector {
   }
 
   @Test
+  @IR(counts = {IRNode.VECTOR_CAST_H2F, "> 0"})
   public void test_float16_float(float[] fout, short[] sinp) {
       for (int i = 0; i < sinp.length; i+=1) {
           fout[i] = Float.float16ToFloat(sinp[i]);

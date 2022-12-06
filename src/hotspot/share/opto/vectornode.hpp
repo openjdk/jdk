@@ -1627,17 +1627,17 @@ class VectorUCastS2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-class HF2FVNode : public VectorNode {
+class VectorCastH2FNode : public VectorNode {
  public:
-  HF2FVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+  VectorCastH2FNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
   }
   virtual int Opcode() const;
 };
 
-class F2HFVNode : public VectorNode {
+class VectorCastF2HNode : public VectorNode {
  public:
-  F2HFVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+  VectorCastF2HNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
   }
   virtual int Opcode() const;
