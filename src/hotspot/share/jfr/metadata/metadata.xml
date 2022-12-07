@@ -595,7 +595,7 @@
   </Event>
 
   <Event name="CompilationFailure" category="Java Virtual Machine, Compiler" label="Compilation Failure"
-         description="In case a JIT compilation failed, a CompilationFailure is triggered, reporting the reason"
+         description="In case a JIT compilation failed, a compilation failure is triggered, reporting the reason"
          thread="true" startTime="false">
     <Field type="string" name="failureMessage" label="Failure Message" />
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
