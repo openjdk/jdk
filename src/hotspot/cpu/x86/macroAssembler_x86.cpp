@@ -4338,18 +4338,6 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   if (!UseSecondarySuperCache && super_check_offset.is_constant() && super_check_offset.as_constant() == sc_offset) {
     FINAL_JMP(*L_slow_path);
   } else {
-    Address super_check_addr(sub_klass, super_check_offset, Address::times_1, 0);
-    cmpptr(super_klass, super_check_addr); // load displayed supertype
-
-    // This check has worked decisively for primary supers.
-    // Secondary supers are sought in the super_cache ('super_cache_addr').
-    // (Secondary supers are interfaces and very deeply nested subtypes.)
-    // This works in the same check above because of a tricky aliasing
-    // between the super_cache and the primary super display elements.
-    // (The 'super_check_addr' can address either, as the case requires.)
-    // So if it was a primary super, we can just fail immediately.
-    // Otherwise, it's the slow path for us (no success at this point).
-
     // Check the supertype display:
     if (must_load_sco) {
       // Positive movl does right thing on LP64.
