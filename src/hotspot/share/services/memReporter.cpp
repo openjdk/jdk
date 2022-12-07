@@ -31,11 +31,11 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
 }
 
-size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
