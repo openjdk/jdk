@@ -353,7 +353,7 @@ public final class SoftMainMixer {
                                     }
                                     SoftTuning tuning = synth.getTuning(new Patch(
                                             data[5] & 0xFF, data[6] & 0xFF));
-                                    tuning.load(data); // various
+                                    tuning.load(data);
                                     SoftVoice[] voices = synth.getVoices();
                                     for (int i = 0; i < voices.length; i++)
                                         if (voices[i].active)
@@ -396,7 +396,7 @@ public final class SoftMainMixer {
                             switch (subid2) {
                                 case 0x01: // Channel Pressure
                                 {
-                                    if (data.length < 7) {
+                                    if (data.length < 8) {
                                         break;
                                     }
                                     int[] destinations = new int[(data.length - 7) / 2];
@@ -415,7 +415,7 @@ public final class SoftMainMixer {
                                 }
                                 case 0x02: // Poly Pressure
                                 {
-                                    if (data.length < 7) {
+                                    if (data.length < 8) {
                                         break;
                                     }
                                     int[] destinations = new int[(data.length - 7) / 2];
@@ -434,7 +434,7 @@ public final class SoftMainMixer {
                                 }
                                 case 0x03: // Control Change
                                 {
-                                    if (data.length < 7) {
+                                    if (data.length < 8) {
                                         break;
                                     }
                                     int[] destinations = new int[(data.length - 7) / 2];
@@ -459,7 +459,7 @@ public final class SoftMainMixer {
 
                         case 0x0A:  // Key Based Instrument Control
                         {
-                            if (data.length < 7 || (data[4] & 0xFF) != 01) {
+                            if (data.length < 8 || (data[4] & 0xFF) != 0x01) {
                                 break;
                             }
                             subid2 = data[4] & 0xFF;

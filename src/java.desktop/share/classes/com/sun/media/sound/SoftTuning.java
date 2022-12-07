@@ -111,11 +111,11 @@ public final class SoftTuning {
                     // http://www.midi.org/about-midi/tuning.shtml
                     //if (!checksumOK2(data))
                     //    break;
-                    if (data.length < 406) {
+                    int r = 22;
+                    if (data.length < 128 * 3 + r) {
                         break;
                     }
                     name = new String(data, 6, 16, US_ASCII);
-                    int r = 22;
                     for (int i = 0; i < 128; i++) {
                         int xx = data[r++] & 0xFF;
                         int yy = data[r++] & 0xFF;
@@ -133,10 +133,10 @@ public final class SoftTuning {
                         break;
                     }
                     int ll = data[6] & 0xFF;
-                    if (data.length < ll * 4 + 8) {
+                    int r = 7;
+                    if (data.length < ll * 4 + r) {
                         break;
                     }
-                    int r = 7;
                     for (int i = 0; i < ll; i++) {
                         int kk = data[r++] & 0xFF;
                         int xx = data[r++] & 0xFF;
@@ -228,7 +228,7 @@ public final class SoftTuning {
                            // Real-Time/REAL-TIME)
                 {
                     // http://www.midi.org/about-midi/tuning-scale.shtml
-                    if (data.length < 21) {
+                    if (data.length < 20) {
                         break;
                     }
                     int[] octave_tuning = new int[12];
