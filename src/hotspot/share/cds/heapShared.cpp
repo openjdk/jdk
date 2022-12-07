@@ -838,7 +838,9 @@ void HeapShared::write_subgraph_info_table() {
     _archived_ArchiveHeapTestClass = array;
   }
 #endif
-  print_stats();
+  if (log_is_enabled(Info, cds, heap)) {
+    print_stats();
+  }
 }
 
 void HeapShared::serialize_root(SerializeClosure* soc) {
