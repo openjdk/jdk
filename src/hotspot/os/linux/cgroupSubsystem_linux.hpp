@@ -112,32 +112,35 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   char* p = fgets(buf, MAXPATHLEN, fp);
   if (p == nullptr) {
     log_debug(os, container)("Empty file %s", file.base());
+    fclose(fp);
     return OSCONTAINER_ERROR;
   }
-  for (; p != nullptr; p = fgets(buf, MAXPATHLEN, fp)) {
-    bool found_match = false;
-    if (matchline == nullptr) {
-      // single-line file case
-      int matched = sscanf(p, scan_fmt, returnval);
-      found_match = (matched == 1);
-    } else {
-      // multi-line file case
+
+  bool found_match = false;
+  if (matchline == nullptr) {
+    // File consists of a single line according to caller, with only a value
+    int matched = sscanf(p, scan_fmt, returnval);
+    found_match = matched == 1;
+  } else {
+    // File consists of multiple lines in a "key value"
+    // fashion, we need to find the match.
+    for (; p != nullptr; p = fgets(buf, MAXPATHLEN, fp)) {
       if (strstr(p, matchline) != nullptr) {
         // discard matchline string prefix
         char discard[MAXPATHLEN+1];
         int matched = sscanf(p, scan_fmt, discard, returnval);
         found_match = (matched == 2);
-      } else {
-        continue; // substring not found
+        if (found_match) {
+          break;
+        }
       }
     }
-    if (found_match) {
-      fclose(fp);
-      return 0;
-    } else {
-      log_debug(os, container)("Type %s not found in file %s", scan_fmt, file.base());
-    }
   }
+  fclose(fp);
+  if (found_match) {
+    return 0;
+  }
+  log_debug(os, container)("Type %s not found in file %s", scan_fmt, file.base());
   return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP
