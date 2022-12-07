@@ -776,9 +776,11 @@ private:
   inline oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahRegionAffiliation target_gen);
   void handle_old_evacuation(HeapWord* obj, size_t words, bool promotion);
   void handle_old_evacuation_failure();
-  void handle_promotion_failure();
 
 public:
+  void handle_promotion_failure();
+  void report_promotion_failure(Thread* thread, size_t size);
+
   static address in_cset_fast_test_addr();
 
   ShenandoahCollectionSet* collection_set() const { return _collection_set; }
@@ -854,7 +856,6 @@ private:
   void try_inject_alloc_failure();
   bool should_inject_alloc_failure();
 
-  void report_promotion_failure(Thread* thread, size_t size);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP

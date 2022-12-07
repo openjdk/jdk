@@ -455,7 +455,8 @@ void ShenandoahHeap::initialize_generations() {
 
   _young_generation = new ShenandoahYoungGeneration(_max_workers, max_capacity_new, soft_max_capacity_new);
   _old_generation = new ShenandoahOldGeneration(_max_workers, max_capacity_old, soft_max_capacity_old);
-  _global_generation = new ShenandoahGlobalGeneration(_max_workers);
+  _global_generation = new ShenandoahGlobalGeneration(_max_workers, max_capacity_new + max_capacity_old,
+                                                      soft_max_capacity_new + soft_max_capacity_old);
 }
 
 void ShenandoahHeap::initialize_heuristics() {
@@ -683,6 +684,8 @@ size_t ShenandoahHeap::young_generation_capacity(size_t capacity) {
         capacity = MIN2(MaxNewSize, capacity);
       }
     }
+    // capacity must be a multiple of ShenandoahHeapRegion::region_size_bytes()
+    capacity &= ~ShenandoahHeapRegion::region_size_bytes_mask();
   }
   // else, make no adjustment to global capacity
   return capacity;
@@ -1227,6 +1230,12 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
         if (requested_bytes >= young_generation()->adjusted_available()) {
           // We know this is not a GCLAB.  This must be a TLAB or a shared allocation.  Reject the allocation request if
           // exceeds established capacity limits.
+
+          // TODO: if ShenandoahElasticTLAB and req.is_lab_alloc(), we should endeavor to shrink the TLAB request
+          // in order to avoid allocation failure and degeneration of GC.
+
+          log_info(gc, ergo)("Rejecting mutator alloc of " SIZE_FORMAT " because young available is: " SIZE_FORMAT,
+                             requested_bytes, young_generation()->adjusted_available());
           return nullptr;
         }
       }
@@ -1479,7 +1488,16 @@ private:
         // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
         // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
         // triggers the load-reference barrier (LRB) to copy on reference fetch.
-        r->promote_humongous();
+        if (r->promote_humongous() == 0) {
+          // We chose not to promote because old-gen is out of memory.  Report and handle the promotion failure because
+          // this suggests need for expanding old-gen and/or performing collection of old-gen.
+          ShenandoahHeap* heap = ShenandoahHeap::heap();
+          oop obj = cast_to_oop(r->bottom());
+          size_t size = obj->size();
+          Thread* thread = Thread::current();
+          heap->report_promotion_failure(thread, size);
+          heap->handle_promotion_failure();
+        }
       }
       // else, region is free, or OLD, or not in collection set, or humongous_continuation,
       // or is young humongous_start that is too young to be promoted

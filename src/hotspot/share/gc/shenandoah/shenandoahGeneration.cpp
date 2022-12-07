@@ -914,12 +914,14 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   heap->workers()->run_task(&task);
 }
 
-void ShenandoahGeneration::increment_affiliated_region_count() {
+size_t ShenandoahGeneration::increment_affiliated_region_count() {
   _affiliated_region_count++;
+  return _affiliated_region_count;
 }
 
-void ShenandoahGeneration::decrement_affiliated_region_count() {
+size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   _affiliated_region_count--;
+  return _affiliated_region_count;
 }
 
 void ShenandoahGeneration::clear_used() {
@@ -975,6 +977,15 @@ size_t ShenandoahGeneration::adjusted_available() const {
   size_t in_use = used();
   size_t capacity = _adjusted_capacity;
   return in_use > capacity ? 0 : capacity - in_use;
+}
+
+size_t ShenandoahGeneration::adjusted_capacity() const {
+  return _adjusted_capacity;
+}
+
+size_t ShenandoahGeneration::adjusted_unaffiliated_regions() const {
+  assert(adjusted_capacity() > used_regions_size(), "adjusted_unaffiliated_regions() cannot return negative");
+  return (adjusted_capacity() - used_regions_size()) / ShenandoahHeapRegion::region_size_bytes();
 }
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {

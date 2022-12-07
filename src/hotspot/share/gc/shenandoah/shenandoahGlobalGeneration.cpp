@@ -40,6 +40,11 @@ size_t ShenandoahGlobalGeneration::max_capacity() const {
   return ShenandoahHeap::heap()->max_capacity();
 }
 
+size_t ShenandoahGlobalGeneration::used_regions() const {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  return heap->old_generation()->used_regions() + heap->young_generation()->used_regions();
+}
+
 size_t ShenandoahGlobalGeneration::used_regions_size() const {
   return ShenandoahHeap::heap()->capacity();
 }

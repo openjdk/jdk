@@ -340,23 +340,30 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
+// This closure computes the amounts of used, committed, and garbage memory and the number of regions contained within
+// a subset (e.g. the young generation or old generation) of the total heap.
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
 private:
-  size_t _used, _committed, _garbage;
+  size_t _used, _committed, _garbage, _regions;
 public:
-  ShenandoahCalculateRegionStatsClosure() : _used(0), _committed(0), _garbage(0) {};
+  ShenandoahCalculateRegionStatsClosure() : _used(0), _committed(0), _garbage(0), _regions(0) {};
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     _used += r->used();
-    log_debug(gc)("ShenandoahCalculatRegionStatsClosure added " SIZE_FORMAT " for %s Region " SIZE_FORMAT ", yielding: " SIZE_FORMAT,
+    log_debug(gc)("ShenandoahCalculateRegionStatsClosure added " SIZE_FORMAT " for %s Region " SIZE_FORMAT ", yielding: " SIZE_FORMAT,
                   r->used(), r->is_humongous()? "humongous": "regular", r->index(), _used);
     _garbage += r->garbage();
     _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
+    _regions++;
   }
 
   size_t used() { return _used; }
   size_t committed() { return _committed; }
   size_t garbage() { return _garbage; }
+  size_t regions() { return _regions; }
+
+  // span is the total memory affiliated with these stats (some of which is in use and other is available)
+  size_t span() { return _regions * ShenandoahHeapRegion::region_size_bytes(); }
 };
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
@@ -395,6 +402,17 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
               label, generation->name(),
               byte_size_in_proper_unit(generation_used), proper_unit_for_byte_size(generation_used),
               byte_size_in_proper_unit(stats.used()), proper_unit_for_byte_size(stats.used()));
+
+    guarantee(stats.regions() == generation->used_regions(),
+              "%s: generation (%s) used regions (" SIZE_FORMAT ") must equal regions that are in use (" SIZE_FORMAT ")",
+              label, generation->name(), generation->used_regions(), stats.regions());
+
+    size_t capacity = generation->adjusted_capacity();
+    guarantee(stats.span() <= capacity,
+              "%s: generation (%s) size spanned by regions (" SIZE_FORMAT ") must not exceed current capacity (" SIZE_FORMAT "%s)",
+              label, generation->name(), stats.regions(),
+              byte_size_in_proper_unit(capacity), proper_unit_for_byte_size(capacity));
+
   }
 };
 

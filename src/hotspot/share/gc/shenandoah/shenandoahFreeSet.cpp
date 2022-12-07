@@ -97,14 +97,37 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 
   // Overwrite with non-zero (non-NULL) values only if necessary for allocation bookkeeping.
 
+  bool allow_new_region = true;
+  switch (req.affiliation()) {
+    case ShenandoahRegionAffiliation::OLD_GENERATION:
+      // Note: unsigned result from adjusted_unaffiliated_regions() will never be less than zero, but it may equal zero.
+      if (_heap->old_generation()->adjusted_unaffiliated_regions() <= 0) {
+        allow_new_region = false;
+      }
+      break;
+
+    case ShenandoahRegionAffiliation::YOUNG_GENERATION:
+      // Note: unsigned result from adjusted_unaffiliated_regions() will never be less than zero, but it may equal zero.
+      if (_heap->young_generation()->adjusted_unaffiliated_regions() <= 0) {
+        allow_new_region = false;
+      }
+      break;
+
+    case ShenandoahRegionAffiliation::FREE:
+    default:
+      ShouldNotReachHere();
+      break;
+  }
+
   switch (req.type()) {
     case ShenandoahAllocRequest::_alloc_tlab:
     case ShenandoahAllocRequest::_alloc_shared: {
       // Try to allocate in the mutator view
       for (size_t idx = _mutator_leftmost; idx <= _mutator_rightmost; idx++) {
-        if (is_mutator_free(idx)) {
+        ShenandoahHeapRegion* r = _heap->get_region(idx);
+        if (is_mutator_free(idx) && (allow_new_region || r->affiliation() != ShenandoahRegionAffiliation::FREE)) {
           // try_allocate_in() increases used if the allocation is successful.
-          HeapWord* result = try_allocate_in(_heap->get_region(idx), req, in_new_region);
+          HeapWord* result = try_allocate_in(r, req, in_new_region);
           if (result != NULL) {
             return result;
           }
@@ -127,10 +150,12 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       if (result != NULL) {
         return result;
       }
-      // Then try a free region that is dedicated to GC allocations.
-      result = allocate_with_affiliation(FREE, req, in_new_region);
-      if (result != NULL) {
-        return result;
+      if (allow_new_region) {
+        // Then try a free region that is dedicated to GC allocations.
+        result = allocate_with_affiliation(FREE, req, in_new_region);
+        if (result != NULL) {
+          return result;
+        }
       }
 
       // No dice. Can we borrow space from mutator view?
@@ -138,16 +163,18 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         return NULL;
       }
 
-      // Try to steal an empty region from the mutator view.
-      for (size_t c = _mutator_rightmost + 1; c > _mutator_leftmost; c--) {
-        size_t idx = c - 1;
-        if (is_mutator_free(idx)) {
-          ShenandoahHeapRegion* r = _heap->get_region(idx);
-          if (can_allocate_from(r)) {
-            flip_to_gc(r);
-            HeapWord *result = try_allocate_in(r, req, in_new_region);
-            if (result != NULL) {
-              return result;
+      if (allow_new_region) {
+        // Try to steal an empty region from the mutator view.
+        for (size_t c = _mutator_rightmost + 1; c > _mutator_leftmost; c--) {
+          size_t idx = c - 1;
+          if (is_mutator_free(idx)) {
+            ShenandoahHeapRegion* r = _heap->get_region(idx);
+            if (can_allocate_from(r)) {
+              flip_to_gc(r);
+              HeapWord *result = try_allocate_in(r, req, in_new_region);
+              if (result != NULL) {
+                return result;
+              }
             }
           }
         }
@@ -176,9 +203,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
   if (r->affiliation() == ShenandoahRegionAffiliation::FREE) {
     ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
-
     r->set_affiliation(req.affiliation());
-
     if (r->is_old()) {
       // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
       // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
@@ -243,6 +268,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       if (size >= req.min_size()) {
         result = r->allocate(size, req);
         assert (result != NULL, "Allocation must succeed: free " SIZE_FORMAT ", actual " SIZE_FORMAT, free, size);
+      } else {
+        log_info(gc, ergo)("Failed to shrink TLAB or GCLAB request (" SIZE_FORMAT ") in region " SIZE_FORMAT " to " SIZE_FORMAT
+                           " because min_size() is " SIZE_FORMAT, req.size(), r->index(), size, req.min_size());
       }
     }
   } else if (req.is_lab_alloc() && req.type() == ShenandoahAllocRequest::_alloc_plab) {
@@ -372,8 +400,11 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   size_t words_size = req.size();
   size_t num = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
 
+  assert(req.affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION, "Humongous regions always allocated in YOUNG");
+  size_t avail_young_regions = _heap->young_generation()->adjusted_unaffiliated_regions();
+
   // No regions left to satisfy allocation, bye.
-  if (num > mutator_count()) {
+  if (num > mutator_count() || (num > avail_young_regions)) {
     return NULL;
   }
 

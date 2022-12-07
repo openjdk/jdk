@@ -95,6 +95,11 @@ private:
   // set aside within each generation to hold the results of evacuation, but not promotion, into that region.  Promotions
   // into old-gen are bounded by adjusted_available() whereas evacuations into old-gen are pre-committed.
   virtual size_t adjusted_available() const;
+  virtual size_t adjusted_capacity() const;
+
+  // This is the number of FREE regions that are eligible to be affiliated with this generation according to the current
+  // adjusted capacity.
+  virtual size_t adjusted_unaffiliated_regions() const;
 
   // Both of following return new value of available
   virtual size_t adjust_available(intptr_t adjustment);
@@ -161,8 +166,11 @@ private:
   // Scan remembered set at start of concurrent young-gen marking. */
   void scan_remembered_set(bool is_concurrent);
 
-  void increment_affiliated_region_count();
-  void decrement_affiliated_region_count();
+  // Return the updated value of affiliated_region_count
+  size_t increment_affiliated_region_count();
+
+  // Return the updated value of affiliated_region_count
+  size_t decrement_affiliated_region_count();
 
   void clear_used();
   void increase_used(size_t bytes);
