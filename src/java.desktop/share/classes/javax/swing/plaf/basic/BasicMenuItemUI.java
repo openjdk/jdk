@@ -1160,6 +1160,9 @@ public class BasicMenuItemUI extends MenuItemUI
                 // existed, and install a new one if the text installed
                 // into the JLabel is html source.
                 JMenuItem lbl = ((JMenuItem) e.getSource());
+                if (SwingUtilities2.isScaleChanged(e)) {
+                    MenuItemLayoutHelper.clearUsedParentClientProperties(lbl);
+                }
                 String text = lbl.getText();
                 BasicHTML.updateRenderer(lbl, text);
             } else if (name  == "iconTextGap") {
