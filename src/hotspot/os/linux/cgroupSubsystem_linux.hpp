@@ -92,19 +92,19 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     return OSCONTAINER_ERROR;
   }
 
-  stringStream file;
-  file.print_raw(c->subsystem_path());
-  file.print_raw(filename);
+  stringStream file_path;
+  file_path.print_raw(c->subsystem_path());
+  file_path.print_raw(filename);
 
-  if (file.size() > (MAXPATHLEN-1)) {
-    log_debug(os, container)("File path too long %s, %s", file.base(), filename);
+  if (file_path.size() > (MAXPATHLEN-1)) {
+    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
     return OSCONTAINER_ERROR;
   }
-  log_trace(os, container)("Path to %s is %s", filename, file.base());
+  log_trace(os, container)("Path to %s is %s", filename, file_path.base());
 
-  FILE* fp = os::fopen(file.base(), "r");
+  FILE* fp = os::fopen(file_path.base(), "r");
   if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", file.base(), os::strerror(errno));
+    log_debug(os, container)("Open of file %s failed, %s", file_path.base(), os::strerror(errno));
     return OSCONTAINER_ERROR;
   }
 
@@ -112,7 +112,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   char buf[buf_len];
   char* line = fgets(buf, buf_len, fp);
   if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", file.base());
+    log_debug(os, container)("Empty file %s", file_path.base());
     fclose(fp);
     return OSCONTAINER_ERROR;
   }
@@ -127,7 +127,9 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     // fashion, we have to find the key.
     const int key_len = strlen(key);
     for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
-      if (strstr(line, key) != nullptr) {
+      char* key_substr = strstr(line, key);
+      // key should be at beginning of line and next character space
+      if (key_substr == line && line[key_len] == ' ') {
         // Skip key, skip space
         const char* value_substr = line + key_len + 1;
         int matched = sscanf(value_substr, scan_fmt, returnval);
@@ -142,7 +144,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   if (found_match) {
     return 0;
   }
-  log_debug(os, container)("Type %s not found in file %s", scan_fmt, file.base());
+  log_debug(os, container)("Type %s not found in file %s", scan_fmt, file_path.base());
   return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP
