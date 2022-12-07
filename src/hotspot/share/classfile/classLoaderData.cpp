@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -67,9 +67,9 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -1011,6 +1011,23 @@ void ClassLoaderData::print_on(outputStream* out) const {
 
 void ClassLoaderData::print() const { print_on(tty); }
 
+class VerifyHandleOops : public OopClosure {
+ public:
+  virtual void do_oop(oop* p) {
+    if (p != nullptr && *p != nullptr) {
+      oop o = *p;
+      if (!java_lang_Class::is_instance(o)) {
+        guarantee(oopDesc::is_oop(o), "Should be some oop");
+      }
+      if (o->is_objArray()) {
+        VerifyOopClosure vc;
+        o->oop_iterate(&vc);
+      }
+    }
+  }
+  virtual void do_oop(narrowOop* o) { ShouldNotReachHere(); }
+};
+
 void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);
   oop cl = class_loader();
@@ -1034,6 +1051,19 @@ void ClassLoaderData::verify() {
   if (_modules != NULL) {
     _modules->verify();
   }
+
+  if (_deallocate_list != nullptr) {
+    for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
+      Metadata* m = _deallocate_list->at(i);
+      if (m->is_klass()) {
+        ((InstanceKlass*)m)->verify();
+      }
+    }
+  }
+
+  // Check the oops in the handles area
+  VerifyHandleOops vho;
+  oops_do(&vho, _claim_none, false);
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {
