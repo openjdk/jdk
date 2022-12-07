@@ -463,7 +463,7 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
   if (current_count > 0) {
     out->print(" #" SIZE_FORMAT "", current_count);
     if (current_count != early_count) {
-      out->print(" %+d", (int)(current_count - early_count));
+      out->print(" " SSIZE_PLUS_FORMAT, (ssize_t)(current_count - early_count));
     }
   }
 }
@@ -479,7 +479,7 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
 
   out->print(" #" SIZE_FORMAT "", current_count);
   if (current_count != early_count) {
-    out->print(" %+d", (int)(current_count - early_count));
+    out->print(" " SSIZE_PLUS_FORMAT, (ssize_t)(current_count - early_count));
   }
 }
 
@@ -554,27 +554,27 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
       int class_count_diff = (int)(_current_baseline.class_count() -
         _early_baseline.class_count());
       if (_current_baseline.class_count() != _early_baseline.class_count()) {
-        out->print(" %+d", (int)(_current_baseline.class_count() - _early_baseline.class_count()));
+        out->print(" " SSIZE_PLUS_FORMAT, (ssize_t)(_current_baseline.class_count() - _early_baseline.class_count()));
       }
       out->print_cr(")");
 
       out->print("%27s (  instance classes #" SIZE_FORMAT, " ", _current_baseline.instance_class_count());
       if (_current_baseline.instance_class_count() != _early_baseline.instance_class_count()) {
-        out->print(" %+d", (int)(_current_baseline.instance_class_count() - _early_baseline.instance_class_count()));
+        out->print(" " SSIZE_PLUS_FORMAT, (ssize_t)(_current_baseline.instance_class_count() - _early_baseline.instance_class_count()));
       }
       out->print(", array classes #" SIZE_FORMAT, _current_baseline.array_class_count());
       if (_current_baseline.array_class_count() != _early_baseline.array_class_count()) {
-        out->print(" %+d", (int)(_current_baseline.array_class_count() - _early_baseline.array_class_count()));
+        out->print(" " SSIZE_PLUS_FORMAT, (ssize_t)(_current_baseline.array_class_count() - _early_baseline.array_class_count()));
       }
       out->print_cr(")");
 
     } else if (flag == mtThread) {
       // report thread count
       out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
-      int thread_count_diff = (int)(_current_baseline.thread_count() -
+      ssize_t thread_count_diff = (ssize_t)(_current_baseline.thread_count() -
           _early_baseline.thread_count());
       if (thread_count_diff != 0) {
-        out->print(" %+d", thread_count_diff);
+        out->print(" " SSIZE_PLUS_FORMAT, thread_count_diff);
       }
       out->print_cr(")");
 
