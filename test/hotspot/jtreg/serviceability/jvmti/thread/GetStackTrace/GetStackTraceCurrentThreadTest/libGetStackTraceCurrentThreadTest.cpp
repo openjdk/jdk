@@ -36,7 +36,8 @@ static frame_info expected_virtual_frames[] = {
     {"LGetStackTraceCurrentThreadTest;", "dummy", "()V"},
     {"LGetStackTraceCurrentThreadTest;", "chain", "()V"},
     {"LTask;", "run", "()V"},
-    {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"}
+    {"Ljava/lang/VirtualThread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
+    {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"},
 };
 
 static frame_info expected_platform_frames[] = {
@@ -44,7 +45,8 @@ static frame_info expected_platform_frames[] = {
     {"LGetStackTraceCurrentThreadTest;", "dummy", "()V"},
     {"LGetStackTraceCurrentThreadTest;", "chain", "()V"},
     {"LTask;", "run", "()V"},
-    {"Ljava/lang/Thread;", "run", "()V"}
+    {"Ljava/lang/Thread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
+    {"Ljava/lang/Thread;", "run", "()V"},
 };
 
 JNIEXPORT jint JNICALL

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_RUNTIME_FLAGS_JVMFLAGCONSTRAINTSRUNTIME_HPP
-#define SHARE_RUNTIME_FLAGS_JVMFLAGCONSTRAINTSRUNTIME_HPP
 
-#include "runtime/flags/jvmFlag.hpp"
+package org.openjdk.bench.jdk.incubator.concurrent;
 
-/*
- * Here we have runtime arguments constraints functions, which are called automatically
- * whenever flag's value changes. If the constraint fails the function should return
- * an appropriate error value.
- */
+import java.util.concurrent.*;
 
-#define RUNTIME_CONSTRAINTS(f)                        \
-  f(int,    ObjectAlignmentInBytesConstraintFunc)     \
-  f(intx,   ContendedPaddingWidthConstraintFunc)      \
-  f(intx,   PerfDataSamplingIntervalFunc)             \
-  f(uintx,  VMPageSizeConstraintFunc)                 \
-  f(size_t, NUMAInterleaveGranularityConstraintFunc)
+public class ScopedValuesExecutorService extends ThreadPoolExecutor {
+    public ScopedValuesExecutorService(int corePoolSize, String prefix) {
+        super(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+              new AThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
+    }
+}
 
-RUNTIME_CONSTRAINTS(DECLARE_CONSTRAINT)
-
-#endif // SHARE_RUNTIME_FLAGS_JVMFLAGCONSTRAINTSRUNTIME_HPP
+class AThreadFactory implements ThreadFactory {
+    public Thread newThread(Runnable action) {
+        return new Thread() {
+            public void run() {
+                ScopedValuesData.run(action);
+            }
+        };
+    }
+}
