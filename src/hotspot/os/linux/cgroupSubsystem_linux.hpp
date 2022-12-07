@@ -109,41 +109,39 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   strncat(file, filename, MAXPATHLEN-filelen);
   log_trace(os, container)("Path to %s is %s", filename, file);
   fp = os::fopen(file, "r");
-  if (fp != NULL) {
-    int err = 0;
-    while ((p = fgets(buf, MAXPATHLEN, fp)) != NULL) {
-      found_match = false;
-      if (matchline == NULL) {
-        // single-line file case
-        int matched = sscanf(p, scan_fmt, returnval);
-        found_match = (matched == 1);
-      } else {
-        // multi-line file case
-        if (strstr(p, matchline) != NULL) {
-          // discard matchline string prefix
-          int matched = sscanf(p, scan_fmt, discard, returnval);
-          found_match = (matched == 2);
-        } else {
-          continue; // substring not found
-        }
-      }
-      if (found_match) {
-        fclose(fp);
-        return 0;
-      } else {
-        err = 1;
-        log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
-      }
-    }
-    if (err == 0) {
-      log_debug(os, container)("Empty file %s", file);
-    }
-  } else {
+  if (fp == nullptr) {
     log_debug(os, container)("Open of file %s failed, %s", file, os::strerror(errno));
+    return OSCONTAINER_ERROR;
   }
-  if (fp != NULL)
-    fclose(fp);
-  return OSCONTAINER_ERROR;
+
+  int err = 0;
+  while ((p = fgets(buf, MAXPATHLEN, fp)) != NULL) {
+    found_match = false;
+    if (matchline == NULL) {
+      // single-line file case
+      int matched = sscanf(p, scan_fmt, returnval);
+      found_match = (matched == 1);
+    } else {
+      // multi-line file case
+      if (strstr(p, matchline) != NULL) {
+        // discard matchline string prefix
+        int matched = sscanf(p, scan_fmt, discard, returnval);
+        found_match = (matched == 2);
+      } else {
+        continue; // substring not found
+      }
+    }
+    if (found_match) {
+      fclose(fp);
+      return 0;
+    } else {
+      err = 1;
+      log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
+    }
+  }
+  if (err == 0) {
+    log_debug(os, container)("Empty file %s", file);
+  }
 }
 PRAGMA_DIAG_POP
 
