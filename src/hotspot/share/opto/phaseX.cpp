@@ -1814,17 +1814,12 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     const Type* tnew = n->Value(this);
     if (told != tnew) {
       // Check special cases that are ok
-      if (told->isa_int() && tnew->isa_int() ) {
-        const TypeInt *t0 = told->is_int();
-        const TypeInt *t1 = tnew->is_int();
-        if (t0->_lo == t1->_lo && t0->_hi == t1->_hi) {
-          continue; // ignore int widen
-        }
-      } else if (told->isa_long() && tnew->isa_long() ) {
-        const TypeLong *t0 = told->is_long();
-        const TypeLong *t1 = tnew->is_long();
-        if (t0->_lo == t1->_lo && t0->_hi == t1->_hi) {
-          continue; // ignore long widen
+      if (told->isa_integer(tnew->basic_type()) ) { // both either int or long
+        const TypeInteger *t0 = told->is_integer(tnew->basic_type());
+        const TypeInteger *t1 = tnew->is_integer(tnew->basic_type());
+        if (t0->lo_as_long() == t1->lo_as_long() &&
+            t0->hi_as_long() == t1->hi_as_long()) {
+          continue; // ignore integer widen
         }
       }
       if (n->is_Load()) {
@@ -1833,19 +1828,22 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
         // the inputs all the way down to the LoadNode. We don't do that.
         continue;
       }
+      tty->cr();
       tty->print_cr("Missed optimization (PhaseCCP):");
       n->dump_bfs(1, 0, "");
       tty->print_cr("Current type:");
       told->dump_on(tty);
-      tty->print_cr("");
+      tty->cr();
       tty->print_cr("Optimized type:");
       tnew->dump_on(tty);
-      tty->print_cr("");
+      tty->cr();
       failure = true;
     }
   }
-  // If you get this assert, check if the node was notified of changes in
-  // the inputs. See PhaseCCP::push_child_nodes_to_worklist
+  // If we get this assert, check why the reported nodes were not processed again in CCP.
+  // We should either make sure that these nodes are properly added back to the CCP worklist
+  // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
+  // in the verification code above if that is not possible for some reason (like Load nodes).
   assert(!failure, "Missed optimization opportunity in PhaseCCP");
 }
 #endif
