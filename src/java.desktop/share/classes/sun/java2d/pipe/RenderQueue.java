@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@ package sun.java2d.pipe;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import java.security.AccessController;
 import sun.awt.SunToolkit;
+import sun.security.action.GetPropertyAction;
 
 /**
  * The RenderQueue class encapsulates a RenderBuffer on which rendering
@@ -72,19 +75,28 @@ import sun.awt.SunToolkit;
 public abstract class RenderQueue {
 
     /** The size of the underlying buffer, in bytes. */
-    private static final int BUFFER_SIZE = 32000;
+    private static final int BUFFER_SIZE;
+
+    static {
+        // Default 32K is too small for high-end GPU:
+        BUFFER_SIZE = align(getInteger("sun.java2d.render_queue.size", 32 * 1024, 32 * 1024, 16 * 1024 * 1024), 1024);
+
+        if (true) {
+            System.out.println("RenderQueue: sun.java2d.render_queue.size = " + BUFFER_SIZE);
+        }
+    }
 
     /** The underlying buffer for this queue. */
-    protected RenderBuffer buf;
+    protected final RenderBuffer buf;
 
     /**
      * A Set containing hard references to Objects that must stay alive until
      * the queue has been completely flushed.
      */
-    protected Set<Object> refSet;
+    protected final Set<Object> refSet;
 
     protected RenderQueue() {
-        refSet = new HashSet<>();
+        refSet = new HashSet<>(64); // large enough ?
         buf = RenderBuffer.allocate(BUFFER_SIZE);
     }
 
@@ -219,5 +231,36 @@ public abstract class RenderQueue {
     public void flushNow(int position) {
         buf.position(position);
         flushNow();
+    }
+
+    // System property utilities
+    static int getInteger(final String key, final int def,
+                          final int min, final int max)
+    {
+        @SuppressWarnings("removal")
+        final String property = AccessController.doPrivileged(
+                                    new GetPropertyAction(key));
+
+        int value = def;
+        if (property != null) {
+            try {
+                value = Integer.decode(property);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid integer value for " + key + " = " + property);
+            }
+        }
+
+        // check for invalid values
+        if ((value < min) || (value > max)) {
+            System.out.println("Invalid value for " + key + " = " + value
+                    + "; expected value in range[" + min + ", " + max + "] !");
+            value = def;
+        }
+        return value;
+    }
+
+    static int align(final int val, final int norm) {
+        final int ceil = (int) Math.ceil( ((double) val) / norm);
+        return ceil * norm;
     }
 }
