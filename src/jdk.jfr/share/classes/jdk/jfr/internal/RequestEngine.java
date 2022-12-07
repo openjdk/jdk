@@ -205,14 +205,11 @@ public final class RequestEngine {
     }
 
     // code copied from native impl.
-    private static long run_requests(Collection<RequestHook> entries, long timestamp) {
+    private static long run_requests(Collection<RequestHook> entries, long eventTimestamp) {
         long last = lastTimeMillis;
-        // Bug 9000556 - current time millis has rather lame resolution
-        // The use of os::elapsed_counter() is deliberate here, we don't
-        // want it exchanged for os::ft_elapsed_counter().
-        // Keeping direct call os::elapsed_counter() here for reliable
-        // real time values in order to decide when registered requestable
-        // events are due.
+        // The interval for periodic events are typically at least 1 s, so
+        // System.currentTimeMillis() is sufficient. JVM.counterTime() lacks
+        // unit and has in the past been more unreliable.
         long now = System.currentTimeMillis();
         long min = 0;
         long delta = 0;
@@ -250,7 +247,7 @@ public final class RequestEngine {
                 // Bug 9000556 - don't try to compensate
                 // for wait > period
                 r_delta = 0;
-                he.execute(timestamp);
+                he.execute(eventTimestamp);
             }
 
             // calculate time left
