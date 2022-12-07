@@ -1689,8 +1689,7 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_VectorCastF2HF:
     case Op_VectorCastHF2F:
-      if ((UseAVX < 2) ||
-          (!VM_Version::supports_f16c() && !VM_Version::supports_evex())) {
+      if (!VM_Version::supports_f16c() && !VM_Version::supports_evex()) {
         return false;
       }
       break;

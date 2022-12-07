@@ -26,7 +26,6 @@
  * @bug 8294588
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx2.*"
  * @requires os.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestFloatConversionsVector
@@ -75,7 +74,7 @@ public class TestFloatConversionsVector {
   @Test
   @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"}, applyIfCPUFeatureOr = {"avx512f", "true", "f16c", "true"})
   public void test_float16_float(float[] fout, short[] sinp) {
-      for (int i = 0; i < sinp.length; i+=1) {
+      for (int i = 0; i < sinp.length; i++) {
           fout[i] = Float.float16ToFloat(sinp[i]);
       }
   }
