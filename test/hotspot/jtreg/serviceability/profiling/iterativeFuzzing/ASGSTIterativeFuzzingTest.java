@@ -22,7 +22,7 @@
  * questions.
  */
 
-package profiling.stress;
+package profiling.fuzzing;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -39,26 +39,32 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.process.*;
 import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
- * @summary Verifies that AsyncGetStackTrace usage is stable in a high-frequency signal sampler
+ * @summary Verifies that the stack walking of AsyncGetStackTrace is save in a high-frequency signal sampler with randomly modifed stack and frame pointers
+ * It is an adaptation of ASGSTStabilityTest.java to additionally fuzz the stack and frame pointers.
+ *
+ * It is known to fail at frame::verify_deopt_original_pc in debug builds, but this should be ignored.
+ *
+ * This tests simulates a tool like async-profiler which uses AsyncGetStackTrace to walk the stack and
+ * moves the stack and frame pointers around a bit to get better results.
+ *
  * @library /test/jdk/lib/testlibrary /test/lib
- * @compile ASGSTStabilityTest.java
+ * @compile ASGSTIterativeFuzzingTest.java
  * @key stress
  * @requires os.family == "linux"
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="s390" | os.arch=="riscv64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTStabilityTest akka-uct 10
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTStabilityTest finagle-chirper 120
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTStabilityTest finagle-http 120
+ * @run main/othervm/native/timeout=216000 profiling.fuzzing.ASGSTIterativeFuzzingTest akka-uct 1
  */
 
-public class ASGSTStabilityTest {
+public class ASGSTIterativeFuzzingTest {
   private static final String RENAISSANCE_URL = "https://github.com/renaissance-benchmarks/renaissance/releases/download/v0.14.1/renaissance-gpl-0.14.1.jar";
 
   public static final class Runner {
@@ -104,6 +110,7 @@ public class ASGSTStabilityTest {
   }
 
   public static void main(String[] args) throws Exception {
+
     String tmpPath = System.getProperty("java.io.tmpdir");
     Path jarPath = Paths.get(tmpPath, "renaissance.jar");
     if (!Files.exists(jarPath)) {
@@ -124,18 +131,17 @@ public class ASGSTStabilityTest {
     String testCp = System.getProperty("test.class.path") +
                       File.pathSeparator + jarPath.toString();
     System.out.println("===> Classpath: " + testCp);
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
       List.of(
         "-Xbootclasspath/a:./WhiteBox.jar",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+WhiteBoxAPI",
-        "-agentlib:AsyncGetStackTraceSampler",
+        "-agentlib:AsyncGetStackTraceFuzzingSampler=iterative",
         "-Djava.library.path=" + System.getProperty("test.nativepath"),
         "-cp", testCp,
-        ASGSTStabilityTest.Runner.class.getName(),
+        ASGSTIterativeFuzzingTest.Runner.class.getName(),
         benchmark, "-t", Integer.toString(duration)))
-      .redirectErrorStream(true);
-    System.out.println("===> Command: " + String.join(" ", pb.command()));
+        .redirectErrorStream(true);
     ProcessTools.executeProcess(pb)
       .shouldHaveExitValue(0)
       .shouldContain("=== asgst sampler initialized ===");

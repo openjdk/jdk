@@ -51,6 +51,9 @@ import jdk.test.whitebox.WhiteBox;
  *
  * It is known to fail at frame::verify_deopt_original_pc in debug builds, but this should be ignored.
  *
+ * This tests simulates a tool like async-profiler which uses AsyncGetStackTrace to walk the stack and
+ * moves the stack and frame pointers around a bit to get better results.
+ *
  * @library /test/jdk/lib/testlibrary /test/lib
  * @compile ASGSTFuzzingTest.java
  * @key stress
@@ -58,7 +61,9 @@ import jdk.test.whitebox.WhiteBox;
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm/native/timeout=216000 profiling.fuzzing.ASGSTFuzzingTest akka-uct 1
+ * @run main/othervm/native/timeout=216000 profiling.fuzzing.ASGSTFuzzingTest akka-uct 10
+ * @run main/othervm/native/timeout=216000 profiling.fuzzing.ASGSTFuzzingTest finagle-chirper 120
+ * @run main/othervm/native/timeout=216000 profiling.fuzzing.ASGSTFuzzingTest finagle-http 120
  */
 
 public class ASGSTFuzzingTest {
@@ -133,12 +138,12 @@ public class ASGSTFuzzingTest {
         "-Xbootclasspath/a:./WhiteBox.jar",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+WhiteBoxAPI",
-        "-agentlib:AsyncGetStackTraceFuzzingSampler",
+        "-agentlib:AsyncGetStackTraceFuzzingSampler=random",
         "-Djava.library.path=" + System.getProperty("test.nativepath"),
         "-cp", testCp,
         ASGSTFuzzingTest.Runner.class.getName(),
         benchmark, "-t", Integer.toString(duration)))
-      .redirectErrorStream(true);
+        .redirectErrorStream(true);
     ProcessTools.executeProcess(pb)
       .shouldHaveExitValue(0)
       .shouldContain("=== asgst sampler initialized ===");

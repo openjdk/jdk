@@ -82,8 +82,6 @@ static void fill_call_trace_given_top(JavaThread* thd,
 
 extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) {
   assert(trace->frames != NULL, "");
-  fprintf(stdout, "######################## asc\n");
-
   // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
   // do from this context.
   Thread* raw_thread = Thread::current_or_null_safe();

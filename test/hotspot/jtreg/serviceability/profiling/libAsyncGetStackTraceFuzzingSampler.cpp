@@ -106,18 +106,35 @@ static SigAction installSignalHandler(int signo, SigAction action, SigHandler ha
 }
 
 // max increase of sp
-int sp_max_fuzz = 100000;
+int sp_max_fuzz = 1000;
 // max increase of fp
-int fp_max_fuzz = 100000;
+int fp_max_fuzz = 1000;
+
+int sp_max_random_fuzz = 1000000;
+int fp_max_random_fuzz = 1000000;
+
+bool iterative = false;
 
 
-void fuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int options, int sp_fuzz, int fp_fuzz, void* ucontext) {
+void iterativeFuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int options, void* ucontext) {
   ucontext_t uc = *((ucontext_t *)ucontext);
   AsyncGetStackTrace(trace, max_depth, &uc, options);
-  uc.uc_mcontext.gregs[REG_RSP] += sp_fuzz;
-  uc.uc_mcontext.gregs[REG_RBP] += fp_fuzz;
+  long long initial_sp = uc.uc_mcontext.gregs[REG_RSP];
+  long long initial_fp = uc.uc_mcontext.gregs[REG_RBP];
+  for (long i = 0; i < sp_max_fuzz; i++) {
+    for (long j = 0; j < fp_max_fuzz; j++) {
+      uc.uc_mcontext.gregs[REG_RSP] = initial_sp + i;
+      uc.uc_mcontext.gregs[REG_RBP] = initial_fp + j;
+      AsyncGetStackTrace(trace, max_depth, &uc, options);
+    }
+  }
+}
 
-
+void fuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int options, int sp_add, int fp_add, void* ucontext) {
+  ucontext_t uc = *((ucontext_t *)ucontext);
+  AsyncGetStackTrace(trace, max_depth, &uc, options);
+  uc.uc_mcontext.gregs[REG_RSP] += sp_add;
+  uc.uc_mcontext.gregs[REG_RBP] += fp_add;
   AsyncGetStackTrace(trace, max_depth, &uc, options);
 }
 
@@ -128,8 +145,12 @@ static void signalHandler(int signo, siginfo_t* siginfo, void* ucontext) {
   trace.frames = frames;
   trace.frame_info = NULL;
   trace.num_frames = 0;
-    fprintf(stdout, "######################## asc2\n");
-  fuzzingAsyncGetStackTraceLike(&trace, MAX_DEPTH, ASGST_INCLUDE_C_FRAMES, rand() % sp_max_fuzz, rand() % fp_max_fuzz, ucontext);
+  printf("iterative: %d\n", iterative);
+  if (iterative) {
+    iterativeFuzzingAsyncGetStackTraceLike(&trace, MAX_DEPTH, ASGST_INCLUDE_C_FRAMES, ucontext);
+  } else {
+    fuzzingAsyncGetStackTraceLike(&trace, MAX_DEPTH, ASGST_INCLUDE_C_FRAMES, rand() % sp_max_random_fuzz, rand() % fp_max_random_fuzz, ucontext);
+  }
 }
 
 static bool startITimerSampler(long interval_ns) {
@@ -171,6 +192,14 @@ extern "C" {
 
 static
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+  if (strcmp("iterative", options) == 0) {
+    iterative = true;
+  } else if (strcmp("random", options) == 0) {
+    iterative = false;
+  } else {
+    fprintf(stderr, "Unknown option: %s", options);
+    return JNI_ERR;
+  }
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
   if (res != JNI_OK || jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
