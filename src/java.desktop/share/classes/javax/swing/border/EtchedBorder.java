@@ -24,14 +24,12 @@
  */
 package javax.swing.border;
 
-import java.awt.BasicStroke;
+import com.sun.java.swing.SwingUtilities3;
+
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Stroke;
-import java.awt.geom.AffineTransform;
 import java.beans.ConstructorProperties;
 
 /**
@@ -150,59 +148,18 @@ public class EtchedBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        // We remove any initial transforms to prevent rounding errors
-        // when drawing in non-integer scales
-        AffineTransform at = null;
-        Stroke oldStk = null;
-        int stkWidth = 1;
-        boolean resetTransform = false;
-        if (g instanceof Graphics2D) {
-            Graphics2D g2d = (Graphics2D) g;
-            at = g2d.getTransform();
-            oldStk = g2d.getStroke();
-            // if m01 or m10 is non-zero, then there is a rotation or shear
-            // skip resetting the transform
-            resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
-            if (resetTransform) {
-                g2d.setTransform(new AffineTransform());
-                stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
-                g2d.setStroke(new BasicStroke((float) stkWidth));
-            }
-        }
+        SwingUtilities3.paintBorder(c, g, x, y, width, height, this::paintUnscaledBorder);
+    }
 
-        int w;
-        int h;
-        int xtranslation;
-        int ytranslation;
-        if (resetTransform) {
-            w = (int) Math.floor(at.getScaleX() * width - 1);
-            h = (int) Math.floor(at.getScaleY() * height - 1);
-            xtranslation = (int) Math.ceil(at.getScaleX()*x+at.getTranslateX());
-            ytranslation = (int) Math.ceil(at.getScaleY()*y+at.getTranslateY());
-        } else {
-            w = width;
-            h = height;
-            xtranslation = x;
-            ytranslation = y;
-        }
-
-        g.translate(xtranslation, ytranslation);
+    private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+                                    int w, int h, double scale, int stroke) {
 
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
                                                    : getShadowColor(c),
-                          w, h, stkWidth);
+                          w, h, stroke);
         paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
                                                       : getHighlightColor(c),
-                             w, h, stkWidth);
-
-        g.translate(-xtranslation, -ytranslation);
-
-        // Set the transform we removed earlier
-        if (resetTransform) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setTransform(at);
-            g2d.setStroke(oldStk);
-        }
+                             w, h, stroke);
     }
 
     /**

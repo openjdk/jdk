@@ -25,17 +25,13 @@
 
 package javax.swing.plaf.metal;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Stroke;
 import java.awt.Window;
-import java.awt.geom.AffineTransform;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -62,6 +58,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
+import com.sun.java.swing.SwingUtilities3;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
 
@@ -250,6 +247,11 @@ public class MetalBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
+            SwingUtilities3.paintBorder(c, g, x, y, w, h, this::paintUnscaledBorder);
+        }
+
+        private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+                                         int w, int h, double scale, int stroke) {
             Color background;
             Color highlight;
             Color shadow;
@@ -264,92 +266,42 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
 
-            AffineTransform at = null;
-            Stroke oldStk = null;
-            boolean resetTransform = false;
-            int stkWidth = 1;
-            double scaleFactor = 1;
-
-            if (g instanceof Graphics2D g2d) {
-                at = g2d.getTransform();
-                scaleFactor = at.getScaleX();
-                oldStk = g2d.getStroke();
-
-                // if m01 or m10 is non-zero, then there is a rotation or shear
-                // skip resetting the transform
-                resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
-
-                if (resetTransform) {
-                    g2d.setTransform(new AffineTransform());
-                    stkWidth = clipRound(Math.min(at.getScaleX(), at.getScaleY()));
-                    g2d.setStroke(new BasicStroke((float) stkWidth));
-                }
-            }
-
-            int xtranslation;
-            int ytranslation;
-            int width;
-            int height;
-
-            if (resetTransform) {
-                double xx = at.getScaleX() * x + at.getTranslateX();
-                double yy = at.getScaleY() * y + at.getTranslateY();
-                xtranslation = clipRound(xx);
-                ytranslation = clipRound(yy);
-                width = clipRound(at.getScaleX() * w + xx) - xtranslation;
-                height = clipRound(at.getScaleY() * h + yy) - ytranslation;
-            } else {
-                xtranslation = x;
-                ytranslation = y;
-                width = w;
-                height = h;
-            }
-            g.translate(xtranslation, ytranslation);
-
             // scaled border
-            int thickness = (int) Math.ceil(4 * scaleFactor);
+            int thickness = (int) Math.ceil(4 * scale);
 
             g.setColor(background);
             // Draw the bulk of the border
             for (int i = 0; i <= thickness; i++) {
-                g.drawRect(i, i, width - (i * 2), height - (i * 2));
+                g.drawRect(i, i, w - (i * 2), h - (i * 2));
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
                 int midPoint = thickness / 2;
-                int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
-                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
-                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
+                int offset = (((scale - stroke) >= 0) && ((stroke % 2) != 0)) ? 1 : 0;
+                int loc1 = thickness % 2 == 0 ? midPoint + stroke / 2 - stroke : midPoint;
+                int loc2 = thickness % 2 == 0 ? midPoint + stroke / 2 : midPoint + stroke;
                 // scaled corner
-                int corner = (int) Math.round(CORNER * scaleFactor);
+                int corner = (int) Math.round(CORNER * scale);
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
-                g.drawLine(corner + 1, loc2, width - corner, loc2); //top
-                g.drawLine(loc2, corner + 1, loc2, height - corner); //left
-                g.drawLine((width - offset) - loc1, corner + 1,
-                        (width - offset) - loc1, height - corner); //right
-                g.drawLine(corner + 1, (height - offset) - loc1,
-                        width - corner, (height - offset) - loc1); //bottom
+                g.drawLine(corner + 1, loc2, w - corner, loc2); //top
+                g.drawLine(loc2, corner + 1, loc2, h - corner); //left
+                g.drawLine((w - offset) - loc1, corner + 1,
+                        (w - offset) - loc1, h - corner); //right
+                g.drawLine(corner + 1, (h - offset) - loc1,
+                        w - corner, (h - offset) - loc1); //bottom
 
                 // Draw the Long shadow lines
                 g.setColor(shadow);
-                g.drawLine(corner, loc1, width - corner - 1, loc1);
-                g.drawLine(loc1, corner, loc1, height - corner - 1);
-                g.drawLine((width - offset) - loc2, corner,
-                        (width - offset) - loc2, height - corner - 1);
-                g.drawLine(corner, (height - offset) - loc2,
-                        width - corner - 1, (height - offset) - loc2);
-            }
-
-            // restore previous transform
-            g.translate(-xtranslation, -ytranslation);
-            if (resetTransform) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setTransform(at);
-                g2d.setStroke(oldStk);
+                g.drawLine(corner, loc1, w - corner - 1, loc1);
+                g.drawLine(loc1, corner, loc1, h - corner - 1);
+                g.drawLine((w - offset) - loc2, corner,
+                        (w - offset) - loc2, h - corner - 1);
+                g.drawLine(corner, (h - offset) - loc2,
+                        w - corner - 1, (h - offset) - loc2);
             }
         }
 

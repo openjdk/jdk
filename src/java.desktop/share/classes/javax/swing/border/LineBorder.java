@@ -24,6 +24,8 @@
  */
 package javax.swing.border;
 
+import com.sun.java.swing.SwingUtilities3;
+
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Color;
@@ -34,9 +36,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.ConstructorProperties;
-import java.awt.geom.AffineTransform;
-
-import static sun.java2d.pipe.Region.clipRound;
 
 /**
  * A class which implements a line border of arbitrary thickness
@@ -144,52 +143,18 @@ public class LineBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        if ((this.thickness > 0) && (g instanceof Graphics2D)) {
-            Graphics2D g2d = (Graphics2D) g;
+        SwingUtilities3.paintBorder(c, g, x, y, width, height, this::paintUnscaledBorder);
+    }
 
-            AffineTransform at = g2d.getTransform();
-
-            // if m01 or m10 is non-zero, then there is a rotation or shear
-            // or if no Scaling enabled,
-            // skip resetting the transform
-            boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0)) &&
-                    ((at.getScaleX() > 1) || (at.getScaleY() > 1));
-
-            int xtranslation;
-            int ytranslation;
-            int w;
-            int h;
-            int offs;
-
-            if (resetTransform) {
-                /* Deactivate the HiDPI scaling transform,
-                 * so we can do paint operations in the device
-                 * pixel coordinate system instead of the logical coordinate system.
-                 */
-                g2d.setTransform(new AffineTransform());
-                double xx = at.getScaleX() * x + at.getTranslateX();
-                double yy = at.getScaleY() * y + at.getTranslateY();
-                xtranslation = clipRound(xx);
-                ytranslation = clipRound(yy);
-                w = clipRound(at.getScaleX() * width + xx) - xtranslation;
-                h = clipRound(at.getScaleY() * height + yy) - ytranslation;
-                offs = this.thickness * (int) at.getScaleX();
-            } else {
-                w = width;
-                h = height;
-                xtranslation = x;
-                ytranslation = y;
-                offs = this.thickness;
-            }
-
-            g2d.translate(xtranslation, ytranslation);
-
-            Color oldColor = g2d.getColor();
-            g2d.setColor(this.lineColor);
+    private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+                                     int w, int h, double scale, int stroke) {
+        if ((this.thickness > 0)) {
+            int offs =  this.thickness * (int) scale;
+            Color oldColor = g.getColor();
+            g.setColor(this.lineColor);
 
             Shape outer;
             Shape inner;
-
             int size = offs + offs;
             if (this.roundedCorners) {
                 float arc = .2f * offs;
@@ -200,17 +165,14 @@ public class LineBorder extends AbstractBorder
                 outer = new Rectangle2D.Float(0, 0, w, h);
                 inner = new Rectangle2D.Float(offs, offs, w - size, h - size);
             }
-            Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
-            path.append(outer, false);
-            path.append(inner, false);
-            g2d.fill(path);
-            g2d.setColor(oldColor);
 
-            g2d.translate(-xtranslation, -ytranslation);
-
-            if (resetTransform) {
-                g2d.setTransform(at);
+            if (g instanceof Graphics2D g2d) {
+                Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
+                path.append(outer, false);
+                path.append(inner, false);
+                g2d.fill(path);
             }
+            g.setColor(oldColor);
         }
     }
 
