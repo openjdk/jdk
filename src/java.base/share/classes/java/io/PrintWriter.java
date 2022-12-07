@@ -208,7 +208,9 @@ public class PrintWriter extends Writer {
              false);
     }
 
-    /* package private constructor specific to ProxyingConsole */
+    /* Package private constructor, using the specified lock
+     * for synchronization.
+     */
     PrintWriter(Writer out, Object lock) {
         super(lock);
         this.out = out;

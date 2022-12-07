@@ -163,8 +163,8 @@ final class ProxyingConsole extends Console {
         }
 
         @Override
-        public void close() throws IOException {
-            r.close();
+        public void close() {
+            // no-op, per Console's spec
         }
     }
 
@@ -192,7 +192,7 @@ final class ProxyingConsole extends Console {
 
         @Override
         public void close() {
-            pw.close();
+            // no-op, per Console's spec
         }
     }
 }
