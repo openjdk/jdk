@@ -462,6 +462,10 @@ inline bool ZBarrier::is_store_good_fast_path(zpointer ptr) {
   return ZPointer::is_store_good(ptr);
 }
 
+inline bool ZBarrier::is_store_good_or_null_fast_path(zpointer ptr) {
+  return ZPointer::is_store_good_or_null(ptr);
+}
+
 inline bool ZBarrier::is_store_good_or_null_any_fast_path(zpointer ptr) {
   return is_null_any(ptr) || !ZPointer::is_store_bad(ptr);
 }
@@ -717,13 +721,21 @@ inline void ZBarrier::store_barrier_on_heap_oop_field(volatile zpointer* p, bool
     return ZBarrier::heap_store_slow_path(p, addr, prev, heal);
   };
 
-  barrier(is_store_good_fast_path, slow_path, color_store_good, (heal ? p : NULL), prev);
+  if (heal) {
+    barrier(is_store_good_fast_path, slow_path, color_store_good, p, prev);
+  } else {
+    barrier(is_store_good_or_null_fast_path, slow_path, color_store_good, nullptr, prev);
+  }
 }
 
 inline void ZBarrier::store_barrier_on_native_oop_field(volatile zpointer* p, bool heal) {
   const zpointer prev = load_atomic(p);
 
-  barrier(is_store_good_fast_path, native_store_slow_path, color_store_good, (heal ? p : NULL), prev);
+  if (heal) {
+    barrier(is_store_good_fast_path, native_store_slow_path, color_store_good, p, prev);
+  } else {
+    barrier(is_store_good_or_null_fast_path, native_store_slow_path, color_store_good, nullptr, prev);
+  }
 }
 
 inline void ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field(volatile zpointer* p) {
@@ -734,6 +746,19 @@ inline void ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field(volatile zpo
   };
 
   barrier(is_store_good_fast_path, slow_path, color_store_good, NULL, prev);
+}
+
+inline void ZBarrier::remember(volatile zpointer* p) {
+  if (ZHeap::heap()->is_old(p)) {
+    ZGeneration::young()->remember(p);
+  }
+}
+
+inline void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
+  if (!is_null(addr)) {
+    mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
+  }
+  remember(p);
 }
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>

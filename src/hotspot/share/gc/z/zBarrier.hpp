@@ -92,6 +92,7 @@ private:
   static bool is_load_good_or_null_fast_path(zpointer ptr);
   static bool is_mark_good_fast_path(zpointer ptr);
   static bool is_store_good_fast_path(zpointer ptr);
+  static bool is_store_good_or_null_fast_path(zpointer ptr);
   static bool is_store_good_or_null_any_fast_path(zpointer ptr);
 
   static bool is_mark_young_good_fast_path(zpointer ptr);

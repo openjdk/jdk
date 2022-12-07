@@ -189,19 +189,6 @@ zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
   return addr;
 }
 
-void ZBarrier::remember(volatile zpointer* p) {
-  if (ZHeap::heap()->is_old(p)) {
-    ZGeneration::young()->remember(p);
-  }
-}
-
-void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
-  if (!is_null(addr)) {
-    mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
-  }
-  remember(p);
-}
-
 zaddress ZBarrier::heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal) {
   ZStoreBarrierBuffer* buffer = ZStoreBarrierBuffer::buffer_for_store(heal);
 
