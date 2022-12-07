@@ -101,16 +101,16 @@ char* CgroupV2Subsystem::cpu_quota_val() {
   return os::strdup(quota);
 }
 
-char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
-  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpuset.mems",
-                     "cpuset.mems is: %s", "%1023s", mems, 1024);
-  return os::strdup(mems);
-}
-
 int CgroupV2Subsystem::cpu_period() {
   GET_CONTAINER_INFO(int, _unified, "/cpu.max",
                      "CPU Period is: %d", "%*s %d", period);
   return period;
+}
+
+char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
+  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpuset.mems",
+                     "cpuset.mems is: %s", "%1023s", mems, 1024);
+  return os::strdup(mems);
 }
 
 /* memory_usage_in_bytes
@@ -223,7 +223,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
 
 char* CgroupV2Subsystem::pids_max_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.max",
-                     "Maximum number of tasks is: %s", "%1023s %*d", pidsmax, 1024);
+                     "Maximum number of tasks is: %s", "%1023s", pidsmax, 1024);
   return os::strdup(pidsmax);
 }
 
