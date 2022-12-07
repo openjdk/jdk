@@ -39,6 +39,9 @@ import jdk.jfr.Event;
 import jdk.jfr.EventType;
 
 public final class RequestEngine {
+    enum PeriodicType {
+        BEGIN_CHUNK, INTERVAL, END_CHUNK
+    }
 
     private static final JVM jvm = JVM.getJVM();
     private static final ReentrantLock lock = new ReentrantLock();
@@ -62,13 +65,13 @@ public final class RequestEngine {
             this(null, eventType, null);
         }
 
-        private void execute(long timestamp) {
+        private void execute(long timestamp, PeriodicType periodicType) {
             try {
                 if (accessControllerContext == null) { // native
                     if (type.isJDK()) {
                         hook.run();
                     } else {
-                        emitJVMEvent(type, timestamp);
+                        emitJVMEvent(type, timestamp, periodicType);
                     }
                     if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
                         Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Executed periodic hook for " + type.getLogName());
@@ -82,13 +85,13 @@ public final class RequestEngine {
             }
         }
 
-        private void emitJVMEvent(PlatformEventType type, long timestamp) {
+        private void emitJVMEvent(PlatformEventType type, long timestamp, PeriodicType periodicType) {
             try {
                 // There should only be one thread in native at a time.
                 // ReentrantLock is used to avoid JavaMonitorBlocked event
                 // from synchronized block.
                 lock.lock();
-                jvm.emitEvent(type.getId(), timestamp, 0);
+                jvm.emitEvent(type.getId(), timestamp, periodicType.ordinal());
             } finally {
                 lock.unlock();
             }
@@ -183,19 +186,19 @@ public final class RequestEngine {
     }
 
     static void doChunkEnd() {
-        doChunk(x -> x.isEndChunk());
+        doChunk(x -> x.isEndChunk(), PeriodicType.END_CHUNK);
     }
 
     static void doChunkBegin() {
-        doChunk(x -> x.isBeginChunk());
+        doChunk(x -> x.isBeginChunk(), PeriodicType.BEGIN_CHUNK);
     }
 
-    private static void doChunk(Predicate<PlatformEventType> predicate) {
+    private static void doChunk(Predicate<PlatformEventType> predicate, PeriodicType type) {
         long timestamp = JVM.counterTime();
         for (RequestHook requestHook : entries) {
             PlatformEventType s = requestHook.type;
             if (s.isEnabled() && predicate.test(s)) {
-                requestHook.execute(timestamp);
+                requestHook.execute(timestamp, type);
             }
         }
     }
@@ -207,7 +210,7 @@ public final class RequestEngine {
     // code copied from native impl.
     private static long run_requests(Collection<RequestHook> entries, long eventTimestamp) {
         long last = lastTimeMillis;
-        // The interval for periodic events are typically at least 1 s, so
+        // The interval for periodic events is typically at least 1 s, so
         // System.currentTimeMillis() is sufficient. JVM.counterTime() lacks
         // unit and has in the past been more unreliable.
         long now = System.currentTimeMillis();
@@ -247,7 +250,7 @@ public final class RequestEngine {
                 // Bug 9000556 - don't try to compensate
                 // for wait > period
                 r_delta = 0;
-                he.execute(eventTimestamp);
+                he.execute(eventTimestamp, PeriodicType.INTERVAL);
             }
 
             // calculate time left
