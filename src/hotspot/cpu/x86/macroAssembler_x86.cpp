@@ -4425,7 +4425,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   if (needs_post_handling) {
     Label L_scan_end;
-    scan(super_klass, cur_pos, counter, L_scan_end, L_scan_end, L_scan_end, UseNewCode /*do_unroll*/);
+    scan(super_klass, cur_pos, counter, L_scan_end, L_scan_end, L_scan_end);
     bind(L_scan_end);
 
     // Unspill the temp. registers:
@@ -4444,41 +4444,37 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     FINAL_JMP(*L_success);
     bind(L_fallthrough);
   } else {
-    scan(super_klass, cur_pos, counter, *L_success, *L_failure, L_fallthrough, UseNewCode /*do_unroll*/);
+    scan(super_klass, cur_pos, counter, *L_success, *L_failure, L_fallthrough);
     bind(L_fallthrough);
   }
 }
 
 void MacroAssembler::scan(Register value, Register position, Register counter,
-                          Label& L_success, Label& L_failure, Label& L_fallthrough,
-                          bool do_unroll) {
-  Label L_loop;
+                          Label& L_success, Label& L_failure, Label& L_fallthrough) {
 
-  if (do_unroll) {
-    Label L_unrolled_loop, L_unrolled_loop_end;
+  Label L_unrolled_loop, L_unrolled_loop_end, L_loop;
 
-    bind(L_unrolled_loop);
-    cmpl(counter, 4);
-    jccb(Assembler::less, L_unrolled_loop_end);
+  bind(L_unrolled_loop);
+  cmpl(counter, 4);
+  jccb(Assembler::less, L_unrolled_loop_end);
 
-    cmpptr(value, Address(position, 0 * BytesPerWord));
-    jcc(Assembler::equal, L_success); // match!
+  cmpptr(value, Address(position, 0 * BytesPerWord));
+  jcc(Assembler::equal, L_success); // match!
 
-    cmpptr(value, Address(position, 1 * BytesPerWord));
-    jcc(Assembler::equal, L_success); // match!
+  cmpptr(value, Address(position, 1 * BytesPerWord));
+  jcc(Assembler::equal, L_success); // match!
 
-    cmpptr(value, Address(position, 2 * BytesPerWord));
-    jcc(Assembler::equal, L_success); // match!
+  cmpptr(value, Address(position, 2 * BytesPerWord));
+  jcc(Assembler::equal, L_success); // match!
 
-    cmpptr(value, Address(position, 3 * BytesPerWord));
-    jcc(Assembler::equal, L_success); // match!
+  cmpptr(value, Address(position, 3 * BytesPerWord));
+  jcc(Assembler::equal, L_success); // match!
 
-    addq(position, 4 * BytesPerWord);
-    subl(counter, 4);
-    jmpb(L_unrolled_loop);
+  addptr(position, 4 * BytesPerWord);
+  subl(counter, 4);
+  jmpb(L_unrolled_loop);
 
-    bind(L_unrolled_loop_end);
-  }
+  bind(L_unrolled_loop_end);
 
   testl(counter, counter);
   jcc(Assembler::zero, L_failure);
@@ -4607,7 +4603,7 @@ void MacroAssembler::check_klass_subtype_slow_path_avx2(Register    sub_klass,
 
   const Register tail_counter = sub_klass; sub_klass = noreg;
 
-  int32_t stride = (UseNewCode ? 8 : 4);
+  int32_t stride = 8;
   movq(tail_counter, counter);
   andq(tail_counter, stride - 1);
   andq(counter, ~(stride - 1)); // vector count
@@ -4616,32 +4612,24 @@ void MacroAssembler::check_klass_subtype_slow_path_avx2(Register    sub_klass,
   movdq(xtmp1, super_klass);
   vpbroadcastq(xtmp1, xtmp1, Assembler::AVX_256bit);
 
-  if (UseNewCode) {
-    bind(VECTOR32_LOOP);
-    vmovdqu(xtmp2, Address(cur_pos, 0 * BytesPerWord));
-    vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
-    vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
-    LOCAL_JCC(Assembler::notZero, *L_success); // match!
+  bind(VECTOR32_LOOP);
+  vmovdqu(xtmp2, Address(cur_pos, 0 * BytesPerWord));
+  vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
+  vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
+  LOCAL_JCC(Assembler::notZero, *L_success); // match!
 
-    vmovdqu(xtmp2, Address(cur_pos, 4 * BytesPerWord));
-    vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
-    vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
-    LOCAL_JCC(Assembler::notZero, *L_success); // match!
+  vmovdqu(xtmp2, Address(cur_pos, 4 * BytesPerWord));
+  vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
+  vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
+  LOCAL_JCC(Assembler::notZero, *L_success); // match!
 
-  } else {
-    bind(VECTOR32_LOOP);
-    vmovdqu(xtmp2, Address(cur_pos, 0 * BytesPerWord));
-    vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
-    vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
-    LOCAL_JCC(Assembler::notZero, *L_success); // match!
-  }
   addq(cur_pos, stride * BytesPerWord);
   subq(counter, stride);
   jccb(Assembler::notZero, VECTOR32_LOOP);
 
   bind(VECTOR32_TAIL);
 
-  scan(super_klass, cur_pos, tail_counter, *L_success, *L_failure, L_fallthrough, UseNewCode /*do_unroll*/);
+  scan(super_klass, cur_pos, tail_counter, *L_success, *L_failure, L_fallthrough);
 
   bind(L_fallthrough);
 }
