@@ -296,18 +296,32 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
   } else {
-    int cache_index = ConstantPool::decode_invokedynamic_index(
-                        Bytes::get_native_u4(p));
-    tty->print_cr("Reverse! Cache index is: %d", cache_index);
-    // We will reverse the bytecode rewriting _after_ adjusting them.
-    // Adjust the cache index by offset to the invokedynamic entries in the
-    // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
-    int adjustment = cp_cache_delta() + _first_iteration_cp_cache_limit;
-    int cp_index = invokedynamic_cp_cache_entry_pool_index(cache_index - adjustment);
-    assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
-    // zero out 4 bytes
-    Bytes::put_Java_u4(p, 0);
-    Bytes::put_Java_u2(p, cp_index);
+    // Add UseNewIndyCode, get indy_index to grab cp index from stuff_to_collect
+    if (UseNewIndyCode) {
+      int cache_index = ConstantPool::decode_invokedynamic_index(
+                          Bytes::get_native_u4(p));
+      // We will reverse the bytecode rewriting _after_ adjusting them.
+      // Adjust the cache index by offset to the invokedynamic entries in the
+      // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
+      int adjustment = cp_cache_delta() + _first_iteration_cp_cache_limit;
+      int cp_index = _stuff_to_collect_during_rewriting.at(cache_index)._cp_index;
+      assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
+      // zero out 4 bytes
+      Bytes::put_Java_u4(p, 0);
+      Bytes::put_Java_u2(p, cp_index);
+    } else {
+      int cache_index = ConstantPool::decode_invokedynamic_index(
+                          Bytes::get_native_u4(p));
+      // We will reverse the bytecode rewriting _after_ adjusting them.
+      // Adjust the cache index by offset to the invokedynamic entries in the
+      // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
+      int adjustment = cp_cache_delta() + _first_iteration_cp_cache_limit;
+      int cp_index = invokedynamic_cp_cache_entry_pool_index(cache_index - adjustment);
+      assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
+      // zero out 4 bytes
+      Bytes::put_Java_u4(p, 0);
+      Bytes::put_Java_u2(p, cp_index);
+    }
   }
 }
 
