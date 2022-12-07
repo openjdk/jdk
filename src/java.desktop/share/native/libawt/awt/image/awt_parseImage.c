@@ -97,9 +97,8 @@ int awt_parseImage(JNIEnv *env, jobject jimage, BufImageS_t **imagePP,
     }
 
     /* Parse the color model */
-    ColorModelS_t *cmP = &imageP->cmodel;
     if ((status = awt_parseColorModel(env, jcmodel, imageP->imageType,
-                                      cmP)) <= 0) {
+                                      &imageP->cmodel)) <= 0) {
         awt_freeParsedRaster(&imageP->raster, FALSE);
         free((void *)imageP);
         return 0;
