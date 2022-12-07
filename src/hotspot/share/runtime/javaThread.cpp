@@ -1734,8 +1734,8 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
   HandleMark hm(current_thread);
 
   RegisterMap reg_map(this,
-                      RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::include);
   ContinuationEntry* cont_entry = last_continuation();
   vframe* start_vf = last_java_vframe(&reg_map);
