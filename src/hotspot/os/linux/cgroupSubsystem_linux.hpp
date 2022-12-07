@@ -114,15 +114,15 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     log_debug(os, container)("Empty file %s", file.base());
     return OSCONTAINER_ERROR;
   }
-  for (; p != NULL; p = fgets(buf, MAXPATHLEN, fp)) {
+  for (; p != nullptr; p = fgets(buf, MAXPATHLEN, fp)) {
     bool found_match = false;
-    if (matchline == NULL) {
+    if (matchline == nullptr) {
       // single-line file case
       int matched = sscanf(p, scan_fmt, returnval);
       found_match = (matched == 1);
     } else {
       // multi-line file case
-      if (strstr(p, matchline) != NULL) {
+      if (strstr(p, matchline) != nullptr) {
         // discard matchline string prefix
         char discard[MAXPATHLEN+1];
         int matched = sscanf(p, scan_fmt, discard, returnval);
