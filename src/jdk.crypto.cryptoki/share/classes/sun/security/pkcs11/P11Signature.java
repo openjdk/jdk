@@ -32,10 +32,12 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
 
 import sun.security.rsa.RSAUtil;
 import sun.security.rsa.RSAPadding;
@@ -97,6 +99,8 @@ import sun.security.util.KeyUtil;
  * @since   1.5
  */
 final class P11Signature extends SignatureSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // token instance
     private final Token token;
@@ -575,14 +579,15 @@ final class P11Signature extends SignatureSpi {
         }
         switch (type) {
             case T_UPDATE -> {
-                if (!(byteBuffer instanceof DirectBuffer)) {
+                if (!(byteBuffer instanceof DirectBuffer dByteBuffer)) {
                     // cannot do better than default impl
                     super.engineUpdate(byteBuffer);
                     return;
                 }
-                long addr = ((DirectBuffer) byteBuffer).address();
                 int ofs = byteBuffer.position();
+                NIO_ACCESS.acquireSession(byteBuffer);
                 try {
+                    long addr = dByteBuffer.address();
                     if (mode == M_SIGN) {
                         token.p11.C_SignUpdate
                                 (session.id(), addr + ofs, null, 0, len);
@@ -595,6 +600,8 @@ final class P11Signature extends SignatureSpi {
                 } catch (PKCS11Exception e) {
                     reset(false);
                     throw new ProviderException("Update failed", e);
+                } finally {
+                    NIO_ACCESS.releaseSession(byteBuffer);
                 }
             }
             case T_DIGEST -> {

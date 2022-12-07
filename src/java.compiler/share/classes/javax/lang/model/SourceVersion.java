@@ -69,6 +69,8 @@ public enum SourceVersion {
      *  18: no changes (pattern matching for switch in second preview)
      *  19: no changes (pattern matching for switch in third preview,
      *      record patterns in preview)
+     *  20: no changes (pattern matching for switch in fourth preview,
+     *      record patterns in second preview)
      */
 
     /**
@@ -361,6 +363,8 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 20.
+     *
+     * No major changes from the prior release.
      *
      * @since 20
      *
