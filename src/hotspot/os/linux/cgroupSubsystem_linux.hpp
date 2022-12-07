@@ -112,8 +112,12 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     return OSCONTAINER_ERROR;
   }
 
-  int err = 0;
-  for (char* p = fgets(buf, MAXPATHLEN, fp); p != NULL; p = fgets(buf, MAXPATHLEN, fp)) {
+  char* p = fgets(buf, MAXPATHLEN, fp);
+  if (p == nullptr) {
+    log_debug(os, container)("Empty file %s", file);
+    return OSCONTAINER_ERROR;
+  }
+  for (; p != NULL; p = fgets(buf, MAXPATHLEN, fp)) {
     bool found_match = false;
     if (matchline == NULL) {
       // single-line file case
@@ -133,12 +137,8 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
       fclose(fp);
       return 0;
     } else {
-      err = 1;
       log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
     }
-  }
-  if (err == 0) {
-    log_debug(os, container)("Empty file %s", file);
   }
   return OSCONTAINER_ERROR;
 }
