@@ -94,7 +94,7 @@ public class TestNativeMemoryUsageEvents {
 
     private static void generateEvents(Recording recording) throws Exception {
         // Enable the two types of events for "everyChunk", it will give
-        // an event att the beginning of the chunk as well as the end.
+        // an event at the beginning of the chunk as well as at the end.
         recording.enable(UsageEvent).with("period", "everyChunk");
         recording.enable(UsageTotalEvent).with("period", "everyChunk");
 

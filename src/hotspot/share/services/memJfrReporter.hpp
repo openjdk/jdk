@@ -30,29 +30,15 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-// The MemJFRReporter and MemJFRCurrentUsage classes are only to be used from the
-// thread sending periodic JFR events. So no synchronization is needed.
+// MemJFRReporter is only used by threads sending periodic JFR
+// events. These threads are synchronized at a higher level,
+// so no more synchronization is needed.
 class MemJFRReporter : public AllStatic {
 private:
   static void send_type_event(const Ticks& starttime, const char* tag, size_t reserved, size_t committed);
  public:
   static void send_total_event();
   static void send_type_events();
-};
-
-// Helper class to avoid refreshing the NMTUsage to often and allow
-// the two JFR events to use the same data.
-class MemJFRCurrentUsage : public AllStatic {
-private:
-  // The age threshold in milliseconds. If older that this refresh the usage.
-  static const uint64_t AgeThreshold = 50;
-
-  static Ticks _timestamp;
-  static NMTUsage* _usage;
-
-public:
-  static NMTUsage* get_usage();
-  static Ticks get_timestamp();
 };
 
 #endif //SHARE_SERVICES_MEMJFRREPORTER_HPP

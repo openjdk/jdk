@@ -30,9 +30,23 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
+// Helper class to avoid refreshing the NMTUsage to often and allow
+// the two JFR events to use the same data.
+class MemJFRCurrentUsage : public AllStatic {
+private:
+  // The age threshold in milliseconds. If older than this refresh the usage.
+  static const uint64_t AgeThreshold = 50;
+
+  static Ticks _timestamp;
+  static NMTUsage* _usage;
+
+public:
+  static NMTUsage* get_usage();
+  static Ticks get_timestamp();
+};
+
 Ticks MemJFRCurrentUsage::_timestamp;
 NMTUsage* MemJFRCurrentUsage::_usage = nullptr;
-
 
 NMTUsage* MemJFRCurrentUsage::get_usage() {
   Tickspan since_baselined = Ticks::now() - _timestamp;
@@ -64,7 +78,7 @@ void MemJFRReporter::send_total_event() {
   NMTUsage* usage = MemJFRCurrentUsage::get_usage();
   Ticks timestamp = MemJFRCurrentUsage::get_timestamp();
 
-  EventNativeMemoryUsageTotal event;
+  EventNativeMemoryUsageTotal event(UNTIMED);
   event.set_starttime(timestamp);
   event.set_reserved(usage->total_reserved());
   event.set_committed(usage->total_committed());
@@ -72,7 +86,7 @@ void MemJFRReporter::send_total_event() {
 }
 
 void MemJFRReporter::send_type_event(const Ticks& starttime, const char* type, size_t reserved, size_t committed) {
-  EventNativeMemoryUsage event;
+  EventNativeMemoryUsage event(UNTIMED);
   event.set_starttime(starttime);
   event.set_type(type);
   event.set_reserved(reserved);
