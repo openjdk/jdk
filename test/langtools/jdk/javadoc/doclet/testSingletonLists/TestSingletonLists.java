@@ -270,7 +270,7 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
-                    if ("see-list".equals(attrs.get("class"))) {
+                    if ("tag-list".equals(attrs.get("class"))) {
                         inSeeList = true;
                     }
                     break;

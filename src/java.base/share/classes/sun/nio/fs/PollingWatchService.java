@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,7 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
-    // Wait between polling thread creation and first poll (seconds)
-    private static final int POLLING_INIT_DELAY = 1;
-    // Default time between polls (seconds)
+    // default polling interval in seconds
     private static final int DEFAULT_POLLING_INTERVAL = 2;
 
     // map of registrations
@@ -252,7 +250,6 @@ class PollingWatchService
      * directory and queue keys when entries are added, modified, or deleted.
      */
     private class PollingWatchKey extends AbstractWatchKey {
-
         private final Object fileKey;
 
         // current event set
@@ -311,10 +308,10 @@ class PollingWatchService
                 // update the events
                 this.events = events;
 
-                // create the periodic task with initialDelay set to the specified constant
+                // create the periodic task to poll directories
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
-                    .scheduleAtFixedRate(thunk, POLLING_INIT_DELAY, period, TimeUnit.SECONDS);
+                    .scheduleAtFixedRate(thunk, period, period, TimeUnit.SECONDS);
             }
         }
 

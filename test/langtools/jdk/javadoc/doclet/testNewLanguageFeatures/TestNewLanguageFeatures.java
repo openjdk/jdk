@@ -123,7 +123,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="TypeParameters.html" title="class in pkg"><code>TypeParameters</code></a></li>
                     </ul>
                     </dd>
