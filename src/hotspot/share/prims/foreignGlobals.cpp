@@ -27,6 +27,40 @@
 #include "memory/resourceArea.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/resourceHash.hpp"
+
+StubLocations::StubLocations() {
+  for (uint32_t i = 0; i < LOCATION_LIMIT; i++) {
+    _locs[i] = VMStorage::invalid();
+  }
+}
+
+void StubLocations::set(uint32_t loc, VMStorage storage) {
+  assert(loc < LOCATION_LIMIT, "oob");
+  _locs[loc] = storage;
+}
+
+void StubLocations::set_frame_data(uint32_t loc, int offset) {
+  set(loc, VMStorage(StorageType::FRAME_DATA, 8, offset));
+}
+
+VMStorage StubLocations::get(uint32_t loc) const {
+  assert(loc < LOCATION_LIMIT, "oob");
+  VMStorage storage = _locs[loc];
+  assert(storage.is_valid(), "not set");
+  return storage;
+}
+
+VMStorage StubLocations::get(VMStorage placeholder) const {
+  assert(placeholder.type() == StorageType::PLACEHOLDER, "must be");
+  return get(placeholder.index());
+}
+
+int StubLocations::data_offset(uint32_t loc) const {
+  VMStorage storage = get(loc);
+  assert(storage.type() == StorageType::FRAME_DATA, "must be");
+  return storage.offset();
+}
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
@@ -49,13 +83,15 @@ const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
   return result;
 }
 
-VMReg ForeignGlobals::parse_vmstorage(oop storage) {
-  jint index = jdk_internal_foreign_abi_VMStorage::index(storage);
-  jint type = jdk_internal_foreign_abi_VMStorage::type(storage);
-  return vmstorage_to_vmreg(type, index);
+VMStorage ForeignGlobals::parse_vmstorage(oop storage) {
+  jbyte type = jdk_internal_foreign_abi_VMStorage::type(storage);
+  jshort segment_mask_or_size = jdk_internal_foreign_abi_VMStorage::segment_mask_or_size(storage);
+  jint index_or_offset = jdk_internal_foreign_abi_VMStorage::index_or_offset(storage);
+
+  return VMStorage(static_cast<StorageType>(type), segment_mask_or_size, index_or_offset);
 }
 
-int RegSpiller::compute_spill_area(const GrowableArray<VMReg>& regs) {
+int RegSpiller::compute_spill_area(const GrowableArray<VMStorage>& regs) {
   int result_size = 0;
   for (int i = 0; i < regs.length(); i++) {
     result_size += pd_reg_size(regs.at(i));
@@ -67,7 +103,7 @@ void RegSpiller::generate(MacroAssembler* masm, int rsp_offset, bool spill) cons
   assert(rsp_offset != -1, "rsp_offset should be set");
   int offset = rsp_offset;
   for (int i = 0; i < _regs.length(); i++) {
-    VMReg reg = _regs.at(i);
+    VMStorage reg = _regs.at(i);
     if (spill) {
       pd_store_reg(masm, offset, reg);
     } else {
@@ -81,27 +117,22 @@ void ArgumentShuffle::print_on(outputStream* os) const {
   os->print_cr("Argument shuffle {");
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
-    BasicType arg_bt     = move.bt;
-    VMRegPair from_vmreg = move.from;
-    VMRegPair to_vmreg   = move.to;
+    VMStorage from_reg = move.from;
+    VMStorage to_reg   = move.to;
 
-    os->print("Move a %s from (", null_safe_string(type2name(arg_bt)));
-    from_vmreg.first()->print_on(os);
-    os->print(",");
-    from_vmreg.second()->print_on(os);
-    os->print(") to (");
-    to_vmreg.first()->print_on(os);
-    os->print(",");
-    to_vmreg.second()->print_on(os);
-    os->print_cr(")");
+    os->print("Move from ");
+    from_reg.print_on(os);
+    os->print(" to ");
+    to_reg.print_on(os);
+    os->print_cr("");
   }
-  os->print_cr("Stack argument slots: %d", _out_arg_stack_slots);
+  os->print_cr("Stack argument bytes: %d", _out_arg_bytes);
   os->print_cr("}");
 }
 
-int NativeCallingConvention::calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const {
+int NativeCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage* out_regs, int num_args) const {
   int src_pos = 0;
-  int stk_slots = 0;
+  uint32_t max_stack_offset = 0;
   for (int i = 0; i < num_args; i++) {
     switch (sig_bt[i]) {
       case T_BOOLEAN:
@@ -110,72 +141,99 @@ int NativeCallingConvention::calling_convention(BasicType* sig_bt, VMRegPair* ou
       case T_SHORT:
       case T_INT:
       case T_FLOAT: {
-        assert(src_pos < _input_regs.length(), "oob");
-        VMReg reg = _input_regs.at(src_pos++);
-        out_regs[i].set1(reg);
-        if (reg->is_stack())
-          stk_slots += 2;
+        VMStorage reg = _input_regs.at(src_pos++);
+        out_regs[i] = reg;
+        if (reg.is_stack())
+          max_stack_offset = MAX2(max_stack_offset, reg.offset() + reg.stack_size());
         break;
       }
       case T_LONG:
       case T_DOUBLE: {
         assert((i + 1) < num_args && sig_bt[i + 1] == T_VOID, "expecting half");
-        assert(src_pos < _input_regs.length(), "oob");
-        VMReg reg = _input_regs.at(src_pos++);
-        out_regs[i].set2(reg);
-        if (reg->is_stack())
-          stk_slots += 2;
+        VMStorage reg = _input_regs.at(src_pos++);
+        out_regs[i] = reg;
+        if (reg.is_stack())
+          max_stack_offset = MAX2(max_stack_offset, reg.offset() + reg.stack_size());
         break;
       }
       case T_VOID: // Halves of longs and doubles
         assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
-        out_regs[i].set_bad();
+        out_regs[i] = VMStorage::invalid();
         break;
       default:
         ShouldNotReachHere();
         break;
     }
   }
-  return stk_slots;
+  return align_up(max_stack_offset, 8);
+}
+
+int JavaCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const {
+  VMRegPair* vm_regs = NEW_RESOURCE_ARRAY(VMRegPair, num_args);
+  int slots = SharedRuntime::java_calling_convention(sig_bt, vm_regs, num_args);
+  for (int i = 0; i < num_args; i++) {
+    VMRegPair pair = vm_regs[i];
+    // note, we ignore second here. Signature should consist of register-size values. So there should be
+    // no need for multi-register pairs.
+    //assert(!pair.first()->is_valid() || pair.is_single_reg(), "must be: %s");
+    regs[i] = as_VMStorage(pair.first());
+  }
+  return slots << LogBytesPerInt;
 }
 
 class ComputeMoveOrder: public StackObj {
+  class MoveOperation;
+
+  // segment_mask_or_size is not taken into account since
+  // VMStorages that differ only in mask or size can still
+  // conflict
+  static inline unsigned hash(const VMStorage& vms) {
+    return static_cast<unsigned int>(vms.type()) ^ vms.index_or_offset();
+  }
+  static inline bool equals(const VMStorage& a, const VMStorage& b) {
+    return a.type() == b.type() && a.index_or_offset() == b.index_or_offset();
+  }
+
+  using KillerTable = ResourceHashtable<
+    VMStorage, MoveOperation*,
+    32, // doesn't need to be big. don't have that many argument registers (in known ABIs)
+    AnyObj::RESOURCE_AREA,
+    mtInternal,
+    ComputeMoveOrder::hash,
+    ComputeMoveOrder::equals
+    >;
+
   class MoveOperation: public ResourceObj {
     friend class ComputeMoveOrder;
    private:
-    VMRegPair      _src;
-    VMRegPair      _dst;
-    bool           _processed;
-    MoveOperation* _next;
-    MoveOperation* _prev;
-    BasicType      _bt;
-
-    static int get_id(VMRegPair r) {
-      return r.first()->value();
-    }
+    VMStorage       _src;
+    VMStorage       _dst;
+    bool            _processed;
+    MoveOperation*  _next;
+    MoveOperation*  _prev;
 
    public:
-    MoveOperation(VMRegPair src, VMRegPair dst, BasicType bt)
-      : _src(src), _dst(dst), _processed(false), _next(NULL), _prev(NULL), _bt(bt) {}
+    MoveOperation(VMStorage src, VMStorage dst):
+      _src(src), _dst(dst), _processed(false), _next(nullptr), _prev(nullptr) {}
 
-    int src_id() const          { return get_id(_src); }
-    int dst_id() const          { return get_id(_dst); }
-    MoveOperation* next() const { return _next; }
-    MoveOperation* prev() const { return _prev; }
-    void set_processed()        { _processed = true; }
-    bool is_processed() const   { return _processed; }
+    const VMStorage& src() const { return _src; }
+    const VMStorage& dst() const { return _dst; }
+    MoveOperation* next()  const { return _next; }
+    MoveOperation* prev()  const { return _prev; }
+    void set_processed()         { _processed = true; }
+    bool is_processed()    const { return _processed; }
 
     // insert
-    void break_cycle(VMRegPair temp_register) {
+    void break_cycle(VMStorage temp_register) {
       // create a new store following the last store
       // to move from the temp_register to the original
-      MoveOperation* new_store = new MoveOperation(temp_register, _dst, _bt);
+      MoveOperation* new_store = new MoveOperation(temp_register, _dst);
 
       // break the cycle of links and insert new_store at the end
       // break the reverse link.
       MoveOperation* p = prev();
       assert(p->next() == this, "must be");
-      _prev = NULL;
+      _prev = nullptr;
       p->_next = new_store;
       new_store->_prev = p;
 
@@ -183,33 +241,35 @@ class ComputeMoveOrder: public StackObj {
       _dst = temp_register;
     }
 
-    void link(GrowableArray<MoveOperation*>& killer) {
+    void link(KillerTable& killer) {
       // link this store in front the store that it depends on
-      MoveOperation* n = killer.at_grow(src_id(), NULL);
-      if (n != NULL) {
-        assert(_next == NULL && n->_prev == NULL, "shouldn't have been set yet");
-        _next = n;
-        n->_prev = this;
+      MoveOperation** n = killer.get(_src);
+      if (n != nullptr) {
+        MoveOperation* src_killer = *n;
+        assert(_next == nullptr && src_killer->_prev == nullptr, "shouldn't have been set yet");
+        _next = src_killer;
+        src_killer->_prev = this;
       }
     }
 
     Move as_move() {
-      return {_bt, _src, _dst};
+      return {_src, _dst};
     }
   };
 
  private:
   int _total_in_args;
-  const VMRegPair* _in_regs;
+  const VMStorage* _in_regs;
   int _total_out_args;
-  const VMRegPair* _out_regs;
+  const VMStorage* _out_regs;
   const BasicType* _in_sig_bt;
-  VMRegPair _tmp_vmreg;
+  VMStorage _tmp_vmreg;
   GrowableArray<MoveOperation*> _edges;
   GrowableArray<Move> _moves;
 
-  ComputeMoveOrder(int total_in_args, const VMRegPair* in_regs, int total_out_args, VMRegPair* out_regs,
-                   const BasicType* in_sig_bt, VMRegPair tmp_vmreg) :
+ public:
+  ComputeMoveOrder(int total_in_args, const VMStorage* in_regs, int total_out_args, VMStorage* out_regs,
+                   const BasicType* in_sig_bt, VMStorage tmp_vmreg) :
       _total_in_args(total_in_args),
       _in_regs(in_regs),
       _total_out_args(total_out_args),
@@ -232,16 +292,16 @@ class ComputeMoveOrder: public StackObj {
     for (int in_idx = _total_in_args - 1, out_idx = _total_out_args - 1; in_idx >= 0; in_idx--, out_idx--) {
       BasicType bt = _in_sig_bt[in_idx];
       assert(bt != T_ARRAY, "array not expected");
-      VMRegPair in_reg = _in_regs[in_idx];
-      VMRegPair out_reg = _out_regs[out_idx];
+      VMStorage in_reg = _in_regs[in_idx];
+      VMStorage out_reg = _out_regs[out_idx];
 
-      if (out_reg.first()->is_stack()) {
+      if (out_reg.is_stack() || out_reg.is_frame_data()) {
         // Move operations where the dest is the stack can all be
         // scheduled first since they can't interfere with the other moves.
         // The input and output stack spaces are distinct from each other.
-        Move move{bt, in_reg, out_reg};
+        Move move{in_reg, out_reg};
         _moves.push(move);
-      } else if (in_reg.first() == out_reg.first()
+      } else if (in_reg == out_reg
                  || bt == T_VOID) {
         // 1. Can skip non-stack identity moves.
         //
@@ -249,7 +309,7 @@ class ComputeMoveOrder: public StackObj {
         //    Don't need to do anything.
         continue;
       } else {
-        _edges.append(new MoveOperation(in_reg, out_reg, bt));
+        _edges.append(new MoveOperation(in_reg, out_reg));
       }
     }
     // Break any cycles in the register moves and emit the in the
@@ -259,16 +319,16 @@ class ComputeMoveOrder: public StackObj {
 
   // Walk the edges breaking cycles between moves.  The result list
   // can be walked in order to produce the proper set of loads
-  void compute_store_order(VMRegPair temp_register) {
-    // Record which moves kill which values
-    GrowableArray<MoveOperation*> killer; // essentially a map of register id -> MoveOperation*
+  void compute_store_order(VMStorage temp_register) {
+    // Record which moves kill which registers
+    KillerTable killer; // a map of VMStorage -> MoveOperation*
     for (int i = 0; i < _edges.length(); i++) {
       MoveOperation* s = _edges.at(i);
-      assert(killer.at_grow(s->dst_id(), NULL) == NULL,
+      assert(!killer.contains(s->dst()),
              "multiple moves with the same register as destination");
-      killer.at_put_grow(s->dst_id(), s, NULL);
+      killer.put(s->dst(), s);
     }
-    assert(killer.at_grow(MoveOperation::get_id(temp_register), NULL) == NULL,
+    assert(!killer.contains(temp_register),
            "make sure temp isn't in the registers that are killed");
 
     // create links between loads and stores
@@ -286,14 +346,14 @@ class ComputeMoveOrder: public StackObj {
       if (!s->is_processed()) {
         MoveOperation* start = s;
         // search for the beginning of the chain or cycle
-        while (start->prev() != NULL && start->prev() != s) {
+        while (start->prev() != nullptr && start->prev() != s) {
           start = start->prev();
         }
         if (start->prev() == s) {
           start->break_cycle(temp_register);
         }
         // walk the chain forward inserting to store list
-        while (start != NULL) {
+        while (start != nullptr) {
           _moves.push(start->as_move());
 
           start->set_processed();
@@ -304,9 +364,9 @@ class ComputeMoveOrder: public StackObj {
   }
 
 public:
-  static GrowableArray<Move> compute_move_order(int total_in_args, const VMRegPair* in_regs,
-                                                int total_out_args, VMRegPair* out_regs,
-                                                const BasicType* in_sig_bt, VMRegPair tmp_vmreg) {
+  static GrowableArray<Move> compute_move_order(int total_in_args, const VMStorage* in_regs,
+                                                int total_out_args, VMStorage* out_regs,
+                                                const BasicType* in_sig_bt, VMStorage tmp_vmreg) {
     ComputeMoveOrder cmo(total_in_args, in_regs, total_out_args, out_regs, in_sig_bt, tmp_vmreg);
     cmo.compute();
     return cmo._moves;
@@ -320,24 +380,15 @@ ArgumentShuffle::ArgumentShuffle(
     int num_out_args,
     const CallingConventionClosure* input_conv,
     const CallingConventionClosure* output_conv,
-    VMReg shuffle_temp) {
+    VMStorage shuffle_temp) {
 
-  VMRegPair* in_regs = NEW_RESOURCE_ARRAY(VMRegPair, num_in_args);
+  VMStorage* in_regs = NEW_RESOURCE_ARRAY(VMStorage, num_in_args);
   input_conv->calling_convention(in_sig_bt, in_regs, num_in_args);
 
-  VMRegPair* out_regs = NEW_RESOURCE_ARRAY(VMRegPair, num_out_args);
-  _out_arg_stack_slots = output_conv->calling_convention(out_sig_bt, out_regs, num_out_args);
+  VMStorage* out_regs = NEW_RESOURCE_ARRAY(VMStorage, num_out_args);
+  _out_arg_bytes = output_conv->calling_convention(out_sig_bt, out_regs, num_out_args);
 
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(shuffle_temp);
-
-  // Compute a valid move order, using tmp_vmreg to break any cycles.
-  // Note that ComputeMoveOrder ignores the upper half of our VMRegPairs.
-  // We are not moving Java values here, only register-sized values,
-  // so we shouldn't have to worry about the upper half any ways.
-  // This should work fine on 32-bit as well, since we would only be
-  // moving 32-bit sized values (i.e. low-level MH shouldn't take any double/long).
   _moves = ComputeMoveOrder::compute_move_order(num_in_args, in_regs,
                                                 num_out_args, out_regs,
-                                                in_sig_bt, tmp_vmreg);
+                                                in_sig_bt, shuffle_temp);
 }

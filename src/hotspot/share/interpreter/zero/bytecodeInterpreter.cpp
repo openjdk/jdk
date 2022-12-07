@@ -60,8 +60,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
-// no precompiled headers
-
 /*
  * USELABELS - If using GCC, then use labels for the opcode dispatching
  * rather -then a switch statement. This improves performance because it

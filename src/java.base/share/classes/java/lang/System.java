@@ -86,6 +86,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.annotation.ChangesCurrentThread;
@@ -2244,6 +2245,12 @@ public final class System {
         // SecurityManager
         Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
 
+        // Emit a warning if java.io.tmpdir is set via the command line
+        // to a directory that doesn't exist
+        if (SystemProps.isBadIoTmpdir()) {
+            System.err.println("WARNING: java.io.tmpdir directory does not exist");
+        }
+
         String smProp = System.getProperty("java.security.manager");
         boolean needWarning = false;
         if (smProp != null) {
@@ -2431,11 +2438,11 @@ public final class System {
             public Module addEnableNativeAccess(Module m) {
                 return m.implAddEnableNativeAccess();
             }
-            public void addEnableNativeAccessAllUnnamed() {
-                Module.implAddEnableNativeAccessAllUnnamed();
+            public void addEnableNativeAccessToAllUnnamed() {
+                Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public boolean isEnableNativeAccess(Module m) {
-                return m.implIsEnableNativeAccess();
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName) {
+                m.ensureNativeAccess(owner, methodName);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2572,20 +2579,29 @@ public final class System {
                 return ((ThreadLocal<?>)local).isCarrierThreadLocalPresent();
             }
 
-            public Object[] extentLocalCache() {
-                return Thread.extentLocalCache();
+            public Object[] scopedValueCache() {
+                return Thread.scopedValueCache();
             }
 
-            public void setExtentLocalCache(Object[] cache) {
-                Thread.setExtentLocalCache(cache);
+            public void setScopedValueCache(Object[] cache) {
+                Thread.setScopedValueCache(cache);
             }
 
-            public Object extentLocalBindings() {
-                return Thread.extentLocalBindings();
+            public Object scopedValueBindings() {
+                return Thread.scopedValueBindings();
             }
 
-            public void setExtentLocalBindings(Object bindings) {
-                Thread.setExtentLocalBindings(bindings);
+            public Object findScopedValueBindings() {
+                return Thread.findScopedValueBindings();
+            }
+
+            public void setScopedValueBindings(Object bindings) {
+                Thread.setScopedValueBindings(bindings);
+            }
+
+            @ForceInline
+            public void ensureMaterializedForStackWalk(Object value) {
+                Thread.ensureMaterializedForStackWalk(value);
             }
 
             public Continuation getContinuation(Thread thread) {

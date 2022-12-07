@@ -78,11 +78,15 @@ public class SubjectInfoAccessExtension extends Extension {
      * Create an SubjectInfoAccessExtension from a List of
      * AccessDescription; the criticality is set to false.
      *
-     * @param accessDescriptions the List of AccessDescription
-     * @throws IOException on error
+     * @param accessDescriptions the List of AccessDescription,
+     *                           cannot be null or empty.
      */
     public SubjectInfoAccessExtension(
-            List<AccessDescription> accessDescriptions) throws IOException {
+            List<AccessDescription> accessDescriptions) {
+        if (accessDescriptions == null || accessDescriptions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "accessDescriptions cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
         this.critical = false;
         this.accessDescriptions = accessDescriptions;
@@ -138,10 +142,9 @@ public class SubjectInfoAccessExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
             this.critical = false;
@@ -151,7 +154,7 @@ public class SubjectInfoAccessExtension extends Extension {
     }
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (accessDescriptions.isEmpty()) {
             this.extensionValue = null;
         } else {

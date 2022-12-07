@@ -79,11 +79,6 @@ class ObjectMonitorsHashtable {
     return (listpp == nullptr) ? nullptr : *listpp;
   }
 
-  bool has_entry(void* key) {
-    PtrList** listpp = _ptrs->get(key);
-    return listpp != nullptr && *listpp != nullptr;
-  }
-
   bool has_entry(void* key, ObjectMonitor* om);
 
   size_t key_count() { return _key_count; }
@@ -158,11 +153,6 @@ class ObjectSynchronizer : AllStatic {
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
   static bool quick_enter(oop obj, JavaThread* current, BasicLock* Lock);
-
-  // Special internal-use-only method for use by JVM infrastructure
-  // that needs to wait() on a java-level object but must not respond
-  // to interrupt requests and doesn't timeout.
-  static void wait_uninterruptibly(Handle obj, JavaThread* current);
 
   // used by classloading to free classloader object lock,
   // wait on an internal lock, and reclaim original lock
@@ -266,7 +256,6 @@ class ObjectLocker : public StackObj {
   // Monitor behavior
   void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
-  void wait_uninterruptibly(JavaThread* current) { ObjectSynchronizer::wait_uninterruptibly(_obj, current); }
 };
 
 #endif // SHARE_RUNTIME_SYNCHRONIZER_HPP

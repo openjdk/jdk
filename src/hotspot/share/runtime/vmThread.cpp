@@ -323,7 +323,7 @@ void VMThread::setup_periodic_safepoint_if_needed() {
   assert(_cur_vm_operation  == NULL, "Already have an op");
   assert(_next_vm_operation == NULL, "Already have an op");
   // Check for a cleanup before SafepointALot to keep stats correct.
-  long interval_ms = SafepointTracing::time_since_last_safepoint_ms();
+  jlong interval_ms = SafepointTracing::time_since_last_safepoint_ms();
   bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
                            (interval_ms >= GuaranteedSafepointInterval);
   if (!max_time_exceeded) {
