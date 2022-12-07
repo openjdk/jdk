@@ -577,6 +577,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                  }),
             "ComboBox.font", new FontLazyValue(Region.COMBO_BOX),
             "ComboBox.isEnterSelectablePopup", Boolean.TRUE,
+            "ComboBox.squareButton", Boolean.FALSE,
 
 
             "EditorPane.caretForeground", caretColor,
