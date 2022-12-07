@@ -1079,14 +1079,14 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
     }
 
-    public static final String VECTOR_CAST_F2H = PREFIX + "VECTOR_CAST_F2H" + POSTFIX;
+    public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_F2H, "VectorCastF2H");
+        beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
     }
 
-    public static final String VECTOR_CAST_H2F = PREFIX + "VECTOR_CAST_H2F" + POSTFIX;
+    public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_H2F, "VectorCastH2F");
+        beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
     }
 
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;

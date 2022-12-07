@@ -1687,9 +1687,10 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_VectorCastF2H:
-    case Op_VectorCastH2F:
-      if (!VM_Version::supports_f16c() && !VM_Version::supports_evex()) {
+    case Op_VectorCastF2HF:
+    case Op_VectorCastHF2F:
+      if ((UseAVX < 2) ||
+          (!VM_Version::supports_f16c() && !VM_Version::supports_evex())) {
         return false;
       }
       break;
@@ -1907,8 +1908,8 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
-    case Op_VectorCastF2H:
-    case Op_VectorCastH2F:
+    case Op_VectorCastF2HF:
+    case Op_VectorCastHF2F:
       if (!VM_Version::supports_f16c() &&
          ((!VM_Version::supports_evex() ||
          ((size_in_bits != 512) && !VM_Version::supports_avx512vl())))) {
@@ -3688,7 +3689,7 @@ instruct convF2HF_mem_reg(memory mem, regF src, kReg ktmp, rRegI rtmp) %{
 %}
 
 instruct vconvF2HF(vec dst, vec src) %{
-  match(Set dst (VectorCastF2H src));
+  match(Set dst (VectorCastF2HF src));
   format %{ "vector_conv_F2HF $dst $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
@@ -3698,7 +3699,7 @@ instruct vconvF2HF(vec dst, vec src) %{
 %}
 
 instruct vconvF2HF_mem_reg(memory mem, vec src) %{
-  match(Set mem (StoreVector mem (VectorCastF2H src)));
+  match(Set mem (StoreVector mem (VectorCastF2HF src)));
   format %{ "vcvtps2ph $mem,$src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
@@ -3718,7 +3719,7 @@ instruct convHF2F_reg_reg(regF dst, rRegI src) %{
 %}
 
 instruct vconvHF2F_reg_mem(vec dst, memory mem) %{
-  match(Set dst (VectorCastH2F (LoadVector mem)));
+  match(Set dst (VectorCastHF2F (LoadVector mem)));
   format %{ "vcvtph2ps $dst,$mem" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
@@ -3728,7 +3729,7 @@ instruct vconvHF2F_reg_mem(vec dst, memory mem) %{
 %}
 
 instruct vconvHF2F(vec dst, vec src) %{
-  match(Set dst (VectorCastH2F src));
+  match(Set dst (VectorCastHF2F src));
   ins_cost(125);
   format %{ "vector_conv_HF2F $dst,$src" %}
   ins_encode %{

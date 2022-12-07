@@ -2690,8 +2690,7 @@ bool SuperWord::output() {
                  opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
                  opc == Op_ReverseI || opc == Op_ReverseL ||
                  opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
-                 opc == Op_CountTrailingZerosI || opc == Op_ConvHF2F ||
-                 opc == Op_ConvF2HF) {
+                 opc == Op_CountTrailingZerosI) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
@@ -2713,7 +2712,7 @@ bool SuperWord::output() {
         assert(n->req() == 2, "only one input expected");
         BasicType bt = velt_basic_type(n);
         Node* in = vector_opd(p, 1);
-        int vopc = VectorCastNode::opcode(in->bottom_type()->is_vect()->element_basic_type());
+        int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {

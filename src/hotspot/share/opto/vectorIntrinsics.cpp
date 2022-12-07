@@ -775,7 +775,7 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
     return false;
   }
 
-  int cast_vopc = VectorCastNode::opcode(T_BYTE); // from shuffle of type T_BYTE
+  int cast_vopc = VectorCastNode::opcode(-1, T_BYTE); // from shuffle of type T_BYTE
   // Make sure that cast is implemented to particular type/size combination.
   if (!arch_supports_vector(cast_vopc, num_elem, elem_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
@@ -2489,7 +2489,7 @@ bool LibraryCallKit::inline_vector_convert() {
   Node* op = opd1;
   if (is_cast) {
     assert(!is_mask || num_elem_from == num_elem_to, "vector mask cast needs the same elem num");
-    int cast_vopc = VectorCastNode::opcode(elem_bt_from, !is_ucast);
+    int cast_vopc = VectorCastNode::opcode(-1, elem_bt_from, !is_ucast);
 
     // Make sure that vector cast is implemented to particular type/size combination if it is
     // not a mask casting.

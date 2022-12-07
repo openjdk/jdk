@@ -267,10 +267,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_SignumVF;
   case Op_SignumD:
     return Op_SignumVD;
-  case Op_ConvHF2F:
-    return Op_VectorCastH2F;
-  case Op_ConvF2HF:
-    return Op_VectorCastF2H;
 
   default:
     assert(!VectorNode::is_convert_opcode(sopc),
@@ -700,8 +696,6 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_CompressM: assert(n1 == NULL, ""); return new CompressMNode(n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
-  case Op_VectorCastH2F: return new VectorCastH2FNode(n1, vt);
-  case Op_VectorCastF2H: return new VectorCastF2HNode(n1, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -1336,14 +1330,31 @@ VectorCastNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen
     case Op_VectorUCastB2X: return new VectorUCastB2XNode(n1, vt);
     case Op_VectorUCastS2X: return new VectorUCastS2XNode(n1, vt);
     case Op_VectorUCastI2X: return new VectorUCastI2XNode(n1, vt);
+    case Op_VectorCastHF2F: return new VectorCastHF2FNode(n1, vt);
+    case Op_VectorCastF2HF: return new VectorCastF2HFNode(n1, vt);
     default:
       assert(false, "unknown node: %s", NodeClassNames[vopc]);
       return NULL;
   }
 }
 
-int VectorCastNode::opcode(BasicType bt, bool is_signed) {
+int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
   assert((is_integral_type(bt) && bt != T_LONG) || is_signed, "");
+
+  // Handle special case for to/from Half Float conversions
+  switch (sopc) {
+    case Op_ConvHF2F:
+      assert(bt == T_SHORT, "");
+      return Op_VectorCastHF2F;
+    case Op_ConvF2HF:
+      assert(bt == T_FLOAT, "");
+      return Op_VectorCastF2HF;
+    default:
+      // Handled normally below
+      break;
+  }
+
+  // Handle normal conversions
   switch (bt) {
     case T_BYTE:   return is_signed ? Op_VectorCastB2X : Op_VectorUCastB2X;
     case T_SHORT:  return is_signed ? Op_VectorCastS2X : Op_VectorUCastS2X;
@@ -1362,7 +1373,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported(dst_type, vlen)) {
-    int vopc = VectorCastNode::opcode(src_type);
+    int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
   }
   return false;
