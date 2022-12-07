@@ -173,7 +173,6 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     private float getTracking(Font font) {
-
         if (font.hasLayoutAttributes()) {
             AttributeValues values = ((AttributeMap)font.getAttributes()).getValues();
             return values.getTracking();
