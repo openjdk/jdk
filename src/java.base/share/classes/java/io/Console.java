@@ -622,7 +622,7 @@ public class Console implements Flushable
                         .orElse(istty ? new Console() : null);
             };
             return AccessController.doPrivileged(pa);
-        } catch (Throwable ignore) {
+        } catch (ServiceConfigurationError ignore) {
             // default to built-in Console
             return istty ? new Console() : null;
         }

@@ -150,6 +150,7 @@ final class ProxyingConsole extends Console {
         private final Object lock;
 
         WrappingReader(Reader r, Object lock) {
+            super(lock);
             this.r = r;
             this.lock = lock;
         }
@@ -172,7 +173,7 @@ final class ProxyingConsole extends Console {
         private final Object lock;
 
         public WrappingWriter(PrintWriter pw, Object lock) {
-            super(pw);
+            super(pw, lock);
             this.pw = pw;
             this.lock = lock;
         }

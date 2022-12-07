@@ -208,6 +208,13 @@ public class PrintWriter extends Writer {
              false);
     }
 
+    /* package private constructor specific to ProxyingConsole */
+    PrintWriter(Writer out, Object lock) {
+        super(lock);
+        this.out = out;
+        this.autoFlush = false;
+    }
+
     /* Private constructor */
     private PrintWriter(Charset charset, File file)
         throws FileNotFoundException
