@@ -451,6 +451,8 @@ enum NamedGroup {
         return false;
     }
 
+    // Get preferred named group from the configured named groups for the
+    // negotiated protocol and named group types.
     static NamedGroup getPreferredGroup(
             SSLConfiguration sslConfig,
             ProtocolVersion negotiatedProtocol,
@@ -468,6 +470,8 @@ enum NamedGroup {
         return null;
     }
 
+    // Get preferred named group from the requested and configured named
+    // groups for the negotiated protocol and named group types.
     static NamedGroup getPreferredGroup(
             SSLConfiguration sslConfig,
             ProtocolVersion negotiatedProtocol,

@@ -27,7 +27,7 @@
 /*
  * @test
  * @bug 8281236
- * @summary (D)TLS key exchange named groups
+ * @summary Check TLS connection behaviors for named groups configuration
  * @library /javax/net/ssl/templates
  * @run main/othervm NamedGroups
  */

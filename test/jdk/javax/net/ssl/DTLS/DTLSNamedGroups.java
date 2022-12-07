@@ -27,7 +27,7 @@
 /*
  * @test
  * @bug 8281236
- * @summary (D)TLS key exchange named groups
+ * @summary Check DTLS connection behaviors for named groups configuration
  * @modules java.base/sun.security.util
  * @library /test/lib
  * @build DTLSOverDatagram

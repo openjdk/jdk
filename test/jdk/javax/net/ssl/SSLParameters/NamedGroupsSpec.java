@@ -24,37 +24,44 @@
 /*
  * @test
  * @bug 8281236
- * @summary (D)TLS key exchange named groups
+ * @summary check SSLParameters.setNamedGroups() implementation
  */
 
 import javax.net.ssl.SSLParameters;
+import java.util.Arrays;
 
 public class NamedGroupsSpec {
     public static void main(String[] args) throws Exception {
-        runTest(new String[] {
+        runTest(null,             // null array should be allowed.
+                false);
+        runTest(new String[] {    // empty array should be allowed
+                    // blank line
+                },
+                false);
+        runTest(new String[] {    // multiple elements should be fine
                         "x25519",
                         "secp256r1"
                 },
                 false);
-        runTest(new String[] {
+        runTest(new String[] {    // no duplicate element should be allowed
                         "x25519",
                         "x25519"
                 },
                 true);
-        runTest(new String[] {
+        runTest(new String[] {    // no null element should be allowed
                         null
                 },
                 true);
-        runTest(new String[] {
+        runTest(new String[] {    // no blank element should be allowed
                         ""
                 },
                 true);
-        runTest(new String[] {
+        runTest(new String[] {    // no blank element should be allowed
                         "x25519",
                         ""
                 },
                 true);
-        runTest(new String[] {
+        runTest(new String[] {    // no null element should be allowed.
                         "x25519",
                         null
                 },
@@ -77,6 +84,14 @@ public class NamedGroupsSpec {
 
         if (exceptionExpected) {
             throw new RuntimeException("Unexpected success!");
+        }
+
+        // Check if the getNamedGroups() method returns the same elements.
+        String[] configuredNamedGroups = sslParams.getNamedGroups();
+        if (!Arrays.equals(namedGroups, configuredNamedGroups)) {
+            throw new RuntimeException(
+                    "SSLParameters.getNamedGroups() method does not return "
+                  + "the same elements as set with setNamedGroups()");
         }
     }
 }

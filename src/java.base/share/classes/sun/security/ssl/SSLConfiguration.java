@@ -276,7 +276,7 @@ final class SSLConfiguration implements Cloneable {
 
         String[] ngs = params.getNamedGroups();
         if (ngs != null) {
-            // Note if 'ss' is empty, then no signature schemes should be
+            // Note if 'ngs' is empty, then no named groups should be
             // specified over the connections.
             this.namedGroups = ngs;
         } else {    // Otherwise, use the default values.
