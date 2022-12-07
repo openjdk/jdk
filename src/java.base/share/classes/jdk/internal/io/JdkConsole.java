@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.io;
+
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.nio.charset.Charset;
 
 /**
- * Internal API for line editing
- *
- * @since 9
+ * Delegate interface for custom Console implementations.
+ * Methods defined here duplicates the ones in Console class.
+ * Providers should implement jdk.internal.io.JdkConsoleProvider
+ * to instantiate an implementation of this interface.
  */
-module jdk.internal.le {
-    exports jdk.internal.org.jline.keymap to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.completer to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.history to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal to
-        jdk.jshell;
-    exports jdk.internal.org.jline.utils to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.spi to
-        jdk.jshell;
-
-    uses jdk.internal.org.jline.terminal.spi.JnaSupport;
-
-    // Console
-    provides jdk.internal.io.JdkConsoleProvider with
-            jdk.internal.org.jline.JdkConsoleProviderImpl;
+public interface JdkConsole {
+    PrintWriter writer();
+    Reader reader();
+    JdkConsole format(String fmt, Object ... args);
+    JdkConsole printf(String format, Object ... args);
+    String readLine(String fmt, Object ... args);
+    String readLine();
+    char[] readPassword(String fmt, Object ... args);
+    char[] readPassword();
+    void flush();
+    Charset charset();
 }
-
