@@ -25,7 +25,7 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.VM;
@@ -80,10 +80,10 @@ public class BindingSpecializer {
 
     private static final String BINDING_CONTEXT_DESC = Binding.Context.class.descriptorString();
     private static final String OF_BOUNDED_ALLOCATOR_DESC = methodType(Binding.Context.class, long.class).descriptorString();
-    private static final String OF_SESSION_DESC = methodType(Binding.Context.class).descriptorString();
+    private static final String OF_SCOPE_DESC = methodType(Binding.Context.class).descriptorString();
     private static final String ALLOCATOR_DESC = methodType(SegmentAllocator.class).descriptorString();
-    private static final String SESSION_DESC = methodType(SegmentScope.class).descriptorString();
-    private static final String SESSION_IMPL_DESC = methodType(MemorySessionImpl.class).descriptorString();
+    private static final String SCOPE_DESC = methodType(SegmentScope.class).descriptorString();
+    private static final String SCOPE_IMPL_DESC = methodType(MemoryScopeImpl.class).descriptorString();
     private static final String CLOSE_DESC = VOID_DESC;
     private static final String UNBOX_SEGMENT_DESC = methodType(long.class, MemorySegment.class).descriptorString();
     private static final String COPY_DESC = methodType(void.class, MemorySegment.class, long.class, MemorySegment.class, long.class, long.class).descriptorString();
@@ -293,8 +293,8 @@ public class BindingSpecializer {
         if (callingSequence.allocationSize() != 0) {
             emitConst(callingSequence.allocationSize());
             emitInvokeStatic(Binding.Context.class, "ofBoundedAllocator", OF_BOUNDED_ALLOCATOR_DESC);
-        } else if (callingSequence.forUpcall() && needsSession()) {
-            emitInvokeStatic(Binding.Context.class, "ofSession", OF_SESSION_DESC);
+        } else if (callingSequence.forUpcall() && needsScope()) {
+            emitInvokeStatic(Binding.Context.class, "ofScope", OF_SCOPE_DESC);
         } else {
             emitGetStatic(Binding.Context.class, "DUMMY", BINDING_CONTEXT_DESC);
         }
@@ -432,11 +432,11 @@ public class BindingSpecializer {
         mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, null);
     }
 
-    private boolean needsSession() {
+    private boolean needsScope() {
         return callingSequence.argumentBindings()
                 .filter(Binding.BoxAddress.class::isInstance)
                 .map(Binding.BoxAddress.class::cast)
-                .anyMatch(Binding.BoxAddress::needsSession);
+                .anyMatch(Binding.BoxAddress::needsScope);
     }
 
     private boolean shouldAcquire(int paramIndex) {
@@ -499,7 +499,7 @@ public class BindingSpecializer {
 
     private void emitAcquireScope() {
         emitCheckCast(AbstractMemorySegmentImpl.class);
-        emitInvokeVirtual(AbstractMemorySegmentImpl.class, "sessionImpl", SESSION_IMPL_DESC);
+        emitInvokeVirtual(AbstractMemorySegmentImpl.class, "scopeImpl", SCOPE_IMPL_DESC);
         Label skipAcquire = new Label();
         Label end = new Label();
 
@@ -516,7 +516,7 @@ public class BindingSpecializer {
         emitDup(Object.class);
         int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
         // call acquire first here. So that if it fails, we don't call release
-        emitInvokeVirtual(MemorySessionImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
+        emitInvokeVirtual(MemoryScopeImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
         emitStore(Object.class, nextScopeLocal); // store off one to release later
 
         if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
@@ -536,7 +536,7 @@ public class BindingSpecializer {
             emitLoad(Object.class, scopeLocal);
             mv.visitJumpInsn(IFNULL, skipRelease);
             emitLoad(Object.class, scopeLocal);
-            emitInvokeVirtual(MemorySessionImpl.class, "release0", RELEASE0_DESC);
+            emitInvokeVirtual(MemoryScopeImpl.class, "release0", RELEASE0_DESC);
             mv.visitLabel(skipRelease);
         }
     }
@@ -558,10 +558,10 @@ public class BindingSpecializer {
         return idx;
     }
 
-    private void emitLoadInternalSession() {
+    private void emitLoadInternalScope() {
         assert contextIdx != -1;
         emitLoad(Object.class, contextIdx);
-        emitInvokeVirtual(Binding.Context.class, "session", SESSION_DESC);
+        emitInvokeVirtual(Binding.Context.class, "scope", SCOPE_DESC);
     }
 
     private void emitLoadInternalAllocator() {
@@ -579,8 +579,8 @@ public class BindingSpecializer {
     private void emitBoxAddress(Binding.BoxAddress boxAddress) {
         popType(long.class);
         emitConst(boxAddress.size());
-        if (needsSession()) {
-            emitLoadInternalSession();
+        if (needsScope()) {
+            emitLoadInternalScope();
             emitInvokeStatic(NativeMemorySegmentImpl.class, "makeNativeSegmentUnchecked", OF_LONG_UNCHECKED_DESC);
         } else {
             emitInvokeStatic(NativeMemorySegmentImpl.class, "makeNativeSegmentUnchecked", OF_LONG_DESC);

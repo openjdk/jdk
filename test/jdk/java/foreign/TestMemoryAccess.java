@@ -115,9 +115,9 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment);
-            throw new AssertionError(); //not ok, session is closed
+            throw new AssertionError(); //not ok, scope is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (session is closed)
+            //ok, should fail (scope is closed)
         }
     }
 
@@ -149,9 +149,9 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment, 0);
-            throw new AssertionError(); //not ok, session is closed
+            throw new AssertionError(); //not ok, scope is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (session is closed)
+            //ok, should fail (scope is closed)
         }
     }
 
@@ -221,9 +221,9 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment, 0, 0);
-            throw new AssertionError(); //not ok, session is closed
+            throw new AssertionError(); //not ok, scope is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (session is closed)
+            //ok, should fail (scope is closed)
         }
     }
 

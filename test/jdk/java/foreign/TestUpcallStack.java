@@ -71,8 +71,8 @@ public class TestUpcallStack extends TestUpcallBase {
         return function(ret, params, fields, STACK_PREFIX_LAYOUTS);
     }
 
-    static Object[] makeArgsStack(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
-        return makeArgs(session, ret, params, fields, checks, argChecks, STACK_PREFIX_LAYOUTS);
+    static Object[] makeArgsStack(SegmentScope scope, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
+        return makeArgs(scope, ret, params, fields, checks, argChecks, STACK_PREFIX_LAYOUTS);
     }
 
 }

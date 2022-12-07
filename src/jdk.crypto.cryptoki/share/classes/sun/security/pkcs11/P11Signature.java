@@ -585,7 +585,7 @@ final class P11Signature extends SignatureSpi {
                     return;
                 }
                 int ofs = byteBuffer.position();
-                NIO_ACCESS.acquireSession(byteBuffer);
+                NIO_ACCESS.acquireScope(byteBuffer);
                 try {
                     long addr = dByteBuffer.address();
                     if (mode == M_SIGN) {
@@ -601,7 +601,7 @@ final class P11Signature extends SignatureSpi {
                     reset(false);
                     throw new ProviderException("Update failed", e);
                 } finally {
-                    NIO_ACCESS.releaseSession(byteBuffer);
+                    NIO_ACCESS.releaseScope(byteBuffer);
                 }
             }
             case T_DIGEST -> {

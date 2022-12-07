@@ -364,14 +364,14 @@ public class TestByteBuffer {
             MemorySegment segment = MemorySegment.allocateNative(bytes, arena.scope());;
             bb = bufferFactory.apply(segment.asByteBuffer());
         }
-        //outside of session!!
+        //outside of scope!!
         try {
             method.invoke(bb, args);
             fail("Exception expected");
         } catch (InvocationTargetException ex) {
             Throwable cause = ex.getCause();
             if (cause instanceof IllegalStateException) {
-                //all get/set buffer operation should fail because of the session check
+                //all get/set buffer operation should fail because of the scope check
                 assertTrue(ex.getCause().getMessage().contains("Already closed"));
             } else {
                 //all other exceptions were unexpected - fail
@@ -480,7 +480,7 @@ public class TestByteBuffer {
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void testBufferOnClosedSession() {
+    public void testBufferOnClosedScope() {
         MemorySegment leaked;
         try (Arena arena = Arena.openConfined()) {
             leaked = MemorySegment.allocateNative(bytes, arena.scope());;

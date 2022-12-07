@@ -108,8 +108,8 @@ public class TestNulls {
 
     static final Set<String> EXCLUDE_LIST = Set.of(
             "java.lang.foreign.MemorySegment/ofAddress(long,long,java.lang.foreign.SegmentScope,java.lang.Runnable)/3/0",
-            "java.lang.foreign.MemorySegment.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemorySegment.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
+            "java.lang.foreign.MemorySegment.MemoryScope/openConfined(java.lang.ref.Cleaner)/0/0",
+            "java.lang.foreign.MemorySegment.MemoryScope/openShared(java.lang.ref.Cleaner)/0/0",
             "java.lang.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.SequenceLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.ValueLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",

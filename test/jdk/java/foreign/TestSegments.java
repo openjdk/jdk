@@ -56,17 +56,17 @@ public class TestSegments {
     @Test
     public void testZeroLengthNativeSegment() {
         try (Arena arena = Arena.openConfined()) {
-            SegmentScope session = arena.scope();
-            var segment = MemorySegment.allocateNative(0, session);
+            SegmentScope scope = arena.scope();
+            var segment = MemorySegment.allocateNative(0, scope);
             assertEquals(segment.byteSize(), 0);
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
-            segment = MemorySegment.allocateNative(seq, session);
+            segment = MemorySegment.allocateNative(seq, scope);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % seq.byteAlignment(), 0);
-            segment = MemorySegment.allocateNative(0, 4, session);
+            segment = MemorySegment.allocateNative(0, 4, scope);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % 4, 0);
-            MemorySegment rawAddress = MemorySegment.ofAddress(segment.address(), 0, session);
+            MemorySegment rawAddress = MemorySegment.ofAddress(segment.address(), 0, scope);
             assertEquals(rawAddress.byteSize(), 0);
             assertEquals(rawAddress.address() % 4, 0);
         }

@@ -110,17 +110,17 @@ public class TestScopedOperations {
     static List<ScopedOperation> scopedOperations = new ArrayList<>();
 
     static {
-        // session operations
-        ScopedOperation.ofScope(session -> MemorySegment.allocateNative(100, session), "MemorySession::allocate");;
-        ScopedOperation.ofScope(session -> {
+        // scope operations
+        ScopedOperation.ofScope(scope -> MemorySegment.allocateNative(100, scope), "MemoryScope::allocate");;
+        ScopedOperation.ofScope(scope -> {
             try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
+                fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, scope);
             } catch (IOException ex) {
                 fail();
             }
         }, "FileChannel::map");
-        ScopedOperation.ofScope(session -> VaList.make(b -> b.addVarg(JAVA_INT, 42), session), "VaList::make");
-        ScopedOperation.ofScope(session -> VaList.ofAddress(42, session), "VaList::make");
+        ScopedOperation.ofScope(scope -> VaList.make(b -> b.addVarg(JAVA_INT, 42), scope), "VaList::make");
+        ScopedOperation.ofScope(scope -> VaList.ofAddress(42, scope), "VaList::make");
         // segment operations
         ScopedOperation.ofSegment(s -> s.toArray(JAVA_BYTE), "MemorySegment::toArray(BYTE)");
         ScopedOperation.ofSegment(s -> s.copyFrom(s), "MemorySegment::copyFrom");
@@ -179,8 +179,8 @@ public class TestScopedOperations {
         }
 
         @Override
-        public X apply(SegmentScope session) {
-            return factory.apply(session);
+        public X apply(SegmentScope scope) {
+            return factory.apply(scope);
         }
 
         static <Z> void of(Function<SegmentScope, Z> factory, Consumer<Z> consumer, String name) {
@@ -192,7 +192,7 @@ public class TestScopedOperations {
         }
 
         static void ofVaList(Consumer<VaList> vaListConsumer, String name) {
-            scopedOperations.add(new ScopedOperation<>(session -> VaList.make(builder -> builder.addVarg(JAVA_LONG, 42), session),
+            scopedOperations.add(new ScopedOperation<>(scope -> VaList.make(builder -> builder.addVarg(JAVA_LONG, 42), scope),
                     vaListConsumer, name));
         }
 
@@ -216,15 +216,15 @@ public class TestScopedOperations {
 
         enum SegmentFactory {
 
-            NATIVE(session -> MemorySegment.allocateNative(10, session)),
-            MAPPED(session -> {
+            NATIVE(scope -> MemorySegment.allocateNative(10, scope)),
+            MAPPED(scope -> {
                 try (FileChannel fileChannel = FileChannel.open(Path.of("foo.txt"), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-                    return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
+                    return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, scope);
                 } catch (IOException ex) {
                     throw new AssertionError(ex);
                 }
             }),
-            UNSAFE(session -> MemorySegment.ofAddress(0, 10, session));
+            UNSAFE(scope -> MemorySegment.ofAddress(0, 10, scope));
 
             static {
                 try {

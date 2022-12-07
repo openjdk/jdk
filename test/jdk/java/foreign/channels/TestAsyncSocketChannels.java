@@ -66,7 +66,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     static final Class<ExecutionException> EE = ExecutionException.class;
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
 
-    /** Tests that confined sessions are not supported. */
+    /** Tests that confined scopes are not supported. */
     @Test(dataProvider = "confinedArenas")
     public void testWithConfined(Supplier<Arena> arenaSupplier)
         throws Throwable
@@ -94,14 +94,14 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 ioOp.accept(handler);
                 handler.await()
                         .assertFailedWith(ISE)
-                        .assertExceptionMessage("Confined session not supported");
+                        .assertExceptionMessage("Confined scope not supported");
             }
         }
     }
 
-    /** Tests that I/O with a closed session throws a suitable exception. */
+    /** Tests that I/O with a closed scope throws a suitable exception. */
     @Test(dataProvider = "sharedArenasAndTimeouts")
-    public void testIOWithClosedSharedSession(Supplier<Arena> arenaSupplier, int timeout)
+    public void testIOWithClosedSharedScope(Supplier<Arena> arenaSupplier, int timeout)
         throws Exception
     {
         try (var channel = AsynchronousSocketChannel.open();
@@ -150,9 +150,9 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    /** Tests basic I/O operations work with views over implicit and shared sessions. */
+    /** Tests basic I/O operations work with views over implicit and shared scopes. */
     @Test(dataProvider = "sharedArenas")
-    public void testBasicIOWithSupportedSession(Supplier<Arena> arenaSupplier)
+    public void testBasicIOWithSupportedScope(Supplier<Arena> arenaSupplier)
         throws Exception
     {
         Arena drop;
@@ -198,7 +198,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    /** Tests that a session is not closeable when there is an outstanding read operation. */
+    /** Tests that a scope is not closeable when there is an outstanding read operation. */
     @Test(dataProvider = "sharedArenasAndTimeouts")
     public void testCloseWithOutstandingRead(Supplier<Arena> arenaSupplier, int timeout)
         throws Throwable
@@ -222,10 +222,10 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 ioOp.accept(handler);
                 assertFalse(handler.isDone());
                 assertTrue(drop.scope().isAlive());
-                assertMessage(expectThrows(ISE, () -> drop.close()), "Session is acquired by");
+                assertMessage(expectThrows(ISE, () -> drop.close()), "Scope is acquired by");
 
                 // write to allow the blocking read complete, which will
-                // in turn unlock the session and allow it to be closed.
+                // in turn unlock the scope and allow it to be closed.
                 asc2.write(ByteBuffer.wrap(new byte[] { 0x01 })).get();
                 handler.await().assertCompleteWith(1L);
                 assertTrue(drop.scope().isAlive());
@@ -233,7 +233,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
         }
     }
 
-    /** Tests that a session is not closeable when there is an outstanding write operation. */
+    /** Tests that a scope is not closeable when there is an outstanding write operation. */
     // Note: limited scenarios are checked, given the 5 sec sleep!
     @Test(dataProvider = "sharedArenasAndTimeouts")
     public void testCloseWithOutstandingWrite(Supplier<Arena> arenaSupplier, int timeout)
@@ -271,14 +271,14 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             // give time for socket buffer to fill up.
             awaitNoFurtherWrites(bytesWritten);
 
-            assertMessage(expectThrows(ISE, () -> drop.close()), "Session is acquired by");
+            assertMessage(expectThrows(ISE, () -> drop.close()), "Scope is acquired by");
             assertTrue(drop.scope().isAlive());
 
             // signal handler to stop further writing
             continueWriting.set(false);
 
             // read to allow the outstanding write complete, which will
-            // in turn unlock the session and allow it to be closed.
+            // in turn unlock the scope and allow it to be closed.
             readNBytes(asc2, bytesWritten.get());
             assertTrue(drop.scope().isAlive());
             awaitOutstandingWrites(outstandingWriteOps);

@@ -25,7 +25,7 @@
 
 package java.lang.foreign;
 
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -154,13 +154,13 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * {@return a new confined arena, owned by the current thread}
      */
     static Arena openConfined() {
-        return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
+        return MemoryScopeImpl.createConfined(Thread.currentThread()).asArena();
     }
 
     /**
      * {@return a new shared arena}
      */
     static Arena openShared() {
-        return MemorySessionImpl.createShared().asArena();
+        return MemoryScopeImpl.createShared().asArena();
     }
 }

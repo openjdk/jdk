@@ -33,7 +33,7 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
 
@@ -141,7 +141,7 @@ public non-sealed class WinVaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        ((MemorySessionImpl) segment.scope()).checkValidState();
+        ((MemoryScopeImpl) segment.scope()).checkValidState();
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             checkElement(layout);
@@ -149,17 +149,17 @@ public non-sealed class WinVaList implements VaList {
         }
     }
 
-    static WinVaList ofAddress(long address, SegmentScope session) {
-        return new WinVaList(MemorySegment.ofAddress(address, Long.MAX_VALUE, session));
+    static WinVaList ofAddress(long address, SegmentScope scope) {
+        return new WinVaList(MemorySegment.ofAddress(address, Long.MAX_VALUE, scope));
     }
 
-    static Builder builder(SegmentScope session) {
-        return new Builder(session);
+    static Builder builder(SegmentScope scope) {
+        return new Builder(scope);
     }
 
     @Override
     public VaList copy() {
-        ((MemorySessionImpl) segment.scope()).checkValidState();
+        ((MemoryScopeImpl) segment.scope()).checkValidState();
         return new WinVaList(segment);
     }
 
@@ -171,12 +171,12 @@ public non-sealed class WinVaList implements VaList {
 
     public static non-sealed class Builder implements VaList.Builder {
 
-        private final SegmentScope session;
+        private final SegmentScope scope;
         private final List<SimpleVaArg> args = new ArrayList<>();
 
-        public Builder(SegmentScope session) {
-            ((MemorySessionImpl) session).checkValidState();
-            this.session = session;
+        public Builder(SegmentScope scope) {
+            ((MemoryScopeImpl) scope).checkValidState();
+            this.scope = scope;
         }
 
         private Builder arg(MemoryLayout layout, Object value) {
@@ -216,7 +216,7 @@ public non-sealed class WinVaList implements VaList {
                 return EMPTY;
             }
 
-            MemorySegment segment = MemorySegment.allocateNative(VA_SLOT_SIZE_BYTES * args.size(), session);
+            MemorySegment segment = MemorySegment.allocateNative(VA_SLOT_SIZE_BYTES * args.size(), scope);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
@@ -225,7 +225,7 @@ public non-sealed class WinVaList implements VaList {
                     TypeClass typeClass = TypeClass.typeClassFor(arg.layout, false);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
-                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, session);
+                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, scope);
                             copy.copyFrom(msArg); // by-value
                             VH_address.set(cursor, copy);
                         }

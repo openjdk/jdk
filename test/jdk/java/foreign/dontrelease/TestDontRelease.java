@@ -70,7 +70,7 @@ public class TestDontRelease extends NativeTestHelper  {
                     throw new RuntimeException(e);
                 }
 
-                // the downcall above should not have called release on the session
+                // the downcall above should not have called release on the scope
                 // so doing it here should succeed without error
             });
         }

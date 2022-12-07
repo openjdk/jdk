@@ -29,7 +29,7 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
@@ -761,18 +761,18 @@ public abstract sealed class Buffer
     }
 
     @ForceInline
-    final MemorySessionImpl session() {
+    final MemoryScopeImpl scope() {
         if (segment != null) {
-            return ((AbstractMemorySegmentImpl)segment).sessionImpl();
+            return ((AbstractMemorySegmentImpl)segment).scopeImpl();
         } else {
             return null;
         }
     }
 
-    final void checkSession() {
-        MemorySessionImpl session = session();
-        if (session != null) {
-            session.checkValidState();
+    final void checkScope() {
+        MemoryScopeImpl scope = scope();
+        if (scope != null) {
+            scope.checkValidState();
         }
     }
 
@@ -826,17 +826,17 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public void acquireSession(Buffer buffer) {
-                    var scope = buffer.session();
+                public void acquireScope(Buffer buffer) {
+                    var scope = buffer.scope();
                     if (scope != null) {
                         scope.acquire0();
                     }
                 }
 
                 @Override
-                public void releaseSession(Buffer buffer) {
+                public void releaseScope(Buffer buffer) {
                     try {
-                        var scope = buffer.session();
+                        var scope = buffer.scope();
                         if (scope != null) {
                             scope.release0();
                         }
@@ -847,13 +847,13 @@ public abstract sealed class Buffer
 
                 @Override
                 public boolean isThreadConfined(Buffer buffer) {
-                    var scope = buffer.session();
+                    var scope = buffer.scope();
                     return scope != null && scope.ownerThread() != null;
                 }
 
                 @Override
-                public boolean hasSession(Buffer buffer) {
-                    return buffer.session() != null;
+                public boolean hasScope(Buffer buffer) {
+                    return buffer.scope() != null;
                 }
 
                 @Override

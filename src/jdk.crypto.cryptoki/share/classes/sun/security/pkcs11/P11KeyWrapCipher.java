@@ -555,9 +555,9 @@ final class P11KeyWrapCipher extends CipherSpi {
 
         boolean doCancel = true;
         int k = 0;
-        NIO_ACCESS.acquireSession(inBuffer);
+        NIO_ACCESS.acquireScope(inBuffer);
         try {
-            NIO_ACCESS.acquireSession(outBuffer);
+            NIO_ACCESS.acquireScope(outBuffer);
             try {
                 try {
                     ensureInitialized();
@@ -633,10 +633,10 @@ final class P11KeyWrapCipher extends CipherSpi {
                     reset(doCancel);
                 }
             } finally {
-                NIO_ACCESS.releaseSession(outBuffer);
+                NIO_ACCESS.releaseScope(outBuffer);
             }
         } finally {
-            NIO_ACCESS.releaseSession(inBuffer);
+            NIO_ACCESS.releaseScope(inBuffer);
         }
         return k;
     }

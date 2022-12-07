@@ -25,7 +25,7 @@
  */
 package java.lang.foreign;
 
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.ref.CleanerFactory;
 
@@ -86,7 +86,7 @@ import jdk.internal.ref.CleanerFactory;
  * @since 20
  */
 @PreviewFeature(feature =PreviewFeature.Feature.FOREIGN)
-sealed public interface SegmentScope permits MemorySessionImpl {
+sealed public interface SegmentScope permits MemoryScopeImpl {
 
     /**
      * Creates a new scope that is managed, automatically, by the garbage collector.
@@ -96,7 +96,7 @@ sealed public interface SegmentScope permits MemorySessionImpl {
      * @return a new scope that is managed, automatically, by the garbage collector.
      */
     static SegmentScope auto() {
-        return MemorySessionImpl.createImplicit(CleanerFactory.cleaner());
+        return MemoryScopeImpl.createImplicit(CleanerFactory.cleaner());
     }
 
     /**
@@ -106,7 +106,7 @@ sealed public interface SegmentScope permits MemorySessionImpl {
      * @return the global scope.
      */
     static SegmentScope global() {
-        return MemorySessionImpl.GLOBAL;
+        return MemoryScopeImpl.GLOBAL;
     }
 
     /**

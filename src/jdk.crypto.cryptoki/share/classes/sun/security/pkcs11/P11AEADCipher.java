@@ -709,9 +709,9 @@ final class P11AEADCipher extends CipherSpi {
         }
 
         boolean doCancel = true;
-        NIO_ACCESS.acquireSession(inBuffer);
+        NIO_ACCESS.acquireScope(inBuffer);
         try {
-            NIO_ACCESS.acquireSession(outBuffer);
+            NIO_ACCESS.acquireScope(outBuffer);
             try {
                 try {
                     ensureInitialized();
@@ -793,10 +793,10 @@ final class P11AEADCipher extends CipherSpi {
                     reset(doCancel);
                 }
             } finally {
-                NIO_ACCESS.releaseSession(outBuffer);
+                NIO_ACCESS.releaseScope(outBuffer);
             }
         } finally {
-            NIO_ACCESS.releaseSession(inBuffer);
+            NIO_ACCESS.releaseScope(inBuffer);
         }
     }
 

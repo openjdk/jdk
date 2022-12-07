@@ -81,11 +81,11 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
                 FunctionDescriptor.of(layouts[prefix.size()], layouts);
     }
 
-    static Object[] makeArgs(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
-        return makeArgs(session, ret, params, fields, checks, argChecks, List.of());
+    static Object[] makeArgs(SegmentScope scope, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
+        return makeArgs(scope, ret, params, fields, checks, argChecks, List.of());
     }
 
-    static Object[] makeArgs(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) throws ReflectiveOperationException {
+    static Object[] makeArgs(SegmentScope scope, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) throws ReflectiveOperationException {
         Object[] args = new Object[prefix.size() + params.size() + 1];
         int argNum = 0;
         for (MemoryLayout layout : prefix) {
@@ -94,11 +94,11 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
         for (int i = 0 ; i < params.size() ; i++) {
             args[argNum++] = makeArg(params.get(i).layout(fields), checks, i == 0);
         }
-        args[argNum] = makeCallback(session, ret, params, fields, checks, argChecks, prefix);
+        args[argNum] = makeCallback(scope, ret, params, fields, checks, argChecks, prefix);
         return args;
     }
 
-    static MemorySegment makeCallback(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) {
+    static MemorySegment makeCallback(SegmentScope scope, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) {
         if (params.isEmpty()) {
             return DUMMY_STUB;
         }
@@ -145,7 +145,7 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
         FunctionDescriptor func = ret != Ret.VOID
                 ? FunctionDescriptor.of(firstlayout, paramLayouts)
                 : FunctionDescriptor.ofVoid(paramLayouts);
-        return ABI.upcallStub(mh, func, session);
+        return ABI.upcallStub(mh, func, scope);
     }
 
     static Object passAndSave(Object[] o, AtomicReference<Object[]> ref, int retArg, List<MemoryLayout> layouts) {

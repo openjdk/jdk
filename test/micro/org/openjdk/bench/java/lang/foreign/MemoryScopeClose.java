@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(value = 3, jvmArgsAppend = "--enable-preview")
-public class MemorySessionClose {
+public class MemoryScopeClose {
 
     static final int ALLOC_SIZE = 1024;
 

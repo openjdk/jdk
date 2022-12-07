@@ -63,7 +63,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * about the segment's spatial and temporal bounds; each memory segment implementation is associated with an owner thread which is set at creation time.
  * Access to certain sensitive operations on the memory segment will fail with {@code IllegalStateException} if the
  * segment is either in an invalid state (e.g. it has already been closed) or if access occurs from a thread other
- * than the owner thread. See {@link MemorySessionImpl} for more details on management of temporal bounds. Subclasses
+ * than the owner thread. See {@link MemoryScopeImpl} for more details on management of temporal bounds. Subclasses
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
@@ -77,22 +77,22 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     final long length;
     final boolean readOnly;
-    final SegmentScope session;
+    final SegmentScope scope;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, boolean readOnly, SegmentScope session) {
+    AbstractMemorySegmentImpl(long length, boolean readOnly, SegmentScope scope) {
         this.length = length;
         this.readOnly = readOnly;
-        this.session = session;
+        this.scope = scope;
     }
 
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope scope);
 
     abstract ByteBuffer makeByteBuffer();
 
     @Override
     public AbstractMemorySegmentImpl asReadOnly() {
-        return dup(0, length, true, session);
+        return dup(0, length, true, scope);
     }
 
     @Override
@@ -113,7 +113,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
-        return dup(offset, newSize, readOnly, session);
+        return dup(offset, newSize, readOnly, scope);
     }
 
     @Override
@@ -141,7 +141,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final MemorySegment fill(byte value){
         checkAccess(0, length, false);
-        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+        SCOPED_MEMORY_ACCESS.setMemory(scopeImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         return this;
     }
 
@@ -154,10 +154,10 @@ public abstract sealed class AbstractMemorySegmentImpl
     /**
      * Mismatch over long lengths.
      */
-    public static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
-                                                        Object a, long aOffset,
-                                                        Object b, long bOffset,
-                                                        long length) {
+    public static long vectorizedMismatchLargeForBytes(MemoryScopeImpl aScope, MemoryScopeImpl bScope,
+                                                       Object a, long aOffset,
+                                                       Object b, long bOffset,
+                                                       long length) {
         long off = 0;
         long remaining = length;
         int i, size;
@@ -169,7 +169,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 size = (int) remaining;
                 lastSubRange = true;
             }
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aScope, bScope,
                     a, aOffset + off,
                     b, bOffset + off,
                     size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
@@ -188,7 +188,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         checkArraySize("ByteBuffer", 1);
         ByteBuffer _bb = makeByteBuffer();
         if (readOnly) {
-            //session is IMMUTABLE - obtain a RO byte buffer
+            //scope is IMMUTABLE - obtain a RO byte buffer
             _bb = _bb.asReadOnlyBuffer();
         }
         return _bb;
@@ -312,7 +312,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     public void checkValidState() {
-        sessionImpl().checkValidState();
+        scopeImpl().checkValidState();
     }
 
     public abstract long unsafeGetOffset();
@@ -359,12 +359,12 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public SegmentScope scope() {
-        return session;
+        return scope;
     }
 
     @ForceInline
-    public final MemorySessionImpl sessionImpl() {
-        return (MemorySessionImpl)session;
+    public final MemoryScopeImpl scopeImpl() {
+        return (MemoryScopeImpl) scope;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
@@ -481,11 +481,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         int size = limit - pos;
 
         AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(bb);
-        final SegmentScope bufferSession;
+        final SegmentScope bufferScope;
         if (bufferSegment != null) {
-            bufferSession = bufferSegment.session;
+            bufferScope = bufferSegment.scope;
         } else {
-            bufferSession = MemorySessionImpl.heapSession(bb);
+            bufferScope = MemoryScopeImpl.heapScope(bb);
         }
         boolean readOnly = bb.isReadOnly();
         int scaleFactor = getScaleFactor(bb);
@@ -508,10 +508,10 @@ public abstract sealed class AbstractMemorySegmentImpl
                 throw new AssertionError("Cannot get here");
             }
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferSession);
+            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferScope);
         } else {
             // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferSession);
+            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferScope);
         }
     }
 
@@ -557,11 +557,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         srcImpl.checkAccess(srcOffset, size, true);
         dstImpl.checkAccess(dstOffset, size, false);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
-            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.scopeImpl(), dstImpl.scopeImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
                     dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
         } else {
-            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.scopeImpl(), dstImpl.scopeImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
                     dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
         }
@@ -586,11 +586,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         srcImpl.checkAccess(srcOffset, elementCount * dstWidth, true);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
         if (dstWidth == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
-            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), null,
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.scopeImpl(), null,
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
                     dstArray, dstBase + (dstIndex * dstWidth), elementCount * dstWidth);
         } else {
-            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), null,
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.scopeImpl(), null,
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
                     dstArray, dstBase + (dstIndex * dstWidth), elementCount * dstWidth, dstWidth);
         }
@@ -615,11 +615,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
         destImpl.checkAccess(dstOffset, elementCount * srcWidth, false);
         if (srcWidth == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
-            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.sessionImpl(),
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.scopeImpl(),
                     srcArray, srcBase + (srcIndex * srcWidth),
                     destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcWidth);
         } else {
-            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(null, destImpl.sessionImpl(),
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(null, destImpl.scopeImpl(),
                     srcArray, srcBase + (srcIndex * srcWidth),
                     destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcWidth, srcWidth);
         }
@@ -644,7 +644,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             if (srcImpl.get(JAVA_BYTE, srcFromOffset) != dstImpl.get(JAVA_BYTE, dstFromOffset)) {
                 return 0;
             }
-            i = AbstractMemorySegmentImpl.vectorizedMismatchLargeForBytes(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+            i = AbstractMemorySegmentImpl.vectorizedMismatchLargeForBytes(srcImpl.scopeImpl(), dstImpl.scopeImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcFromOffset,
                     dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstFromOffset,
                     bytes);

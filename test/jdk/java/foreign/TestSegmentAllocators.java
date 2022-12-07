@@ -102,7 +102,7 @@ public class TestSegmentAllocators {
     static final int SIZE_256M = 1024 * 1024 * 256;
 
     @Test
-    public void testBigAllocationInUnboundedSession() {
+    public void testBigAllocationInUnboundedScope() {
         try (Arena arena = Arena.openConfined()) {
             for (int i = 8 ; i < SIZE_256M ; i *= 8) {
                 SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(i * 2 + 1));

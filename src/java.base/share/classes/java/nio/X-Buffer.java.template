@@ -936,12 +936,12 @@ public abstract sealed class $Type$Buffer
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            session(), null, base(), bufAddr,
+                            scope(), null, base(), bufAddr,
                             dst, dstOffset, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            session(), null, base(), bufAddr,
+                            scope(), null, base(), bufAddr,
                             dst, dstOffset, len);
             } finally {
                 Reference.reachabilityFence(this);
@@ -1106,12 +1106,12 @@ public abstract sealed class $Type$Buffer
 #if[!byte]
                 if (this.order() != src.order())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            src.session(), session(), srcBase, srcAddr,
+                            src.scope(), scope(), srcBase, srcAddr,
                             base, addr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            src.session(), session(), srcBase, srcAddr,
+                            src.scope(), scope(), srcBase, srcAddr,
                             base, addr, len);
             } finally {
                 Reference.reachabilityFence(src);
@@ -1326,12 +1326,12 @@ public abstract sealed class $Type$Buffer
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            null, session(), src, srcOffset,
+                            null, scope(), src, srcOffset,
                             base(), bufAddr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            null, session(), src, srcOffset,
+                            null, scope(), src, srcOffset,
                             base(), bufAddr, len);
             } finally {
                 Reference.reachabilityFence(this);

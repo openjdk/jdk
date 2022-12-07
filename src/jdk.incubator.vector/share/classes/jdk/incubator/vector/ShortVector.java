@@ -3277,8 +3277,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *         for any lane {@code N} in the vector
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
      *         not backed by a {@code byte[]} array.
-     * @throws IllegalStateException if the memory segment's session is not alive,
-     *         or if access occurs from a thread other than the thread owning the session.
+     * @throws IllegalStateException if the memory segment's scope is not alive,
+     *         or if access occurs from a thread other than the thread owning the scope.
      * @since 19
      */
     @ForceInline
@@ -3334,8 +3334,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *         where the mask is set
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
      *         not backed by a {@code byte[]} array.
-     * @throws IllegalStateException if the memory segment's session is not alive,
-     *         or if access occurs from a thread other than the thread owning the session.
+     * @throws IllegalStateException if the memory segment's scope is not alive,
+     *         or if access occurs from a thread other than the thread owning the scope.
      * @since 19
      */
     @ForceInline

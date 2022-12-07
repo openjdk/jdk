@@ -119,7 +119,7 @@ public class LoopOverNew extends JavaLayouts {
     // act under significant native memory pressure, and here the ByteBuffer API has more juice, since it features
     // a complex exponential back off with multiple GC retries (see ByteBuffer::allocateDirect). Of course, we
     // don't care about those cases with segments, as if clients need to allocate/free very frequently
-    // they should just use deterministic deallocation (with confined session) instead, which delivers much
+    // they should just use deterministic deallocation (with confined scope) instead, which delivers much
     // better performances anyway.
     static byte gcCount = 0;
 

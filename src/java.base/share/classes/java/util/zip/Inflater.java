@@ -260,12 +260,12 @@ public class Inflater {
             int remaining = Math.max(dictionary.limit() - position, 0);
             ensureOpen();
             if (dictionary.isDirect()) {
-                NIO_ACCESS.acquireSession(dictionary);
+                NIO_ACCESS.acquireScope(dictionary);
                 try {
                     long address = ((DirectBuffer) dictionary).address();
                     setDictionaryBuffer(zsRef.address(), address + position, remaining);
                 } finally {
-                    NIO_ACCESS.releaseSession(dictionary);
+                    NIO_ACCESS.releaseScope(dictionary);
                 }
             } else {
                 byte[] array = ZipUtils.getBufferArray(dictionary);
@@ -385,14 +385,14 @@ public class Inflater {
                     try {
                         int inputRem = Math.max(input.limit() - inputPos, 0);
                         if (input.isDirect()) {
-                            NIO_ACCESS.acquireSession(input);
+                            NIO_ACCESS.acquireScope(input);
                             try {
                                 long inputAddress = ((DirectBuffer) input).address();
                                 result = inflateBufferBytes(zsRef.address(),
                                     inputAddress + inputPos, inputRem,
                                     output, off, len);
                             } finally {
-                                NIO_ACCESS.releaseSession(input);
+                                NIO_ACCESS.releaseScope(input);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
@@ -520,14 +520,14 @@ public class Inflater {
                     inputPos = this.inputPos;
                     try {
                         if (output.isDirect()) {
-                            NIO_ACCESS.acquireSession(output);
+                            NIO_ACCESS.acquireScope(output);
                             try {
                                 long outputAddress = ((DirectBuffer) output).address();
                                 result = inflateBytesBuffer(zsRef.address(),
                                     inputArray, inputPos, inputLim - inputPos,
                                     outputAddress + outputPos, outputRem);
                             } finally {
-                                NIO_ACCESS.releaseSession(output);
+                                NIO_ACCESS.releaseScope(output);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -545,18 +545,18 @@ public class Inflater {
                     int inputRem = Math.max(input.limit() - inputPos, 0);
                     try {
                         if (input.isDirect()) {
-                            NIO_ACCESS.acquireSession(input);
+                            NIO_ACCESS.acquireScope(input);
                             try {
                                 long inputAddress = ((DirectBuffer) input).address();
                                 if (output.isDirect()) {
-                                    NIO_ACCESS.acquireSession(output);
+                                    NIO_ACCESS.acquireScope(output);
                                     try {
                                         long outputAddress = ((DirectBuffer) output).address();
                                         result = inflateBufferBuffer(zsRef.address(),
                                             inputAddress + inputPos, inputRem,
                                             outputAddress + outputPos, outputRem);
                                     } finally {
-                                        NIO_ACCESS.releaseSession(output);
+                                        NIO_ACCESS.releaseScope(output);
                                     }
                                 } else {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
@@ -566,20 +566,20 @@ public class Inflater {
                                         outputArray, outputOffset + outputPos, outputRem);
                                 }
                             } finally {
-                                NIO_ACCESS.releaseSession(input);
+                                NIO_ACCESS.releaseScope(input);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
                             int inputOffset = ZipUtils.getBufferOffset(input);
                             if (output.isDirect()) {
-                                NIO_ACCESS.acquireSession(output);
+                                NIO_ACCESS.acquireScope(output);
                                 try {
                                     long outputAddress = ((DirectBuffer) output).address();
                                     result = inflateBytesBuffer(zsRef.address(),
                                         inputArray, inputOffset + inputPos, inputRem,
                                         outputAddress + outputPos, outputRem);
                                 } finally {
-                                    NIO_ACCESS.releaseSession(output);
+                                    NIO_ACCESS.releaseScope(output);
                                 }
                             } else {
                                 byte[] outputArray = ZipUtils.getBufferArray(output);

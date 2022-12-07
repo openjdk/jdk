@@ -784,7 +784,7 @@ class DatagramChannelImpl
                                         boolean connected)
         throws IOException
     {
-        NIO_ACCESS.acquireSession(bb);
+        NIO_ACCESS.acquireScope(bb);
         try {
             int n = receive0(fd,
                             ((DirectBuffer)bb).address() + pos, rem,
@@ -794,7 +794,7 @@ class DatagramChannelImpl
                 bb.position(pos + n);
             return n;
         } finally {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseScope(bb);
         }
     }
 
@@ -939,7 +939,7 @@ class DatagramChannelImpl
         int rem = (pos <= lim ? lim - pos : 0);
 
         int written;
-        NIO_ACCESS.acquireSession(bb);
+        NIO_ACCESS.acquireScope(bb);
         try {
             int addressLen = targetSocketAddress(target);
             written = send0(fd, ((DirectBuffer)bb).address() + pos, rem,
@@ -949,7 +949,7 @@ class DatagramChannelImpl
                 throw pue;
             written = rem;
         } finally {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseScope(bb);
         }
         if (written > 0)
             bb.position(pos + written);

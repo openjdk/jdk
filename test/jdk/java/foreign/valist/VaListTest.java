@@ -600,9 +600,9 @@ public class VaListTest extends NativeTestHelper {
                 assertEquals((int) VH_Point_y.get(pointOut), 6);
                 assertTrue(pointOut.scope().isAlive()); // after VaList freed
             }
-            assertTrue(pointOut.scope().isAlive()); // after inner session freed
+            assertTrue(pointOut.scope().isAlive()); // after inner scope freed
         }
-        assertFalse(pointOut.scope().isAlive()); // after outer session freed
+        assertFalse(pointOut.scope().isAlive()); // after outer scope freed
     }
 
     @DataProvider

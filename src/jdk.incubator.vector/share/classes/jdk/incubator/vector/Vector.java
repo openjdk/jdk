@@ -3392,8 +3392,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *         if the memory segment is read-only
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
      *         not backed by a {@code byte[]} array.
-     * @throws IllegalStateException if the memory segment's session is not alive,
-     *         or if access occurs from a thread other than the thread owning the session.
+     * @throws IllegalStateException if the memory segment's scope is not alive,
+     *         or if access occurs from a thread other than the thread owning the scope.
      * @since 19
      */
     public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
@@ -3445,8 +3445,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *         if the memory segment is read-only
      * @throws IllegalArgumentException if the memory segment is a heap segment that is
      *         not backed by a {@code byte[]} array.
-     * @throws IllegalStateException if the memory segment's session is not alive,
-     *         or if access occurs from a thread other than the thread owning the session.
+     * @throws IllegalStateException if the memory segment's scope is not alive,
+     *         or if access occurs from a thread other than the thread owning the scope.
      * @since 19
      */
     public abstract void intoMemorySegment(MemorySegment ms, long offset,

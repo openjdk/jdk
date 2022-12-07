@@ -50,7 +50,7 @@ import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -1208,13 +1208,13 @@ public class FileChannelImpl
 
     @Override
     public MemorySegment map(MapMode mode, long offset, long size,
-                             SegmentScope session)
+                             SegmentScope scope)
             throws IOException
     {
         Objects.requireNonNull(mode,"Mode is null");
-        Objects.requireNonNull(session, "Session is null");
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
-        sessionImpl.checkValidState();
+        Objects.requireNonNull(scope, "Scope is null");
+        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        scopeImpl.checkValidState();
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
         if (size < 0)
@@ -1230,18 +1230,18 @@ public class FileChannelImpl
         if (unmapper != null) {
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            readOnly, session);
-            MemorySessionImpl.ResourceList.ResourceCleanup resource =
-                new MemorySessionImpl.ResourceList.ResourceCleanup() {
+                                            readOnly, scope);
+            MemoryScopeImpl.ResourceList.ResourceCleanup resource =
+                new MemoryScopeImpl.ResourceList.ResourceCleanup() {
                     @Override
                     public void cleanup() {
                         unmapper.unmap();
                     }
                 };
-            sessionImpl.addOrCleanupIfFail(resource);
+            scopeImpl.addOrCleanupIfFail(resource);
             return segment;
         } else {
-            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(readOnly, sessionImpl);
+            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(readOnly, scopeImpl);
         }
     }
 

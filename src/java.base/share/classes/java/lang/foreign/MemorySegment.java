@@ -1361,11 +1361,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         srcImpl.checkAccess(srcOffset, size, true);
         dstImpl.checkAccess(dstOffset, size, false);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
-            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.scopeImpl(), dstImpl.scopeImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
                     dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
         } else {
-            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.scopeImpl(), dstImpl.scopeImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
                     dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
         }

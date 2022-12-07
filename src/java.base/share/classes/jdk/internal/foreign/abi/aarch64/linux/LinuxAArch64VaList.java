@@ -33,7 +33,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.foreign.VaList;
 import java.lang.foreign.SegmentAllocator;
 import jdk.internal.foreign.abi.aarch64.TypeClass;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.SharedUtils;
 
@@ -120,11 +120,11 @@ public non-sealed class LinuxAArch64VaList implements VaList {
         this.fpLimit = fpLimit;
     }
 
-    private static LinuxAArch64VaList readFromAddress(long address, SegmentScope session) {
-        MemorySegment segment = MemorySegment.ofAddress(address, LAYOUT.byteSize(), session);
+    private static LinuxAArch64VaList readFromAddress(long address, SegmentScope scope) {
+        MemorySegment segment = MemorySegment.ofAddress(address, LAYOUT.byteSize(), scope);
         MemorySegment stack = stackPtr(segment); // size unknown
-        MemorySegment gpRegsArea = MemorySegment.ofAddress(grTop(segment).address() - MAX_GP_OFFSET, MAX_GP_OFFSET, session);
-        MemorySegment fpRegsArea = MemorySegment.ofAddress(vrTop(segment).address() - MAX_FP_OFFSET, MAX_FP_OFFSET, session);
+        MemorySegment gpRegsArea = MemorySegment.ofAddress(grTop(segment).address() - MAX_GP_OFFSET, MAX_GP_OFFSET, scope);
+        MemorySegment fpRegsArea = MemorySegment.ofAddress(vrTop(segment).address() - MAX_FP_OFFSET, MAX_FP_OFFSET, scope);
         return new LinuxAArch64VaList(segment, stack, gpRegsArea, MAX_GP_OFFSET, fpRegsArea, MAX_FP_OFFSET);
     }
 
@@ -361,7 +361,7 @@ public non-sealed class LinuxAArch64VaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        ((MemorySessionImpl) segment.scope()).checkValidState();
+        ((MemoryScopeImpl) segment.scope()).checkValidState();
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -384,12 +384,12 @@ public non-sealed class LinuxAArch64VaList implements VaList {
         }
     }
 
-    static LinuxAArch64VaList.Builder builder(SegmentScope session) {
-        return new LinuxAArch64VaList.Builder(session);
+    static LinuxAArch64VaList.Builder builder(SegmentScope scope) {
+        return new LinuxAArch64VaList.Builder(scope);
     }
 
-    public static VaList ofAddress(long address, SegmentScope session) {
-        return readFromAddress(address, session);
+    public static VaList ofAddress(long address, SegmentScope scope) {
+        return readFromAddress(address, scope);
     }
 
     @Override
@@ -432,7 +432,7 @@ public non-sealed class LinuxAArch64VaList implements VaList {
     }
 
     public static non-sealed class Builder implements VaList.Builder {
-        private final SegmentScope session;
+        private final SegmentScope scope;
         private final MemorySegment gpRegs;
         private final MemorySegment fpRegs;
 
@@ -440,10 +440,10 @@ public non-sealed class LinuxAArch64VaList implements VaList {
         private long currentFPOffset = 0;
         private final List<SimpleVaArg> stackArgs = new ArrayList<>();
 
-        Builder(SegmentScope session) {
-            this.session = session;
-            this.gpRegs = MemorySegment.allocateNative(LAYOUT_GP_REGS, session);
-            this.fpRegs = MemorySegment.allocateNative(LAYOUT_FP_REGS, session);
+        Builder(SegmentScope scope) {
+            this.scope = scope;
+            this.gpRegs = MemorySegment.allocateNative(LAYOUT_GP_REGS, scope);
+            this.fpRegs = MemorySegment.allocateNative(LAYOUT_FP_REGS, scope);
         }
 
         @Override
@@ -536,12 +536,12 @@ public non-sealed class LinuxAArch64VaList implements VaList {
                 return EMPTY;
             }
 
-            MemorySegment vaListSegment = MemorySegment.allocateNative(LAYOUT, session);
+            MemorySegment vaListSegment = MemorySegment.allocateNative(LAYOUT, scope);
             MemorySegment stackArgsSegment;
             if (!stackArgs.isEmpty()) {
                 long stackArgsSize = stackArgs.stream()
                     .reduce(0L, (acc, e) -> acc + Utils.alignUp(e.layout.byteSize(), STACK_SLOT_SIZE), Long::sum);
-                stackArgsSegment = MemorySegment.allocateNative(stackArgsSize, 16, session);
+                stackArgsSegment = MemorySegment.allocateNative(stackArgsSize, 16, scope);
                 MemorySegment writeCursor = stackArgsSegment;
                 for (SimpleVaArg arg : stackArgs) {
                     final long alignedSize = Utils.alignUp(arg.layout.byteSize(), STACK_SLOT_SIZE);
@@ -560,8 +560,8 @@ public non-sealed class LinuxAArch64VaList implements VaList {
             VH_gr_offs.set(vaListSegment, -MAX_GP_OFFSET);
             VH_vr_offs.set(vaListSegment, -MAX_FP_OFFSET);
 
-            assert MemorySessionImpl.sameOwnerThread(gpRegs.scope(), vaListSegment.scope());
-            assert MemorySessionImpl.sameOwnerThread(fpRegs.scope(), vaListSegment.scope());
+            assert MemoryScopeImpl.sameOwnerThread(gpRegs.scope(), vaListSegment.scope());
+            assert MemoryScopeImpl.sameOwnerThread(fpRegs.scope(), vaListSegment.scope());
             return new LinuxAArch64VaList(vaListSegment, stackArgsSegment, gpRegs, currentGPOffset, fpRegs, currentFPOffset);
         }
     }

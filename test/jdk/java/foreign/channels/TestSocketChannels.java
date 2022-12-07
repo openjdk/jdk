@@ -116,7 +116,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
     }
 
     @Test
-    public void testBasicHeapIOWithGlobalSession() throws Exception {
+    public void testBasicHeapIOWithGlobalScope() throws Exception {
         try (var sc1 = SocketChannel.open();
              var ssc = ServerSocketChannel.open();
              var sc2 = connectChannels(ssc, sc1)) {
@@ -181,7 +181,7 @@ public class TestSocketChannels extends AbstractChannelsTest {
     }
 
     @Test(dataProvider = "closeableArenas")
-    public void testBasicIOWithDifferentSessions(Supplier<Arena> arenaSupplier)
+    public void testBasicIOWithDifferentScopes(Supplier<Arena> arenaSupplier)
          throws Exception
     {
         try (var sc1 = SocketChannel.open();

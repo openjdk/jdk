@@ -255,11 +255,11 @@ final class P11Mac extends MacSpi {
                 return;
             }
             int ofs = byteBuffer.position();
-            NIO_ACCESS.acquireSession(byteBuffer);
+            NIO_ACCESS.acquireScope(byteBuffer);
             try  {
                 token.p11.C_SignUpdate(session.id(), dByteBuffer.address() + ofs, null, 0, len);
             } finally {
-                NIO_ACCESS.releaseSession(byteBuffer);
+                NIO_ACCESS.releaseScope(byteBuffer);
             }
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {

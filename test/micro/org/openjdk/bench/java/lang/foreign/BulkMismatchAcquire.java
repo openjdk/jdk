@@ -51,13 +51,13 @@ import java.util.function.Supplier;
 @Fork(value = 3, jvmArgsAppend = "--enable-preview")
 public class BulkMismatchAcquire {
 
-    public enum SessionKind {
+    public enum ScopeKind {
         CONFINED(Arena::openConfined),
         SHARED(Arena::openShared);
 
         final Supplier<Arena> arenaFactory;
 
-        SessionKind(Supplier<Arena> arenaFactory) {
+        ScopeKind(Supplier<Arena> arenaFactory) {
             this.arenaFactory = arenaFactory;
         }
 
@@ -67,7 +67,7 @@ public class BulkMismatchAcquire {
     }
 
     @Param({"CONFINED", "SHARED"})
-    public BulkMismatchAcquire.SessionKind sessionKind;
+    public BulkMismatchAcquire.ScopeKind scopeKind;
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
@@ -84,7 +84,7 @@ public class BulkMismatchAcquire {
 
     @Setup
     public void setup() {
-        arena = sessionKind.makeArena();
+        arena = scopeKind.makeArena();
         mismatchSegmentLarge1 = arena.allocate(SIZE_WITH_TAIL);
         mismatchSegmentLarge2 = arena.allocate(SIZE_WITH_TAIL);
         mismatchBufferLarge1 = ByteBuffer.allocateDirect(SIZE_WITH_TAIL);

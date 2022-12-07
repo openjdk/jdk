@@ -97,11 +97,11 @@ public class CRC32 implements Checksum {
         if (rem <= 0)
             return;
         if (buffer.isDirect()) {
-            NIO_ACCESS.acquireSession(buffer);
+            NIO_ACCESS.acquireScope(buffer);
             try {
                 crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
             } finally {
-                NIO_ACCESS.releaseSession(buffer);
+                NIO_ACCESS.releaseScope(buffer);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(), rem);

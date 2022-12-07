@@ -68,29 +68,29 @@ public class AbstractChannelsTest {
 
     static final Random RANDOM = RandomFactory.getRandom();
 
-    static ByteBuffer segmentBufferOfSize(SegmentScope session, int size) {
-        var segment = MemorySegment.allocateNative(size, 1, session);
+    static ByteBuffer segmentBufferOfSize(SegmentScope scope, int size) {
+        var segment = MemorySegment.allocateNative(size, 1, scope);
         for (int i = 0; i < size; i++) {
             segment.set(JAVA_BYTE, i, ((byte)RANDOM.nextInt()));
         }
         return segment.asByteBuffer();
     }
 
-    static ByteBuffer[] segmentBuffersOfSize(int len, SegmentScope session, int size) {
+    static ByteBuffer[] segmentBuffersOfSize(int len, SegmentScope scope, int size) {
         ByteBuffer[] bufs = new ByteBuffer[len];
         for (int i = 0; i < len; i++)
-            bufs[i] = segmentBufferOfSize(session, size);
+            bufs[i] = segmentBufferOfSize(scope, size);
         return bufs;
     }
 
     /**
      * Returns an array of mixed source byte buffers; both heap and direct,
-     * where heap can be from the global session or session-less, and direct are
-     * associated with the given session.
+     * where heap can be from the global scope or scope-less, and direct are
+     * associated with the given scope.
      */
-    static ByteBuffer[] mixedBuffersOfSize(int len, SegmentScope session, int size) {
+    static ByteBuffer[] mixedBuffersOfSize(int len, SegmentScope scope, int size) {
         ByteBuffer[] bufs;
-        boolean atLeastOneSessionBuffer = false;
+        boolean atLeastOneScopeBuffer = false;
         do {
             bufs = new ByteBuffer[len];
             for (int i = 0; i < len; i++) {
@@ -101,12 +101,12 @@ public class AbstractChannelsTest {
                     case 1 -> { byte[] b = new byte[size];
                                 RANDOM.nextBytes(b);
                                 yield MemorySegment.ofArray(b).asByteBuffer(); }
-                    case 2 -> { atLeastOneSessionBuffer = true;
-                                yield segmentBufferOfSize(session, size); }
+                    case 2 -> { atLeastOneScopeBuffer = true;
+                                yield segmentBufferOfSize(scope, size); }
                     default -> throw new AssertionError("cannot happen");
                 };
             }
-        } while (!atLeastOneSessionBuffer);
+        } while (!atLeastOneScopeBuffer);
         return bufs;
     }
 

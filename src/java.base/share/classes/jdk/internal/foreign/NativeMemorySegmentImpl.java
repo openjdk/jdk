@@ -52,8 +52,8 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     final long min;
 
     @ForceInline
-    NativeMemorySegmentImpl(long min, long length, boolean readOnly, SegmentScope session) {
-        super(length, readOnly, session);
+    NativeMemorySegmentImpl(long min, long length, boolean readOnly, SegmentScope scope) {
+        super(length, readOnly, scope);
         this.min = min;
     }
 
@@ -69,14 +69,14 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     @ForceInline
     @Override
-    NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope session) {
-        return new NativeMemorySegmentImpl(min + offset, size, readOnly, session);
+    NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope scope) {
+        return new NativeMemorySegmentImpl(min + offset, size, readOnly, scope);
     }
 
     @Override
     ByteBuffer makeByteBuffer() {
         return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-                session == MemorySessionImpl.GLOBAL ? null : this);
+                scope == MemoryScopeImpl.GLOBAL ? null : this);
     }
 
     @Override
@@ -101,9 +101,9 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     // factories
 
-    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, SegmentScope session) {
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
-        sessionImpl.checkValidState();
+    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, SegmentScope scope) {
+        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        scopeImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
         }
@@ -119,8 +119,8 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
         }
         long alignedBuf = Utils.alignUp(buf, byteAlignment);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
-                false, session);
-        sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+                false, scope);
+        scopeImpl.addOrCleanupIfFail(new MemoryScopeImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 UNSAFE.freeMemory(buf);
@@ -138,21 +138,21 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     // associated with MemorySegment::ofAddress.
 
     @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope session, Runnable action) {
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope scope, Runnable action) {
+        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
         if (action == null) {
-            sessionImpl.checkValidState();
+            scopeImpl.checkValidState();
         } else {
-            sessionImpl.addCloseAction(action);
+            scopeImpl.addCloseAction(action);
         }
-        return new NativeMemorySegmentImpl(min, byteSize, false, session);
+        return new NativeMemorySegmentImpl(min, byteSize, false, scope);
     }
 
     @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope session) {
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
-        sessionImpl.checkValidState();
-        return new NativeMemorySegmentImpl(min, byteSize, false, session);
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope scope) {
+        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        scopeImpl.checkValidState();
+        return new NativeMemorySegmentImpl(min, byteSize, false, scope);
     }
 
     @ForceInline

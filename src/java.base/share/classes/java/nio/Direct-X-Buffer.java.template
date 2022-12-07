@@ -31,7 +31,7 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemoryScopeImpl;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
@@ -314,12 +314,12 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
 
     public long address() {
-        MemorySessionImpl session = session();
-        if (session != null) {
-            if (session.ownerThread() == null && session.isCloseable()) {
-                throw new UnsupportedOperationException("ByteBuffer derived from closeable shared sessions not supported");
+        MemoryScopeImpl scope = scope();
+        if (scope != null) {
+            if (scope.ownerThread() == null && scope.isCloseable()) {
+                throw new UnsupportedOperationException("ByteBuffer derived from closeable shared scopes not supported");
             }
-            session.checkValidState();
+            scope.checkValidState();
         }
         return address;
     }
@@ -330,7 +330,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $type$ get() {
         try {
-            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(session(), null, ix(nextGetIndex()))));
+            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(scope(), null, ix(nextGetIndex()))));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -338,7 +338,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $type$ get(int i) {
         try {
-            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(session(), null, ix(checkIndex(i)))));
+            return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(scope(), null, ix(checkIndex(i)))));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -358,7 +358,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put($type$ x) {
 #if[rw]
         try {
-            SCOPED_MEMORY_ACCESS.put$Swaptype$(session(), null, ix(nextPutIndex()), $swap$($toBits$(x)));
+            SCOPED_MEMORY_ACCESS.put$Swaptype$(scope(), null, ix(nextPutIndex()), $swap$($toBits$(x)));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -371,7 +371,7 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
         try {
-            SCOPED_MEMORY_ACCESS.put$Swaptype$(session(), null, ix(checkIndex(i)), $swap$($toBits$(x)));
+            SCOPED_MEMORY_ACCESS.put$Swaptype$(scope(), null, ix(checkIndex(i)), $swap$($toBits$(x)));
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -388,8 +388,8 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         try {
-            // null is passed as destination MemorySession to avoid checking session() twice
-            SCOPED_MEMORY_ACCESS.copyMemory(session(), null, null,
+            // null is passed as destination MemoryScope to avoid checking scope() twice
+            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null,
                     ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         } finally {
             Reference.reachabilityFence(this);

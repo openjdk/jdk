@@ -86,26 +86,26 @@ public interface JavaNioAccess {
     MemorySegment bufferSegment(Buffer buffer);
 
     /**
-     * Used by operations to make a buffer's session non-closeable
-     * (for the duration of the operation) by acquiring the session.
+     * Used by operations to make a buffer's scope non-closeable
+     * (for the duration of the operation) by acquiring the scope.
      * {@snippet lang = java:
-     * acquireSession(buffer);
+     * acquireScope(buffer);
      * try {
      *     performOperation(buffer);
      * } finally {
-     *     releaseSession(buffer);
+     *     releaseScope(buffer);
      * }
      *}
      *
-     * @see #releaseSession(Buffer)
+     * @see #releaseScope(Buffer)
      */
-    void acquireSession(Buffer buffer);
+    void acquireScope(Buffer buffer);
 
-    void releaseSession(Buffer buffer);
+    void releaseScope(Buffer buffer);
 
     boolean isThreadConfined(Buffer buffer);
 
-    boolean hasSession(Buffer buffer);
+    boolean hasScope(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.

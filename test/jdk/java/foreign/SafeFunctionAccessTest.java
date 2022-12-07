@@ -151,7 +151,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
         try (Arena arena = Arena.openConfined()) {
             VaList list = VaList.make(b -> b.addVarg(C_INT, 42), arena.scope());
-            handle.invokeExact(list.segment(), sessionChecker(arena));
+            handle.invokeExact(list.segment(), scopeChecker(arena));
         }
     }
 
@@ -163,7 +163,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
         try (Arena arena = Arena.openConfined()) {
             MemorySegment segment = arena.allocate(POINT);
-            handle.invokeExact(segment, sessionChecker(arena));
+            handle.invokeExact(segment, scopeChecker(arena));
         }
     }
 
@@ -176,13 +176,13 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         try (Arena arena = Arena.openConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
             MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena.scope());
-            handle.invokeExact(upcall, sessionChecker(arena));
+            handle.invokeExact(upcall, scopeChecker(arena));
         }
     }
 
-    MemorySegment sessionChecker(Arena arena) {
+    MemorySegment scopeChecker(Arena arena) {
         try {
-            MethodHandle handle = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "checkSession",
+            MethodHandle handle = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "checkScope",
                     MethodType.methodType(void.class, Arena.class));
             handle = handle.bindTo(arena);
             return Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), SegmentScope.auto());
@@ -191,10 +191,10 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         }
     }
 
-    static void checkSession(Arena arena) {
+    static void checkScope(Arena arena) {
         try {
             arena.close();
-            fail("Session closed unexpectedly!");
+            fail("Scope closed unexpectedly!");
         } catch (IllegalStateException ex) {
             assertTrue(ex.getMessage().contains("acquired")); //if acquired, fine
         }

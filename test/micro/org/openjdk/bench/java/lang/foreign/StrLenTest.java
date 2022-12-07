@@ -148,8 +148,8 @@ public class StrLenTest extends CLayouts {
         SegmentAllocator current;
         long rem;
 
-        public RingAllocator(SegmentScope session) {
-            this.segment = MemorySegment.allocateNative(1024, session);
+        public RingAllocator(SegmentScope scope) {
+            this.segment = MemorySegment.allocateNative(1024, scope);
             reset();
         }
 

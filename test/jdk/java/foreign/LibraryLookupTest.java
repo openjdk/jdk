@@ -71,10 +71,10 @@ public class LibraryLookupTest {
         callFunc(addr);
     }
 
-    private static MemorySegment loadLibrary(SegmentScope session) {
-        SymbolLookup lib = SymbolLookup.libraryLookup(LIB_PATH, session);
+    private static MemorySegment loadLibrary(SegmentScope scope) {
+        SymbolLookup lib = SymbolLookup.libraryLookup(LIB_PATH, scope);
         MemorySegment addr = lib.find("inc").get();
-        assertEquals(addr.scope(), session);
+        assertEquals(addr.scope(), scope);
         return addr;
     }
 

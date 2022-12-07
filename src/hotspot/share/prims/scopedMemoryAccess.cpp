@@ -141,10 +141,10 @@ public:
 
 /*
  * This function performs a thread-local handshake against all threads running at the time
- * the given session (deopt) was closed. If the handshake for a given thread is processed while
+ * the given scope (deopt) was closed. If the handshake for a given thread is processed while
  * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
- * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
- * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
+ * class annotated with the '@Scoped' annotation), and whose local variables mention the scope being
+ * closed (deopt), this method returns false, signalling that the scope cannot be closed safely.
  */
 JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception))
   CloseScopedMemoryClosure cl(deopt, exception);
@@ -158,7 +158,7 @@ JVM_END
 #define PKG_FOREIGN "Ljdk/internal/foreign/"
 
 #define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE PKG_FOREIGN "MemorySessionImpl;"
+#define SCOPE PKG_FOREIGN "MemoryScopeImpl;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)

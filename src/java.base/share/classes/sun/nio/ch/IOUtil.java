@@ -31,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.MemorySessionImpl;
 
 /**
  * File-descriptor based I/O utilities that are shared by NIO classes.
@@ -183,7 +182,7 @@ public final class IOUtil {
             while (i < count && iov_len < IOV_MAX && writevLen < WRITEV_MAX) {
                 ByteBuffer buf = bufs[i];
                 acquireScope(buf, async);
-                if (NIO_ACCESS.hasSession(buf)) {
+                if (NIO_ACCESS.hasScope(buf)) {
                     handleReleasers = LinkedRunnable.of(Releaser.of(buf), handleReleasers);
                 }
                 int pos = buf.position();
@@ -395,7 +394,7 @@ public final class IOUtil {
                 if (buf.isReadOnly())
                     throw new IllegalArgumentException("Read-only buffer");
                 acquireScope(buf, async);
-                if (NIO_ACCESS.hasSession(buf)) {
+                if (NIO_ACCESS.hasScope(buf)) {
                     handleReleasers = LinkedRunnable.of(Releaser.of(buf), handleReleasers);
                 }
                 int pos = buf.position();
@@ -477,14 +476,14 @@ public final class IOUtil {
 
     static void acquireScope(ByteBuffer bb, boolean async) {
         if (async && NIO_ACCESS.isThreadConfined(bb)) {
-            throw new IllegalStateException("Confined session not supported");
+            throw new IllegalStateException("Confined scope not supported");
         }
-        NIO_ACCESS.acquireSession(bb);
+        NIO_ACCESS.acquireScope(bb);
     }
 
     private static void releaseScope(ByteBuffer bb) {
         try {
-            NIO_ACCESS.releaseSession(bb);
+            NIO_ACCESS.releaseScope(bb);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -546,7 +545,7 @@ public final class IOUtil {
         }
 
         static Runnable of(ByteBuffer bb) {
-            return NIO_ACCESS.hasSession(bb)
+            return NIO_ACCESS.hasScope(bb)
                     ? new Releaser(bb)
                     : () -> {};
         }
