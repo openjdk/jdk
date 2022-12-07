@@ -399,8 +399,8 @@ public final class SoftMainMixer {
                                     if (data.length < 8) {
                                         break;
                                     }
-                                    int[] destinations = new int[(data.length - 7) / 2];
-                                    int[] ranges = new int[(data.length - 7) / 2];
+                                    int[] destinations = new int[(data.length - 6) / 2];
+                                    int[] ranges = new int[(data.length - 6) / 2];
                                     int ix = 0;
                                     for (int j = 6; j < data.length - 1; j += 2) {
                                         destinations[ix] = data[j] & 0xFF;
@@ -418,8 +418,8 @@ public final class SoftMainMixer {
                                     if (data.length < 8) {
                                         break;
                                     }
-                                    int[] destinations = new int[(data.length - 7) / 2];
-                                    int[] ranges = new int[(data.length - 7) / 2];
+                                    int[] destinations = new int[(data.length - 6) / 2];
+                                    int[] ranges = new int[(data.length - 6) / 2];
                                     int ix = 0;
                                     for (int j = 6; j < data.length - 1; j += 2) {
                                         destinations[ix] = data[j] & 0xFF;
