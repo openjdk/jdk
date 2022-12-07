@@ -313,7 +313,6 @@ reg_class int_rdi_reg(RDI);
 
 // Singleton class for instruction pointer
 // reg_class ip_reg(RIP);
-
 %}
 
 //----------SOURCE BLOCK-------------------------------------------------------
@@ -3317,6 +3316,20 @@ operand immL_65535()
 
   format %{ %}
   interface(CONST_INTER);
+%}
+
+operand xmm0_regF() %{
+  constraint(ALLOC_IN_RC(xmm0_reg));
+  match(RegF);
+  format%{%}
+  interface(REG_INTER);
+%}
+
+operand xmm1_regF() %{
+  constraint(ALLOC_IN_RC(xmm1_reg));
+  match(RegF);
+  format%{%}
+  interface(REG_INTER);
 %}
 
 operand kReg()
@@ -13089,11 +13102,8 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 %}
 
 // ============================================================================
-// The 2nd slow-half of a subtype check.  Scan the subklass's 2ndary
-// superklass array for an instance of the superklass.  Set a hidden
-// internal cache on a hit (cache is checked with exposed code in
-// gen_subtype_check()).  Return NZ for a miss or zero for a hit.  The
-// encoding ALSO sets flags.
+// The 2nd slow-half of a subtype check. Scan the subklass's 2ndary superklass array
+// for an instance of the superklass. Return NZ for a miss or zero for a hit.
 
 instruct partialSubtypeCheck(rdi_RegP result,
                              rsi_RegP sub, rax_RegP super, rcx_RegI tmp,
@@ -13106,12 +13116,43 @@ instruct partialSubtypeCheck(rdi_RegP result,
   format %{ "check_klass_subtype_slow_path" %}
 
   ins_encode %{
-    Label miss;
-    __ check_klass_subtype_slow_path($sub$$Register, $super$$Register,
-                                     $tmp$$Register, $result$$Register,
-                                     NULL, &miss);
-    __ xorptr($result$$Register, $result$$Register);
-    __ bind(miss);
+    __ call(RuntimeAddress(StubRoutines::x86::scan_secondary_supers_scalar_addr()), $tmp$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct partialSubtypeCheckAVX2(rdi_RegP result, rsi_RegP sub, rax_RegP super, rcx_RegI rtmp,
+                                 xmm0_regF xtmp1, xmm1_regF xtmp2, rFlagsReg cr)
+%{
+  predicate(UseAVX > 1);
+  match(Set result (PartialSubtypeCheck sub super));
+  effect(TEMP_DEF result, USE_KILL sub, USE_KILL super,
+         TEMP rtmp, TEMP xtmp1, TEMP xtmp2, KILL cr);
+
+  ins_cost(500);
+  format %{ "subtype_check_slow_path_avx2" %}
+
+  ins_encode %{
+    __ call(RuntimeAddress(StubRoutines::x86::scan_secondary_supers_avx2_addr()), $rtmp$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct partialSubtypeCheckAVX512(rdi_RegP result, rsi_RegP sub, rax_RegP super, rcx_RegI rtmp,
+                                   xmm0_regF xtmp, kReg_K1 ktmp, rFlagsReg cr)
+%{
+  predicate(UseAVX > 2 && (VM_Version::avx3_threshold() == 0) && VM_Version::supports_avx512vldq());
+  match(Set result (PartialSubtypeCheck sub super));
+  effect(TEMP_DEF result, USE_KILL sub, USE_KILL super,
+         TEMP rtmp, TEMP xtmp, TEMP ktmp, KILL cr);
+
+  ins_cost(250);
+  format %{ "subtype_check_slow_path_avx512" %}
+
+  ins_encode %{
+     __ call(RuntimeAddress(StubRoutines::x86::scan_secondary_supers_avx512_addr()), $rtmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

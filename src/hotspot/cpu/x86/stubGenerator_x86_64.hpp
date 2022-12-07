@@ -510,6 +510,13 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier();
   address generate_cont_returnBarrier_exception();
 
+
+  address generate_scan_secondary_supers_scalar_stub();
+  address generate_scan_secondary_supers_avx2_stub();
+  address generate_scan_secondary_supers_avx512_stub();
+
+  void generate_scan_secondary_supers_stubs();
+
 #if INCLUDE_JFR
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.

@@ -326,6 +326,17 @@ class x86 {
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);
+
+#ifdef _LP64
+ private:
+  static address _scan_secondary_supers_scalar;
+  static address _scan_secondary_supers_avx2;
+  static address _scan_secondary_supers_avx512;
+ public:
+  static address scan_secondary_supers_scalar_addr() { return _scan_secondary_supers_scalar; }
+  static address scan_secondary_supers_avx2_addr()   { return _scan_secondary_supers_avx2; }
+  static address scan_secondary_supers_avx512_addr() { return _scan_secondary_supers_avx512; }
+#endif // _LP64
 };
 
 #endif // CPU_X86_STUBROUTINES_X86_HPP

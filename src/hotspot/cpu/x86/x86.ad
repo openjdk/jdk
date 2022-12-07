@@ -1146,6 +1146,7 @@ reg_class_dynamic vectorz_reg   (vectorz_reg_evex, vectorz_reg_legacy, %{ VM_Ver
 reg_class_dynamic vectorz_reg_vl(vectorz_reg_evex, vectorz_reg_legacy, %{ VM_Version::supports_evex() && VM_Version::supports_avx512vl() %} );
 
 reg_class xmm0_reg(XMM0, XMM0b, XMM0c, XMM0d);
+reg_class xmm1_reg(XMM1, XMM1b, XMM1c, XMM1d);
 %}
 
 

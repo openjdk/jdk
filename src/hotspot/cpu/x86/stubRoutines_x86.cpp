@@ -80,6 +80,9 @@ address StubRoutines::x86::_join_0_1_base64 = NULL;
 address StubRoutines::x86::_join_1_2_base64 = NULL;
 address StubRoutines::x86::_join_2_3_base64 = NULL;
 address StubRoutines::x86::_decoding_table_base64 = NULL;
+address StubRoutines::x86::_scan_secondary_supers_scalar = NULL;
+address StubRoutines::x86::_scan_secondary_supers_avx2   = NULL;
+address StubRoutines::x86::_scan_secondary_supers_avx512 = NULL;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 

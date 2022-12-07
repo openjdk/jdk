@@ -4425,7 +4425,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   if (needs_post_handling) {
     Label L_scan_end;
-    scan(super_klass, cur_pos, counter, L_scan_end, L_scan_end, L_scan_end);
+    scan(super_klass, cur_pos, counter, L_scan_end, L_scan_end, L_scan_end, UseNewCode /*do_unroll*/);
     bind(L_scan_end);
 
     // Unspill the temp. registers:
@@ -4444,21 +4444,22 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     FINAL_JMP(*L_success);
     bind(L_fallthrough);
   } else {
-    scan(super_klass, cur_pos, counter, *L_success, *L_failure, L_fallthrough);
+    scan(super_klass, cur_pos, counter, *L_success, *L_failure, L_fallthrough, UseNewCode /*do_unroll*/);
     bind(L_fallthrough);
   }
 }
 
 void MacroAssembler::scan(Register value, Register position, Register counter,
-                          Label& L_success, Label& L_failure, Label& L_fallthrough) {
+                          Label& L_success, Label& L_failure, Label& L_fallthrough,
+                          bool do_unroll) {
   Label L_loop;
 
-  if (UseNewCode) {
+  if (do_unroll) {
     Label L_unrolled_loop, L_unrolled_loop_end;
 
     bind(L_unrolled_loop);
     cmpl(counter, 4);
-    jcc(Assembler::less, L_unrolled_loop_end);
+    jccb(Assembler::less, L_unrolled_loop_end);
 
     cmpptr(value, Address(position, 0 * BytesPerWord));
     jcc(Assembler::equal, L_success); // match!
@@ -4480,11 +4481,11 @@ void MacroAssembler::scan(Register value, Register position, Register counter,
   }
 
   testl(counter, counter);
-  jccb(Assembler::zero, L_failure);
+  jcc(Assembler::zero, L_failure);
 
   bind(L_loop);
   cmpptr(value, Address(position, 0));
-  jccb(Assembler::equal, L_success);
+  jcc(Assembler::equal, L_success);
 
   increment(position, BytesPerWord);
   decrementl(counter);
@@ -4494,6 +4495,157 @@ void MacroAssembler::scan(Register value, Register position, Register counter,
     jmp(L_failure);
   }
 }
+
+#ifdef _LP64
+void MacroAssembler::check_klass_subtype_slow_path_avx512(Register    sub_klass,
+                                                          Register    super_klass,
+                                                          Register    rtmp1,
+                                                          Register    rtmp2,
+                                                          XMMRegister xtmp,
+                                                          KRegister   ktmp,
+                                                          Label*      L_success,
+                                                          Label*      L_failure) {
+  assert(VM_Version::avx3_threshold() == 0, "required");
+  assert(VM_Version::supports_avx512vldq(), "required");
+  assert(L_success != NULL || L_failure != NULL, "at most one NULL in the batch");
+  assert_different_registers(sub_klass, super_klass, rtmp1, rtmp2);
+
+  Label L_fallthrough;
+  if (L_success == NULL) { L_success = &L_fallthrough; }
+  if (L_failure == NULL) { L_failure = &L_fallthrough; }
+
+#ifndef PRODUCT
+  incrementl(ExternalAddress(SharedRuntime::partial_subtype_ctr_addr()), rtmp1 /*rscratch*/);
+#endif // !PRODUCT
+
+  // Do a linear scan of the secondary super-klass chain.
+
+  movptr(rtmp2, Address(sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+  const Register counter = rtmp1;
+  const Register cur_pos = rtmp2;
+
+  movl(counter, Address(rtmp2, Array<Klass*>::length_offset_in_bytes()));
+  lea (cur_pos, Address(rtmp2, Array<Klass*>::base_offset_in_bytes()));
+
+  // Do a linear scan of the secondary super-klass array.
+
+  evpbroadcastq(xtmp, super_klass, Assembler::AVX_512bit);
+
+  Label VECTOR64_LOOP, VECTOR64_TAIL;
+
+  const Register tail_counter = sub_klass; sub_klass   = noreg;
+  const Register tmp2 = super_klass;  super_klass = noreg;
+
+  movl(tail_counter, counter);
+  andl(counter, ~(0x7)); // vector count
+  jccb(Assembler::zero, VECTOR64_TAIL);
+
+  bind(VECTOR64_LOOP);
+  //align32();
+  evpcmpq(ktmp, k0, xtmp, Address(cur_pos, 0), Assembler::eq, false, Assembler::AVX_512bit);
+  kortestql(ktmp, ktmp);
+  LOCAL_JCC(Assembler::notZero, *L_success); // match!
+
+  addq(cur_pos, 8 * BytesPerWord);
+  subl(counter, 8);
+  jccb(Assembler::notZero, VECTOR64_LOOP);
+
+  bind(VECTOR64_TAIL);
+  andl(tail_counter, 0x7);
+  LOCAL_JCC(Assembler::zero, *L_failure); // not found
+
+  // AVX512 code to compare up to 7 word vectors.
+  movl(tmp2, 0xFF);
+  shlxl(tmp2, tmp2, tail_counter);
+  notl(tmp2);
+  kmovbl(ktmp, tmp2);
+
+  evpcmpq(ktmp, ktmp, xtmp, Address(cur_pos, 0), Assembler::eq, false, Assembler::AVX_512bit);
+  kortestbl(ktmp, ktmp);
+  LOCAL_JCC(Assembler::zero, *L_failure); // not found
+
+  if (L_success != &L_fallthrough) {
+    jmp(*L_success);
+  }
+  bind(L_fallthrough);
+}
+
+void MacroAssembler::check_klass_subtype_slow_path_avx2(Register    sub_klass,
+                                                        Register    super_klass,
+                                                        Register    rtmp1,
+                                                        Register    rtmp2,
+                                                        XMMRegister xtmp1,
+                                                        XMMRegister xtmp2,
+                                                        Label*      L_success,
+                                                        Label*      L_failure) {
+  assert(VM_Version::supports_avx2(), "required");
+  assert_different_registers(sub_klass, super_klass, rtmp1, rtmp2);
+  assert(L_success != NULL || L_failure != NULL, "at most one NULL in the batch");
+
+  Label L_fallthrough;
+  if (L_success == NULL) { L_success = &L_fallthrough; }
+  if (L_failure == NULL) { L_failure = &L_fallthrough; }
+
+#ifndef PRODUCT
+  incrementl(ExternalAddress(SharedRuntime::partial_subtype_ctr_addr()), rtmp1 /*rscratch*/);
+#endif // !PRODUCT
+
+  // Do a linear scan of the secondary super-klass chain.
+
+  movptr(rtmp2, Address(sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+  const Register counter = rtmp1;
+  const Register cur_pos = rtmp2;
+
+  movl(counter, Address(rtmp2, Array<Klass*>::length_offset_in_bytes()));
+  lea (cur_pos, Address(rtmp2, Array<Klass*>::base_offset_in_bytes()));
+
+  // Do a linear scan of the secondary super-klass array.
+
+  Label VECTOR32_LOOP, VECTOR32_TAIL, SCALAR_LOOP;
+
+  const Register tail_counter = sub_klass; sub_klass = noreg;
+
+  int32_t stride = (UseNewCode ? 8 : 4);
+  movq(tail_counter, counter);
+  andq(tail_counter, stride - 1);
+  andq(counter, ~(stride - 1)); // vector count
+  jccb(Assembler::zero, VECTOR32_TAIL);
+
+  movdq(xtmp1, super_klass);
+  vpbroadcastq(xtmp1, xtmp1, Assembler::AVX_256bit);
+
+  if (UseNewCode) {
+    bind(VECTOR32_LOOP);
+    vmovdqu(xtmp2, Address(cur_pos, 0 * BytesPerWord));
+    vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
+    vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
+    LOCAL_JCC(Assembler::notZero, *L_success); // match!
+
+    vmovdqu(xtmp2, Address(cur_pos, 4 * BytesPerWord));
+    vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
+    vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
+    LOCAL_JCC(Assembler::notZero, *L_success); // match!
+
+  } else {
+    bind(VECTOR32_LOOP);
+    vmovdqu(xtmp2, Address(cur_pos, 0 * BytesPerWord));
+    vpcmpCCW(xtmp2, xtmp1, xtmp2, xnoreg, Assembler::eq, Assembler::Q, Assembler::AVX_256bit);
+    vptest(xtmp2, xtmp2, Assembler::AVX_256bit);
+    LOCAL_JCC(Assembler::notZero, *L_success); // match!
+  }
+  addq(cur_pos, stride * BytesPerWord);
+  subq(counter, stride);
+  jccb(Assembler::notZero, VECTOR32_LOOP);
+
+  bind(VECTOR32_TAIL);
+
+  scan(super_klass, cur_pos, tail_counter, *L_success, *L_failure, L_fallthrough, UseNewCode /*do_unroll*/);
+
+  bind(L_fallthrough);
+}
+#endif // _LP64
 
 #undef LOCAL_JCC
 #undef FINAL_JMP

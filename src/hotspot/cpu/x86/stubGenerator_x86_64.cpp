@@ -3648,6 +3648,75 @@ address StubGenerator::generate_throw_exception(const char* name,
   return stub->entry_point();
 }
 
+address StubGenerator::generate_scan_secondary_supers_scalar_stub() {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "scan_secondary_supers_scalar");
+  address start = __ pc();
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  Label miss;
+  __ check_klass_subtype_slow_path(rsi, rax, rcx, rdi,
+                                   NULL, &miss);
+  __ xorptr(rdi, rdi);
+  __ bind(miss);
+
+  __ leave();
+  __ ret(0);
+
+  return start;
+}
+
+address StubGenerator::generate_scan_secondary_supers_avx2_stub() {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "scan_secondary_supers_avx2");
+  address start = __ pc();
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  Label miss;
+  __ check_klass_subtype_slow_path_avx2(rsi, rax, rcx, rdi,
+                                        xmm0, xmm1,
+                                        NULL, &miss);
+  __ xorptr(rdi, rdi);
+  __ bind(miss);
+
+  __ leave();
+  __ ret(0);
+
+  return start;
+}
+
+address StubGenerator::generate_scan_secondary_supers_avx512_stub() {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "scan_secondary_supers_avx512");
+  address start = __ pc();
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+  Label miss;
+  __ check_klass_subtype_slow_path_avx512(rsi, rax, rcx, rdi,
+                                          xmm0, k1,
+                                          NULL, &miss);
+  __ xorptr(rdi, rdi);
+  __ bind(miss);
+
+  __ leave();
+  __ ret(0);
+
+  return start;
+}
+
+void StubGenerator::generate_scan_secondary_supers_stubs() {
+  StubRoutines::x86::_scan_secondary_supers_scalar = generate_scan_secondary_supers_scalar_stub();
+  if (UseAVX > 1) {
+    StubRoutines::x86::_scan_secondary_supers_avx2 = generate_scan_secondary_supers_avx2_stub();
+  }
+  if (UseAVX > 2 && (VM_Version::avx3_threshold() == 0) && VM_Version::supports_avx512vldq()) {
+    StubRoutines::x86::_scan_secondary_supers_avx512 = generate_scan_secondary_supers_avx512_stub();
+  }
+}
+
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked
   StubRoutines::x86::_mxcsr_std = 0x1F80;
@@ -3955,6 +4024,9 @@ void StubGenerator::generate_all() {
       snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
+  }
+  if (UseNewCode3) {
+    generate_scan_secondary_supers_stubs();
   }
 #endif // COMPILER2
 
