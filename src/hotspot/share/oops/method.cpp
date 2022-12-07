@@ -2167,23 +2167,14 @@ JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _top(0), _next(NULL) {
 
 void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
   ClassLoaderData* cld = loader_data;
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the lock
-    // protects as well.
-    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock(capacity));
-    } else {
-      cld->jmethod_ids()->ensure_methods(capacity);
-    }
+  // Have to add jmethod_ids() to class loader data thread-safely.
+  // Also have to add the method to the list safely, which the lock
+  // protects as well.
+  MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
+  if (cld->jmethod_ids() == NULL) {
+    cld->set_jmethod_ids(new JNIMethodBlock(capacity));
   } else {
-    // At safepoint, we are single threaded and can set this.
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock(capacity));
-    } else {
-      cld->jmethod_ids()->ensure_methods(capacity);
-    }
+    cld->jmethod_ids()->ensure_methods(capacity);
   }
 }
 
@@ -2191,24 +2182,15 @@ void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
 jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {
   ClassLoaderData* cld = loader_data;
 
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the lock
-    // protects as well.
-    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock());
-    }
-    // jmethodID is a pointer to Method*
-    return (jmethodID)cld->jmethod_ids()->add_method(m);
-  } else {
-    // At safepoint, we are single threaded and can set this.
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock());
-    }
-    // jmethodID is a pointer to Method*
-    return (jmethodID)cld->jmethod_ids()->add_method(m);
+  // Have to add jmethod_ids() to class loader data thread-safely.
+  // Also have to add the method to the list safely, which the lock
+  // protects as well.
+  MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
+  if (cld->jmethod_ids() == NULL) {
+    cld->set_jmethod_ids(new JNIMethodBlock());
   }
+  // jmethodID is a pointer to Method*
+  return (jmethodID)cld->jmethod_ids()->add_method(m);
 }
 
 jmethodID Method::jmethod_id() {
