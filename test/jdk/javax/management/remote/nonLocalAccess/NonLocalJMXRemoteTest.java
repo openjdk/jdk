@@ -121,7 +121,7 @@ public class NonLocalJMXRemoteTest {
                     + "\n\n",
     };
     static final String message = "Enter <registry.host>:<port> and submit:";
-    static final int TIMEOUT_MS = 3600000;
+    static final int TIMEOUT_MS = 300000;
     private volatile boolean abort = false;
 
     public static void main(String[] args) throws Exception {
