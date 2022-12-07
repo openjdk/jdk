@@ -95,7 +95,7 @@ import jdk.internal.reflect.Reflection;
  * <li>threads' current methods do not complete normally or abruptly;</li>
  * <li>{@code finally} clauses are not executed;</li>
  * <li>{@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers} are not run; and</li>
- * <li>resources opened with try-with-resources are not {@linkplain AutoCloseable close}d;</li>
+ * <li>resources opened with try-with-resources are not {@linkplain AutoCloseable closed};</li>
  * </ul>
  *
  * @implNote
