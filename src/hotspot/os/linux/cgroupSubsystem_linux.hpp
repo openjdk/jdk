@@ -83,7 +83,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *matchline,
                                               const char *scan_fmt,
                                               T returnval) {
-  char file[MAXPATHLEN+1];
+  stringStream file;
   char buf[MAXPATHLEN+1];
   char discard[MAXPATHLEN+1];
 
@@ -95,26 +95,24 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     log_debug(os, container)("subsystem_file_line_contents: subsystem path is NULL");
     return OSCONTAINER_ERROR;
   }
-
-  strncpy(file, c->subsystem_path(), MAXPATHLEN);
-  file[MAXPATHLEN-1] = '\0';
-  int filelen = strlen(file);
+  file.print_raw(c->subsystem_path());
+  int filelen = file.size();
   if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
-    log_debug(os, container)("File path too long %s, %s", file, filename);
+    log_debug(os, container)("File path too long %s, %s", file.base(), filename);
     return OSCONTAINER_ERROR;
   }
-  strncat(file, filename, MAXPATHLEN-filelen);
-  log_trace(os, container)("Path to %s is %s", filename, file);
+  file.print_raw(filename);
+  log_trace(os, container)("Path to %s is %s", filename, file.base());
 
-  FILE* fp = os::fopen(file, "r");
+  FILE* fp = os::fopen(file.base(), "r");
   if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", file, os::strerror(errno));
+    log_debug(os, container)("Open of file %s failed, %s", file.base(), os::strerror(errno));
     return OSCONTAINER_ERROR;
   }
 
   char* p = fgets(buf, MAXPATHLEN, fp);
   if (p == nullptr) {
-    log_debug(os, container)("Empty file %s", file);
+    log_debug(os, container)("Empty file %s", file.base());
     return OSCONTAINER_ERROR;
   }
   for (; p != NULL; p = fgets(buf, MAXPATHLEN, fp)) {
@@ -137,7 +135,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
       fclose(fp);
       return 0;
     } else {
-      log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
+      log_debug(os, container)("Type %s not found in file %s", scan_fmt, file.base());
     }
   }
   return OSCONTAINER_ERROR;
