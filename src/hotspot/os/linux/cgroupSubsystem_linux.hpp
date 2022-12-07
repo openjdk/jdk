@@ -84,8 +84,6 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *scan_fmt,
                                               T returnval) {
   stringStream file;
-  char buf[MAXPATHLEN+1];
-  char discard[MAXPATHLEN+1];
 
   if (c == NULL) {
     log_debug(os, container)("subsystem_file_line_contents: CgroupController* is NULL");
@@ -110,6 +108,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     return OSCONTAINER_ERROR;
   }
 
+  char buf[MAXPATHLEN+1];
   char* p = fgets(buf, MAXPATHLEN, fp);
   if (p == nullptr) {
     log_debug(os, container)("Empty file %s", file.base());
@@ -125,6 +124,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
       // multi-line file case
       if (strstr(p, matchline) != NULL) {
         // discard matchline string prefix
+        char discard[MAXPATHLEN+1];
         int matched = sscanf(p, scan_fmt, discard, returnval);
         found_match = (matched == 2);
       } else {
