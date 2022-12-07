@@ -83,12 +83,9 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *matchline,
                                               const char *scan_fmt,
                                               T returnval) {
-  FILE *fp = NULL;
-  char *p;
   char file[MAXPATHLEN+1];
   char buf[MAXPATHLEN+1];
   char discard[MAXPATHLEN+1];
-  bool found_match = false;
 
   if (c == NULL) {
     log_debug(os, container)("subsystem_file_line_contents: CgroupController* is NULL");
@@ -108,15 +105,16 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   }
   strncat(file, filename, MAXPATHLEN-filelen);
   log_trace(os, container)("Path to %s is %s", filename, file);
-  fp = os::fopen(file, "r");
+
+  FILE* fp = os::fopen(file, "r");
   if (fp == nullptr) {
     log_debug(os, container)("Open of file %s failed, %s", file, os::strerror(errno));
     return OSCONTAINER_ERROR;
   }
 
   int err = 0;
-  while ((p = fgets(buf, MAXPATHLEN, fp)) != NULL) {
-    found_match = false;
+  for (char* p = fgets(buf, MAXPATHLEN, fp); p != NULL; p = fgets(buf, MAXPATHLEN, fp)) {
+    bool found_match = false;
     if (matchline == NULL) {
       // single-line file case
       int matched = sscanf(p, scan_fmt, returnval);
@@ -142,6 +140,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   if (err == 0) {
     log_debug(os, container)("Empty file %s", file);
   }
+  return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP
 
