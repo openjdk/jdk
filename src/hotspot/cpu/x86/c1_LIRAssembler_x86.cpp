@@ -1744,8 +1744,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ cmpptr(k_RInfo, Rtmp1);
     } else {
       __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-      __ jcc(Assembler::notEqual, *failure_target);
     }
+    __ jcc(Assembler::notEqual, *failure_target);
     // successful cast, fall through to profile or jump
   } else {
     // get object class
