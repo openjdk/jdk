@@ -1729,33 +1729,23 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ jcc(Assembler::equal, *obj_is_null);
   }
 
-  if (!k->is_loaded()) {
-    klass2reg_with_patching(k_RInfo, op->info_for_patch());
-  } else {
-#ifdef _LP64
+  if (k->is_loaded()) {
     __ mov_metadata(k_RInfo, k->constant_encoding());
-#endif // _LP64
+  } else {
+    klass2reg_with_patching(k_RInfo, op->info_for_patch());
   }
   __ verify_oop(obj);
 
   if (op->fast_check()) {
     // get object class
     // not a safepoint as obj null check happens earlier
-#ifdef _LP64
     if (UseCompressedClassPointers) {
       __ load_klass(Rtmp1, obj, tmp_load_klass);
       __ cmpptr(k_RInfo, Rtmp1);
     } else {
       __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
+      __ jcc(Assembler::notEqual, *failure_target);
     }
-#else
-    if (k->is_loaded()) {
-      __ cmpklass(Address(obj, oopDesc::klass_offset_in_bytes()), k->constant_encoding());
-    } else {
-      __ cmpptr(k_RInfo, Address(obj, oopDesc::klass_offset_in_bytes()));
-    }
-#endif
-    __ jcc(Assembler::notEqual, *failure_target);
     // successful cast, fall through to profile or jump
   } else {
     // get object class
@@ -1763,29 +1753,18 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ load_klass(klass_RInfo, obj, tmp_load_klass);
     if (k->is_loaded()) {
       if (k->can_be_primary_super()) {
-#ifdef _LP64
         __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
-#else
-        __ cmpklass(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
-#endif // _LP64
         __ jcc(Assembler::notEqual, *failure_target);
         // successful cast, fall through to profile or jump
       } else {
         if (UseSecondarySuperCache) {
-#ifdef _LP64
-          __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
-#else
-          __ cmpklass(Address(klass_RInfo, k->super_check_offset()), k->constant_encoding());
-#endif // _LP64
           // See if we get an immediate positive hit
+          __ cmpptr(k_RInfo, Address(klass_RInfo, k->super_check_offset()));
           __ jcc(Assembler::equal, *success_target);
         }
         // check for self
-#ifdef _LP64
         __ cmpptr(klass_RInfo, k_RInfo);
-#else
-        __ cmpklass(klass_RInfo, k->constant_encoding());
-#endif // _LP64
+        __ jcc(Assembler::equal, *success_target);
       }
     } else {
       // perform the fast part of the checking logic
@@ -1796,14 +1775,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     if (needs_slow_path) {
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
       __ push(klass_RInfo);
-#ifndef _LP64
-      if (k->is_loaded()) {
-        __ pushklass(k->constant_encoding(), noreg);
-      } else
-#endif // !_LP64
       __ push(k_RInfo);
       __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
-      __ pop(klass_RInfo);
+      __ pop(k_RInfo);
       __ pop(klass_RInfo);
       // result is a boolean
       __ cmpl(klass_RInfo, 0);
