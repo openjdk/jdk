@@ -83,8 +83,6 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *matchline,
                                               const char *scan_fmt,
                                               T returnval) {
-  stringStream file;
-
   if (c == NULL) {
     log_debug(os, container)("subsystem_file_line_contents: CgroupController* is NULL");
     return OSCONTAINER_ERROR;
@@ -93,13 +91,15 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     log_debug(os, container)("subsystem_file_line_contents: subsystem path is NULL");
     return OSCONTAINER_ERROR;
   }
+
+  stringStream file;
   file.print_raw(c->subsystem_path());
-  int filelen = file.size();
-  if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
+  file.print_raw(filename);
+
+  if (file.size() > (MAXPATHLEN-1)) {
     log_debug(os, container)("File path too long %s, %s", file.base(), filename);
     return OSCONTAINER_ERROR;
   }
-  file.print_raw(filename);
   log_trace(os, container)("Path to %s is %s", filename, file.base());
 
   FILE* fp = os::fopen(file.base(), "r");
@@ -108,8 +108,9 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     return OSCONTAINER_ERROR;
   }
 
-  char buf[MAXPATHLEN+1];
-  char* p = fgets(buf, MAXPATHLEN, fp);
+  const int buf_len = MAXPATHLEN+1;
+  char buf[buf_len];
+  char* p = fgets(buf, buf_len, fp);
   if (p == nullptr) {
     log_debug(os, container)("Empty file %s", file.base());
     fclose(fp);
@@ -124,10 +125,10 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   } else {
     // File consists of multiple lines in a "key value"
     // fashion, we need to find the match.
-    for (; p != nullptr; p = fgets(buf, MAXPATHLEN, fp)) {
+    for (; p != nullptr; p = fgets(buf, buf_len, fp)) {
       if (strstr(p, matchline) != nullptr) {
         // discard matchline string prefix
-        char discard[MAXPATHLEN+1];
+        char discard[buf_len];
         int matched = sscanf(p, scan_fmt, discard, returnval);
         found_match = (matched == 2);
         if (found_match) {
