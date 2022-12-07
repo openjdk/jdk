@@ -5480,12 +5480,12 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   if (input >= cmpzm->req() || cmpzm->in(input) == NULL) {
     return NULL;
   }
-  bool res = cmpzm->in(input)->Opcode() == Op_Opaque1;
+  bool res = cmpzm->in(input)->Opcode() == Op_OpaqueZeroTripGuard;
 #ifdef ASSERT
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
-    if (opnd && opnd->Opcode() == Op_Opaque1) {
+    if (opnd && opnd->is_Opaque1()) {
       found_opaque = true;
       break;
     }
