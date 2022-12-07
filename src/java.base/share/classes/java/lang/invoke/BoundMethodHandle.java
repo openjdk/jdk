@@ -26,7 +26,6 @@
 package java.lang.invoke;
 
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.ValueConversions;
 
 import java.util.ArrayList;
 import java.util.List;

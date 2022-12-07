@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 
 import java.lang.reflect.Constructor;
