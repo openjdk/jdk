@@ -638,11 +638,9 @@ public:
 #endif // _LP64
 
   void scan(Register value, Register position, Register counter,
-            Label& L_success, Label& L_failure, Label& L_fallthrough,
-            bool do_unroll);
+            Label& L_success, Label& L_failure, Label& L_fallthrough);
 
-
-    // Simplified, combined version, good for typical uses.
+  // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
