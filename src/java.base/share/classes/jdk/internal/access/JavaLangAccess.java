@@ -476,24 +476,28 @@ public interface JavaLangAccess {
     boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
 
     /**
-     * Returns the current thread's extent locals cache
+     * Returns the current thread's scoped values cache
      */
-    Object[] extentLocalCache();
+    Object[] scopedValueCache();
 
     /**
-     * Sets the current thread's extent locals cache
+     * Sets the current thread's scoped values cache
      */
-    void setExtentLocalCache(Object[] cache);
+    void setScopedValueCache(Object[] cache);
 
     /**
-     * Return the current thread's extent local bindings.
+     * Return the current thread's scoped value bindings.
      */
-    Object extentLocalBindings();
+    Object scopedValueBindings();
 
     /**
-     * Set the current thread's extent local bindings.
+     * Set the current thread's scoped value bindings.
      */
-    void setExtentLocalBindings(Object bindings);
+    void setScopedValueBindings(Object bindings);
+
+    Object findScopedValueBindings();
+
+    void ensureMaterializedForStackWalk(Object value);
 
     /**
      * Returns the innermost mounted continuation

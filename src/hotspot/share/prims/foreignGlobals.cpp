@@ -27,6 +27,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/resourceHash.hpp"
 
 StubLocations::StubLocations() {
   for (uint32_t i = 0; i < LOCATION_LIMIT; i++) {
@@ -116,11 +117,10 @@ void ArgumentShuffle::print_on(outputStream* os) const {
   os->print_cr("Argument shuffle {");
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
-    BasicType arg_bt   = move.bt;
     VMStorage from_reg = move.from;
     VMStorage to_reg   = move.to;
 
-    os->print("Move a %s from ", null_safe_string(type2name(arg_bt)));
+    os->print("Move from ");
     from_reg.print_on(os);
     os->print(" to ");
     to_reg.print_on(os);
@@ -182,44 +182,58 @@ int JavaCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage
 }
 
 class ComputeMoveOrder: public StackObj {
+  class MoveOperation;
+
+  // segment_mask_or_size is not taken into account since
+  // VMStorages that differ only in mask or size can still
+  // conflict
+  static inline unsigned hash(const VMStorage& vms) {
+    return static_cast<unsigned int>(vms.type()) ^ vms.index_or_offset();
+  }
+  static inline bool equals(const VMStorage& a, const VMStorage& b) {
+    return a.type() == b.type() && a.index_or_offset() == b.index_or_offset();
+  }
+
+  using KillerTable = ResourceHashtable<
+    VMStorage, MoveOperation*,
+    32, // doesn't need to be big. don't have that many argument registers (in known ABIs)
+    AnyObj::RESOURCE_AREA,
+    mtInternal,
+    ComputeMoveOrder::hash,
+    ComputeMoveOrder::equals
+    >;
+
   class MoveOperation: public ResourceObj {
     friend class ComputeMoveOrder;
    private:
-    VMStorage        _src;
-    VMStorage        _dst;
-    bool             _processed;
+    VMStorage       _src;
+    VMStorage       _dst;
+    bool            _processed;
     MoveOperation*  _next;
     MoveOperation*  _prev;
-    BasicType       _bt;
-
-    static int get_id(VMStorage r) {
-      assert((r.index_or_offset() & 0xFF000000) == 0, "index or offset too large");
-      // assuming mask and size doesn't matter for now
-      return ((int) r.type()) | (r.index_or_offset() << 8);
-    }
 
    public:
-    MoveOperation(VMStorage src, VMStorage dst, BasicType bt):
-      _src(src), _dst(dst), _processed(false), _next(NULL), _prev(NULL), _bt(bt) {}
+    MoveOperation(VMStorage src, VMStorage dst):
+      _src(src), _dst(dst), _processed(false), _next(nullptr), _prev(nullptr) {}
 
-    int src_id() const          { return get_id(_src); }
-    int dst_id() const          { return get_id(_dst); }
-    MoveOperation* next() const { return _next; }
-    MoveOperation* prev() const { return _prev; }
-    void set_processed()        { _processed = true; }
-    bool is_processed() const   { return _processed; }
+    const VMStorage& src() const { return _src; }
+    const VMStorage& dst() const { return _dst; }
+    MoveOperation* next()  const { return _next; }
+    MoveOperation* prev()  const { return _prev; }
+    void set_processed()         { _processed = true; }
+    bool is_processed()    const { return _processed; }
 
     // insert
     void break_cycle(VMStorage temp_register) {
       // create a new store following the last store
       // to move from the temp_register to the original
-      MoveOperation* new_store = new MoveOperation(temp_register, _dst, _bt);
+      MoveOperation* new_store = new MoveOperation(temp_register, _dst);
 
       // break the cycle of links and insert new_store at the end
       // break the reverse link.
       MoveOperation* p = prev();
       assert(p->next() == this, "must be");
-      _prev = NULL;
+      _prev = nullptr;
       p->_next = new_store;
       new_store->_prev = p;
 
@@ -227,18 +241,19 @@ class ComputeMoveOrder: public StackObj {
       _dst = temp_register;
     }
 
-    void link(GrowableArray<MoveOperation*>& killer) {
+    void link(KillerTable& killer) {
       // link this store in front the store that it depends on
-      MoveOperation* n = killer.at_grow(src_id(), NULL);
-      if (n != NULL) {
-        assert(_next == NULL && n->_prev == NULL, "shouldn't have been set yet");
-        _next = n;
-        n->_prev = this;
+      MoveOperation** n = killer.get(_src);
+      if (n != nullptr) {
+        MoveOperation* src_killer = *n;
+        assert(_next == nullptr && src_killer->_prev == nullptr, "shouldn't have been set yet");
+        _next = src_killer;
+        src_killer->_prev = this;
       }
     }
 
     Move as_move() {
-      return {_bt, _src, _dst};
+      return {_src, _dst};
     }
   };
 
@@ -280,11 +295,11 @@ class ComputeMoveOrder: public StackObj {
       VMStorage in_reg = _in_regs[in_idx];
       VMStorage out_reg = _out_regs[out_idx];
 
-      if (out_reg.is_stack()) {
+      if (out_reg.is_stack() || out_reg.is_frame_data()) {
         // Move operations where the dest is the stack can all be
         // scheduled first since they can't interfere with the other moves.
         // The input and output stack spaces are distinct from each other.
-        Move move{bt, in_reg, out_reg};
+        Move move{in_reg, out_reg};
         _moves.push(move);
       } else if (in_reg == out_reg
                  || bt == T_VOID) {
@@ -294,7 +309,7 @@ class ComputeMoveOrder: public StackObj {
         //    Don't need to do anything.
         continue;
       } else {
-        _edges.append(new MoveOperation(in_reg, out_reg, bt));
+        _edges.append(new MoveOperation(in_reg, out_reg));
       }
     }
     // Break any cycles in the register moves and emit the in the
@@ -305,16 +320,15 @@ class ComputeMoveOrder: public StackObj {
   // Walk the edges breaking cycles between moves.  The result list
   // can be walked in order to produce the proper set of loads
   void compute_store_order(VMStorage temp_register) {
-    // Record which moves kill which values
-    // FIXME should be a map
-    GrowableArray<MoveOperation*> killer; // essentially a map of register id -> MoveOperation*
+    // Record which moves kill which registers
+    KillerTable killer; // a map of VMStorage -> MoveOperation*
     for (int i = 0; i < _edges.length(); i++) {
       MoveOperation* s = _edges.at(i);
-      assert(killer.at_grow(s->dst_id(), NULL) == NULL,
+      assert(!killer.contains(s->dst()),
              "multiple moves with the same register as destination");
-      killer.at_put_grow(s->dst_id(), s, NULL);
+      killer.put(s->dst(), s);
     }
-    assert(killer.at_grow(MoveOperation::get_id(temp_register), NULL) == NULL,
+    assert(!killer.contains(temp_register),
            "make sure temp isn't in the registers that are killed");
 
     // create links between loads and stores
@@ -332,14 +346,14 @@ class ComputeMoveOrder: public StackObj {
       if (!s->is_processed()) {
         MoveOperation* start = s;
         // search for the beginning of the chain or cycle
-        while (start->prev() != NULL && start->prev() != s) {
+        while (start->prev() != nullptr && start->prev() != s) {
           start = start->prev();
         }
         if (start->prev() == s) {
           start->break_cycle(temp_register);
         }
         // walk the chain forward inserting to store list
-        while (start != NULL) {
+        while (start != nullptr) {
           _moves.push(start->as_move());
 
           start->set_processed();

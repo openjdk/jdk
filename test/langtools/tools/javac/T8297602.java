@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,24 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.net;
 
-import java.net.URL;
-
-/**
- * ProgressMeteringPolicy is an interface for determining progress metering policy.
- *
- * @author Stanley Man-Kit Ho
+/*
+ * @test
+ * @bug 8297602
+ * @summary Compiler crash with type annotation and generic record during pattern matching
+ * @enablePreview
+ * @compile --enable-preview -source ${jdk.version} -XDrawDiagnostics T8297602.java
  */
-public interface ProgressMeteringPolicy
-{
-    /**
-     * Return true if metering should be turned on for a particular network input stream.
-     */
-    public boolean shouldMeterInput(URL url, String method);
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-    /**
-     * Return update notification threshold.
-     */
-    public int getProgressUpdateThreshold();
+public class T8297602
+{
+    void meth(Foo<Integer> p) {
+        switch(p) {
+            case Foo<@Annot(field = "") Integer>(): {}
+        };
+
+        if (p instanceof Foo<@Annot(field = "") Integer>()) {
+
+        }
+    }
+
+    @Target({ElementType.TYPE_USE})
+    @interface Annot {
+        String field();
+    }
+
+    record Foo<T>() { }
 }

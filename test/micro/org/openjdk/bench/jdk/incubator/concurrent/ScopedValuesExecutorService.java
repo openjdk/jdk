@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,30 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.net;
 
-import java.util.EventListener;
 
-/**
- * ProgressListener is an interface to be implemented by parties
- * interested to be notified of progress in network input stream.
- *
- * @author Stanley Man-Kit Ho
- */
-public interface ProgressListener extends EventListener
-{
-    /**
-     * Start progress.
-     */
-    public void progressStart(ProgressEvent evt);
+package org.openjdk.bench.jdk.incubator.concurrent;
 
-    /**
-     * Update progress.
-     */
-    public void progressUpdate(ProgressEvent evt);
+import java.util.concurrent.*;
 
-    /**
-     * Finish progress.
-     */
-    public void progressFinish(ProgressEvent evt);
+public class ScopedValuesExecutorService extends ThreadPoolExecutor {
+    public ScopedValuesExecutorService(int corePoolSize, String prefix) {
+        super(1, 1, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+              new AThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
+    }
+}
+
+class AThreadFactory implements ThreadFactory {
+    public Thread newThread(Runnable action) {
+        return new Thread() {
+            public void run() {
+                ScopedValuesData.run(action);
+            }
+        };
+    }
 }

@@ -287,9 +287,6 @@ int CgroupV1Subsystem::cpu_shares() {
 char* CgroupV1Subsystem::pids_max_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _pids, "/pids.max",
                      "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
-  if (pidsmax == NULL) {
-    return NULL;
-  }
   return os::strdup(pidsmax);
 }
 

@@ -116,7 +116,6 @@ private:
 };
 
 struct Move {
-  BasicType bt;
   VMStorage from;
   VMStorage to;
 };
