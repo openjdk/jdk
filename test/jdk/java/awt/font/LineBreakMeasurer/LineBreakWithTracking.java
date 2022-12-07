@@ -47,7 +47,7 @@ import java.lang.reflect.InvocationTargetException;
 class LineBreakPanel extends JPanel implements ActionListener {
 
   private float textTracking = 0.0f;
-  private static String fontName = "Bitstream Cyberbit";
+  private static String fontName = "Dialog";
   private static String text = "This is a long line of text that should be broken across multiple lines. "
           + "Please set the different tracking values to test via menu! This test should pass if "
           + "these lines are broken to fit the width, and fail otherwise.  It should "
