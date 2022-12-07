@@ -2912,10 +2912,8 @@ static int expandPackedBCR(JNIEnv *env, RasterS_t *rasterP, int component,
     jint   *inDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
 
-#if defined(LINUX) && defined(s390x)
     memset(loff, 0, sizeof(loff));
     memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3006,11 +3004,6 @@ static int expandPackedBCRdefault(JNIEnv *env, RasterS_t *rasterP,
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
     int numBands = rasterP->numBands - (forceAlpha ? 0 : 1);
     int a = numBands;
-
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3103,10 +3096,8 @@ static int expandPackedSCR(JNIEnv *env, RasterS_t *rasterP, int component,
     jint   *inDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
 
-#if defined(LINUX) && defined(s390x)
     memset(loff, 0, sizeof(loff));
     memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3204,11 +3195,6 @@ static int expandPackedSCRdefault(JNIEnv *env, RasterS_t *rasterP,
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
     int numBands = rasterP->numBands - (forceAlpha ? 0 : 1);
     int a = numBands;
-
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3310,11 +3296,6 @@ static int expandPackedICR(JNIEnv *env, RasterS_t *rasterP, int component,
     jint   *inDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
 
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
-
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
     }
@@ -3408,11 +3389,6 @@ static int expandPackedICRdefault(JNIEnv *env, RasterS_t *rasterP,
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
     int numBands = rasterP->numBands - (forceAlpha ? 0 : 1);
     int a = numBands;
-
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3510,11 +3486,6 @@ static int setPackedBCR(JNIEnv *env, RasterS_t *rasterP, int component,
     unsigned char *outDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
 
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
-
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
     }
@@ -3591,11 +3562,6 @@ static int setPackedSCR(JNIEnv *env, RasterS_t *rasterP, int component,
     unsigned short *outDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
 
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
-
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
     }
@@ -3671,11 +3637,6 @@ static int setPackedICR(JNIEnv *env, RasterS_t *rasterP, int component,
     jsize dataArrayLength;
     unsigned int *outDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
-
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3755,11 +3716,6 @@ static int setPackedBCRdefault(JNIEnv *env, RasterS_t *rasterP,
     unsigned char *outDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
     int a = rasterP->numBands - 1;
-
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
@@ -3859,11 +3815,6 @@ static int setPackedSCRdefault(JNIEnv *env, RasterS_t *rasterP,
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
     int a = rasterP->numBands - 1;
 
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
-
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
     }
@@ -3960,11 +3911,6 @@ static int setPackedICRdefault(JNIEnv *env, RasterS_t *rasterP,
     unsigned int *outDataP;
     int loff[MAX_NUMBANDS], roff[MAX_NUMBANDS];
     int a = rasterP->numBands - 1;
-
-#if defined(LINUX) && defined(s390x)
-    memset(loff, 0, sizeof(loff));
-    memset(roff, 0, sizeof(roff));
-#endif
 
     if (rasterP->numBands > MAX_NUMBANDS) {
         return -1;
