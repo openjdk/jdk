@@ -80,7 +80,7 @@ public class ASGSTStabilityTest {
           } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
             break;
-          } 
+          }
         }
       });
       t.setDaemon(true);

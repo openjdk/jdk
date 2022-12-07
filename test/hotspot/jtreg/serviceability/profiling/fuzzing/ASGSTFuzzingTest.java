@@ -22,7 +22,7 @@
  * questions.
  */
 
-package profiling.stress;
+package profiling.fuzzing;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -58,9 +58,7 @@ import jdk.test.whitebox.WhiteBox;
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest akka-uct 10
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest finagle-chirper 120
- * @run main/othervm/native/timeout=216000 profiling.stress.ASGSTFuzzingTest finagle-http 120
+ * @run main/othervm/native/timeout=216000 profiling.fuzzing.ASGSTFuzzingTest akka-uct 1
  */
 
 public class ASGSTFuzzingTest {
@@ -109,6 +107,7 @@ public class ASGSTFuzzingTest {
   }
 
   public static void main(String[] args) throws Exception {
+
     String tmpPath = System.getProperty("java.io.tmpdir");
     Path jarPath = Paths.get(tmpPath, "renaissance.jar");
     if (!Files.exists(jarPath)) {

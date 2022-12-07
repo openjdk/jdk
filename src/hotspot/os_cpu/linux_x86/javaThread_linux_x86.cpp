@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include <cstdio>
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
@@ -51,12 +52,13 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava,
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
   // But forceUContextUsage == true overrides this.
+  fprintf(stderr, "JavaThread::pd_get_top_frame: ucontext=%p, isInJava=%d, forceUContextUsage=%d\n", ucontext, isInJava, forceUContextUsage);
   if (ucontext == NULL ||
       (!forceUContextUsage && has_last_Java_frame() && frame_anchor()->walkable())) {
-    fprintf(stderr, "Has last java frame\n");
     *fr_addr = pd_last_frame();
     return true;
   }
+
 
   // At this point, we don't have a last_Java_frame, so
   // we try to glean some information out of the ucontext

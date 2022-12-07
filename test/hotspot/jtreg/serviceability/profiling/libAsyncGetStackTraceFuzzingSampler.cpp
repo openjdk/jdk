@@ -117,6 +117,7 @@ void fuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int op
   uc.uc_mcontext.gregs[REG_RSP] += sp_fuzz;
   uc.uc_mcontext.gregs[REG_RBP] += fp_fuzz;
 
+
   AsyncGetStackTrace(trace, max_depth, &uc, options);
 }
 
@@ -127,6 +128,7 @@ static void signalHandler(int signo, siginfo_t* siginfo, void* ucontext) {
   trace.frames = frames;
   trace.frame_info = NULL;
   trace.num_frames = 0;
+    fprintf(stdout, "######################## asc2\n");
   fuzzingAsyncGetStackTraceLike(&trace, MAX_DEPTH, ASGST_INCLUDE_C_FRAMES, rand() % sp_max_fuzz, rand() % fp_max_fuzz, ucontext);
 }
 
@@ -146,7 +148,6 @@ static bool startITimerSampler(long interval_ns) {
 
 static void JNICALL OnVMInit(jvmtiEnv *jvmti, JNIEnv *jni_env, jthread thread) {
   jint class_count = 0;
-
   // Get any previously loaded classes that won't have gone through the
   // OnClassPrepare callback to prime the jmethods for AsyncGetStackTrace.
   JvmtiDeallocator<jclass*> classes;
@@ -170,7 +171,6 @@ extern "C" {
 
 static
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
   if (res != JNI_OK || jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
