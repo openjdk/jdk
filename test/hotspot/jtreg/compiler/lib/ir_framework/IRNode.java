@@ -714,6 +714,16 @@ public class IRNode {
         superWordNodes(POPCOUNT_VL, "PopCountVL");
     }
 
+    public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
+    }
+
+    public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
+    }
+
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
     static {
         String regex = START + "PopulateIndex" + MID + END;

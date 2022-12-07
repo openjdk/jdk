@@ -99,7 +99,6 @@ class VectorNode : public TypeNode {
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(Node* n);
-  static bool is_type_transition_long_to_int(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -551,7 +550,9 @@ class PopCountVINode : public VectorNode {
 // Vector popcount long bits
 class PopCountVLNode : public VectorNode {
  public:
-  PopCountVLNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  PopCountVLNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {
+    assert(vt->element_basic_type() == T_LONG, "must be long");
+  }
   virtual int Opcode() const;
 };
 
@@ -1732,7 +1733,10 @@ public:
 class CountLeadingZerosVNode : public VectorNode {
  public:
   CountLeadingZerosVNode(Node* in, const TypeVect* vt)
-  : VectorNode(in, vt) {}
+  : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == vt->element_basic_type(),
+           "must be the same");
+  }
 
   virtual int Opcode() const;
 };
@@ -1740,7 +1744,10 @@ class CountLeadingZerosVNode : public VectorNode {
 class CountTrailingZerosVNode : public VectorNode {
  public:
   CountTrailingZerosVNode(Node* in, const TypeVect* vt)
-  : VectorNode(in, vt) {}
+  : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == vt->element_basic_type(),
+           "must be the same");
+  }
 
   virtual int Opcode() const;
 };

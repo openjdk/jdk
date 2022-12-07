@@ -270,12 +270,13 @@ public interface JavaLangAccess {
     /**
      * Updates all unnamed modules to allow access to restricted methods.
      */
-    void addEnableNativeAccessAllUnnamed();
+    void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Returns true if module m can access restricted methods.
+     * Ensure that the given module has native access. If not, warn or
+     * throw exception depending on the configuration.
      */
-    boolean isEnableNativeAccess(Module m);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -475,24 +476,28 @@ public interface JavaLangAccess {
     boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
 
     /**
-     * Returns the current thread's extent locals cache
+     * Returns the current thread's scoped values cache
      */
-    Object[] extentLocalCache();
+    Object[] scopedValueCache();
 
     /**
-     * Sets the current thread's extent locals cache
+     * Sets the current thread's scoped values cache
      */
-    void setExtentLocalCache(Object[] cache);
+    void setScopedValueCache(Object[] cache);
 
     /**
-     * Return the current thread's extent local bindings.
+     * Return the current thread's scoped value bindings.
      */
-    Object extentLocalBindings();
+    Object scopedValueBindings();
 
     /**
-     * Set the current thread's extent local bindings.
+     * Set the current thread's scoped value bindings.
      */
-    void setExtentLocalBindings(Object bindings);
+    void setScopedValueBindings(Object bindings);
+
+    Object findScopedValueBindings();
+
+    void ensureMaterializedForStackWalk(Object value);
 
     /**
      * Returns the innermost mounted continuation

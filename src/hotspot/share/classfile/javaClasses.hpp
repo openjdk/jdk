@@ -352,7 +352,7 @@ class java_lang_Thread : AllStatic {
   static int _tid_offset;
   static int _continuation_offset;
   static int _park_blocker_offset;
-  static int _extentLocalBindings_offset;
+  static int _scopedValueBindings_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
@@ -398,8 +398,8 @@ class java_lang_Thread : AllStatic {
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);
 
-  // Clear all extent local bindings on error
-  static void clear_extentLocalBindings(oop java_thread);
+  // Clear all scoped value bindings on error
+  static void clear_scopedValueBindings(oop java_thread);
 
   // Blocker object responsible for thread parking
   static oop park_blocker(oop java_thread);
@@ -1121,8 +1121,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static int _volatileStorage_offset;
   static int _stackAlignment_offset;
   static int _shadowSpace_offset;
-  static int _targetAddrStorage_offset;
-  static int _retBufAddrStorage_offset;
+  static int _scratch1_offset;
+  static int _scratch2_offset;
 
   static void compute_offsets();
 
@@ -1135,8 +1135,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static objArrayOop volatileStorage(oop entry);
   static jint        stackAlignment(oop entry);
   static jint        shadowSpace(oop entry);
-  static oop         targetAddrStorage(oop entry);
-  static oop         retBufAddrStorage(oop entry);
+  static oop         scratch1(oop entry);
+  static oop         scratch2(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1151,7 +1151,8 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
 
  private:
   static int _type_offset;
-  static int _index_offset;
+  static int _indexOrOffset_offset;
+  static int _segmentMaskOrSize_offset;
   static int _debugName_offset;
 
   static void compute_offsets();
@@ -1160,9 +1161,10 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static jint        type(oop entry);
-  static jint        index(oop entry);
-  static oop         debugName(oop entry);
+  static jbyte  type(oop entry);
+  static jint   index_or_offset(oop entry);
+  static jshort segment_mask_or_size(oop entry);
+  static oop    debugName(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {

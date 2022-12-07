@@ -428,6 +428,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                               "Franz\u00F6sisch-Guiana Zeit", "GFT"}},
             {"America/Cayman", EST},
             {"America/Chihuahua", CST},
+            {"America/Ciudad_Juarez", MST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},

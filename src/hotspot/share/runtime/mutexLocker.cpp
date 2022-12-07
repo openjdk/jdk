@@ -193,11 +193,6 @@ void assert_lock_strong(const Mutex* lock) {
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
 }
-
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread) {
-  if (thread->is_handshake_safe_for(Thread::current())) return;
-  assert_locked_or_safepoint(lock);
-}
 #endif
 
 static void add_mutex(Mutex* var) {
@@ -374,7 +369,7 @@ void mutex_init() {
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock);
-  defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock); // used for JNI critical regions
+  defl(JNICritical_lock            , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
 #if INCLUDE_JVMCI
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   defl(JVMCI_lock                  , PaddedMonitor, JVMCIRuntime_lock);
