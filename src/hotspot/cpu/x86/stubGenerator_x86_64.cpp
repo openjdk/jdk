@@ -3871,6 +3871,8 @@ void StubGenerator::generate_all() {
   StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
   StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
 
+  generate_scan_secondary_supers_stubs();
+
   // arraycopy stubs used by compilers
   generate_arraycopy_stubs();
 
@@ -3940,6 +3942,8 @@ void StubGenerator::generate_all() {
     StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
   }
 #ifdef COMPILER2
+  generate_scan_secondary_supers_stubs();
+
   if (UseMultiplyToLenIntrinsic) {
     StubRoutines::_multiplyToLen = generate_multiplyToLen();
   }
@@ -4024,9 +4028,6 @@ void StubGenerator::generate_all() {
       snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
-  }
-  if (UseNewCode3) {
-    generate_scan_secondary_supers_stubs();
   }
 #endif // COMPILER2
 

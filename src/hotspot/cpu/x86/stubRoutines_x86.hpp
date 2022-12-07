@@ -333,9 +333,18 @@ class x86 {
   static address _scan_secondary_supers_avx2;
   static address _scan_secondary_supers_avx512;
  public:
-  static address scan_secondary_supers_scalar_addr() { return _scan_secondary_supers_scalar; }
-  static address scan_secondary_supers_avx2_addr()   { return _scan_secondary_supers_avx2; }
-  static address scan_secondary_supers_avx512_addr() { return _scan_secondary_supers_avx512; }
+  static address scan_secondary_supers_scalar_addr() {
+    assert(_scan_secondary_supers_scalar != NULL, "missing stub");
+    return _scan_secondary_supers_scalar;
+  }
+  static address scan_secondary_supers_avx2_addr() {
+    assert(_scan_secondary_supers_avx2 != NULL, "missing stub");
+    return _scan_secondary_supers_avx2;
+  }
+  static address scan_secondary_supers_avx512_addr() {
+    assert(_scan_secondary_supers_avx512 != NULL, "missing stub");
+    return _scan_secondary_supers_avx512;
+  }
 #endif // _LP64
 };
 
