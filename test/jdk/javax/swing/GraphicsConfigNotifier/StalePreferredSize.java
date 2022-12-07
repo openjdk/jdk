@@ -65,7 +65,6 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @summary Initial layout of the component should use correct graphics config.
  *          It is checked by SwingUtilities.updateComponentTreeUI(), if layout
  *          was correct the call to updateComponentTreeUI() will be no-op.
- * @modules java.desktop/sun.swing
  * @compile -encoding utf-8 StalePreferredSize.java
  * @run main/othervm/timeout=600 StalePreferredSize
  * @run main/othervm/timeout=600 -Dsun.java2d.uiScale=1 StalePreferredSize
