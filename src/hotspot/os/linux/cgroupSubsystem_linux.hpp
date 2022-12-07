@@ -80,7 +80,7 @@ PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *filename,
-                                              const char *matchline,
+                                              const char *key,
                                               const char *scan_fmt,
                                               T returnval) {
   if (c == NULL) {
@@ -110,27 +110,28 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
 
   const int buf_len = MAXPATHLEN+1;
   char buf[buf_len];
-  char* p = fgets(buf, buf_len, fp);
-  if (p == nullptr) {
+  char* line = fgets(buf, buf_len, fp);
+  if (line == nullptr) {
     log_debug(os, container)("Empty file %s", file.base());
     fclose(fp);
     return OSCONTAINER_ERROR;
   }
 
   bool found_match = false;
-  if (matchline == nullptr) {
+  if (key == nullptr) {
     // File consists of a single line according to caller, with only a value
-    int matched = sscanf(p, scan_fmt, returnval);
+    int matched = sscanf(line, scan_fmt, returnval);
     found_match = matched == 1;
   } else {
     // File consists of multiple lines in a "key value"
-    // fashion, we need to find the match.
-    for (; p != nullptr; p = fgets(buf, buf_len, fp)) {
-      if (strstr(p, matchline) != nullptr) {
-        // discard matchline string prefix
-        char discard[buf_len];
-        int matched = sscanf(p, scan_fmt, discard, returnval);
-        found_match = (matched == 2);
+    // fashion, we have to find the key.
+    const int key_len = strlen(key);
+    for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
+      if (strstr(line, key) != nullptr) {
+        // Skip key, skip space
+        const char* value_substr = line + key_len + 1;
+        int matched = sscanf(value_substr, scan_fmt, returnval);
+        found_match = matched == 1;
         if (found_match) {
           break;
         }

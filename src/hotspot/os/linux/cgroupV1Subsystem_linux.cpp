@@ -97,9 +97,8 @@ jlong CgroupV1Subsystem::read_memory_limit_in_bytes() {
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
       const char* matchline = "hierarchical_memory_limit";
-      const char* format = "%s " JULONG_FORMAT;
       GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchline,
-                             "Hierarchical Memory Limit is: " JULONG_FORMAT, format, hier_memlimit)
+                             "Hierarchical Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, hier_memlimit)
       if (hier_memlimit >= os::Linux::physical_memory()) {
         log_trace(os, container)("Hierarchical Memory Limit is: Unlimited");
       } else {
@@ -123,9 +122,8 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
     CgroupV1MemoryController* mem_controller = reinterpret_cast<CgroupV1MemoryController*>(_memory->controller());
     if (mem_controller->is_hierarchical()) {
       const char* matchline = "hierarchical_memsw_limit";
-      const char* format = "%s " JULONG_FORMAT;
       GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchline,
-                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, format, hier_memswlimit)
+                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, JULONG_FORMAT, hier_memswlimit)
       if (hier_memswlimit >= host_total_memsw) {
         log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
       } else {
@@ -133,7 +131,7 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
         if (swappiness == 0) {
             const char* matchmemline = "hierarchical_memory_limit";
             GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchmemline,
-                             "Hierarchical Memory Limit is : " JULONG_FORMAT, format, hier_memlimit)
+                             "Hierarchical Memory Limit is : " JULONG_FORMAT, JULONG_FORMAT, hier_memlimit)
             log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", hier_memlimit);
             return (jlong)hier_memlimit;
         }
