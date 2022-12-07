@@ -44,8 +44,8 @@ class CPUInformation : public CHeapObj<mtInternal> {
     _no_of_sockets(0),
     _no_of_cores(0),
     _no_of_hw_threads(0),
-    _description(NULL),
-    _name(NULL) {}
+    _description(nullptr),
+    _name(nullptr) {}
 
   int number_of_sockets(void) const {
     return _no_of_sockets;
@@ -99,10 +99,10 @@ class SystemProcess : public CHeapObj<mtInternal> {
  public:
   SystemProcess() :
     _pid (0),
-    _name(NULL),
-    _path(NULL),
-    _command_line(NULL),
-    _next(NULL) {}
+    _name(nullptr),
+    _path(nullptr),
+    _command_line(nullptr),
+    _next(nullptr) {}
 
   SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) :
     _pid(pid),
@@ -169,11 +169,11 @@ class NetworkInterface : public ResourceObj {
 
  public:
   NetworkInterface(const char* name, uint64_t bytes_in, uint64_t bytes_out, NetworkInterface* next) :
-  _name(NULL),
+  _name(nullptr),
   _bytes_in(bytes_in),
   _bytes_out(bytes_out),
   _next(next) {
-    assert(name != NULL, "invariant");
+    assert(name != nullptr, "invariant");
     const size_t length = strlen(name);
     _name = NEW_RESOURCE_ARRAY(char, length + 1);
     strncpy(_name, name, length + 1);
