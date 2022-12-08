@@ -130,7 +130,7 @@
  *
  * <h2><a id="serialization">Swing's Serialization policy</a></h2>
  * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
+ * Serialized objects of any swing class will not be compatible with
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
