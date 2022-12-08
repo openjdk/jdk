@@ -292,7 +292,7 @@ int JfrOSInterface::generate_initial_environment_variable_events() {
         strncpy(key, variable, key_length);
         key[key_length] = '\0';
         EventInitialEnvironmentVariable event(UNTIMED);
-        event.set_startime(time_stamp);
+        event.set_starttime(time_stamp);
         event.set_endtime(time_stamp);
         event.set_key(key);
         event.set_value(value);
