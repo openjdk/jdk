@@ -1211,11 +1211,15 @@ define SetupNativeCompilationBody
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
                   endif
                 endif
-                # On macosx, optionally run codesign on every binary
+                # On macosx, optionally run codesign on every binary.
+                # Remove signature explicitly first to avoid warnings if the linker
+                # added a default adhoc signature.
                 ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+		  $(CODESIGN) --remove-signature $$@
 		  $(CODESIGN) -f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
 		      --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+		  $(CODESIGN) --remove-signature $$@
 		  $(CODESIGN) -f -s - --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
   endif
