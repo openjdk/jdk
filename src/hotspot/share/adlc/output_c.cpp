@@ -543,7 +543,7 @@ static int pipeline_res_mask_initializer(
     // "0x012345678, 0x012345678, 4294967295"
     char* args = new char [36 + 1];
 
-    snprintf_checked(args, 37, "0x%x, 0x%x, %u",
+    snprintf_checked(args, 36 + 1, "0x%x, 0x%x, %u",
         resources_used, resources_used_exclusively, element_count);
 
     pipeline_res_args.addName(args);

@@ -25,7 +25,7 @@
 // FORMS.CPP - Definitions for ADL Parser Forms Classes
 #include "adlc.hpp"
 
-#define remaining_buflen(buffer, position) (sizeof(buffer) - (position - buffer))
+#define remaining_buflen(buffer, position) (sizeof(buffer) - ((position) - (buffer)))
 
 //==============================Instructions===================================
 //------------------------------InstructForm-----------------------------------
