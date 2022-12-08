@@ -71,6 +71,7 @@ enum StackWalkerReturn {
 class StackWalker {
 
   // Java thread to walk
+  // can be null for non java threads (only c frames then)
   JavaThread* _thread;
 
   bool _skip_c_frames;
@@ -81,6 +82,7 @@ class StackWalker {
   frame _frame;
 
   // is os::get_sender_for_C_frame currently supported?
+  // invariant: true if _thread is null
   const bool supports_os_get_frame;
 
   // StackWalkerError + StackWalkerReturn
@@ -127,6 +129,7 @@ public:
 
   StackWalker(JavaThread* thread, frame top_frame, bool skip_c_frames = true, int max_c_frames_skip = -1);
 
+  // requires a non null thread
   StackWalker(JavaThread* thread, bool skip_c_frames = true, int max_c_frames_skip = -1);
 
   // returns an error code < 0 on error and StackWalkerReturn code otherwise.

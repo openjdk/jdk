@@ -106,9 +106,9 @@ static SigAction installSignalHandler(int signo, SigAction action, SigHandler ha
 }
 
 // max increase of sp
-int sp_max_fuzz = 1000;
+int sp_max_fuzz = 250;
 // max increase of fp
-int fp_max_fuzz = 1000;
+int fp_max_fuzz = 250;
 
 int sp_max_random_fuzz = 1000000;
 int fp_max_random_fuzz = 1000000;

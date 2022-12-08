@@ -236,6 +236,10 @@ StackWalker::StackWalker(JavaThread* thread, frame top_frame, bool skip_c_frames
   _state(STACKWALKER_START), _map(thread, RegisterMap::UpdateMap::skip,
      RegisterMap::ProcessFrames::skip, RegisterMap::WalkContinuation::skip),
     in_c_on_top(false) {
+  if ((thread == NULL && skip_c_frames) || !supports_os_get_frame) {
+    set_state(STACKWALKER_END);
+    return;
+  }
   init();
 }
 
@@ -245,7 +249,7 @@ StackWalker::StackWalker(JavaThread* thread, bool skip_c_frames, int max_c_frame
   _state(STACKWALKER_START), _map(thread, RegisterMap::UpdateMap::skip,
      RegisterMap::ProcessFrames::skip, RegisterMap::WalkContinuation::skip),
   in_c_on_top(false) {
-  if (!thread->has_last_Java_frame()) {
+  if (thread == NULL || !thread->has_last_Java_frame()) {
     set_state(STACKWALKER_END);
     return;
   }
@@ -274,30 +278,32 @@ void StackWalker::init() {
  *
  * Problem: leads to "invalid bci or invalid scope error" in vframestream
  */
- frame StackWalker::next_c_frame(frame fr) {
+frame StackWalker::next_c_frame(frame fr) {
   // Compiled code may use EBP register on x86 so it looks like
   // non-walkable C frame. Use frame.sender() for java frames.
   frame invalid;
   // Catch very first native / c frame by using stack address.
   // For JavaThread stack_base and stack_size should be set.
-  if (!_thread->is_in_full_stack((address)(fr.real_fp() + 1))) {
+
+  if (_thread != NULL) {
+    if (!_thread->is_in_full_stack((address)(fr.real_fp() + 1))) {
+      return invalid;
+    }
+    if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame() || !supports_os_get_frame) {
+      if (!fr.safe_for_sender(_thread)) {
+        return invalid;
+      }
+      RegisterMap map(_thread, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::skip,
+          RegisterMap::WalkContinuation::skip); // No update
+      return fr.sender(&map);
+    }
+  }
+  // is_first_C_frame() does only simple checks for frame pointer,
+  // it will pass if java compiled code has a pointer in EBP.
+  if (os::is_first_C_frame(&fr)) {
     return invalid;
   }
-  if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame() || !supports_os_get_frame) {
-    if (!fr.safe_for_sender(_thread)) {
-      return invalid;
-    }
-    RegisterMap map(_thread, RegisterMap::UpdateMap::skip, RegisterMap::ProcessFrames::skip,
-        RegisterMap::WalkContinuation::skip); // No update
-    return fr.sender(&map);
-  } else {
-    // is_first_C_frame() does only simple checks for frame pointer,
-    // it will pass if java compiled code has a pointer in EBP.
-    if (os::is_first_C_frame(&fr)) {
-      return invalid;
-    }
-    return os::get_sender_for_C_frame(&fr);
-  }
+  return os::get_sender_for_C_frame(&fr);
 }
 
 void StackWalker::reset() {
@@ -328,6 +334,11 @@ void StackWalker::advance() {
 }
 
 bool StackWalker::checkFrame() {
+  if (_thread == NULL) {
+    in_c_on_top = true;
+    set_state(STACKWALKER_C_FRAME);
+    return true;
+  }
   if (!_frame.safe_for_sender(_thread) || _frame.is_first_frame()) {
     if (_skip_c_frames) {
       set_state(STACKWALKER_END);

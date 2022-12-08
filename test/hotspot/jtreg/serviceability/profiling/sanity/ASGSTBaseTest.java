@@ -45,11 +45,12 @@ public class ASGSTBaseTest {
     }
   }
 
+  /** check a simple native call which calls ASGST */
   private static native boolean checkAsyncGetStackTraceCall();
 
   public static void main(String[] args) throws Exception {
     if (!checkAsyncGetStackTraceCall()) {
-      throw new RuntimeException("AsyncGetStackTrace call failed.");
+      throw new RuntimeException("Basic AsyncGetStackTrace calls failed.");
     }
   }
 }

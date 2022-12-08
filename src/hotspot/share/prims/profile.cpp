@@ -26,6 +26,7 @@
 
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -34,11 +35,12 @@
 #include "prims/stackWalker.hpp"
 #include "prims/jvmtiExport.hpp"
 
-static void fill_call_trace_given_top(JavaThread* thd,
-                                      ASGST_CallTrace* trace,
-                                      int depth,
-                                      frame top_frame,
-                                      bool skip_c_frames) {
+// thd can be null for non java threads (only c frames then)
+void fill_call_trace_given_top(JavaThread* thd,
+                               ASGST_CallTrace* trace,
+                               int depth,
+                               frame top_frame,
+                               bool skip_c_frames) {
   NoHandleMark nhm;
   assert(trace->frames != NULL, "trace->frames must be non-NULL");
   trace->frame_info = NULL;
@@ -80,23 +82,72 @@ static void fill_call_trace_given_top(JavaThread* thd,
   trace->num_frames = count;
 }
 
+// check if the frame has at least valid pointers
+bool is_c_frame_safe(frame fr) {
+  return os::is_readable_pointer(fr.pc()) && os::is_readable_pointer(fr.sp()) && os::is_readable_pointer(fr.fp());
+}
+
+// like pd_fetch_frame_from_context but whithout using the JavaThread, only using os methods
+bool frame_from_context(frame* fr, void* ucontext) {
+  ucontext_t* uc = (ucontext_t*) ucontext;
+  frame ret_frame = os::fetch_frame_from_context(ucontext);
+  if (!is_c_frame_safe(ret_frame)) {
+#if COMPILER2_OR_JVMCI
+    // C2 and JVMCI use ebp as a general register see if NULL fp helps
+    frame ret_frame2(ret_frame.sp(), NULL, ret_frame.pc());
+    if (!is_c_frame_safe(ret_frame2)) {
+      // nothing else to try if the frame isn't good
+      return false;
+    }
+    ret_frame = ret_frame2;
+#else
+    // nothing else to try if the frame isn't good
+    return false;
+#endif // COMPILER2_OR_JVMCI
+  }
+  *fr = ret_frame;
+  return true;
+}
+
+
+void fill_call_trace_for_non_java_thread(ASGST_CallTrace *trace, jint depth, void* ucontext, bool include_c_frames) {
+  if (!include_c_frames) { // no java frames in non java threads
+    trace->num_frames = 0;
+    return;
+  }
+  frame ret_frame;
+  if (!frame_from_context(&ret_frame, ucontext)) {
+    trace->num_frames = ASGST_UNKNOWN_NOT_JAVA; // -3
+    return;
+  }
+  fill_call_trace_given_top(NULL, trace, depth, ret_frame, false);
+}
+
+
 extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options) {
   assert(trace->frames != NULL, "");
+  bool include_c_frames = (options & ASGST_INCLUDE_C_FRAMES) != 0;
+  bool include_non_java_threads = (options & ASGST_INCLUDE_NON_JAVA_THREADS) != 0;
+
   // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
   // do from this context.
   Thread* raw_thread = Thread::current_or_null_safe();
   JavaThread* thread;
 
-  if (raw_thread == NULL) {
-    // bad env_id, thread has exited or thread is exiting
-    trace->num_frames = (jint)ASGST_THREAD_EXIT; // -8
+  if (raw_thread == NULL || !raw_thread->is_Java_thread()) {
+    trace->kind = ASGST_KIND_C; // 3
+    if (include_non_java_threads) {
+      // the raw thread is null for all non JVM threads
+      // as these threads could not have called the required
+      // ThreadLocalStorage::init() method
+      fill_call_trace_for_non_java_thread(trace, depth, ucontext, include_c_frames);
+    } else {
+      trace->num_frames = (jint)ASGST_THREAD_NOT_JAVA; // -10
+    }
     return;
   }
 
-  if (!raw_thread->is_Java_thread()) { // TODO: disable this check
-    trace->num_frames = (jint)ASGST_THREAD_NOT_JAVA; // -8
-    return;
-  }
+  trace->kind = ASGST_KIND_JAVA; // 0
 
   if ((thread = JavaThread::cast(raw_thread))->is_exiting()) {
     trace->num_frames = (jint)ASGST_THREAD_EXIT; // -8
@@ -104,8 +155,25 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
   }
 
   if (thread->in_deopt_handler()) {
-    // thread is in the deoptimization handler so return no frames
-    trace->num_frames = (jint)ASGST_DEOPT; // -9
+    trace->kind = ASGST_KIND_DEOPT; // 2
+    if (include_non_java_threads) {
+      fill_call_trace_for_non_java_thread(trace, depth, ucontext, include_c_frames);
+    } else {
+      // thread is in the deoptimization handler so return no frames
+      trace->num_frames = (jint)ASGST_DEOPT; // -9
+    }
+    return;
+  }
+
+  // we check for GC before (!) should_post_class_load,
+  // as we might be able to get a valid c stack trace for the GC
+  if (Universe::heap()->is_gc_active()) {
+    trace->kind = ASGST_KIND_GC; // 1
+    if (include_non_java_threads) {
+      fill_call_trace_for_non_java_thread(trace, depth, ucontext, include_c_frames);
+    } else {
+      trace->num_frames = (jint)ASGST_GC_ACTIVE; // -2
+    }
     return;
   }
 
@@ -113,12 +181,6 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     trace->num_frames = (jint)ASGST_NO_CLASS_LOAD; // -1
     return;
   }
-
-  if (Universe::heap()->is_gc_active()) {
-    trace->num_frames = (jint)ASGST_GC_ACTIVE; // -2
-    return;
-  }
-
 
 
   // !important! make sure all to call thread->set_in_asgct(false) before every return
@@ -142,10 +204,9 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
   case _thread_in_Java_trans:
     {
       frame ret_frame;
-      bool include_c_frames = (options & ASGST_INCLUDE_C_FRAMES) != 0;
-      if (!thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, true, include_c_frames)) {
+      if (!thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, include_c_frames)) {
         // check without forced ucontext again
-        if (!include_c_frames || !thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, true, false)) {
+        if (!include_c_frames || !thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, false)) {
           trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
           return;
         }
