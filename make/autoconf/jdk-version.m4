@@ -144,7 +144,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     RESULT: VENDOR_URL_BUG,
     DEFAULT: $VENDOR_URL_BUG,
     DESC: [Set the 'java.vendor.url.bug' system property],
-    DEFAULT_DESC: [not specified],
+    DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-vendor-bug-url must have a value"
