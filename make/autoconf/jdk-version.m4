@@ -111,7 +111,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $COMPANY_NAME,
     DESC: [Set vendor name. Among others, used to set the 'java.vendor'
        and 'java.vm.vendor' system properties.],
-    DEFAULT_DESC: [not specified],
+    DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-vendor-name must have a value"
