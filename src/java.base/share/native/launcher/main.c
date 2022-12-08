@@ -34,6 +34,14 @@
 #include "jli_util.h"
 #include "jni.h"
 
+#ifdef UNDEFINED_BEHAVIOR_SANITIZER
+// Override weak symbol exposed by UBSan to override default options. This is called by UBSan
+// extremely early during library loading, before main is called.
+JNIEXPORT const char* __ubsan_default_options() {
+  return "halt_on_error=1,print_stacktrace=1";
+}
+#endif // UNDEFINED_BEHAVIOR_SANITIZER
+
 /*
  * Entry point.
  */
