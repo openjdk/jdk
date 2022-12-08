@@ -31,11 +31,11 @@ void MetadataFactory::free_metadata(ClassLoaderData* loader_data, MethodData* md
   if (md != NULL) {
     assert(loader_data != NULL, "shouldn't pass null");
     int size = md->size();
-    // Call metadata's deallocate function which will call deallocate fields
+    // Call metadata's deallocate function which will deallocate fields and release_C_heap_structures
     assert(!md->on_stack(), "can't deallocate things on stack");
     assert(!md->is_shared(), "cannot deallocate if in shared spaces");
     md->deallocate_contents(loader_data);
-    md->~MethodData(); // needs to call destructor
+    md->~MethodData(); // MethodData needs to call destructor
     loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, false);
   }
 }

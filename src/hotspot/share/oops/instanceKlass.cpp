@@ -598,7 +598,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // Can't release the constant pool here because the constant pool can be
   // deallocated separately from the InstanceKlass for default methods and
   // redefine classes.
-  release_C_heap_structures(/* release_constant_and_methods */ false);
+  release_C_heap_structures(/* release_sub_metadata */ false);
 
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
