@@ -33,8 +33,6 @@ import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
 
-import sun.security.ec.point.AffinePoint;
-import sun.security.ec.point.MutablePoint;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
@@ -142,7 +140,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     // see JCA doc
     public BigInteger getS() {
         if (s == null) {
-            byte[] arrCopy = privKeyMaterial.clone();
+            byte[] arrCopy = arrayS.clone();
             ArrayUtil.reverse(arrCopy);
             s = new BigInteger(1, arrCopy);
             Arrays.fill(arrCopy, (byte)0);
@@ -163,18 +161,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     }
 
     private void parseKeyBits() throws InvalidKeyException {
-        ArrayUtil.reverse(privKeyMaterial);
-        AlgorithmParameters algParams = this.algid.getParameters();
-        if (algParams == null) {
-            throw new InvalidKeyException("EC domain parameters must be "
-                + "encoded in the algorithm identifier");
-        }
-        try {
-            params = algParams.getParameterSpec(ECParameterSpec.class);
-        } catch (InvalidParameterSpecException e) {
-            throw new InvalidKeyException("Invalid EC private key", e);
-        }
-        /*
+        // Parse private key material from PKCS8Key.decode()
         try {
             DerInputStream in = new DerInputStream(privKeyMaterial);
             DerValue derValue = in.getDerValue();
@@ -199,6 +186,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                     throw new InvalidKeyException("Unexpected value: " + value);
                 }
             }
+
+            // Validate parameters stored from PKCS8Key.decode()
             AlgorithmParameters algParams = this.algid.getParameters();
             if (algParams == null) {
                 throw new InvalidKeyException("EC domain parameters must be "

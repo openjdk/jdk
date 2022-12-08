@@ -233,7 +233,7 @@ public class EncryptedPrivateKeyInfo {
             tmp = null;
         }
 
-        // one and only one is non null
+        // one and only one is non-null
         this.algid = tmp;
         this.params = this.algid != null ? null : algParams;
 
