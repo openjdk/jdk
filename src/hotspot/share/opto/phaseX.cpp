@@ -1248,6 +1248,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
 
+  // Allow Bool -> Cmp idealisation in late inlining intrinsics that return a bool
+  if (n->is_Cmp()) {
+    add_users_to_worklist(n);
+  }
+
   // Apply the Ideal call in a loop until it no longer applies
   Node* k = n;
   DEBUG_ONLY(dead_loop_check(k);)

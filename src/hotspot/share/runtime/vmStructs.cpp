@@ -1875,7 +1875,7 @@
   declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, Node)                                   \
+  declare_c2_type(VectorTestNode, CmpNode)                                \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
