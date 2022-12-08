@@ -128,7 +128,7 @@
  * href="https://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
  * Concurrency in Swing</a>.
  *
- * <h2><a id="threading">Swing's Serialization policy</a></h2>
+ * <h2><a id="serialization">Swing's Serialization policy</a></h2>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
  * future Swing releases. The current serialization support is
