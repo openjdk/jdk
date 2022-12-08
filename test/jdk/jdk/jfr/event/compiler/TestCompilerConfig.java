@@ -52,7 +52,7 @@ public class TestCompilerConfig {
             System.out.println("Event:" + event);
             Events.assertField(event, "threadCount").atLeast(0);
             Events.assertField(event, "tieredCompilation");
-            Events.assertField(event, "usesDynamicNrOfCompilerThreads");
+            Events.assertField(event, "dynamicCompilerThreadCount");
         }
     }
 }
