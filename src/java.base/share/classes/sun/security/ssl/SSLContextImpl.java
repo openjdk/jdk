@@ -30,6 +30,7 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.action.GetPropertyAction;
@@ -71,9 +72,42 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private volatile StatusResponseManager statusResponseManager;
 
     private final ReentrantLock contextLock = new ReentrantLock();
-    final HashMap<Integer,
-            SessionTicketExtension.StatelessKey> keyHashMap = new HashMap<>();
+    private int currentKeyID = new SecureRandom().nextInt();
+    private final Map<Integer,
+            SessionTicketExtension.StatelessKey> keyHashMap = new ConcurrentHashMap<>();
 
+    private void cleanupSessionKeys() {
+        for (Map.Entry<Integer, SessionTicketExtension.StatelessKey> entry : keyHashMap.entrySet()) {
+            SessionTicketExtension.StatelessKey k = entry.getValue();
+            if (k.isInvalid(this)) {
+                try {
+                    k.key.destroy();
+                } catch (Exception e) {
+                    // Suppress
+                }
+                keyHashMap.remove(entry.getKey());
+            }
+        }
+    }
+
+    protected void addSessionKey(SessionTicketExtension.StatelessKey key) {
+        int newID = key.num;
+        keyHashMap.put(Integer.valueOf(newID), key);
+        currentKeyID = newID;
+        cleanupSessionKeys();
+    }
+
+    protected int getID() {
+        return currentKeyID;
+    }
+
+    protected SessionTicketExtension.StatelessKey getKey(int id) {
+        return keyHashMap.get(id);
+    }
+
+    protected SessionTicketExtension.StatelessKey getKey() {
+        return keyHashMap.get(currentKeyID);
+    }
 
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
