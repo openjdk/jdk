@@ -81,6 +81,18 @@
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
 
+// Timestamp to correlate events in the same batch/generation
+Ticks JfrPeriodicEventSet::_timestamp;
+PeriodicType JfrPeriodicEventSet::_type;
+
+Ticks JfrPeriodicEventSet::timestamp(void) {
+  return _timestamp;
+}
+
+PeriodicType JfrPeriodicEventSet::type(void) {
+  return _type;
+}
+
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
   EventJVMInformation event;
