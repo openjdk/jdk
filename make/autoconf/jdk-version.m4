@@ -127,7 +127,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: vendor-url, TYPE: string,
     DEFAULT: $VENDOR_URL,
     DESC: [Set the 'java.vendor.url' system property],
-    DEFAULT_DESC: [not specified],
+    DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-vendor-url must have a value"
