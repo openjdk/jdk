@@ -210,6 +210,7 @@ void MacroAssembler::post_call_nop() {
   }
   relocate(post_call_nop_Relocation::spec(), [&] {
     nop();
+    li32(zr, 0);
   });
 }
 
@@ -1383,7 +1384,7 @@ static int patch_imm_in_li64(address branch, address target) {
   return LI64_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
-static int patch_imm_in_li32(address branch, int32_t target) {
+int MacroAssembler::patch_imm_in_li32(address branch, int32_t target) {
   const int LI32_INSTRUCTIONS_NUM = 2;                                          // lui + addiw
   int64_t upper = (intptr_t)target;
   int32_t lower = (((int32_t)target) << 20) >> 20;
@@ -1447,7 +1448,7 @@ static address get_target_of_li64(address insn_addr) {
   return (address)target_address;
 }
 
-static address get_target_of_li32(address insn_addr) {
+address MacroAssembler::get_target_of_li32(address insn_addr) {
   assert_cond(insn_addr != NULL);
   intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 12;    // Lui.
   target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20));                              // Addiw.

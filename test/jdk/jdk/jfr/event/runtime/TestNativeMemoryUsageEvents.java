@@ -103,6 +103,15 @@ public class TestNativeMemoryUsageEvents {
         // Generate data to force heap to grow.
         generateHeapContents();
 
+        // To allow the two usage events to share a single NMTUsage snapshot
+        // there is an AgeThreshold set to 50ms and if the two events occur
+        // within this interval they will use the same snapshot. On fast
+        // machines it is possible that the whole heap contents generation
+        // take less than 50ms and therefor both beginChunk end endChunk
+        // events will use the same NMTUsage snapshot. To avoid this, do
+        // a short sleep.
+        Thread.sleep(100);
+
         recording.stop();
     }
 

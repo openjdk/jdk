@@ -937,6 +937,7 @@
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="int" name="threadCount" label="Thread Count" />
     <Field type="boolean" name="tieredCompilation" label="Tiered Compilation" />
+    <Field type="boolean" name="dynamicCompilerThreadCount" label="Uses Dynamic Number of Compiler Threads" />
   </Event>
 
   <Event name="CodeCacheStatistics" category="Java Virtual Machine, Code Cache" label="Code Cache Statistics" thread="false" period="everyChunk" startTime="false">
