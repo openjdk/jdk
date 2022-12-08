@@ -137,30 +137,24 @@ public class CRLExtensions {
      * @param out the DerOutputStream to marshal the contents to.
      * @param isExplicit the tag indicating whether this is an entry
      * extension (false) or a CRL extension (true).
-     * @exception CRLException on encoding errors.
      */
-    public void encode(OutputStream out, boolean isExplicit)
-    throws CRLException {
-        try {
-            DerOutputStream extOut = new DerOutputStream();
-            for (Extension ext : map.values()) {
-                ext.encode(extOut);
-            }
-
-            DerOutputStream seq = new DerOutputStream();
-            seq.write(DerValue.tag_Sequence, extOut);
-
-            DerOutputStream tmp = new DerOutputStream();
-            if (isExplicit)
-                tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT,
-                                             true, (byte)0), seq);
-            else
-                tmp = seq;
-
-            out.write(tmp.toByteArray());
-        } catch (IOException e) {
-            throw new CRLException("Encoding error: " + e.toString());
+    public void encode(DerOutputStream out, boolean isExplicit) {
+        DerOutputStream extOut = new DerOutputStream();
+        for (Extension ext : map.values()) {
+            ext.encode(extOut);
         }
+
+        DerOutputStream seq = new DerOutputStream();
+        seq.write(DerValue.tag_Sequence, extOut);
+
+        DerOutputStream tmp = new DerOutputStream();
+        if (isExplicit)
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT,
+                    true, (byte) 0), seq);
+        else
+            tmp = seq;
+
+        out.writeBytes(tmp.toByteArray());
     }
 
     /**

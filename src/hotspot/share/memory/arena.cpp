@@ -273,10 +273,6 @@ Arena::~Arena() {
 
 // Destroy this arenas contents and reset to empty
 void Arena::destruct_contents() {
-  if (UseMallocOnly && _first != NULL) {
-    char* end = _first->next() ? _first->top() : _hwm;
-    free_malloced_objects(_first, _first->bottom(), end, _hwm);
-  }
   // reset size before chop to avoid a rare racing condition
   // that can have total arena memory exceed total chunk memory
   set_size_in_bytes(0);
@@ -342,19 +338,6 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
     assert(old_size == 0, "sanity");
     return Amalloc(new_size, alloc_failmode); // as with realloc(3), a NULL old ptr is equivalent to malloc(3)
   }
-#ifdef ASSERT
-  if (UseMallocOnly) {
-    // always allocate a new object  (otherwise we'll free this one twice)
-    char* copy = (char*)Amalloc(new_size, alloc_failmode);
-    if (copy == NULL) {
-      return NULL;
-    }
-    size_t n = MIN2(old_size, new_size);
-    if (n > 0) memcpy(copy, old_ptr, n);
-    Afree(old_ptr,old_size);    // Mostly done to keep stats accurate
-    return copy;
-  }
-#endif
   char *c_old = (char*)old_ptr; // Handy name
   // Stupid fast special case
   if( new_size <= old_size ) {  // Shrink in-place
@@ -386,24 +369,6 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
 
 // Determine if pointer belongs to this Arena or not.
 bool Arena::contains( const void *ptr ) const {
-#ifdef ASSERT
-  if (UseMallocOnly) {
-    // really slow, but not easy to make fast
-    if (_chunk == NULL) return false;
-    char** bottom = (char**)_chunk->bottom();
-    for (char** p = (char**)_hwm - 1; p >= bottom; p--) {
-      if (*p == ptr) return true;
-    }
-    for (Chunk *c = _first; c != NULL; c = c->next()) {
-      if (c == _chunk) continue;  // current chunk has been processed
-      char** bottom = (char**)c->bottom();
-      for (char** p = (char**)c->top() - 1; p >= bottom; p--) {
-        if (*p == ptr) return true;
-      }
-    }
-    return false;
-  }
-#endif
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
   for (Chunk *c = _first; c; c = c->next()) {
@@ -414,51 +379,3 @@ bool Arena::contains( const void *ptr ) const {
   }
   return false;                 // Not in any Chunk, so not in Arena
 }
-
-
-#ifdef ASSERT
-void* Arena::malloc(size_t size) {
-  assert(UseMallocOnly, "shouldn't call");
-  // use malloc, but save pointer in res. area for later freeing
-  char** save = (char**)internal_amalloc(sizeof(char*));
-  return (*save = (char*)os::malloc(size, mtChunk));
-}
-#endif
-
-
-//--------------------------------------------------------------------------------------
-// Non-product code
-
-#ifndef PRODUCT
-
-// debugging code
-inline void Arena::free_all(char** start, char** end) {
-  for (char** p = start; p < end; p++) if (*p) os::free(*p);
-}
-
-void Arena::free_malloced_objects(Chunk* chunk, char* hwm, char* max, char* hwm2) {
-  assert(UseMallocOnly, "should not call");
-  // free all objects malloced since resource mark was created; resource area
-  // contains their addresses
-  if (chunk->next()) {
-    // this chunk is full, and some others too
-    for (Chunk* c = chunk->next(); c != NULL; c = c->next()) {
-      char* top = c->top();
-      if (c->next() == NULL) {
-        top = hwm2;     // last junk is only used up to hwm2
-        assert(c->contains(hwm2), "bad hwm2");
-      }
-      free_all((char**)c->bottom(), (char**)top);
-    }
-    assert(chunk->contains(hwm), "bad hwm");
-    assert(chunk->contains(max), "bad max");
-    free_all((char**)hwm, (char**)max);
-  } else {
-    // this chunk was partially used
-    assert(chunk->contains(hwm), "bad hwm");
-    assert(chunk->contains(hwm2), "bad hwm2");
-    free_all((char**)hwm, (char**)hwm2);
-  }
-}
-
-#endif // Non-product

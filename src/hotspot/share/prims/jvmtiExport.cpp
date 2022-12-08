@@ -60,6 +60,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
@@ -1964,6 +1965,11 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
   HandleMark hm(thread);
   methodHandle mh(thread, method);
   Handle exception_handle(thread, exception);
+  // The KeepStackGCProcessedMark below keeps the target thread and its stack fully
+  // GC processed across this scope. This is needed because there is a stack walk
+  // below with safepoint polls inside of it. After such safepoints, we have to
+  // ensure the stack is sufficiently processed.
+  KeepStackGCProcessedMark ksgcpm(thread);
 
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
