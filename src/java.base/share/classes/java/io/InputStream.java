@@ -793,4 +793,63 @@ public abstract class InputStream implements Closeable {
         }
         return transferred;
     }
+
+    /**
+     * Returns an input stream which is a sequence of the content of {@code this} stream
+     * followed by the content of the provided {@code in} stream.
+     *
+     * @apiNote No assumption must be made on the behavior of the returned implementation,
+     * In particular whether the implementation is synchronized in any way, is buffered,
+     * is {@link #markSupported()}, or is serializable.
+     *
+     * @implSpec The implementation SHOULD NOT explicitly synchronize nor buffer the content
+     * beyond delegating to the concatenated streams, which MAY keep their specific behavior.
+     * As a result, the wrapped streams MAY be synchronized, buffered and/or serializable.
+     *
+     * @implNote The implementation may change at any time without further note.
+     * It currently returns a {@link SequenceInputStream}, but MAY return a different
+     * class in future.
+     *
+     * @param in The input stream to concatenate to the end of {@code this} input stream.
+     * @return An input stream providing the content of {@code this} input stream until EOF,
+     * followed by the content of {@code in}.
+     * @throws IOException if an I/O error occurs while setting up the sequence
+     * @throws NullPointerException if {@code in} is {@code null}
+     *
+     * @since 21
+     */
+    public InputStream concat(InputStream in) throws IOException {
+        Object.requireNonNull(in, "in");
+        return new SequenceInputStream(this, in);
+    }
+
+    /**
+     * Returns an input stream which is a sequence of the content of {@code this} stream
+     * followed by the content of the provided {@code in} stream.
+     *
+     * @apiNote No assumption must be made on the behavior of the returned implementation,
+     * In particular whether the implementation is synchronized in any way, is buffered,
+     * is {@link #markSupported()}, or is serializable.
+     *
+     * @implSpec The implementation SHOULD NOT explicitly synchronize nor buffer the content
+     * beyond delegating to the concatenated streams, which MAY keep their specific behavior.
+     * As a result, the wrapped streams MAY be synchronized, buffered and/or serializable.
+     *
+     * @implNote The implementation may change at any time without further note.
+     * It currently returns {@code in1.concat(in2)}.
+     *
+     * @param in1 The first input stream of the returned sequence.
+     * @param in2 The second input stream of the returned sequence.
+     * @return An input stream providing the content of {@code in1} until EOF,
+     * followed by the content of {@code in2}.
+     * @throws IOException if an I/O error occurs while setting up the sequence
+     * @throws NullPointerException if {@code in} is {@code null}
+     *
+     * @since 21
+     */
+    public static InputStream concat(InputStream in1, InputStream in2) throws IOException {
+        Object.requireNonNull(in1, "in1");
+        Object.requireNonNull(in2, "in2");
+        return in1.concat(in2);
+    }
 }
