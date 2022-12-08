@@ -33,6 +33,7 @@ import jdk.javadoc.doclet.Taglet;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.System.lineSeparator;
 import static java.nio.file.StandardOpenOption.*;
+import static java.util.stream.Collectors.joining;
 import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
@@ -159,13 +161,17 @@ public final class SealedGraph implements Taglet {
 
             private static final String LABEL = "label";
             private static final String TOOLTIP = "tooltip";
+            private static final String LINK = "href";
             private static final String STYLE = "style";
+
+            private final TypeElement rootNode;
 
             private final StringBuilder builder;
 
             private final Map<String, Map<String, String>> nodeStyleMap;
 
             public State(TypeElement rootNode) {
+                this.rootNode = rootNode;
                 nodeStyleMap = new LinkedHashMap<>();
                 builder = new StringBuilder()
                         .append("digraph G {")
@@ -188,10 +194,24 @@ public final class SealedGraph implements Taglet {
                 var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
                 styles.put(LABEL, node.getSimpleName().toString());
                 styles.put(TOOLTIP, node.getQualifiedName().toString());
+                styles.put(LINK, relativeLink(rootNode, node));
                 if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
                     // This indicates that the hierarchy is not closed
                     styles.put(STYLE, "dashed");
                 }
+            }
+
+            // A permitted class must be in the same package or in the same module.
+            // This implies the module is always the same.
+            private static String relativeLink(TypeElement rootNode, TypeElement node) {
+                var backNavigator = rootNode.getQualifiedName().toString().chars()
+                        .filter(c -> '.' == c)
+                        .mapToObj(c -> "../")
+                        .collect(joining());
+                var forwardNavigator = node.getQualifiedName().toString()
+                        .replace(".", "/");
+
+                return backNavigator + forwardNavigator + ".html";
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
@@ -209,7 +229,7 @@ public final class SealedGraph implements Taglet {
                             .append('"').append(nodeName).append("\" ")
                             .append(styles.entrySet().stream()
                                     .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
-                                    .collect(Collectors.joining(" ", "[", "]")))
+                                    .collect(joining(" ", "[", "]")))
                             .append(System.lineSeparator());
                 });
                 builder.append("}");
