@@ -93,7 +93,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $PRODUCT_NAME $JDK_RC_PLATFORM_NAME,
     DESC: [Set JDK RC name. This is used for FileDescription and ProductName
        properties of MS Windows binaries.],
-    DEFAULT_DESC: [not specified],
+    DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-jdk-rc-name cannot be empty"
