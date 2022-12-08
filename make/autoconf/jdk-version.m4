@@ -161,7 +161,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     RESULT: VENDOR_URL_VM_BUG,
     DEFAULT: $VENDOR_URL_VM_BUG,
     DESC: [Sets the bug URL which will be displayed when the VM crashes],
-    DEFAULT_DESC: [not specified],
+    DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-vendor-vm-bug-url must have a value"
