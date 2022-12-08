@@ -63,10 +63,8 @@ import sun.security.util.DerOutputStream;
  * @author Anne Anderson
  * @since       1.4
  * @see Extension
- * @see CertAttrSet
  */
-public class CertificatePoliciesExtension extends Extension
-        implements CertAttrSet {
+public class CertificatePoliciesExtension extends Extension {
 
     public static final String NAME = "CertificatePolicies";
 
@@ -76,7 +74,7 @@ public class CertificatePoliciesExtension extends Extension
     private List<PolicyInformation> certPolicies;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (certPolicies == null || certPolicies.isEmpty()) {
             this.extensionValue = null;
         } else {
@@ -98,8 +96,7 @@ public class CertificatePoliciesExtension extends Extension
      *
      * @param certPolicies the List of PolicyInformation.
      */
-    public CertificatePoliciesExtension(List<PolicyInformation> certPolicies)
-    throws IOException {
+    public CertificatePoliciesExtension(List<PolicyInformation> certPolicies) {
         this(Boolean.FALSE, certPolicies);
     }
 
@@ -108,10 +105,14 @@ public class CertificatePoliciesExtension extends Extension
      * a List of PolicyInformation with specified criticality.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param certPolicies the List of PolicyInformation.
+     * @param certPolicies the List of PolicyInformation, cannot be null or empty.
      */
     public CertificatePoliciesExtension(Boolean critical,
-            List<PolicyInformation> certPolicies) throws IOException {
+            List<PolicyInformation> certPolicies) {
+        if (certPolicies == null || certPolicies.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "certificate policies cannot be null or empty");
+        }
         this.certPolicies = certPolicies;
         this.extensionId = PKIXExtensions.CertificatePolicies_Id;
         this.critical = critical.booleanValue();
@@ -166,10 +167,9 @@ public class CertificatePoliciesExtension extends Extension
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.CertificatePolicies_Id;
           critical = false;

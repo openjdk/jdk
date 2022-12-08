@@ -972,6 +972,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
     case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_stw_fullgc_mark:            out->print_cr("stw full gc mark"); break;
+    case _claim_stw_fullgc_adjust:          out->print_cr("stw full gc adjust"); break;
     case _claim_other:                      out->print_cr("other"); break;
     case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;

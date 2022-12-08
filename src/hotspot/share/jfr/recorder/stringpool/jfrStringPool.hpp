@@ -25,11 +25,11 @@
 #ifndef SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOL_HPP
 #define SHARE_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOL_HPP
 
-#include "jni.h"
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 #include "jfr/recorder/storage/jfrMemorySpaceRetrieval.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
 #include "jfr/utilities/jfrLinkedList.hpp"
+#include "jni.h"
 
 class JavaThread;
 class JfrChunkWriter;

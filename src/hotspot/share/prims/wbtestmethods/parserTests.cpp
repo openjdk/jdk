@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
+#include "jni.h"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"

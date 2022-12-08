@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"

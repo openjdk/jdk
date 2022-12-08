@@ -35,9 +35,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateVersion implements CertAttrSet {
+public class CertificateVersion implements DerEncoder {
     /**
      * X509Certificate Version 1
      */
@@ -146,10 +146,9 @@ public class CertificateVersion implements CertAttrSet {
      * Encode the CertificateVersion period in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         // Nothing for default
         if (version == V1) {
             return;

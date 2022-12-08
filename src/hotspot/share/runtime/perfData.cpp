@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"

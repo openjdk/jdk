@@ -1217,7 +1217,6 @@ public:
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
 
-  void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
