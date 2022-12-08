@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class YieldQueuing {
 
     /**
-     * Test Thread.yield submits the task for the current virtyal thread to a scheduler
+     * Test Thread.yield submits the task for the current virtual thread to a scheduler
      * submission queue when there are no tasks in the local queue.
      */
     @Test
