@@ -91,11 +91,6 @@ public final class StalePreferredSize {
 
     public static void main(final String[] args) throws Exception {
         for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
-            // Ignore obsolete/deprecated Motif
-            if (laf.getClassName().contains("Motif")) {
-                System.out.println("Skipped Motif");
-                continue;
-            }
             EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
             for (typeFont = 0; typeFont < 3; typeFont++) {
                 System.err.println("typeFont = " + typeFont);
