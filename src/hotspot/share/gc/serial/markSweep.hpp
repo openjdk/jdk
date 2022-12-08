@@ -175,8 +175,8 @@ public:
   MarkAndPushClosure(int claim) : ClaimMetadataVisitingOopIterateClosure(claim) {}
 
   template <typename T> void do_oop_work(T* p);
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p);
+  virtual void do_oop(narrowOop* p);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);

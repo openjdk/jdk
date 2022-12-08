@@ -76,6 +76,8 @@ inline void MarkSweep::follow_klass(Klass* klass) {
 
 template <typename T>
 inline void MarkAndPushClosure::do_oop_work(T* p)            { MarkSweep::mark_and_push(p); }
+inline void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
+inline void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
