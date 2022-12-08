@@ -71,12 +71,15 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 
   # Note: UTIL_ARG_WITH treats empty strings as valid values when OPTIONAL is false!
 
-  # Setup username (for use in adhoc version strings etc)
   # Outer [ ] to quote m4.
+  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+
+  # Setup username (for use in adhoc version strings etc)
   UTIL_ARG_WITH(NAME: build-user, TYPE: string,
     RESULT: USERNAME,
-    DEFAULT: [ `$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ],
+    DEFAULT: $USERNAME,
     DESC: [build username to use in version strings],
+    DEFAULT_DESC: [current username, sanitized],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-build-user cannot be empty"
