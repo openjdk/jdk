@@ -271,7 +271,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             // give time for socket buffer to fill up.
             awaitNoFurtherWrites(bytesWritten);
 
-            assertMessage(expectThrows(ISE, () -> drop.close()), "Session is acquired by");
+            assertMessage(expectThrows(ISE, () -> drop.close()), "Scope is acquired by");
             assertTrue(drop.scope().isAlive());
 
             // signal handler to stop further writing

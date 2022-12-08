@@ -156,13 +156,13 @@ public non-sealed class MacOsAArch64VaList implements VaList {
         }
     }
 
-    static MacOsAArch64VaList ofAddress(long address, SegmentScope session) {
-        MemorySegment segment = MemorySegment.ofAddress(address, Long.MAX_VALUE, session);
+    static MacOsAArch64VaList ofAddress(long address, SegmentScope scope) {
+        MemorySegment segment = MemorySegment.ofAddress(address, Long.MAX_VALUE, scope);
         return new MacOsAArch64VaList(segment);
     }
 
-    static Builder builder(SegmentScope session) {
-        return new Builder(session);
+    static Builder builder(SegmentScope scope) {
+        return new Builder(scope);
     }
 
     @Override
@@ -179,12 +179,12 @@ public non-sealed class MacOsAArch64VaList implements VaList {
 
     public static non-sealed class Builder implements VaList.Builder {
 
-        private final SegmentScope session;
+        private final SegmentScope scope;
         private final List<SimpleVaArg> args = new ArrayList<>();
 
-        public Builder(SegmentScope session) {
-            ((MemorySessionImpl) session).checkValidState();
-            this.session = session;
+        public Builder(SegmentScope scope) {
+            ((MemorySessionImpl) scope).checkValidState();
+            this.scope = scope;
         }
 
         private Builder arg(MemoryLayout layout, Object value) {
@@ -225,7 +225,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
             }
 
             long allocationSize = args.stream().reduce(0L, (acc, e) -> acc + sizeOf(e.layout), Long::sum);
-            MemorySegment segment = MemorySegment.allocateNative(allocationSize, session);
+            MemorySegment segment = MemorySegment.allocateNative(allocationSize, scope);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
@@ -234,7 +234,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
                     TypeClass typeClass = TypeClass.classifyLayout(arg.layout);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
-                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, session);
+                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, scope);
                             copy.copyFrom(msArg); // by-value
                             VH_address.set(cursor, copy);
                             cursor = cursor.asSlice(VA_SLOT_SIZE_BYTES);

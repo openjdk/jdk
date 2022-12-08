@@ -39,16 +39,16 @@ import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
- * as thread confinement. A session has a liveness bit, which is updated when the session is closed
+ * as thread confinement. A scope has a liveness bit, which is updated when the scope is closed
  * (this operation is triggered by {@link MemorySessionImpl#close()}). This bit is consulted prior
  * to memory access (see {@link #checkValidStateRaw()}).
- * There are two kinds of memory session: confined memory session and shared memory session.
- * A confined memory session has an associated owner thread that confines some operations to
+ * There are two kinds of memory scope: confined memory scope and shared memory scope.
+ * A confined memory scope has an associated owner thread that confines some operations to
  * associated owner thread such as {@link #close()} or {@link #checkValidStateRaw()}.
- * Shared sessions do not feature an owner thread - meaning their operations can be called, in a racy
+ * Shared scopes do not feature an owner thread - meaning their operations can be called, in a racy
  * manner, by multiple threads. To guarantee temporal safety in the presence of concurrent thread,
- * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
- * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
+ * shared scopes use a more sophisticated synchronization mechanism, which guarantees that no concurrent
+ * access is possible when a scope is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
 public abstract sealed class MemorySessionImpl
         implements SegmentScope, SegmentAllocator
@@ -106,9 +106,9 @@ public abstract sealed class MemorySessionImpl
     /**
      * Add a cleanup action. If a failure occurred (because of a add vs. close race), call the cleanup action.
      * This semantics is useful when allocating new memory segments, since we first do a malloc/mmap and _then_
-     * we register the cleanup (free/munmap) against the session; so, if registration fails, we still have to
+     * we register the cleanup (free/munmap) against the scope; so, if registration fails, we still have to
      * cleanup memory. From the perspective of the client, such a failure would manifest as a factory
-     * returning a segment that is already "closed" - which is always possible anyway (e.g. if the session
+     * returning a segment that is already "closed" - which is always possible anyway (e.g. if the scope
      * is closed _after_ the cleanup for the segment is registered but _before_ the factory returns the
      * new segment to the client). For this reason, it's not worth adding extra complexity to the segment
      * initialization logic here - and using an optimistic logic works well in practice.
@@ -124,9 +124,9 @@ public abstract sealed class MemorySessionImpl
 
     void addInternal(ResourceList.ResourceCleanup resource) {
         checkValidState();
-        // Note: from here on we no longer check the session state. Two cases are possible: either the resource cleanup
-        // is added to the list when the session is still open, in which case everything works ok; or the resource
-        // cleanup is added while the session is being closed. In this latter case, what matters is whether we have already
+        // Note: from here on we no longer check the scope state. Two cases are possible: either the resource cleanup
+        // is added to the list when the scope is still open, in which case everything works ok; or the resource
+        // cleanup is added while the scope is being closed. In this latter case, what matters is whether we have already
         // called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
         // to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
         // called immediately after).
@@ -175,9 +175,9 @@ public abstract sealed class MemorySessionImpl
         return owner;
     }
 
-    public static boolean sameOwnerThread(SegmentScope session1, SegmentScope session2) {
-        return ((MemorySessionImpl) session1).ownerThread() ==
-                ((MemorySessionImpl) session2).ownerThread();
+    public static boolean sameOwnerThread(SegmentScope scope1, SegmentScope scope2) {
+        return ((MemorySessionImpl) scope1).ownerThread() ==
+                ((MemorySessionImpl) scope2).ownerThread();
     }
 
     @Override
@@ -187,8 +187,8 @@ public abstract sealed class MemorySessionImpl
     }
 
     /**
-     * Returns true, if this session is still open. This method may be called in any thread.
-     * @return {@code true} if this session is not closed yet.
+     * Returns true, if this scope is still open. This method may be called in any thread.
+     * @return {@code true} if this scope is not closed yet.
      */
     public boolean isAlive() {
         return state >= OPEN;
@@ -196,7 +196,7 @@ public abstract sealed class MemorySessionImpl
 
     /**
      * This is a faster version of {@link #checkValidState()}, which is called upon memory access, and which
-     * relies on invariants associated with the memory session implementations (volatile access
+     * relies on invariants associated with the memory scope implementations (volatile access
      * to the closed state bit is replaced with plain access). This method should be monomorphic,
      * to avoid virtual calls in the memory access hot path. This method is not intended as general purpose method
      * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
@@ -213,9 +213,9 @@ public abstract sealed class MemorySessionImpl
     }
 
     /**
-     * Checks that this session is still alive (see {@link #isAlive()}).
-     * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     * Checks that this scope is still alive (see {@link #isAlive()}).
+     * @throws IllegalStateException if this scope is already closed or if this is
+     * a confined scope and this method is called outside of the owner thread.
      */
     public void checkValidState() {
         try {
@@ -235,9 +235,9 @@ public abstract sealed class MemorySessionImpl
     }
 
     /**
-     * Closes this session, executing any cleanup action (where provided).
-     * @throws IllegalStateException if this session is already closed or if this is
-     * a confined session and this method is called outside of the owner thread.
+     * Closes this scope, executing any cleanup action (where provided).
+     * @throws IllegalStateException if this scope is already closed or if this is
+     * a confined scope and this method is called outside of the owner thread.
      */
     public void close() {
         justClose();
@@ -251,8 +251,8 @@ public abstract sealed class MemorySessionImpl
     }
 
     /**
-     * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances
-     * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a session
+     * A list of all cleanup actions associated with a memory scope. Cleanup actions are modelled as instances
+     * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a scope
      * is shared or confined, different implementations of this class will be used, see {@link ConfinedSession.ConfinedResourceList}
      * and {@link SharedSession.SharedResourceList}.
      */
@@ -301,11 +301,11 @@ public abstract sealed class MemorySessionImpl
     // helper functions to centralize error handling
 
     static IllegalStateException tooManyAcquires() {
-        return new IllegalStateException("Session acquire limit exceeded");
+        return new IllegalStateException("Scope acquire limit exceeded");
     }
 
     static IllegalStateException alreadyAcquired(int acquires) {
-        return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
+        return new IllegalStateException(String.format("Scope is acquired by %d clients", acquires));
     }
 
     static IllegalStateException alreadyClosed() {
@@ -317,7 +317,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     static UnsupportedOperationException nonCloseable() {
-        return new UnsupportedOperationException("Attempted to close a non-closeable session");
+        return new UnsupportedOperationException("Attempted to close a non-closeable scope");
     }
 
 }

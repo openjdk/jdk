@@ -32,9 +32,9 @@ import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * A shared session, which can be shared across multiple threads. Closing a shared session has to ensure that
- * (i) only one thread can successfully close a session (e.g. in a close vs. close race) and that
- * (ii) no other thread is accessing the memory associated with this session while the segment is being
+ * A shared scope, which can be shared across multiple threads. Closing a shared scope has to ensure that
+ * (i) only one thread can successfully close a scope (e.g. in a close vs. close race) and that
+ * (ii) no other thread is accessing the memory associated with this scope while the segment is being
  * closed. To ensure the former condition, a CAS is performed on the liveness bit. Ensuring the latter
  * is trickier, and require a complex synchronization protocol (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
