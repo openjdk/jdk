@@ -101,8 +101,6 @@ protected:
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
-  debug_only(void* malloc(size_t size);)
-
   void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     if (pointer_delta(_max, _hwm, 1) >= x) {
@@ -125,7 +123,6 @@ protected:
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
-    debug_only(if (UseMallocOnly) return malloc(x);)
     // Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
     // allocation was AmallocWords. Only needed on 32-bit - on 64-bit Amalloc and AmallocWords are
     // identical.
@@ -138,7 +135,6 @@ protected:
   // is 4 bytes on 32 bits, hence the name.
   void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
-    debug_only(if (UseMallocOnly) return malloc(x);)
     return internal_amalloc(x, alloc_failmode);
   }
 
@@ -149,7 +145,6 @@ protected:
     }
 #ifdef ASSERT
     if (ZapResourceArea) memset(ptr, badResourceValue, size); // zap freed memory
-    if (UseMallocOnly) return true;
 #endif
     if (((char*)ptr) + size == _hwm) {
       _hwm = (char*)ptr;
@@ -175,9 +170,6 @@ protected:
   // Total # of bytes used
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
-
-  static void free_malloced_objects(Chunk* chunk, char* hwm, char* max, char* hwm2)  PRODUCT_RETURN;
-  static void free_all(char** start, char** end)                                     PRODUCT_RETURN;
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary

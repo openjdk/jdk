@@ -108,8 +108,6 @@ class JNIHandles : AllStatic {
   static bool is_frame_handle(JavaThread* thread, jobject handle);
   static bool is_global_handle(jobject handle);
   static bool is_weak_global_handle(jobject handle);
-  static size_t global_handle_memory_usage();
-  static size_t weak_global_handle_memory_usage();
 
   // precondition: handle != NULL.
   static jobjectRefType handle_type(JavaThread* thread, jobject handle);
@@ -147,8 +145,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   JNIHandleBlock* _pop_frame_link;              // Block to restore on PopLocalFrame call
   uintptr_t*      _free_list;                   // Handle free list
 
-  // Check JNI, "planned capacity" for current frame (or push/ensure)
-  size_t          _planned_capacity;
   static int      _blocks_allocated;            // For debugging/printing
 
   // Fill block with bad_handle values
@@ -179,16 +175,9 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Traversal of handles
   void oops_do(OopClosure* f);
 
-  // Checked JNI support
-  void set_planned_capacity(size_t planned_capacity) { _planned_capacity = planned_capacity; }
-  const size_t get_planned_capacity() { return _planned_capacity; }
-  const size_t get_number_of_live_handles();
-
   // Debugging
   bool chain_contains(jobject handle) const;    // Does this block or following blocks contain handle
   bool contains(jobject handle) const;          // Does this block contain handle
-  size_t length() const;                        // Length of chain starting with this block
-  size_t memory_usage() const;
 };
 
 #endif // SHARE_RUNTIME_JNIHANDLES_HPP

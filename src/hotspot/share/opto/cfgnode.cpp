@@ -39,6 +39,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -618,7 +619,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (opaq != NULL) {
           // This is not a loop anymore. No need to keep the Opaque1 node on the test that guards the loop as it won't be
           // subject to further loop opts.
-          assert(opaq->Opcode() == Op_Opaque1, "");
+          assert(opaq->Opcode() == Op_OpaqueZeroTripGuard, "");
           igvn->replace_node(opaq, opaq->in(1));
         }
       }
@@ -2814,3 +2815,25 @@ void NeverBranchNode::format( PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("%s", Name());
 }
 #endif
+
+#ifndef PRODUCT
+void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("blackhole ");
+  bool first = true;
+  for (uint i = 0; i < req(); i++) {
+    Node* n = in(i);
+    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
+      if (first) {
+        first = false;
+      } else {
+        st->print(", ");
+      }
+      char buf[128];
+      ra->dump_register(n, buf);
+      st->print("%s", buf);
+    }
+  }
+  st->cr();
+}
+#endif
+

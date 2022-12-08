@@ -222,6 +222,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   template <class T>
   void details(T* phase, uint indent_level) const;
 
+  void print_thread_work_items(WorkerDataArray<double>* phase, uint indent_level, outputStream* out) const;
+  void debug_phase_merge_remset() const;
+
   void log_work_items(WorkerDataArray<double>* phase, uint indent, outputStream* out) const;
   void log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const;
   void debug_serial_phase(WorkerDataArray<double>* phase, uint extra_indent = 0) const;
