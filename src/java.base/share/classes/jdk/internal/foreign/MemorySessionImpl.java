@@ -40,7 +40,7 @@ import jdk.internal.vm.annotation.ForceInline;
 /**
  * This class manages the temporal bounds associated with a memory segment as well
  * as thread confinement. A scope has a liveness bit, which is updated when the scope is closed
- * (this operation is triggered by {@link MemoryScopeImpl#close()}). This bit is consulted prior
+ * (this operation is triggered by {@link MemorySessionImpl#close()}). This bit is consulted prior
  * to memory access (see {@link #checkValidStateRaw()}).
  * There are two kinds of memory scope: confined memory scope and shared memory scope.
  * A confined memory scope has an associated owner thread that confines some operations to
@@ -50,7 +50,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * shared scopes use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a scope is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract sealed class MemoryScopeImpl
+public abstract sealed class MemorySessionImpl
         implements SegmentScope, SegmentAllocator
         permits ConfinedScope, GlobalScope, SharedScope {
     static final int OPEN = 0;
@@ -60,10 +60,10 @@ public abstract sealed class MemoryScopeImpl
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
-    public static final MemoryScopeImpl GLOBAL = new GlobalScope(null);
+    public static final MemorySessionImpl GLOBAL = new GlobalScope(null);
 
-    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemoryScopeImpl::alreadyClosed);
-    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemoryScopeImpl::wrongThread);
+    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
+    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
 
     final ResourceList resourceList;
     final Thread owner;
@@ -71,7 +71,7 @@ public abstract sealed class MemoryScopeImpl
 
     static {
         try {
-            STATE = MethodHandles.lookup().findVarHandle(MemoryScopeImpl.class, "state", int.class);
+            STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -81,12 +81,12 @@ public abstract sealed class MemoryScopeImpl
         return new Arena() {
             @Override
             public SegmentScope scope() {
-                return MemoryScopeImpl.this;
+                return MemorySessionImpl.this;
             }
 
             @Override
             public void close() {
-                MemoryScopeImpl.this.close();
+                MemorySessionImpl.this.close();
             }
 
             @Override
@@ -133,20 +133,20 @@ public abstract sealed class MemoryScopeImpl
         resourceList.add(resource);
     }
 
-    protected MemoryScopeImpl(Thread owner, ResourceList resourceList) {
+    protected MemorySessionImpl(Thread owner, ResourceList resourceList) {
         this.owner = owner;
         this.resourceList = resourceList;
     }
 
-    public static MemoryScopeImpl createConfined(Thread thread) {
+    public static MemorySessionImpl createConfined(Thread thread) {
         return new ConfinedScope(thread);
     }
 
-    public static MemoryScopeImpl createShared() {
+    public static MemorySessionImpl createShared() {
         return new SharedScope();
     }
 
-    public static MemoryScopeImpl createImplicit(Cleaner cleaner) {
+    public static MemorySessionImpl createImplicit(Cleaner cleaner) {
         return new ImplicitScope(cleaner);
     }
 
@@ -176,8 +176,8 @@ public abstract sealed class MemoryScopeImpl
     }
 
     public static boolean sameOwnerThread(SegmentScope scope1, SegmentScope scope2) {
-        return ((MemoryScopeImpl) scope1).ownerThread() ==
-                ((MemoryScopeImpl) scope2).ownerThread();
+        return ((MemorySessionImpl) scope1).ownerThread() ==
+                ((MemorySessionImpl) scope2).ownerThread();
     }
 
     @Override
@@ -246,7 +246,7 @@ public abstract sealed class MemoryScopeImpl
 
     abstract void justClose();
 
-    public static MemoryScopeImpl heapScope(Object ref) {
+    public static MemorySessionImpl heapScope(Object ref) {
         return new GlobalScope(ref);
     }
 

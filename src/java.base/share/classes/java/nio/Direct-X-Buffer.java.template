@@ -31,7 +31,7 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
@@ -314,7 +314,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
 
     public long address() {
-        MemoryScopeImpl scope = scope();
+        MemorySessionImpl scope = scope();
         if (scope != null) {
             if (scope.ownerThread() == null && scope.isCloseable()) {
                 throw new UnsupportedOperationException("ByteBuffer derived from closeable shared scopes not supported");

@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Function;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
@@ -409,6 +409,6 @@ public interface SegmentAllocator {
      */
     static SegmentAllocator nativeAllocator(SegmentScope scope) {
         Objects.requireNonNull(scope);
-        return (MemoryScopeImpl)scope;
+        return (MemorySessionImpl)scope;
     }
 }

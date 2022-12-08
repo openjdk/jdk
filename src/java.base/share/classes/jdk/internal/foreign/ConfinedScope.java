@@ -36,7 +36,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * owner thread will result in an exception. Because of this restriction, checking the liveness bit
  * can be performed in plain mode.
  */
-final class ConfinedScope extends MemoryScopeImpl {
+final class ConfinedScope extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 

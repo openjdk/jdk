@@ -27,7 +27,7 @@ package java.lang.foreign;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
@@ -160,7 +160,7 @@ public interface SymbolLookup {
                 ClassLoader.getSystemClassLoader();
         SegmentScope loaderScope = (loader == null || loader instanceof BuiltinClassLoader) ?
                 SegmentScope.global() : // builtin loaders never go away
-                MemoryScopeImpl.heapScope(loader);
+                MemorySessionImpl.heapScope(loader);
         return name -> {
             Objects.requireNonNull(name);
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
@@ -235,7 +235,7 @@ public interface SymbolLookup {
             throw new IllegalArgumentException("Cannot open library: " + libDesc);
         }
         // register hook to unload library when 'libScope' becomes not alive
-        ((MemoryScopeImpl) libScope).addOrCleanupIfFail(new MemoryScopeImpl.ResourceList.ResourceCleanup() {
+        ((MemorySessionImpl) libScope).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 nativeLibraries.unload(library);

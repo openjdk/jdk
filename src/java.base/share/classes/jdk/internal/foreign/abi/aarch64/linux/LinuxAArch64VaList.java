@@ -33,7 +33,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.foreign.VaList;
 import java.lang.foreign.SegmentAllocator;
 import jdk.internal.foreign.abi.aarch64.TypeClass;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.SharedUtils;
 
@@ -361,7 +361,7 @@ public non-sealed class LinuxAArch64VaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        ((MemoryScopeImpl) segment.scope()).checkValidState();
+        ((MemorySessionImpl) segment.scope()).checkValidState();
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -560,8 +560,8 @@ public non-sealed class LinuxAArch64VaList implements VaList {
             VH_gr_offs.set(vaListSegment, -MAX_GP_OFFSET);
             VH_vr_offs.set(vaListSegment, -MAX_FP_OFFSET);
 
-            assert MemoryScopeImpl.sameOwnerThread(gpRegs.scope(), vaListSegment.scope());
-            assert MemoryScopeImpl.sameOwnerThread(fpRegs.scope(), vaListSegment.scope());
+            assert MemorySessionImpl.sameOwnerThread(gpRegs.scope(), vaListSegment.scope());
+            assert MemorySessionImpl.sameOwnerThread(fpRegs.scope(), vaListSegment.scope());
             return new LinuxAArch64VaList(vaListSegment, stackArgsSegment, gpRegs, currentGPOffset, fpRegs, currentFPOffset);
         }
     }

@@ -27,7 +27,7 @@ package jdk.internal.foreign.abi;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentScope;
 
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 
 public final class UpcallStubs {
 
@@ -51,7 +51,7 @@ public final class UpcallStubs {
     }
 
     static MemorySegment makeUpcall(long entry, SegmentScope scope) {
-        ((MemoryScopeImpl) scope).addOrCleanupIfFail(new MemoryScopeImpl.ResourceList.ResourceCleanup() {
+        ((MemorySessionImpl) scope).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 freeUpcallStub(entry);

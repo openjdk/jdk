@@ -29,7 +29,7 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
@@ -761,7 +761,7 @@ public abstract sealed class Buffer
     }
 
     @ForceInline
-    final MemoryScopeImpl scope() {
+    final MemorySessionImpl scope() {
         if (segment != null) {
             return ((AbstractMemorySegmentImpl)segment).scopeImpl();
         } else {
@@ -770,7 +770,7 @@ public abstract sealed class Buffer
     }
 
     final void checkScope() {
-        MemoryScopeImpl scope = scope();
+        MemorySessionImpl scope = scope();
         if (scope != null) {
             scope.checkValidState();
         }

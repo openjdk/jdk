@@ -51,7 +51,7 @@ public sealed class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     @Override
     ByteBuffer makeByteBuffer() {
         return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null,
-                scope == MemoryScopeImpl.GLOBAL ? null : this);
+                scope == MemorySessionImpl.GLOBAL ? null : this);
     }
 
     @Override
@@ -95,7 +95,7 @@ public sealed class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     public static final class EmptyMappedMemorySegmentImpl extends MappedMemorySegmentImpl {
 
-        public EmptyMappedMemorySegmentImpl(boolean readOnly, MemoryScopeImpl scope) {
+        public EmptyMappedMemorySegmentImpl(boolean readOnly, MemorySessionImpl scope) {
             super(0, null, 0, readOnly, scope);
         }
 

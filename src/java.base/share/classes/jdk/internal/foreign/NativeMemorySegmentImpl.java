@@ -76,7 +76,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     @Override
     ByteBuffer makeByteBuffer() {
         return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-                scope == MemoryScopeImpl.GLOBAL ? null : this);
+                scope == MemorySessionImpl.GLOBAL ? null : this);
     }
 
     @Override
@@ -102,7 +102,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     // factories
 
     public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, SegmentScope scope) {
-        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        MemorySessionImpl scopeImpl = (MemorySessionImpl) scope;
         scopeImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
@@ -120,7 +120,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
         long alignedBuf = Utils.alignUp(buf, byteAlignment);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
                 false, scope);
-        scopeImpl.addOrCleanupIfFail(new MemoryScopeImpl.ResourceList.ResourceCleanup() {
+        scopeImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 UNSAFE.freeMemory(buf);
@@ -139,7 +139,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope scope, Runnable action) {
-        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        MemorySessionImpl scopeImpl = (MemorySessionImpl) scope;
         if (action == null) {
             scopeImpl.checkValidState();
         } else {
@@ -150,7 +150,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope scope) {
-        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        MemorySessionImpl scopeImpl = (MemorySessionImpl) scope;
         scopeImpl.checkValidState();
         return new NativeMemorySegmentImpl(min, byteSize, false, scope);
     }

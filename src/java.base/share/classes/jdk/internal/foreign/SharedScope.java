@@ -40,7 +40,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
  * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
  */
-sealed class SharedScope extends MemoryScopeImpl permits ImplicitScope {
+sealed class SharedScope extends MemorySessionImpl permits ImplicitScope {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
@@ -124,7 +124,7 @@ sealed class SharedScope extends MemoryScopeImpl permits ImplicitScope {
 
         void cleanup() {
             // At this point we are only interested about add vs. close races - not close vs. close
-            // (because MemoryScopeImpl::justClose ensured that this thread won the race to close the scope).
+            // (because MemorySessionImpl::justClose ensured that this thread won the race to close the scope).
             // So, the only "bad" thing that could happen is that some other thread adds to this list
             // while we're closing it.
             if (FST.getAcquire(this) != ResourceCleanup.CLOSED_LIST) {

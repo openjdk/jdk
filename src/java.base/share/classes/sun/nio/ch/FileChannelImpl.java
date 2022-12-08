@@ -50,7 +50,7 @@ import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -1213,7 +1213,7 @@ public class FileChannelImpl
     {
         Objects.requireNonNull(mode,"Mode is null");
         Objects.requireNonNull(scope, "Scope is null");
-        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        MemorySessionImpl scopeImpl = (MemorySessionImpl) scope;
         scopeImpl.checkValidState();
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
@@ -1231,8 +1231,8 @@ public class FileChannelImpl
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
                                             readOnly, scope);
-            MemoryScopeImpl.ResourceList.ResourceCleanup resource =
-                new MemoryScopeImpl.ResourceList.ResourceCleanup() {
+            MemorySessionImpl.ResourceList.ResourceCleanup resource =
+                new MemorySessionImpl.ResourceList.ResourceCleanup() {
                     @Override
                     public void cleanup() {
                         unmapper.unmap();

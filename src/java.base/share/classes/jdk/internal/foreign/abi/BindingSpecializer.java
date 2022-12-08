@@ -25,7 +25,7 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.VM;
@@ -83,7 +83,7 @@ public class BindingSpecializer {
     private static final String OF_SCOPE_DESC = methodType(Binding.Context.class).descriptorString();
     private static final String ALLOCATOR_DESC = methodType(SegmentAllocator.class).descriptorString();
     private static final String SCOPE_DESC = methodType(SegmentScope.class).descriptorString();
-    private static final String SCOPE_IMPL_DESC = methodType(MemoryScopeImpl.class).descriptorString();
+    private static final String SCOPE_IMPL_DESC = methodType(MemorySessionImpl.class).descriptorString();
     private static final String CLOSE_DESC = VOID_DESC;
     private static final String UNBOX_SEGMENT_DESC = methodType(long.class, MemorySegment.class).descriptorString();
     private static final String COPY_DESC = methodType(void.class, MemorySegment.class, long.class, MemorySegment.class, long.class, long.class).descriptorString();
@@ -516,7 +516,7 @@ public class BindingSpecializer {
         emitDup(Object.class);
         int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
         // call acquire first here. So that if it fails, we don't call release
-        emitInvokeVirtual(MemoryScopeImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
+        emitInvokeVirtual(MemorySessionImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
         emitStore(Object.class, nextScopeLocal); // store off one to release later
 
         if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
@@ -536,7 +536,7 @@ public class BindingSpecializer {
             emitLoad(Object.class, scopeLocal);
             mv.visitJumpInsn(IFNULL, skipRelease);
             emitLoad(Object.class, scopeLocal);
-            emitInvokeVirtual(MemoryScopeImpl.class, "release0", RELEASE0_DESC);
+            emitInvokeVirtual(MemorySessionImpl.class, "release0", RELEASE0_DESC);
             mv.visitLabel(skipRelease);
         }
     }

@@ -63,7 +63,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * about the segment's spatial and temporal bounds; each memory segment implementation is associated with an owner thread which is set at creation time.
  * Access to certain sensitive operations on the memory segment will fail with {@code IllegalStateException} if the
  * segment is either in an invalid state (e.g. it has already been closed) or if access occurs from a thread other
- * than the owner thread. See {@link MemoryScopeImpl} for more details on management of temporal bounds. Subclasses
+ * than the owner thread. See {@link MemorySessionImpl} for more details on management of temporal bounds. Subclasses
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
@@ -154,7 +154,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     /**
      * Mismatch over long lengths.
      */
-    public static long vectorizedMismatchLargeForBytes(MemoryScopeImpl aScope, MemoryScopeImpl bScope,
+    public static long vectorizedMismatchLargeForBytes(MemorySessionImpl aScope, MemorySessionImpl bScope,
                                                        Object a, long aOffset,
                                                        Object b, long bOffset,
                                                        long length) {
@@ -363,8 +363,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    public final MemoryScopeImpl scopeImpl() {
-        return (MemoryScopeImpl) scope;
+    public final MemorySessionImpl scopeImpl() {
+        return (MemorySessionImpl) scope;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
@@ -485,7 +485,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (bufferSegment != null) {
             bufferScope = bufferSegment.scope;
         } else {
-            bufferScope = MemoryScopeImpl.heapScope(bb);
+            bufferScope = MemorySessionImpl.heapScope(bb);
         }
         boolean readOnly = bb.isReadOnly();
         int scaleFactor = getScaleFactor(bb);

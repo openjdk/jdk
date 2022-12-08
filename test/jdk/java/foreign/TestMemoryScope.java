@@ -32,7 +32,7 @@ import java.lang.foreign.Arena;
 
 import java.lang.foreign.SegmentScope;
 
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -327,24 +327,24 @@ public class TestMemoryScope {
     }
 
     private void keepAlive(SegmentScope child, SegmentScope parent) {
-        MemoryScopeImpl parentImpl = (MemoryScopeImpl) parent;
+        MemorySessionImpl parentImpl = (MemorySessionImpl) parent;
         parentImpl.acquire0();
         addCloseAction(child, parentImpl::release0);
     }
 
     private void addCloseAction(SegmentScope scope, Runnable action) {
-        MemoryScopeImpl scopeImpl = (MemoryScopeImpl) scope;
+        MemorySessionImpl scopeImpl = (MemorySessionImpl) scope;
         scopeImpl.addCloseAction(action);
     }
 
     interface ScopeSupplier extends Supplier<SegmentScope> {
 
         static void close(SegmentScope scope) {
-            ((MemoryScopeImpl)scope).close();
+            ((MemorySessionImpl)scope).close();
         }
 
         static boolean isImplicit(SegmentScope scope) {
-            return !((MemoryScopeImpl)scope).isCloseable();
+            return !((MemorySessionImpl)scope).isCloseable();
         }
 
         static ScopeSupplier ofImplicit() {

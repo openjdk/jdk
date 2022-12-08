@@ -33,7 +33,7 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 
-import jdk.internal.foreign.MemoryScopeImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.abi.aarch64.TypeClass;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
@@ -141,7 +141,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        ((MemoryScopeImpl) segment.scope()).checkValidState();
+        ((MemorySessionImpl) segment.scope()).checkValidState();
 
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
@@ -168,7 +168,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
 
     @Override
     public VaList copy() {
-        ((MemoryScopeImpl) segment.scope()).checkValidState();
+        ((MemorySessionImpl) segment.scope()).checkValidState();
         return new MacOsAArch64VaList(segment);
     }
 
@@ -184,7 +184,7 @@ public non-sealed class MacOsAArch64VaList implements VaList {
         private final List<SimpleVaArg> args = new ArrayList<>();
 
         public Builder(SegmentScope scope) {
-            ((MemoryScopeImpl) scope).checkValidState();
+            ((MemorySessionImpl) scope).checkValidState();
             this.scope = scope;
         }
 

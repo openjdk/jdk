@@ -1,5 +1,5 @@
     @ForceInline
-    public $type$ get$Type$(MemoryScopeImpl scope, Object base, long offset) {
+    public $type$ get$Type$(MemorySessionImpl scope, Object base, long offset) {
         try {
             return get$Type$Internal(scope, base, offset);
         } catch (ScopedAccessError ex) {
@@ -8,7 +8,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ get$Type$Internal(MemoryScopeImpl scope, Object base, long offset) {
+    private $type$ get$Type$Internal(MemorySessionImpl scope, Object base, long offset) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -20,7 +20,7 @@
     }
 
     @ForceInline
-    public void put$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public void put$Type$(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             put$Type$Internal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -29,7 +29,7 @@
     }
 
     @ForceInline @Scoped
-    private void put$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private void put$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -42,7 +42,7 @@
 
 #if[Unaligned]
     @ForceInline
-    public $type$ get$Type$Unaligned(MemoryScopeImpl scope, Object base, long offset, boolean be) {
+    public $type$ get$Type$Unaligned(MemorySessionImpl scope, Object base, long offset, boolean be) {
         try {
             return get$Type$UnalignedInternal(scope, base, offset, be);
         } catch (ScopedAccessError ex) {
@@ -51,7 +51,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ get$Type$UnalignedInternal(MemoryScopeImpl scope, Object base, long offset, boolean be) {
+    private $type$ get$Type$UnalignedInternal(MemorySessionImpl scope, Object base, long offset, boolean be) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -63,7 +63,7 @@
     }
 
     @ForceInline
-    public void put$Type$Unaligned(MemoryScopeImpl scope, Object base, long offset, $type$ value, boolean be) {
+    public void put$Type$Unaligned(MemorySessionImpl scope, Object base, long offset, $type$ value, boolean be) {
         try {
             put$Type$UnalignedInternal(scope, base, offset, value, be);
         } catch (ScopedAccessError ex) {
@@ -72,7 +72,7 @@
     }
 
     @ForceInline @Scoped
-    private void put$Type$UnalignedInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value, boolean be) {
+    private void put$Type$UnalignedInternal(MemorySessionImpl scope, Object base, long offset, $type$ value, boolean be) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -85,7 +85,7 @@
 #end[Unaligned]
 
     @ForceInline
-    public $type$ get$Type$Volatile(MemoryScopeImpl scope, Object base, long offset) {
+    public $type$ get$Type$Volatile(MemorySessionImpl scope, Object base, long offset) {
         try {
             return get$Type$VolatileInternal(scope, base, offset);
         } catch (ScopedAccessError ex) {
@@ -94,7 +94,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ get$Type$VolatileInternal(MemoryScopeImpl scope, Object base, long offset) {
+    private $type$ get$Type$VolatileInternal(MemorySessionImpl scope, Object base, long offset) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -106,7 +106,7 @@
     }
 
     @ForceInline
-    public void put$Type$Volatile(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public void put$Type$Volatile(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             put$Type$VolatileInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -115,7 +115,7 @@
     }
 
     @ForceInline @Scoped
-    private void put$Type$VolatileInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private void put$Type$VolatileInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -127,7 +127,7 @@
     }
 
     @ForceInline
-    public $type$ get$Type$Acquire(MemoryScopeImpl scope, Object base, long offset) {
+    public $type$ get$Type$Acquire(MemorySessionImpl scope, Object base, long offset) {
         try {
             return get$Type$AcquireInternal(scope, base, offset);
         } catch (ScopedAccessError ex) {
@@ -136,7 +136,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ get$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset) {
+    private $type$ get$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -148,7 +148,7 @@
     }
 
     @ForceInline
-    public void put$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public void put$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             put$Type$ReleaseInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -157,7 +157,7 @@
     }
 
     @ForceInline @Scoped
-    private void put$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private void put$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -169,7 +169,7 @@
     }
 
     @ForceInline
-    public $type$ get$Type$Opaque(MemoryScopeImpl scope, Object base, long offset) {
+    public $type$ get$Type$Opaque(MemorySessionImpl scope, Object base, long offset) {
         try {
             return get$Type$OpaqueInternal(scope, base, offset);
         } catch (ScopedAccessError ex) {
@@ -178,7 +178,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ get$Type$OpaqueInternal(MemoryScopeImpl scope, Object base, long offset) {
+    private $type$ get$Type$OpaqueInternal(MemorySessionImpl scope, Object base, long offset) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -189,7 +189,7 @@
         }
     }
     @ForceInline
-    public void put$Type$Opaque(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public void put$Type$Opaque(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             put$Type$OpaqueInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -198,7 +198,7 @@
     }
 
     @ForceInline @Scoped
-    private void put$Type$OpaqueInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private void put$Type$OpaqueInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -210,7 +210,7 @@
     }
 #if[CAS]
     @ForceInline
-    public boolean compareAndSet$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public boolean compareAndSet$Type$(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return compareAndSet$Type$Internal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -219,7 +219,7 @@
     }
 
     @ForceInline @Scoped
-    private boolean compareAndSet$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private boolean compareAndSet$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -231,7 +231,7 @@
     }
 
     @ForceInline
-    public $type$ compareAndExchange$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public $type$ compareAndExchange$Type$(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return compareAndExchange$Type$Internal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -240,7 +240,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ compareAndExchange$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private $type$ compareAndExchange$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -252,7 +252,7 @@
     }
 
     @ForceInline
-    public $type$ compareAndExchange$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public $type$ compareAndExchange$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return compareAndExchange$Type$AcquireInternal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -261,7 +261,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ compareAndExchange$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private $type$ compareAndExchange$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -273,7 +273,7 @@
     }
 
     @ForceInline
-    public $type$ compareAndExchange$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public $type$ compareAndExchange$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return compareAndExchange$Type$ReleaseInternal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -282,7 +282,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ compareAndExchange$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private $type$ compareAndExchange$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -294,7 +294,7 @@
     }
 
     @ForceInline
-    public boolean weakCompareAndSet$Type$Plain(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public boolean weakCompareAndSet$Type$Plain(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return weakCompareAndSet$Type$PlainInternal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -303,7 +303,7 @@
     }
 
     @ForceInline @Scoped
-    private boolean weakCompareAndSet$Type$PlainInternal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private boolean weakCompareAndSet$Type$PlainInternal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -315,7 +315,7 @@
     }
 
     @ForceInline
-    public boolean weakCompareAndSet$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public boolean weakCompareAndSet$Type$(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return weakCompareAndSet$Type$Internal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -324,7 +324,7 @@
     }
 
     @ForceInline @Scoped
-    private boolean weakCompareAndSet$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private boolean weakCompareAndSet$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -336,7 +336,7 @@
     }
 
     @ForceInline
-    public boolean weakCompareAndSet$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public boolean weakCompareAndSet$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return weakCompareAndSet$Type$AcquireInternal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -345,7 +345,7 @@
     }
 
     @ForceInline @Scoped
-    private boolean weakCompareAndSet$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private boolean weakCompareAndSet$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -357,7 +357,7 @@
     }
 
     @ForceInline
-    public boolean weakCompareAndSet$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    public boolean weakCompareAndSet$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             return weakCompareAndSet$Type$ReleaseInternal(scope, base, offset, expected, value);
         } catch (ScopedAccessError ex) {
@@ -366,7 +366,7 @@
     }
 
     @ForceInline @Scoped
-    private boolean weakCompareAndSet$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ expected, $type$ value) {
+    private boolean weakCompareAndSet$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ expected, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -378,7 +378,7 @@
     }
 
     @ForceInline
-    public $type$ getAndSet$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndSet$Type$(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndSet$Type$Internal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -387,7 +387,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndSet$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndSet$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -399,7 +399,7 @@
     }
 
     @ForceInline
-    public $type$ getAndSet$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndSet$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndSet$Type$AcquireInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -408,7 +408,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndSet$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndSet$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -420,7 +420,7 @@
     }
 
     @ForceInline
-    public $type$ getAndSet$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndSet$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndSet$Type$ReleaseInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -429,7 +429,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndSet$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndSet$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -443,7 +443,7 @@
 
 #if[AtomicAdd]
     @ForceInline
-    public $type$ getAndAdd$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ delta) {
+    public $type$ getAndAdd$Type$(MemorySessionImpl scope, Object base, long offset, $type$ delta) {
         try {
             return getAndAdd$Type$Internal(scope, base, offset, delta);
         } catch (ScopedAccessError ex) {
@@ -452,7 +452,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndAdd$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ delta) {
+    private $type$ getAndAdd$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ delta) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -464,7 +464,7 @@
     }
 
     @ForceInline
-    public $type$ getAndAdd$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ delta) {
+    public $type$ getAndAdd$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ delta) {
         try {
             return getAndAdd$Type$AcquireInternal(scope, base, offset, delta);
         } catch (ScopedAccessError ex) {
@@ -473,7 +473,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndAdd$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ delta) {
+    private $type$ getAndAdd$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ delta) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -485,7 +485,7 @@
     }
 
     @ForceInline
-    public $type$ getAndAdd$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ delta) {
+    public $type$ getAndAdd$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ delta) {
         try {
             return getAndAdd$Type$ReleaseInternal(scope, base, offset, delta);
         } catch (ScopedAccessError ex) {
@@ -494,7 +494,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndAdd$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ delta) {
+    private $type$ getAndAdd$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ delta) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -508,7 +508,7 @@
 
 #if[Bitwise]
     @ForceInline
-    public $type$ getAndBitwiseOr$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseOr$Type$(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseOr$Type$Internal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -517,7 +517,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseOr$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseOr$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -529,7 +529,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseOr$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseOr$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseOr$Type$AcquireInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -538,7 +538,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseOr$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseOr$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -550,7 +550,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseOr$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseOr$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseOr$Type$ReleaseInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -559,7 +559,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseOr$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseOr$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -571,7 +571,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseAnd$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseAnd$Type$(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseAnd$Type$Internal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -580,7 +580,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseAnd$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseAnd$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -592,7 +592,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseAnd$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseAnd$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseAnd$Type$AcquireInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -601,7 +601,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseAnd$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseAnd$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -613,7 +613,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseAnd$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseAnd$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseAnd$Type$ReleaseInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -622,7 +622,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseAnd$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseAnd$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -634,7 +634,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseXor$Type$(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseXor$Type$(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseXor$Type$Internal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -643,7 +643,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseXor$Type$Internal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseXor$Type$Internal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -655,7 +655,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseXor$Type$Acquire(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseXor$Type$Acquire(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseXor$Type$AcquireInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -664,7 +664,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseXor$Type$AcquireInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseXor$Type$AcquireInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();
@@ -676,7 +676,7 @@
     }
 
     @ForceInline
-    public $type$ getAndBitwiseXor$Type$Release(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    public $type$ getAndBitwiseXor$Type$Release(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             return getAndBitwiseXor$Type$ReleaseInternal(scope, base, offset, value);
         } catch (ScopedAccessError ex) {
@@ -685,7 +685,7 @@
     }
 
     @ForceInline @Scoped
-    private $type$ getAndBitwiseXor$Type$ReleaseInternal(MemoryScopeImpl scope, Object base, long offset, $type$ value) {
+    private $type$ getAndBitwiseXor$Type$ReleaseInternal(MemorySessionImpl scope, Object base, long offset, $type$ value) {
         try {
             if (scope != null) {
                 scope.checkValidStateRaw();

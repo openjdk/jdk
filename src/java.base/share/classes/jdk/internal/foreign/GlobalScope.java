@@ -32,7 +32,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Adding new resources to the global scope, does nothing: as the scope can never become not-alive, there is nothing to track.
  * Acquiring and or releasing a memory scope similarly does nothing.
  */
-final class GlobalScope extends MemoryScopeImpl {
+final class GlobalScope extends MemorySessionImpl {
 
     final Object ref;
 
