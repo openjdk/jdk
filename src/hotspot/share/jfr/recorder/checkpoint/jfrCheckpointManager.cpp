@@ -314,7 +314,6 @@ static Return read_data(const u1* data) {
 static size_t total_size(const u1* data) {
   const int64_t size = read_data<int64_t>(data);
   assert(size > 0, "invariant");
-  assert(min_intx <= size, "invariant");
   return static_cast<size_t>(size);
 }
 
@@ -373,7 +372,6 @@ static size_t write_checkpoints(JfrChunkWriter& cw, const u1* data, size_t size)
   assert(cw.is_valid(), "invariant");
   assert(data != NULL, "invariant");
   assert(size > 0, "invariant");
-  assert(size < static_cast<size_t>(min_intx), "invariant");
   const u1* const limit = data + size;
   const u1* next = data;
   size_t processed = 0;
@@ -390,7 +388,6 @@ static size_t write_thread_checkpoint_content(JfrChunkWriter& cw, const u1* data
   assert(data != NULL, "invariant");
   const size_t size = total_size(data);
   assert(size > 0, "invariant");
-  assert(size < static_cast<size_t>(min_intx), "invariant");
   assert(checkpoint_type(data) == THREADS, "invariant");
   assert(number_of_types(data) == 1, "invariant");
   // Thread checkpoints are small so write them buffered to cache as much as possible before flush.
