@@ -1123,15 +1123,15 @@ instruct vroundD(vReg dst, vReg src, immI rmode) %{
     switch ($rmode$$constant) {
       case RoundDoubleModeNode::rmode_rint:
         __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
-        __ vfcvt_rtz_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+        __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
         break;
       case RoundDoubleModeNode::rmode_floor:
         __ csrwi(CSR_FRM, C2_MacroAssembler::rdn);
-        __ vfcvt_rtz_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+        __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
         break;
       case RoundDoubleModeNode::rmode_ceil:
         __ csrwi(CSR_FRM, C2_MacroAssembler::rup);
-        __ vfcvt_rtz_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+        __ vfcvt_x_f_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
         break;
       default:
         ShouldNotReachHere();
