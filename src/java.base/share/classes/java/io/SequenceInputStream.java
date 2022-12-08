@@ -242,7 +242,11 @@ public class SequenceInputStream extends InputStream {
         if (getClass() == SequenceInputStream.class) {
             long c = 0;
             while (in != null) {
-                c += in.transferTo(out);
+                try {
+                    c = Math.addExact(c, in.transferTo(out));
+                } catch (ArithmeticException ignore) {
+                    return Long.MAX_VALUE;
+                }
                 nextStream();
             }
             return c;
