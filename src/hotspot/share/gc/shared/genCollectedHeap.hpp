@@ -326,21 +326,16 @@ public:
   };
 
  protected:
+  virtual void gc_prologue(bool full);
+  virtual void gc_epilogue(bool full);
+
+ public:
+  // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
   void process_roots(ScanningOption so,
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);
-
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
- public:
-  void full_process_roots(bool is_adjust_phase,
-                          ScanningOption so,
-                          bool only_strong_roots,
-                          OopClosure* root_closure,
-                          CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.
   // These include JNI weak roots, string table,

@@ -24,6 +24,7 @@
  */
 package java.lang;
 
+import java.lang.ref.Reference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
@@ -53,6 +54,8 @@ import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 import jdk.internal.vm.annotation.ChangesCurrentThread;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.JvmtiMountTransition;
 import sun.nio.ch.Interruptible;
 import sun.security.action.GetPropertyAction;
@@ -297,13 +300,13 @@ final class VirtualThread extends BaseVirtualThread {
             event.commit();
         }
 
+        Object bindings = scopedValueBindings();
         try {
-            task.run();
+            runWith(bindings, task);
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
             try {
-
                 // pop any remaining scopes from the stack, this may block
                 StackableScope.popAll();
 
@@ -323,6 +326,14 @@ final class VirtualThread extends BaseVirtualThread {
                 setState(TERMINATED);
             }
         }
+    }
+
+    @Hidden
+    @ForceInline
+    private void runWith(Object bindings, Runnable op) {
+        ensureMaterializedForStackWalk(bindings);
+        op.run();
+        Reference.reachabilityFence(bindings);
     }
 
     /**
@@ -511,8 +522,8 @@ final class VirtualThread extends BaseVirtualThread {
         boolean started = false;
         container.onStart(this); // may throw
         try {
-            // extent locals may be inherited
-            inheritExtentLocalBindings(container);
+            // scoped values may be inherited
+            inheritScopedValueBindings(container);
 
             // submit task to run thread
             submitRunContinuation();
