@@ -25,8 +25,8 @@
  * @test
  * @summary Test virtual threads using Object.wait/notifyAll
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} WaitNotify.java
- * @run testng/othervm --enable-preview WaitNotify
+ * @enablePreview
+ * @run testng WaitNotify
  */
 
 import java.util.concurrent.Semaphore;

@@ -131,7 +131,7 @@ public:
       _oop_closure.set_scanned_cld(cld);
 
       // Clean the cld since we're going to scavenge all the metadata.
-      cld->oops_do(&_oop_closure, false, /*clear_modified_oops*/true);
+      cld->oops_do(&_oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
 
       _oop_closure.set_scanned_cld(NULL);
     }

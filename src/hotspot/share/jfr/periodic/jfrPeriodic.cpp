@@ -63,6 +63,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
+#include "services/memJfrReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -72,6 +73,7 @@
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
+
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in
@@ -622,4 +624,12 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #else
   log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsage) {
+  MemJFRReporter::send_type_events();
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
+  MemJFRReporter::send_total_event();
 }
