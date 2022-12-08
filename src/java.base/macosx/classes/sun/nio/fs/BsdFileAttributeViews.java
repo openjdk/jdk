@@ -39,11 +39,20 @@ class BsdFileAttributeViews {
                                  FileTime lastAccessTime, FileTime createTime,
                                  boolean followLinks) throws IOException
     {
-        // null => don't change
-        if (lastModifiedTime == null && lastAccessTime == null &&
-            createTime == null) {
-            // no effect
-            return;
+        if (createTime == null) {
+            // all times null => don't change
+            if (lastModifiedTime == null && lastAccessTime == null)
+                return; // no effect
+
+            if (lastAccessTime != null) {
+                // if the last access time is being set, defer to Unix
+                // implementation in case the file is on an HFS store on
+                // which setattrlist(2) does not work for this purpose
+                UnixFileAttributeViews.Basic basic =
+                    new UnixFileAttributeViews.Basic(path, followLinks);
+                basic.setTimes(lastModifiedTime, lastAccessTime, null);
+                return;
+            }
         }
 
         // permission check
@@ -57,8 +66,14 @@ class BsdFileAttributeViews {
         }
         long accValue = 0L;
         if (lastAccessTime != null) {
-            accValue = lastAccessTime.to(TimeUnit.NANOSECONDS);
-            commonattr |= UnixConstants.ATTR_CMN_ACCTIME;
+            String fstype =
+                path.getFileSystem().provider().getFileStore(path).type();
+
+            // setattrlist(2) fails to set last access time on HFS
+            if (!"hfs".equals(fstype)) {
+                accValue = lastAccessTime.to(TimeUnit.NANOSECONDS);
+                commonattr |= UnixConstants.ATTR_CMN_ACCTIME;
+            }
         }
         long createValue = 0L;
         if (createTime != null) {
@@ -69,6 +84,16 @@ class BsdFileAttributeViews {
         try {
             setattrlist(path, commonattr, modValue, accValue, createValue,
                         followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+
+            // if the last access time is given but its commonattr bit is not
+            // set, then the path must be on an HFS store, so use the Unix
+            // implementation to set the last access time
+            if (lastAccessTime != null &&
+                (commonattr & UnixConstants.ATTR_CMN_ACCTIME) == 0) {
+                UnixFileAttributeViews.Basic basic =
+                    new UnixFileAttributeViews.Basic(path, followLinks);
+                basic.setTimes(null, lastAccessTime, null);
+            }
         } catch (UnixException x) {
             x.rethrowAsIOException(path);
         }
