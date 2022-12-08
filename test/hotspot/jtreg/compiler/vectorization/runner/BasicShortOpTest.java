@@ -47,15 +47,18 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     private short[] a;
     private short[] b;
     private short[] c;
+    private int[] idx;
 
     public BasicShortOpTest() {
         a = new short[SIZE];
         b = new short[SIZE];
         c = new short[SIZE];
+        idx = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
             a[i] = (short) (-12 * i);
             b[i] = (short) (9 * i + 8888);
             c[i] = (short) -32323;
+            idx[i] = i;
         }
     }
 
@@ -184,6 +187,25 @@ public class BasicShortOpTest extends VectorizationTestRunner {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (short) (a[i] >>> 5);
+        }
+        return res;
+    }
+
+    // ------------- ReverseBytes -------------
+    @Test
+    public short[] reverseBytesWithShort() {
+        short[] res = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Short.reverseBytes(a[i]);
+        }
+        return res;
+    }
+
+    @Test
+    public int[] reverseBytesWithInt() {
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Short.reverseBytes((short) idx[i]);
         }
         return res;
     }

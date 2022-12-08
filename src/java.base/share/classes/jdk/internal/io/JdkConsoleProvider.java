@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.net;
+package jdk.internal.io;
 
-import java.util.EventListener;
+import java.nio.charset.Charset;
 
 /**
- * ProgressListener is an interface to be implemented by parties
- * interested to be notified of progress in network input stream.
- *
- * @author Stanley Man-Kit Ho
+ * Service provider interface for JdkConsole implementations.
+ * The provider used for instantiating JdkConsole instance can be
+ * specified with the system property "jdk.console", whose value
+ * designates the module name of the implementation, and which defaults
+ * to "jdk.internal.le" (jline). If no providers is available,
+ * or instantiation failed, java.base built-in Console implementation
+ * is used.
  */
-public interface ProgressListener extends EventListener
-{
+public interface JdkConsoleProvider {
     /**
-     * Start progress.
+     * The module name of the JdkConsole default provider.
      */
-    public void progressStart(ProgressEvent evt);
+    String DEFAULT_PROVIDER_MODULE_NAME = "jdk.internal.le";
 
     /**
-     * Update progress.
+     * {@return the Console instance, or {@code null} if not available}
+     * @param isTTY indicates if the jvm is attached to a terminal
+     * @param charset charset of the platform console
      */
-    public void progressUpdate(ProgressEvent evt);
-
-    /**
-     * Finish progress.
-     */
-    public void progressFinish(ProgressEvent evt);
+    JdkConsole console(boolean isTTY, Charset charset);
 }
