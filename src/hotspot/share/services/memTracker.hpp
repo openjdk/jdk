@@ -106,7 +106,7 @@ class MemTracker : AllStatic {
   static inline void* record_free(void* memblock) {
     // Never turned on
     assert(memblock != NULL, "caller should handle NULL");
-    if(!enabled()) {
+    if (!enabled()) {
       return memblock;
     }
     return MallocTracker::record_free_block(memblock);
