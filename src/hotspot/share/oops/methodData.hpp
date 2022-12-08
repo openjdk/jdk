@@ -1957,7 +1957,7 @@ private:
   // Cached hint for bci_to_dp and bci_to_data
   int _hint_di;
 
-  Mutex* _extra_data_lock;
+  Mutex _extra_data_lock;
 
   MethodData(const methodHandle& method);
 public:
@@ -2450,8 +2450,7 @@ public:
   virtual MetaspaceObj::Type type() const { return MethodDataType; }
 
   // Deallocation support - no metaspace pointer fields to deallocate
-  void deallocate_contents(ClassLoaderData* loader_data);
-  void release_C_heap_structures();
+  void deallocate_contents(ClassLoaderData* loader_data) {}
 
   // GC support
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }
@@ -2478,7 +2477,7 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  Mutex* extra_data_lock() { return _extra_data_lock; }
+  Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP

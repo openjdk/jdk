@@ -145,7 +145,7 @@ void Method::release_C_heap_structures() {
     FailedSpeculation::free_failed_speculations(method_data()->get_failed_speculations_address());
 #endif
     // Destroy MethodData
-    method_data()->release_C_heap_structures();
+    method_data()->~MethodData();
   }
 }
 
@@ -599,7 +599,7 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   }
 
   if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
-    method_data->release_C_heap_structures();
+    method_data->~MethodData();
     MetadataFactory::free_metadata(loader_data, method_data);
     return;
   }
