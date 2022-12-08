@@ -28,7 +28,7 @@
  * test class).
  <p>
 <h3>A simplified example</h3>
-Suppose we want to to define a test Test with an option "iterations",
+Suppose we want to define a test Test with an option "iterations",
 which can be run via
 </p>
 <pre> > java Test -iterations 10 </pre>

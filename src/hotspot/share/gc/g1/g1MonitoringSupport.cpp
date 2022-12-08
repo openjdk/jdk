@@ -90,6 +90,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
   _incremental_memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
+  _conc_gc_memory_manager("G1 Concurrent GC", "end of concurrent GC pause"),
   _eden_space_pool(NULL),
   _survivor_space_pool(NULL),
   _old_gen_pool(NULL),
@@ -199,6 +200,8 @@ void G1MonitoringSupport::initialize_serviceability() {
   _full_gc_memory_manager.add_pool(_survivor_space_pool);
   _full_gc_memory_manager.add_pool(_old_gen_pool);
 
+  _conc_gc_memory_manager.add_pool(_old_gen_pool);
+
   _incremental_memory_manager.add_pool(_eden_space_pool);
   _incremental_memory_manager.add_pool(_survivor_space_pool);
   _incremental_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
@@ -210,9 +213,10 @@ MemoryUsage G1MonitoringSupport::memory_usage() {
 }
 
 GrowableArray<GCMemoryManager*> G1MonitoringSupport::memory_managers() {
-  GrowableArray<GCMemoryManager*> memory_managers(2);
+  GrowableArray<GCMemoryManager*> memory_managers(3);
   memory_managers.append(&_incremental_memory_manager);
   memory_managers.append(&_full_gc_memory_manager);
+  memory_managers.append(&_conc_gc_memory_manager);
   return memory_managers;
 }
 
@@ -344,10 +348,13 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
                      max_size);
 }
 
-G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support, bool full_gc, bool all_memory_pools_affected) :
+G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support,
+                                     CollectorCounters* collection_counters,
+                                     GCMemoryManager* gc_memory_manager,
+                                     bool all_memory_pools_affected) :
   _monitoring_support(monitoring_support),
-  _tcs(full_gc ? monitoring_support->_full_collection_counters : monitoring_support->_incremental_collection_counters),
-  _tms(full_gc ? &monitoring_support->_full_gc_memory_manager : &monitoring_support->_incremental_memory_manager,
+  _tcs(collection_counters),
+  _tms(gc_memory_manager,
        G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
 }
 
@@ -355,4 +362,24 @@ G1MonitoringScope::~G1MonitoringScope() {
   _monitoring_support->update_sizes();
   // Needs to be called after updating pool sizes.
   MemoryService::track_memory_usage();
+}
+
+G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
+                                                   bool all_memory_pools_affected) :
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_incremental_collection_counters,
+                    &monitoring_support->_incremental_memory_manager,
+                    all_memory_pools_affected) {
+}
+
+G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_full_collection_counters,
+                    &monitoring_support->_full_gc_memory_manager) {
+}
+
+G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
+  G1MonitoringScope(monitoring_support,
+                    monitoring_support->_conc_collection_counters,
+                    &monitoring_support->_conc_gc_memory_manager) {
 }

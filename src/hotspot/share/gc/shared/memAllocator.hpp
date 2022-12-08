@@ -42,12 +42,19 @@ protected:
   Klass* const         _klass;
   const size_t         _word_size;
 
+  // Allocate from the current thread's TLAB, without taking a new TLAB (no safepoint).
+ HeapWord* mem_allocate_inside_tlab_fast() const;
+
 private:
-  // Allocate from the current thread's TLAB, with broken-out slow path.
-  HeapWord* allocate_inside_tlab(Allocation& allocation) const;
-  HeapWord* allocate_inside_tlab_fast() const;
-  HeapWord* allocate_inside_tlab_slow(Allocation& allocation) const;
-  HeapWord* allocate_outside_tlab(Allocation& allocation) const;
+  // Allocate in a TLAB. Could allocate a new TLAB, and therefore potentially safepoint.
+  HeapWord* mem_allocate_inside_tlab(Allocation& allocation) const;
+  HeapWord* mem_allocate_inside_tlab_slow(Allocation& allocation) const;
+
+  // Allocate outside a TLAB. Could safepoint.
+  HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
+
+  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
+  HeapWord* mem_allocate_slow(Allocation& allocation) const;
 
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
@@ -78,13 +85,13 @@ protected:
 public:
   // Allocate and fully construct the object, and perform various instrumentation. Could safepoint.
   oop allocate() const;
-  oop try_allocate_in_existing_tlab();
 };
 
 class ObjAllocator: public MemAllocator {
 public:
   ObjAllocator(Klass* klass, size_t word_size, Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread) {}
+
   virtual oop initialize(HeapWord* mem) const;
 };
 
@@ -101,6 +108,7 @@ public:
     : MemAllocator(klass, word_size, thread),
       _length(length),
       _do_zero(do_zero) {}
+
   virtual oop initialize(HeapWord* mem) const;
 };
 
@@ -108,16 +116,7 @@ class ClassAllocator: public MemAllocator {
 public:
   ClassAllocator(Klass* klass, size_t word_size, Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread) {}
-  virtual oop initialize(HeapWord* mem) const;
-};
 
-class StackChunkAllocator : public MemAllocator {
-  const size_t _stack_size;
-
-public:
-  StackChunkAllocator(Klass* klass, size_t word_size, size_t stack_size, Thread* thread = Thread::current())
-    : MemAllocator(klass, word_size, thread),
-      _stack_size(stack_size) {}
   virtual oop initialize(HeapWord* mem) const;
 };
 

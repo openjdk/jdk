@@ -108,8 +108,6 @@ class JNIHandles : AllStatic {
   static bool is_frame_handle(JavaThread* thread, jobject handle);
   static bool is_global_handle(jobject handle);
   static bool is_weak_global_handle(jobject handle);
-  static size_t global_handle_memory_usage();
-  static size_t weak_global_handle_memory_usage();
 
   // precondition: handle != NULL.
   static jobjectRefType handle_type(JavaThread* thread, jobject handle);
@@ -180,8 +178,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Debugging
   bool chain_contains(jobject handle) const;    // Does this block or following blocks contain handle
   bool contains(jobject handle) const;          // Does this block contain handle
-  size_t length() const;                        // Length of chain starting with this block
-  size_t memory_usage() const;
 };
 
 #endif // SHARE_RUNTIME_JNIHANDLES_HPP
