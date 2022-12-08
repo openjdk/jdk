@@ -50,7 +50,7 @@ public class CompressedClassSpaceSizeInJmapHeap {
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
-        LingeredApp  theApp = new LingeredApp();
+        LingeredApp theApp = new LingeredApp();
         LingeredApp.startApp(theApp, "-XX:CompressedClassSpaceSize=48m");
         String pid = Long.toString(theApp.getPid());
 
