@@ -1146,7 +1146,7 @@ class LambdaFormEditor {
             }
         }
 
-        form = new LambdaForm(arity2, names2, result2);
+        form = LambdaForm.of(arity2, names2, result2);
         return putInCache(key, form);
     }
 
