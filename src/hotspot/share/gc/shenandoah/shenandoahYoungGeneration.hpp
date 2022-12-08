@@ -56,7 +56,9 @@ public:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
-protected:
+  virtual void add_collection_time(double time_seconds) override;
+
+ protected:
   bool is_concurrent_mark_in_progress() override;
 
 };

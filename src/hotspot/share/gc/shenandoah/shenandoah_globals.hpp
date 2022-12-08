@@ -376,6 +376,18 @@
           "events.")                                                        \
           range(0,100)                                                      \
                                                                             \
+  product(uintx, ShenandoahMinYoungPercentage, 20,                                \
+          "The minimum percentage of the heap to use for the young "        \
+          "generation. Heuristics will not adjust the young generation "    \
+          "to be less than this.")                                          \
+          range(0, 100)                                                     \
+                                                                            \
+  product(uintx, ShenandoahMaxYoungPercentage, 80,                                \
+          "The maximum percentage of the heap to use for the young "        \
+          "generation. Heuristics will not adjust the young generation "    \
+          "to be more than this.")                                          \
+          range(0, 100)                                                     \
+                                                                            \
   product(bool, ShenandoahPacing, true, EXPERIMENTAL,                       \
           "Pace application allocations to give GC chance to start "        \
           "and complete before allocation failure is reached.")             \

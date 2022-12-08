@@ -988,6 +988,19 @@ size_t ShenandoahGeneration::adjusted_unaffiliated_regions() const {
   return (adjusted_capacity() - used_regions_size()) / ShenandoahHeapRegion::region_size_bytes();
 }
 
+
+void ShenandoahGeneration::increase_capacity(size_t increment) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  _max_capacity += increment;
+  _soft_max_capacity += increment;
+}
+
+void ShenandoahGeneration::decrease_capacity(size_t decrement) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  _max_capacity -= decrement;
+  _soft_max_capacity -= decrement;
+}
+
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
   heuristics()->record_success_concurrent(abbreviated);
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_concurrent();
@@ -997,3 +1010,14 @@ void ShenandoahGeneration::record_success_degenerated() {
   heuristics()->record_success_degenerated();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_degenerated();
 }
+
+void ShenandoahGeneration::add_collection_time(double time_seconds) {
+  _collection_thread_time_s += time_seconds;
+}
+
+double ShenandoahGeneration::reset_collection_time() {
+  double t = _collection_thread_time_s;
+  _collection_thread_time_s = 0.0;
+  return t;
+}
+

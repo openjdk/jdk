@@ -97,7 +97,7 @@ protected:
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_time_history;
+  TruncatedSeq* _gc_cycle_time_history;
 
   size_t _live_memory_last_cycle;
   size_t _live_memory_penultimate_cycle;
@@ -168,7 +168,7 @@ public:
   virtual bool is_experimental() = 0;
   virtual void initialize();
 
-  double time_since_last_gc() const;
+  double elapsed_cycle_time() const;
 
   void save_last_live_memory(size_t live_memory);
   size_t get_last_live_memory();

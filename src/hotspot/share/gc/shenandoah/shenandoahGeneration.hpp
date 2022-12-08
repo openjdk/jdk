@@ -46,6 +46,8 @@ private:
 
   ShenandoahReferenceProcessor* const _ref_processor;
 
+  double _collection_thread_time_s;
+
 protected:
   // Usage
   size_t _affiliated_region_count;
@@ -108,6 +110,9 @@ private:
   size_t bytes_allocated_since_gc_start();
   void reset_bytes_allocated_since_gc_start();
   void increase_allocated(size_t bytes);
+
+  void increase_capacity(size_t increment);
+  void decrease_capacity(size_t decrement);
 
   void set_soft_max_capacity(size_t soft_max_capacity) {
     _soft_max_capacity = soft_max_capacity;
@@ -181,6 +186,9 @@ private:
 
   virtual void record_success_concurrent(bool abbreviated);
   virtual void record_success_degenerated();
+
+  virtual void add_collection_time(double time_seconds);
+  double reset_collection_time();
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

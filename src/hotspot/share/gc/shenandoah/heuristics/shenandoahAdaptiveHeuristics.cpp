@@ -419,7 +419,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //     ShenandoahControlIntervalMax.  The current control interval (or the max control interval) should also be added into
   //     the calculation of avg_cycle_time below.
 
-  double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
+  double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
 
   size_t last_live_memory = get_last_live_memory();
   size_t penultimate_live_memory = get_penultimate_live_memory();

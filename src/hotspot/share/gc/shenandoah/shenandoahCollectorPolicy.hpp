@@ -52,13 +52,11 @@ private:
   size_t _explicit_full;
   size_t _implicit_concurrent;
   size_t _implicit_full;
+  size_t _cycle_counter;
   size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
-
   ShenandoahTracer* _tracer;
-
-  size_t _cycle_counter;
 
 public:
   ShenandoahCollectorPolicy();

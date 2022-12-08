@@ -69,6 +69,13 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(UseNUMA, true);
   }
 
+  // We use this as the time period for tracking minimum mutator utilization (MMU).
+  // In generational mode, the MMU is used as a signal to adjust the size of the
+  // young generation.
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, 5000);
+  }
+
   // Set up default number of concurrent threads. We want to have cycles complete fast
   // enough, but we also do not want to steal too much CPU from the concurrently running
   // application. Using 1/4 of available threads for concurrent GC seems a good

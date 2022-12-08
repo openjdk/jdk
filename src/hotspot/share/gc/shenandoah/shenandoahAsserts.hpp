@@ -167,6 +167,9 @@ public:
 
 #define shenandoah_assert_heaplocked_or_fullgc_safepoint() \
                     ShenandoahAsserts::assert_heaplocked_or_fullgc_safepoint(__FILE__, __LINE__)
+
+#define shenandoah_assert_generational() \
+                    assert(ShenandoahHeap::heap()->mode()->is_generational(), "Must be in generational mode here.")
 #else
 #define shenandoah_assert_in_heap(interior_loc, obj)
 #define shenandoah_assert_in_heap_or_null(interior_loc, obj)
@@ -218,6 +221,7 @@ public:
 #define shenandoah_assert_not_heaplocked()
 #define shenandoah_assert_heaplocked_or_safepoint()
 #define shenandoah_assert_heaplocked_or_fullgc_safepoint()
+#define shenandoah_assert_generational()
 
 #endif
 

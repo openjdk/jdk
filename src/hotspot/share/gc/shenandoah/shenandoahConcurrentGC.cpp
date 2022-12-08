@@ -1202,6 +1202,7 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+  heap->adjust_generation_sizes();
 }
 
 void ShenandoahConcurrentGC::op_final_roots() {

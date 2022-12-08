@@ -336,6 +336,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   // Resize metaspace
   MetaspaceGC::compute_new_size();
 
+  heap->adjust_generation_sizes();
+
   // Free worker slices
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];

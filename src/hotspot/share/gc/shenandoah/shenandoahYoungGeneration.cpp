@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -88,4 +89,13 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedYoungGCInterval);
   confirm_heuristics_mode();
   return _heuristics;
+}
+
+void ShenandoahYoungGeneration::add_collection_time(double time_seconds) {
+  if (_old_gen_task_queues != NULL) {
+    // This is a bootstrap cycle, so attribute time to old gc
+    ShenandoahHeap::heap()->old_generation()->add_collection_time(time_seconds);
+  } else {
+    ShenandoahGeneration::add_collection_time(time_seconds);
+  }
 }

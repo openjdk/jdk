@@ -448,7 +448,7 @@ void ShenandoahControlThread::process_phase_timings(const ShenandoahHeap* heap) 
 //
 void ShenandoahControlThread::service_concurrent_normal_cycle(
   const ShenandoahHeap* heap, const GenerationMode generation, GCCause::Cause cause) {
-
+  GCIdMark gc_id_mark;
   switch (generation) {
     case YOUNG: {
       // Run a young cycle. This might or might not, have interrupted an ongoing
@@ -458,24 +458,22 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(
       // that are in the cset.
       log_info(gc, ergo)("Start GC cycle (YOUNG)");
       service_concurrent_cycle(heap->young_generation(), cause, false);
-      heap->young_generation()->log_status();
       break;
     }
     case GLOBAL: {
       log_info(gc, ergo)("Start GC cycle (GLOBAL)");
       service_concurrent_cycle(heap->global_generation(), cause, false);
-      heap->global_generation()->log_status();
       break;
     }
     case OLD: {
       log_info(gc, ergo)("Start GC cycle (OLD)");
       service_concurrent_old_cycle(heap, cause);
-      heap->old_generation()->log_status();
       break;
     }
     default:
       ShouldNotReachHere();
   }
+  log_heap_status(heap);
 }
 
 void ShenandoahControlThread::service_concurrent_old_cycle(const ShenandoahHeap* heap, GCCause::Cause &cause) {
@@ -483,7 +481,6 @@ void ShenandoahControlThread::service_concurrent_old_cycle(const ShenandoahHeap*
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahYoungGeneration* young_generation = heap->young_generation();
 
-  GCIdMark gc_id_mark;
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
   switch (old_generation->state()) {
@@ -582,6 +579,15 @@ bool ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* 
   return true;
 }
 
+void ShenandoahControlThread::log_heap_status(const ShenandoahHeap* heap) {
+  if (heap->mode()->is_generational()) {
+    heap->young_generation()->log_status();
+    heap->old_generation()->log_status();
+  } else {
+    heap->global_generation()->log_status();
+  }
+}
+
 bool ShenandoahControlThread::check_soft_max_changed() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
@@ -640,7 +646,6 @@ void ShenandoahControlThread::service_concurrent_cycle(ShenandoahGeneration* gen
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, generation);
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 

@@ -47,14 +47,12 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGenerat
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
 
-  _heap->set_gc_cause(cause);
-  _heap->set_gc_generation(generation);
+  _heap->on_cycle_start(cause, _generation);
+
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
-  _heap->shenandoah_policy()->record_cycle_start();
-  generation->heuristics()->record_cycle_start();
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
@@ -67,22 +65,14 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGenerat
   );
 }
 
-
 ShenandoahGCSession::~ShenandoahGCSession() {
-
-  _generation->heuristics()->record_cycle_end();
-  if (_heap->mode()->is_generational() &&
-      ((_generation->generation_mode() == GLOBAL) || _heap->upgraded_to_full())) {
-    // If we just completed a GLOBAL GC, claim credit for completion of young-gen and old-gen GC as well
-    _heap->young_generation()->heuristics()->record_cycle_end();
-    _heap->old_generation()->heuristics()->record_cycle_end();
-  }
+  _heap->on_cycle_end(_generation);
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
   _tracer->report_gc_reference_stats(_generation->ref_processor()->reference_process_stats());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
-  _heap->set_gc_cause(GCCause::_no_gc);
+
 }
 
 ShenandoahGCPauseMark::ShenandoahGCPauseMark(uint gc_id, SvcGCMarker::reason_type type) :
