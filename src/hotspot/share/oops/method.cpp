@@ -131,7 +131,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
 void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, constMethod());
   set_constMethod(NULL);
-  MetadataFactory::free_metadata(loader_data, method_data());
+  MetadataFactory::free_metadata(loader_data, method_data(), /*invoke_destructor*/ true);
   set_method_data(NULL);
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
@@ -144,8 +144,6 @@ void Method::release_C_heap_structures() {
 #if INCLUDE_JVMCI
     FailedSpeculation::free_failed_speculations(method_data()->get_failed_speculations_address());
 #endif
-    // Destroy MethodData
-    method_data()->~MethodData();
   }
 }
 
@@ -599,8 +597,7 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
   }
 
   if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
-    method_data->~MethodData();
-    MetadataFactory::free_metadata(loader_data, method_data);
+    MetadataFactory::free_metadata(loader_data, method_data, /*invoke_destructor*/ true);
     return;
   }
 

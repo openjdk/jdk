@@ -27,6 +27,8 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "metaprogramming/removePointer.hpp"
+#include "metaprogramming/removeCV.hpp"
 #include "oops/array.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -61,7 +63,7 @@ class MetadataFactory : AllStatic {
 
   // Deallocation method for metadata
   template <class T>
-  static void free_metadata(ClassLoaderData* loader_data, T md) {
+  static void free_metadata(ClassLoaderData* loader_data, T md, bool invoke_destructor = false) {
     if (md != NULL) {
       assert(loader_data != NULL, "shouldn't pass null");
       int size = md->size();
@@ -69,7 +71,12 @@ class MetadataFactory : AllStatic {
       assert(!md->on_stack(), "can't deallocate things on stack");
       assert(!md->is_shared(), "cannot deallocate if in shared spaces");
       md->deallocate_contents(loader_data);
-      loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, md->is_klass());
+      bool is_klass = md->is_klass();
+      if (invoke_destructor) {
+        using U = typename RemoveCV<typename RemovePointer<T>::type>::type;
+        md->~U();
+      }
+      loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, is_klass);
     }
   }
 };
