@@ -180,21 +180,25 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   return memblock;
 }
 
-void* MallocTracker::record_free(void* memblock) {
+void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
   assert(memblock != NULL, "precondition");
 
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();
 
-  MallocMemorySummary::record_free(header->size(), header->flags());
-  if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-  }
+  deaccount(header->free_info());
 
   header->mark_block_as_dead();
 
   return (void*)header;
+}
+
+void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
+  MallocMemorySummary::record_free(free_info.size, free_info.flags);
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
+  }
 }
 
 // Given a pointer, if it seems to point to the start of a valid malloced block,

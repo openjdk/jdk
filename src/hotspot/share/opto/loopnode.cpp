@@ -4190,45 +4190,40 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 }
 
 #ifdef ASSERT
-// Goes over all children of the root of the loop tree, collects all controls for the loop and its inner loops then
-// checks whether any control is a branch out of the loop and if it is, whether it's not a NeverBranch.
+// Goes over all children of the root of the loop tree. Check if any of them have a path
+// down to Root, that does not go via a NeverBranch exit.
 bool PhaseIdealLoop::only_has_infinite_loops() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  // start traversal at all loop heads of first-level loops
   for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
-    Unique_Node_List wq;
     Node* head = l->_head;
     assert(head->is_Region(), "");
-    for (uint i = 1; i < head->req(); ++i) {
-      Node* in = head->in(i);
-      if (get_loop(in) != _ltree_root) {
-        wq.push(in);
-      }
-    }
-    for (uint i = 0; i < wq.size(); ++i) {
-      Node* c = wq.at(i);
-      if (c == head) {
-        continue;
-      } else if (c->is_Region()) {
-        for (uint j = 1; j < c->req(); ++j) {
-          wq.push(c->in(j));
-        }
-      } else {
-        wq.push(c->in(0));
-      }
-    }
-    assert(wq.member(head), "");
-    for (uint i = 0; i < wq.size(); ++i) {
-      Node* c = wq.at(i);
-      if (c->is_MultiBranch()) {
-        for (DUIterator_Fast jmax, j = c->fast_outs(jmax); j < jmax; j++) {
-          Node* u = c->fast_out(j);
-          assert(u->is_CFG(), "");
-          if (!wq.member(u) && c->Opcode() != Op_NeverBranch) {
-            return false;
-          }
+    worklist.push(head);
+  }
+  // BFS traversal down the CFG, except through NeverBranch exits
+  for (uint i = 0; i < worklist.size(); ++i) {
+    Node* n = worklist.at(i);
+    assert(n->is_CFG(), "only traverse CFG");
+    if (n->is_Root()) {
+      // Found root -> there was an exit!
+      return false;
+    } else if (n->Opcode() == Op_NeverBranch) {
+      // Only follow the loop-internal projection, not the NeverBranch exit
+      ProjNode* proj = n->as_Multi()->proj_out_or_null(0);
+      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
+      worklist.push(proj);
+    } else {
+      // Traverse all CFG outputs
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (use->is_CFG()) {
+          worklist.push(use);
         }
       }
     }
   }
+  // No exit found for any loop -> all are infinite
   return true;
 }
 #endif
