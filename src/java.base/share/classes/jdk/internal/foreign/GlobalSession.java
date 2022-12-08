@@ -28,9 +28,9 @@ package jdk.internal.foreign;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * The global, non-closeable, shared scope. Similar to a shared scope, but its {@link #close()} method throws unconditionally.
- * Adding new resources to the global scope, does nothing: as the scope can never become not-alive, there is nothing to track.
- * Acquiring and or releasing a memory scope similarly does nothing.
+ * The global, non-closeable, shared session. Similar to a shared session, but its {@link #close()} method throws unconditionally.
+ * Adding new resources to the global session, does nothing: as the session can never become not-alive, there is nothing to track.
+ * Acquiring and or releasing a memory session similarly does nothing.
  */
 final class GlobalSession extends MemorySessionImpl {
 

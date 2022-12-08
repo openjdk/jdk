@@ -154,7 +154,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     /**
      * Mismatch over long lengths.
      */
-    public static long vectorizedMismatchLargeForBytes(MemorySessionImpl aScope, MemorySessionImpl bScope,
+    public static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
                                                         Object a, long aOffset,
                                                         Object b, long bOffset,
                                                         long length) {
@@ -169,7 +169,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 size = (int) remaining;
                 lastSubRange = true;
             }
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aScope, bScope,
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
                     a, aOffset + off,
                     b, bOffset + off,
                     size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);

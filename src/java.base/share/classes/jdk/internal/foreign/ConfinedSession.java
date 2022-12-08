@@ -32,8 +32,8 @@ import java.lang.ref.Cleaner;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * A confined scope, which features an owner thread. The liveness check features an additional
- * confinement check - that is, calling any operation on this scope from a thread other than the
+ * A confined session, which features an owner thread. The liveness check features an additional
+ * confinement check - that is, calling any operation on this session from a thread other than the
  * owner thread will result in an exception. Because of this restriction, checking the liveness bit
  * can be performed in plain mode.
  */

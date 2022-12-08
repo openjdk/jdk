@@ -31,12 +31,12 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /**
- * This is an implicit, GC-backed memory scope. Implicit scopes cannot be closed explicitly.
- * While it would be possible to model an implicit scope as a non-closeable view of a shared
- * scope, it is better to capture the fact that an implicit scope is not just a non-closeable
- * view of some scope which might be closeable. This is useful e.g. in the implementations of
+ * This is an implicit, GC-backed memory session. Implicit sessions cannot be closed explicitly.
+ * While it would be possible to model an implicit session as a non-closeable view of a shared
+ * session, it is better to capture the fact that an implicit session is not just a non-closeable
+ * view of some session which might be closeable. This is useful e.g. in the implementations of
  * {@link DirectBuffer#address()}, where obtaining an address of a buffer instance associated
- * with a potentially closeable scope is forbidden.
+ * with a potentially closeable session is forbidden.
  */
 final class ImplicitSession extends SharedSession {
 
