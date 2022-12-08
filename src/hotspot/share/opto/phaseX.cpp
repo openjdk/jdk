@@ -1814,9 +1814,9 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     const Type* tnew = n->Value(this);
     if (told != tnew) {
       // Check special cases that are ok
-      if (told->isa_integer(tnew->basic_type()) ) { // both either int or long
-        const TypeInteger *t0 = told->is_integer(tnew->basic_type());
-        const TypeInteger *t1 = tnew->is_integer(tnew->basic_type());
+      if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
+        const TypeInteger* t0 = told->is_integer(tnew->basic_type());
+        const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
         if (t0->lo_as_long() == t1->lo_as_long() &&
             t0->hi_as_long() == t1->hi_as_long()) {
           continue; // ignore integer widen
