@@ -54,7 +54,7 @@ template <typename T>
 void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp) {
   T event(UNTIMED);
   if (event.should_commit()) {
-    event.set_endtime(timestamp);
+    event.set_starttime(timestamp);
     event.set_endtime(timestamp);
     event.set_gcId(GCId::current());
     event.set_objectClass(klass);
