@@ -545,7 +545,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: macosx-bundle-id-base, TYPE: string,
     DEFAULT: $MACOSX_BUNDLE_ID_BASE,
     DESC: [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.],
-    DEFAULT_DESC: [not specified],
+    DEFAULT_DESC: [based on branding.conf and VERSION_PRE],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-macosx-bundle-id-base must have a value"
