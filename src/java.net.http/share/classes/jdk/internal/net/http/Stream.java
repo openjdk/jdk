@@ -1598,7 +1598,7 @@ class Stream<T> extends ExchangeImpl<T> {
             // if the subscriber has already completed,
             // there is nothing to do...
             if (!completed()) {
-                // otherwise makes sur it will be completed
+                // otherwise make sure it will be completed
                 var ex = cause == null
                         ? new IOException("stream closed")
                         : cause;
