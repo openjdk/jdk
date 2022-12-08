@@ -33,7 +33,6 @@ import jdk.javadoc.doclet.Taglet;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
