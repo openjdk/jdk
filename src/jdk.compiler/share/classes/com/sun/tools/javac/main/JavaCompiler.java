@@ -1640,7 +1640,11 @@ public class JavaCompiler {
                 }
                 if (results != null && file != null)
                     results.add(file);
-            } catch (IOException | FileSystemNotFoundException | InvalidPathException | ReadOnlyFileSystemException ex) {
+            } catch (IOException
+                    | UncheckedIOException
+                    | FileSystemNotFoundException
+                    | InvalidPathException
+                    | ReadOnlyFileSystemException ex) {
                 log.error(cdef.pos(),
                           Errors.ClassCantWrite(cdef.sym, ex.getMessage()));
                 return;
