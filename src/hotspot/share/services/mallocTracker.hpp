@@ -153,7 +153,12 @@ class MallocMemorySnapshot : public ResourceObj {
 
 
  public:
-  inline MallocMemory*  by_type(MEMFLAGS flags) {
+  inline MallocMemory* by_type(MEMFLAGS flags) {
+    int index = NMTUtil::flag_to_index(flags);
+    return &_malloc[index];
+  }
+
+  inline const MallocMemory* by_type(MEMFLAGS flags) const {
     int index = NMTUtil::flag_to_index(flags);
     return &_malloc[index];
   }
