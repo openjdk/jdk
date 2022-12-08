@@ -32,13 +32,33 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
 JvmtiTagMapKey::JvmtiTagMapKey(oop obj): _obj(obj) {}
+
+JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
+  // move object into WeakHandle when copying into the table
+  assert(src._obj != nullptr, "must be set");
+  _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
+  _obj = nullptr;
+}
+
+JvmtiTagMapKey::~JvmtiTagMapKey() {
+  // If obj is set null it out, this is called for stack object on lookup,
+  // and it should not have a WeakHandle created for it yet.
+  if (_obj != nullptr) {
+    _obj = nullptr;
+    assert(_wh.is_null(), "WeakHandle should be null");
+  } else {
+    _wh.release(JvmtiExport::weak_tag_storage());
+  }
+}
+
+JvmtiTagMapKey::JvmtiTagMapKey(oop obj) : _obj(obj) {}
 
 JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
   // move object into WeakHandle when copying into the table
@@ -68,18 +88,15 @@ oop JvmtiTagMapKey::object_no_keepalive() const {
   return _wh.peek();
 }
 
-JvmtiTagMapTable::JvmtiTagMapTable()
-  :_table(Constants::_table_size) {
-}
+JvmtiTagMapTable::JvmtiTagMapTable() : _table(Constants::_table_size) {}
 
 void JvmtiTagMapTable::clear() {
   struct RemoveAll {
-    bool do_entry(JvmtiTagMapKey& entry, jlong const& tag)
-    {
+    bool do_entry(const JvmtiTagMapKey& entry, const jlong& tag) {
       return true;
     }
-  } RemoveAll;
-  _table.unlink(&RemoveAll);
+  } remove_all;
+  _table.unlink(&remove_all);
 
   assert(_table.number_of_entries() == 0, "should have removed all entries");
 }
@@ -89,16 +106,17 @@ JvmtiTagMapTable::~JvmtiTagMapTable() {
 }
 
 jlong JvmtiTagMapTable::find(oop obj) {
-   if (is_empty()) {
+  if (is_empty()) {
     return 0;
-   }
-   if (obj->fast_no_hash_check()) {
+  }
+
+  if (obj->fast_no_hash_check()) {
     return 0;
-   } else {
-     JvmtiTagMapKey jtme(obj);
-     jlong* found = _table.get(jtme);
-     return found == NULL ? 0 : *found;
-   }
+  }
+
+  JvmtiTagMapKey jtme(obj);
+  jlong* found = _table.get(jtme);
+  return found == NULL ? 0 : *found;
 }
 
 bool JvmtiTagMapTable::add(oop obj, jlong tag) {
@@ -133,15 +151,15 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   struct IsDead {
     GrowableArray<jlong>* _objects;
     IsDead(GrowableArray<jlong>* objects) : _objects(objects) {}
-    bool do_entry(JvmtiTagMapKey const& entry, jlong tag) {
+    bool do_entry(const JvmtiTagMapKey& entry, jlong tag) {
       if (entry.object_no_keepalive() == NULL) {
-        if (_objects!=NULL) {
+        if (_objects != NULL) {
           _objects->append(tag);
         }
         return true;
       }
       return false;;
     }
-  } IsDead(objects);
-  _table.unlink(&IsDead);
+  } is_dead(objects);
+  _table.unlink(&is_dead);
 }

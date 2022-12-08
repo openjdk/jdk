@@ -185,8 +185,8 @@ static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
 //
 // }
 // wrapper goes out of scope here which results in the destructor
-//      checking to see if the object has been tagged, untagged, or the
-//      tag value has changed.
+// checking to see if the object has been tagged, untagged, or the
+// tag value has changed.
 //
 class CallbackWrapper : public StackObj {
  private:
@@ -229,7 +229,7 @@ class CallbackWrapper : public StackObj {
   }
 
   ~CallbackWrapper() {
-    post_callback_tag_update(_o, _hashmap,  _obj_tag);
+    post_callback_tag_update(_o, _hashmap, _obj_tag);
   }
 
   inline jlong* obj_tag_p()                     { return &_obj_tag; }
@@ -238,15 +238,12 @@ class CallbackWrapper : public StackObj {
   inline jlong klass_tag() const                { return _klass_tag; }
 };
 
-
-
 // callback post-callback to tag, untag, or update the tag of an object
-
 void inline CallbackWrapper::post_callback_tag_update(oop o,
                                                       JvmtiTagMapTable* hashmap,
                                                       jlong obj_tag) {
   jlong current_tag = hashmap->find(o);
-  if (current_tag == 0 ) {
+  if (current_tag == 0) {
     if (obj_tag != 0) {
       // callback has tagged the object
       assert(Thread::current()->is_VM_thread(), "must be VMThread");
@@ -258,7 +255,7 @@ void inline CallbackWrapper::post_callback_tag_update(oop o,
     if (obj_tag == 0) {
       hashmap->remove(o);
     } else {
-      if (obj_tag != current_tag ) {
+      if (obj_tag != current_tag) {
         hashmap->update(o, obj_tag);
       }
     }
@@ -285,7 +282,6 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
  private:
   bool _is_reference_to_self;
   JvmtiTagMapTable* _referrer_hashmap;
-
   oop _referrer;
   jlong _referrer_obj_tag;
   jlong _referrer_klass_tag;
@@ -350,7 +346,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
 
-  //see if the object is already tagged
+  // see if the object is already tagged
   JvmtiTagMapTable* hashmap = _hashmap;
   jlong found_tag = hashmap->find(o);
 
@@ -368,7 +364,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
     if (tag == 0) {
       hashmap->remove(o);
     } else {
-        hashmap->update(o, tag);
+      hashmap->update(o, tag);
     }
   }
 }
@@ -1263,7 +1259,7 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
   // - if it matches then we create a JNI local reference to the object
   // and record the reference and tag value.
   //
-  bool do_entry(JvmtiTagMapKey& key , jlong& value ) {
+  bool do_entry(JvmtiTagMapKey& key, jlong& value) {
     for (int i = 0; i < _tag_count; i++) {
       if (_tags[i] == value) {
         // The reference in this tag map could be the only (implicitly weak)

@@ -47,7 +47,7 @@ class JvmtiTagMapKey : public CHeapObj<mtInternal> {
  public:
   JvmtiTagMapKey(oop obj);
   JvmtiTagMapKey(const JvmtiTagMapKey& src);
-  JvmtiTagMapKey& operator=(JvmtiTagMapKey const&) = delete;
+  JvmtiTagMapKey& operator=(const JvmtiTagMapKey&) = delete;
 
   ~JvmtiTagMapKey();
 
@@ -55,12 +55,12 @@ class JvmtiTagMapKey : public CHeapObj<mtInternal> {
   oop object() const;
   oop object_no_keepalive() const;
 
-  static unsigned get_hash(JvmtiTagMapKey const &entry)  {
+  static unsigned get_hash(const JvmtiTagMapKey& entry) {
     assert(entry._obj != NULL, "must lookup obj to hash");
     return entry._obj->identity_hash();
   }
 
-  static bool equals(JvmtiTagMapKey const & lhs, JvmtiTagMapKey const & rhs) {
+  static bool equals(const JvmtiTagMapKey& lhs, const JvmtiTagMapKey& rhs) {
     oop lhs_obj = lhs._obj != nullptr ? lhs._obj : lhs.object_no_keepalive();
     oop rhs_obj = rhs._obj != nullptr ? rhs._obj : rhs.object_no_keepalive();
     return lhs_obj == rhs_obj;
@@ -105,7 +105,7 @@ class JvmtiTagMapTable : public CHeapObj<mtInternal> {
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapKeyClosure {
  public:
-  virtual bool do_entry(JvmtiTagMapKey& key , jlong& value) = 0;
+  virtual bool do_entry(JvmtiTagMapKey& key, jlong& value) = 0;
 };
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP
