@@ -1696,23 +1696,6 @@ encode %{
     emit_d8( cbuf, $brOffs$$constant );
   %}
 
-  enc_class enc_PartialSubtypeCheck( ) %{
-    Register Redi = as_Register(EDI_enc); // result register
-    Register Reax = as_Register(EAX_enc); // super class
-    Register Recx = as_Register(ECX_enc); // killed
-    Register Resi = as_Register(ESI_enc); // sub class
-    Label miss;
-
-    MacroAssembler _masm(&cbuf);
-    __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
-                                     NULL, &miss,
-                                     /*set_cond_codes:*/ true);
-    if ($primary) {
-      __ xorptr(Redi, Redi);
-    }
-    __ bind(miss);
-  %}
-
   enc_class FFree_Float_Stack_All %{    // Free_Float_Stack_All
     MacroAssembler masm(&cbuf);
     int start = masm.offset();
@@ -12770,44 +12753,23 @@ instruct jmpConUCF2(cmpOpUCF2 cop, eFlagsRegUCF cmp, label labl) %{
 %}
 
 // ============================================================================
-// The 2nd slow-half of a subtype check.  Scan the subklass's 2ndary superklass
-// array for an instance of the superklass.  Set a hidden internal cache on a
-// hit (cache is checked with exposed code in gen_subtype_check()).  Return
-// NZ for a miss or zero for a hit.  The encoding ALSO sets flags.
-instruct partialSubtypeCheck( eDIRegP result, eSIRegP sub, eAXRegP super, eCXRegI rcx, eFlagsReg cr ) %{
+// The 2nd slow-half of a subtype check. Scan the subklass's 2ndary superklass
+// array for an instance of the superklass. Return NZ for a miss or zero for a hit.
+instruct partialSubtypeCheck(eDIRegP result, eSIRegP sub, eAXRegP super, eCXRegI tmp, eFlagsReg cr) %{
   match(Set result (PartialSubtypeCheck sub super));
-  effect( KILL rcx, KILL cr );
+  effect(TEMP tmp, KILL cr);
 
-  ins_cost(1100);  // slightly larger than the next version
-  format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
-            "MOV    ECX,[EDI+ArrayKlass::length]\t# length to scan\n\t"
-            "ADD    EDI,ArrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
-            "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
-            "JNE,s  miss\t\t# Missed: EDI not-zero\n\t"
-            "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache\n\t"
-            "XOR    $result,$result\t\t Hit: EDI zero\n\t"
-     "miss:\t" %}
+  ins_cost(1100);
+  format %{ "check_klass_subtype_slow_path" %}
 
-  opcode(0x1); // Force a XOR of EDI
-  ins_encode( enc_PartialSubtypeCheck() );
-  ins_pipe( pipe_slow );
-%}
-
-instruct partialSubtypeCheck_vs_Zero( eFlagsReg cr, eSIRegP sub, eAXRegP super, eCXRegI rcx, eDIRegP result, immP0 zero ) %{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect( KILL rcx, KILL result );
-
-  ins_cost(1000);
-  format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
-            "MOV    ECX,[EDI+ArrayKlass::length]\t# length to scan\n\t"
-            "ADD    EDI,ArrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
-            "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
-            "JNE,s  miss\t\t# Missed: flags NZ\n\t"
-            "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache, flags Z\n\t"
-     "miss:\t" %}
-
-  opcode(0x0);  // No need to XOR EDI
-  ins_encode( enc_PartialSubtypeCheck() );
+  ins_encode %{
+    Label miss;
+    __ check_klass_subtype_slow_path($sub$$Register, $super$$Register,
+                                     $tmp$$Register, $result$$Register,
+                                     NULL, &miss);
+    __ xorptr($result$$Register, $result$$Register);
+    __ bind(miss);
+  %}
   ins_pipe( pipe_slow );
 %}
 
