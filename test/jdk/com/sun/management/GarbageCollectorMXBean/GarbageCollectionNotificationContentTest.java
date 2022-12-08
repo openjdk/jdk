@@ -91,7 +91,7 @@ public class GarbageCollectionNotificationContentTest {
             throw new Exception("Test incorrect: no GC MXBeans");
         numberOfGCMBeans = names.size();
         for (ObjectName n : names) {
-            if(mbs.isInstanceOf(n, "javax.management.NotificationEmitter")) {
+            if (mbs.isInstanceOf(n, "javax.management.NotificationEmitter")) {
                 listenerInvoked.put(n.getCanonicalName(), null);
                 GcListener listener = new GcListener();
                 mbs.addNotificationListener(n, listener, null, null);
