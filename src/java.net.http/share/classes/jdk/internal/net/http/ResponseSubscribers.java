@@ -481,7 +481,12 @@ public class ResponseSubscribers {
                     if (debug.on()) debug.log("Next Buffer");
                     currentBuffer = currentListItr.next();
                 } catch (InterruptedException ex) {
-                    // continue
+                    try {
+                        close();
+                    } catch (IOException ignored) {
+                    }
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();
@@ -549,13 +554,13 @@ public class ResponseSubscribers {
                         closed = this.closed;
                         if (!closed) {
                             this.subscription = s;
+                            assert buffers.remainingCapacity() > 1; // should contain at least 2
                         }
                     }
                     if (closed) {
                         s.cancel();
                         return;
                     }
-                    assert buffers.remainingCapacity() > 1; // should contain at least 2
                     if (debug.on())
                         debug.log("onSubscribe: requesting "
                                   + Math.max(1, buffers.remainingCapacity() - 1));

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -84,7 +84,9 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.DefaultCaseLabelTree;
+import com.sun.source.tree.ModuleTree;
 import com.sun.source.util.TreePathScanner;
+import com.sun.tools.javac.api.JavacTaskPool;
 import java.util.Objects;
 
 public class JavacParserTest extends TestCase {
@@ -106,7 +108,11 @@ public class JavacParserTest extends TestCase {
         private String text;
 
         public MyFileObject(String text) {
-            super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
+            this("Test", text);
+        }
+
+        public MyFileObject(String fileName, String text) {
+            super(URI.create("myfo:/" + fileName + ".java"), JavaFileObject.Kind.SOURCE);
             this.text = text;
         }
 
@@ -1987,6 +1993,74 @@ public class JavacParserTest extends TestCase {
                 return super.visitModifiers(node, p);
             }
         }.scan(cut, null);
+    }
+
+    @Test //JDK-8295401
+    void testModuleInfoProvidesRecovery() throws IOException {
+        String code = """
+                      module m {
+                          $DIRECTIVE
+                      }
+                      """;
+        record Test(String directive, int prefix, Kind expectedKind) {}
+        Test[] tests = new Test[] {
+            new Test("uses api.api.API;", 4, Kind.USES),
+            new Test("opens api.api to other.module;", 5, Kind.OPENS),
+            new Test("exports api.api to other.module;", 7, Kind.EXPORTS),
+            new Test("provides java.util.spi.ToolProvider with impl.ToolProvider;", 8, Kind.PROVIDES),
+        };
+        JavacTaskPool pool = new JavacTaskPool(1);
+        for (Test test : tests) {
+            String directive = test.directive();
+            for (int i = test.prefix(); i < directive.length(); i++) {
+                String replaced = code.replace("$DIRECTIVE", directive.substring(0, i));
+                pool.getTask(null, null, d -> {}, List.of(), null, List.of(new MyFileObject(replaced)), task -> {
+                    try {
+                        CompilationUnitTree cut = task.parse().iterator().next();
+                        new TreePathScanner<Void, Void>() {
+                            @Override
+                            public Void visitModule(ModuleTree node, Void p) {
+                                assertEquals("Unexpected directives size: " + node.getDirectives().size(),
+                                             node.getDirectives().size(),
+                                             1);
+                                assertEquals("Unexpected directive: " + node.getDirectives().get(0).getKind(),
+                                             node.getDirectives().get(0).getKind(),
+                                             test.expectedKind);
+                                return super.visitModule(node, p);
+                            }
+                        }.scan(cut, null);
+                        return null;
+                    } catch (IOException ex) {
+                        throw new IllegalStateException(ex);
+                    }
+                });
+            }
+        }
+        String extendedCode = """
+                              module m {
+                                  provides ;
+                                  provides java.;
+                                  provides java.util.spi.ToolProvider with ;
+                                  provides java.util.spi.ToolProvider with impl.;
+                              """;
+        pool.getTask(null, null, d -> {}, List.of(), null, List.of(new MyFileObject("module-info", extendedCode)), task -> {
+            try {
+                CompilationUnitTree cut = task.parse().iterator().next();
+                task.analyze();
+                new TreePathScanner<Void, Void>() {
+                    @Override
+                    public Void visitModule(ModuleTree node, Void p) {
+                        assertEquals("Unexpected directives size: " + node.getDirectives().size(),
+                                     node.getDirectives().size(),
+                                     4);
+                        return super.visitModule(node, p);
+                    }
+                }.scan(cut, null);
+                return null;
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        });
     }
 
     void run(String[] args) throws Exception {

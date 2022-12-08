@@ -566,12 +566,16 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" />
   </Event>
 
-  <Event name="JITRestart" category="Java Virtual Machine, Compiler" label="JIT Restart" stackTrace="false" startTime="false" thread="true">
+  <Event name="JITRestart" category="Java Virtual Machine, Compiler" label="JIT Restart"
+         description="Restart of the JIT compilers after they were stopped"
+         stackTrace="false" startTime="false" thread="true">
     <Field type="ulong" contentType="bytes" name="freedMemory" label="Freed Memory" />
     <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
   </Event>
 
-  <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true">
+  <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation"
+         description="Results of method compilation attempts"
+         thread="true">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="Method" name="method" label="Method" />
@@ -582,13 +586,17 @@
     <Field type="ulong" contentType="bytes" name="inlinedBytes" label="Inlined Code Size" />
   </Event>
 
-  <Event name="CompilerPhase" category="Java Virtual Machine, Compiler" label="Compiler Phase" thread="true" >
+  <Event name="CompilerPhase" category="Java Virtual Machine, Compiler" label="Compiler Phase"
+         description="Describes various phases of the compilation process like inlining or string optimization related phases"
+         thread="true">
     <Field type="CompilerPhaseType" name="phase" label="Compile Phase" />
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="ushort" name="phaseLevel" label="Phase Level" />
   </Event>
 
-  <Event name="CompilationFailure" category="Java Virtual Machine, Compiler" label="Compilation Failure" thread="true"  startTime="false">
+  <Event name="CompilationFailure" category="Java Virtual Machine, Compiler" label="Compilation Failure"
+         description="In case a JIT compilation failed, a compilation failure is triggered, reporting the reason"
+         thread="true" startTime="false">
     <Field type="string" name="failureMessage" label="Failure Message" />
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
   </Event>
@@ -599,7 +607,9 @@
     <Field type="string" name="descriptor" label="Method Descriptor" />
   </Type>
 
-  <Event name="CompilerInlining" category="Java Virtual Machine, Compiler, Optimization" label="Method Inlining" thread="true" startTime="false">
+  <Event name="CompilerInlining" category="Java Virtual Machine, Compiler, Optimization" label="Method Inlining"
+         description="Describes the result of a method inlining attempt"
+         thread="true" startTime="false">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="Method" name="caller" label="Caller Method" />
     <Field type="CalleeMethod" name="callee" struct="true" label="Callee Method" />
@@ -608,7 +618,9 @@
     <Field type="int" name="bci" label="Bytecode Index" />
   </Event>
 
-  <Event name="CodeCacheFull" category="Java Virtual Machine, Code Cache" label="Code Cache Full" thread="true" startTime="false">
+  <Event name="CodeCacheFull" category="Java Virtual Machine, Code Cache" label="Code Cache Full"
+         description="A code heap is full, this leads to disabling the compiler"
+         thread="true" startTime="false">
     <Field type="CodeBlobType" name="codeBlobType" label="Code Heap" />
     <Field type="ulong" contentType="address" name="startAddress" label="Start Address" />
     <Field type="ulong" contentType="address" name="commitedTopAddress" label="Commited Top" />
@@ -621,7 +633,9 @@
     <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
   </Event>
 
-  <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization" thread="true" stackTrace="true" startTime="false">
+  <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization"
+         description="Describes the detection of an uncommon situation in a compiled method which may lead to deoptimization of the method"
+         thread="true" stackTrace="true" startTime="false">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="Method" name="method" label="Method" />
@@ -706,6 +720,19 @@
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
+  <Event name="NativeMemoryUsage" category="Java Virtual Machine, Memory" label="Native Memory Usage Per Type"
+    description="Native memory usage for a given memory type in the JVM" period="everyChunk">
+    <Field type="string" name="type" label="Memory Type" description="Type used for the native memory allocation" />
+    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Reserved bytes for this type" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Committed bytes for this type" />
+  </Event>
+
+  <Event name="NativeMemoryUsageTotal" category="Java Virtual Machine, Memory" label="Total Native Memory Usage"
+    description="Total native memory usage for the JVM. Might not be the exact sum of the NativeMemoryUsage events due to timeing." period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="reserved" label="Reserved Memory" description="Total amount of reserved bytes for the JVM" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed Memory" description="Total amount of committed bytes for the JVM" />
+  </Event>
+
   <Event name="DumpReason" category="Flight Recorder" label="Recording Reason"
          description="Who requested the recording and why"
          startTime="false">
@@ -732,11 +759,15 @@
     <Field type="long" name="pid" label="Process Identifier" />
      </Event>
 
-  <Event name="OSInformation" category="Operating System" label="OS Information" period="endChunk">
+  <Event name="OSInformation" category="Operating System" label="OS Information"
+         description="Description of the OS the JVM runs on, for example, a uname-like output"
+         period="endChunk">
     <Field type="string" name="osVersion" label="OS Version" />
   </Event>
 
-  <Event name="VirtualizationInformation" category="Operating System" label="Virtualization Information" period="endChunk">
+  <Event name="VirtualizationInformation" category="Operating System" label="Virtualization Information"
+         description="Description of the virtualization technology the JVM runs on"
+         period="endChunk">
     <Field type="string" name="name" label="Name" />
   </Event>
 
@@ -745,7 +776,9 @@
     <Field type="string" name="value" label="Value" />
   </Event>
 
-  <Event name="InitialEnvironmentVariable" category="Operating System" label="Initial Environment Variable" period="endChunk">
+  <Event name="InitialEnvironmentVariable" category="Operating System" label="Initial Environment Variable"
+         description="Key-value pairs for environment variables at JVM startup"
+         period="endChunk">
     <Field type="string" name="key" label="Key" />
     <Field type="string" name="value" label="Value" />
   </Event>
@@ -904,6 +937,7 @@
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="int" name="threadCount" label="Thread Count" />
     <Field type="boolean" name="tieredCompilation" label="Tiered Compilation" />
+    <Field type="boolean" name="dynamicCompilerThreadCount" label="Uses Dynamic Number of Compiler Threads" />
   </Event>
 
   <Event name="CodeCacheStatistics" category="Java Virtual Machine, Code Cache" label="Code Cache Statistics" thread="false" period="everyChunk" startTime="false">

@@ -366,6 +366,17 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          UseChaCha20Intrinsics = true;
+      }
+  } else if (UseChaCha20Intrinsics) {
+      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          warning("ChaCha20 intrinsic requires ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
     UseBASE64Intrinsics = true;
   }
