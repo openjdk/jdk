@@ -137,6 +137,8 @@
  * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  *
+ * <h2><a id="related">Related Documentation</a></h2>
+ *
  * For overviews, tutorials, examples, guides, and other documentation,
  * please see:
  * <ul>
