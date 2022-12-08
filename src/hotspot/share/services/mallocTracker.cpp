@@ -183,7 +183,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 #ifdef ASSERT
   // Read back
   {
-    MallocHeader* header2 = MallocHeader::assert_block_integrity(memblock);
+    MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
     assert(header2->flags() == flags, "Wrong flags");
   }
@@ -196,7 +196,7 @@ void* MallocTracker::record_free(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
   assert(memblock != NULL, "precondition");
 
-  MallocHeader* header = MallocHeader::assert_block_integrity(memblock);
+  MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
   MallocMemorySummary::record_free(header->size(), header->flags());
   if (MemTracker::tracking_level() == NMT_detail) {

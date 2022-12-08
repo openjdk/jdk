@@ -51,11 +51,13 @@ inline void MallocHeader::mark_block_as_dead() {
   set_footer(_footer_canary_dead_mark);
 }
 
-inline bool MallocHeader::check_pointer_integrity(uintptr_t header, char* msg, size_t msglen, address* p_corruption) {
+inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* msg, size_t msglen) {
+  // Handle the pointer as an integral type
+  uintptr_t ptr = reinterpret_cast<uintptr_t>(payload);
   // Weed out obviously wrong block addresses of NULL or very low
   // values. Note that we should not call this for ::free(NULL),
   // which should be handled by os::free() above us.
-  if (header < K) {
+  if (ptr < K) {
     jio_snprintf(msg, msglen, "invalid block address");
     return false;
   }
@@ -75,8 +77,7 @@ inline bool MallocHeader::check_pointer_integrity(uintptr_t header, char* msg, s
   // we test the smallest alignment we know.
   // Should we ever start using std::max_align_t, this would be one place to
   // fix up.
-  if (!is_aligned(header, sizeof(uint64_t))) {
-    *p_corruption = (address)header;
+  if (!is_aligned(ptr, sizeof(uint64_t))) {
     jio_snprintf(msg, msglen, "block address is unaligned");
     return false;
   }
@@ -84,31 +85,27 @@ inline bool MallocHeader::check_pointer_integrity(uintptr_t header, char* msg, s
 }
 
 template<typename IN, typename OUT>
-inline OUT MallocHeader::assert_block_integrity_internal(IN memblock){
+inline OUT MallocHeader::resolve_checked_impl(IN memblock){
   char msg[256];
   address corruption = NULL;
-  uintptr_t header = reinterpret_cast<uintptr_t>(memblock) - sizeof(MallocHeader);
-  if (!check_pointer_integrity(header, msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      MallocHeader::print_block_on_error(tty, (address)header);
-    }
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", header, msg);
+  if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
+    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", memblock, msg);
   }
-  OUT header_pointer = &(((OUT)memblock)[-1]);
+  OUT header_pointer = (OUT)memblock - 1;
   if (!header_pointer->check_block_integrity( msg, sizeof(msg), &corruption)) {
     if (corruption != NULL) {
-      MallocHeader::print_block_on_error(tty, (address)header);
+      MallocHeader::print_block_on_error(tty, (address)memblock);
     }
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", header, msg);
+    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", memblock, msg);
   }
   return header_pointer;
 }
 
-inline MallocHeader* MallocHeader::assert_block_integrity(void* memblock) {
-  return MallocHeader::assert_block_integrity_internal<void*, MallocHeader*>(memblock);
+inline MallocHeader* MallocHeader::resolve_checked(void* memblock) {
+  return MallocHeader::resolve_checked_impl<void*, MallocHeader*>(memblock);
 }
-inline const MallocHeader* MallocHeader::assert_block_integrity(const void* memblock) {
-  return MallocHeader::assert_block_integrity_internal<const void*, const MallocHeader*>(memblock);
+inline const MallocHeader* MallocHeader::resolve_checked(const void* memblock) {
+  return MallocHeader::resolve_checked_impl<const void*, const MallocHeader*>(memblock);
 }
 
 inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {

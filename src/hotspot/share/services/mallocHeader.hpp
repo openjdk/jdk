@@ -115,7 +115,7 @@ class MallocHeader {
   void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
   template<typename IN, typename OUT>
-  inline static OUT assert_block_integrity_internal(IN memblock);
+  inline static OUT resolve_checked_impl(IN memblock);
 public:
 
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
@@ -134,12 +134,12 @@ public:
   // Check correct alignment and placement of pointer, fill in short descriptive text and return false
   // if this is not the case.
   // Returns true if the memblock looks OK.
-  inline static bool check_pointer_integrity(uintptr_t header, char* msg, size_t msglen, address* p_corruption);
+  inline static bool is_valid_malloced_pointer(const void* payload, char* msg, size_t msglen);
 
   // If block is broken, print out a report to tty (optionally with
   // hex dump surrounding the broken block), then trigger a fatal error
-  inline static const MallocHeader* assert_block_integrity(const void* memblock);
-  inline static MallocHeader* assert_block_integrity(void* memblock);
+  inline static const MallocHeader* resolve_checked(const void* memblock);
+  inline static MallocHeader* resolve_checked(void* memblock);
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms
