@@ -2032,7 +2032,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         // (Folds up type checking code.)
         assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
         ciKlass *ss = klass->super_of_depth(depth);
-        return ss ? TypeKlassPtr::make(ss) : TypePtr::NULL_PTR;
+        return ss ? TypeKlassPtr::make(ss, Type::trust_interfaces) : TypePtr::NULL_PTR;
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
@@ -2063,7 +2063,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
           // (Folds up type checking code.)
           assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
           ciKlass *ss = klass->super_of_depth(depth);
-          return ss ? TypeKlassPtr::make(ss) : TypePtr::NULL_PTR;
+          return ss ? TypeKlassPtr::make(ss, Type::trust_interfaces) : TypePtr::NULL_PTR;
         }
       }
     }
@@ -2323,14 +2323,14 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
             // klass.  Users of this result need to do a null check on the returned klass.
             return TypePtr::NULL_PTR;
           }
-          return TypeKlassPtr::make(ciArrayKlass::make(t));
+          return TypeKlassPtr::make(ciArrayKlass::make(t), Type::trust_interfaces);
         }
         if (!t->is_klass()) {
           // a primitive Class (e.g., int.class) has NULL for a klass field
           return TypePtr::NULL_PTR;
         }
         // (Folds up the 1st indirection in aClassConstant.getModifiers().)
-        return TypeKlassPtr::make(t->as_klass());
+        return TypeKlassPtr::make(t->as_klass(), Type::trust_interfaces);
       }
       // non-constant mirror, so we can't tell what's going on
     }
@@ -2368,7 +2368,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       ciKlass* sup = tkls->is_instklassptr()->instance_klass()->super();
       // The field is Klass::_super.  Return its (constant) value.
       // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
-      return sup ? TypeKlassPtr::make(sup) : TypePtr::NULL_PTR;
+      return sup ? TypeKlassPtr::make(sup, Type::trust_interfaces) : TypePtr::NULL_PTR;
     }
   }
 
