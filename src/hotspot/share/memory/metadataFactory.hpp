@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,9 @@ class MetadataFactory : AllStatic {
       loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, md->is_klass());
     }
   }
+
+  // Deallocation method for MethodData because it has a destructor
+  static void free_metadata(ClassLoaderData* loader_data, MethodData* md);
 };
 
 #endif // SHARE_MEMORY_METADATAFACTORY_HPP

@@ -598,7 +598,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // Can't release the constant pool here because the constant pool can be
   // deallocated separately from the InstanceKlass for default methods and
   // redefine classes.
-  release_C_heap_structures(/* release_constant_pool */ false);
+  release_C_heap_structures(/* release_constant_and_methods */ false);
 
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
@@ -2665,12 +2665,14 @@ static void method_release_C_heap_structures(Method* m) {
 }
 
 // Called also by InstanceKlass::deallocate_contents, with false for release_constant_pool.
-void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
+void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   // Clean up C heap
   Klass::release_C_heap_structures();
 
   // Deallocate and call destructors for MDO mutexes
-  methods_do(method_release_C_heap_structures);
+  if (release_sub_metadata) {
+    methods_do(method_release_C_heap_structures);
+  }
 
   // Destroy the init_monitor
   delete _init_monitor;
@@ -2710,7 +2712,7 @@ void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
 
   FREE_C_HEAP_ARRAY(char, _source_debug_extension);
 
-  if (release_constant_pool) {
+  if (release_sub_metadata) {
     constants()->release_C_heap_structures();
   }
 }
