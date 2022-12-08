@@ -72,7 +72,11 @@ class MetadataFactory : AllStatic {
       assert(!md->is_shared(), "cannot deallocate if in shared spaces");
       md->deallocate_contents(loader_data);
       bool is_klass = md->is_klass();
+      // If requested, call the destructor.
       if (invoke_destructor) {
+        // This is currently used for MethodData which has a member that needs to be destructed to
+        // release resources. Most Metadata derived classes have noop destructors and/or cleanup
+        // using deallocate_contents.
         using U = typename RemoveCV<typename RemovePointer<T>::type>::type;
         md->~U();
       }
