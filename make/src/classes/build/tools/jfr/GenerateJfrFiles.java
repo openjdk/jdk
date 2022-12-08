@@ -573,9 +573,13 @@ public class GenerateJfrFiles {
             out.write("#include \"jfrfiles/jfrEventIds.hpp\"");
             out.write("#include \"memory/allocation.hpp\"");
             out.write("");
+            out.write("enum PeriodicType {BEGIN_CHUNK, INTERVAL, END_CHUNK};");
+            out.write("");
             out.write("class JfrPeriodicEventSet : public AllStatic {");
             out.write(" public:");
-            out.write("  static void requestEvent(JfrEventId id) {");
+            out.write("  static void requestEvent(JfrEventId id, jlong timestamp, PeriodicType periodicType) {");
+            out.write("    _timestamp = Ticks(timestamp);");
+            out.write("    _type = periodicType;");
             out.write("    switch(id) {");
             out.write("  ");
             for (TypeElement e : metadata.getPeriodicEvents()) {
@@ -595,6 +599,10 @@ public class GenerateJfrFiles {
                 out.write("  static void request" + e.name + "(void);");
                 out.write("");
             }
+            out.write(" static Ticks timestamp(void);");
+            out.write(" static Ticks _timestamp;");
+            out.write(" static PeriodicType type(void);");
+            out.write(" static PeriodicType _type;");
             out.write("};");
             out.write("");
             out.write("#endif // INCLUDE_JFR");

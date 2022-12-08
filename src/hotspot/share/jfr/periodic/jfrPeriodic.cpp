@@ -63,6 +63,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
+#include "services/memJfrReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -79,6 +80,18 @@
  *  xsl generated traceRequestables.hpp
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
+
+// Timestamp to correlate events in the same batch/generation
+Ticks JfrPeriodicEventSet::_timestamp;
+PeriodicType JfrPeriodicEventSet::_type;
+
+Ticks JfrPeriodicEventSet::timestamp(void) {
+  return _timestamp;
+}
+
+PeriodicType JfrPeriodicEventSet::type(void) {
+  return _type;
+}
 
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
@@ -623,4 +636,12 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #else
   log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsage) {
+  MemJFRReporter::send_type_events();
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
+  MemJFRReporter::send_total_event();
 }

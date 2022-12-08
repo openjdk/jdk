@@ -208,6 +208,15 @@ public class PrintWriter extends Writer {
              false);
     }
 
+    /* Package private constructor, using the specified lock
+     * for synchronization.
+     */
+    PrintWriter(Writer out, Object lock) {
+        super(lock);
+        this.out = out;
+        this.autoFlush = false;
+    }
+
     /* Private constructor */
     private PrintWriter(Charset charset, File file)
         throws FileNotFoundException
