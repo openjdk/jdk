@@ -157,7 +157,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
   _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _extentLocalCache = OopHandle(_thread_oop_storage, NULL);
+  _scopedValueCache = OopHandle(_thread_oop_storage, NULL);
 }
 
 oop JavaThread::threadObj() const {
@@ -186,13 +186,26 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-oop JavaThread::extentLocalCache() const {
-  return _extentLocalCache.resolve();
+oop JavaThread::scopedValueCache() const {
+  return _scopedValueCache.resolve();
 }
 
-void JavaThread::set_extentLocalCache(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
-  _extentLocalCache.replace(p);
+void JavaThread::set_scopedValueCache(oop p) {
+  if (_scopedValueCache.ptr_raw() != NULL) { // i.e. if the OopHandle has been allocated
+    _scopedValueCache.replace(p);
+  } else {
+    assert(p == NULL, "not yet initialized");
+  }
+}
+
+void JavaThread::clear_scopedValueBindings() {
+  set_scopedValueCache(NULL);
+  oop vthread_oop = vthread();
+  // vthread may be null here if we get a VM error during startup,
+  // before the java.lang.Thread instance has been created.
+  if (vthread_oop != NULL) {
+    java_lang_Thread::clear_scopedValueBindings(vthread_oop);
+  }
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
@@ -383,7 +396,6 @@ void JavaThread::check_for_valid_safepoint_state() {
 JavaThread::JavaThread() :
   // Initialize fields
 
-  _in_asgct(false),
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
@@ -981,30 +993,6 @@ bool JavaThread::is_lock_owned(address adr) const {
   return false;
 }
 
-bool JavaThread::is_lock_owned_current(address adr) const {
-  address stack_end = _stack_base - _stack_size;
-  const ContinuationEntry* ce = vthread_continuation();
-  address stack_base = ce != nullptr ? (address)ce->entry_sp() : _stack_base;
-  if (stack_base > adr && adr >= stack_end) {
-    return true;
-  }
-
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
-    if (chunk->contains(adr)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool JavaThread::is_lock_owned_carrier(address adr) const {
-  assert(is_vthread_mounted(), "");
-  address stack_end = _stack_base - _stack_size;
-  address stack_base = (address)vthread_continuation()->entry_sp();
-  return stack_base > adr && adr >= stack_end;
-}
-
 oop JavaThread::exception_oop() const {
   return Atomic::load(&_exception_oop);
 }
@@ -1065,11 +1053,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   // We cannot call Exceptions::_throw(...) here because we cannot block
   set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-  // Clear any extent-local bindings
-  set_extentLocalCache(NULL);
-  oop threadOop = threadObj();
-  assert(threadOop != NULL, "must be");
-  java_lang_Thread::clear_extentLocalBindings(threadOop);
+  clear_scopedValueBindings();
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
@@ -1469,10 +1453,6 @@ const char* _get_thread_state_name(JavaThreadState _thread_state) {
 
 void JavaThread::print_thread_state_on(outputStream *st) const {
   st->print_cr("   JavaThread state: %s", _get_thread_state_name(_thread_state));
-}
-
-const char* JavaThread::thread_state_name() const {
-  return _get_thread_state_name(_thread_state);
 }
 
 // Called by Threads::print() for VM_PrintThreads operation
@@ -1909,11 +1889,6 @@ javaVFrame* JavaThread::last_java_vframe(const frame f, RegisterMap *reg_map) {
   return NULL;
 }
 
-oop JavaThread::get_continuation() const {
-  assert(threadObj() != nullptr, "must be set");
-  return java_lang_Thread::continuation(threadObj());
-}
-
 Klass* JavaThread::security_get_caller_class(int depth) {
   ResetNoHandleMark rnhm;
   HandleMark hm(Thread::current());
@@ -2131,7 +2106,7 @@ void JavaThread::add_oop_handles_for_release() {
   new_head->add(_threadObj);
   new_head->add(_vthread);
   new_head->add(_jvmti_vthread);
-  new_head->add(_extentLocalCache);
+  new_head->add(_scopedValueCache);
   _oop_handle_list = new_head;
   Service_lock->notify_all();
 }

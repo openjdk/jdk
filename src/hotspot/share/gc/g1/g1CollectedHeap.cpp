@@ -1466,6 +1466,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _hot_card_cache(NULL),
   _rem_set(NULL),
   _card_set_config(),
+  _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
   _cm(NULL),
   _cm_thread(NULL),
   _cr(NULL),

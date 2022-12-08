@@ -333,7 +333,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
-        R r = scan(node.getVariable(), p);
+        R r = scan(node.getVariableOrRecordPattern(), p);
         r = scanAndReduce(node.getExpression(), p, r);
         r = scanAndReduce(node.getStatement(), p, r);
         return r;

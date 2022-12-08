@@ -3632,6 +3632,11 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+    } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
+      // The NOP here is purely to ensure that eliding a call to
+      // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
+      __ nop();
+      __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
