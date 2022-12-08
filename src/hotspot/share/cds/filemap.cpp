@@ -2060,6 +2060,16 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   return count;
 }
 
+// Get the total size in bytes of a read only region
+size_t FileMapInfo::readonly_total() const {
+  size_t total = 0;
+  FileMapRegion* r = region_at(MetaspaceShared::ro);
+  if (r->read_only()) {
+    total = r->used();
+  }
+  return total;
+}
+
 static MemRegion *closed_heap_regions = NULL;
 static MemRegion *open_heap_regions = NULL;
 static int num_closed_heap_regions = 0;

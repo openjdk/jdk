@@ -81,7 +81,7 @@ class MemReporterBase : public StackObj {
   size_t readonly_total(FileMapInfo* info) const;
 
   // Print summary total, malloc and virtual memory
-  void print_total(size_t reserved, size_t committed, size_t read_only = 0) const;
+  void print_total(size_t reserved, size_t committed) const;
   void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed) const;
 
@@ -117,7 +117,7 @@ class MemSummaryReporter : public MemReporterBase {
  private:
   // Report summary for each memory type
   void report_summary_of_type(MEMFLAGS type, MallocMemory* malloc_memory,
-    VirtualMemory* virtual_memory, size_t read_only_bytes);
+    VirtualMemory* virtual_memory);
 
   void report_metadata(Metaspace::MetadataType type) const;
 };

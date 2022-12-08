@@ -39,28 +39,11 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
-// There can be upto two CDS archives which can contain readonly data. On Windows, pages are not
-// shareable so the RO region may not actually be read only
-size_t MemReporterBase::readonly_total(FileMapInfo* info) const {
-  size_t total = 0;
-  if (info!= NULL) {
-    FileMapRegion* r = info->region_at(MetaspaceShared::ro);
-    if (r->read_only()) {
-      total = r->used();
-    }
-  }
-  return total;
-}
-
-void MemReporterBase::print_total(size_t reserved, size_t committed, size_t read_only) const {
+void MemReporterBase::print_total(size_t reserved, size_t committed) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
                   amount_in_current_scale(reserved), scale,
                   amount_in_current_scale(committed), scale);
-  if (read_only > 0) {
-    output()->print(", readonly=" SIZE_FORMAT "%s",
-                    amount_in_current_scale(read_only), scale);
-  }
 }
 
 void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const {
@@ -151,8 +134,6 @@ void MemSummaryReporter::report() {
 
   size_t total_reserved_amount = total_malloced_bytes + total_mmap_reserved_bytes;
   size_t total_committed_amount = total_malloced_bytes + total_mmap_committed_bytes;
-  size_t read_only_bytes = readonly_total(FileMapInfo::current_info()); // static archive
-  read_only_bytes += readonly_total(FileMapInfo::dynamic_info()); // dynamic archive
 
   // Overall total
   out->print_cr("\nNative Memory Tracking:\n");
@@ -181,15 +162,21 @@ void MemSummaryReporter::report() {
     MallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
     VirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
 
-    report_summary_of_type(flag, malloc_memory, virtual_memory, read_only_bytes);
+    report_summary_of_type(flag, malloc_memory, virtual_memory);
   }
 }
 
 void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
-  MallocMemory*  malloc_memory, VirtualMemory* virtual_memory, size_t read_only_bytes) {
+  MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
   size_t committed_amount = committed_total(malloc_memory, virtual_memory);
+  // There can be up to two CDS archives which can contain readonly data. On Windows, pages are not
+  // shareable so the RO region may not actually be read only
+  size_t read_only_bytes;
+  FileMapInfo::current_info() != nullptr ? read_only_bytes = FileMapInfo::current_info()->readonly_total() : read_only_bytes = 0; // static archive
+  if (FileMapInfo::dynamic_info() != nullptr)
+    read_only_bytes += FileMapInfo::dynamic_info()->readonly_total(); // dynamic archive
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
@@ -214,7 +201,11 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     outputStream* out   = output();
     const char*   scale = current_scale();
     out->print("-%26s (", NMTUtil::flag_to_name(flag));
-    flag == mtClassShared ? print_total(reserved_amount, committed_amount, read_only_bytes) : print_total(reserved_amount, committed_amount);
+    print_total(reserved_amount, committed_amount);
+    if (flag == mtClassShared) {
+      output()->print(", readonly=" SIZE_FORMAT "%s",
+                      amount_in_current_scale(read_only_bytes), scale);
+    }
     out->print_cr(")");
 
     if (flag == mtClass) {
