@@ -571,7 +571,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $MACOSX_BUNDLE_BUILD_VERSION,
     DESC: [Set the MacOSX Bundle CFBundleVersion field. This key is a machine-readable
       string composed of one to three period-separated integers and should represent the
-      build version. Defaults to the build number.],
+      build version.],
+    DEFAULT_DESC: [the build number],
     CHECK_VALUE: [
       if test "x$RESULT" = x; then
         FAILURE="--with-macosx-bundle-build-version must have a value"
