@@ -27,8 +27,8 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/classLoaderMetaspace.hpp"
-#include "metaprogramming/removePointer.hpp"
 #include "metaprogramming/removeCV.hpp"
+#include "metaprogramming/removePointer.hpp"
 #include "oops/array.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
