@@ -588,6 +588,7 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
   event.set_threadCount(CICompilerCount);
   event.set_tieredCompilation(TieredCompilation);
+  event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();
 }
 
