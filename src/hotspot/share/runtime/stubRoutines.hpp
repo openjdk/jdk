@@ -143,13 +143,9 @@ class StubRoutines: AllStatic {
   static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
-  static address _atomic_xchg_long_entry;
-  static address _atomic_store_entry;
   static address _atomic_cmpxchg_entry;
-  static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
-  static address _atomic_add_long_entry;
   static address _fence_entry;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
@@ -314,13 +310,9 @@ class StubRoutines: AllStatic {
   static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
-  static address atomic_xchg_long_entry()                  { return _atomic_xchg_long_entry; }
-  static address atomic_store_entry()                      { return _atomic_store_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
-  static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
-  static address atomic_add_long_entry()                   { return _atomic_add_long_entry; }
   static address fence_entry()                             { return _fence_entry; }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);

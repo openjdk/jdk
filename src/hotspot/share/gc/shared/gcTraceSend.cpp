@@ -389,6 +389,7 @@ void GCLockerTracer::report_gc_locker() {
     EventGCLocker event(UNTIMED);
     if (event.should_commit()) {
       event.set_starttime(_needs_gc_start_timestamp);
+      event.set_endtime(_needs_gc_start_timestamp);
       event.set_lockCount(_jni_lock_count);
       event.set_stallCount(_stall_count);
       event.commit();
