@@ -26,18 +26,18 @@
  * @bug 8297642
  * @compile TestOnlyInfiniteLoops.jasm
  * @summary Nested irreducible loops, where the inner loop floats out of the outer
- * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestOnlyInfiniteLoops::test*
- *      -XX:-TieredCompilation -Xbatch -Xcomp
+ *      -XX:-TieredCompilation -Xcomp
  *      TestOnlyInfiniteLoopsMain
  *
  * @test
  * @bug 8297642
  * @compile TestOnlyInfiniteLoops.jasm
  * @summary Nested irreducible loops, where the inner loop floats out of the outer
- * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestOnlyInfiniteLoops::test*
- *      -XX:-TieredCompilation -Xbatch -Xcomp
+ *      -XX:-TieredCompilation -Xcomp
  *      -XX:PerMethodTrapLimit=0
  *      TestOnlyInfiniteLoopsMain
 */
