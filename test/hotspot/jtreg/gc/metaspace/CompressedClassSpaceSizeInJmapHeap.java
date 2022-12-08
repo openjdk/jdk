@@ -74,7 +74,7 @@ public class CompressedClassSpaceSizeInJmapHeap {
         out.delete();
 
         LingeredApp.stopApp(theApp);
- }
+    }
 
     private static void run(ProcessBuilder pb) throws Exception {
         Process p = pb.start();
