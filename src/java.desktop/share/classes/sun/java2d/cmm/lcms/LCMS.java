@@ -138,8 +138,7 @@ final class LCMS implements PCMM {
     static native void colorConvert(long trans, int width, int height,
                                     int srcOffset, int srcNextRowOffset,
                                     int dstOffset, int dstNextRowOffset,
-                                    Object srcData, Object dstData,
-                                    int srcType, int dstType);
+                                    Object srcData, Object dstData);
 
     private LCMS() {};
 

@@ -66,13 +66,8 @@ final class LCMSImageLayout {
             DOSWAP | EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1);
     public static final int PT_BGRA_8 = EXTRA_SH(1) | CHANNELS_SH(3)
             | BYTES_SH(1) | DOSWAP | SWAPFIRST;
-    public static final int DT_BYTE = 0;
-    public static final int DT_SHORT = 1;
-    public static final int DT_INT = 2;
-    public static final int DT_DOUBLE = 3;
     boolean isIntPacked = false;
     int pixelType;
-    int dataType;
     int width;
     int height;
     int nextRowOffset;
@@ -111,7 +106,6 @@ final class LCMSImageLayout {
             throws ImageLayoutException
     {
         this(np, pixelType, pixelSize);
-        dataType = DT_BYTE;
         dataArray = data;
         dataArrayLength = data.length;
 
@@ -122,7 +116,6 @@ final class LCMSImageLayout {
             throws ImageLayoutException
     {
         this(np, pixelType, pixelSize);
-        dataType = DT_SHORT;
         dataArray = data;
         dataArrayLength = 2 * data.length;
 
@@ -133,7 +126,6 @@ final class LCMSImageLayout {
             throws ImageLayoutException
     {
         this(np, pixelType, pixelSize);
-        dataType = DT_INT;
         dataArray = data;
         dataArrayLength = 4 * data.length;
 
@@ -144,7 +136,6 @@ final class LCMSImageLayout {
             throws ImageLayoutException
     {
         this(np, pixelType, pixelSize);
-        dataType = DT_DOUBLE;
         dataArray = data;
         dataArrayLength = 8 * data.length;
 
@@ -228,7 +219,6 @@ final class LCMSImageLayout {
                     l.offset = safeMult(4, intRaster.getDataOffset(0));
                     l.dataArray = intRaster.getDataStorage();
                     l.dataArrayLength = 4 * intRaster.getDataStorage().length;
-                    l.dataType = DT_INT;
                 } while (false);
                 break;
 
@@ -244,7 +234,6 @@ final class LCMSImageLayout {
                     l.offset = byteRaster.getDataOffset(firstBand);
                     l.dataArray = byteRaster.getDataStorage();
                     l.dataArrayLength = byteRaster.getDataStorage().length;
-                    l.dataType = DT_BYTE;
                 } while (false);
                 break;
 
@@ -258,7 +247,6 @@ final class LCMSImageLayout {
                     l.dataArrayLength = byteRaster.getDataStorage().length;
                     l.offset = byteRaster.getDataOffset(0);
                     l.dataArray = byteRaster.getDataStorage();
-                    l.dataType = DT_BYTE;
                 } while (false);
                 break;
 
@@ -272,7 +260,6 @@ final class LCMSImageLayout {
                     l.offset = safeMult(2, shortRaster.getDataOffset(0));
                     l.dataArray = shortRaster.getDataStorage();
                     l.dataArrayLength = 2 * shortRaster.getDataStorage().length;
-                    l.dataType = DT_SHORT;
                 } while (false);
                 break;
             default:
@@ -385,7 +372,6 @@ final class LCMSImageLayout {
 
             l.offset = br.getDataOffset(firstBand);
             l.dataArray = br.getDataStorage();
-            l.dataType = DT_BYTE;
 
             l.width = br.getWidth();
             l.height = br.getHeight();
