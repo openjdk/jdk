@@ -24,6 +24,7 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import java.text.NumberFormat;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -102,6 +103,13 @@ public final class DefaultCompressPlugin extends AbstractPlugin implements Resou
                     zip = new ZipPlugin(resFilter);
                     break;
                 default:
+                    if(level.length() == 5 && level.startsWith("zip-")) {
+                        try {
+                            int zipLevel = Integer.parseInt(level.substring(4));
+                            zip = new ZipPlugin(resFilter, zipLevel);
+                            break;
+                        } catch (NumberFormatException ignored) {}
+                    }
                     throw new IllegalArgumentException("Invalid compression level " + level);
             }
         } else {
