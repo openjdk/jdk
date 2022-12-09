@@ -687,8 +687,9 @@ href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf">C++14
 storage duration (<a
 href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf">C++14
 3.7.1, 3.7.3</a>). As a consequence, <em>over-aligned types</em> are
-forbidden; this may change if HotSpot updates to using C++17 or later <a
-href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html">p0035r4</a>.</p>
+forbidden; this may change if HotSpot updates to using C++17 or later
+(<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html">p0035r4</a>).</p>
 <p>Large <em>extended alignments</em> should be avoided, particularly
 for stack allocated objects. What is a large value may depend on the
 platform and configuration. There may also be hard limits for some
@@ -703,16 +704,16 @@ alignment in a non-definition declaration, so such duplication should be
 avoided in HotSpot code.)</p>
 <p>Enumerations are forbidden from having <em>alignment-specifiers</em>.
 Aligned enumerations were originally permitted but insufficiently
-specified, and were later (C++20) removed <a
-href="https://cplusplus.github.io/CWG/issues/2354.html">CWG 2354</a>.
+specified, and were later (C++20) removed (<a
+href="https://cplusplus.github.io/CWG/issues/2354.html">CWG 2354</a>).
 Permitting such usage in HotSpot now would just cause problems in the
 future.</p>
 <p><em>Alignment-specifiers</em> are forbidden in <code>typedef</code>
 and <em>alias-declarations</em>. This may work or may have worked in
 some versions of some compilers, but was later (C++14) explicitly
-disallowed <a
+disallowed (<a
 href="https://cplusplus.github.io/CWG/issues/1437.html">CWG
-1437</a>.</p>
+1437</a>).</p>
 <p>The HotSpot macro <code>ATTRIBUTE_ALIGNED</code> provides similar
 capabilities for platforms that define it. This macro predates the use
 by HotSpot of C++ versions providing <code>alignas</code>. New code
