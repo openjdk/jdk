@@ -70,6 +70,13 @@ class OpaqueLoopStrideNode : public Opaque1Node {
   virtual int Opcode() const;
 };
 
+class OpaqueZeroTripGuardNode : public Opaque1Node {
+public:
+  OpaqueZeroTripGuardNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+  }
+  virtual int Opcode() const;
+};
+
 //------------------------------Opaque3Node------------------------------------
 // A node to prevent unwanted optimizations. Will be optimized only during
 // macro nodes expansion.

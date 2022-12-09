@@ -619,7 +619,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (opaq != NULL) {
           // This is not a loop anymore. No need to keep the Opaque1 node on the test that guards the loop as it won't be
           // subject to further loop opts.
-          assert(opaq->Opcode() == Op_Opaque1, "");
+          assert(opaq->Opcode() == Op_OpaqueZeroTripGuard, "");
           igvn->replace_node(opaq, opaq->in(1));
         }
       }
