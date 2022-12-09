@@ -3657,11 +3657,13 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT))
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return;         // skip malformed counted loop
+  }
   Node *incr = cl->incr();
-  if (incr == NULL)
+  if (incr == NULL) {
     return;         // Dead loop?
+  }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
   int stride_con = cl->stride_con();
@@ -3670,25 +3672,33 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
     Node *out = cl->out(i);
     // Look for other phis (secondary IVs). Skip dead ones
-    if (!out->is_Phi() || out == phi || !has_node(out))
+    if (!out->is_Phi() || out == phi || !has_node(out)) {
       continue;
+    }
+
     PhiNode* phi2 = out->as_Phi();
-    Node *incr2 = phi2->in( LoopNode::LoopBackControl );
+    Node* incr2 = phi2->in(LoopNode::LoopBackControl);
     // Look for induction variables of the form:  X += constant
     if (phi2->region() != loop->_head ||
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         incr2->Opcode() != Op_AddI ||
-        !incr2->in(2)->is_Con())
+        !incr2->in(2)->is_Con()) {
       continue;
+    }
 
+    if (incr2->in(1)->is_ConstraintCast() &&
+        !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
+      // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
+      continue;
+    }
     // Check for parallel induction variable (parallel to trip counter)
     // via an affine function.  In particular, count-down loops with
     // count-up array indices are common. We only RCE references off
     // the trip-counter, so we need to convert all these to trip-counter
     // expressions.
-    Node *init2 = phi2->in( LoopNode::EntryControl );
+    Node* init2 = phi2->in(LoopNode::EntryControl);
     int stride_con2 = incr2->in(2)->get_int();
 
     // The ratio of the two strides cannot be represented as an int
@@ -4180,45 +4190,40 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 }
 
 #ifdef ASSERT
-// Goes over all children of the root of the loop tree, collects all controls for the loop and its inner loops then
-// checks whether any control is a branch out of the loop and if it is, whether it's not a NeverBranch.
+// Goes over all children of the root of the loop tree. Check if any of them have a path
+// down to Root, that does not go via a NeverBranch exit.
 bool PhaseIdealLoop::only_has_infinite_loops() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  // start traversal at all loop heads of first-level loops
   for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
-    Unique_Node_List wq;
     Node* head = l->_head;
     assert(head->is_Region(), "");
-    for (uint i = 1; i < head->req(); ++i) {
-      Node* in = head->in(i);
-      if (get_loop(in) != _ltree_root) {
-        wq.push(in);
-      }
-    }
-    for (uint i = 0; i < wq.size(); ++i) {
-      Node* c = wq.at(i);
-      if (c == head) {
-        continue;
-      } else if (c->is_Region()) {
-        for (uint j = 1; j < c->req(); ++j) {
-          wq.push(c->in(j));
-        }
-      } else {
-        wq.push(c->in(0));
-      }
-    }
-    assert(wq.member(head), "");
-    for (uint i = 0; i < wq.size(); ++i) {
-      Node* c = wq.at(i);
-      if (c->is_MultiBranch()) {
-        for (DUIterator_Fast jmax, j = c->fast_outs(jmax); j < jmax; j++) {
-          Node* u = c->fast_out(j);
-          assert(u->is_CFG(), "");
-          if (!wq.member(u) && c->Opcode() != Op_NeverBranch) {
-            return false;
-          }
+    worklist.push(head);
+  }
+  // BFS traversal down the CFG, except through NeverBranch exits
+  for (uint i = 0; i < worklist.size(); ++i) {
+    Node* n = worklist.at(i);
+    assert(n->is_CFG(), "only traverse CFG");
+    if (n->is_Root()) {
+      // Found root -> there was an exit!
+      return false;
+    } else if (n->Opcode() == Op_NeverBranch) {
+      // Only follow the loop-internal projection, not the NeverBranch exit
+      ProjNode* proj = n->as_Multi()->proj_out_or_null(0);
+      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
+      worklist.push(proj);
+    } else {
+      // Traverse all CFG outputs
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (use->is_CFG()) {
+          worklist.push(use);
         }
       }
     }
   }
+  // No exit found for any loop -> all are infinite
   return true;
 }
 #endif
@@ -5470,12 +5475,12 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   if (input >= cmpzm->req() || cmpzm->in(input) == NULL) {
     return NULL;
   }
-  bool res = cmpzm->in(input)->Opcode() == Op_Opaque1;
+  bool res = cmpzm->in(input)->Opcode() == Op_OpaqueZeroTripGuard;
 #ifdef ASSERT
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
-    if (opnd && opnd->Opcode() == Op_Opaque1) {
+    if (opnd && opnd->is_Opaque1()) {
       found_opaque = true;
       break;
     }

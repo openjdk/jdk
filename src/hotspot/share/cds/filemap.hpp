@@ -468,7 +468,7 @@ public:
   void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                      int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
   bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
+  MemRegion get_heap_regions_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
@@ -490,7 +490,6 @@ public:
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
   }
-  bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
@@ -583,25 +582,16 @@ public:
   bool  can_use_heap_regions();
   bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  address heap_region_runtime_start_address(FileMapRegion* spc) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_shared_heap_runtime_delta(ptrdiff_t delta) NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
   static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
 
-  address decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode);
-
-  // The starting address of spc, as calculated with CompressedOop::decode_non_null()
-  address start_address_as_decoded_with_current_oop_encoding_mode(FileMapRegion* spc) {
-    return decode_start_address(spc, true);
-  }
 public:
-  // The starting address of spc, as calculated with HeapShared::decode_from_archive()
-  address start_address_as_decoded_from_archive(FileMapRegion* spc) {
-    return decode_start_address(spc, false);
-  }
+  address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  address heap_region_requested_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  address heap_region_mapped_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
 
 private:
 

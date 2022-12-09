@@ -141,9 +141,7 @@ void JfrUpcalls::on_retransform(jlong trace_id,
                                              CHECK);
   assert(new_byte_array != NULL, "invariant");
   assert(new_bytes_length > 0, "invariant");
-  // memory space must be malloced as mtInternal
-  // as it will be deallocated by JVMTI routines
-  unsigned char* const new_bytes = (unsigned char* const)os::malloc(new_bytes_length, mtInternal);
+  unsigned char* const new_bytes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, unsigned char, new_bytes_length);
   if (new_bytes == NULL) {
     log_error_and_throw_oom(new_bytes_length, THREAD); // unwinds
   }

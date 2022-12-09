@@ -1300,7 +1300,7 @@ void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) 
   assert(zer_cmp != NULL && zer_cmp->Opcode() == Op_CmpI, "must be CmpI");
   // For the main loop, the opaque node is the second input to zer_cmp, for the post loop it's the first input node
   Node* zer_opaq = zer_cmp->in(is_main_loop ? 2 : 1);
-  assert(zer_opaq != NULL && zer_opaq->Opcode() == Op_Opaque1, "must be Opaque1");
+  assert(zer_opaq != NULL && zer_opaq->Opcode() == Op_OpaqueZeroTripGuard, "must be OpaqueZeroTripGuard");
 }
 #endif
 
@@ -1705,7 +1705,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // pre-loop, the main-loop may not execute at all.  Later in life this
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
-  Node *min_opaq = new Opaque1Node(C, limit);
+  Node *min_opaq = new OpaqueZeroTripGuardNode(C, limit);
   Node *min_cmp  = new CmpINode(pre_incr, min_opaq);
   Node *min_bol  = new BoolNode(min_cmp, b_test);
   register_new_node(min_opaq, new_pre_exit);
@@ -1994,7 +1994,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // (the previous loop trip-counter exit value) because we will be changing
   // the exit value (via additional unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
-  Node *zer_opaq = new Opaque1Node(C, incr);
+  Node *zer_opaq = new OpaqueZeroTripGuardNode(C, incr);
   Node *zer_cmp = new CmpINode(zer_opaq, limit);
   Node *zer_bol = new BoolNode(zer_cmp, main_end->test_trip());
   register_new_node(zer_opaq, new_main_exit);
@@ -2287,18 +2287,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       set_ctrl(new_limit, C->root());
     } else {
       // Limit is not constant.
-      if (loop_head->unrolled_count() == 1) { // only for first unroll
-        // Separate limit by Opaque node in case it is an incremented
-        // variable from previous loop to avoid using pre-incremented
-        // value which could increase register pressure.
-        // Otherwise reorg_offsets() optimization will create a separate
-        // Opaque node for each use of trip-counter and as result
-        // zero trip guard limit will be different from loop limit.
-        assert(has_ctrl(opaq), "should have it");
-        Node* opaq_ctrl = get_ctrl(opaq);
-        limit = new Opaque2Node(C, limit);
-        register_new_node(limit, opaq_ctrl);
-      }
+      assert(loop_head->unrolled_count() != 1 || has_ctrl(opaq), "should have opaque for first unroll");
       if ((stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo)) ||
           (stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi))) {
         // No underflow.
@@ -2346,20 +2335,6 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
       }
       register_new_node(new_limit, ctrl);
-      if (loop_head->unrolled_count() == 1) {
-        // The Opaque2 node created above (in the case of the first unrolling) hides the type of the loop limit.
-        // As a result, if the iv Phi constant folds (because it captured the iteration range), the exit test won't
-        // constant fold and the graph contains a broken counted loop.
-        const Type* new_limit_t;
-        if (stride_con > 0) {
-          new_limit_t = TypeInt::make(min_jint, limit_type->_hi, limit_type->_widen);
-        } else {
-          assert(stride_con < 0, "stride can't be 0");
-          new_limit_t = TypeInt::make(limit_type->_lo, max_jint, limit_type->_widen);
-        }
-        new_limit = new CastIINode(new_limit, new_limit_t);
-        register_new_node(new_limit, ctrl);
-      }
     }
 
     assert(new_limit != NULL, "");
@@ -3601,9 +3576,9 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
 
   // Remove the Opaque1Node of the pre loop and make it execute all iterations
   phase->_igvn.replace_input_of(pre_cmp, 2, pre_cmp->in(2)->in(2));
-  // Remove the Opaque1Node of the main loop so it can be optimized out
+  // Remove the OpaqueZeroTripGuardNode of the main loop so it can be optimized out
   Node* main_cmp = main_iff->in(1)->in(1);
-  assert(main_cmp->in(2)->Opcode() == Op_Opaque1, "main loop has no opaque node?");
+  assert(main_cmp->in(2)->Opcode() == Op_OpaqueZeroTripGuard, "main loop has no opaque node?");
   phase->_igvn.replace_input_of(main_cmp, 2, main_cmp->in(2)->in(1));
 }
 
@@ -3939,10 +3914,6 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
       }
     }
   }
-
-  // Minor offset re-organization to remove loop-fallout uses of
-  // trip counter when there was no major reshaping.
-  phase->reorg_offsets(this);
 
   if (_next && !_next->iteration_split(phase, old_new)) {
     return false;
