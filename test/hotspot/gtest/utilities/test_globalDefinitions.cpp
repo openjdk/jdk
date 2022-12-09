@@ -266,11 +266,11 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(SSIZE_FORMAT,           (ssize_t)123,      "123");
   check_format(SSIZE_FORMAT,           (ssize_t)-123,     "-123");
   check_format(SSIZE_FORMAT,           (ssize_t)2147483647, "2147483647");
-  check_format(SSIZE_FORMAT,           (ssize_t)-2147483648, "-2147483648");
+  check_format(SSIZE_FORMAT,           (ssize_t)-2147483648, "-2147483647");
   check_format(SSIZE_PLUS_FORMAT,      (ssize_t)123,      "+123");
   check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-123,     "-123");
   check_format(SSIZE_PLUS_FORMAT,      (ssize_t)2147483647, "+2147483647");
-  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-2147483648, "-2147483648");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-2147483648, "-2147483647");
   check_format(SSIZE_FORMAT_W(5),      (ssize_t)123,      "  123");
   check_format(SSIZE_FORMAT_W(-5),     (ssize_t)123,      "123  ");
   check_format(SIZE_FORMAT,            (size_t)123u,      "123");
