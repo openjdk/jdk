@@ -78,17 +78,23 @@ class CgroupController: public CHeapObj<mtInternal> {
 
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
+// Parses a subsystem's file, looking for a matching line.
+// If key is null, then the first line will be matched with scan_fmt.
+// If key isn't null, then each line will be matched, looking for something that matches "$key $scan_fmt".
+// The matching value will be assigned to returnval.
+// scan_fmt uses scanf() syntax.
+// Return value: 0 on match, OSCONTAINER_ERROR on error.
 template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *filename,
                                               const char *key,
                                               const char *scan_fmt,
                                               T returnval) {
-  if (c == NULL) {
-    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is NULL");
+  if (c == nullptr) {
+    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is nullptr");
     return OSCONTAINER_ERROR;
   }
-  if (c->subsystem_path() == NULL) {
-    log_debug(os, container)("subsystem_file_line_contents: subsystem path is NULL");
+  if (c->subsystem_path() == nullptr) {
+    log_debug(os, container)("subsystem_file_line_contents: subsystem path is nullptr");
     return OSCONTAINER_ERROR;
   }
 
