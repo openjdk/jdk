@@ -591,8 +591,8 @@ public:
 // empty.
 class NeverBranchNode : public MultiBranchNode {
 public:
-  NeverBranchNode( Node *ctrl ) : MultiBranchNode(1) {
-    init_req(0,ctrl);
+  NeverBranchNode(Node* ctrl) : MultiBranchNode(1) {
+    init_req(0, ctrl);
     init_class_id(Class_NeverBranch);
   }
   virtual int Opcode() const;
