@@ -521,7 +521,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
       write_synchonize_on_visible_epoch(thread);
     }
     for (size_t node_it = 0; node_it < nd; node_it++) {
-      Node*& ndel = node_it < StackBufferSize ? ndel_stack[node_it] : extra.at(node_it - StackBufferSize);
+      Node*& ndel = node_it < StackBufferSize ? ndel_stack[node_it] : extra.at(static_cast<int>(node_it - StackBufferSize));
       del_f(ndel->value());
       Node::destroy_node(_context, ndel);
       JFR_ONLY(safe_stats_remove();)
