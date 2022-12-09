@@ -2558,16 +2558,17 @@ bool G1CollectedHeap::print_location(outputStream* st, void* addr) const {
 
 G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
-  size_t eden_used_bytes = _eden.used_bytes();
-  size_t survivor_used_bytes = _survivor.used_bytes();
+  size_t eden_used_bytes = _monitoring_support->eden_space_used();
+  size_t survivor_used_bytes = _monitoring_support->survivor_space_used();
+  size_t old_gen_used_bytes = _monitoring_support->old_gen_used();
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
 
   size_t eden_capacity_bytes =
     (policy()->young_list_target_length() * HeapRegion::GrainBytes) - survivor_used_bytes;
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
-  return G1HeapSummary(heap_summary, heap_used, eden_used_bytes,
-                       eden_capacity_bytes, survivor_used_bytes, num_regions());
+  return G1HeapSummary(heap_summary, heap_used, eden_used_bytes, eden_capacity_bytes,
+                       survivor_used_bytes, old_gen_used_bytes, num_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
