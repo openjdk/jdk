@@ -119,20 +119,18 @@ class PollingWatchService
 
         // Extended modifiers may be used to specify the sensitivity level
         int sensitivity = DEFAULT_POLLING_INTERVAL;
-        if (modifiers.length > 0) {
-            for (WatchEvent.Modifier modifier: modifiers) {
-                if (modifier == null)
-                    throw new NullPointerException();
+        for (WatchEvent.Modifier modifier : modifiers) {
+            if (modifier == null)
+                throw new NullPointerException();
 
-                if (ExtendedOptions.SENSITIVITY_HIGH.matches(modifier)) {
-                    sensitivity = ExtendedOptions.SENSITIVITY_HIGH.parameter();
-                } else if (ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier)) {
-                    sensitivity = ExtendedOptions.SENSITIVITY_MEDIUM.parameter();
-                } else if (ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
-                    sensitivity = ExtendedOptions.SENSITIVITY_LOW.parameter();
-                } else {
-                    throw new UnsupportedOperationException("Modifier not supported");
-                }
+            if (ExtendedOptions.SENSITIVITY_HIGH.matches(modifier)) {
+                sensitivity = ExtendedOptions.SENSITIVITY_HIGH.parameter();
+            } else if (ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier)) {
+                sensitivity = ExtendedOptions.SENSITIVITY_MEDIUM.parameter();
+            } else if (ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
+                sensitivity = ExtendedOptions.SENSITIVITY_LOW.parameter();
+            } else {
+                throw new UnsupportedOperationException("Modifier not supported");
             }
         }
 
