@@ -25,7 +25,6 @@
 #ifndef SHARE_SERVICES_MEMREPORTER_HPP
 #define SHARE_SERVICES_MEMREPORTER_HPP
 
-#include "cds/filemap.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/instanceKlass.hpp"
 #include "services/memBaseline.hpp"
@@ -78,7 +77,6 @@ class MemReporterBase : public StackObj {
   // Calculate total reserved and committed amount
   size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
   size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-  size_t readonly_total(FileMapInfo* info) const;
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;

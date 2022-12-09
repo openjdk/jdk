@@ -2061,11 +2061,15 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
 }
 
 // Get the total size in bytes of a read only region
-size_t FileMapInfo::readonly_total() const {
+size_t FileMapInfo::readonly_total() {
   size_t total = 0;
-  FileMapRegion* r = region_at(MetaspaceShared::ro);
-  if (r->read_only()) {
-    total = r->used();
+  if (current_info() != nullptr) {
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
+    if (r->read_only()) total += r->used();
+  }
+  if (dynamic_info() != nullptr) {
+    FileMapRegion* r = FileMapInfo::dynamic_info()->region_at(MetaspaceShared::ro);
+    if (r->read_only()) total += r->used();
   }
   return total;
 }

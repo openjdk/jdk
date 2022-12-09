@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -171,12 +172,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
   size_t committed_amount = committed_total(malloc_memory, virtual_memory);
-  // There can be up to two CDS archives which can contain readonly data. On Windows, pages are not
-  // shareable so the RO region may not actually be read only
-  size_t read_only_bytes;
-  FileMapInfo::current_info() != nullptr ? read_only_bytes = FileMapInfo::current_info()->readonly_total() : read_only_bytes = 0; // static archive
-  if (FileMapInfo::dynamic_info() != nullptr)
-    read_only_bytes += FileMapInfo::dynamic_info()->readonly_total(); // dynamic archive
+  size_t read_only_bytes = FileMapInfo::readonly_total();
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
