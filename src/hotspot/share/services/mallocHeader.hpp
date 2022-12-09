@@ -88,7 +88,7 @@ class outputStream;
  */
 
 class MallocHeader {
-
+  NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
@@ -117,6 +117,13 @@ class MallocHeader {
   template<typename IN, typename OUT>
   inline static OUT resolve_checked_impl(IN memblock);
 public:
+ public:
+  // Contains all of the necessary data to to deaccount block with NMT.
+  struct FreeInfo {
+    const size_t size;
+    const MEMFLAGS flags;
+    const uint32_t mst_marker;
+  };
 
   inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
 
@@ -125,7 +132,12 @@ public:
   inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 
+  // Return the necessary data to deaccount the block with NMT.
+  FreeInfo free_info() {
+    return FreeInfo{this->size(), this->flags(), this->mst_marker()};
+  }
   inline void mark_block_as_dead();
+  inline void revive();
 
   // If block is broken, fill in a short descriptive text in out,
   // an option pointer to the corruption in p_corruption, and return false.

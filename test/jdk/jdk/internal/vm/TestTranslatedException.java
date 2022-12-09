@@ -23,16 +23,12 @@
 
 /*
  * @test
- * @requires vm.jvmci
- * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
+ * @modules java.base/jdk.internal.vm
  *          java.base/jdk.internal.misc
- * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
- *      jdk.vm.ci.hotspot.test.TestTranslatedException
+ *      jdk.internal.vm.test.TestTranslatedException
  */
-
-package jdk.vm.ci.hotspot.test;
+package jdk.internal.vm.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -43,7 +39,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import jdk.internal.misc.Unsafe;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.internal.vm.VMSupport;
 
 public class TestTranslatedException {
     @SuppressWarnings("serial")
@@ -56,52 +52,37 @@ public class TestTranslatedException {
     @SuppressWarnings("unchecked")
     @Test
     public void encodeDecodeTest() throws Exception {
-
-        Class<?> translatedExceptionClass = Class.forName("jdk.vm.ci.hotspot.TranslatedException");
-
-        Method encode = translatedExceptionClass.getDeclaredMethod("encodeThrowable", Throwable.class);
-        Method decode = translatedExceptionClass.getDeclaredMethod("decodeThrowable", byte[].class);
-        encode.setAccessible(true);
-        decode.setAccessible(true);
-
         Throwable throwable = new ExceptionInInitializerError(new InvocationTargetException(new Untranslatable("test exception", new NullPointerException()), "invoke"));
         for (int i = 0; i < 10; i++) {
             throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
         }
-        byte[] encoding = (byte[]) encode.invoke(null, throwable);
-        Throwable decoded = (Throwable) decode.invoke(null, encoding);
-        assertThrowableEquals(throwable, decoded);
+        encodeDecode(throwable);
     }
-
     @SuppressWarnings("unchecked")
     @Test
     public void encodeDecodeTest2() throws Exception {
+        Throwable throwable = new ExceptionInInitializerError(new InvocationTargetException(new Untranslatable("test exception", new NullPointerException()), "invoke"));
+        for (int i = 0; i < 10; i++) {
+            throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
+        }
+        encodeDecode(throwable);
+    }
+
+    private void encodeDecode(Throwable throwable) throws Exception {
         Unsafe unsafe = Unsafe.getUnsafe();
         int bufferSize = 512;
         long buffer = 0L;
         while (true) {
             buffer = unsafe.allocateMemory(bufferSize);
             try {
-                Throwable throwable = new ExceptionInInitializerError(new InvocationTargetException(new Untranslatable("test exception", new NullPointerException()), "invoke"));
-                for (int i = 0; i < 10; i++) {
-                    throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
-                }
-
-                Method encode = HotSpotJVMCIRuntime.class.getDeclaredMethod("encodeThrowable", Throwable.class, long.class, int.class);
-                Method decode = HotSpotJVMCIRuntime.class.getDeclaredMethod("decodeAndThrowThrowable", long.class);
-                encode.setAccessible(true);
-                decode.setAccessible(true);
-
-                int res = (Integer) encode.invoke(null, throwable, buffer, bufferSize);
-
+                int res = VMSupport.encodeThrowable(throwable, buffer, bufferSize);
                 if (res < 0) {
                     bufferSize = -res;
                 } else {
                     try {
-                        decode.invoke(null, buffer);
+                        VMSupport.decodeAndThrowThrowable(buffer);
                         throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
-                    } catch (InvocationTargetException e) {
-                        Throwable decoded = e.getCause();
+                    } catch (Throwable decoded) {
                         assertThrowableEquals(throwable, decoded);
                     }
                     return;
@@ -117,12 +98,12 @@ public class TestTranslatedException {
             Assert.assertEquals(original == null, decoded == null);
             while (original != null) {
                 if (Untranslatable.class.equals(original.getClass())) {
-                    Assert.assertEquals("jdk.vm.ci.hotspot.TranslatedException", decoded.getClass().getName());
-                    Assert.assertEquals("jdk.vm.ci.hotspot.TranslatedException[jdk.vm.ci.hotspot.test.TestTranslatedException$Untranslatable]: test exception", decoded.toString());
-                    Assert.assertEquals("test exception", original.getMessage());
+                    Assert.assertEquals(decoded.getClass().getName(), "jdk.internal.vm.TranslatedException");
+                    Assert.assertEquals(decoded.toString(), "jdk.internal.vm.TranslatedException[jdk.internal.vm.test.TestTranslatedException$Untranslatable]: test exception");
+                    Assert.assertEquals(original.getMessage(), "test exception");
                 } else {
-                    Assert.assertEquals(original.getClass().getName(), decoded.getClass().getName());
-                    Assert.assertEquals(original.getMessage(), decoded.getMessage());
+                    Assert.assertEquals(decoded.getClass().getName(), original.getClass().getName());
+                    Assert.assertEquals(decoded.getMessage(), original.getMessage());
                 }
                 StackTraceElement[] originalStack = original.getStackTrace();
                 StackTraceElement[] decodedStack = decoded.getStackTrace();
@@ -130,12 +111,12 @@ public class TestTranslatedException {
                 for (int i = 0, n = originalStack.length; i < n; ++i) {
                     StackTraceElement originalStackElement = originalStack[i];
                     StackTraceElement decodedStackElement = decodedStack[i];
-                    Assert.assertEquals(originalStackElement.getClassLoaderName(), decodedStackElement.getClassLoaderName());
-                    Assert.assertEquals(originalStackElement.getModuleName(), decodedStackElement.getModuleName());
-                    Assert.assertEquals(originalStackElement.getClassName(), decodedStackElement.getClassName());
-                    Assert.assertEquals(originalStackElement.getMethodName(), decodedStackElement.getMethodName());
-                    Assert.assertEquals(originalStackElement.getFileName(), decodedStackElement.getFileName());
-                    Assert.assertEquals(originalStackElement.getLineNumber(), decodedStackElement.getLineNumber());
+                    Assert.assertEquals(decodedStackElement.getClassLoaderName(), originalStackElement.getClassLoaderName());
+                    Assert.assertEquals(decodedStackElement.getModuleName(), originalStackElement.getModuleName());
+                    Assert.assertEquals(decodedStackElement.getClassName(), originalStackElement.getClassName());
+                    Assert.assertEquals(decodedStackElement.getMethodName(), originalStackElement.getMethodName());
+                    Assert.assertEquals(decodedStackElement.getFileName(), originalStackElement.getFileName());
+                    Assert.assertEquals(decodedStackElement.getLineNumber(), originalStackElement.getLineNumber());
                 }
                 original = original.getCause();
                 decoded = decoded.getCause();

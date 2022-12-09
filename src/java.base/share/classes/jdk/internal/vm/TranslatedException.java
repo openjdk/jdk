@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
+package jdk.internal.vm;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,31 +38,32 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import jdk.vm.ci.common.JVMCIError;
-
 /**
- * Support for translating exceptions between different runtime heaps.
+ * Support for translating exceptions between the HotSpot heap and libjvmci heap.
  */
 @SuppressWarnings("serial")
 final class TranslatedException extends Exception {
 
     /**
-     * The value returned by {@link #encodeThrowable(Throwable)} when encoding fails due to an
-     * {@link OutOfMemoryError}.
+     * The value returned by {@link #encodeThrowable(Throwable)} when encoding
+     * fails due to an {@link OutOfMemoryError}.
      */
     private static final byte[] FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES;
 
     /**
-     * The value returned by {@link #encodeThrowable(Throwable)} when encoding fails for any reason
-     * other than {@link OutOfMemoryError}.
+     * The value returned by {@link #encodeThrowable(Throwable)} when encoding
+     * fails for any reason other than {@link OutOfMemoryError}.
      */
     private static final byte[] FALLBACK_ENCODED_THROWABLE_BYTES;
     static {
         try {
-            FALLBACK_ENCODED_THROWABLE_BYTES = encodeThrowable(new TranslatedException("error during encoding", "<unknown>"), false);
-            FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES = encodeThrowable(new OutOfMemoryError(), false);
+            FALLBACK_ENCODED_THROWABLE_BYTES =
+                encodeThrowable(new TranslatedException("error during encoding",
+                                                        "<unknown>"), false);
+            FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES =
+                encodeThrowable(new OutOfMemoryError(), false);
         } catch (IOException e) {
-            throw new JVMCIError(e);
+            throw new InternalError(e);
         }
     }
 
@@ -74,7 +78,8 @@ final class TranslatedException extends Exception {
     }
 
     /**
-     * No need to record an initial stack trace since it will be manually overwritten.
+     * No need to record an initial stack trace since
+     * it will be manually overwritten.
      */
     @SuppressWarnings("sync-override")
     @Override
@@ -95,12 +100,14 @@ final class TranslatedException extends Exception {
     }
 
     /**
-     * Prints a stack trace for {@code throwable} and returns {@code true}. Used to print stack
-     * traces only when assertions are enabled.
+     * Prints a stack trace for {@code throwable} if the system property
+     * {@code "jdk.internal.vm.TranslatedException.debug"} is true.
      */
-    private static boolean printStackTrace(Throwable throwable) {
-        throwable.printStackTrace();
-        return true;
+    private static void debugPrintStackTrace(Throwable throwable) {
+        if (Boolean.getBoolean("jdk.internal.vm.TranslatedException.debug")) {
+            System.err.print("DEBUG: ");
+            throwable.printStackTrace();
+        }
     }
 
     private static Throwable initCause(Throwable throwable, Throwable cause) {
@@ -109,7 +116,7 @@ final class TranslatedException extends Exception {
                 throwable.initCause(cause);
             } catch (IllegalStateException e) {
                 // Cause could not be set or overwritten.
-                assert printStackTrace(e);
+                debugPrintStackTrace(e);
             }
         }
         return throwable;
@@ -120,7 +127,8 @@ final class TranslatedException extends Exception {
         try {
             Class<?> cls = Class.forName(className);
             if (cause != null) {
-                // Handle known exception types whose cause must be set in the constructor
+                // Handle known exception types whose cause must
+                // be set in the constructor
                 if (cls == InvocationTargetException.class) {
                     return new InvocationTargetException(cause, message);
                 }
@@ -129,10 +137,13 @@ final class TranslatedException extends Exception {
                 }
             }
             if (message == null) {
-                return initCause((Throwable) cls.getConstructor().newInstance(), cause);
+                Constructor<?> cons = cls.getConstructor();
+                return initCause((Throwable) cons.newInstance(), cause);
             }
-            return initCause((Throwable) cls.getDeclaredConstructor(String.class).newInstance(message), cause);
+            Constructor<?> cons = cls.getDeclaredConstructor(String.class);
+            return initCause((Throwable) cons.newInstance(message), cause);
         } catch (Throwable translationFailure) {
+            debugPrintStackTrace(translationFailure);
             return initCause(new TranslatedException(message, className), cause);
         }
     }
@@ -149,7 +160,7 @@ final class TranslatedException extends Exception {
      * Encodes {@code throwable} including its stack and causes as a {@linkplain GZIPOutputStream
      * compressed} byte array that can be decoded by {@link #decodeThrowable}.
      */
-    static byte[] encodeThrowable(Throwable throwable) throws Throwable {
+    static byte[] encodeThrowable(Throwable throwable) {
         try {
             return encodeThrowable(throwable, true);
         } catch (OutOfMemoryError e) {
@@ -159,7 +170,8 @@ final class TranslatedException extends Exception {
         }
     }
 
-    private static byte[] encodeThrowable(Throwable throwable, boolean withCauseAndStack) throws IOException {
+    private static byte[] encodeThrowable(Throwable throwable,
+                                          boolean withCauseAndStack) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(baos))) {
             List<Throwable> throwables = new ArrayList<>();
@@ -199,20 +211,20 @@ final class TranslatedException extends Exception {
     }
 
     /**
-     * Gets the stack of the current thread without the frames between this call and the one just
-     * below the frame of the first method in {@link CompilerToVM}. The chopped frames are for the
-     * VM call to {@link HotSpotJVMCIRuntime#decodeAndThrowThrowable}.
+     * Gets the stack of the current thread as of the first native method. The chopped
+     * frames are for the VM call to {@link VMSupport#decodeAndThrowThrowable}.
      */
     private static StackTraceElement[] getMyStackTrace() {
-        StackTraceElement[] stack = new Exception().getStackTrace();
+        Exception ex = new Exception();
+        StackTraceElement[] stack = ex.getStackTrace();
         for (int i = 0; i < stack.length; i++) {
             StackTraceElement e = stack[i];
-            if (e.getClassName().equals(CompilerToVM.class.getName())) {
+            if (e.isNativeMethod()) {
                 return Arrays.copyOfRange(stack, i, stack.length);
             }
         }
-        // This should never happen but since we're in exception handling
-        // code, just return a safe value instead raising a nested exception.
+        // This should never happen but since this is exception handling
+        // code, be defensive instead raising a nested exception.
         return new StackTraceElement[0];
     }
 
@@ -223,7 +235,8 @@ final class TranslatedException extends Exception {
      *            {@link #encodeThrowable}
      */
     static Throwable decodeThrowable(byte[] encodedThrowable) {
-        try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(encodedThrowable)))) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(encodedThrowable);
+        try (DataInputStream dis = new DataInputStream(new GZIPInputStream(bais))) {
             Throwable cause = null;
             Throwable throwable = null;
             StackTraceElement[] myStack = getMyStackTrace();
@@ -243,7 +256,13 @@ final class TranslatedException extends Exception {
                     String methodName = emptyAsNull(dis.readUTF());
                     String fileName = emptyAsNull(dis.readUTF());
                     int lineNumber = dis.readInt();
-                    StackTraceElement ste = new StackTraceElement(classLoaderName, moduleName, moduleVersion, className, methodName, fileName, lineNumber);
+                    StackTraceElement ste = new StackTraceElement(classLoaderName,
+                                                                  moduleName,
+                                                                  moduleVersion,
+                                                                  className,
+                                                                  methodName,
+                                                                  fileName,
+                                                                  lineNumber);
 
                     if (ste.isNativeMethod()) {
                         // Best effort attempt to weave stack traces from two heaps into
@@ -263,13 +282,18 @@ final class TranslatedException extends Exception {
                 while (myStackIndex < myStack.length) {
                     stackTrace[stackTraceIndex++] = myStack[myStackIndex++];
                 }
+                if (stackTraceIndex != stackTrace.length) {
+                    // Remove null entries at end of stackTrace
+                    stackTrace = Arrays.copyOf(stackTrace, stackTraceIndex);
+                }
                 throwable.setStackTrace(stackTrace);
                 cause = throwable;
             }
             return throwable;
         } catch (Throwable translationFailure) {
-            assert printStackTrace(translationFailure);
-            return new TranslatedException("Error decoding exception: " + encodedThrowable, translationFailure.getClass().getName());
+            debugPrintStackTrace(translationFailure);
+            return new TranslatedException("Error decoding exception: " + encodedThrowable,
+                                           translationFailure.getClass().getName());
         }
     }
 }

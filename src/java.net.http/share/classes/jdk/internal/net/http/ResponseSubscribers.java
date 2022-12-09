@@ -481,7 +481,12 @@ public class ResponseSubscribers {
                     if (debug.on()) debug.log("Next Buffer");
                     currentBuffer = currentListItr.next();
                 } catch (InterruptedException ex) {
-                    // continue
+                    try {
+                        close();
+                    } catch (IOException ignored) {
+                    }
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();
