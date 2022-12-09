@@ -80,11 +80,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $USERNAME,
     DESC: [build username to use in version strings],
     DEFAULT_DESC: [current username, sanitized],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-build-user cannot be empty"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY])
   AC_SUBST(USERNAME)
 
   # Set the JDK RC name
@@ -94,13 +90,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DESC: [Set JDK RC name. This is used for FileDescription and ProductName
        properties of MS Windows binaries.],
     DEFAULT_DESC: [from branding.conf],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-jdk-rc-name cannot be empty"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-jdk-rc-name contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(JDK_RC_NAME)
 
   # The vendor name, if any
@@ -112,13 +102,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DESC: [Set vendor name. Among others, used to set the 'java.vendor'
        and 'java.vm.vendor' system properties.],
     DEFAULT_DESC: [from branding.conf],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-vendor-name must have a value"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-vendor-name contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(COMPANY_NAME)
 
   # The vendor URL, if any
@@ -128,13 +112,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $VENDOR_URL,
     DESC: [Set the 'java.vendor.url' system property],
     DEFAULT_DESC: [from branding.conf],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-vendor-url must have a value"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-vendor-url contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(VENDOR_URL)
 
   # The vendor bug URL, if any
@@ -145,13 +123,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $VENDOR_URL_BUG,
     DESC: [Set the 'java.vendor.url.bug' system property],
     DEFAULT_DESC: [from branding.conf],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-vendor-bug-url must have a value"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-vendor-bug-url contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(VENDOR_URL_BUG)
 
   # The vendor VM bug URL, if any
@@ -162,13 +134,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $VENDOR_URL_VM_BUG,
     DESC: [Sets the bug URL which will be displayed when the VM crashes],
     DEFAULT_DESC: [from branding.conf],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-vendor-vm-bug-url must have a value"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-vendor-vm-bug-url contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(VENDOR_URL_VM_BUG)
 
   # Override version from arguments
@@ -526,13 +492,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $MACOSX_BUNDLE_NAME_BASE,
     DESC: [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.],
     DEFAULT_DESC: [from branding.conf],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-macosx-bundle-name-base must have a value"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-macosx-bundle-name-base contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
 
   # If using the default value, append the VERSION_PRE if there is one
@@ -546,13 +506,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     DEFAULT: $MACOSX_BUNDLE_ID_BASE,
     DESC: [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.],
     DEFAULT_DESC: [based on branding.conf and VERSION_PRE],
-    CHECK_VALUE: [
-      if test "x$RESULT" = x; then
-        FAILURE="--with-macosx-bundle-id-base must have a value"
-      elif [ ! [[ $RESULT =~ ^[[:print:]]*$ ]] ]; then
-        FAILURE="--with-macosx-bundle-id-base contains non-printing characters: $RESULT"
-      fi
-    ])
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
   if test "x$VERSION_BUILD" != x; then

@@ -781,7 +781,7 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
 
       # Check for user provided code signing identity.
       UTIL_ARG_WITH(NAME: macosx-codesign-identity, TYPE: string,
-          DEFAULT: openjdk_codesign, CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY,
+          DEFAULT: openjdk_codesign, CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY],
           DESC: [specify the macosx code signing identity],
           CHECKING_MSG: [for macosx code signing identity]
       )
