@@ -106,11 +106,12 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
     return OSCONTAINER_ERROR;
   }
-  log_trace(os, container)("Path to %s is %s", filename, file_path.base());
+  const char* absolute_path = file_path.freeze();
+  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
 
-  FILE* fp = os::fopen(file_path.base(), "r");
+  FILE* fp = os::fopen(absolute_path, "r");
   if (fp == nullptr) {
-    log_debug(os, container)("Open of file %s failed, %s", file_path.base(), os::strerror(errno));
+    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
     return OSCONTAINER_ERROR;
   }
 
@@ -118,7 +119,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   char buf[buf_len];
   char* line = fgets(buf, buf_len, fp);
   if (line == nullptr) {
-    log_debug(os, container)("Empty file %s", file_path.base());
+    log_debug(os, container)("Empty file %s", absolute_path);
     fclose(fp);
     return OSCONTAINER_ERROR;
   }
@@ -150,7 +151,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   if (found_match) {
     return 0;
   }
-  log_debug(os, container)("Type %s not found in file %s", scan_fmt, file_path.base());
+  log_debug(os, container)("Type %s not found in file %s", scan_fmt, absolute_path);
   return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP
