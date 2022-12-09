@@ -252,15 +252,6 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(UINT32_FORMAT_W(-5),    123u,              "123  ");
 
   check_format(INT64_FORMAT,           (int64_t)123,      "123");
-  check_format(INT64_FORMAT,           (int64_t)-123,     "-123");
-  check_format(INT64_FORMAT,           (int64_t)2147483647, "2147483647");
-  check_format(INT64_FORMAT,           (int64_t)-2147483647, "-2147483647");
-
-  check_format(INT64_PLUS_FORMAT,      (int64_t)123,      "+123");
-  check_format(INT64_PLUS_FORMAT,      (int64_t)-123,     "-123");
-  check_format(INT64_PLUS_FORMAT,      (int64_t)2147483647, "+2147483647");
-  check_format(INT64_PLUS_FORMAT,      (int64_t)-2147483647, "-2147483647");
-
   check_format(INT64_FORMAT_X,         (int64_t)0x123,    "0x123");
   check_format(INT64_FORMAT_X_0,       (int64_t)0x123,    "0x0000000000000123");
   check_format(INT64_FORMAT_W(5),      (int64_t)123,      "  123");
