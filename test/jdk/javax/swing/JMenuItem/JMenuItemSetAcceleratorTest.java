@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,7 +51,7 @@ public class JMenuItemSetAcceleratorTest {
     private static final CountDownLatch actionLatch = new CountDownLatch(1);
     private volatile static Point frameAt;
     private volatile static Dimension frameSize;
-  
+
     private static void createAndShow() {
         frame = new JFrame("JMenuItem.setAccelerator");
         frame.setLayout(new FlowLayout());
@@ -93,7 +93,7 @@ public class JMenuItemSetAcceleratorTest {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            
+
             robot.keyPress(KeyEvent.VK_META);
             robot.keyPress(KeyEvent.VK_M);
             robot.keyRelease(KeyEvent.VK_M);
@@ -104,7 +104,8 @@ public class JMenuItemSetAcceleratorTest {
                     "Hasn't received the JMenuItem action event by pressing "
                         + "accelerator keys, test fails.");
             }
-            System.out.println("Test passed, received action event on menu item.");
+            System.out
+                .println("Test passed, received action event on menu item.");
         } finally {
             SwingUtilities.invokeAndWait(JMenuItemSetAcceleratorTest::disposeFrame);
         }
