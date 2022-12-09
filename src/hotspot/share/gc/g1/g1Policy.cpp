@@ -188,15 +188,19 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 }
 
 void G1Policy::update_young_length_bounds() {
+  assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   bool for_young_only_phase = collector_state()->in_young_only_phase();
+  // Request at least one eden region to ensure progress.
+  bool after_gc = true;
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
-                             _analytics->predict_rs_length(for_young_only_phase));
+                             _analytics->predict_rs_length(for_young_only_phase),
+                             after_gc);
 }
 
-void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
+void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length, bool after_gc) {
   uint old_young_list_target_length = young_list_target_length();
 
-  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length, after_gc);
   uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
   uint new_young_list_max_length = calculate_young_max_length(new_young_list_target_length);
 
@@ -224,27 +228,23 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
 //
 // - sizer min/max bounds on young gen
 // - pause time goal for whole young gen evacuation
-// - MMU goal influencing eden to make GCs spaced apart.
-// - a minimum one eden region length.
+// - MMU goal influencing eden to make GCs spaced apart
+// - if after a GC, request at least one eden region to avoid immediate full gcs
 //
-// We may enter with already allocated eden and survivor regions, that may be
-// higher than the maximum, or the above goals may result in a desired value
-// smaller than are already allocated.
-// The main reason is revising young length, with or without the GCLocker being
-// active.
+// We may enter with already allocated eden and survivor regions because there
+// are survivor regions (after gc). Young gen revising can call this method at any
+// time too.
 //
-uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length) const {
+// For this method it does not matter if the above goals may result in a desired
+// value smaller than what is already allocated or what can actually be allocated.
+// This return value is only an expectation.
+//
+uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length, bool after_gc) const {
   uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
   uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
 
   assert(min_young_length_by_sizer >= 1, "invariant");
   assert(max_young_length_by_sizer >= min_young_length_by_sizer, "invariant");
-
-  // Absolute minimum eden length.
-  // Enforcing a minimum eden length helps at startup when the predictors are not
-  // yet trained on the application to avoid unnecessary (but very short) full gcs
-  // on very small (initial) heaps.
-  uint const MinDesiredEdenLength = 1;
 
   // Calculate the absolute and desired min bounds first.
 
@@ -260,6 +260,10 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // young length we might have exceeded absolute min length or absolute_max_length,
   // so adjust the result accordingly.
   uint absolute_max_young_length = MAX2(max_young_length_by_sizer, absolute_min_young_length);
+
+  // The absolute minimum young gen length (as provided by the young gen sizer) ensures
+  // that we desire at least one young gen region.
+  assert(absolute_min_young_length > 0, "must be");
 
   uint desired_eden_length_by_mmu = 0;
   uint desired_eden_length_by_pause = 0;
@@ -277,10 +281,8 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
 
     // Incorporate MMU concerns; assume that it overrides the pause time
     // goal, as the default value has been chosen to effectively disable it.
-    // Also request at least one eden region, see above for reasons.
-    uint desired_eden_length = MAX3(desired_eden_length_by_pause,
-                                    desired_eden_length_by_mmu,
-                                    MinDesiredEdenLength);
+    uint desired_eden_length = MAX2(desired_eden_length_by_pause,
+                                    desired_eden_length_by_mmu);
 
     desired_young_length = desired_eden_length + survivor_length;
   } else {
@@ -291,19 +293,31 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // Clamp to absolute min/max after we determined desired lengths.
   desired_young_length = clamp(desired_young_length, absolute_min_young_length, absolute_max_young_length);
 
-  log_trace(gc, ergo, heap)("Young desired length %u "
+  // After a garbage collection, make room for at least one eden region (i.e. in addition to
+  // already allocated survivor regions).
+  // This may make desired regions go over absolute maximum length by the heap sizer, however
+  // the immediate full gcs after that young gc (particularly on small heaps) are worse.
+  if (after_gc && (allocated_young_length >= desired_young_length)) {
+   log_trace(gc, ergo, heap)("Young desired length: Desired young region length less than already "
+                              "allocated region length, but requesting one eden region minimum. "
+                              "Expanding desired young length from %u to %u.",
+                              desired_young_length,
+                              allocated_young_length + 1);
+    desired_young_length = allocated_young_length + 1;
+  }
+
+  log_trace(gc, ergo, heap)("Young desired length %u (after gc: %s) "
                             "survivor length %u "
                             "allocated young length %u "
                             "absolute min young length %u "
                             "absolute max young length %u "
                             "desired eden length by mmu %u "
-                            "desired eden length by pause %u "
-                            "desired eden length by default %u",
-                            desired_young_length, survivor_length,
+                            "desired eden length by pause %u ",
+                            desired_young_length, BOOL_TO_STR(after_gc),
+                            survivor_length,
                             allocated_young_length, absolute_min_young_length,
                             absolute_max_young_length, desired_eden_length_by_mmu,
-                            desired_eden_length_by_pause,
-                            MinDesiredEdenLength);
+                            desired_eden_length_by_pause);
 
   assert(desired_young_length >= allocated_young_length, "must be");
   return desired_young_length;
@@ -534,7 +548,10 @@ void G1Policy::revise_young_list_target_length(size_t rs_length) {
   size_t thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t pending_cards = dcqs.num_cards() + thread_buffer_cards;
-  update_young_length_bounds(pending_cards, rs_length);
+  // We are only revising young gen length to meet pause time goal, so do not request
+  // at least one eden region for progress. At this point we actually want to run into
+  // a GC soon if young gen is already (too) large.
+  update_young_length_bounds(pending_cards, rs_length, false /* need_one_eden_region */);
 }
 
 void G1Policy::record_full_collection_start() {

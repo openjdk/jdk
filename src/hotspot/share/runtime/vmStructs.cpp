@@ -710,7 +710,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _extentLocalCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
@@ -1071,7 +1071,6 @@
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
-  nonstatic_field(vframeArray,                 _next,                                         vframeArray*)                          \
   nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
   nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
   nonstatic_field(vframeArray,                 _frames,                                       int)                                   \
@@ -1566,11 +1565,10 @@
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
-  declare_c2_type(BlackholeNode, MemBarNode)                              \
+  declare_c2_type(BlackholeNode, MultiNode)                               \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
-  declare_c2_type(Opaque2Node, Node)                                      \
   declare_c2_type(PartialSubtypeCheckNode, Node)                          \
   declare_c2_type(MoveI2FNode, Node)                                      \
   declare_c2_type(MoveL2DNode, Node)                                      \
@@ -1877,7 +1875,7 @@
   declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, Node)                                   \
+  declare_c2_type(VectorTestNode, CmpNode)                                \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \

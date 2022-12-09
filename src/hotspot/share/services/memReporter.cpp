@@ -31,11 +31,11 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
 }
 
-size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
@@ -45,10 +45,13 @@ void MemReporterBase::print_total(size_t reserved, size_t committed) const {
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
 }
 
-void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
+void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const {
   const char* scale = current_scale();
   outputStream* out = output();
   const char* alloc_type = (flag == mtThreadStack) ? "" : "malloc=";
+
+  const size_t amount = c->size();
+  const size_t count = c->count();
 
   if (flag != mtNone) {
     out->print("(%s" SIZE_FORMAT "%s type=%s", alloc_type,
@@ -58,11 +61,21 @@ void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) c
       amount_in_current_scale(amount), scale);
   }
 
+  // blends out mtChunk count number
   if (count > 0) {
     out->print(" #" SIZE_FORMAT "", count);
   }
 
   out->print(")");
+
+  size_t pk_amount = c->peak_size();
+  if (pk_amount == amount) {
+    out->print_raw(" (at peak)");
+  } else if (pk_amount > amount) {
+    size_t pk_count = c->peak_count();
+    out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
+        amount_in_current_scale(pk_amount), scale, pk_count);
+  }
 }
 
 void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed) const {
@@ -71,9 +84,9 @@ void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed) co
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
 }
 
-void MemReporterBase::print_malloc_line(size_t amount, size_t count) const {
+void MemReporterBase::print_malloc_line(const MemoryCounter* c) const {
   output()->print("%28s", " ");
-  print_malloc(amount, count);
+  print_malloc(c);
   output()->print_cr(" ");
 }
 
@@ -83,10 +96,26 @@ void MemReporterBase::print_virtual_memory_line(size_t reserved, size_t committe
   output()->print_cr(" ");
 }
 
-void MemReporterBase::print_arena_line(size_t amount, size_t count) const {
+void MemReporterBase::print_arena_line(const MemoryCounter* c) const {
   const char* scale = current_scale();
-  output()->print_cr("%27s (arena=" SIZE_FORMAT "%s #" SIZE_FORMAT ")", " ",
+  outputStream* out = output();
+
+  const size_t amount = c->size();
+  const size_t count = c->count();
+
+  out->print("%27s (arena=" SIZE_FORMAT "%s #" SIZE_FORMAT ")", "",
     amount_in_current_scale(amount), scale, count);
+
+  size_t pk_amount = c->peak_size();
+  if (pk_amount == amount) {
+    out->print_raw(" (at peak)");
+  } else if (pk_amount > amount) {
+    size_t pk_count = c->peak_count();
+    out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
+        amount_in_current_scale(pk_amount), scale, pk_count);
+  }
+
+  out->cr();
 }
 
 void MemReporterBase::print_virtual_memory_region(const char* type, address base, size_t size) const {
@@ -195,18 +224,18 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     }
 
      // report malloc'd memory
-    if (amount_in_current_scale(malloc_memory->malloc_size()) > 0) {
-      // We don't know how many arena chunks are in used, so don't report the count
-      size_t count = (flag == mtChunk) ? 0 : malloc_memory->malloc_count();
-      print_malloc_line(malloc_memory->malloc_size(), count);
+    if (amount_in_current_scale(malloc_memory->malloc_size()) > 0
+        DEBUG_ONLY(|| amount_in_current_scale(malloc_memory->malloc_peak_size()) > 0)) {
+      print_malloc_line(malloc_memory->malloc_counter());
     }
 
     if (amount_in_current_scale(virtual_memory->reserved()) > 0) {
       print_virtual_memory_line(virtual_memory->reserved(), virtual_memory->committed());
     }
 
-    if (amount_in_current_scale(malloc_memory->arena_size()) > 0) {
-      print_arena_line(malloc_memory->arena_size(), malloc_memory->arena_count());
+    if (amount_in_current_scale(malloc_memory->arena_size()) > 0
+        DEBUG_ONLY(|| amount_in_current_scale(malloc_memory->arena_peak_size()) > 0)) {
+      print_arena_line(malloc_memory->arena_counter());
     }
 
     if (flag == mtNMT &&
@@ -271,12 +300,9 @@ int MemDetailReporter::report_malloc_sites() {
   const MallocSite* malloc_site;
   int num_omitted = 0;
   while ((malloc_site = malloc_itr.next()) != NULL) {
-    // Don't report free sites; does not count toward omitted count.
-    if (malloc_site->size() == 0) {
-      continue;
-    }
-    // Don't report if site has allocated less than one unit of whatever our scale is
-    if (scale() > 1 && amount_in_current_scale(malloc_site->size()) == 0) {
+    // Don't report if site has never allocated less than one unit of whatever our scale is
+    if (scale() > 1 && amount_in_current_scale(malloc_site->size()) == 0
+                       DEBUG_ONLY(&& amount_in_current_scale(malloc_site->peak_size()) == 0)) {
       num_omitted ++;
       continue;
     }
@@ -286,7 +312,7 @@ int MemDetailReporter::report_malloc_sites() {
     MEMFLAGS flag = malloc_site->flag();
     assert(NMTUtil::flag_is_valid(flag) && flag != mtNone,
       "Must have a valid memory type");
-    print_malloc(malloc_site->size(), malloc_site->count(),flag);
+    print_malloc(malloc_site->counter(), flag);
     out->print_cr("\n");
   }
   return num_omitted;

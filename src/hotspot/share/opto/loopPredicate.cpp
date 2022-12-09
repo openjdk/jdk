@@ -109,9 +109,9 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 // Otherwise, the continuation projection is set up to be the false
 // projection. This code is also used to clone predicates to cloned loops.
 ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
-                                                      Deoptimization::DeoptReason reason, int opcode,
-                                                      bool if_cont_is_true_proj, Node_List* old_new,
-                                                      UnswitchingAction unswitching_action) {
+                                                      Deoptimization::DeoptReason reason,
+                                                      const int opcode, const bool rewire_uncommon_proj_phi_inputs,
+                                                      const bool if_cont_is_true_proj) {
   assert(cont_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   IfNode* iff = cont_proj->in(0)->as_If();
 
@@ -196,39 +196,25 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
       assert(use->in(0) == rgn, "");
       _igvn.rehash_node_delayed(use);
       Node* phi_input = use->in(proj_index);
-      if (unswitching_action == UnswitchingAction::FastLoopCloning
-          && !phi_input->is_CFG() && !phi_input->is_Phi() && get_ctrl(phi_input) == uncommon_proj) {
-        // There are some control dependent nodes on the uncommon projection and we are currently copying predicates
-        // to the fast loop in loop unswitching (first step, slow loop is processed afterwards). For the fast loop,
-        // we need to clone all the data nodes in the chain from the phi ('use') up until the node whose control input
-        // is the uncommon_proj. The slow loop can reuse the old data nodes and thus only needs to update the control
-        // input to the uncommon_proj (done on the next invocation of this method when 'unswitch_is_slow_loop' is true.
-        assert(LoopUnswitching, "sanity check");
-        phi_input = clone_data_nodes_for_fast_loop(phi_input, uncommon_proj, if_uct, old_new);
-      } else if (unswitching_action == UnswitchingAction::SlowLoopRewiring) {
-        // Replace phi input for the old predicate path with TOP as the predicate is dying anyways. This avoids the need
-        // to clone the data nodes again for the slow loop.
-        assert(LoopUnswitching, "sanity check");
-        _igvn.replace_input_of(use, proj_index, C->top());
+
+      if (uncommon_proj->outcnt() > 1 && !phi_input->is_CFG() && !phi_input->is_Phi() && get_ctrl(phi_input) == uncommon_proj) {
+        // There are some control dependent nodes on the uncommon projection. We cannot simply reuse these data nodes.
+        // We either need to rewire them from the old uncommon projection to the newly created uncommon proj (if the old
+        // If is dying) or clone them and update their control (if the old If is not dying).
+        if (rewire_uncommon_proj_phi_inputs) {
+          // Replace phi input for the old uncommon projection with TOP as the If is dying anyways. Reuse the old data
+          // nodes by simply updating control inputs and ctrl.
+          _igvn.replace_input_of(use, proj_index, C->top());
+          set_ctrl_of_nodes_with_same_ctrl(phi_input, uncommon_proj, if_uct);
+        } else {
+          phi_input = clone_nodes_with_same_ctrl(phi_input, uncommon_proj, if_uct);
+        }
       }
       use->add_req(phi_input);
       has_phi = true;
     }
   }
   assert(!has_phi || rgn->req() > 3, "no phis when region is created");
-  if (unswitching_action == UnswitchingAction::SlowLoopRewiring) {
-    // Rewire the control dependent data nodes for the slow loop from the old to the new uncommon projection.
-    assert(uncommon_proj->outcnt() > 1 && old_new == NULL, "sanity");
-    for (DUIterator_Fast jmax, j = uncommon_proj->fast_outs(jmax); j < jmax; j++) {
-      Node* data = uncommon_proj->fast_out(j);
-      if (!data->is_CFG()) {
-        _igvn.replace_input_of(data, 0, if_uct);
-        set_ctrl(data, if_uct);
-        --j;
-        --jmax;
-      }
-    }
-  }
 
   if (new_entry == NULL) {
     // Attach if_cont to iff
@@ -240,70 +226,98 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
   return if_cont->as_Proj();
 }
 
-// Clone data nodes for the fast loop while creating a new If with create_new_if_for_predicate. Returns the node which is
-// used for the uncommon trap phi input.
-Node* PhaseIdealLoop::clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new) {
-  // Step 1: Clone all nodes on the data chain but do not rewire anything, yet. Keep track of the cloned nodes
-  // by using the old_new mapping. This mapping is then used in step 2 to rewire the cloned nodes accordingly.
+// Update ctrl and control inputs of all data nodes starting from 'node' to 'new_ctrl' which have 'old_ctrl' as
+// current ctrl.
+void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl) {
+  Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(node, old_ctrl);
+  for (uint j = 0; j < nodes_with_same_ctrl.size(); j++) {
+    Node* next = nodes_with_same_ctrl[j];
+    if (next->in(0) == old_ctrl) {
+      _igvn.replace_input_of(next, 0, new_ctrl);
+    }
+    set_ctrl(next, new_ctrl);
+  }
+}
+
+// Recursively find all input nodes with the same ctrl.
+Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl) {
+  Unique_Node_List nodes_with_same_ctrl;
+  nodes_with_same_ctrl.push(node);
+  for (uint j = 0; j < nodes_with_same_ctrl.size(); j++) {
+    Node* next = nodes_with_same_ctrl[j];
+    for (uint k = 1; k < next->req(); k++) {
+      Node* in = next->in(k);
+      if (!in->is_Phi() && get_ctrl(in) == ctrl) {
+        nodes_with_same_ctrl.push(in);
+      }
+    }
+  }
+  return nodes_with_same_ctrl;
+}
+
+// Clone all nodes with the same ctrl as 'old_ctrl' starting from 'node' by following its inputs. Rewire the cloned nodes
+// to 'new_ctrl'. Returns the clone of 'node'.
+Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl) {
   DEBUG_ONLY(uint last_idx = C->unique();)
-  Unique_Node_List list;
-  list.push(phi_input);
-  for (uint j = 0; j < list.size(); j++) {
-    Node* next = list.at(j);
-    Node* clone = next->clone();
-    _igvn.register_new_node_with_optimizer(clone);
-    old_new->map(next->_idx, clone);
-    for (uint k = 1; k < next->req(); k++) {
-      Node* in = next->in(k);
-      if (!in->is_Phi() && get_ctrl(in) == uncommon_proj) {
-        list.push(in);
-      }
-    }
-  }
-
-  // Step 2: All nodes are cloned. Rewire them by using the old_new mapping.
-  for (uint j = 0; j < list.size(); j++) {
-    Node* next = list.at(j);
-    Node* clone = old_new->at(next->_idx);
-    assert(clone != NULL && clone->_idx >= last_idx, "must exist and be a proper clone");
-    if (next->in(0) == uncommon_proj) {
-      // All data nodes with a control input to the uncommon projection in the chain need to be rewired to the new uncommon
-      // projection (could not only be the last data node in the chain but also, for example, a DivNode within the chain).
-      _igvn.replace_input_of(clone, 0, if_uct);
-      set_ctrl(clone, if_uct);
-    }
-
-    // Rewire the inputs of the cloned nodes to the old nodes to the new clones.
-    for (uint k = 1; k < next->req(); k++) {
-      Node* in = next->in(k);
-      if (!in->is_Phi()) {
-        assert(!in->is_CFG(), "must be data node");
-        Node* in_clone = old_new->at(in->_idx);
-        if (in_clone != NULL) {
-          assert(in_clone->_idx >= last_idx, "must be a valid clone");
-          _igvn.replace_input_of(clone, k, in_clone);
-          set_ctrl(clone, if_uct);
-        }
-      }
-    }
-  }
-  Node* clone_phi_input = old_new->at(phi_input->_idx);
+  Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(node, old_ctrl);
+  Dict old_new_mapping = clone_nodes(nodes_with_same_ctrl); // Cloned but not rewired, yet
+  rewire_cloned_nodes_to_ctrl(old_ctrl, new_ctrl, nodes_with_same_ctrl, old_new_mapping);
+  Node* clone_phi_input = static_cast<Node*>(old_new_mapping[node]);
   assert(clone_phi_input != NULL && clone_phi_input->_idx >= last_idx, "must exist and be a proper clone");
   return clone_phi_input;
 }
+
+// Clone all the nodes on 'list_to_clone' and return an old->new mapping.
+Dict PhaseIdealLoop::clone_nodes(const Node_List& list_to_clone) {
+  Dict old_new_mapping(cmpkey, hashkey);
+  for (uint i = 0; i < list_to_clone.size(); i++) {
+    Node* next = list_to_clone[i];
+    Node* clone = next->clone();
+    _igvn.register_new_node_with_optimizer(clone);
+    old_new_mapping.Insert(next, clone);
+  }
+  return old_new_mapping;
+}
+
+// Rewire inputs of the unprocessed cloned nodes (inputs are not updated, yet, and still point to the old nodes) by
+// using the old_new_mapping.
+void PhaseIdealLoop::rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl,
+                                                 const Node_List& nodes_with_same_ctrl, const Dict& old_new_mapping) {
+  for (uint i = 0; i < nodes_with_same_ctrl.size(); i++) {
+    Node* next = nodes_with_same_ctrl[i];
+    Node* clone = static_cast<Node*>(old_new_mapping[next]);
+    if (next->in(0) == old_ctrl) {
+      // All data nodes with a control input to the uncommon projection in the chain need to be rewired to the new uncommon
+      // projection (could not only be the last data node in the chain but also, for example, a DivNode within the chain).
+      _igvn.replace_input_of(clone, 0, new_ctrl);
+      set_ctrl(clone, new_ctrl);
+    }
+    rewire_inputs_of_clones_to_clones(new_ctrl, clone, old_new_mapping, next);
+  }
+}
+
+// Rewire the inputs of the cloned nodes to the old nodes to the new clones.
+void PhaseIdealLoop::rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping,
+                                                       const Node* next) {
+  for (uint i = 1; i < next->req(); i++) {
+    Node* in = next->in(i);
+    if (!in->is_Phi()) {
+      assert(!in->is_CFG(), "must be data node");
+      Node* in_clone = static_cast<Node*>(old_new_mapping[in]);
+      if (in_clone != NULL) {
+        _igvn.replace_input_of(clone, i, in_clone);
+        set_ctrl(clone, new_ctrl);
+      }
+    }
+  }
+}
+
 //--------------------------clone_predicate-----------------------
 ProjNode* PhaseIdealLoop::clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry,
-                                                             Deoptimization::DeoptReason reason, Node_List* old_new) {
-  UnswitchingAction unswitching_action;
-  if (predicate_proj->other_if_proj()->outcnt() > 1) {
-    // There are some data dependencies that need to be taken care of when cloning a predicate.
-    unswitching_action = old_new == NULL ? UnswitchingAction::SlowLoopRewiring : UnswitchingAction::FastLoopCloning;
-  } else {
-    unswitching_action = UnswitchingAction::None;
-  }
+                                                             Deoptimization::DeoptReason reason, const bool slow_loop) {
 
   ProjNode* new_predicate_proj = create_new_if_for_predicate(predicate_proj, new_entry, reason, Op_If,
-                                                             true, old_new, unswitching_action);
+                                                             slow_loop);
   IfNode* iff = new_predicate_proj->in(0)->as_If();
   Node* ctrl  = iff->in(0);
 
@@ -402,7 +416,8 @@ ProjNode* PhaseIdealLoop::clone_skeleton_predicate_for_unswitched_loops(Node* if
                                                                         Deoptimization::DeoptReason reason,
                                                                         ProjNode* output_proj) {
   Node* bol = clone_skeleton_predicate_bool(iff, NULL, NULL, output_proj);
-  ProjNode* proj = create_new_if_for_predicate(output_proj, NULL, reason, iff->Opcode(), predicate->is_IfTrue());
+  ProjNode* proj = create_new_if_for_predicate(output_proj, NULL, reason, iff->Opcode(),
+                                               false, predicate->is_IfTrue());
   _igvn.replace_input_of(proj->in(0), 1, bol);
   _igvn.replace_input_of(output_proj->in(0), 0, proj);
   set_idom(output_proj->in(0), proj, dom_depth(proj));
@@ -435,8 +450,8 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree* loop, No
   }
   if (predicate_proj != NULL) { // right pattern that can be used by loop predication
     // clone predicate
-    iffast_pred = clone_predicate_to_unswitched_loop(predicate_proj, iffast_pred, Deoptimization::Reason_predicate, &old_new);
-    ifslow_pred = clone_predicate_to_unswitched_loop(predicate_proj, ifslow_pred, Deoptimization::Reason_predicate);
+    iffast_pred = clone_predicate_to_unswitched_loop(predicate_proj, iffast_pred, Deoptimization::Reason_predicate,false);
+    ifslow_pred = clone_predicate_to_unswitched_loop(predicate_proj, ifslow_pred, Deoptimization::Reason_predicate,true);
     clone_skeleton_predicates_to_unswitched_loop(loop, old_new, Deoptimization::Reason_predicate, predicate_proj, iffast_pred, ifslow_pred);
 
     check_created_predicate_for_unswitching(iffast_pred);
@@ -444,8 +459,8 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree* loop, No
   }
   if (profile_predicate_proj != NULL) { // right pattern that can be used by loop predication
     // clone predicate
-    iffast_pred = clone_predicate_to_unswitched_loop(profile_predicate_proj, iffast_pred, Deoptimization::Reason_profile_predicate, &old_new);
-    ifslow_pred = clone_predicate_to_unswitched_loop(profile_predicate_proj, ifslow_pred, Deoptimization::Reason_profile_predicate);
+    iffast_pred = clone_predicate_to_unswitched_loop(profile_predicate_proj, iffast_pred,Deoptimization::Reason_profile_predicate, false);
+    ifslow_pred = clone_predicate_to_unswitched_loop(profile_predicate_proj, ifslow_pred,Deoptimization::Reason_profile_predicate, true);
     clone_skeleton_predicates_to_unswitched_loop(loop, old_new, Deoptimization::Reason_profile_predicate, profile_predicate_proj, iffast_pred, ifslow_pred);
 
     check_created_predicate_for_unswitching(iffast_pred);
@@ -455,8 +470,8 @@ void PhaseIdealLoop::clone_predicates_to_unswitched_loop(IdealLoopTree* loop, No
     // Clone loop limit check last to insert it before loop.
     // Don't clone a limit check which was already finalized
     // for this counted loop (only one limit check is needed).
-    iffast_pred = clone_predicate_to_unswitched_loop(limit_check_proj, iffast_pred, Deoptimization::Reason_loop_limit_check, &old_new);
-    ifslow_pred = clone_predicate_to_unswitched_loop(limit_check_proj, ifslow_pred, Deoptimization::Reason_loop_limit_check);
+    iffast_pred = clone_predicate_to_unswitched_loop(limit_check_proj, iffast_pred,Deoptimization::Reason_loop_limit_check, false);
+    ifslow_pred = clone_predicate_to_unswitched_loop(limit_check_proj, ifslow_pred,Deoptimization::Reason_loop_limit_check, true);
 
     check_created_predicate_for_unswitching(iffast_pred);
     check_created_predicate_for_unswitching(ifslow_pred);
@@ -1337,13 +1352,11 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     upper_bound_iff->set_req(1, upper_bound_bol);
     if (TraceLoopPredicate) tty->print_cr("upper bound check if: %s %d ", negate ? " negated" : "", lower_bound_iff->_idx);
 
-    // Fall through into rest of the clean up code which will move
-    // any dependent nodes onto the upper bound test.
-    new_predicate_proj = upper_bound_proj;
-
-    if (iff->is_RangeCheck()) {
-      new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow, reason);
-    }
+    // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
+    // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
+    // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
+    new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale,
+                                                           offset, init, limit, stride, rng, overflow, reason);
 
 #ifndef PRODUCT
     if (TraceLoopOpts && !TraceLoopPredicate) {

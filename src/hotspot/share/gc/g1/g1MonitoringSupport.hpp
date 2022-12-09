@@ -121,13 +121,16 @@ class MemoryPool;
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class G1MonitoringScope;
+  friend class G1YoungGCMonitoringScope;
+  friend class G1FullGCMonitoringScope;
+  friend class G1ConcGCMonitoringScope;
 
   G1CollectedHeap* _g1h;
 
   // java.lang.management MemoryManager and MemoryPool support
   GCMemoryManager _incremental_memory_manager;
   GCMemoryManager _full_gc_memory_manager;
+  GCMemoryManager _conc_gc_memory_manager;
 
   MemoryPool* _eden_space_pool;
   MemoryPool* _survivor_space_pool;
@@ -210,10 +213,6 @@ public:
 
   void update_eden_size();
 
-  CollectorCounters* conc_collection_counters() {
-    return _conc_collection_counters;
-  }
-
   // Monitoring support used by
   //   MemoryService
   //   jstat counters
@@ -241,9 +240,26 @@ class G1MonitoringScope : public StackObj {
   G1MonitoringSupport* _monitoring_support;
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
-public:
-  G1MonitoringScope(G1MonitoringSupport* monitoring_support, bool full_gc, bool all_memory_pools_affected);
+protected:
+  G1MonitoringScope(G1MonitoringSupport* monitoring_support,
+                    CollectorCounters* collection_counters,
+                    GCMemoryManager* gc_memory_manager,
+                    bool all_memory_pools_affected = true);
   ~G1MonitoringScope();
 };
 
+class G1YoungGCMonitoringScope : public G1MonitoringScope {
+public:
+  G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
+};
+
+class G1FullGCMonitoringScope : public G1MonitoringScope {
+public:
+  G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+};
+
+class G1ConcGCMonitoringScope : public G1MonitoringScope {
+public:
+  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+};
 #endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP

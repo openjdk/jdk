@@ -119,6 +119,7 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
+java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
@@ -474,8 +475,8 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
-java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
-java/foreign/TestDowncallStack.java 8275584 macosx-aarch64
+java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
+java/foreign/TestLargeSegmentCopy.java generic-x86
 
 ############################################################################
 
@@ -617,6 +618,8 @@ sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
 
+java/security/SignedJar/spi-calendar-provider/TestSPISigned.java 8298271 windows-all
+
 ############################################################################
 
 # jdk_sound
@@ -649,7 +652,6 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 802462
 # The next test below is an intermittent failure
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 7105441 macosx-all
-javax/swing/JSpinner/4788637/bug4788637.java 8296084 linux-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
@@ -662,6 +664,7 @@ javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
+javax/swing/JRadioButton/4314194/bug4314194.java 8298153 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
@@ -670,6 +673,9 @@ javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
 java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8297296 macosx-all
 javax/swing/JFileChooser/8046391/bug8046391.java 8293862 windows-x64
+java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/Mixing/AWT_Mixing/ViewportOverlapping.java 8253184,8295813 windows-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
@@ -711,6 +717,7 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
+java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
 
 ############################################################################
 
@@ -790,3 +797,4 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
+

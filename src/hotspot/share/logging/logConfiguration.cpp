@@ -675,6 +675,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
   out->print_cr("\t Turn off all logging, including warnings and errors,");
   out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
+  out->cr();
 
   out->print_cr(" -Xlog:async -Xlog:gc=debug:file=gc.log -Xlog:safepoint=trace");
   out->print_cr("\t Write logs asynchronously. Enable messages tagged with 'safepoint' up to 'trace' level to stdout ");

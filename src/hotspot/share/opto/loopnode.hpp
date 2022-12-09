@@ -1308,22 +1308,22 @@ public:
                                       jlong* p_scale, Node** p_offset,
                                       bool* p_short_scale, int depth);
 
-
-  // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
-  enum class UnswitchingAction {
-    None,            // No special action.
-    FastLoopCloning, // Need to clone nodes for the fast loop.
-    SlowLoopRewiring // Need to rewire nodes for the slow loop.
-  };
-
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                        int opcode, bool if_cont_is_true_proj = true, Node_List* old_new = NULL,
-                                        UnswitchingAction unswitching_action = UnswitchingAction::None);
+                                        int opcode, bool rewire_uncommon_proj_phi_inputs = false,
+                                        bool if_cont_is_true_proj = true);
 
-  // Clone data nodes for the fast loop while creating a new If with create_new_if_for_predicate.
-  Node* clone_data_nodes_for_fast_loop(Node* phi_input, ProjNode* uncommon_proj, Node* if_uct, Node_List* old_new);
+ private:
+  // Helper functions for create_new_if_for_predicate()
+  void set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
+  Unique_Node_List find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl);
+  Node* clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
+  Dict clone_nodes(const Node_List& list_to_clone);
+  void rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl, const Node_List& nodes_with_same_ctrl,
+                                   const Dict& old_new_mapping);
+  void rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping, const Node* next);
 
+ public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
   static Node* skip_all_loop_predicates(Node* entry);
@@ -1522,12 +1522,6 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
-  // Reorganize offset computations to lower register pressure.
-  // Mostly prevent loop-fallout uses of the pre-incremented trip counter
-  // (which are then alive with the post-incremented trip counter
-  // forcing an extra register move)
-  void reorg_offsets( IdealLoopTree *loop );
-
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
@@ -1646,8 +1640,8 @@ private:
 
   // Clone loop predicates to slow and fast loop when unswitching a loop
   void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
-  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                               Node_List* old_new = NULL);
+  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry,
+                                               Deoptimization::DeoptReason reason, bool slow_loop);
   void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
                                                     ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
   ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate,
