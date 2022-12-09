@@ -518,26 +518,24 @@ public abstract sealed class Reference<T>
      * reclaimable by garbage collection at least until after the invocation of
      * this method. {@link Reference}s referring to the given object will not be
      * enqueued on a {@link ReferenceQueue} until after invocation of this method.
-     * Invocation of this method does not itself initiate garbage collection or
-     * finalization.
+     * Invocation of this method does not itself initiate reference processing,
+     * garbage collection, or finalization.
      *
      * <p> This method establishes an ordering for <em>strong reachability</em>
      * with respect to garbage collection.  It controls relations that are
      * otherwise only implicit in a program -- the reachability conditions
-     * triggering garbage collection.  This method is designed for use in
-     * uncommon situations of premature finalization where using
-     * {@code synchronized} blocks or methods, or using other synchronization
-     * facilities are not possible or do not provide the desired control.  This
-     * method is applicable only when reclamation may have visible effects,
-     * which is possible for objects with finalizers or that use Cleaners.
+     * triggering garbage collection.  This method is designed for use
+     * when reclamation may have visible effects,
+     * such as for objects with finalizers or that use Cleaner.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
-     * reachabilityFence(x) happen-before any Reference to x is enqueued on a
-     * ReferenceQueue (such as happens when running a
-     * {@linkplain Cleaner.register cleaning action} for x).
+     * reachabilityFence(x)
+     * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+     * any Reference to x is enqueued on a ReferenceQueue (such as happens when
+     * running a {@linkplain Cleaner#register cleaning action} for x).
      *
      * @apiNote
-     * Cleaning actions or finalization may occur whenever the virtual machine detects that no
+     * Reference processing or finalization may occur whenever the virtual machine detects that no
      * reference to an object will ever be stored in the heap: The garbage
      * collector may reclaim an object even if the fields of that object are
      * still in use, so long as the object has otherwise become unreachable.
