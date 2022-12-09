@@ -25,7 +25,7 @@
 
 package java.io;
 
-import java.io.*;
+import java.util.Objects;
 
 /**
  * A piped output stream can be connected to a piped input stream
@@ -144,10 +144,9 @@ public class PipedOutputStream extends OutputStream {
             throw new IOException("Pipe not connected");
         } else if (b == null) {
             throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0) ||
-                   ((off + len) > b.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        Objects.checkFromToIndex(off, len, b.length);
+        if (len == 0) {
             return;
         }
         sink.receive(b, off, len);

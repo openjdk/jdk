@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.util.Objects;
+
 /**
  * This class is an input stream filter that provides the added
  * functionality of keeping track of the current line number.
@@ -129,10 +131,9 @@ public class LineNumberInputStream extends FilterInputStream {
     public int read(byte[] b, int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0) ||
-                   ((off + len) > b.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        Objects.checkFromToIndex(off, len, b.length);
+        if (len == 0) {
             return 0;
         }
 

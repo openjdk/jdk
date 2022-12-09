@@ -484,10 +484,7 @@ public class Console implements Flushable
         {
             int off = offset;
             int end = offset + length;
-            if (offset < 0 || offset > cbuf.length || length < 0 ||
-                end < 0 || end > cbuf.length) {
-                throw new IndexOutOfBoundsException();
-            }
+            Objects.checkFromToIndex(off, length, cbuf.length);
             synchronized(readLock) {
                 boolean eof = false;
                 char c = 0;

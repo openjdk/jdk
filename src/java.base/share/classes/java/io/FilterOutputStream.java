@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.util.Objects;
+
 /**
  * This class is the superclass of all classes that filter output
  * streams. These streams sit on top of an already existing output
@@ -131,8 +133,7 @@ public class FilterOutputStream extends OutputStream {
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if ((off | len | (b.length - (len + off)) | (off + len)) < 0)
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromToIndex(off, len, b.length);
 
         for (int i = 0 ; i < len ; i++) {
             write(b[off + i]);
