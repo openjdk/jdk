@@ -620,17 +620,12 @@ static bool no_flip_branch(Block *b) {
 // fake exit path to infinite loops.  At this late stage they need to turn
 // into Goto's so that when you enter the infinite loop you indeed hang.
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
-  // NeverBranch sits at end_idx, the two projections right after it
   int end_idx = b->end_idx();
   NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
-  ProjNode* proj_always = never_branch->proj_out(0);
-  ProjNode* proj_never  = never_branch->proj_out(1);
-  // if proj_always projects into _succs[0], dead_idx == 1
-  int dead_idx = b->_succs[0]->get_node(0) == proj_always->unique_ctrl_out_or_null();
-  Block* succ = b->_succs[1 - dead_idx];
-  Block* dead = b->_succs[dead_idx];
-  assert(proj_always->unique_ctrl_out_or_null() == succ->get_node(0), "proj_always leads to succ block");
-  assert(proj_never->unique_ctrl_out_or_null() == dead->get_node(0), "proj_never leads to dead block");
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
+  assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
 
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, b->head());
