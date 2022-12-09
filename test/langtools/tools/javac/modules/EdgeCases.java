@@ -39,6 +39,7 @@
 import java.io.BufferedWriter;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -1079,6 +1080,7 @@ public class EdgeCases extends ModuleTestBase {
         tb.createDirectories(classes);
 
         record TestCase(Path[] files, String... expectedLog){}
+        String nameSeparator = FileSystems.getDefault().getSeparator();
 
         TestCase[] testCases = new TestCase[] {
             new TestCase(new Path[] {m.resolve("module-info.java")},
@@ -1133,7 +1135,9 @@ public class EdgeCases extends ModuleTestBase {
                             }
                             private void record(TaskEvent e, String phase) {
                                 JavaFileObject source = e.getSourceFile();
-                                String sourceName = source != null ? source.getName() : "<none>";
+                                String sourceName = source != null ? source.getName()
+                                                                           .replace(nameSeparator, "/")
+                                                                   : "<none>";
                                 log.add(e.getKind() + ":" + phase + ":" + sourceName);
                             }
                         });
