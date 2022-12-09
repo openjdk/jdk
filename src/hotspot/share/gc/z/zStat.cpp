@@ -1852,8 +1852,20 @@ size_t ZStatHeap::used_at_mark_start() const {
   return _at_mark_start.used;
 }
 
+size_t ZStatHeap::used_generation_at_mark_start() const {
+  return _at_mark_start.used_generation;
+}
+
 size_t ZStatHeap::live_at_mark_end() const {
   return _at_mark_end.live;
+}
+
+size_t ZStatHeap::allocated_at_mark_end() const {
+  return _at_mark_end.mutator_allocated;
+}
+
+size_t ZStatHeap::garbage_at_mark_end() const {
+  return _at_mark_end.garbage;
 }
 
 size_t ZStatHeap::used_at_relocate_end() const {

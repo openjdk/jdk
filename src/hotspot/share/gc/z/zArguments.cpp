@@ -90,7 +90,7 @@ void ZArguments::initialize() {
       // Reduce the number of object ages, if the resulting garbage is too high
       const size_t medium_page_overhead = ZPageSizeMedium * tenuring_threshold;
       const size_t small_page_overhead = ZPageSizeSmall * ConcGCThreads * tenuring_threshold;
-      if (small_page_overhead + medium_page_overhead >= ZHeuristics::significant_heap_overhead()) {
+      if (small_page_overhead + medium_page_overhead >= ZHeuristics::significant_young_overhead()) {
         break;
       }
     }

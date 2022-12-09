@@ -671,50 +671,103 @@ void ZGenerationYoung::select_tenuring_threshold(ZRelocationSetSelectorStats sta
 }
 
 uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats stats) {
-  const size_t old_live_total = ZGeneration::old()->stat_heap()->live_at_mark_end();
-
   size_t young_live_total = 0;
   size_t young_live_last = 0;
   double young_life_expectancy_sum = 0.0;
   uint young_life_expectancy_samples = 0;
+  uint last_populated_age = 0;
+  size_t last_populated_live = 0;
 
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
-    assert(age != ZPageAge::old || young_live == 0, "old data");
-    if (young_live > 0 && young_live_last > 0) {
-      young_life_expectancy_sum += double(young_live) / double(young_live_last);
-      young_life_expectancy_samples++;
+    if (young_live > 0) {
+      last_populated_age = i;
+      last_populated_live = young_live;
+      if (young_live_last > 0) {
+        young_life_expectancy_sum += double(young_live) / double(young_live_last);
+        young_life_expectancy_samples++;
+      }
     }
     young_live_total += young_live;
     young_live_last = young_live;
   }
 
-  const size_t live_total = young_live_total + old_live_total;
-  const double young_residency_ratio = double(young_live_total) / double(live_total);
-  const double young_life_expectancy = young_life_expectancy_samples == 0 ? 0.0 : young_life_expectancy_sum / young_life_expectancy_samples;
-  const double max_promotion_fraction = young_residency_ratio * young_life_expectancy;
-  const size_t promotion_threshold = live_total * max_promotion_fraction;
-
-  log_info(gc, reloc)("Young: Residency Ratio: %.1f%%", young_residency_ratio * 100.0);
-  log_info(gc, reloc)("Young: Survivor Ratio: %.1f%%", young_life_expectancy * 100.0);
-
-  size_t young_selected_live = 0;
-
-  const uint max_tenuring_threshold = MIN2(ZPageAgeMax, (uint)MaxTenuringThreshold);
-  uint tenuring_threshold;
-  for (tenuring_threshold = 0; tenuring_threshold < max_tenuring_threshold; ++tenuring_threshold) {
-    const ZPageAge age = static_cast<ZPageAge>(tenuring_threshold);
-    const size_t live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
-    const size_t promoted = young_live_total - young_selected_live;
-    young_selected_live += live;
-
-    if (tenuring_threshold > 0 && promoted <= promotion_threshold) {
-      // Increment tenuring threshold until promoted memory goes below the
-      // heuristically computed threshold
-      return tenuring_threshold;
-    }
+  if (young_live_total == 0) {
+    return 0;
   }
+
+  const size_t young_used_at_mark_start = ZGeneration::young()->stat_heap()->used_generation_at_mark_start();
+  const size_t young_garbage = ZGeneration::young()->stat_heap()->garbage_at_mark_end();
+  const size_t young_allocated = ZGeneration::young()->stat_heap()->allocated_at_mark_end();
+  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+
+  // The life expectancy shows by what factor on average one age changes between
+  // two ages in the age table. Values below 1 indicate generational behaviour where
+  // the live bytes is shrinking from age to age. Values at or above 1 indicate
+  // anti-generational patterns where the live bytes isn't going down or grows
+  // from age to age.
+  const double young_life_expectancy = young_life_expectancy_samples == 0 ? 1.0 : young_life_expectancy_sum / young_life_expectancy_samples;
+
+  // The life decay factor is the reciprocal of the life expectancy. Therefore,
+  // values at or below 1 indicate anti-generational behaviour where the live
+  // bytes either stays the same or grows from age to age. Conversely, values
+  // above 1 indicate generational behaviour where the live bytes shrinks from
+  // age to age. The more it shrinks from age to age, the higher the value.
+  // Therefore, the higher this value is, the higher we want the tenuring
+  // threshold to be, as we exponentially avoid promotions to the old generation.
+  const double young_life_decay_factor = 1.0 / young_life_expectancy;
+
+  // The young residency reciprocal indicates the inverse of how small the
+  // resident part of the young generation is compared to the entire heap. Values
+  // below 1 indicate it is relatively big. Conversely, values above 1 indicate
+  // it is relatively small.
+  const double young_residency_reciprocal = double(soft_max_capacity) / double(young_live_total);
+
+  // The old residency factor clamps the old residency reciprocal to
+  // at least 1. That implies this factor is 1 unless the resident memory of
+  // the old generation is small compared to the residency of the heap. The
+  // smaller the old generation is, the higher this value is. The reasoning
+  // is that the less memory that is resident in the old generation, the less
+  // point there is in promoting objects to the old generation, as the amount
+  // of work it removes from the young generation collections becomes less
+  // and less valuable, the smaller the old generation is.
+  const double young_residency_factor = MAX2(young_residency_reciprocal, 1.0);
+
+  // The allocated to garbage ratio, compares the ratio of newly allocated
+  // memory since GC started to how much garbage we are freeing up. The higher
+  // the value, the harder it is for the YC to keep up with the allocation rate.
+  const double allocated_garbage_ratio = double(young_allocated) / double(young_garbage + 1);
+
+  // We slow down the young residency factor with a log. A larger log slows
+  // it down faster. We select a log between 2 - 16 scaled by the allocated
+  // to garbage factor. This selects a larger log when the GC has a harder
+  // time keeping up, which causes more promotions to the old generation,
+  // making the young collections faster so they can catch up.
+  const double young_log = MAX2(MIN2(allocated_garbage_ratio, 1.0) * 16, 2.0);
+
+  // The young log residency is essentially the young residency factor, but slowed
+  // down by the log_{young_log}(X) function described above.
+  const double young_log_residency = log(young_residency_factor) / log(young_log);
+
+  // The tenuring threshold is computed as the young life decay factor times
+  // the young residency factor. That takes into consideration that the
+  // value should be higher the more generational the age table is, and higher
+  // the more insignificant the footprint of young resident memory is, yet breaks
+  // if the GC is finding it hard to keep up with the allocation rate.
+  const double tenuring_threshold_raw = young_life_decay_factor * young_log_residency;
+
+  log_trace(gc, reloc)("Young Allocated: " SIZE_FORMAT "M", young_allocated / M);
+  log_trace(gc, reloc)("Young Garbage: " SIZE_FORMAT "M", young_garbage / M);
+  log_info(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
+  log_trace(gc, reloc)("Young Log: %.1f", young_log);
+  log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);
+  log_trace(gc, reloc)("Young Residency Factor: %.1f", young_residency_factor);
+  log_info(gc, reloc)("Young Log Residency: %.1f", young_log_residency);
+  log_info(gc, reloc)("Life Decay Factor: %.1f", young_life_decay_factor);
+
+  // Round to an integer as we can't have non-integral tenuring threshold.
+  uint tenuring_threshold = clamp((uint)round(tenuring_threshold_raw), 1u, MIN2(last_populated_age + 1u, (uint)MaxTenuringThreshold));
 
   return tenuring_threshold;
 }
