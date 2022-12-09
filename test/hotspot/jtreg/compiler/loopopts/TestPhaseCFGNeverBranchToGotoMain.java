@@ -25,7 +25,7 @@
  * @test
  * @bug 8296389
  * @summary Peeling of Irreducible loop can lead to NeverBranch being visited from either side
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:PerMethodTrapLimit=0
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:PerMethodTrapLimit=0
  *      -XX:CompileCommand=compileonly,TestPhaseCFGNeverBranchToGotoMain::test
  *      TestPhaseCFGNeverBranchToGotoMain
  */
@@ -35,7 +35,7 @@
  * @bug 8296389
  * @compile TestPhaseCFGNeverBranchToGoto.jasm
  * @summary Peeling of Irreducible loop can lead to NeverBranch being visited from either side
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:PerMethodTrapLimit=0
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:PerMethodTrapLimit=0
  *      -XX:CompileCommand=compileonly,TestPhaseCFGNeverBranchToGoto::test
  *      TestPhaseCFGNeverBranchToGoto
  */
@@ -45,6 +45,7 @@ public class TestPhaseCFGNeverBranchToGotoMain {
     public static void main (String[] args) {
         test(false, false);
     }
+
     public static void test(boolean flag1, boolean flag2) {
         if (flag1) { // runtime check, avoid infinite loop
             int a = 77;
