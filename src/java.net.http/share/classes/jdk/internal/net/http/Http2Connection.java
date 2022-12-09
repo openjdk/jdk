@@ -1008,6 +1008,7 @@ class Http2Connection  {
     // This method is called when the HTTP/2 client is being
     // stopped. Do not call it from anywhere else.
     void closeAllStreams() {
+        if (debug.on()) debug.log("Close all streams");
         for (var streamId : streams.keySet()) {
             // safe to call without locking - see Stream::deRegister
             decrementStreamsCount(streamId);
