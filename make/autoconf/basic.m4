@@ -212,6 +212,18 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_toolchain_path)]
   )
 
+  AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
+      [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  if test "x$with_xcode_path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],
+          $with_xcode_path/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$with_xcode_path/Contents/Developer/usr/bin)
+    else
+      AC_MSG_WARN([Option --with-xcode-path is only valid on Mac OS, ignoring.])
+    fi
+  fi
+
   AC_ARG_WITH([extra-path], [AS_HELP_STRING([--with-extra-path],
       [prepend these directories to the default path])],
       [UTIL_PREPEND_TO_PATH([EXTRA_PATH],$with_extra_path)]
@@ -222,7 +234,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
     # If not, detect if Xcode is installed by running xcodebuild -version
     # if no Xcode installed, xcodebuild exits with 1
     # if Xcode is installed, even if xcode-select is misconfigured, then it exits with 0
-    if test "x$DEVKIT_ROOT" != x || /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+    if test "x$DEVKIT_ROOT" != x || test "x$TOOLCHAIN_PATH" != x || /usr/bin/xcodebuild -version >/dev/null 2>&1; then
       # We need to use xcodebuild in the toolchain dir provided by the user
       UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
       if test x$XCODEBUILD = x; then

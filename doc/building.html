@@ -239,26 +239,26 @@
 <table>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Operating system</th>
-<th style="text-align: left;">Supported toolchain</th>
+<th>Operating system</th>
+<th>Supported toolchain</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Linux</td>
-<td style="text-align: left;">gcc, clang</td>
+<td>Linux</td>
+<td>gcc, clang</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">macOS</td>
-<td style="text-align: left;">Apple Xcode (using clang)</td>
+<td>macOS</td>
+<td>Apple Xcode (using clang)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">AIX</td>
-<td style="text-align: left;">IBM XL C/C++</td>
+<td>AIX</td>
+<td>IBM XL C/C++</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Windows</td>
-<td style="text-align: left;">Microsoft Visual Studio</td>
+<td>Windows</td>
+<td>Microsoft Visual Studio</td>
 </tr>
 </tbody>
 </table>
@@ -266,22 +266,22 @@
 <table>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Operating system</th>
-<th style="text-align: left;">Toolchain version</th>
+<th>Operating system</th>
+<th>Toolchain version</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Linux</td>
-<td style="text-align: left;">gcc 10.2.0</td>
+<td>Linux</td>
+<td>gcc 10.2.0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">macOS</td>
-<td style="text-align: left;">Apple Xcode 10.1 (using clang 10.0.0)</td>
+<td>macOS</td>
+<td>Apple Xcode 10.1 (using clang 10.0.0)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Windows</td>
-<td style="text-align: left;">Microsoft Visual Studio 2022 update 17.1.0</td>
+<td>Windows</td>
+<td>Microsoft Visual Studio 2022 update 17.1.0</td>
 </tr>
 </tbody>
 </table>
@@ -295,12 +295,16 @@
 <p>To use clang instead of gcc on Linux, use <code>--with-toolchain-type=clang</code>.</p>
 <h3 id="apple-xcode">Apple Xcode</h3>
 <p>The oldest supported version of Xcode is 8.</p>
-<p>You will need the Xcode command lines developers tools to be able to build the JDK. (Actually, <em>only</em> the command lines tools are needed, not the IDE.) The simplest way to install these is to run:</p>
+<p>You will need the Xcode command line developer tools to be able to build the JDK. (Actually, <em>only</em> the command line tools are needed, not the IDE.) The simplest way to install these is to run:</p>
 <pre><code>xcode-select --install</code></pre>
-<p>It is advisable to keep an older version of Xcode for building the JDK when updating Xcode. This <a href="http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html">blog page</a> has good suggestions on managing multiple Xcode versions. To use a specific version of Xcode, use <code>xcode-select -s</code> before running <code>configure</code>, or use <code>--with-toolchain-path</code> to point to the version of Xcode to use, e.g. <code>configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin</code></p>
+<p>When updating Xcode, it is advisable to keep an older version for building the JDK. To use a specific version of Xcode you have multiple options:</p>
+<ul>
+<li>Use <code>xcode-select -s</code> before running <code>configure</code>, e.g. <code>xcode-select -s /Applications/Xcode13.1.app</code>. The drawback is that the setting is system wide and you may have to revert it after an OpenJDK build.</li>
+<li>Use configure option <code>--with-xcode-path</code>, e.g. <code>configure --with-xcode-path=/Applications/Xcode13.1.app</code> This allows using a specific Xcode version for an OpenJDK build, independently of the active Xcode version by <code>xcode-select</code>.</li>
+</ul>
 <p>If you have recently (inadvertently) updated your OS and/or Xcode version, and the JDK can no longer be built, please see the section on <a href="#problems-with-the-build-environment">Problems with the Build Environment</a>, and <a href="#getting-help">Getting Help</a> to find out if there are any recent, non-merged patches available for this update.</p>
 <h3 id="microsoft-visual-studio">Microsoft Visual Studio</h3>
-<p>For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 (16.8 or higher). For all other platforms the minimum accepted version of Visual Studio is 2017. Older versions will not be accepted by <code>configure</code> and will not work. For all platforms the maximum accepted version of Visual Studio is 2019.</p>
+<p>The minimum accepted version of Visual Studio is 2017. Older versions will not be accepted by <code>configure</code> and will not work. The maximum accepted version of Visual Studio is 2019.</p>
 <p>If you have multiple versions of Visual Studio installed, <code>configure</code> will by default pick the latest. You can request a specific version to be used by setting <code>--with-toolchain-version</code>, e.g. <code>--with-toolchain-version=2017</code>.</p>
 <p>If you have Visual Studio installed but <code>configure</code> fails to detect it, it may be because of <a href="#spaces-in-path">spaces in path</a>.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
