@@ -112,7 +112,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_attr(const char *name, intptr_t val);
   void print_prop(const char *name, const char *val);
   void print_prop(const char *name, int val);
-  void tail(const char *name);
+  void print_prop(const char *name, unsigned int val);
+    void tail(const char *name);
   void head(const char *name);
   void text(const char *s);
   void init(const char* file_name, bool use_multiple_files, bool append);

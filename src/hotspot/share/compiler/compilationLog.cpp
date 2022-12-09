@@ -45,14 +45,14 @@ void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
 }
 
 void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
-  log(thread, "nmethod %d%s " INTPTR_FORMAT " code [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",
+  log(thread, "nmethod %u%s " INTPTR_FORMAT " code [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",
       nm->compile_id(), nm->is_osr_method() ? "%" : "",
       p2i(nm), p2i(nm->code_begin()), p2i(nm->code_end()));
 }
 
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
   StringLogMessage lm;
-  lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+  lm.print("%4u   COMPILE SKIPPED: %s", task->compile_id(), reason);
   if (retry_message != NULL) {
     lm.append(" (%s)", retry_message);
   }

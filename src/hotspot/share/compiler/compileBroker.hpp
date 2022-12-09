@@ -148,7 +148,7 @@ class CompileBroker: AllStatic {
 
   // Compile type Information for print_last_compile() and CompilerCounters
   enum { no_compile, normal_compile, osr_compile, native_compile };
-  static int assign_compile_id (const methodHandle& method, int osr_bci);
+  static uint assign_compile_id (const methodHandle& method, int osr_bci);
 
 
  private:
@@ -171,9 +171,9 @@ class CompileBroker: AllStatic {
   static CompileLog **_compiler1_logs, **_compiler2_logs;
 
   // These counters are used for assigning id's to each compilation
-  static volatile jint _compilation_id;
-  static volatile jint _osr_compilation_id;
-  static volatile jint _native_compilation_id;
+  static volatile uint _compilation_id;
+  static volatile uint _osr_compilation_id;
+  static volatile uint _native_compilation_id;
 
   static CompileQueue* _c2_compile_queue;
   static CompileQueue* _c1_compile_queue;
@@ -239,7 +239,7 @@ class CompileBroker: AllStatic {
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
-                                          int                 compile_id,
+                                          uint                compile_id,
                                           const methodHandle& method,
                                           int                 osr_bci,
                                           int                 comp_level,

@@ -540,9 +540,9 @@ void Compile::print_compile_messages() {
 
   if( PrintOpto ) {
     if (is_osr_compilation()) {
-      tty->print("[OSR]%3d", _compile_id);
+      tty->print("[OSR]%3u", _compile_id);
     } else {
-      tty->print("%3d", _compile_id);
+      tty->print("%3u", _compile_id);
     }
   }
 #endif
@@ -556,7 +556,7 @@ void Compile::print_ideal_ir(const char* phase_name) {
   // To enable tools to match it up with the compilation activity,
   // be sure to tag this tty output with the compile ID.
   if (xtty != NULL) {
-    xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
+    xtty->head("ideal compile_id='%u'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
@@ -4586,6 +4586,7 @@ void Compile::log_inline_id(CallGenerator* cg) {
     // file.
     // Distinguish OSR compilations from others in case CICountOSR is
     // on.
+    assert(compile_id() < LONG_MAX, "compile id too big");
     jlong id = ((jlong)unique()) + (((jlong)compile_id()) << 33) + (CICountOSR && is_osr_compilation() ? ((jlong)1) << 32 : 0);
     cg->set_unique_id(id);
     log()->elem("inline_id id='" JLONG_FORMAT "'", id);

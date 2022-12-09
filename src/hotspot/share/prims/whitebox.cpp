@@ -1548,7 +1548,8 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   env->SetByteArrayRegion(insts, 0, insts_size, (jbyte*) code->insts_begin());
   env->SetObjectArrayElement(result, 2, insts);
 
-  jobject id = integerBox(thread, env, code->compile_id());
+  assert(code->compile_id() < INT_MAX, "compile id too big");
+  jobject id = integerBox(thread, env, (jint) code->compile_id());
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 3, id);
 

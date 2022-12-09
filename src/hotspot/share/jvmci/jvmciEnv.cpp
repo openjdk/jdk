@@ -1622,7 +1622,9 @@ nmethod* JVMCIEnv::lookup_nmethod(address code, jlong compile_id_snapshot) {
   CodeBlob* cb = CodeCache::find_blob(code);
   if (cb == (CodeBlob*) code) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL && (compile_id_snapshot == 0 || nm->compile_id() == compile_id_snapshot)) {
+    assert(compile_id_snapshot >= 0, "negative compile id snapshot");
+    assert(compile_id_snapshot < UINT_MAX, "compile id snapshot too big");
+    if (nm != NULL && (compile_id_snapshot == 0 || nm->compile_id() == (uint) compile_id_snapshot)) {
       return nm;
     }
   }

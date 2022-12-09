@@ -2015,7 +2015,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
 //
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 const methodHandle& method,
-                                                int compile_id,
+                                                uint compile_id,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {

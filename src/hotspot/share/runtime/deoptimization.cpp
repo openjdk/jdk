@@ -1842,7 +1842,7 @@ static void log_deopt(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, in
   if (lt.is_enabled()) {
     LogStream ls(lt);
     bool is_osr = nm->is_osr_method();
-    ls.print("cid=%4d %s level=%d",
+    ls.print("cid=%4u %s level=%d",
              nm->compile_id(), (is_osr ? "osr" : "   "), nm->comp_level());
     ls.print(" %s", tm->name_and_sig_as_C_string());
     ls.print(" trap_bci=%d ", trap_bci);
@@ -2023,7 +2023,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         st.print("UNCOMMON TRAP method=%s", trap_scope->method()->name_and_sig_as_C_string());
         st.print("  bci=%d pc=" INTPTR_FORMAT ", relative_pc=" INTPTR_FORMAT JVMCI_ONLY(", debug_id=%d"),
                  trap_scope->bci(), p2i(fr.pc()), fr.pc() - nm->code_begin() JVMCI_ONLY(COMMA debug_id));
-        st.print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
+        st.print(" compiler=%s compile_id=%u", nm->compiler_name(), nm->compile_id());
 #if INCLUDE_JVMCI
         if (nm->is_nmethod()) {
           const char* installed_code_name = nm->as_nmethod()->jvmci_name();

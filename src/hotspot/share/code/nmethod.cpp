@@ -488,7 +488,7 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
 #endif
 
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
-  int compile_id,
+  uint compile_id,
   CodeBuffer *code_buffer,
   int vep_offset,
   int frame_complete,
@@ -535,7 +535,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
 }
 
 nmethod* nmethod::new_nmethod(const methodHandle& method,
-  int compile_id,
+  uint compile_id,
   int entry_bci,
   CodeOffsets* offsets,
   int orig_pc_offset,
@@ -635,16 +635,16 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 
 // For native wrappers
 nmethod::nmethod(
-  Method* method,
-  CompilerType type,
-  int nmethod_size,
-  int compile_id,
-  CodeOffsets* offsets,
-  CodeBuffer* code_buffer,
-  int frame_size,
-  ByteSize basic_lock_owner_sp_offset,
-  ByteSize basic_lock_sp_offset,
-  OopMapSet* oop_maps )
+    Method* method,
+    CompilerType type,
+    int nmethod_size,
+    uint compile_id,
+    CodeOffsets* offsets,
+    CodeBuffer* code_buffer,
+    int frame_size,
+    ByteSize basic_lock_owner_sp_offset,
+    ByteSize basic_lock_sp_offset,
+    OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
   _unlinked_next(NULL),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
@@ -769,7 +769,7 @@ nmethod::nmethod(
   Method* method,
   CompilerType type,
   int nmethod_size,
-  int compile_id,
+  uint compile_id,
   int entry_bci,
   CodeOffsets* offsets,
   int orig_pc_offset,
@@ -912,7 +912,7 @@ nmethod::nmethod(
 // Print a short set of xml attributes to identify this nmethod.  The
 // output should be embedded in some other element.
 void nmethod::log_identity(xmlStream* log) const {
-  log->print(" compile_id='%d'", compile_id());
+  log->print(" compile_id='%u'", compile_id());
   const char* nm_kind = compile_kind();
   if (nm_kind != NULL)  log->print(" compile_kind='%s'", nm_kind);
   log->print(" compiler='%s'", compiler_name());
@@ -1436,7 +1436,7 @@ void nmethod::flush() {
 
   // completely deallocate this method
   Events::log(Thread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
-  log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
+  log_debug(codecache)("*flushing %s nmethod %3u/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
                        "/Free CodeCache:" SIZE_FORMAT "Kb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
                        CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);

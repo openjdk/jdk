@@ -52,12 +52,12 @@ class CompilerEvent : AllStatic {
 
   class CompilationEvent : AllStatic {
    public:
-    static void post(EventCompilation& event, int compile_id, CompilerType type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) NOT_JFR_RETURN();
+    static void post(EventCompilation& event, uint compile_id, CompilerType compiler_type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) NOT_JFR_RETURN();
   };
 
   class CompilationFailureEvent : AllStatic {
    public:
-    static void post(EventCompilationFailure& event, int compile_id, const char* reason) NOT_JFR_RETURN();
+    static void post(EventCompilationFailure& event, uint compile_id, const char* reason) NOT_JFR_RETURN();
   };
 
   class PhaseEvent : AllStatic {
@@ -71,17 +71,17 @@ class CompilerEvent : AllStatic {
     // If `sync` is true, then access to the registration table is synchronized.
     static int get_phase_id(const char* phase_name, bool may_exist, bool use_strdup, bool sync) NOT_JFR_RETURN_(-1);
 
-    static void post(EventCompilerPhase& event, const Ticks& start_time, int phase, int compile_id, int level) NOT_JFR_RETURN();
-    static void post(EventCompilerPhase& event, jlong start_time, int phase, int compile_id, int level) {
+    static void post(EventCompilerPhase& event, const Ticks& start_time, int phase, uint compile_id, int level) NOT_JFR_RETURN();
+    static void post(EventCompilerPhase& event, jlong start_time, int phase, uint compile_id, int level) {
       JFR_ONLY(post(event, Ticks(start_time), phase, compile_id, level);)
     }
   };
 
   class InlineEvent : AllStatic {
-    static void post(EventCompilerInlining& event, int compile_id, Method* caller, const JfrStructCalleeMethod& callee, bool success, const char* msg, int bci) NOT_JFR_RETURN();
+    static void post(EventCompilerInlining& event, uint compile_id, Method* caller, const JfrStructCalleeMethod& callee, bool success, const char* msg, int bci) NOT_JFR_RETURN();
    public:
-    static void post(EventCompilerInlining& event, int compile_id, Method* caller, Method* callee, bool success, const char* msg, int bci) NOT_JFR_RETURN();
-    static void post(EventCompilerInlining& event, int compile_id, Method* caller, ciMethod* callee, bool success, const char* msg, int bci) NOT_JFR_RETURN();
+    static void post(EventCompilerInlining& event, uint compile_id, Method* caller, Method* callee, bool success, const char* msg, int bci) NOT_JFR_RETURN();
+    static void post(EventCompilerInlining& event, uint compile_id, Method* caller, ciMethod* callee, bool success, const char* msg, int bci) NOT_JFR_RETURN();
   };
 };
 #endif // SHARE_COMPILER_COMPILEREVENT_HPP

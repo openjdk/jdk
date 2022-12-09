@@ -113,14 +113,14 @@ class CompileTask : public CHeapObj<mtCompiler> {
     _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
   }
 
-  void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
+  void initialize(uint compile_id, const methodHandle& method, int osr_bci, int comp_level,
                   const methodHandle& hot_method, int hot_count,
                   CompileTask::CompileReason compile_reason, bool is_blocking);
 
   static CompileTask* allocate();
   static void         free(CompileTask* task);
 
-  int          compile_id() const                { return _compile_id; }
+  uint         compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }
   Method*      hot_method() const                { return _hot_method; }
   int          osr_bci() const                   { return _osr_bci; }
@@ -193,10 +193,10 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         mark_on_stack();
 
 private:
-  static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
-                                      bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
-                                      const char* msg = NULL, bool short_form = false, bool cr = true,
-                                      jlong time_queued = 0, jlong time_started = 0);
+  static void  print_impl(outputStream* st, Method* method, uint compile_id, int comp_level,
+                          bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
+                          const char* msg = NULL, bool short_form = false, bool cr = true,
+                          jlong time_queued = 0, jlong time_started = 0);
 
 public:
   void         print(outputStream* st = tty, const char* msg = NULL, bool short_form = false, bool cr = true);

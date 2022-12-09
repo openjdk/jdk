@@ -490,8 +490,8 @@ private:
 
 public:
   // Dump the compilation replay data for the ciEnv to the stream.
-  void dump_replay_data(int compile_id);
-  void dump_inline_data(int compile_id);
+  void dump_replay_data(uint compile_id);
+  void dump_inline_data(uint compile_id);
   void dump_replay_data(outputStream* out);
   void dump_replay_data_unsafe(outputStream* out);
   void dump_replay_data_helper(outputStream* out);

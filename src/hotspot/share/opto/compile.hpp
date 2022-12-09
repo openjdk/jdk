@@ -288,7 +288,7 @@ class Compile : public Phase {
 
  private:
   // Fixed parameters to this compilation.
-  const int             _compile_id;
+  const uint            _compile_id;
   const Options         _options;               // Compilation options
   ciMethod*             _method;                // The method being compiled.
   int                   _entry_bci;             // entry bci for osr methods.
@@ -535,7 +535,7 @@ class Compile : public Phase {
   void              set_output(PhaseOutput* o)  { _output = o; }
 
   // ID for this compilation.  Useful for setting breakpoints in the debugger.
-  int               compile_id() const          { return _compile_id; }
+  uint              compile_id() const          { return _compile_id; }
   DirectiveSet*     directive() const           { return _directive; }
 
   // Does this compilation allow instructions to subsume loads?  User
