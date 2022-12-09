@@ -32,6 +32,10 @@ inputs:
   debug-suffix:
     description: 'File name suffix denoting debug level, possibly empty'
     required: false
+  path:
+    description: 'Path to the installed JDK bundle'
+    required: false
+    default: 'bundles'
 outputs:
   jdk-path:
     description: 'Path to the installed JDK bundle'
@@ -51,40 +55,40 @@ runs:
       uses: actions/download-artifact@v3
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
-        path: bundles
+        path: ${{ inputs.path }}
       continue-on-error: true
 
     - name: 'Download bundles artifact (retry)'
       uses: actions/download-artifact@v3
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
-        path: bundles
+        path: ${{ inputs.path }}
       if: steps.download-bundles.outcome == 'failure'
 
     - name: 'Unpack bundles'
       run: |
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
+        if [[ -e ${{ inputs.path }}/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip ]]; then
           echo 'Unpacking jdk bundle...'
-          mkdir -p bundles/jdk
-          unzip -q bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip -d bundles/jdk
+          mkdir -p ${{ inputs.path }}/jdk
+          unzip -q ${{ inputs.path }}/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.zip -d ${{ inputs.path }}/jdk
         fi
 
-        if [[ -e bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+        if [[ -e ${{ inputs.path }}/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
           echo 'Unpacking jdk bundle...'
-          mkdir -p bundles/jdk
-          tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
+          mkdir -p ${{ inputs.path }}/jdk
+          tar -xf ${{ inputs.path }}/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C ${{ inputs.path }}/jdk
         fi
 
-        if [[ -e bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+        if [[ -e ${{ inputs.path }}/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
           echo 'Unpacking symbols bundle...'
-          mkdir -p bundles/symbols
-          tar -xf bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/symbols
+          mkdir -p ${{ inputs.path }}/symbols
+          tar -xf ${{ inputs.path }}/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C ${{ inputs.path }}/symbols
         fi
 
-        if [[ -e bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+        if [[ -e ${{ inputs.path }}/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
           echo 'Unpacking tests bundle...'
-          mkdir -p bundles/tests
-          tar -xf bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/tests
+          mkdir -p ${{ inputs.path }}/tests
+          tar -xf ${{ inputs.path }}/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C ${{ inputs.path }}/tests
         fi
       shell: bash
 
@@ -93,9 +97,9 @@ runs:
       run: |
         # Export the paths
 
-        jdk_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/jdk -name bin -type d))"
-        symbols_dir="$GITHUB_WORKSPACE/$(dirname $(find bundles/symbols -name bin -type d))"
-        tests_dir="$GITHUB_WORKSPACE/bundles/tests"
+        jdk_dir="$GITHUB_WORKSPACE/$(dirname $(find ${{ inputs.path }}/jdk -name bin -type d))"
+        symbols_dir="$GITHUB_WORKSPACE/$(dirname $(find ${{ inputs.path }}/symbols -name bin -type d))"
+        tests_dir="$GITHUB_WORKSPACE/${{ inputs.path }}/tests"
 
         if [[ '${{ runner.os }}' == 'Windows' ]]; then
           jdk_dir="$(cygpath $jdk_dir)"
