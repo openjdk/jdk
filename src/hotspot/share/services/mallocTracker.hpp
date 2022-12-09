@@ -45,8 +45,13 @@ class MemoryCounter {
   volatile size_t   _count;
   volatile size_t   _size;
 
-  DEBUG_ONLY(volatile size_t   _peak_count;)
-  DEBUG_ONLY(volatile size_t   _peak_size; )
+#ifdef ASSERT
+  // Peak size and count. Note: Peak count is the count at the point
+  // peak size was reached, not the absolute highest peak count.
+  volatile size_t _peak_count;
+  volatile size_t _peak_size;
+  void update_peak(size_t size, size_t cnt);
+#endif // ASSERT
 
  public:
   MemoryCounter() : _count(0), _size(0) {
@@ -58,9 +63,8 @@ class MemoryCounter {
     size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
     if (sz > 0) {
       size_t sum = Atomic::add(&_size, sz, memory_order_relaxed);
-      DEBUG_ONLY(update_peak_size(sum);)
+      DEBUG_ONLY(update_peak(sum, cnt);)
     }
-    DEBUG_ONLY(update_peak_count(cnt);)
   }
 
   inline void deallocate(size_t sz) {
@@ -76,19 +80,20 @@ class MemoryCounter {
     if (sz != 0) {
       assert(sz >= 0 || size() >= size_t(-sz), "Must be");
       size_t sum = Atomic::add(&_size, size_t(sz), memory_order_relaxed);
-      DEBUG_ONLY(update_peak_size(sum);)
+      DEBUG_ONLY(update_peak(sum, _count);)
     }
   }
 
   inline size_t count() const { return Atomic::load(&_count); }
   inline size_t size()  const { return Atomic::load(&_size);  }
 
-#ifdef ASSERT
-  void update_peak_count(size_t cnt);
-  void update_peak_size(size_t sz);
-  size_t peak_count() const;
-  size_t peak_size()  const;
-#endif // ASSERT
+  inline size_t peak_count() const {
+    return DEBUG_ONLY(Atomic::load(&_peak_count)) NOT_DEBUG(0);
+  }
+
+  inline size_t peak_size() const {
+    return DEBUG_ONLY(Atomic::load(&_peak_size)) NOT_DEBUG(0);
+  }
 };
 
 /*
@@ -125,12 +130,14 @@ class MallocMemory {
   }
 
   inline size_t malloc_size()  const { return _malloc.size(); }
+  inline size_t malloc_peak_size()  const { return _malloc.peak_size(); }
   inline size_t malloc_count() const { return _malloc.count();}
   inline size_t arena_size()   const { return _arena.size();  }
+  inline size_t arena_peak_size()  const { return _arena.peak_size(); }
   inline size_t arena_count()  const { return _arena.count(); }
 
-  DEBUG_ONLY(inline const MemoryCounter& malloc_counter() const { return _malloc; })
-  DEBUG_ONLY(inline const MemoryCounter& arena_counter()  const { return _arena;  })
+  const MemoryCounter* malloc_counter() const { return &_malloc; }
+  const MemoryCounter* arena_counter()  const { return &_arena;  }
 };
 
 class MallocMemorySummary;
@@ -146,7 +153,12 @@ class MallocMemorySnapshot : public ResourceObj {
 
 
  public:
-  inline MallocMemory*  by_type(MEMFLAGS flags) {
+  inline MallocMemory* by_type(MEMFLAGS flags) {
+    int index = NMTUtil::flag_to_index(flags);
+    return &_malloc[index];
+  }
+
+  inline const MallocMemory* by_type(MEMFLAGS flags) const {
     int index = NMTUtil::flag_to_index(flags);
     return &_malloc[index];
   }
@@ -291,8 +303,11 @@ class MallocTracker : AllStatic {
   static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
     const NativeCallStack& stack);
 
-  // Record free on specified memory block
-  static void* record_free(void* memblock);
+  // Given a block returned by os::malloc() or os::realloc():
+  // deaccount block from NMT, mark its header as dead and return pointer to header.
+  static void* record_free_block(void* memblock);
+  // Given the free info from a block, de-account block from NMT.
+  static void deaccount(MallocHeader::FreeInfo free_info);
 
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);

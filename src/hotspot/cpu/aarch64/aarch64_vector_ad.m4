@@ -4241,67 +4241,62 @@ instruct vroundD(vReg dst, vReg src, immI rmode) %{
 
 // anytrue
 
-instruct vtest_anytrue_neon(iRegINoSp dst, vReg src1, vReg src2, vReg tmp, rFlagsReg cr) %{
+instruct vtest_anytrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
   predicate(UseSVE == 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2 ));
-  effect(TEMP tmp, KILL cr);
-  format %{ "vtest_anytrue_neon $dst, $src1\t# KILL $tmp, cr" %}
+  match(Set cr (VectorTest src1 src2));
+  effect(TEMP tmp);
+  format %{ "vtest_anytrue_neon $src1\t# KILL $tmp" %}
   ins_encode %{
     // No need to use src2.
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src1);
     assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
     __ addv($tmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B, $src1$$FloatRegister);
-    __ umov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
-    __ cmpw($dst$$Register, zr);
-    __ csetw($dst$$Register, Assembler::NE);
+    __ umov(rscratch1, $tmp$$FloatRegister, __ B, 0);
+    __ cmpw(rscratch1, zr);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vtest_anytrue_sve(iRegINoSp dst, pReg src1, pReg src2, rFlagsReg cr) %{
+instruct vtest_anytrue_sve(rFlagsReg cr, pReg src1, pReg src2) %{
   predicate(UseSVE > 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
-  match(Set dst (VectorTest src1 src2));
-  effect(KILL cr);
-  format %{ "vtest_anytrue_sve $dst, $src1\t# KILL cr" %}
+  match(Set cr (VectorTest src1 src2));
+  format %{ "vtest_anytrue_sve $src1" %}
   ins_encode %{
     // "src2" is not used for sve.
     __ sve_ptest(ptrue, $src1$$PRegister);
-    __ csetw($dst$$Register, Assembler::NE);
   %}
   ins_pipe(pipe_slow);
 %}
 
 // alltrue
 
-instruct vtest_alltrue_neon(iRegINoSp dst, vReg src1, vReg src2, vReg tmp, rFlagsReg cr) %{
+instruct vtest_alltrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
   predicate(UseSVE == 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2));
-  effect(TEMP tmp, KILL cr);
-  format %{ "vtest_alltrue_neon $dst, $src1\t# KILL $tmp, cr" %}
+  match(Set cr (VectorTest src1 src2));
+  effect(TEMP tmp);
+  format %{ "vtest_alltrue_neon $src1\t# KILL $tmp" %}
   ins_encode %{
     // No need to use src2.
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src1);
     assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
     __ uminv($tmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B, $src1$$FloatRegister);
-    __ umov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
-    __ cmpw($dst$$Register, 0xff);
-    __ csetw($dst$$Register, Assembler::EQ);
+    __ umov(rscratch1, $tmp$$FloatRegister, __ B, 0);
+    __ cmpw(rscratch1, 0xff);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vtest_alltrue_sve(iRegINoSp dst, pReg src1, pReg src2, pReg ptmp, rFlagsReg cr) %{
+instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
   predicate(UseSVE > 0 &&
             static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
-  match(Set dst (VectorTest src1 src2));
-  effect(TEMP ptmp, KILL cr);
-  format %{ "vtest_alltrue_sve $dst, $src1, $src2\t# KILL $ptmp, cr" %}
+  match(Set cr (VectorTest src1 src2));
+  effect(TEMP ptmp);
+  format %{ "vtest_alltrue_sve $src1, $src2\t# KILL $ptmp" %}
   ins_encode %{
     __ sve_eors($ptmp$$PRegister, ptrue, $src1$$PRegister, $src2$$PRegister);
-    __ csetw($dst$$Register, Assembler::EQ);
   %}
   ins_pipe(pipe_slow);
 %}
