@@ -83,10 +83,6 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *matchline,
                                               const char *scan_fmt,
                                               T returnval) {
-  if (filename == NULL || scan_fmt == NULL || returnval == NULL) {
-    return OSCONTAINER_ERROR;
-  }
-
   FILE *fp = NULL;
   char *p;
   char file[MAXPATHLEN+1];
