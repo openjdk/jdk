@@ -335,7 +335,7 @@ static void emit_store_fast_path_check(MacroAssembler* masm, Address ref_addr, b
     // Raw NULL pointers may only exist in the young generation, as they get pruned when
     // the object is relocated to old. And no pre-write barrier needs to perform any action
     // in the young generation.
-    __ testw(ref_addr, barrier_Relocation::unpatched);
+    __ Assembler::testl(ref_addr, barrier_Relocation::unpatched);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadAfterTest);
   }
   __ jcc(Assembler::notEqual, medium_path);
@@ -654,7 +654,7 @@ void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
   if (!dest_uninitialized) {
     Label store;
     Label store_bad;
-    __ testw(dst, (int16_t)(uint16_t)ZPointerStoreBadMask);
+    __ Assembler::testl(dst, (int32_t)(uint32_t)ZPointerStoreBadMask);
     _store_bad_relocations.append(__ code_section()->end());
     __ jcc(Assembler::zero, store);
 
@@ -1480,9 +1480,9 @@ static int patch_barrier_relocation_offset(int format) {
   case ZBarrierRelocationFormatLoadBadAfterTest:
   case ZBarrierRelocationFormatMarkBadAfterTest:
   case ZBarrierRelocationFormatStoreGoodAfterCmp:
-  case ZBarrierRelocationFormatStoreBadAfterTest:
     return -2;
 
+  case ZBarrierRelocationFormatStoreBadAfterTest:
   case ZBarrierRelocationFormatStoreGoodAfterOr:
     return -4;
   case ZBarrierRelocationFormatStoreGoodAfterMov:
