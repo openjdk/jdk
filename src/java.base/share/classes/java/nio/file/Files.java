@@ -2938,7 +2938,12 @@ public final class Files {
      * a size of {@code 0} if it exists.
      *
      * <p> The {@code Writer} methods to write text throw {@code IOException}
-     * if the text cannot be encoded using the specified charset.
+     * if the text cannot be encoded using the specified charset. Such coding
+     * exceptions will not occur until characters are flushed to the underlying
+     * stream either because the internal buffer was filled during writing, or
+     * {@linkplain BufferedWriter#close close()} or
+     * {@linkplain BufferedWriter#flush flush()}
+     * was invoked explicitly on the returned {@code BufferedWriter}.
      *
      * @param   path
      *          the path to the file
