@@ -61,7 +61,7 @@ StringDedup::Requests*  MarkSweep::_string_dedup_requests = NULL;
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
-MarkAndPushClosure MarkSweep::mark_and_push_closure;
+MarkAndPushClosure MarkSweep::mark_and_push_closure(ClassLoaderData::_claim_stw_fullgc_mark);
 CLDToOopClosure    MarkSweep::follow_cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
 CLDToOopClosure    MarkSweep::adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
 
