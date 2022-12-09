@@ -44,7 +44,6 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
-import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SealedObject;
 
 import static java.nio.charset.StandardCharsets.UTF_8;

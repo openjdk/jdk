@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-package sun.security.pkcs;
+package com.sun.crypto.provider;
 
 import java.io.*;
-import sun.security.x509.*;
-import sun.security.util.DerValue;
-import sun.security.util.DerOutputStream;
+import sun.security.x509.AlgorithmId;
+import sun.security.util.*;
 
 /**
  * This class implements the <code>EncryptedPrivateKeyInfo</code> type,
@@ -41,16 +40,14 @@ import sun.security.util.DerOutputStream;
  * </pre>
  *
  * @author Jan Luehe
- *
  */
-
-public class EncryptedPrivateKeyInfo {
+final class EncryptedPrivateKeyInfo {
 
     // the "encryptionAlgorithm" field
-    private final AlgorithmId algid;
+    private AlgorithmId algid;
 
     // the "encryptedData" field
-    private final byte[] encryptedData;
+    private byte[] encryptedData;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded;
@@ -59,13 +56,7 @@ public class EncryptedPrivateKeyInfo {
      * Constructs (i.e., parses) an <code>EncryptedPrivateKeyInfo</code> from
      * its encoding.
      */
-    public EncryptedPrivateKeyInfo(byte[] encoded)
-        throws IOException
-    {
-        if (encoded == null) {
-            throw new IllegalArgumentException("encoding must not be null");
-        }
-
+    EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {
         DerValue val = new DerValue(encoded);
 
         DerValue[] seq = new DerValue[2];
@@ -93,31 +84,30 @@ public class EncryptedPrivateKeyInfo {
      * Constructs an <code>EncryptedPrivateKeyInfo</code> from the
      * encryption algorithm and the encrypted data.
      */
-    public EncryptedPrivateKeyInfo(AlgorithmId algid, byte[] encryptedData) {
+    EncryptedPrivateKeyInfo(AlgorithmId algid, byte[] encryptedData) {
         this.algid = algid;
         this.encryptedData = encryptedData.clone();
+        this.encoded = null; // lazy generation of encoding
     }
 
     /**
      * Returns the encryption algorithm.
      */
-    public AlgorithmId getAlgorithm() {
+    AlgorithmId getAlgorithm() {
         return this.algid;
     }
 
     /**
      * Returns the encrypted data.
      */
-    public byte[] getEncryptedData() {
+    byte[] getEncryptedData() {
         return this.encryptedData.clone();
     }
 
     /**
      * Returns the ASN.1 encoding of this class.
      */
-    public byte[] getEncoded()
-        throws IOException
-    {
+    byte[] getEncoded() {
         if (this.encoded != null) return this.encoded.clone();
 
         DerOutputStream out = new DerOutputStream();
@@ -134,39 +124,5 @@ public class EncryptedPrivateKeyInfo {
         this.encoded = out.toByteArray();
 
         return this.encoded.clone();
-    }
-
-    public boolean equals(Object other) {
-        if (this == other)
-            return true;
-        if (!(other instanceof EncryptedPrivateKeyInfo))
-            return false;
-        try {
-            byte[] thisEncrInfo = this.getEncoded();
-            byte[] otherEncrInfo
-                = ((EncryptedPrivateKeyInfo)other).getEncoded();
-
-            if (thisEncrInfo.length != otherEncrInfo.length)
-                return false;
-            for (int i = 0; i < thisEncrInfo.length; i++)
-                 if (thisEncrInfo[i] != otherEncrInfo[i])
-                     return false;
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Returns a hashcode for this EncryptedPrivateKeyInfo.
-     *
-     * @return a hashcode for this EncryptedPrivateKeyInfo.
-     */
-    public int hashCode() {
-        int retval = 0;
-
-        for (int i = 0; i < this.encryptedData.length; i++)
-            retval += this.encryptedData[i] * i;
-        return retval;
     }
 }
