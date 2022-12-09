@@ -137,36 +137,6 @@ set_event_notification(jvmtiEventMode mode, EventIndex ei)
     return error;
 }
 
-typedef struct {
-    int major;
-    int minor;
-} version_type;
-
-typedef struct {
-    version_type runtime;
-    version_type compiletime;
-} compatible_versions_type;
-
-/*
- * List of explicitly compatible JVMTI versions, specified as
- * { runtime version, compile-time version } pairs. -1 is a wildcard.
- */
-static int nof_compatible_versions = 3;
-static compatible_versions_type compatible_versions_list[] = {
-    /*
-     * FIXUP: Allow version 0 to be compatible with anything
-     * Special check for FCS of 1.0.
-     */
-    { {  0, -1 }, { -1, -1 } },
-    { { -1, -1 }, {  0, -1 } },
-    /*
-     * 1.2 is runtime compatible with 1.1 -- just make sure to check the
-     * version before using any new 1.2 features
-     */
-    { {  1,  1 }, {  1,  2 } }
-};
-
-
 /* Logic to determine JVMTI version compatibility */
 static jboolean
 compatible_versions(jint major_runtime,     jint minor_runtime,
