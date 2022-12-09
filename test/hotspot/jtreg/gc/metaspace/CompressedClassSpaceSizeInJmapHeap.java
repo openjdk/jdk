@@ -32,7 +32,7 @@ package gc.metaspace;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/timeout=240  gc.metaspace.CompressedClassSpaceSizeInJmapHeap
+ * @run main/timeout=240 gc.metaspace.CompressedClassSpaceSizeInJmapHeap
  */
 
 import jdk.test.lib.JDKToolLauncher;
