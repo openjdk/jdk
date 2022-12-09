@@ -272,8 +272,17 @@ class ConcurrentHashTable : public CHeapObj<F> {
   };
 
 
-  // Max number of deletes in one bucket chain during bulk delete.
-  static const size_t BULK_DELETE_LIMIT = 256;
+  // When doing deletes, we need to store the pointers until the next
+  // visible epoch.  In the normal case (good hash function and
+  // reasonable sizing), we can save these pointers on the stack
+  // (there should not be more than a few entries per bucket). But if
+  // the hash function is bad and/or the sizing of the table is bad,
+  // we can not use a fixed size stack buffer alone. We will use a
+  // heap buffer as fall-back when the stack is not enough, and then
+  // we have to pay for a dynamic allocation.  `StackBufferSize` tells
+  // the size of optimistic stack buffer that will almost always be
+  // used.
+  static const size_t StackBufferSize = 256;
 
   // Simple getters and setters for the internal table.
   InternalTable* get_table() const;
