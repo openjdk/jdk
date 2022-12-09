@@ -819,7 +819,7 @@ public abstract class InputStream implements Closeable {
      * @since 21
      */
     public InputStream concat(InputStream in) throws IOException {
-        Object.requireNonNull(in, "in");
+        Objects.requireNonNull(in, "in");
         return new SequenceInputStream(this, in);
     }
 
@@ -848,8 +848,8 @@ public abstract class InputStream implements Closeable {
      * @since 21
      */
     public static InputStream concat(InputStream in1, InputStream in2) throws IOException {
-        Object.requireNonNull(in1, "in1");
-        Object.requireNonNull(in2, "in2");
+        Objects.requireNonNull(in1, "in1");
+        Objects.requireNonNull(in2, "in2");
         return in1.concat(in2);
     }
 }
