@@ -557,40 +557,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
     releaseILData(env, outputBuffer, dstDType, dstData, 0);
 }
 
-/*
- * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    getProfileID
- * Signature: (Ljava/awt/color/ICC_Profile;)Lsun/java2d/cmm/lcms/LCMSProfile;
- */
-JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
-  (JNIEnv *env, jclass cls, jobject pf)
-{
-    if (pf == NULL) {
-        return NULL;
-    }
-    jclass pcls = (*env)->GetObjectClass(env, pf);
-    if (pcls == NULL) {
-        return NULL;
-    }
-    jmethodID mid = (*env)->GetMethodID(env, pcls, "cmmProfile",
-                                        "()Lsun/java2d/cmm/Profile;");
-    if (mid == NULL) {
-        return NULL;
-    }
-    jobject cmmProfile = (*env)->CallObjectMethod(env, pf, mid);
-    if ((*env)->ExceptionCheck(env)) {
-        return NULL;
-    }
-    jclass lcmsPCls = (*env)->FindClass(env, "sun/java2d/cmm/lcms/LCMSProfile");
-    if (lcmsPCls == NULL) {
-        return NULL;
-    }
-    if ((*env)->IsInstanceOf(env, cmmProfile, lcmsPCls)) {
-        return cmmProfile;
-    }
-    return NULL;
-}
-
 static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
 {
   cmsUInt32Number pfSize = 0;

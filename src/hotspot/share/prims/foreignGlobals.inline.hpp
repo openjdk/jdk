@@ -31,13 +31,13 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oopCast.inline.hpp"
 
-template<typename T, typename Func>
-void ForeignGlobals::parse_register_array(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter) {
-  objArrayOop subarray = oop_cast<objArrayOop>(jarray->obj_at(type_index));
+template<typename T>
+void ForeignGlobals::parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int)) {
+  objArrayOop subarray = oop_cast<objArrayOop>(jarray->obj_at((int) type_index));
   int subarray_length = subarray->length();
   for (int i = 0; i < subarray_length; i++) {
     oop storage = subarray->obj_at(i);
-    jint index = jdk_internal_foreign_abi_VMStorage::index(storage);
+    jint index = jdk_internal_foreign_abi_VMStorage::index_or_offset(storage);
     array.push(converter(index));
   }
 }

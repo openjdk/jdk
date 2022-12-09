@@ -8875,12 +8875,6 @@ instruct vpopcount_integral_reg_evex(vec dst, vec src) %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     __ vector_popcount_integral_evex(bt, $dst$$XMMRegister, $src$$XMMRegister, k0, true, vlen_enc);
-    // TODO: Once auto-vectorizer supports ConvL2I operation, PopCountVL
-    // should be succeeded by its corresponding vector IR and following
-    // special handling should be removed.
-    if (opcode == Op_PopCountVL && Matcher::vector_element_basic_type(this) == T_INT) {
-      __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8911,18 +8905,6 @@ instruct vpopcount_avx_reg(vec dst, vec src, vec xtmp1, vec xtmp2, rRegP rtmp) %
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     __ vector_popcount_integral(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                                 $xtmp2$$XMMRegister, $rtmp$$Register, vlen_enc);
-    // TODO: Once auto-vectorizer supports ConvL2I operation, PopCountVL
-    // should be succeeded by its corresponding vector IR and following
-    // special handling should be removed.
-    if (opcode == Op_PopCountVL && Matcher::vector_element_basic_type(this) == T_INT) {
-      if (VM_Version::supports_avx512vl()) {
-        __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-      } else {
-        assert(VM_Version::supports_avx2(), "");
-        __ vpshufd($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
-        __ vpermq($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
-      }
-    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8939,15 +8921,8 @@ instruct vcount_trailing_zeros_reg_evex(vec dst, vec src, vec xtmp, rRegP rtmp) 
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    BasicType rbt = Matcher::vector_element_basic_type(this);
     __ vector_count_trailing_zeros_evex(bt, $dst$$XMMRegister, $src$$XMMRegister, xnoreg,
                                         xnoreg, xnoreg, $xtmp$$XMMRegister, k0, $rtmp$$Register, vlen_enc);
-    // TODO: Once auto-vectorizer supports ConvL2I operation, CountTrailingZerosV
-    // should be succeeded by its corresponding vector IR and following
-    // special handling should be removed.
-    if (bt == T_LONG && rbt == T_INT) {
-      __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8993,17 +8968,8 @@ instruct vcount_trailing_zeros_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, v
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    BasicType rbt = Matcher::vector_element_basic_type(this);
     __ vector_count_trailing_zeros_avx(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                                        $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, vlen_enc);
-    // TODO: Once auto-vectorizer supports ConvL2I operation, PopCountVL
-    // should be succeeded by its corresponding vector IR and following
-    // special handling should be removed.
-    if (bt == T_LONG && rbt == T_INT) {
-      assert(VM_Version::supports_avx2(), "");
-      __ vpshufd($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
-      __ vpermq($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
-    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9408,15 +9374,8 @@ instruct vcount_leading_zeros_IL_reg_evex(vec dst, vec src) %{
   ins_encode %{
      int vlen_enc = vector_length_encoding(this, $src);
      BasicType bt = Matcher::vector_element_basic_type(this, $src);
-     BasicType rbt = Matcher::vector_element_basic_type(this);
      __ vector_count_leading_zeros_evex(bt, $dst$$XMMRegister, $src$$XMMRegister, xnoreg,
                                         xnoreg, xnoreg, k0, noreg, true, vlen_enc);
-     // TODO: Once auto-vectorizer supports ConvL2I operation, CountLeadingZerosV
-     // should be succeeded by its corresponding vector IR and following
-     // special handling should be removed.
-     if (rbt == T_INT && bt == T_LONG) {
-       __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-     }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9491,15 +9450,8 @@ instruct vcount_leading_zeros_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, ve
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    BasicType rbt = Matcher::vector_element_basic_type(this);
     __ vector_count_leading_zeros_avx(bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, vlen_enc);
-    // TODO: Once auto-vectorizer supports ConvL2I operation, CountLeadingZerosV
-    // should be succeeded by its corresponding vector IR and following
-    // special handling should be removed.
-    if (rbt == T_INT && bt == T_LONG) {
-      __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
   %}
   ins_pipe( pipe_slow );
 %}

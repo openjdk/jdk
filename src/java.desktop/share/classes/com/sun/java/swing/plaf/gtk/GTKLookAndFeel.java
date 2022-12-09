@@ -591,6 +591,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "FileChooser.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                      "ESCAPE", "cancelSelection",
+                 "BACK_SPACE", "Go Up",
                  "ctrl ENTER", "approveSelection"
                  }),
             "FileChooserUI", "com.sun.java.swing.plaf.gtk.GTKLookAndFeel",

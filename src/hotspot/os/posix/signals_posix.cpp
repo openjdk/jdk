@@ -23,11 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
-#include "jvm.h"
 #include "code/codeCache.hpp"
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
 #include "runtime/atomic.hpp"

@@ -70,7 +70,6 @@ class KlassStream {
   virtual void next() = 0;
 
   // accessors
-  InstanceKlass* klass() const      { return _klass; }
   int index() const                 { return _index; }
   bool base_class_search_defaults() const { return _base_class_search_defaults; }
   void base_class_search_defaults(bool b) { _base_class_search_defaults = b; }
