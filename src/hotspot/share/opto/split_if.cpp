@@ -27,6 +27,7 @@
 #include "opto/callnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/opaquenode.hpp"
 
 
 //------------------------------split_thru_region------------------------------
@@ -218,6 +219,24 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
         }
       }
     }
+  }
+
+  if (n->Opcode() == Op_OpaqueZeroTripGuard) {
+    // If this Opaque1 is part of the zero trip guard for a loop:
+    // 1- it can't be shared
+    // 2- the zero trip guard can't be the if that's being split
+    // As a consequence, this node could be assigned control anywhere between its current control and the zero trip guard.
+    // Move it down to get it out of the way of split if and avoid breaking the zero trip guard shape.
+    Node* cmp = n->unique_out();
+    assert(cmp->Opcode() == Op_CmpI, "bad zero trip guard shape");
+    Node* bol = cmp->unique_out();
+    assert(bol->Opcode() == Op_Bool, "bad zero trip guard shape");
+    Node* iff = bol->unique_out();
+    assert(iff->Opcode() == Op_If, "bad zero trip guard shape");
+    set_ctrl(n, iff->in(0));
+    set_ctrl(cmp, iff->in(0));
+    set_ctrl(bol, iff->in(0));
+    return true;
   }
 
   // See if splitting-up a Store.  Any anti-dep loads must go up as

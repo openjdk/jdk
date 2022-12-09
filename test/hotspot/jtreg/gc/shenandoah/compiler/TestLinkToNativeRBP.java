@@ -50,7 +50,7 @@ public class TestLinkToNativeRBP {
 
     final static Linker abi = Linker.nativeLinker();
     static final SymbolLookup lookup = SymbolLookup.loaderLookup();
-    final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
+    final static MethodHandle foo = abi.downcallHandle(lookup.find("foo").get(),
             FunctionDescriptor.of(ValueLayout.JAVA_INT));
 
     static int foo() throws Throwable {

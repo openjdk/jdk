@@ -428,6 +428,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                               "\u6CD5\u5C5E\u572D\u4E9A\u90A3\u65F6\u95F4", "GFT"}},
             {"America/Cayman", EST},
             {"America/Chihuahua", CST},
+            {"America/Ciudad_Juarez", MST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},
