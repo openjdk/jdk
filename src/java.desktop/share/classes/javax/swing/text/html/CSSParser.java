@@ -37,7 +37,7 @@ import java.io.*;
  *       would be notified 4 times, for 'p,' 'bar' ',' and 'a'.
  *   <li>When a rule starts, <code>startRule</code>
  *   <li>Properties in the rule via the <code>handleProperty</code>. This
- *       is invoked one per property/value key, eg font size: foo;, would
+ *       is invoked once per property/value key, eg font size: foo;, would
  *       cause the delegate to be notified once with a value of 'font size'.
  *   <li>Values in the rule via the <code>handleValue</code>, this is notified
  *       for the total value.
