@@ -217,6 +217,15 @@ public class Throwable implements Serializable {
      */
     private transient int depth;
 
+    /** Cache the hash code for the throwable */
+    private transient int hash; // Default to 0
+
+    /**
+     * Cache if the hash has been calculated as actually being zero, enabling
+     * us to avoid recalculating this.
+     */
+    private transient boolean hashIsZero; // Default to false;
+
     // Setting this static field introduces an acceptable
     // initialization dependency on a few java.util classes.
     private static final List<Throwable> SUPPRESSED_SENTINEL = Collections.emptyList();
@@ -1129,5 +1138,95 @@ public class Throwable implements Serializable {
             return EMPTY_THROWABLE_ARRAY;
         else
             return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
+    }
+
+    /**
+     * Returns {@code true} if the specified object is another {@code Throwable}
+     * instance representing the same exception as this instance. Two throwables
+     * {@code a} and {@code b} are equal if and only if:
+     * <pre>{@code
+     *     Objects.equals(a.getClass(), b.getClass()) &&
+     *     Objects.equals(a.getMessage(), b.getMessage()) &&
+     *     Objects.equals(a.getCause(), b.getCause()) &&
+     *     Arrays.equals(a.getStacktrace(), b.getStacktrace()) &&
+     *     Arrays.equals(a.getSupressed(), b.getSupressed())
+     * }</pre>
+     *
+     * @param  obj The object to be compared with this throwable.
+     * @return {@code true} if the specified object is another
+     *         {@code Throwable} instance representing the same
+     *         exception.
+     */
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj instanceof Throwable) {
+            Throwable t = (Throwable) obj;
+            return getClass().equals(t.getClass())
+                && Objects.equals(detailMessage, t.detailMessage)
+                && causeEquals(t)
+                && Arrays.equals(getOurStackTrace(), t.getOurStackTrace())
+                && Objects.equals(suppressedExceptions, t.suppressedExceptions);
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the cause for this instance and {@code t} are to be treated as
+     * equal. As the field {@code cause} defaults to {@code this} for
+     * {@code Throwable}s, comparing for equality needs to handle this special
+     * case to prevent circular lookups for defaults.
+     *
+     * @param t The throwable of which the cause is compared against the
+     *        cause of this instance
+     * @return {@code true} if this instance and the specified throwable have
+     *         either the same cause or no cause at all
+     */
+    private boolean causeEquals(Throwable t) {
+        // prevent circular lookup as "cause" is by default set to "this"
+        if ((cause != this) && (t.cause != t)) {
+            return Objects.equals(cause, t.cause);
+        }
+
+        return (cause == this) && (t.cause == t);
+    }
+
+    /**
+     * Returns a hash code for this throwable. The hash code for two
+     * {@code Throwable} objects (and subclasses) is expected to be the same
+     * when they are of the same type, constructed on the same line and with
+     * the same parameters. The hash code is computesd lazily.
+     *
+     * @return  A hash code value for this object.
+     */
+    public int hashCode() {
+        int h = hash;
+        if (h == 0 && !hashIsZero) {
+            h = 31 + getClass().hashCode();
+
+            // calling getOurStackTrace() instead of accessing stack trace
+            // field directly since it might be not initialized yet
+            h = 31 * h + Arrays.hashCode(getOurStackTrace());
+            h = 31 * h + Objects.hashCode(detailMessage);
+
+            // don't check for circular references other than the special
+            // case "this" as this would make the code unnecessary complex
+            // for an theoretical use case with little use, if at all
+            h = 31 * h + (cause == this
+                    ? 0 : Objects.hashCode(cause));
+
+            h = 31 * h + (suppressedExceptions == SUPPRESSED_SENTINEL
+                    ? 0 : suppressedExceptions.hashCode());
+
+            if (h == 0) {
+                hashIsZero = true;
+            } else {
+                hash = h;
+            }
+        }
+        return h;
     }
 }
