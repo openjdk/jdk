@@ -1683,7 +1683,7 @@ int java_lang_Thread::_interrupted_offset;
 int java_lang_Thread::_tid_offset;
 int java_lang_Thread::_continuation_offset;
 int java_lang_Thread::_park_blocker_offset;
-int java_lang_Thread::_extentLocalBindings_offset;
+int java_lang_Thread::_scopedValueBindings_offset;
 JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
 
 #define THREAD_FIELDS_DO(macro) \
@@ -1696,7 +1696,7 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
   macro(_tid_offset,           k, "tid", long_signature, false); \
   macro(_park_blocker_offset,  k, "parkBlocker", object_signature, false); \
   macro(_continuation_offset,  k, "cont", continuation_signature, false); \
-  macro(_extentLocalBindings_offset, k, "extentLocalBindings", object_signature, false);
+  macro(_scopedValueBindings_offset, k, "scopedValueBindings", object_signature, false);
 
 void java_lang_Thread::compute_offsets() {
   assert(_holder_offset == 0, "offsets should be initialized only once");
@@ -1729,8 +1729,9 @@ void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState*
   java_thread->address_field_put(_jvmti_thread_state_offset, (address)state);
 }
 
-void java_lang_Thread::clear_extentLocalBindings(oop java_thread) {
-  java_thread->obj_field_put(_extentLocalBindings_offset, NULL);
+void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
+  assert(java_thread != NULL, "need a java_lang_Thread pointer here");
+  java_thread->obj_field_put(_scopedValueBindings_offset, NULL);
 }
 
 oop java_lang_Thread::holder(oop java_thread) {
@@ -2491,17 +2492,18 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   }
 
   // Allocate temporary buffer with extra space for formatting and line number
-  char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
+  const size_t buf_size = buf_len + 64;
+  char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  sprintf(buf, "\tat %s.%s(", klass_name, method_name);
+  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
     if (module_version != NULL) {
-      sprintf(buf + (int)strlen(buf), "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
     } else {
-      sprintf(buf + (int)strlen(buf), "%s/", module_name);
+      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
     }
   }
 
@@ -2516,17 +2518,17 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     } else {
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
-        sprintf(buf + (int)strlen(buf), "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
       } else if (source_file_name != NULL) {
         // Just sourcename
-        sprintf(buf + (int)strlen(buf), "%s)", source_file_name);
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        sprintf(buf + (int)strlen(buf), "Unknown Source)");
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
       CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
-        sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
     }
   }

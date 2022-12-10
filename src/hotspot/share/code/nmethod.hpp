@@ -298,6 +298,10 @@ class nmethod : public CompiledMethod {
 
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
+  // Attention: Only allow NonNMethod space for special nmethods which don't need to be
+  // findable by nmethod iterators! In particular, they must not contain oops!
+  void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 

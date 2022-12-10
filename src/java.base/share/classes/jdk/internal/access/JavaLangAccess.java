@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -364,6 +365,12 @@ public interface JavaLangAccess {
     int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
+     * Returns the initial `System.in` to determine if it is replaced
+     * with `System.setIn(newIn)` method
+     */
+    InputStream initialSystemIn();
+
+    /**
      * Encodes ASCII codepoints as possible from the source array into
      * the destination byte array, assuming that the encoding is ASCII
      * compatible
@@ -476,24 +483,28 @@ public interface JavaLangAccess {
     boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
 
     /**
-     * Returns the current thread's extent locals cache
+     * Returns the current thread's scoped values cache
      */
-    Object[] extentLocalCache();
+    Object[] scopedValueCache();
 
     /**
-     * Sets the current thread's extent locals cache
+     * Sets the current thread's scoped values cache
      */
-    void setExtentLocalCache(Object[] cache);
+    void setScopedValueCache(Object[] cache);
 
     /**
-     * Return the current thread's extent local bindings.
+     * Return the current thread's scoped value bindings.
      */
-    Object extentLocalBindings();
+    Object scopedValueBindings();
 
     /**
-     * Set the current thread's extent local bindings.
+     * Set the current thread's scoped value bindings.
      */
-    void setExtentLocalBindings(Object bindings);
+    void setScopedValueBindings(Object bindings);
+
+    Object findScopedValueBindings();
+
+    void ensureMaterializedForStackWalk(Object value);
 
     /**
      * Returns the innermost mounted continuation

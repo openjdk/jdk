@@ -1733,7 +1733,7 @@ Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
 bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* u = n->fast_out(i);
-    if (u->Opcode() == Op_Opaque1) {
+    if (u->is_Opaque1()) {
       return false;  // Found loop limit, bugfix for 4677003
     }
     // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to

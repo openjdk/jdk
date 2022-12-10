@@ -70,6 +70,11 @@ class EncoderHost : public AllStatic {
   }
 
   template <typename T>
+  static size_t size_in_bytes(T value) {
+    return IntegerEncoder::size_in_bytes(value);
+  }
+
+  template <typename T>
   static u1* write(T value, u1* pos) {
     return write(&value, 1, pos);
   }

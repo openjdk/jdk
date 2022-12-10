@@ -157,7 +157,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
   _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _extentLocalCache = OopHandle(_thread_oop_storage, NULL);
+  _scopedValueCache = OopHandle(_thread_oop_storage, NULL);
 }
 
 oop JavaThread::threadObj() const {
@@ -186,13 +186,26 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-oop JavaThread::extentLocalCache() const {
-  return _extentLocalCache.resolve();
+oop JavaThread::scopedValueCache() const {
+  return _scopedValueCache.resolve();
 }
 
-void JavaThread::set_extentLocalCache(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
-  _extentLocalCache.replace(p);
+void JavaThread::set_scopedValueCache(oop p) {
+  if (_scopedValueCache.ptr_raw() != NULL) { // i.e. if the OopHandle has been allocated
+    _scopedValueCache.replace(p);
+  } else {
+    assert(p == NULL, "not yet initialized");
+  }
+}
+
+void JavaThread::clear_scopedValueBindings() {
+  set_scopedValueCache(NULL);
+  oop vthread_oop = vthread();
+  // vthread may be null here if we get a VM error during startup,
+  // before the java.lang.Thread instance has been created.
+  if (vthread_oop != NULL) {
+    java_lang_Thread::clear_scopedValueBindings(vthread_oop);
+  }
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
@@ -1040,11 +1053,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   // We cannot call Exceptions::_throw(...) here because we cannot block
   set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-  // Clear any extent-local bindings
-  set_extentLocalCache(NULL);
-  oop threadOop = threadObj();
-  assert(threadOop != NULL, "must be");
-  java_lang_Thread::clear_extentLocalBindings(threadOop);
+  clear_scopedValueBindings();
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
@@ -2097,7 +2106,7 @@ void JavaThread::add_oop_handles_for_release() {
   new_head->add(_threadObj);
   new_head->add(_vthread);
   new_head->add(_jvmti_vthread);
-  new_head->add(_extentLocalCache);
+  new_head->add(_scopedValueCache);
   _oop_handle_list = new_head;
   Service_lock->notify_all();
 }

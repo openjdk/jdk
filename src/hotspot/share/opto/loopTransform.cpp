@@ -1300,7 +1300,7 @@ void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) 
   assert(zer_cmp != NULL && zer_cmp->Opcode() == Op_CmpI, "must be CmpI");
   // For the main loop, the opaque node is the second input to zer_cmp, for the post loop it's the first input node
   Node* zer_opaq = zer_cmp->in(is_main_loop ? 2 : 1);
-  assert(zer_opaq != NULL && zer_opaq->Opcode() == Op_Opaque1, "must be Opaque1");
+  assert(zer_opaq != NULL && zer_opaq->Opcode() == Op_OpaqueZeroTripGuard, "must be OpaqueZeroTripGuard");
 }
 #endif
 
@@ -1705,7 +1705,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // pre-loop, the main-loop may not execute at all.  Later in life this
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
-  Node *min_opaq = new Opaque1Node(C, limit);
+  Node *min_opaq = new OpaqueZeroTripGuardNode(C, limit);
   Node *min_cmp  = new CmpINode(pre_incr, min_opaq);
   Node *min_bol  = new BoolNode(min_cmp, b_test);
   register_new_node(min_opaq, new_pre_exit);
@@ -1994,7 +1994,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // (the previous loop trip-counter exit value) because we will be changing
   // the exit value (via additional unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
-  Node *zer_opaq = new Opaque1Node(C, incr);
+  Node *zer_opaq = new OpaqueZeroTripGuardNode(C, incr);
   Node *zer_cmp = new CmpINode(zer_opaq, limit);
   Node *zer_bol = new BoolNode(zer_cmp, main_end->test_trip());
   register_new_node(zer_opaq, new_main_exit);
@@ -3576,9 +3576,9 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
 
   // Remove the Opaque1Node of the pre loop and make it execute all iterations
   phase->_igvn.replace_input_of(pre_cmp, 2, pre_cmp->in(2)->in(2));
-  // Remove the Opaque1Node of the main loop so it can be optimized out
+  // Remove the OpaqueZeroTripGuardNode of the main loop so it can be optimized out
   Node* main_cmp = main_iff->in(1)->in(1);
-  assert(main_cmp->in(2)->Opcode() == Op_Opaque1, "main loop has no opaque node?");
+  assert(main_cmp->in(2)->Opcode() == Op_OpaqueZeroTripGuard, "main loop has no opaque node?");
   phase->_igvn.replace_input_of(main_cmp, 2, main_cmp->in(2)->in(1));
 }
 
