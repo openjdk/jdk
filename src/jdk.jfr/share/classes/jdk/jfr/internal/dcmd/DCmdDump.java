@@ -138,7 +138,7 @@ final class DCmdDump extends AbstractDCmd {
             }
             r.dumpStopped(wup);
             reportOperationComplete("Dumped", name, new SafePath(wup.getRealPathText()));
-            if (recording.getState() == RecordingState.STOPPED) {
+            if (recording != null && (recording.getState() == RecordingState.STOPPED)) {
                 recording.close();
             }
         }
