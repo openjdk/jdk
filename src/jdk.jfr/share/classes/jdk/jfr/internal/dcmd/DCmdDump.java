@@ -37,7 +37,6 @@ import java.time.format.DateTimeParseException;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
-import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
@@ -138,9 +137,6 @@ final class DCmdDump extends AbstractDCmd {
             }
             r.dumpStopped(wup);
             reportOperationComplete("Dumped", name, new SafePath(wup.getRealPathText()));
-            if (recording != null && (recording.getState() == RecordingState.STOPPED)) {
-                recording.close();
-            }
         }
     }
 

@@ -29,6 +29,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 
 import jdk.jfr.Recording;
+import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.WriteableUserPath;
@@ -59,7 +60,9 @@ final class DCmdStop extends AbstractDCmd {
                     throw new DCmdException("Failed to stop %s. Could not set destination for \"%s\" to file %s", recording.getName(), filename, e.getMessage());
                 }
             }
-            recording.stop();
+            if (recording.getState() != RecordingState.STOPPED) {
+                recording.stop();
+            }
             reportOperationComplete("Stopped", recording.getName(), safePath);
             recording.close();
         } catch (InvalidPathException | DCmdException e) {
