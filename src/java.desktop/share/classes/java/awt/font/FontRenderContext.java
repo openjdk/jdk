@@ -317,6 +317,19 @@ public class FontRenderContext {
     }
 
     /**
+     * Return true if rhs has the same transform, antialiasing,
+     * and fractional metrics values as this.
+     * @param rhs the {@code FontRenderContext} to test for equality
+     * @return {@code true} if {@code rhs} is equal to
+     *         this {@code FontRenderContext}; {@code false}
+     *         otherwise.
+     * @since 1.4
+     */
+    public boolean equals(FontRenderContext rhs) {
+        return equals((Object) rhs);
+    }
+
+    /**
      * Return a hashcode for this FontRenderContext.
      */
     public int hashCode() {

@@ -188,4 +188,17 @@ public final class ImageGraphicAttribute extends GraphicAttribute {
                 && getAlignment() == rhs.getAlignment()
                 && fImage.equals(rhs.fImage);
     }
+
+    /**
+     * Compares this {@code ImageGraphicAttribute} to the specified
+     * {@code ImageGraphicAttribute}.
+     * @param rhs the {@code ImageGraphicAttribute} to compare for
+     * equality
+     * @return {@code true} if this
+     * {@code ImageGraphicAttribute} equals {@code rhs};
+     * {@code false} otherwise.
+     */
+    public boolean equals(ImageGraphicAttribute rhs) {
+        return equals((Object) rhs);
+    }
 }

@@ -216,4 +216,17 @@ public final class ShapeGraphicAttribute extends GraphicAttribute {
                 && getAlignment() == rhs.getAlignment()
                 && fShape.equals(rhs.fShape);
     }
+
+    /**
+     * Compares this {@code ShapeGraphicAttribute} to the specified
+     * {@code ShapeGraphicAttribute}.
+     * @param rhs the {@code ShapeGraphicAttribute} to compare for
+     * equality
+     * @return {@code true} if this
+     * {@code ShapeGraphicAttribute} equals {@code rhs};
+     * {@code false} otherwise.
+     */
+    public boolean equals(ShapeGraphicAttribute rhs) {
+        return equals((Object) rhs);
+    }
 }
