@@ -586,26 +586,26 @@ public final class AttributeValues implements Cloneable {
 
     private boolean i_equals(EAttribute a, AttributeValues src) {
         switch (a) {
-        case EFAMILY: return equals(family, src.family);
+        case EFAMILY: return Objects.equals(family, src.family);
         case EWEIGHT: return weight == src.weight;
         case EWIDTH: return width == src.width;
         case EPOSTURE: return posture == src.posture;
         case ESIZE: return size == src.size;
-        case ETRANSFORM: return equals(transform, src.transform);
+        case ETRANSFORM: return Objects.equals(transform, src.transform);
         case ESUPERSCRIPT: return superscript == src.superscript;
-        case EFONT: return equals(font, src.font);
-        case ECHAR_REPLACEMENT: return equals(charReplacement, src.charReplacement);
-        case EFOREGROUND: return equals(foreground, src.foreground);
-        case EBACKGROUND: return equals(background, src.background);
+        case EFONT: return Objects.equals(font, src.font);
+        case ECHAR_REPLACEMENT: return Objects.equals(charReplacement, src.charReplacement);
+        case EFOREGROUND: return Objects.equals(foreground, src.foreground);
+        case EBACKGROUND: return Objects.equals(background, src.background);
         case EUNDERLINE: return underline == src.underline;
         case ESTRIKETHROUGH: return strikethrough == src.strikethrough;
         case ERUN_DIRECTION: return runDirection == src.runDirection;
         case EBIDI_EMBEDDING: return bidiEmbedding == src.bidiEmbedding;
         case EJUSTIFICATION: return justification == src.justification;
-        case EINPUT_METHOD_HIGHLIGHT: return equals(imHighlight, src.imHighlight);
+        case EINPUT_METHOD_HIGHLIGHT: return Objects.equals(imHighlight, src.imHighlight);
         case EINPUT_METHOD_UNDERLINE: return imUnderline == src.imUnderline;
         case ESWAP_COLORS: return swapColors == src.swapColors;
-        case ENUMERIC_SHAPING: return equals(numericShaping, src.numericShaping);
+        case ENUMERIC_SHAPING: return Objects.equals(numericShaping, src.numericShaping);
         case EKERNING: return kerning == src.kerning;
         case ELIGATURES: return ligatures == src.ligatures;
         case ETRACKING: return tracking == src.tracking;
