@@ -26,8 +26,9 @@
  * @bug 8221481
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @compile --enable-preview -source ${jdk.version} Timeouts.java
- * @run testng/othervm/timeout=180 --enable-preview Timeouts
+ * @enablePreview
+ * @compile Timeouts.java
+ * @run testng/othervm/timeout=180 Timeouts
  * @summary Test Socket timeouts
  */
 
