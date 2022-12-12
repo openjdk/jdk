@@ -1768,9 +1768,6 @@ public:
   using Assembler::vpternlogq;
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
 
-  void alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch);
-  void anytrue(Register dst, uint masklen, KRegister src, KRegister kscratch);
-
   void cmov32( Condition cc, Register dst, Address  src);
   void cmov32( Condition cc, Register dst, Register src);
 

@@ -46,7 +46,7 @@ public:
   Label& continuation() { return _continuation; }
 
   virtual void emit(C2_MacroAssembler& masm) = 0;
-  virtual int size() const = 0;
+  virtual int max_size() const = 0;
 };
 
 class C2CodeStubList {
@@ -67,7 +67,7 @@ private:
 public:
   C2SafepointPollStub(uintptr_t safepoint_offset) :
     _safepoint_offset(safepoint_offset) {}
-  int size() const;
+  int max_size() const;
   void emit(C2_MacroAssembler& masm);
 };
 
@@ -82,7 +82,7 @@ public:
 
   Label& guard() { return _guard; }
 
-  int size() const;
+  int max_size() const;
   void emit(C2_MacroAssembler& masm);
 };
 
@@ -90,7 +90,7 @@ class C2CheckLockStackStub : public C2CodeStub {
 public:
   C2CheckLockStackStub() : C2CodeStub() {}
 
-  int size() const;
+  int max_size() const;
   void emit(C2_MacroAssembler& masm);
 };
 

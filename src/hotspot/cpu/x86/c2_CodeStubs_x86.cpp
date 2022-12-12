@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@
 
 #define __ masm.
 
-int C2SafepointPollStub::size() const {
-  LP64_ONLY(return 22;)
-  NOT_LP64(return 33;)
+int C2SafepointPollStub::max_size() const {
+  return 33;
 }
 
 void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
@@ -63,7 +62,7 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   __ jump(callback_addr);
 }
 
-int C2EntryBarrierStub::size() const {
+int C2EntryBarrierStub::max_size() const {
   return 10;
 }
 
@@ -71,6 +70,10 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
   __ jmp(continuation(), false /* maybe_short */);
+}
+
+int C2CheckLockStackStub::max_size() const {
+  return 0;
 }
 
 void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {

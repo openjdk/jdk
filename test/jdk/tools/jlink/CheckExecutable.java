@@ -25,7 +25,7 @@
  * @test
  * @bug 8132475
  * @summary Check that jlink creates executables in the bin directory
- *          that are are executable by all users
+ *          that are executable by all users
  * @run main CheckExecutable
  * @author Volker Simonis
  */
