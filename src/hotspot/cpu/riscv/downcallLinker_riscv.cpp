@@ -218,11 +218,7 @@ void DowncallStubGenerator::generate() {
   // jump to foreign funtion.
   __ jalr(_abi._target_addr_reg);
 
-  if (!_needs_return_buffer) {
-    // Unpack native results, convert native results into java value.
-    // results still in registers, so when in slow path, it must be spilled.
-    __ cast_primitive_type(_ret_bt, c_rarg0);
-  } else {
+  if (_needs_return_buffer) {
     // when use return buffer, copy content of return registers to return buffer,
     // then operations created in BoxBindingCalculator will be operated.
     assert(ret_buf_addr_sp_offset != -1, "no return buffer addr spill");

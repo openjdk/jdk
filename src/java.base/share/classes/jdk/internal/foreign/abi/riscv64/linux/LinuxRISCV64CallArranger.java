@@ -25,8 +25,8 @@
 
 package jdk.internal.foreign.abi.riscv64.linux;
 
-import jdk.internal.foreign.PlatformLayouts;
 import jdk.internal.foreign.abi.*;
+import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
@@ -35,8 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
 import static jdk.internal.foreign.abi.riscv64.linux.TypeClass.*;
+import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
+import static jdk.internal.foreign.PlatformLayouts.*;
 
 /**
  * For the RISCV64 C ABI specifically, this class uses CallingSequenceBuilder
@@ -60,17 +61,15 @@ public class LinuxRISCV64CallArranger {
             x30  // ret buf addr reg
     );
 
-    public static class Bindings {
-        public final CallingSequence callingSequence;
-        public final boolean isInMemoryReturn;
-
-        Bindings(CallingSequence callingSequence, boolean isInMemoryReturn) {
-            this.callingSequence = callingSequence;
-            this.isInMemoryReturn = isInMemoryReturn;
-        }
+    public record Bindings(CallingSequence callingSequence,
+                           boolean isInMemoryReturn) {
     }
 
-    public static LinuxRISCV64CallArranger.Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
+    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
+        return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
+    }
+
+    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(CLinux, forUpcall);
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -78,8 +77,8 @@ public class LinuxRISCV64CallArranger {
         // When return struct is classified as STRUCT_REFERENCE, it will be true.
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
-            Class<?> carrier = MemoryAddress.class;
-            MemoryLayout layout = PlatformLayouts.LinuxRISCV64.C_POINTER;
+            Class<?> carrier = MemorySegment.class;
+            MemoryLayout layout = RISCV64.C_POINTER;
             csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout, false));
         } else if (cDesc.returnLayout().isPresent()) {
             Class<?> carrier = mt.returnType();
@@ -90,15 +89,15 @@ public class LinuxRISCV64CallArranger {
         for (int i = 0; i < mt.parameterCount(); i++) {
             Class<?> carrier = mt.parameterType(i);
             MemoryLayout layout = cDesc.argumentLayouts().get(i);
-            boolean isVar = cDesc.firstVariadicArgumentIndex() != -1 && i >= cDesc.firstVariadicArgumentIndex();
+            boolean isVar = options.isVarargsIndex(i);
             csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout, isVar));
         }
 
-        return new LinuxRISCV64CallArranger.Bindings(csb.build(), returnInMemory);
+        return new Bindings(csb.build(), returnInMemory);
     }
 
-    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
-        LinuxRISCV64CallArranger.Bindings bindings = getBindings(mt, cDesc, false);
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(CLinux, bindings.callingSequence).getBoundMethodHandle();
 
@@ -109,9 +108,9 @@ public class LinuxRISCV64CallArranger {
         return handle;
     }
 
-    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, MemorySession session) {
+    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope session) {
 
-        LinuxRISCV64CallArranger.Bindings bindings = getBindings(mt, cDesc, true);
+        Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
             target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
@@ -243,7 +242,7 @@ public class LinuxRISCV64CallArranger {
                 }
 
                 case POINTER -> {
-                    bindings.unboxAddress(carrier);
+                    bindings.unboxAddress();
                     VMStorage storage = storageCalculator.getStorage(StorageClasses.INTEGER);
                     bindings.vmStore(storage, long.class);
                 }
@@ -308,7 +307,7 @@ public class LinuxRISCV64CallArranger {
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
-                            .unboxAddress(MemorySegment.class);
+                            .unboxAddress();
                     VMStorage storage = storageCalculator.getStorage(
                             StorageClasses.INTEGER);
                     bindings.vmStore(storage, long.class);
@@ -346,7 +345,7 @@ public class LinuxRISCV64CallArranger {
                 case POINTER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageClasses.INTEGER);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddress();
+                            .boxAddressRaw(Utils.pointeeSize(layout));
                 }
 
                 case STRUCT_A -> {
@@ -409,8 +408,7 @@ public class LinuxRISCV64CallArranger {
                     VMStorage storage = storageCalculator.getStorage(
                             StorageClasses.INTEGER);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddress()
-                            .toSegment(layout);
+                            .boxAddress(layout);
                 }
 
                 default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);

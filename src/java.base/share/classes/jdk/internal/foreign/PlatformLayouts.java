@@ -211,8 +211,8 @@ public final class PlatformLayouts {
         public static final ValueLayout.OfAddress C_VA_LIST = AArch64.C_POINTER;
     }
 
-    public static final class LinuxRISCV64 {
-        private LinuxRISCV64() {
+    public static final class RISCV64 {
+        private RISCV64() {
             //just the one
         }
 
@@ -264,6 +264,6 @@ public final class PlatformLayouts {
         /**
          * The {@code va_list} native type, as it is passed to a function.
          */
-        public static final ValueLayout.OfAddress C_VA_LIST = LinuxRISCV64.C_POINTER;
+        public static final ValueLayout.OfAddress C_VA_LIST = RISCV64.C_POINTER;
     }
 }

@@ -83,7 +83,7 @@ public enum TypeClass {
             } else if (layout instanceof GroupLayout groupLayout) {
                 FieldCounter currCounter = FieldCounter.EMPTY;
                 for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
-                    if (memberLayout.isPadding()) continue;
+                    if (memberLayout instanceof PaddingLayout) continue;
                     currCounter = currCounter.add(flatten(memberLayout));
                 }
                 return currCounter;
@@ -136,7 +136,7 @@ public enum TypeClass {
         } else if (layout instanceof GroupLayout groupLayout) {
             List<FlattenedFieldDesc> fields = new ArrayList<>();
             for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
-                if (memberLayout.isPadding()) {
+                if (memberLayout instanceof PaddingLayout) {
                     offset += memberLayout.byteSize();
                     continue;
                 }
@@ -169,7 +169,7 @@ public enum TypeClass {
             return INTEGER;
         } else if (carrier == float.class || carrier == double.class) {
             return FLOAT;
-        } else if (carrier == MemoryAddress.class) {
+        } else if (carrier == MemorySegment.class) {
             return POINTER;
         } else {
             throw new IllegalStateException("Cannot get here: " + carrier.getName());
@@ -181,7 +181,7 @@ public enum TypeClass {
     }
 
     private static TypeClass classifyStructType(GroupLayout layout) {
-        if (layout.isUnion()) {
+        if (layout instanceof UnionLayout) {
             return isRegisterAggregate(layout) ? STRUCT_A : STRUCT_REFERENCE;
         }
 
@@ -200,7 +200,7 @@ public enum TypeClass {
         } else if (type instanceof GroupLayout gt) {
             return classifyStructType(gt);
         } else {
-            throw new IllegalArgumentException("Unhandled type " + type);
+            throw new IllegalArgumentException("Unsupported layout: " + type);
         }
     }
 }

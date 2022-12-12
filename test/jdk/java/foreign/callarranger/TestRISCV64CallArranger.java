@@ -34,23 +34,24 @@
  * @run testng TestRISCV64CallArranger
  */
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64CallArranger;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodType;
 
+import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
-import static jdk.internal.foreign.PlatformLayouts.LinuxRISCV64.*;
+import static jdk.internal.foreign.PlatformLayouts.RISCV64.*;
 import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -63,13 +64,13 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid();
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) }
+            { unboxAddress(), vmStore(x29, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -87,15 +88,15 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             C_INT, C_CHAR);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
-            { vmStore(x10, byte.class) },
-            { vmStore(x11, short.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
+            { cast(byte.class, int.class), vmStore(x10, int.class) },
+            { cast(short.class, int.class), vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
             { vmStore(x13, int.class) },
             { vmStore(x14, int.class) },
@@ -103,7 +104,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             { vmStore(x16, long.class) },
             { vmStore(x17, int.class) },
             { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), byte.class) }
+            { cast(byte.class, int.class), vmStore(stackStorage(1), int.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -115,13 +116,13 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_INT, C_FLOAT, C_FLOAT);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { vmStore(x10, int.class) },
             { vmStore(x11, int.class) },
             { vmStore(f10, float.class) },
@@ -137,13 +138,13 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             expectedBindings
         });
 
@@ -177,7 +178,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             { struct1,
                 new Binding[]{
                     copy(struct1),
-                    unboxAddress(MemorySegment.class),
+                    unboxAddress(),
                     vmStore(x10, long.class)
                 }
             },
@@ -234,14 +235,14 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.of(fa, C_FLOAT, C_INT, fa);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(MemorySegment.class), vmStore(x30, long.class) },
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x30, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { vmStore(f10, float.class) },
             { vmStore(x10, int.class) },
             {
@@ -272,14 +273,14 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.of(fa, C_FLOAT, C_INT, fa);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(MemorySegment.class), vmStore(x30, long.class) },
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x30, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { vmStore(f10, float.class) },
             { vmStore(x10, int.class) },
             {
@@ -313,13 +314,13 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             C_FLOAT, C_FLOAT, C_FLOAT, struct);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { vmStore(f10, float.class) },
             { vmStore(f11, float.class) },
             { vmStore(f12, float.class) },
@@ -344,13 +345,13 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct, struct, struct);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             {
                 dup(),
                 bufferLoad(0, int.class),
@@ -392,22 +393,22 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             struct, struct, C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, struct, C_INT);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
-            { copy(struct), unboxAddress(MemorySegment.class), vmStore(x10, long.class) },
-            { copy(struct), unboxAddress(MemorySegment.class), vmStore(x11, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
+            { copy(struct), unboxAddress(), vmStore(x10, long.class) },
+            { copy(struct), unboxAddress(), vmStore(x11, long.class) },
             { vmStore(x12, int.class) },
             { vmStore(x13, int.class) },
             { vmStore(x14, int.class) },
             { vmStore(x15, int.class) },
             { vmStore(x16, int.class) },
             { vmStore(x17, int.class) },
-            { copy(struct), unboxAddress(MemorySegment.class), vmStore(stackStorage(0), long.class) },
+            { copy(struct), unboxAddress(), vmStore(stackStorage(0), long.class) },
             { vmStore(stackStorage(1), int.class) }
         });
 
@@ -417,18 +418,18 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
     @Test
     public void testVarArgsInRegs() {
         MethodType mt = MethodType.methodType(void.class, int.class, int.class, float.class);
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT).asVariadic(C_INT, C_FLOAT);
+        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_INT, C_FLOAT);
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_INT, C_FLOAT);
-        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
+        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false, LinkerOptions.of(firstVariadicArg(1)));
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fdExpected);
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { vmStore(x10, int.class) },
             { vmStore(x11, int.class) },
             { vmStore(x12, float.class) }
@@ -442,22 +443,22 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         MethodType mt = MethodType.methodType(void.class, int.class, int.class, int.class, double.class,
             double.class, long.class, long.class, int.class,
             double.class, double.class, long.class);
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT).asVariadic(C_INT, C_INT, C_DOUBLE, C_DOUBLE,
+        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_DOUBLE, C_DOUBLE,
             C_LONG, C_LONG, C_INT, C_DOUBLE,
             C_DOUBLE, C_LONG);
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_INT, C_INT, C_DOUBLE,
             C_DOUBLE, C_LONG, C_LONG, C_INT,
             C_DOUBLE, C_DOUBLE, C_LONG);
-        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
+        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false, LinkerOptions.of(firstVariadicArg(1)));
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fdExpected);
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { vmStore(x10, int.class) },
             { vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
@@ -482,16 +483,16 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.of(struct, C_INT, C_INT, C_FLOAT);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertTrue(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
+        assertTrue(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
         assertEquals(callingSequence.callerMethodType(),
-            MethodType.methodType(void.class, Addressable.class, MemoryAddress.class,
+            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class,
                 int.class, int.class, float.class));
         assertEquals(callingSequence.functionDesc(),
             FunctionDescriptor.ofVoid(ADDRESS, C_POINTER, C_INT, C_INT, C_FLOAT));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) },
             { unboxAddress(), vmStore(x10, long.class) },
             { vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
@@ -509,14 +510,14 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.of(struct);
         LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false);
 
-        assertFalse(bindings.isInMemoryReturn);
-        CallingSequence callingSequence = bindings.callingSequence;
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, Addressable.class));
+        assertFalse(bindings.isInMemoryReturn());
+        CallingSequence callingSequence = bindings.callingSequence();
+        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class, MemorySegment.class));
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(MemorySegment.class), vmStore(x30, long.class) },
-            { unboxAddress(Addressable.class), vmStore(x29, long.class) }
+            { unboxAddress(), vmStore(x30, long.class) },
+            { unboxAddress(), vmStore(x29, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{
