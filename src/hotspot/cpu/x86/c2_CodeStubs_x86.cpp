@@ -73,7 +73,7 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
 }
 
 int C2CheckLockStackStub::max_size() const {
-  return 0;
+  return 10;
 }
 
 void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
