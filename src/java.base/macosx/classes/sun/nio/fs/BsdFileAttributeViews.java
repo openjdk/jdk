@@ -58,7 +58,7 @@ class BsdFileAttributeViews {
             }
 
             // not all volumes support fsetattrlist(2), so set the last
-            // modified and last access times using the Unix implementation
+            // modified and last access times using futimens(2)
             if (lastModifiedTime != null || lastAccessTime != null) {
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
