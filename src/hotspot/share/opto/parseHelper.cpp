@@ -400,6 +400,56 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
   Node* obj = alloc->result_cast();
   const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
   Node* objx = kit->set_output_for_allocation(allocx, oop_type);
+  VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
+
+  if (oop_type->isa_instptr()) {
+    ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+
+    for (int i = 0; i < ik->nof_nonstatic_fields(); ++i) {
+      Node* val = virt->_entries[i];
+      ciField* field = ik->nonstatic_field_at(i);
+
+#ifndef PRODUCT
+      if (Verbose) {
+        tty->print("flt#%2d = ", i);
+        if (val) {
+          val->dump();
+        } else {
+          tty->print("0");
+        }
+        tty->print(" // ");
+        field->print_name_on(tty);
+        tty->cr();
+      }
+#endif
+      // no initial value or is captured by InitializeNode
+      if (val == nullptr) continue;
+
+      int offset = field->offset_in_bytes();
+      Node* adr = kit->basic_plus_adr(objx, objx, offset);
+      const TypePtr* adr_type = kit->C->alias_type(field)->adr_type();
+
+      DecoratorSet decorators = IN_HEAP;
+
+      BasicType bt = field->layout_type();
+      bool is_obj = is_reference_type(bt);
+      // Store the value.
+      const Type* field_type;
+      if (!field->type()->is_loaded()) {
+        field_type = TypeInstPtr::BOTTOM;
+      } else {
+        if (is_obj) {
+          field_type = TypeOopPtr::make_from_klass(field->type()->as_klass());
+        } else {
+          field_type = Type::BOTTOM;
+        }
+      }
+      decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
+      kit->access_store_at(objx, adr, adr_type, val, field_type, bt, decorators);
+    }
+  } else {
+    assert(false, "array not support yet!");
+  }
 
   EscapedState* escaped = new EscapedState(objx);
   _state.put(alloc, escaped);

@@ -910,7 +910,9 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 
   // Fall through if the instance matches the desired type.
   kit.replace_in_map(receiver, casted_receiver);
-
+  if (_if_hit->is_inline() && _caller_state != nullptr) {
+    static_cast<InlineCallGenerator*>(_if_hit)->set_caller_state(_caller_state);
+  }
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
   if (new_jvms == NULL) {

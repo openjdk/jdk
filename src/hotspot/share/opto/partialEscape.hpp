@@ -41,6 +41,7 @@ class ObjectState {
 };
 
 class VirtualState: public ObjectState {
+  friend class PEAState;
   int _lockCount;
   Node** _entries;
   DEBUG_ONLY(uint _nfields);

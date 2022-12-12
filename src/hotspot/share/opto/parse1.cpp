@@ -612,10 +612,35 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAS
   Block* entry_block = start_block();
   assert(entry_block->start() == (is_osr_parse() ? osr_bci() : 0), "");
   set_map_clone(entry_map);
-  merge_common(entry_block, entry_block->next_path_num());
+
   if (_caller_state) {
-    entry_block->state() = *_caller_state;
+    PEAState& init = entry_block->state();
+    // only arguments flow into callee. Caller pushed arguments and 'dec_sp(nargs)' changed them to arguments
+    // of callee. refer to Parse::do_call().
+    uint nargs = _method->arg_size();
+    // arguments are bound to locals
+    for (uint i = 0; i < nargs; ++i) {
+      Node* arg = local(i);
+      ObjID alloc = _caller_state->is_alias(arg);
+
+      if (alloc != nullptr) {
+        bool created;
+        ObjectState** obj_state = init._state.put_if_absent(alloc, &created);
+
+        if (created) {
+          *obj_state = _caller_state->get_object_state(alloc);
+        }
+      }
+    }
+
+    _caller_state->_alias.iterate([&](Node* node, ObjID alloc) {
+       if (init._state.contains(alloc)) {
+         init._alias.put(node, alloc);
+       }
+       return true;
+    });
   }
+  merge_common(entry_block, entry_block->next_path_num());
 #ifndef PRODUCT
   BytecodeParseHistogram *parse_histogram_obj = new (C->env()->arena()) BytecodeParseHistogram(this, C);
   set_parse_histogram( parse_histogram_obj );
@@ -1116,6 +1141,11 @@ void Parse::do_exits() {
     while ((ex_map = caller.pop_exception_state()) != NULL) {
       _exits.add_exception_state(ex_map);
     }
+  }
+
+  if (_caller_state) {
+    // overwrite _caller_state
+    // if object is new in _caller_state, it must be retval.
   }
   _exits.map()->apply_replaced_nodes(_new_idx);
 }
@@ -2415,8 +2445,55 @@ void Parse::return_current(Node* value) {
   if (_first_return) {
     _exits.map()->transfer_replaced_nodes_from(map(), _new_idx);
     _first_return = false;
+
+
+    if (_caller_state) {
+      // only incoming arguments and return value are live in caller.
+      PEAState& instate = block()->state();
+      uint nargs = _method->arg_size();
+      // scan _caller->map() because the argument section is intact
+      GraphKit caller(_caller);
+
+      for (uint i = 0; i < nargs; ++i) {
+        Node* arg = caller.argument(i);
+        ObjID alloc = instate.is_alias(arg);
+        if (alloc != nullptr) {
+          bool created;
+          ObjectState** obj_state = _exit_state._state.put_if_absent(alloc, &created);
+          if (created) {
+            *obj_state = instate.get_object_state(alloc);
+          }
+        }
+      }
+
+      // retval
+      if (tf()->range()->cnt() > TypeFunc::Parms) {
+        Node* phi = _exits.argument(0);
+        const TypeInstPtr *tr = phi->bottom_type()->isa_instptr();
+        if (tr != nullptr) {
+          Node* retval = phi->in(1);
+          ObjID alloc = instate.is_alias(retval);
+
+          if (alloc != nullptr) {
+            bool created;
+            ObjectState** obj_state = _exit_state._state.put_if_absent(alloc, &created);
+            if (created) {
+              *obj_state = instate.get_object_state(alloc);
+            }
+          }
+        }
+      }
+
+      instate._alias.iterate([&](Node* node, ObjID alloc) {
+                               if (_exit_state._state.contains(alloc)) {
+                                 _exit_state._alias.put(node, alloc);
+                               }
+                               return true;
+                             });
+    }
   } else {
     _exits.map()->merge_replaced_nodes_with(map());
+    // TODO: support merge from other regular exits.
   }
 
   stop_and_kill_map();          // This CFG path dies here
