@@ -33,7 +33,8 @@
 #include "utilities/ostream.hpp"
 
 
-void MallocHeader::print_block_on_error(outputStream* st, address bad_address) {
+void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
+  assert(bad_address >= (address)this, "sanity");
 
   // This function prints block information, including hex dump, in case of a detected
   // corruption. The hex dump should show both block header and corruption site
@@ -43,9 +44,9 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) {
   // memory (it uses SafeFetch).
 
   st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
-               p2i(bad_address), p2i(bad_address));
+               p2i(this), p2i(bad_address));
   static const size_t min_dump_length = 256;
-  address from1 = align_down((address)bad_address, sizeof(void*)) - (min_dump_length / 2);
+  address from1 = align_down((address)this, sizeof(void*)) - (min_dump_length / 2);
   address to1 = from1 + min_dump_length;
   address from2 = align_down(bad_address, sizeof(void*)) - (min_dump_length / 2);
   address to2 = from2 + min_dump_length;

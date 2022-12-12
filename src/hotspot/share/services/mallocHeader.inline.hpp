@@ -99,14 +99,12 @@ inline OUT MallocHeader::resolve_checked_impl(IN memblock){
   char msg[256];
   address corruption = NULL;
   if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", memblock, msg);
+    fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
   OUT header_pointer = (OUT)memblock - 1;
   if (!header_pointer->check_block_integrity( msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      MallocHeader::print_block_on_error(tty, (address)memblock);
-    }
-    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", memblock, msg);
+    header_pointer->print_block_on_error(tty, corruption != NULL ? corruption : (address)header_pointer);
+    fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
   return header_pointer;
 }
