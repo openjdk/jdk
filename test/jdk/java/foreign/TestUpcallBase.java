@@ -22,10 +22,10 @@
  *
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
@@ -34,6 +34,7 @@ import org.testng.annotations.BeforeClass;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -54,17 +55,17 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
         try {
             DUMMY = MethodHandles.lookup().findStatic(TestUpcallBase.class, "dummy", MethodType.methodType(void.class));
             PASS_AND_SAVE = MethodHandles.lookup().findStatic(TestUpcallBase.class, "passAndSave",
-                    MethodType.methodType(Object.class, Object[].class, AtomicReference.class, int.class));
+                    MethodType.methodType(Object.class, Object[].class, AtomicReference.class, int.class, List.class));
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
     }
 
-    private static Addressable DUMMY_STUB;
+    private static MemorySegment DUMMY_STUB;
 
     @BeforeClass
     void setup() {
-        DUMMY_STUB = ABI.upcallStub(DUMMY, FunctionDescriptor.ofVoid(), MemorySession.openImplicit());
+        DUMMY_STUB = ABI.upcallStub(DUMMY, FunctionDescriptor.ofVoid(), SegmentScope.auto());
     }
 
     static FunctionDescriptor function(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
@@ -80,11 +81,11 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
                 FunctionDescriptor.of(layouts[prefix.size()], layouts);
     }
 
-    static Object[] makeArgs(MemorySession session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
+    static Object[] makeArgs(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks) throws ReflectiveOperationException {
         return makeArgs(session, ret, params, fields, checks, argChecks, List.of());
     }
 
-    static Object[] makeArgs(MemorySession session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) throws ReflectiveOperationException {
+    static Object[] makeArgs(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) throws ReflectiveOperationException {
         Object[] args = new Object[prefix.size() + params.size() + 1];
         int argNum = 0;
         for (MemoryLayout layout : prefix) {
@@ -97,27 +98,32 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
         return args;
     }
 
-    static Addressable makeCallback(MemorySession session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) {
+    static MemorySegment makeCallback(SegmentScope session, Ret ret, List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<Consumer<Object[]>> argChecks, List<MemoryLayout> prefix) {
         if (params.isEmpty()) {
             return DUMMY_STUB;
         }
 
         AtomicReference<Object[]> box = new AtomicReference<>();
-        MethodHandle mh = insertArguments(PASS_AND_SAVE, 1, box, prefix.size());
+        List<MemoryLayout> layouts = new ArrayList<>();
+        layouts.addAll(prefix);
+        for (int i = 0 ; i < params.size() ; i++) {
+            layouts.add(params.get(i).layout(fields));
+        }
+        MethodHandle mh = insertArguments(PASS_AND_SAVE, 1, box, prefix.size(), layouts);
         mh = mh.asCollector(Object[].class, prefix.size() + params.size());
 
         for(int i = 0; i < prefix.size(); i++) {
-            mh = mh.asType(mh.type().changeParameterType(i, carrier(prefix.get(i), false)));
+            mh = mh.asType(mh.type().changeParameterType(i, carrier(prefix.get(i))));
         }
 
         for (int i = 0; i < params.size(); i++) {
             ParamType pt = params.get(i);
             MemoryLayout layout = pt.layout(fields);
-            Class<?> carrier = carrier(layout, false);
+            Class<?> carrier = carrier(layout);
             mh = mh.asType(mh.type().changeParameterType(prefix.size() + i, carrier));
 
             final int finalI = prefix.size() + i;
-            if (carrier == MemorySegment.class) {
+            if (layout instanceof GroupLayout) {
                 argChecks.add(o -> assertStructEquals((MemorySegment) box.get()[finalI], (MemorySegment) o[finalI], layout));
             } else {
                 argChecks.add(o -> assertEquals(box.get()[finalI], o[finalI]));
@@ -126,9 +132,8 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
 
         ParamType firstParam = params.get(0);
         MemoryLayout firstlayout = firstParam.layout(fields);
-        Class<?> firstCarrier = carrier(firstlayout, true);
-
-        if (firstCarrier == MemorySegment.class) {
+        Class<?> firstCarrier = carrier(firstlayout);
+        if (firstlayout instanceof GroupLayout) {
             checks.add(o -> assertStructEquals((MemorySegment) box.get()[prefix.size()], (MemorySegment) o, firstlayout));
         } else {
             checks.add(o -> assertEquals(o, box.get()[prefix.size()]));
@@ -143,11 +148,11 @@ public abstract class TestUpcallBase extends CallGeneratorHelper {
         return ABI.upcallStub(mh, func, session);
     }
 
-    static Object passAndSave(Object[] o, AtomicReference<Object[]> ref, int retArg) {
+    static Object passAndSave(Object[] o, AtomicReference<Object[]> ref, int retArg, List<MemoryLayout> layouts) {
         for (int i = 0; i < o.length; i++) {
-            if (o[i] instanceof MemorySegment) {
+            if (layouts.get(i) instanceof GroupLayout) {
                 MemorySegment ms = (MemorySegment) o[i];
-                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), MemorySession.openImplicit());
+                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), SegmentScope.auto());
                 copy.copyFrom(ms);
                 o[i] = copy;
             }

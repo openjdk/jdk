@@ -25,10 +25,13 @@
 
 package java.io;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
@@ -45,7 +48,7 @@ import sun.security.action.GetPropertyAction;
  * output streams then its console will exist and will typically be
  * connected to the keyboard and display from which the virtual machine
  * was launched.  If the virtual machine is started automatically, for
- * example by a background job scheduler, then it will typically not
+ * example by a background job scheduler, then it may not
  * have a console.
  * <p>
  * If this virtual machine has a console then it is represented by a
@@ -93,7 +96,7 @@ import sun.security.action.GetPropertyAction;
  * @since   1.6
  */
 
-public final class Console implements Flushable
+public class Console implements Flushable
 {
    /**
     * Retrieves the unique {@link java.io.PrintWriter PrintWriter} object
@@ -592,25 +595,43 @@ public final class Console implements Flushable
 
         CHARSET = cs;
 
+        cons = instantiateConsole(istty);
+
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                if (istty) {
-                    if (cons == null)
-                        cons = new Console();
-                    return cons;
-                }
-                return null;
-            }
-
-            public Charset charset() {
-                return CHARSET;
+                return cons;
             }
         });
     }
-    private static Console cons;
+
+    @SuppressWarnings("removal")
+    private static Console instantiateConsole(boolean istty) {
+        try {
+            // Try loading providers
+            PrivilegedAction<Console> pa = () -> {
+                var consModName = System.getProperty("jdk.console",
+                        JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+                return ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class).stream()
+                        .map(ServiceLoader.Provider::get)
+                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
+                        .map(jcp -> jcp.console(istty, CHARSET))
+                        .filter(Objects::nonNull)
+                        .findAny()
+                        .map(jc -> (Console) new ProxyingConsole(jc))
+                        .orElse(istty ? new Console() : null);
+            };
+            return AccessController.doPrivileged(pa);
+        } catch (ServiceConfigurationError ignore) {
+            // default to built-in Console
+            return istty ? new Console() : null;
+        }
+    }
+
+    private static final Console cons;
     private static native boolean istty();
-    private Console() {
+
+    Console() {
         readLock = new Object();
         writeLock = new Object();
         out = StreamEncoder.forOutputStreamWriter(

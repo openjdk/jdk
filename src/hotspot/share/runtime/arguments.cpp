@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
@@ -36,6 +35,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
@@ -67,6 +67,7 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
 #include <limits>
 
 #define DEFAULT_JAVA_LAUNCHER  "generic"
@@ -1953,8 +1954,10 @@ bool Arguments::check_vm_args_consistency() {
   if (status && EnableJVMCI) {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
-    if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
-      return false;
+    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+        return false;
+      }
     }
   }
 #endif
@@ -4160,38 +4163,6 @@ const char* Arguments::PropertyList_get_readable_value(SystemProperty *pl, const
     }
   }
   return NULL;
-}
-
-const char* Arguments::PropertyList_get_key_at(SystemProperty *pl, int index) {
-  int count = 0;
-  const char* ret_val = NULL;
-
-  while(pl != NULL) {
-    if(count >= index) {
-      ret_val = pl->key();
-      break;
-    }
-    count++;
-    pl = pl->next();
-  }
-
-  return ret_val;
-}
-
-char* Arguments::PropertyList_get_value_at(SystemProperty* pl, int index) {
-  int count = 0;
-  char* ret_val = NULL;
-
-  while(pl != NULL) {
-    if(count >= index) {
-      ret_val = pl->value();
-      break;
-    }
-    count++;
-    pl = pl->next();
-  }
-
-  return ret_val;
 }
 
 void Arguments::PropertyList_add(SystemProperty** plist, SystemProperty *new_p) {

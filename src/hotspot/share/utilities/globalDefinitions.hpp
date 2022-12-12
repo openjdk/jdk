@@ -130,6 +130,7 @@ class oopDesc;
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR
+#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
@@ -371,6 +372,9 @@ inline T byte_size_in_proper_unit(T s) {
     return s;
   }
 }
+
+#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64

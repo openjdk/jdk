@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -39,6 +38,7 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -83,7 +83,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/utf8.hpp"
-
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -142,6 +141,8 @@
 #define JAVA_19_VERSION                   63
 
 #define JAVA_20_VERSION                   64
+
+#define JAVA_21_VERSION                   65
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||

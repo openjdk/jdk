@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -48,6 +47,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
@@ -1363,6 +1363,54 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
   return JNIHandles::make_local(THREAD, result);
 JVM_END
 
+class ScopedValueBindingsResolver {
+public:
+  InstanceKlass* Carrier_klass;
+  ScopedValueBindingsResolver(JavaThread* THREAD) {
+    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_incubator_concurrent_ScopedValue_Carrier(), true, THREAD);
+    Carrier_klass = InstanceKlass::cast(k);
+  }
+};
+
+JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
+  ResourceMark rm(THREAD);
+  GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
+  JvmtiVMObjectAllocEventCollector oam;
+
+  static ScopedValueBindingsResolver resolver(THREAD);
+
+  // Iterate through Java frames
+  vframeStream vfst(thread);
+  for(; !vfst.at_end(); vfst.next()) {
+    int loc = -1;
+    // get method of frame
+    Method* method = vfst.method();
+
+    Symbol *name = method->name();
+
+    InstanceKlass* holder = method->method_holder();
+    if (name == vmSymbols::runWith_method_name()) {
+      if ((holder == resolver.Carrier_klass
+           || holder == vmClasses::VirtualThread_klass()
+           || holder == vmClasses::Thread_klass())) {
+        loc = 1;
+      }
+    }
+
+    if (loc != -1) {
+      javaVFrame *frame = vfst.asJavaVFrame();
+      StackValueCollection* locals = frame->locals();
+      StackValue* head_sv = locals->at(loc); // jdk/incubator/concurrent/ScopedValue$Snapshot
+      Handle result = head_sv->get_obj();
+      assert(!head_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
+      if (result() != NULL) {
+        return JNIHandles::make_local(THREAD, result());
+      }
+    }
+  }
+
+  return NULL;
+JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsArrayClass(JNIEnv *env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
@@ -3114,22 +3162,15 @@ JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring na
   }
 JVM_END
 
-JVM_ENTRY(jobject, JVM_ExtentLocalCache(JNIEnv* env, jclass threadClass))
-  oop theCache = thread->extentLocalCache();
-  if (theCache) {
-    arrayOop objs = arrayOop(theCache);
-    assert(objs->length() == ExtentLocalCacheSize * 2, "wrong length");
-  }
+JVM_ENTRY(jobject, JVM_ScopedValueCache(JNIEnv* env, jclass threadClass))
+  oop theCache = thread->scopedValueCache();
   return JNIHandles::make_local(THREAD, theCache);
 JVM_END
 
-JVM_ENTRY(void, JVM_SetExtentLocalCache(JNIEnv* env, jclass threadClass,
+JVM_ENTRY(void, JVM_SetScopedValueCache(JNIEnv* env, jclass threadClass,
                                        jobject theCache))
   arrayOop objs = arrayOop(JNIHandles::resolve(theCache));
-  if (objs != NULL) {
-    assert(objs->length() == ExtentLocalCacheSize * 2, "wrong length");
-  }
-  thread->set_extentLocalCache(objs);
+  thread->set_scopedValueCache(objs);
 JVM_END
 
 // java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
@@ -4018,4 +4059,13 @@ JVM_ENTRY(jint, JVM_GetClassFileVersion(JNIEnv* env, jclass current))
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
   return (ik->minor_version() << 16) | ik->major_version();
+JVM_END
+
+/*
+ * Ensure that code doing a stackwalk and using javaVFrame::locals() to
+ * get the value will see a materialized value and not a scalar-replaced
+ * null value.
+ */
+JVM_ENTRY(void, JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value))
+  JVM_EnsureMaterializedForStackWalk(env, value);
 JVM_END

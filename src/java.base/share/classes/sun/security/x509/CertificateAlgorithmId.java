@@ -36,7 +36,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificateAlgorithmId implements CertAttrSet {
+public class CertificateAlgorithmId implements DerEncoder {
     private AlgorithmId algId;
 
     public static final String NAME = "algorithmID";
@@ -85,10 +85,9 @@ public class CertificateAlgorithmId implements CertAttrSet {
      * Encode the algorithm identifier in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         algId.encode(out);
     }
 

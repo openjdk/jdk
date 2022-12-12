@@ -119,6 +119,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int fieldInfoAccessFlagsOffset = getConstant("FieldInfo::access_flags_offset", Integer.class);
     final int fieldInfoNameIndexOffset = getConstant("FieldInfo::name_index_offset", Integer.class);
     final int fieldInfoSignatureIndexOffset = getConstant("FieldInfo::signature_index_offset", Integer.class);
+    final int fieldInfoConstantValueIndexOffset = getConstant("FieldInfo::initval_index_offset", Integer.class);
     final int fieldInfoLowPackedOffset = getConstant("FieldInfo::low_packed_offset", Integer.class);
     final int fieldInfoHighPackedOffset = getConstant("FieldInfo::high_packed_offset", Integer.class);
     final int fieldInfoFieldSlots = getConstant("FieldInfo::field_slots", Integer.class);

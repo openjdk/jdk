@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8027634 8231863
+ * @bug 8027634 8231863 8293041
  * @summary Argument parsing from file
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -221,6 +221,10 @@ public class ArgsFileTest extends TestHelper {
         verifyOptions(options, tr);
         verifyUserArgs(Arrays.asList("uarg1", "@uarg2", "@@uarg3",
                 "-uarg4", "uarg5", "@argKill"), tr, 3);
+
+        // --disable-@files should never pass to VM
+        tr = doExec(env, javaCmd, "@argKill", "--disable-@files", "--version");
+        tr.checkPositive();
 
         argFile1.delete();
         argFile2.delete();

@@ -274,7 +274,10 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
   assert(jt != NULL, "invariant");
   assert(jt == Thread::current(), "invariant");
   assert(!_lineno, "invariant");
-  HandleMark hm(jt); // RegisterMap uses Handles to support continuations.
+  // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
+  // This is because RegisterMap uses Handles to support continuations.
+  ResetNoHandleMark rnhm;
+  HandleMark hm(jt);
   JfrVframeStream vfs(jt, frame, false, false);
   u4 count = 0;
   _reached_root = true;

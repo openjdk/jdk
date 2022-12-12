@@ -139,13 +139,13 @@ public enum TestCertificate {
     public String encoded;
 
     TestCertificate(String serialNumber, String subject, String issuer,
-                    long certId, String encoded) {
+                    int hash, String encoded) {
         this.serialNumber = serialNumber;
         this.subject = subject;
         this.issuer = issuer;
         this.algorithm = "SHA256withRSA";
         this.encoded = encoded;
-        this.certId = certId;
+        this.certId = Integer.toUnsignedLong(hash);
         this.keyType = "RSA";
         this.keyLength = 2048;
     }

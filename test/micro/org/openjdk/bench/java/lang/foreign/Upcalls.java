@@ -22,10 +22,10 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -56,10 +57,10 @@ public class Upcalls extends CLayouts {
     static final MethodHandle args5;
     static final MethodHandle args10;
 
-    static final Addressable cb_blank;
-    static final Addressable cb_identity;
-    static final Addressable cb_args5;
-    static final Addressable cb_args10;
+    static final MemorySegment cb_blank;
+    static final MemorySegment cb_identity;
+    static final MemorySegment cb_args5;
+    static final MemorySegment cb_args10;
 
     static final long cb_blank_jni;
     static final long cb_identity_jni;
@@ -122,15 +123,15 @@ public class Upcalls extends CLayouts {
 
     static MethodHandle linkFunc(String name, FunctionDescriptor baseDesc) {
         return abi.downcallHandle(
-                SymbolLookup.loaderLookup().lookup(name).orElseThrow(),
+                SymbolLookup.loaderLookup().find(name).orElseThrow(),
                 baseDesc.appendArgumentLayouts(C_POINTER)
         );
     }
 
-    static Addressable makeCB(String name, MethodType mt, FunctionDescriptor fd) throws ReflectiveOperationException {
+    static MemorySegment makeCB(String name, MethodType mt, FunctionDescriptor fd) throws ReflectiveOperationException {
         return abi.upcallStub(
             lookup().findStatic(Upcalls.class, name, mt),
-            fd, MemorySession.global()
+            fd, SegmentScope.global()
         );
     }
 
@@ -147,7 +148,7 @@ public class Upcalls extends CLayouts {
 
     @Benchmark
     public void panama_blank() throws Throwable {
-        blank.invokeExact((Addressable)cb_blank);
+        blank.invokeExact(cb_blank);
     }
 
     @Benchmark
@@ -167,17 +168,17 @@ public class Upcalls extends CLayouts {
 
     @Benchmark
     public int panama_identity() throws Throwable {
-        return (int) identity.invokeExact(10, (Addressable)cb_identity);
+        return (int) identity.invokeExact(10, cb_identity);
     }
 
     @Benchmark
     public void panama_args5() throws Throwable {
-        args5.invokeExact(1L, 2D, 3L, 4D, 5L, (Addressable)cb_args5);
+        args5.invokeExact(1L, 2D, 3L, 4D, 5L, cb_args5);
     }
 
     @Benchmark
     public void panama_args10() throws Throwable {
-        args10.invokeExact(1L, 2D, 3L, 4D, 5L, 6D, 7L, 8D, 9L, 10D, (Addressable)cb_args10);
+        args10.invokeExact(1L, 2D, 3L, 4D, 5L, 6D, 7L, 8D, 9L, 10D, cb_args10);
     }
 
     static void blank() {}
