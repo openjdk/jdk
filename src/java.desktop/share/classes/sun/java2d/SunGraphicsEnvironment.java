@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,27 +322,44 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
-     * Returns the graphics configuration which bounds contain the given point.
+     * Returns the graphics configuration which bounds contain the given point
+     * in the user's space.
      *
      * @param  current the default configuration which is checked in the first
      *         place
-     * @param  x the x coordinate of the given point
-     * @param  y the y coordinate of the given point
+     * @param  x the x coordinate of the given point in the user's space
+     * @param  y the y coordinate of the given point in the user's space
      * @return the graphics configuration
      */
     public static GraphicsConfiguration getGraphicsConfigurationAtPoint(
             GraphicsConfiguration current, double x, double y) {
-        if (current.getBounds().contains(x, y)) {
+        if (containsUserSpacePoint(current, x, y)) {
             return current;
         }
         GraphicsEnvironment env = getLocalGraphicsEnvironment();
         for (GraphicsDevice device : env.getScreenDevices()) {
             GraphicsConfiguration config = device.getDefaultConfiguration();
-            if (config.getBounds().contains(x, y)) {
+            if (containsUserSpacePoint(config, x, y)) {
                 return config;
             }
         }
         return current;
+    }
+
+    /**
+     * Returns the graphics configuration which bounds contain the given point
+     * in the user's space.
+     *
+     * @param  x the x coordinate of the given point in the user's space
+     * @param  y the y coordinate of the given point in the user's space
+     * @return the graphics configuration
+     */
+    public static GraphicsConfiguration getGraphicsConfigurationAtPoint(
+            double x, double y) {
+        var gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                    .getDefaultScreenDevice()
+                                    .getDefaultConfiguration();
+        return getGraphicsConfigurationAtPoint(gc, x, y);
     }
 
     /**
@@ -379,6 +396,37 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
+     * Converts absolute coordinates from the device space to the user's space
+     * using passed graphics configuration.
+     *
+     * @param  gc the graphics configuration to be used for transformation
+     * @param  x absolute x coordinate in the device's space
+     * @param  y absolute y coordinate in the device's space
+     * @return the corresponding coordinates in user's space
+     */
+    public static Point toUserSpaceAbs(GraphicsConfiguration gc, int x, int y) {
+        AffineTransform tx = gc.getDefaultTransform();
+        Rectangle screen = gc.getBounds();
+        return new Point(
+                screen.x + Region.clipRound((x - screen.x) / tx.getScaleX()),
+                screen.y + Region.clipRound((y - screen.y) / tx.getScaleY())
+        );
+    }
+
+    /**
+     * Converts absolute coordinates from the device space to the user's space
+     * using appropriate device transformation.
+     *
+     * @param  x absolute x coordinate in the device's space
+     * @param  y absolute y coordinate in the device's space
+     * @return the corresponding coordinates in user's space
+     */
+    public static Point toUserSpaceAbs(int x, int y) {
+        GraphicsConfiguration gc = getGraphicsConfigurationAtDevicePoint(x, y);
+        return toUserSpaceAbs(gc, x, y);
+    }
+
+    /**
      * Converts absolute coordinates from the user's space to the device space
      * using appropriate device transformation.
      *
@@ -401,9 +449,8 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      * @return the rectangle which uses device space (pixels)
      */
     public static Rectangle toDeviceSpaceAbs(Rectangle rect) {
-        GraphicsConfiguration gc = getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration();
-        gc = getGraphicsConfigurationAtPoint(gc, rect.x, rect.y);
+        GraphicsConfiguration gc = getGraphicsConfigurationAtPoint(rect.x,
+                                                                   rect.y);
         return toDeviceSpaceAbs(gc, rect.x, rect.y, rect.width, rect.height);
     }
 
@@ -465,5 +512,64 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
                 Region.clipRound(w * tx.getScaleX()),
                 Region.clipRound(h * tx.getScaleY())
         );
+    }
+
+    /**
+     * Returns the graphics configuration which bounds contain the given point
+     * in the device space.
+     *
+     * @param  x the x coordinate of the given point in the device space
+     * @param  y the y coordinate of the given point in the device space
+     * @return the graphics configuration
+     */
+    public static GraphicsConfiguration getGraphicsConfigurationAtDevicePoint(
+            double x, double y)
+    {
+        var gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                    .getDefaultScreenDevice()
+                                    .getDefaultConfiguration();
+        return getGraphicsConfigurationAtDevicePoint(gc, x, y);
+    }
+
+    /**
+     * Returns the graphics configuration which bounds contain the given point
+     * in the device space.
+     *
+     * @param  current the default configuration which is checked in the first
+     *         place
+     * @param  x the x coordinate of the given point in the device space
+     * @param  y the y coordinate of the given point in the device space
+     * @return the graphics configuration
+     */
+    public static GraphicsConfiguration getGraphicsConfigurationAtDevicePoint(
+            GraphicsConfiguration current, double x, double y)
+    {
+        if (containsDeviceSpacePoint(current, x, y)) {
+            return current;
+        }
+        GraphicsEnvironment env = getLocalGraphicsEnvironment();
+        for (GraphicsDevice device : env.getScreenDevices()) {
+            GraphicsConfiguration config = device.getDefaultConfiguration();
+            if (containsDeviceSpacePoint(config, x, y)) {
+                return config;
+            }
+        }
+        return current;
+    }
+
+    private static boolean containsDeviceSpacePoint(
+            GraphicsConfiguration config, double x, double y)
+    {
+        Rectangle bounds = config.getBounds();
+        bounds = toDeviceSpaceAbs(config, bounds.x, bounds.y, bounds.width,
+                                  bounds.height);
+        return bounds.contains(x, y);
+    }
+
+    private static boolean containsUserSpacePoint(
+            GraphicsConfiguration config, double x, double y)
+    {
+        Rectangle bounds = config.getBounds();
+        return bounds.contains(x, y);
     }
 }
