@@ -36,6 +36,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 
+import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.UNIX;
 
 public class Launcher {
@@ -100,7 +101,13 @@ public class Launcher {
                                                         String... args)
             throws IOException
     {
-        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+        ServerSocketChannel ch;
+        try {
+            ch = ServerSocketChannel.open(INET);
+        } catch (Exception e) {
+            ch = ServerSocketChannel.open();
+        }
+        try (ServerSocketChannel ssc = ch) {
             ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
             InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
                                                       ssc.socket().getLocalPort());

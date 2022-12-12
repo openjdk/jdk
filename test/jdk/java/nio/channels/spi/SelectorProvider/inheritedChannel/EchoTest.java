@@ -57,8 +57,8 @@ public class EchoTest {
      * a reply (with timeout). Once the reply is received it is checked to ensure
      * that it matches the original message.
      */
-    private static void TCPEchoTest() throws IOException {
-        SocketChannel sc = Launcher.launchWithInetSocketChannel(ECHO_SERVICE, null);
+    static void TCPEchoTest(String echoService) throws IOException {
+        SocketChannel sc = Launcher.launchWithInetSocketChannel(echoService, null);
 
         String msg = "Where's that damn torpedo?";
         int repeat = 100;
@@ -160,7 +160,7 @@ public class EchoTest {
 
         // TCP echo
         try {
-            TCPEchoTest();
+            TCPEchoTest(ECHO_SERVICE);
             System.out.println("TCP echo test passed.");
         } catch (Exception x) {
             System.err.println(x);

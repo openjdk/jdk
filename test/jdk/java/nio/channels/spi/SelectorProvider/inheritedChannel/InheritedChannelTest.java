@@ -35,6 +35,7 @@
  *        jdk.test.lib.process.*
  *        UnixSocketTest StateTest StateTestService EchoTest EchoService
  *        UnixDomainChannelTest CloseTest Launcher Util
+ *        CheckIPv6Test CheckIPv6Service
  * @run testng/othervm/native InheritedChannelTest
  * @key intermittent
  */
@@ -79,6 +80,7 @@ public class InheritedChannelTest {
             { "UnixSocketTest", List.of(UnixSocketTest.class.getName())},
             { "StateTest", List.of(StateTest.class.getName(), "-Dtest.classes="+TEST_CLASSES)},
             { "EchoTest",  List.of(EchoTest.class.getName())  },
+            { "CheckIPv6Test",  List.of(CheckIPv6Test.class.getName())  },
             { "CloseTest", List.of(CloseTest.class.getName()) },
 
             // run StateTest with a SecurityManager set
