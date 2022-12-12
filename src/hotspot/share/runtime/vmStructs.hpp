@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_VMSTRUCTS_HPP
 #define SHARE_RUNTIME_VMSTRUCTS_HPP
 
+#include <type_traits>
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #ifdef COMPILER1
@@ -195,11 +196,8 @@ private:
   }
 
 // This macro checks the type of a volatile VMStructEntry by comparing pointer types
-#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) {      \
-    char space[sizeof (typeName)];                                                 \
-    typedef type dummyvtype; typeName *dummyObj = (typeName *)space;               \
-    volatile dummyvtype* dummy = &dummyObj->fieldName;                             \
-  }
+#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) \
+  CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, std::add_volatile_t<type>)
 
 // This macro checks the type of a static VMStructEntry by comparing pointer types
 #define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
