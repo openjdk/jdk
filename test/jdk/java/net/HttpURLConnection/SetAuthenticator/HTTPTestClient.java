@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.net.Authenticator;
+import java.net.BindException;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -36,6 +37,28 @@ import javax.net.ssl.HttpsURLConnection;
 public class HTTPTestClient extends HTTPTest {
 
     public static void connect(HttpProtocolType protocol,
+                               HTTPTestServer server,
+                               HttpAuthType authType,
+                               Authenticator auth)
+            throws IOException {
+        try {
+            doConnect(protocol, server, authType, auth);
+        } catch (BindException ex) {
+            // sleep a bit then try again once
+            System.out.println("WARNING: Unexpected BindException: " + ex);
+            System.out.println("\tSleeping a bit and try again...");
+            System.gc();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException iex) {
+                // ignore
+            }
+            System.gc();
+            doConnect(protocol, server, authType, auth);
+        }
+    }
+
+    public static void doConnect(HttpProtocolType protocol,
                                HTTPTestServer server,
                                HttpAuthType authType,
                                Authenticator auth)
