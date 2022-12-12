@@ -188,10 +188,6 @@ private:
 
 #ifdef ASSERT
 
-// Converts any type T to a reference type.
-template<typename T>
-std::add_rvalue_reference_t<T> declval() noexcept;
-
 // This macro checks the type of a VMStructEntry by comparing pointer types
 #define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) { \
   static_assert( \
