@@ -570,7 +570,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
     bool found = false;
-    if (UseNewCode) {
+    if (UseNewIndyCode) {
       for (int indy_index = 0; indy_index < cpcache->resolved_indy_info_length(); indy_index++) {
         int pool_index = cpcache->resolved_indy_info(indy_index)->cpool_index();
         constantPoolHandle pool(THREAD, cp);

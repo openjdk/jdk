@@ -2719,6 +2719,7 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
 }
 
 void TemplateTable::load_invokedynamic_entry(Register method) {
+  if (UseNewIndyCode) { tty->print_cr("Dispatching load_invokedynamic assembly"); }
   // setup registers
   const Register appendix = rax;
   const Register cache = rcx;
@@ -2743,11 +2744,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ jcc(Assembler::notZero, resolved);
 
   Bytecodes::Code code = bytecode();
-  switch (code) {
-  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
-  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
-  default: break;
-  }
+
   // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(method, code); // this is essentially Bytecodes::_invokedynamic
@@ -2780,17 +2777,17 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // since the parameter_size includes it.
   __ push(rbx);
   __ mov(rbx, index);
-  __ load_resolved_reference_at_index(index, rbx);
-  __ verify_oop(index);
+  __ load_resolved_reference_at_index(appendix, rbx);
+  __ verify_oop(appendix);
   __ pop(rbx);
-  __ push(index);  // push appendix (MethodType, CallSite, etc.)
+  __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
   __ bind(L_no_push);
 
   // compute return type
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::result_type_offset())));
   // load return address
   {
-    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(bytecode());
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     ExternalAddress table(table_addr);
 #ifdef _LP64
     __ lea(rscratch1, table);
@@ -3979,7 +3976,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   const Register rbx_method   = rbx;
   const Register rax_callsite = rax;
 
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
     load_invokedynamic_entry(rbx_method);
   } else {
     prepare_invoke(byte_no, rbx_method, rax_callsite);
@@ -3995,6 +3992,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ profile_arguments_type(rdx, rbx_method, rbcp, false);
 
   __ verify_oop(rax_callsite);
+  if (UseNewCode) {__ hlt();}
   __ jump_from_interpreted(rbx_method, rdx);
 }
 

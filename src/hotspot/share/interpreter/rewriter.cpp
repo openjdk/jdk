@@ -231,6 +231,7 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
         if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
                                                          _pool->name_ref_at(cp_index))) {
+          if (UseNewIndyCode) { tty->print_cr("Inside maybe rewrite invokehandle"); }
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
@@ -265,6 +266,7 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
 
 
 void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
+  if (UseNewIndyCode) { tty->print_cr("Rewriting invokedynamic"); }
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
@@ -280,7 +282,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    if (UseNewCode) {
+    if (UseNewIndyCode) {
       //tty->print_cr("Adding new invokedynamic index %d", _invokedynamic_index);
       Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
       int i = ConstantPool::encode_invokedynamic_index(_invokedynamic_index);
@@ -303,7 +305,6 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
       // We will reverse the bytecode rewriting _after_ adjusting them.
       // Adjust the cache index by offset to the invokedynamic entries in the
       // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
-      int adjustment = cp_cache_delta() + _first_iteration_cp_cache_limit;
       int cp_index = _stuff_to_collect_during_rewriting.at(cache_index)._cp_index;
       assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
       // zero out 4 bytes
@@ -597,7 +598,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 
   // May have to fix invokedynamic bytecodes if invokestatic/InterfaceMethodref
   // entries had to be added.
-  if (!UseNewCode) {
+  if (!UseNewIndyCode) {
     patch_invokedynamic_bytecodes();
   }
 }

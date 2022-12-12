@@ -872,7 +872,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   assert(cpool.not_null(), "need constant pool");
   assert(accessor != NULL, "need origin of access");
   if (bc == Bytecodes::_invokedynamic) {
-    if (UseNewCode) {
+    if (UseNewIndyCode) {
       tty->print_cr("Indy array len %d", cpool->cache()->resolved_indy_info_length());
       if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_indy_info_length()) {
         tty->print_cr("get_method_by_index: %d", index);
@@ -1534,7 +1534,7 @@ void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
 // Process an invokedynamic call site and record any dynamic locations.
 void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
   tty->print_cr("Indy index is %d", indy_index);
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
     int index = cp->decode_invokedynamic_index(indy_index);
     tty->print_cr("Index is %d", index);
     // do stuff
@@ -1644,7 +1644,7 @@ void ciEnv::find_dynamic_call_sites() {
                          bcs.bci());
             if (opcode == Bytecodes::_invokedynamic) {
               int index = bcs.get_index_u4();
-              if (UseNewCode) {tty->print_cr("find_dynamic_callsites index: %d", index);}
+              if (UseNewIndyCode) {tty->print_cr("find_dynamic_callsites index: %d", index);}
               process_invokedynamic(pool, index, thread);
             } else {
               assert(opcode == Bytecodes::_invokehandle, "new switch label added?");

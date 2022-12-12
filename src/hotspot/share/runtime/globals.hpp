@@ -1715,7 +1715,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseNewCode3, false, DIAGNOSTIC,                             \
           "Testing Only: Use the new version while testing")                \
-  product(bool, UseNewIndyCode, true,                                       \
+  product(bool, UseNewIndyCode, false,                                       \
           "Testing resolvedindyinfo")                                       \
                                                                             \
   notproduct(bool, UseDebuggerErgo, false,                                  \

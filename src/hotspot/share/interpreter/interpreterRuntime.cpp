@@ -927,14 +927,20 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
 void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
+  if (UseNewIndyCode) { tty->print_cr("Resolving invokedybanuc in InterpreterRuntime"); }
   LastFrameAccessor last_frame(current);
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
   // resolve method
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
+  Method* caller = last_frame.method();
+  ResourceMark rm;
+  if (strcmp(caller->method_holder()->name()->as_C_string(), "Helloworld") == 0) {
+     tty->print_cr("this is where I need to stop and trace the code!");
+  }
   int index = last_frame.get_index_u4(bytecode);
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
     //index = pool->decode_invokedynamic_index(index);
   }
   {
@@ -944,7 +950,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
     // Call my own set_dynamic_call from CpCache
     pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
   } else {

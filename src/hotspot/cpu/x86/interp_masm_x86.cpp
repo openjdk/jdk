@@ -816,6 +816,7 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register 
     jmp(Address(method, Method::interpreter_entry_offset()));
     bind(run_compiled_code);
   }
+
   jmp(Address(method, Method::from_interpreted_offset()));
 }
 
