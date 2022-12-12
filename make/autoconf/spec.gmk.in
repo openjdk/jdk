@@ -455,6 +455,9 @@ ifeq ($(ASAN_ENABLED), yes)
   endif
 endif
 
+# UndefinedBehaviorSanitizer
+UBSAN_ENABLED:=@UBSAN_ENABLED@
+
 # Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@
 X_LIBS:=@X_LIBS@
