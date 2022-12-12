@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4673940 4930794 8211842
+ * @bug 4673940 4930794 8211842 6914801
  * @summary Unit tests for inetd feature
  * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
