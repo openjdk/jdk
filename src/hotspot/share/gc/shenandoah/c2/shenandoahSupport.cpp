@@ -2002,7 +2002,7 @@ Node* ShenandoahIUBarrierNode::Identity(PhaseGVN* phase) {
 static bool has_never_branch(Node* root) {
   for (uint i = 1; i < root->req(); i++) {
     Node* in = root->in(i);
-    if (in != NULL && in->Opcode() == Op_Halt && in->in(0)->is_Proj() && in->in(0)->in(0)->isNeverBranch()) {
+    if (in != NULL && in->Opcode() == Op_Halt && in->in(0)->is_Proj() && in->in(0)->in(0)->is_NeverBranch()) {
       return true;
     }
   }
