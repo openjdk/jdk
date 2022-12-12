@@ -1062,7 +1062,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
         break;
       }
       case Bytecodes::_invokedynamic: {
-        if (UseNewCode) {
+        if (UseNewIndyCode) {
           int indy_index = pool->decode_invokedynamic_index(index);
           appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
         } else {

@@ -55,7 +55,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 {
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
     assert(indy_index == -1 || pool->resolved_indy_info(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
   } else {
     assert(indy_index == -1 || pool->invokedynamic_bootstrap_ref_index_at(indy_index) == bss_index, "invalid bootstrap specifier index");
@@ -67,7 +67,8 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 // Return true if either action is taken, else false.
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
+    if (UseNewIndyCode) { tty->print_cr("In Bootstrapinfo resolve previously linked indy"); }
     // Check if method is not null
     if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
       methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());

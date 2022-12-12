@@ -1398,6 +1398,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
       assert(resolved_method->can_be_statically_bound(), "cannot override this method");
       selected_method = resolved_method;
     } else {
+      // goes down this path <DELETE THIS COMMENT LATER>
       selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
     }
   }
@@ -1763,8 +1764,9 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
+  if (UseNewIndyCode) { tty->print_cr("Resolving invokedynamic in LinkResolver"); }
   int pool_index;
-  if (UseNewCode) {
+  if (UseNewIndyCode) {
     indy_index = pool->decode_invokedynamic_index(indy_index);
     //pool_index = pool->cache()->resolved_invokedynamic_info_array()->at(indy_index).cpool_index();
     pool_index = pool->resolved_indy_info(indy_index)->cpool_index();
@@ -1830,7 +1832,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       // nor do we memorize a LE for posterity.
       return;
     }
-    if (UseNewCode) {
+    if (UseNewIndyCode) {
       // I forget why this is here
       ShouldNotReachHere();
     }

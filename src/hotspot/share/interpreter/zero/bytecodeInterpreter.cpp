@@ -2247,7 +2247,7 @@ run:
       }
 
       CASE(_invokedynamic): {
-        if (UseNewCode) {
+        if (UseNewIndyCode) {
           u4 index = Bytes::get_native_u4(pc+1);
           if (! cache->is_resolved((Bytecodes::Code) opcode)) {
             CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
