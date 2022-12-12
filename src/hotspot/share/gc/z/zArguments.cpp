@@ -77,6 +77,10 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
+  if (!FLAG_IS_DEFAULT(ZTenuringThreshold)) {
+    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
+  }
+
   if (FLAG_IS_DEFAULT(MaxTenuringThreshold)) {
     uint tenuring_threshold;
     for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
@@ -94,11 +98,20 @@ void ZArguments::initialize() {
     }
   }
 
+  if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && NeverTenure) {
+    vm_exit_during_initialization(err_msg("ZTenuringThreshold and NeverTenure are incompatible"));
+  }
+
   // Large page size must match granule size
   if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != ZGranuleSize) {
     vm_exit_during_initialization(err_msg("Incompatible -XX:LargePageSizeInBytes, only "
                                           SIZE_FORMAT "M large pages are supported by ZGC",
                                           ZGranuleSize / M));
+  }
+
+  if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold > MaxTenuringThreshold) {
+    vm_exit_during_initialization(err_msg("ZTenuringThreshold must be be within bounds of "
+                                          "MaxTenuringThreshold"));
   }
 
   // The heuristics used when UseDynamicNumberOfGCThreads is

@@ -658,6 +658,8 @@ void ZGenerationYoung::concurrent_reset_relocation_set() {
 void ZGenerationYoung::select_tenuring_threshold(ZRelocationSetSelectorStats stats, bool promote_all) {
   if (promote_all) {
     _tenuring_threshold = 0;
+  } else if (ZTenuringThreshold != 0) {
+    _tenuring_threshold = ZTenuringThreshold;
   } else {
     _tenuring_threshold = compute_tenuring_threshold(stats);
   }
@@ -694,8 +696,9 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 
   size_t young_selected_live = 0;
 
+  const uint max_tenuring_threshold = MIN2(ZPageAgeMax, (uint)MaxTenuringThreshold);
   uint tenuring_threshold;
-  for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
+  for (tenuring_threshold = 0; tenuring_threshold < max_tenuring_threshold; ++tenuring_threshold) {
     const ZPageAge age = static_cast<ZPageAge>(tenuring_threshold);
     const size_t live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     const size_t promoted = young_live_total - young_selected_live;

@@ -24,6 +24,8 @@
 #ifndef SHARE_GC_Z_Z_GLOBALS_HPP
 #define SHARE_GC_Z_Z_GLOBALS_HPP
 
+#include "zPageAge.hpp"
+
 #define GC_Z_FLAGS(develop,                                                 \
                    develop_pd,                                              \
                    product,                                                 \
@@ -98,7 +100,11 @@
           "Verify marking stacks")                                          \
                                                                             \
   product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
-          "Verify forwarding tables")
+          "Verify forwarding tables")                                       \
+                                                                            \
+  product(uint, ZTenuringThreshold, 0, DIAGNOSTIC,                          \
+          "Young generation tenuring threshold, 0 means dynamic")           \
+          range(0, ZPageAgeMax)
 
 // end of GC_Z_FLAGS
 

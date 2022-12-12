@@ -1539,7 +1539,7 @@ void ZStatRelocation::print_age_table() {
     return;
   }
 
-  ZStatTablePrinter age_table(10, 18);
+  ZStatTablePrinter age_table(11, 18);
   lt.print("Age Table:");
   lt.print("%s", age_table()
            .fill()
