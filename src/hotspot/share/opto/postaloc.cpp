@@ -262,6 +262,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
   if (value == NULL || regnd == NULL) {
     return blk_adjust;
   }
+
   // Skip through all copies to the _value_ being used.  Do not change from
   // int to pointer.  This attempts to jump through a chain of copies, where
   // intermediate copies might be illegal, i.e., value is stored down to stack
