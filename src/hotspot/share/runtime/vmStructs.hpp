@@ -188,12 +188,19 @@ private:
 
 #ifdef ASSERT
 
+// Converts any type T to a reference type.
+template<typename T>
+std::add_rvalue_reference_t<T> declval() noexcept;
+
 // This macro checks the type of a VMStructEntry by comparing pointer types
-#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) {               \
-    char space[sizeof (typeName)];                                                 \
-    typeName *dummyObj = (typeName *)space; type* dummy = &dummyObj->fieldName;    \
-    assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); \
-  }
+#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) { \
+  static_assert( \
+    std::is_convertible< \
+      std::add_pointer_t<decltype(declval<typeName>().fieldName)>, \
+      std::add_pointer_t<type>>::value, \
+    "type mismatch for " XSTR(fieldName) " member of " XSTR(typeName)); \
+  assert(offset_of(typeName, fieldName) < sizeof(typeName), "..."); \
+}
 
 // This macro checks the type of a volatile VMStructEntry by comparing pointer types
 #define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) \
