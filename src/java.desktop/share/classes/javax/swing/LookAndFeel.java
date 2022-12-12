@@ -167,7 +167,6 @@ public abstract class LookAndFeel
      * @param defaultFgName key for the foreground
      *
      * @see #installColorsAndFont
-     * @see #uninstallColors
      * @see UIManager#getColor
      * @throws NullPointerException as described in
      *         <a href="#exceptions">exceptions</a>
@@ -194,7 +193,7 @@ public abstract class LookAndFeel
      *
      * @see #uninstallColorsAndFont
      * @see #installColors
-     * @param c component to remove the colors from
+     * @param c component from which to remove the colors
      */
     public static void uninstallColors(JComponent c) {
         if (c.getForeground() instanceof UIResource) {
@@ -220,7 +219,6 @@ public abstract class LookAndFeel
      *         <a href="#exceptions">exceptions</a>
      *
      * @see #installColors
-     * @see #uninstallColorsAndFont
      * @see UIManager#getColor
      * @see UIManager#getFont
      */
@@ -238,12 +236,12 @@ public abstract class LookAndFeel
 
 
     /**
-     * Convenience method for removing a component's foreground,
-     * background and font properties by setting them to null.
+     * Convenience method for removing a component's foreground color,
+     * background color, and font properties by setting them to null.
      *
      * @see #uninstallColors
      * @see #installColorsAndFont
-     * @param c component to remove the colors and font from
+     * @param c component from which to remove the colors and font
      */
     public static void uninstallColorsAndFont(JComponent c) {
         if (c.getFont() instanceof UIResource) {
