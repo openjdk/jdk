@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_prop(const char *name, const char *val);
   void print_prop(const char *name, int val);
   void print_prop(const char *name, unsigned int val);
-    void tail(const char *name);
+  void tail(const char *name);
   void head(const char *name);
   void text(const char *s);
   void init(const char* file_name, bool use_multiple_files, bool append);
