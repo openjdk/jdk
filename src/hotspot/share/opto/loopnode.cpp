@@ -4208,9 +4208,9 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     if (n->is_Root()) {
       // Found root -> there was an exit!
       return false;
-    } else if (n->Opcode() == Op_NeverBranch) {
+    } else if (n->is_NeverBranch()) {
       // Only follow the loop-internal projection, not the NeverBranch exit
-      ProjNode* proj = n->as_Multi()->proj_out_or_null(0);
+      ProjNode* proj = n->as_NeverBranch()->proj_out_or_null(0);
       assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
       worklist.push(proj);
     } else {
