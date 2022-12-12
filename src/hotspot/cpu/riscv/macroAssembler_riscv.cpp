@@ -4441,6 +4441,49 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
+void MacroAssembler::move_float_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      lwu(tmp, Address(fp, reg2offset_in(src.first())));
+      sw(tmp, Address(sp, reg2offset_out(dst.first())));
+    } else if (dst.first()->is_Register()) {
+      lwu(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    // java abi will not use integer reg to pass a float.
+    if (src.first()->is_FloatRegister()) {
+      if (dst.first()->is_Register())
+        fmv_x_w(dst.first()->as_Register(), src.first()->as_FloatRegister());
+      else
+        fsw(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
+    } else
+      ShouldNotReachHere();
+  }
+}
+
+void MacroAssembler::move_double_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ld(tmp, Address(fp, reg2offset_in(src.first())));
+      sd(tmp, Address(sp, reg2offset_out(dst.first())));
+    } else if (dst.first()->is_Register()) {
+      ld(dst.first()->as_Register(), Address(fp, reg2offset_in(src.first())));
+    } else {
+      ShouldNotReachHere();
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.first()->is_FloatRegister()) {
+      if (dst.first()->is_Register())
+        fmv_x_d(dst.first()->as_Register(), src.first()->as_FloatRegister());
+      else
+        fsd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
+    } else
+      ShouldNotReachHere();
+  }
+}
+
 void MacroAssembler::rt_call(address dest, Register tmp) {
   CodeBlob *cb = CodeCache::find_blob(dest);
   RuntimeAddress target(dest);
