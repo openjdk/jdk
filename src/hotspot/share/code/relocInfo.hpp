@@ -30,6 +30,7 @@
 #include "runtime/osInfo.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include <new>
 
 class nmethod;
