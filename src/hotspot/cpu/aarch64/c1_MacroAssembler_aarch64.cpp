@@ -310,9 +310,9 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes, int m
 
   if (UseFastLocking && max_monitors > 0) {
     Label ok;
-    ldr(r9, Address(rthread, Thread::lock_stack_current_offset()));
+    ldr(r9, Address(rthread, JavaThread::lock_stack_current_offset()));
     add(r9, r9, max_monitors * oopSize);
-    ldr(r10, Address(rthread, Thread::lock_stack_limit_offset()));
+    ldr(r10, Address(rthread, JavaThread::lock_stack_limit_offset()));
     cmp(r9, r10);
     br(Assembler::LT, ok);
     assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");

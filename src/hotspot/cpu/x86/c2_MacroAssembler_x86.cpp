@@ -133,9 +133,9 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     Compile::current()->output()->add_stub(stub);
     assert(!is_stub, "only methods have monitors");
     Register thread = r15_thread;
-    movptr(rax, Address(thread, Thread::lock_stack_current_offset()));
-    addptr(rax, max_monitors * wordSize);
-    cmpptr(rax, Address(thread, Thread::lock_stack_limit_offset()));
+    movptr(rax, Address(thread, JavaThread::lock_stack_current_offset()));
+    addptr(rax, max_monitors * oopSize);
+    cmpptr(rax, Address(thread, JavaThread::lock_stack_limit_offset()));
     jcc(Assembler::greaterEqual, stub->entry());
     bind(stub->continuation());
   }

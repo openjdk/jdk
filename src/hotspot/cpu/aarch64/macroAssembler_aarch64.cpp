@@ -5932,8 +5932,8 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
 
   if (rt_check_stack) {
     // Check if we would have space on lock-stack for the object.
-    ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
-    ldr(t2, Address(rthread, Thread::lock_stack_limit_offset()));
+    ldr(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
+    ldr(t2, Address(rthread, JavaThread::lock_stack_limit_offset()));
     cmp(t1, t2);
     br(Assembler::GE, slow);
   }
@@ -5948,10 +5948,10 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   br(Assembler::NE, slow);
 
   // After successful lock, push object on lock-stack
-  ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
+  ldr(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
   str(obj, Address(t1, 0));
   add(t1, t1, oopSize);
-  str(t1, Address(rthread, Thread::lock_stack_current_offset()));
+  str(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
 }
 
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
@@ -5970,7 +5970,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
   br(Assembler::NE, slow);
 
   // After successful unlock, pop object from lock-stack
-  ldr(t1, Address(rthread, Thread::lock_stack_current_offset()));
+  ldr(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
   sub(t1, t1, oopSize);
-  str(t1, Address(rthread, Thread::lock_stack_current_offset()));
+  str(t1, Address(rthread, JavaThread::lock_stack_current_offset()));
 }
