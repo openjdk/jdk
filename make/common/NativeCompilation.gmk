@@ -703,7 +703,7 @@ define SetupNativeCompilationBody
 
   ifeq ($$($1_TYPE), EXECUTABLE)
     ifeq ($(UBSAN_ENABLED), true)
-      $1_SRCS += $(TOPDIR)/make/src/native/__ubsan_default_options.c
+      $1_SRCS += $(TOPDIR)/make/src/native/__ubsan_default_options.cpp
     endif
   endif
 
