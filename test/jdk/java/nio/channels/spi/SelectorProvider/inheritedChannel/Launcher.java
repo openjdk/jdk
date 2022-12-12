@@ -108,10 +108,8 @@ public class Launcher {
             ch = ServerSocketChannel.open();
         }
         try (ServerSocketChannel ssc = ch) {
-            ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-            InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
-                                                      ssc.socket().getLocalPort());
-            SocketChannel sc1 = SocketChannel.open(isa);
+            ssc.socket().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            SocketChannel sc1 = SocketChannel.open(ssc.getLocalAddress());
             try (SocketChannel sc2 = ssc.accept()) {
                 launch(className, options, args, Util.getFD(sc2));
             }
