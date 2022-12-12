@@ -701,9 +701,17 @@ define SetupNativeCompilationBody
     $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
   endif
 
+  $1_SANITIZER_DEFAULT_OPTIONS_PREFIX := $(TOPDIR)/make/src/native/
+
+  ifneq ($$(filter %.cpp %.cc, $$($1_SRCS)), )
+    $1_SANITIZER_DEFAULT_OPTIONS_SUFFIX := .cpp
+  else
+    $1_SANITIZER_DEFAULT_OPTIONS_SUFFIX := .c
+  endif
+
   ifeq ($$($1_TYPE), EXECUTABLE)
     ifeq ($(UBSAN_ENABLED), true)
-      $1_SRCS += $(TOPDIR)/make/src/native/__ubsan_default_options.cpp
+      $1_SRCS += $$($1_SANITIZER_DEFAULT_OPTIONS_PREFIX)__ubsan_default_options$$($1_SANITIZER_DEFAULT_OPTIONS_SUFFIX)
     endif
   endif
 
