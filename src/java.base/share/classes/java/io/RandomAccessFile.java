@@ -276,10 +276,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.io.FileDescriptor
      */
     public final FileDescriptor getFD() throws IOException {
-        if (fd != null) {
-            return fd;
-        }
-        throw new IOException();
+        return fd;
     }
 
     /**
