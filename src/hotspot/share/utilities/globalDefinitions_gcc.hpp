@@ -48,8 +48,6 @@
 #include <limits.h>
 #include <errno.h>
 
-#include <type_traits>
-
 #if defined(LINUX) || defined(_ALLBSD_SOURCE)
 #include <inttypes.h>
 #include <signal.h>
@@ -150,7 +148,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // temporarily disabled.
 #define offset_of(klass,field)                          \
 []() {                                                  \
-  char space[sizeof (klass)] ATTRIBUTE_ALIGNED(16);     \
+  char space[sizeof (klass)] ATTRIBUTE_ALIGNED();     \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
@@ -172,9 +170,5 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // Alignment
 //
 #define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x)))
-
-// Converts any type T to a reference type.
-template<typename T>
-std::add_rvalue_reference_t<T> declval() noexcept;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
