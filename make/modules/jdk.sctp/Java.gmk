@@ -46,7 +46,7 @@ ifeq ($(call isTargetOs, aix), true)
 endif
 
 ifeq ($(call isTargetOsType, unix), true)
-  ifeq ($(call isTargetOs, macos aix), false)
+  ifeq ($(call isTargetOs, macosx aix), false)
     # This class is not needed on "unix" because SCTP in Java is supported for that platform
     EXCLUDE_FILES += $(TOPDIR)/src/jdk.sctp/share/classes/sun/nio/ch/sctp/UnsupportedUtil.java
   endif
