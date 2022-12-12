@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_VMSTRUCTS_HPP
 #define SHARE_RUNTIME_VMSTRUCTS_HPP
 
-#include <type_traits>
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #ifdef COMPILER1
