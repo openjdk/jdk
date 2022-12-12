@@ -343,7 +343,7 @@ class LambdaForm {
     }
 
     // root factory pre/post processing and calls simple cosntructor
-    private static LambdaForm of(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
+    private static LambdaForm create(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         names = names.clone();
         assert(namesOK(arity, names));
         result = fixResult(result, names);
@@ -363,20 +363,20 @@ class LambdaForm {
     private static final MethodHandle DEFAULT_CUSTOMIZED = null;
     private static final Kind DEFAULT_KIND = Kind.GENERIC;
 
-    static LambdaForm of(int arity, Name[] names, int result) {
-        return of(arity, names, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, DEFAULT_KIND);
+    static LambdaForm create(int arity, Name[] names, int result) {
+        return create(arity, names, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, DEFAULT_KIND);
     }
-    static LambdaForm of(int arity, Name[] names, int result, Kind kind) {
-        return of(arity, names, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, kind);
+    static LambdaForm create(int arity, Name[] names, int result, Kind kind) {
+        return create(arity, names, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, kind);
     }
-    static LambdaForm of(int arity, Name[] names) {
-        return of(arity, names, DEFAULT_RESULT, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, DEFAULT_KIND);
+    static LambdaForm create(int arity, Name[] names) {
+        return create(arity, names, DEFAULT_RESULT, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, DEFAULT_KIND);
     }
-    static LambdaForm of(int arity, Name[] names, Kind kind) {
-        return of(arity, names, DEFAULT_RESULT, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, kind);
+    static LambdaForm create(int arity, Name[] names, Kind kind) {
+        return create(arity, names, DEFAULT_RESULT, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, kind);
     }
-    static LambdaForm of(int arity, Name[] names, boolean forceInline, Kind kind) {
-        return of(arity, names, DEFAULT_RESULT, forceInline, DEFAULT_CUSTOMIZED, kind);
+    static LambdaForm create(int arity, Name[] names, boolean forceInline, Kind kind) {
+        return create(arity, names, DEFAULT_RESULT, forceInline, DEFAULT_CUSTOMIZED, kind);
     }
 
     private static LambdaForm createBlankForType(MethodType mt) {
@@ -388,10 +388,10 @@ class LambdaForm {
         Name[] names = buildEmptyNames(arity, mt, result == VOID_RESULT);
         boolean canInterpret = normalizeNames(arity, names);
         LambdaForm form = new LambdaForm(arity, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, names, Kind.ZERO);
+        assert(form.nameRefsAreLegal() && form.isEmpty() && isValidSignature(form.basicTypeSignature()));
         if (!canInterpret) {
             form.compileToBytecode();
         }
-        assert(form.nameRefsAreLegal() && form.isEmpty() && isValidSignature(form.basicTypeSignature()));
         return form;
     }
 
@@ -472,7 +472,7 @@ class LambdaForm {
         if (customized == mh) {
             return this;
         }
-        LambdaForm customForm = LambdaForm.of(arity, names, result, forceInline, mh, kind);
+        LambdaForm customForm = LambdaForm.create(arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
@@ -1768,7 +1768,7 @@ class LambdaForm {
             // bootstrap dependency on this method in case we're interpreting LFs
             if (isVoid) {
                 Name[] idNames = new Name[] { argument(0, L_TYPE) };
-                idForm = LambdaForm.of(1, idNames, VOID_RESULT, Kind.IDENTITY);
+                idForm = LambdaForm.create(1, idNames, VOID_RESULT, Kind.IDENTITY);
                 idForm.compileToBytecode();
                 idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
@@ -1776,14 +1776,14 @@ class LambdaForm {
                 zeFun = idFun;
             } else {
                 Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
-                idForm = LambdaForm.of(2, idNames, 1, Kind.IDENTITY);
+                idForm = LambdaForm.create(2, idNames, 1, Kind.IDENTITY);
                 idForm.compileToBytecode();
                 idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
                             MethodHandleImpl.Intrinsic.IDENTITY));
 
                 Object zeValue = Wrapper.forBasicType(btChar).zero();
                 Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
-                zeForm = LambdaForm.of(1, zeNames, 1, Kind.ZERO);
+                zeForm = LambdaForm.create(1, zeNames, 1, Kind.ZERO);
                 zeForm.compileToBytecode();
                 zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm),
                         MethodHandleImpl.Intrinsic.ZERO));
