@@ -30,8 +30,10 @@ import jdk.internal.foreign.abi.Architecture;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
 
-public class AArch64Architecture implements Architecture {
+public final class AArch64Architecture implements Architecture {
     public static final Architecture INSTANCE = new AArch64Architecture();
+
+    private AArch64Architecture() {}
 
     private static final short REG64_MASK = 0b0000_0000_0000_0001;
     private static final short V128_MASK = 0b0000_0000_0000_0001;

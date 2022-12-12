@@ -31,8 +31,10 @@ import jdk.internal.foreign.abi.VMStorage;
 
 import java.util.stream.IntStream;
 
-public class X86_64Architecture implements Architecture {
+public final class X86_64Architecture implements Architecture {
     public static final Architecture INSTANCE = new X86_64Architecture();
+
+    private X86_64Architecture() {}
 
     private static final short REG8_H_MASK = 0b0000_0000_0000_0010;
     private static final short REG8_L_MASK = 0b0000_0000_0000_0001;
