@@ -310,28 +310,6 @@ public:
   }
 };
 
-// We want all used regions to be moved to the bottom-end of the heap, so we have
-// a contiguous range of free regions at the top end of the heap. This way, we can
-// avoid fragmentation while allocating the archive regions.
-//
-// Before calling this, a full GC should have been executed with a single worker thread,
-// so that no old regions would be moved to the middle of the heap.
-void G1HeapVerifier::verify_ready_for_archiving() {
-  VerifyReadyForArchivingRegionClosure cl;
-  G1CollectedHeap::heap()->heap_region_iterate(&cl);
-  if (cl.has_holes()) {
-    log_warning(gc, verify)("All free regions should be at the top end of the heap, but"
-                            " we found holes. This is probably caused by (unmovable) humongous"
-                            " allocations or active GCLocker, and may lead to fragmentation while"
-                            " writing archive heap memory regions.");
-  }
-  if (cl.has_humongous()) {
-    log_warning(gc, verify)("(Unmovable) humongous regions have been found and"
-                            " may lead to fragmentation while"
-                            " writing archive heap memory regions.");
-  }
-}
-
 class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
   virtual bool do_heap_region(HeapRegion* r) {
    if (r->is_archive()) {

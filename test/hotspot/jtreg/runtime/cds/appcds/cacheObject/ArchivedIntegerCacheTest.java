@@ -149,7 +149,6 @@ public class ArchivedIntegerCacheTest {
                 "-Xlog:gc+region=trace",
                 use_whitebox_jar);
         TestCommon.checkDump(output,
-            "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object",
-            "humongous regions have been found and may lead to fragmentation");
+            "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
     }
 }

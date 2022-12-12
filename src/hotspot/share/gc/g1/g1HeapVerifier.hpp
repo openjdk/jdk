@@ -81,7 +81,6 @@ public:
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 
-  static void verify_ready_for_archiving();
   static void verify_archive_regions();
 };
 

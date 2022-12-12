@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListWriter.hpp"
@@ -435,7 +436,7 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
   }
 }
 
-class VM_PopulateDumpSharedSpace : public VM_GC_Operation {
+class VM_PopulateDumpSharedSpace : public VM_Operation {
 private:
   GrowableArray<MemRegion> *_closed_heap_regions;
   GrowableArray<MemRegion> *_open_heap_regions;
@@ -444,11 +445,6 @@ private:
   GrowableArray<ArchiveHeapBitmapInfo> *_open_heap_bitmaps;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_heap_bitmaps() NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
-                         GrowableArray<ArchiveHeapBitmapInfo>* bitmaps);
-  void dump_one_heap_bitmap(MemRegion region, GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
-                            ResourceBitMap bitmap, bool is_oopmap);
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
@@ -457,8 +453,7 @@ private:
 
 public:
 
-  VM_PopulateDumpSharedSpace() :
-    VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
+  VM_PopulateDumpSharedSpace() : VM_Operation(),
     _closed_heap_regions(nullptr),
     _open_heap_regions(nullptr),
     _closed_heap_bitmaps(nullptr),
@@ -507,15 +502,10 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   WriteClosure wc(ro_region);
   MetaspaceShared::serialize(&wc);
 
-  // Write the bitmaps for patching the archive heap regions
-  dump_heap_bitmaps();
-
   return start;
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
-  HeapShared::run_full_gc_in_vm_thread();
-
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
@@ -819,9 +809,10 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-    if (use_full_module_graph()) {
-      HeapShared::reset_archived_object_states(CHECK);
-    }
+  ArchiveHeapWriter::init(CHECK);
+  if (use_full_module_graph()) {
+    HeapShared::reset_archived_object_states(CHECK);
+  }
 #endif
 
   VM_PopulateDumpSharedSpace op;
@@ -894,59 +885,12 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
   // See FileMapInfo::write_heap_regions() for details.
   _closed_heap_regions = new GrowableArray<MemRegion>(2);
   _open_heap_regions = new GrowableArray<MemRegion>(2);
-  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions);
+  _closed_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
+  _open_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
+  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions,
+                              _closed_heap_bitmaps, _open_heap_bitmaps);
   ArchiveBuilder::OtherROAllocMark mark;
   HeapShared::write_subgraph_info_table();
-}
-
-void VM_PopulateDumpSharedSpace::dump_heap_bitmaps() {
-  if (HeapShared::can_write()) {
-    _closed_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
-    dump_heap_bitmaps(_closed_heap_regions, _closed_heap_bitmaps);
-
-    _open_heap_bitmaps = new GrowableArray<ArchiveHeapBitmapInfo>(2);
-    dump_heap_bitmaps(_open_heap_regions, _open_heap_bitmaps);
-  }
-}
-
-void VM_PopulateDumpSharedSpace::dump_heap_bitmaps(GrowableArray<MemRegion>* regions,
-                                                   GrowableArray<ArchiveHeapBitmapInfo>* bitmaps) {
-  for (int i = 0; i < regions->length(); i++) {
-    MemRegion region = regions->at(i);
-    ResourceBitMap oopmap = HeapShared::calculate_oopmap(region);
-    ResourceBitMap ptrmap = HeapShared::calculate_ptrmap(region);
-    dump_one_heap_bitmap(region, bitmaps, oopmap, true);
-    dump_one_heap_bitmap(region, bitmaps, ptrmap, false);
-  }
-}
-
-void VM_PopulateDumpSharedSpace::dump_one_heap_bitmap(MemRegion region,
-                                                      GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
-                                                      ResourceBitMap bitmap, bool is_oopmap) {
-  size_t size_in_bits = bitmap.size();
-  size_t size_in_bytes;
-  uintptr_t* buffer;
-
-  if (size_in_bits > 0) {
-    size_in_bytes = bitmap.size_in_bytes();
-    buffer = (uintptr_t*)NEW_C_HEAP_ARRAY(char, size_in_bytes, mtInternal);
-    bitmap.write_to(buffer, size_in_bytes);
-  } else {
-    size_in_bytes = 0;
-    buffer = nullptr;
-  }
-
-  log_info(cds, heap)("%s = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
-                      INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
-                      is_oopmap ? "Oopmap" : "Ptrmap",
-                      p2i(buffer), size_in_bytes,
-                      p2i(region.start()), region.byte_size());
-
-  ArchiveHeapBitmapInfo info;
-  info._map = (address)buffer;
-  info._size_in_bits = size_in_bits;
-  info._size_in_bytes = size_in_bytes;
-  bitmaps->append(info);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

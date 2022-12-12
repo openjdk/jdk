@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,12 +65,6 @@ public class HumongousDuringDump {
                               "-Xlog:gc+region+cds",
                               "-Xlog:gc+region=trace",
                               extraArg, "-Xmx64m", gcLog);
-        out.shouldContain("(Unmovable) humongous regions have been found and may lead to fragmentation");
-        out.shouldContain("All free regions should be at the top end of the heap, but we found holes.");
-        out.shouldMatch("gc,region,cds. HeapRegion .* HUM. hole");
-        String pattern = "gc,region,cds. HeapRegion .*hole";
-        out.shouldMatch(pattern);
-        out.shouldNotMatch(pattern + ".*unexpected");
 
         TestCommon.run(
                 "-cp", appJar,
