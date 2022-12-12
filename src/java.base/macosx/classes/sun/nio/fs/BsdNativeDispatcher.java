@@ -82,26 +82,24 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
                                          int flags);
 
     /**
-     * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,
-     *             size_t attrBufSize, unsigned long options)
+     * fsetattrlist(int fd, struct attrlist* attrList, void* attrBuf,
+     *              size_t attrBufSize, unsigned long options)
      */
-    static void setattrlist(UnixPath path, int commonattr, long modTime,
-                            long accTime, long createTime, long options)
+    static void fsetattrlist(int fd, int commonattr, long modTime,
+                             long accTime, long createTime, long options)
         throws UnixException
     {
-        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                setattrlist0(buffer.address(), commonattr, modTime, accTime,
-                             createTime, options);
-            } finally {
-                Blocker.end(comp);
+        long comp = Blocker.begin();
+        try {
+            fsetattrlist0(fd, commonattr, modTime, accTime,
+                          createTime, options);
+        } finally {
+            Blocker.end(comp);
             }
-        }
     }
-    private static native void setattrlist0(long pathAddress, int commonattr,
-                                            long modTime, long accTime,
-                                            long createTime, long options)
+    private static native void fsetattrlist0(int fd, int commonattr,
+                                             long modTime, long accTime,
+                                             long createTime, long options)
         throws UnixException;
 
     // initialize field IDs

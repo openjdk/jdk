@@ -28,11 +28,11 @@ package sun.nio.fs;
 import java.io.IOException;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
-import static sun.nio.fs.BsdNativeDispatcher.setattrlist;
+import static sun.nio.fs.BsdNativeDispatcher.*;
 
 class BsdFileAttributeViews {
     //
-    // Use setattrlist(2) system call which can set creation, modification,
+    // Use fsetattrlist(2) system call which can set creation, modification,
     // and access times.
     //
     private static void setTimes(UnixPath path, FileTime lastModifiedTime,
@@ -49,24 +49,71 @@ class BsdFileAttributeViews {
         // permission check
         path.checkWrite();
 
-        // not all volumes support setattrlist(2), so set the last
-        // modified and last access times using the Unix implementation
-        if (lastModifiedTime != null || lastAccessTime != null) {
-            UnixFileAttributeViews.Basic basic =
-                new UnixFileAttributeViews.Basic(path, followLinks);
-            basic.setTimes(lastModifiedTime, lastAccessTime, null);
-        }
-
-        // set the creation time using setattrlist
-        if (createTime != null) {
-            long createValue = createTime.to(TimeUnit.NANOSECONDS);
-            int commonattr = UnixConstants.ATTR_CMN_CRTIME;
+        int fd = -1;
+        try {
             try {
-                setattrlist(path, commonattr, 0L, 0L, createValue,
-                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                fd = path.openForAttributeAccess(followLinks);
             } catch (UnixException x) {
                 x.rethrowAsIOException(path);
             }
+
+            // not all volumes support fsetattrlist(2), so set the last
+            // modified and last access times using the Unix implementation
+            if (lastModifiedTime != null || lastAccessTime != null) {
+                // if not changing both attributes then need existing attributes
+                if (lastModifiedTime == null || lastAccessTime == null) {
+                    try {
+                        UnixFileAttributes attrs = UnixFileAttributes.get(fd);
+                        if (lastModifiedTime == null)
+                            lastModifiedTime = attrs.lastModifiedTime();
+                        if (lastAccessTime == null)
+                            lastAccessTime = attrs.lastAccessTime();
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(path);
+                    }
+                }
+
+                // update times
+                long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
+                long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
+
+                boolean retry = false;
+                try {
+                    futimens(fd, accessValue, modValue);
+                } catch (UnixException x) {
+                    // if futimens fails with EINVAL and one/both of the times is
+                    // negative then we adjust the value to the epoch and retry.
+                    if (x.errno() == UnixConstants.EINVAL &&
+                        (modValue < 0L || accessValue < 0L)) {
+                        retry = true;
+                    } else {
+                        x.rethrowAsIOException(path);
+                    }
+                }
+                if (retry) {
+                    if (modValue < 0L) modValue = 0L;
+                    if (accessValue < 0L) accessValue= 0L;
+                    try {
+                        futimens(fd, accessValue, modValue);
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(path);
+                    }
+                }
+            }
+
+            // set the creation time using fsetattrlist
+            if (createTime != null) {
+                long createValue = createTime.to(TimeUnit.NANOSECONDS);
+                int commonattr = UnixConstants.ATTR_CMN_CRTIME;
+                try {
+                    fsetattrlist(fd, commonattr, 0L, 0L, createValue,
+                                 followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(path);
+                }
+            }
+        } finally {
+            close(fd, e -> null);
         }
     }
 

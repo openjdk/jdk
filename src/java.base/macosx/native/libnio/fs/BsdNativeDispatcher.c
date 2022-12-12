@@ -244,11 +244,10 @@ Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
-    jlong pathAddress, int commonattr, jlong modTime, jlong accTime,
+Java_sun_nio_fs_BsdNativeDispatcher_fsetattrlist0(JNIEnv* env, jclass this,
+    jint fd, int commonattr, jlong modTime, jlong accTime,
     jlong createTime, jlong options)
 {
-    const char* path = (const char*)jlong_to_ptr(pathAddress);
     // attributes must align on 4-byte boundaries per the getattrlist(2) spec
     const int attrsize = ((sizeof(struct timespec) + 3)/4)*4;
     char buf[3*attrsize];
@@ -279,7 +278,7 @@ Java_sun_nio_fs_BsdNativeDispatcher_setattrlist0(JNIEnv* env, jclass this,
     attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
     attrList.commonattr = commonattr;
 
-    if (setattrlist(path, &attrList, (void*)buf, count*attrsize, options) != 0) {
+    if (fsetattrlist(fd, &attrList, (void*)buf, count*attrsize, options) != 0) {
         throwUnixException(env, errno);
     }
 }
