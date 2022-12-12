@@ -158,6 +158,8 @@ public:
 
   bool is_native_frame() const { return _state == STACKWALKER_NATIVE_FRAME; }
 
+  bool is_stub_frame() const { return _state == STACKWALKER_C_FRAME && _frame.is_stub_frame(); }
+
   bool is_c_frame() const { return _state == STACKWALKER_C_FRAME; }
 
   bool is_java_frame() const { return is_interpreted_frame() || is_compiled_frame() || is_native_frame(); }

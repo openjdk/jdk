@@ -36,46 +36,9 @@
 #include "jni.h"
 #include "jvmti.h"
 #include "profile.h"
+#include "util.hpp"
 
-static jvmtiEnv* jvmti;
 
-typedef void (*SigAction)(int, siginfo_t*, void*);
-typedef void (*SigHandler)(int);
-typedef void (*TimerCallback)(void*);
-
-template <class T>
-class JvmtiDeallocator {
- public:
-  JvmtiDeallocator() {
-    elem_ = NULL;
-  }
-
-  ~JvmtiDeallocator() {
-    jvmti->Deallocate(reinterpret_cast<unsigned char*>(elem_));
-  }
-
-  T* get_addr() {
-    return &elem_;
-  }
-
-  T get() {
-    return elem_;
-  }
-
- private:
-  T elem_;
-};
-
-static void GetJMethodIDs(jclass klass) {
-  jint method_count = 0;
-  JvmtiDeallocator<jmethodID*> methods;
-  jvmtiError err = jvmti->GetClassMethods(klass, &method_count, methods.get_addr());
-
-  // If ever the GetClassMethods fails, just ignore it, it was worth a try.
-  if (err != JVMTI_ERROR_NONE && err != JVMTI_ERROR_CLASS_NOT_PREPARED) {
-    fprintf(stderr, "GetJMethodIDs: Error in GetClassMethods: %d\n", err);
-  }
-}
 
 // AsyncGetStackTrace needs class loading events to be turned on!
 static void JNICALL OnClassLoad(jvmtiEnv *jvmti, JNIEnv *jni_env,
@@ -183,24 +146,6 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 
 static int success = 1;
 
-// assumes that getcontext is called in the beginning of the function
-bool doesFrameBelongToMethod(ASGST_CallFrame frame, void* method, const char* msg_prefix) {
-  if (frame.type != ASGST_FRAME_CPP) {
-    fprintf(stderr, "%s: Expected CPP frame, got %d\n", msg_prefix, frame.type);
-    return false;
-  }
-  ASGST_NonJavaFrame non_java_frame = frame.non_java_frame;
-  size_t pc = (size_t)non_java_frame.pc;
-  size_t expected_pc_start = (size_t)method;
-  size_t expected_pc_end = (size_t)method + 0x100;
-  if (pc < expected_pc_start || pc > expected_pc_end) {
-    fprintf(stderr, "%s: Expected PC in range [%p, %p], got %p\n", msg_prefix,
-      (void*)expected_pc_start, (void*)expected_pc_end, (void*)pc);
-    return false;
-  }
-  return true;
-}
-
 static void* checkForNonJava(void *arg);
 
 // Check that we can get a stack trace for a non-java thread.
@@ -220,7 +165,7 @@ static bool checkForNonJava2() {
     fprintf(stderr, "checkForNonJava2: No frames found for non-java thread\n");
     return false;
   }
-  if (trace.kind != ASGST_KIND_C) {
+  if (trace.kind != ASGST_CPP_TRACE) {
     fprintf(stderr, "checkForNonJava2: Expected C kind for non-java thread\n");
     return false;
   }
@@ -254,7 +199,7 @@ static bool checkForNonJavaNoCFrames() {
     fprintf(stderr, "checkForNonJavaNoCFrames: Frames found for non-java thread\n");
     return false;
   }
-  if (trace.kind != ASGST_KIND_C) {
+  if (trace.kind != ASGST_CPP_TRACE) {
     fprintf(stderr, "checkForNonJavaNoCFrames: Expected C kind for non-java thread\n");
     return false;
   }
@@ -278,7 +223,7 @@ static bool checkForNonJavaNoJavaFramesIncluded() {
     fprintf(stderr, "NoJavaFramesIncluded: Found incorrect error code %d\n", trace.num_frames);
     return false;
   }
-  if (trace.kind != ASGST_KIND_C) {
+  if (trace.kind != ASGST_CPP_TRACE) {
     fprintf(stderr, "NoJavaFramesIncluded: Expected C kind for non-java thread\n");
     return false;
   }
@@ -306,7 +251,7 @@ static void* checkForNonJava(void *arg) {
     fprintf(stderr, "checkForNonJava: No frames found for non-java thread\n");
     return NULL;
   }
-  if (trace.kind != ASGST_KIND_C) {
+  if (trace.kind != ASGST_CPP_TRACE) {
     fprintf(stderr, "checkForNonJava: Expected C kind for non-java thread\n");
     return NULL;
   }
@@ -335,24 +280,62 @@ static bool checkForNonJavaFromThread() {
   return result == &success;
 }
 
-bool doesFrameBelongToJavaMethod(ASGST_CallFrame frame, uint8_t type, const char* expected_name, const char* msg_prefix) {
-  if (frame.type != type) {
-    fprintf(stderr, "%s: Expected type %d but got %d\n", msg_prefix, type, frame.type);
+
+bool checkWithSkippedCFrames() {
+  const int MAX_DEPTH = 16;
+  ASGST_CallTrace trace;
+  ASGST_CallFrame frames[MAX_DEPTH];
+  trace.frames = frames;
+  trace.frame_info = NULL;
+  trace.num_frames = 0;
+
+  AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, 0);
+
+  // For now, just check that the first frame is (-3, checkAsyncGetStackTraceCall).
+  if (trace.num_frames <= 0) {
+    fprintf(stderr, "JNICALL: The num_frames must be positive: %d\n", trace.num_frames);
     return false;
   }
-  ASGST_JavaFrame java_frame = frame.java_frame;
-  JvmtiDeallocator<char*> name;
-  jvmtiError err = jvmti->GetMethodName(java_frame.method_id, name.get_addr(), NULL, NULL);
-  if (err != JVMTI_ERROR_NONE) {
-    fprintf(stderr, "%s: Error in GetMethodName: %d\n", msg_prefix, err);
+
+  if (trace.frames[0].type != ASGST_FRAME_NATIVE) {
+    fprintf(stderr, "JNICALL: The first frame must be a Java frame: %d\n", trace.frames[0].type);
     return false;
   }
-  if (strcmp(expected_name, name.get()) != 0) {
-    fprintf(stderr, "%s: Expected method name %s but got %s\n", msg_prefix, expected_name, name.get());
+
+  ASGST_JavaFrame first_frame = trace.frames[0].java_frame;
+  if (first_frame.bci != 0) {
+    fprintf(stderr, "JNICALL: The first frame must have a bci of 0 as it is a native frame: %d\n", first_frame.bci);
     return false;
   }
-  return true;
+  if (first_frame.method_id == NULL) {
+    fprintf(stderr, "JNICALL: The first frame must have a method_id: %p\n", first_frame.method_id);
+    return false;
+  }
+
+  if (trace.num_frames != 3) {
+    fprintf(stderr, "JNICALL: The number of frames must be 4: %d\n", trace.num_frames);
+    return false;
+  }
+
+  if (!doesFrameBelongToJavaMethod(trace.frames[0], ASGST_FRAME_NATIVE,
+        "checkAsyncGetStackTraceCall", "JNICALL frame 0") ||
+      !doesFrameBelongToJavaMethod(trace.frames[1], ASGST_FRAME_JAVA,
+        "main", "JNICALL frame 1") ||
+      !doesFrameBelongToJavaMethod(trace.frames[2], ASGST_FRAME_JAVA,
+        "invokeStatic", "JNICALL frame 2")) {
+    return false;
+  }
+
+
+  ASGST_CallFrame frame = trace.frames[0];
+  if (frame.type != ASGST_FRAME_NATIVE) {
+    fprintf(stderr, "Native frame is expected to have type %u but instead it is %u\n", ASGST_FRAME_NATIVE, frame.type);
+    return false;
+  }
+
+  return checkForNonJavaFromThread();
 }
+
 
 JNIEXPORT jboolean JNICALL
 Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jclass cls) {
@@ -407,7 +390,6 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
     return false;
   }
 
-  return checkForNonJavaFromThread();
+  return checkForNonJavaFromThread() && checkWithSkippedCFrames();
 }
-
 }

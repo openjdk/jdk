@@ -866,6 +866,8 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceTest := -ldl -ljvm
+  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCTest := -ldl -ljvm
+  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCSkipCTest := -ldl -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSampler := -ldl -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceFuzzingSampler := -ldl -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSmallFuzzTest := -ldl -ljvm

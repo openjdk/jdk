@@ -232,7 +232,7 @@ static bool is_decipherable_native_frame(frame* fr, CompiledMethod* nm) {
 StackWalker::StackWalker(JavaThread* thread, frame top_frame, bool skip_c_frames, int max_c_frames_skip):
   _thread(thread),
   _skip_c_frames(skip_c_frames), _max_c_frames_skip(max_c_frames_skip), _frame(top_frame),
-  supports_os_get_frame(!skip_c_frames && os::current_frame().pc() != NULL),
+  supports_os_get_frame(os::current_frame().pc() != NULL),
   _state(STACKWALKER_START), _map(thread, RegisterMap::UpdateMap::skip,
      RegisterMap::ProcessFrames::skip, RegisterMap::WalkContinuation::skip),
     in_c_on_top(false) {
@@ -358,6 +358,11 @@ void StackWalker::advance_normal() {
       advance_fully_c();
     } else if (!_inlined) {
       if (_frame.safe_for_sender(_thread)) {
+        if (is_stub_frame() && !_skip_c_frames) {
+          // we walk the stub frame as a C frame
+          _frame = os::get_sender_for_C_frame(&_frame);
+          return;
+        }
         _frame = _frame.sender(&_map);
       } else {
         in_c_on_top = true;

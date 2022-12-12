@@ -65,7 +65,7 @@ typedef struct {
 typedef struct {
   uint8_t type;      // frame type
   void *pc;          // current program counter inside this frame
-} ASGST_NonJavaFrame;
+} ASGST_NonJavaFrame; // used for FRAME_STUB, FRAME_CPP
 
 typedef union {
   uint8_t type;     // to distinguish between JavaFrame and NonJavaFrame
@@ -84,16 +84,26 @@ typedef union {
   CompLevel_full_optimization = 4          // C2 or JVMCI
 };*/
 
+enum ASGST_TRACE_KIND {
+  ASGST_JAVA_TRACE     = 0,
+  ASGST_CPP_TRACE      = 1,
+  ASGST_GC_TRACE       = 2,
+  ASGST_DEOPT_TRACE    = 3,
+  ASGST_UNKNOWN_TRACE  = 4,
+};
+
 typedef struct {
   jint num_frames;                // number of frames in this trace,
                                   // (< 0 indicates the frame is not walkable).
+  uint8_t kind;                   // kind of the trace
   ASGST_CallFrame *frames;        // frames that make up this trace. Callee followed by callers.
   void* frame_info;               // more information on frames
 } ASGST_CallTrace;
 
 
 enum ASGST_Options {
-  ASGST_INCLUDE_C_FRAMES = 1
+  ASGST_INCLUDE_C_FRAMES         = 1, // include C and stub frames too
+  ASGST_INCLUDE_NON_JAVA_THREADS = 2, // walk the stacks of C/Cpp, GC and deopt threads too
 };
 
 
