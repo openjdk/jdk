@@ -1558,7 +1558,7 @@ uint CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #else
   // CICountOSR is a develop flag and set to 'false' by default. In a product built,
   // only _compilation_id is incremented.
-  return Atomic::add(&_compilation_id, 1);
+  return Atomic::add(&_compilation_id, 1u);
 #endif
 }
 

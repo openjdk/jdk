@@ -2020,7 +2020,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     return;
   }
 
-  assert(compile_state->task()->compile_id() >= 0, "negative compile id");
+  assert(compile_state->task()->compile_id() <= INT_MAX, "compile id too big");
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, (int) compile_state->task()->compile_id());
   if (!JVMCIENV->has_pending_exception()) {
