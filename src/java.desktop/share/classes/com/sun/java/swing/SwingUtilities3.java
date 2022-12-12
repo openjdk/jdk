@@ -163,20 +163,19 @@ public class SwingUtilities3 {
 
         if (g instanceof Graphics2D g2d) {
             at = g2d.getTransform();
-            scaleFactor = at.getScaleX();
             oldStk = g2d.getStroke();
+            scaleFactor = Math.min(at.getScaleX(), at.getScaleY());
 
-            // if m01 or m10 is non-zero, then there is a rotation or shear
-            // skip resetting the transform
+            /* Deactivate the HiDPI scaling transform,
+             * so we can do paint operations in the device
+             * pixel coordinate system instead of the logical coordinate system.
+             */
             resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
 
             if (resetTransform) {
                 g2d.setTransform(new AffineTransform());
-                if (c instanceof JInternalFrame) {
-                    stkWidth = clipRound(Math.min(at.getScaleX(), at.getScaleY()));
-                } else {
-                    stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
-                }
+                stkWidth = c instanceof JInternalFrame ?
+                        clipRound(scaleFactor) : (int) Math.floor(scaleFactor);
                 g2d.setStroke(new BasicStroke((float) stkWidth));
             }
         }

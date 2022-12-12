@@ -62,7 +62,6 @@ import com.sun.java.swing.SwingUtilities3;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
 
-import static sun.java2d.pipe.Region.clipRound;
 
 /**
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
