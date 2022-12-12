@@ -1796,8 +1796,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       Label* guard = &dummy_guard;
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
-        slow_path = &stub->slow_path();
+        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+        Compile::current()->output()->add_stub(stub);
+        slow_path = &stub->entry();
         continuation = &stub->continuation();
         guard = &stub->guard();
       }
@@ -1879,7 +1880,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
