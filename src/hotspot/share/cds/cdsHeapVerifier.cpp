@@ -274,7 +274,6 @@ void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
   }
 }
 
-// Hint: to exercise this function, uncomment out one of the ADD_EXCL lines above.
 int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
   int level = 0;
   if (info->_referrer != NULL) {
