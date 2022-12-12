@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import jdk.internal.misc.OperatingSystem;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import jdk.internal.event.ProcessStartEvent;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class is used to create operating system processes.
@@ -469,9 +469,8 @@ public final class ProcessBuilder
      * @since 1.7
      */
     public abstract static class Redirect {
-        private static final File NULL_FILE = new File(
-                (GetPropertyAction.privilegedGetProperty("os.name")
-                        .startsWith("Windows") ? "NUL" : "/dev/null")
+        private static final File NULL_FILE =
+                new File((OperatingSystem.isWindows() ? "NUL" : "/dev/null")
         );
 
         /**

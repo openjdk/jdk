@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,14 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
         @@VENDOR_URL_VM_BUG@@ => $(VENDOR_URL_VM_BUG), \
 ))
 
-TARGETS += $(BUILD_VERSION_JAVA)
+$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
+    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/OperatingSystemProps.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc/OperatingSystemProps.java, \
+    REPLACEMENTS := \
+        @@OPENJDK_TARGET_OS@@ => $(OPENJDK_TARGET_OS), \
+))
 
+TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
