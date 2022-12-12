@@ -584,8 +584,6 @@ class os: AllStatic {
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 
-  static int pd_self_suspend_thread(Thread* thread);
-
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
   static frame      fetch_compiled_frame_from_context(const void* ucVoid);
@@ -1003,7 +1001,6 @@ class os: AllStatic {
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
   static bool dont_yield();                     // when true, JVM_Yield() is nop
-  static void print_statistics();
 
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);

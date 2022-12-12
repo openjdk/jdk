@@ -102,6 +102,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseRVV, false, EXPERIMENTAL, "Use RVV instructions")             \
   product(bool, UseZba, false, EXPERIMENTAL, "Use Zba instructions")             \
   product(bool, UseZbb, false, EXPERIMENTAL, "Use Zbb instructions")             \
+  product(bool, UseZbs, false, EXPERIMENTAL, "Use Zbs instructions")             \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \

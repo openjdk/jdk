@@ -105,8 +105,11 @@ class VMError : public AllStatic {
 
   // public for use by the internal non-product debugger.
   NOT_PRODUCT(public:)
+  // print_source_info: if true, we try to resolve the source information on platforms that support it
+  //  (useful but may slow down, timeout or misfunction in error situations)
+  // max_frames: if not -1, overrides StackPrintLimit
   static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
-                                 char* buf, int buf_size);
+                                 int max_frames, char* buf, int buf_size);
   NOT_PRODUCT(private:)
 
   static const char* get_filename_only() {

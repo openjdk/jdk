@@ -239,9 +239,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_currentThread();
   bool inline_native_setCurrentThread();
 
-  bool inline_native_extentLocalCache();
-  Node* extentLocalCache_helper();
-  bool inline_native_setExtentLocalCache();
+  bool inline_native_scopedValueCache();
+  Node* scopedValueCache_helper();
+  bool inline_native_setScopedValueCache();
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #ifdef JFR_HAVE_INTRINSICS

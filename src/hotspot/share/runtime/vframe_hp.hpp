@@ -98,11 +98,6 @@ class compiledVFrame: public javaVFrame {
 
  private:
   compiledVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread, ScopeDesc* scope, int vframe_id);
-
-#ifndef PRODUCT
- public:
-  void verify() const;
-#endif
 };
 
 #endif // SHARE_RUNTIME_VFRAME_HP_HPP
