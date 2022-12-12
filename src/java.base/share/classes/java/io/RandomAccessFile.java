@@ -61,7 +61,7 @@ import sun.nio.ch.FileChannelImpl;
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
-    private FileDescriptor fd;
+    private final FileDescriptor fd;
     private volatile FileChannel channel;
     private boolean rw;
 
@@ -1008,20 +1008,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
         while (!eol) {
             switch (c = read()) {
-            case -1:
-            case '\n':
-                eol = true;
-                break;
-            case '\r':
-                eol = true;
-                long cur = getFilePointer();
-                if ((read()) != '\n') {
-                    seek(cur);
+                case -1, '\n' -> eol = true;
+                case '\r'     -> {
+                    eol = true;
+                    long cur = getFilePointer();
+                    if ((read()) != '\n') {
+                        seek(cur);
+                    }
                 }
-                break;
-            default:
-                input.append((char)c);
-                break;
+                default -> input.append((char) c);
             }
         }
 
@@ -1245,7 +1240,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         SharedSecrets.setJavaIORandomAccessFileAccess(new JavaIORandomAccessFileAccess()
         {
             // This is for j.u.z.ZipFile.OPEN_DELETE. The O_TEMPORARY flag
-            // is only implemented/supported on windows.
+            // is only implemented/supported on Windows.
             public RandomAccessFile openAndDelete(File file, String mode)
                 throws IOException
             {
