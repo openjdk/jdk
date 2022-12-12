@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,17 @@
  * questions.
  */
 
-/*
- *
- *
- * Used in conjunction to EchoService to test System.inheritedChannel().
- *
- * The first test is the TCP echo test. A service is launched with a TCP
- * socket and a TCP message is sent to the service. The test checks that
- * the message is correctly echoed.
- *
- * The second test is a UDP echo test. A service is launched with a UDP
- * socket and a UDP packet is sent to the service. The test checks that
- * the packet is correctly echoed.
- *
- */
-
-import jdk.test.lib.Utils;
-
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.util.Random;
 
+/**
+ * This test verifies that a service launched with IPv4 inherited channel
+ * can use IPv6 networking; this used to be impossible, see JDK-6914801
+ */
 public class CheckIPv6Test {
 
     private static int failures = 0;
 
-    private static String SERVICE = "CheckIPv6Service";
+    private static final String SERVICE = "CheckIPv6Service";
 
     public static void main(String args[]) throws IOException {
 

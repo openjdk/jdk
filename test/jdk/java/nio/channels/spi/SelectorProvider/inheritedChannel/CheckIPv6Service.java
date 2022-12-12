@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,53 +21,11 @@
  * questions.
  */
 
-/*
- *
- *
- * An "echo" service designed to be used with inetd. It can be configured in
- * inetd.conf to be used by any of the following types of services :-
- *
- *      stream  tcp   nowait
- *      stream  tcp6  nowait
- *      stream  tcp   wait
- *      stream  tcp6  wait
- *      dgram   udp   wait
- *      dgram   udp6  wait
- *
- * If configured as a "tcp nowait" service then inetd will launch a
- * VM to run the EchoService each time that a client connects to
- * the TCP port. The EchoService simply echos any messages it
- * receives from the client and shuts if the client closes the
- * connection.
- *
- * If configured as a "tcp wait" service then inetd will launch a VM
- * to run the EchoService when a client connects to the port. When
- * launched the EchoService takes over the listener socket. It
- * terminates when all clients have disconnected and the service
- * is idle for a few seconds.
- *
- * If configured as a "udp wait" service then a VM will be launched for
- * each UDP packet to the configured port. System.inheritedChannel()
- * will return a DatagramChannel. The echo service here will terminate after
- * echoing the UDP packet back to the client.
- *
- * The service closes the inherited network channel when complete. To
- * facilate testing that the channel is closed the "tcp nowait" service
- * can close the connection after a given number of bytes.
- */
-
-import jdk.test.lib.Utils;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 public class CheckIPv6Service {
@@ -121,7 +79,6 @@ public class CheckIPv6Service {
             return;
         }
 
-        // tcp nowait
         if (c instanceof SocketChannel) {
             int closeAfter = 0;
             int delay = 0;
@@ -133,15 +90,6 @@ public class CheckIPv6Service {
             }
             doIt((SocketChannel)c, closeAfter, delay);
         }
-
-        // linger?
-        if (args.length > 0) {
-            int delay = Integer.parseInt(args[0]);
-            try {
-                Thread.currentThread().sleep(delay);
-            } catch (InterruptedException x) { }
-        }
-
     }
 
 }
