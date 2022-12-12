@@ -50,7 +50,7 @@ import java.io.*;
  * If an error results in parsing, a RuntimeException will be thrown.
  * <p>
  * This will preserve case. If the callback wishes to treat certain portions
- * case insensitively (such as selectors), it should use toLowerCase, or
+ * case-insensitively (such as selectors), it should use toLowerCase, or
  * something similar.
  *
  * @author Scott Violet
