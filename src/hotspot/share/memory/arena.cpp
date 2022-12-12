@@ -370,23 +370,6 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
 // Determine if pointer belongs to this Arena or not.
 bool Arena::contains( const void *ptr ) const {
   if (_chunk == NULL) return false;
-#ifdef ASSERT
-  if (UseMallocOnly) {
-    // really slow, but not easy to make fast
-    char** bottom = (char**)_chunk->bottom();
-    for (char** p = (char**)_hwm - 1; p >= bottom; p--) {
-      if (*p == ptr) return true;
-    }
-    for (Chunk *c = _first; c != NULL; c = c->next()) {
-      if (c == _chunk) continue;  // current chunk has been processed
-      char** bottom = (char**)c->bottom();
-      for (char** p = (char**)c->top() - 1; p >= bottom; p--) {
-        if (*p == ptr) return true;
-      }
-    }
-    return false;
-  }
-#endif
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
   for (Chunk *c = _first; c; c = c->next()) {
