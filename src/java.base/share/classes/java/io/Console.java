@@ -349,6 +349,7 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
                 "Console class itself does not provide implementation");
     }
 
+    private static native String encoding();
     /*
      * Sets the console echo status to {@code on} and returns the previous
      * console on/off status.
@@ -357,9 +358,7 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
      * @return true if the previous console echo status is on
      */
     static native boolean echo(boolean on) throws IOException;
-    private static native String encoding();
     static final Charset CHARSET;
-
     static {
         Charset cs = null;
         boolean istty = istty();
