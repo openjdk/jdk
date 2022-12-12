@@ -564,6 +564,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         fc.setLayout(new BorderLayout());
         fc.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        fc.setMultiSelectionEnabled(true);
 
         // Top row of buttons
         JPanel topButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
