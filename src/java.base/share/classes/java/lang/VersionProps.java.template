@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,12 @@ class VersionProps {
     @SuppressWarnings("unused")
     private static String VENDOR_URL_VM_BUG =
         "@@VENDOR_URL_VM_BUG@@";
+
+    private static final String OPENJDK_TARGET_OS =
+        "@@OPENJDK_TARGET_OS@@";
+
+    private static final String OPENJDK_TARGET_CPU =
+        "@@OPENJDK_TARGET_CPU@@";
 
     /**
      * Initialize system properties using build provided values.
@@ -186,6 +192,15 @@ class VersionProps {
         }
     }
 
+    // Read by Runtime.OperatingSystem
+    static String targetOS() {
+            return OPENJDK_TARGET_OS;
+    }
+
+    // Read by Runtime.Architecture
+    static String targetCpu() {
+        return OPENJDK_TARGET_CPU;
+    }
 
 
     /**

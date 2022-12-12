@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.lang.ProcessBuilder.Redirect;
+import java.lang.Runtime.OperatingSystem;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -35,11 +36,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -88,65 +86,39 @@ final class ProcessImpl extends Process {
         VFORK
     }
 
-    private static enum Platform {
-
-        LINUX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.VFORK, LaunchMechanism.FORK),
-
-        BSD(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
-
-        AIX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK);
-
-        final LaunchMechanism defaultLaunchMechanism;
-        final Set<LaunchMechanism> validLaunchMechanisms;
-
-        Platform(LaunchMechanism ... launchMechanisms) {
-            this.defaultLaunchMechanism = launchMechanisms[0];
-            this.validLaunchMechanisms =
-                EnumSet.copyOf(Arrays.asList(launchMechanisms));
+    /**
+     * {@return the default or requested launch mechanism}
+     * @throw Error if the requested launch mechanism is not found or valid
+     */
+    @SuppressWarnings("removal")
+    private static LaunchMechanism launchMechanism() {
+        String s = GetPropertyAction.privilegedGetProperty("jdk.lang.Process.launchMechanism");
+        if (s == null) {
+            return LaunchMechanism.POSIX_SPAWN;
         }
-
-        @SuppressWarnings("removal")
-        LaunchMechanism launchMechanism() {
-            return AccessController.doPrivileged(
-                (PrivilegedAction<LaunchMechanism>) () -> {
-                    String s = System.getProperty(
-                        "jdk.lang.Process.launchMechanism");
-                    LaunchMechanism lm;
-                    if (s == null) {
-                        lm = defaultLaunchMechanism;
-                        s = lm.name().toLowerCase(Locale.ENGLISH);
-                    } else {
-                        try {
-                            lm = LaunchMechanism.valueOf(
-                                s.toUpperCase(Locale.ENGLISH));
-                        } catch (IllegalArgumentException e) {
-                            lm = null;
-                        }
+        try {
+            // Should be value of a LaunchMechanism enum
+            LaunchMechanism lm = LaunchMechanism.valueOf(s.toUpperCase(Locale.ENGLISH));
+            switch (OperatingSystem.current()) {
+                case Linux:
+                    return lm;      // All options are valid for Linux
+                case AIX:
+                case MacOSX:
+                    if (lm != LaunchMechanism.VFORK) {
+                        return lm; // All but VFORK are valid
                     }
-                    if (lm == null || !validLaunchMechanisms.contains(lm)) {
-                        throw new Error(
-                            s + " is not a supported " +
-                            "process launch mechanism on this platform."
-                        );
-                    }
-                    return lm;
-                }
-            );
+                    break;
+                default:
+                    // fall through to throw to Error
+            }
+        } catch (IllegalArgumentException e) {
         }
 
-        static Platform get() {
-            String osName = GetPropertyAction.privilegedGetProperty("os.name");
-
-            if (osName.equals("Linux")) { return LINUX; }
-            if (osName.contains("OS X")) { return BSD; }
-            if (osName.equals("AIX")) { return AIX; }
-
-            throw new Error(osName + " is not a supported OS platform.");
-        }
+        throw new Error(s + " is not a supported " +
+            "process launch mechanism on this platform: " + OperatingSystem.current());
     }
 
-    private static final Platform platform = Platform.get();
-    private static final LaunchMechanism launchMechanism = platform.launchMechanism();
+    private static final LaunchMechanism launchMechanism = launchMechanism();
     private static final byte[] helperpath = toCString(StaticProperty.javaHome() + "/lib/jspawnhelper");
 
     private static byte[] toCString(String s) {
@@ -350,9 +322,9 @@ final class ProcessImpl extends Process {
      * @throws IOException
      */
     void initStreams(int[] fds, boolean forceNullOutputStream) throws IOException {
-        switch (platform) {
-            case LINUX:
-            case BSD:
+        switch (OperatingSystem.current()) {
+            case Linux:
+            case MacOSX:
                 stdin = (fds[0] == -1) ?
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new ProcessPipeOutputStream(fds[0]);
@@ -424,7 +396,7 @@ final class ProcessImpl extends Process {
                 });
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + platform);
+            default: throw new AssertionError("Unsupported platform: " + OperatingSystem.current());
         }
     }
 
@@ -480,9 +452,9 @@ final class ProcessImpl extends Process {
     }
 
     private void destroy(boolean force) {
-        switch (platform) {
-            case LINUX:
-            case BSD:
+        switch (OperatingSystem.current()) {
+            case Linux:
+            case MacOSX:
             case AIX:
                 // There is a risk that pid will be recycled, causing us to
                 // kill the wrong process!  So we only terminate processes
@@ -502,7 +474,7 @@ final class ProcessImpl extends Process {
                 try { stderr.close(); } catch (IOException ignored) {}
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + platform);
+            default: throw new AssertionError("Unsupported platform: " + OperatingSystem.current());
         }
     }
 
