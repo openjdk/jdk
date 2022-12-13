@@ -92,7 +92,7 @@ class JavaThread: public Thread {
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
-  OopHandle      _extentLocalCache;
+  OopHandle      _scopedValueCache;
 
   static OopStorage* _thread_oop_storage;
 
@@ -520,8 +520,9 @@ private:
   void set_threadOopHandles(oop p);
   oop vthread() const;
   void set_vthread(oop p);
-  oop extentLocalCache() const;
-  void set_extentLocalCache(oop p);
+  oop scopedValueCache() const;
+  void set_scopedValueCache(oop p);
+  void clear_scopedValueBindings();
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
 
@@ -744,7 +745,7 @@ private:
   void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
   bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
 
-  static ByteSize extentLocalCache_offset()       { return byte_offset_of(JavaThread, _extentLocalCache); }
+  static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
@@ -939,6 +940,12 @@ private:
   // Print stack trace in external format
   void print_stack_on(outputStream* st);
   void print_stack() { print_stack_on(tty); }
+  void print_vthread_stack_on(outputStream* st);
+
+  // Print stack trace for checked JNI warnings and JNI fatal errors.
+  // This is the external format from above, but selecting the platform
+  // or vthread as applicable.
+  void print_jni_stack();
 
   // Print stack traces in various internal formats
   void trace_stack()                             PRODUCT_RETURN;

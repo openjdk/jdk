@@ -603,6 +603,10 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+#ifdef ASSERT
+  // For every node n on verify list, check if type(n) == n->Value()
+  void verify_analyze(Unique_Node_List& worklist_verify);
+#endif
   // Recursive traversal of program.  Used analysis to modify program.
   virtual Node *transform( Node *n );
   // Do any transformation after analysis

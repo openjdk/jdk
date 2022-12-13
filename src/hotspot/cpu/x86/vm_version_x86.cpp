@@ -956,6 +956,7 @@ void VM_Version::get_processor_features() {
   if (UseAVX < 1) {
     _features &= ~CPU_AVX;
     _features &= ~CPU_VZEROUPPER;
+    _features &= ~CPU_F16C;
   }
 
   if (logical_processors_per_package() == 1) {

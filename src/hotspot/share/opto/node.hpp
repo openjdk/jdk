@@ -922,6 +922,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
