@@ -73,6 +73,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private final Object closeLock = new Object();
 
+    /**
+     * A local buffer that allows reading and writing of
+     * longer primitive parameters (e.g. long) to be performed
+     * using bulk operations rather than on a per-byte basis.
+     */
+    private final byte[] buffer = new byte[Long.BYTES];
+
     private volatile boolean closed;
 
     private static final int O_RDONLY = 1;
@@ -806,11 +813,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final short readShort() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (short)((ch1 << 8) + (ch2 << 0));
+        return (short)readUnsignedShort();
     }
 
     /**
@@ -834,11 +837,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final int readUnsignedShort() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (ch1 << 8) + (ch2 << 0);
+        readFully(buffer, 0, Short.BYTES);
+        return  ((buffer[0] & 0xff) <<  8) +
+                ((buffer[1] & 0xff)      );
     }
 
     /**
@@ -862,11 +863,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final char readChar() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (char)((ch1 << 8) + (ch2 << 0));
+        return (char)readUnsignedShort();
     }
 
     /**
@@ -890,13 +887,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final int readInt() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        int ch3 = this.read();
-        int ch4 = this.read();
-        if ((ch1 | ch2 | ch3 | ch4) < 0)
-            throw new EOFException();
-        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        readFully(buffer, 0, Integer.BYTES);
+        return (int)(((long)(buffer[0] & 0xff) << 24) +
+                           ((buffer[1] & 0xff) << 16) +
+                           ((buffer[2] & 0xff) <<  8) +
+                           ((buffer[3] & 0xff)      ));
     }
 
     /**
@@ -928,7 +923,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final long readLong() throws IOException {
-        return ((long)(readInt()) << 32) + (readInt() & 0xFFFFFFFFL);
+        readFully(buffer, 0, Long.BYTES);
+        return (((long)(buffer[0]       ) << 56) +
+                ((long)(buffer[1] & 0xff) << 48) +
+                ((long)(buffer[2] & 0xff) << 40) +
+                ((long)(buffer[3] & 0xff) << 32) +
+                ((long)(buffer[4] & 0xff) << 24) +
+                (      (buffer[5] & 0xff) << 16) +
+                (      (buffer[6] & 0xff) <<  8) +
+                (      (buffer[7] & 0xff)      ));
+
     }
 
     /**
@@ -1095,8 +1099,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeShort(int v) throws IOException {
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+        buffer[0] = (byte)(v >>>  8);
+        buffer[1] = (byte)(v       );
+        write(buffer, 0, Short.BYTES);
         //written += 2;
     }
 
@@ -1109,9 +1114,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeChar(int v) throws IOException {
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
-        //written += 2;
+        writeShort(v);
     }
 
     /**
@@ -1122,10 +1125,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeInt(int v) throws IOException {
-        write((v >>> 24) & 0xFF);
-        write((v >>> 16) & 0xFF);
-        write((v >>>  8) & 0xFF);
-        write((v >>>  0) & 0xFF);
+        buffer[0] = (byte)(v >>> 24);
+        buffer[1] = (byte)(v >>> 16);
+        buffer[2] = (byte)(v >>>  8);
+        buffer[3] = (byte)(v       );
+        write(buffer, 0, Integer.BYTES);
         //written += 4;
     }
 
@@ -1137,14 +1141,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeLong(long v) throws IOException {
-        write((int)(v >>> 56) & 0xFF);
-        write((int)(v >>> 48) & 0xFF);
-        write((int)(v >>> 40) & 0xFF);
-        write((int)(v >>> 32) & 0xFF);
-        write((int)(v >>> 24) & 0xFF);
-        write((int)(v >>> 16) & 0xFF);
-        write((int)(v >>>  8) & 0xFF);
-        write((int)(v >>>  0) & 0xFF);
+        buffer[0] = (byte)(v >>> 56);
+        buffer[1] = (byte)(v >>> 48);
+        buffer[2] = (byte)(v >>> 40);
+        buffer[3] = (byte)(v >>> 32);
+        buffer[4] = (byte)(v >>> 24);
+        buffer[5] = (byte)(v >>> 16);
+        buffer[6] = (byte)(v >>>  8);
+        buffer[7] = (byte)(v       );
+        write(buffer, 0, Long.BYTES);
         //written += 8;
     }
 
