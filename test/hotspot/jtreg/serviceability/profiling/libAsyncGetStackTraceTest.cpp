@@ -348,7 +348,6 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
 
   AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, ASGST_INCLUDE_C_FRAMES);
 
-  // For now, just check that the first frame is (-3, checkAsyncGetStackTraceCall).
   if (trace.num_frames <= 0) {
     fprintf(stderr, "JNICALL: The num_frames must be positive: %d\n", trace.num_frames);
     return false;
@@ -370,7 +369,7 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
   }
 
   if (trace.num_frames != 3) {
-    fprintf(stderr, "JNICALL: The number of frames must be 4: %d\n", trace.num_frames);
+    fprintf(stderr, "JNICALL: The number of frames must be 3: %d\n", trace.num_frames);
     return false;
   }
 
