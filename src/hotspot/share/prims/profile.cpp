@@ -182,10 +182,6 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     return;
   }
 
-
-  // !important! make sure all to call thread->set_in_asgct(false) before every return
-  thread->set_in_asgct(true);
-
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
@@ -220,5 +216,4 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     trace->num_frames = (jint)ASGST_UNKNOWN_STATE; // -7
     break;
   }
-  thread->set_in_asgct(false);
 }
