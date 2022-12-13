@@ -51,12 +51,12 @@ class BsdFileAttributeViews {
 
         int fd = -1;
         try {
-            try {
-                fd = path.openForAttributeAccess(followLinks);
-            } catch (UnixException x) {
-                x.rethrowAsIOException(path);
-            }
+            fd = path.openForAttributeAccess(followLinks);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(path);
+        }
 
+        try {
             // not all volumes support fsetattrlist(2), so set the last
             // modified and last access times using futimens(2)
             if (lastModifiedTime != null || lastAccessTime != null) {
