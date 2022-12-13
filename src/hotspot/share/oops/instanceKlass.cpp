@@ -646,10 +646,15 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_transitive_interfaces(NULL);
   set_local_interfaces(NULL);
 
-  // if (fields() != NULL && !fields()->is_shared()) {
-  //   MetadataFactory::free_array<jushort>(loader_data, fields());
-  // }
-  // set_fields(NULL, 0);
+  if (fieldinfo_stream() != NULL && !fieldinfo_stream()->is_shared()) {
+    MetadataFactory::free_array<u1>(loader_data, fieldinfo_stream());
+  }
+  set_fieldinfo_stream(NULL);
+
+  if (fields_status() != NULL && !fields_status()->is_shared()) {
+    MetadataFactory::free_array<FieldStatus>(loader_data, fields_status());
+  }
+  set_fields_status(NULL);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.

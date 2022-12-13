@@ -406,7 +406,6 @@ class InstanceKlass: public Klass {
   int total_fields_count()              const { return FieldInfoStream::num_total_fields(fieldinfo_stream()); }
 
   Array<u1>* fieldinfo_stream() const {
-    guarantee(_fieldinfo_stream != NULL, "Just checking");
     return _fieldinfo_stream;
   }
   void set_fieldinfo_stream(Array<u1>* fis) {
@@ -414,7 +413,6 @@ class InstanceKlass: public Klass {
   }
 
   Array<FieldStatus>* fields_status() const {
-    guarantee(_fieldinfo_stream != NULL, "Just checking");
     return _fields_status;
   }
 
