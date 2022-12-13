@@ -3795,14 +3795,10 @@ encode %{
 
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
-        Label slow;
-        __ fast_lock(oop, disp_hdr, tmp, rscratch1, slow, false);
+        __ fast_lock(oop, disp_hdr, tmp, rscratch1, cont, false);
 
         // Indicate success at cont.
         __ cmp(oop, oop);
-        __ b(cont);
-        __ bind(slow);
-        __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
       } else {
         // Set tmp to be (markWord of object | UNLOCK_VALUE).
         __ orr(tmp, disp_hdr, markWord::unlocked_value);
@@ -3902,15 +3898,10 @@ encode %{
 
     if (!UseHeavyMonitors) {
       if (UseFastLocking) {
-        Label slow;
-        __ fast_unlock(oop, tmp, box, disp_hdr, slow);
+        __ fast_unlock(oop, tmp, box, disp_hdr, cont);
 
         // Indicate success at cont.
         __ cmp(oop, oop);
-        __ b(cont);
-
-        __ bind(slow);
-        __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
       } else {
         // Check if it is still a light weight lock, this is is true if we
         // see the stack address of the basicLock in the markWord of the
