@@ -227,7 +227,7 @@ public class ArgumentValuesTest extends TestScaffold {
             }
         }
 
-        // a method with with one generic param
+        // a method with one generic param
         {
             System.out.println("----- Testing generic args");
             bpe = resumeTo("ArgumentValuesTarg", GENERIC_ARGS_LINE_1);
