@@ -46,7 +46,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
-class Token implements Serializable {
+final class Token implements Serializable {
 
     // need to be serializable to allow SecureRandom to be serialized
     @Serial

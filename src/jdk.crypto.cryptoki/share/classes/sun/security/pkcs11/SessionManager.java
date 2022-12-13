@@ -78,7 +78,7 @@ final class SessionManager {
     private final int maxSessions;
 
     // total number of active sessions
-    private AtomicInteger activeSessions = new AtomicInteger();
+    private final AtomicInteger activeSessions = new AtomicInteger();
 
     // pool of available object sessions
     private final Pool objSessions;
@@ -88,7 +88,7 @@ final class SessionManager {
 
     // maximum number of active sessions during this invocation, for debugging
     private int maxActiveSessions;
-    private Object maxActiveSessionsLock;
+    private final Object maxActiveSessionsLock;
 
     // flags to use in the C_OpenSession() call
     private final long openSessionFlags;
@@ -112,9 +112,9 @@ final class SessionManager {
         this.token = token;
         this.objSessions = new Pool(this, true);
         this.opSessions = new Pool(this, false);
-        if (debug != null) {
-            maxActiveSessionsLock = new Object();
-        }
+        this.maxActiveSessionsLock = (debug != null)
+                ? new Object()
+                : null;
     }
 
     // returns whether only a fairly low number of sessions are
