@@ -1380,7 +1380,7 @@ void PhaseCFG::verify() const {
             // - We are in infinite loop, where Region may not have been turned into LoopNode
             assert(block->find_node(def) < j ||
                    is_loop ||
-                   block->head()->as_Region()->is_in_infinite_subgraph(),
+                   (block->head()->as_Region()->is_in_infinite_subgraph() && n->is_Phi()),
                    "uses must follow definitions (except in loops)");
           }
         }
