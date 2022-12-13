@@ -251,12 +251,12 @@ void StackWatermark::process_one() {
 }
 
 void StackWatermark::push_linked_watermark(StackWatermark* watermark) {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  assert(JavaThread::current() == _jt, "This code is not thread safe");
   _linked_watermarks.push(watermark);
 }
 
 void StackWatermark::pop_linked_watermark() {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  assert(JavaThread::current() == _jt, "This code is not thread safe");
   assert(_linked_watermarks.length() > 0, "Mismatched push and pop?");
   _linked_watermarks.pop();
 }
@@ -295,22 +295,10 @@ bool StackWatermark::processing_completed_acquire() const {
 }
 
 void StackWatermark::process_linked_watermarks() {
-  _lock.lock_without_safepoint_check();
-  if (_linked_watermarks.is_empty()) {
-    _lock.unlock();
-    return;
-  }
-  ResourceMark rm;
-  GrowableArray<StackWatermark*> watermarks(_linked_watermarks.length());
-  for (StackWatermark* watermark : _linked_watermarks) {
-    watermarks.push(watermark);
-  }
-  _lock.unlock();
+  assert(JavaThread::current() == _jt, "This code is not thread safe");
 
-  // finish_processing must be called without the lock held, so we
-  // copy the growable array to a temporary snapshot of the list, so
-  // we can poke said watermarks without holding the lock
-  for (StackWatermark* watermark : watermarks) {
+  // Finish processing all linked stack watermarks
+  for (StackWatermark* watermark : _linked_watermarks) {
     watermark->finish_processing(NULL /* context */);
   }
 }
