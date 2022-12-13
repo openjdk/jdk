@@ -173,6 +173,18 @@ final class DCmdStart extends AbstractDCmd {
                 recording.close();
                 throw new DCmdException("Could not start recording, not able to write to file %s. %s ", path, e.getMessage());
             }
+        } else if (duration != null && path == null) {
+            try {
+                if (dumpOnExit == null) {
+                    // default to dumponexit=true if user specified filename
+                    dumpOnExit = Boolean.TRUE;
+                }
+                safePath = resolvePath(recording, null);
+                recording.setDestination(safePath.toPath());
+            } catch (IOException e) {
+                recording.close();
+                throw new DCmdException("Could not start recording, not able to write to file %s. %s ", safePath, e.getMessage());
+            }
         }
 
         if (maxAge != null) {
