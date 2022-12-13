@@ -31,20 +31,20 @@
 #include "utilities/ostream.hpp"
 
 LockStack::LockStack() :
-        _base(UseHeavyMonitors ? NULL : NEW_C_HEAP_ARRAY(oop, INITIAL_CAPACITY, mtSynchronizer)),
-        _limit(_base + INITIAL_CAPACITY),
-        _current(_base) {
+  _base(UseFastLocking && !UseHeavyMonitors ? NEW_C_HEAP_ARRAY(oop, INITIAL_CAPACITY, mtSynchronizer) : NULL),
+  _limit(_base + INITIAL_CAPACITY),
+  _current(_base) {
 }
 
 LockStack::~LockStack() {
-  if (!UseHeavyMonitors) {
+  if (UseFastLocking && !UseHeavyMonitors) {
     FREE_C_HEAP_ARRAY(oop, _base);
   }
 }
 
 #ifndef PRODUCT
 void LockStack::validate(const char* msg) const {
-  assert(!UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
+  assert(UseFastLocking && !UseHeavyMonitors, "never use lock-stack when fast-locking is disabled");
   for (oop* loc1 = _base; loc1 < _current - 1; loc1++) {
     for (oop* loc2 = loc1 + 1; loc2 < _current; loc2++) {
       assert(*loc1 != *loc2, "entries must be unique: %s", msg);
@@ -71,15 +71,8 @@ void LockStack::grow(size_t min_capacity) {
   assert((_limit - _base) >= (ptrdiff_t) min_capacity, "must grow enough");
 }
 
-void LockStack::grow() {
-  grow((_limit - _base) + 1);
-}
-
-void LockStack::grow(oop* required_limit) {
-  grow(required_limit - _base);
-}
-
-void LockStack::ensure_lock_stack_size(oop* _required_limit) {
+void LockStack::ensure_lock_stack_size(oop* required_limit) {
   JavaThread* jt = JavaThread::current();
-  jt->lock_stack().grow(_required_limit);
+  LockStack& lock_stack = jt->lock_stack();
+  lock_stack.grow(required_limit - lock_stack._base);
 }

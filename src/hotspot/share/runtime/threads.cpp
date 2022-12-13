@@ -1371,6 +1371,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   return result;
 }
 
+
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
   assert(!UseFastLocking, "only with stack-locking");

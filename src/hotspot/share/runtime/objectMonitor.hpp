@@ -269,7 +269,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   }
 
   bool is_owner_anonymous() const {
-    return _owner == ANONYMOUS_OWNER;
+    return owner_raw() == ANONYMOUS_OWNER;
   }
 
   void set_owner_from_anonymous(Thread* owner) {

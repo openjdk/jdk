@@ -40,9 +40,7 @@ private:
   oop* _limit;
   oop* _current;
 
-  void grow();
   void grow(size_t min_capacity);
-  void grow(oop* required_limit);
 
   void validate(const char* msg) const PRODUCT_RETURN;
 public:

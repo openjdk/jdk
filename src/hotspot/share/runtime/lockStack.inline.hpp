@@ -33,7 +33,7 @@ inline void LockStack::push(oop o) {
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
   if (_current >= _limit) {
-    grow();
+    grow((_limit - _base) + 1);
   }
   *_current = o;
   _current++;
