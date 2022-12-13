@@ -734,7 +734,6 @@ bool Node::is_dead() const {
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != NULL )
       return false;
-  dump();
   return true;
 }
 

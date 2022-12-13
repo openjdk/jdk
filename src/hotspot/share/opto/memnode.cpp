@@ -2012,7 +2012,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   }
 
   const TypeKlassPtr *tkls = tp->isa_klassptr();
-  if (tkls != NULL && !StressReflectiveCode) {
+  if (tkls != NULL) {
     if (tkls->is_loaded() && tkls->klass_is_exact()) {
       ciKlass* klass = tkls->exact_klass();
       // We are loading a field from a Klass metaobject whose identity
