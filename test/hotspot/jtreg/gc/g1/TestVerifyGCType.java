@@ -125,8 +125,7 @@ public class TestVerifyGCType {
                                           new String[] {"-XX:+G1EvacuationFailureALot",
                                                         "-XX:G1EvacuationFailureALotCount=100",
                                                         "-XX:G1EvacuationFailureALotInterval=1",
-                                                        "-XX:+UnlockDiagnosticVMOptions",
-                                                        "-XX:-G1UsePreventiveGC"});
+                                                        "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 
         verifyCollection("Pause Young (Normal)", false, false, true, output.getStdout());
