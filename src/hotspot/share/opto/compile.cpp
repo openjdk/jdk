@@ -489,7 +489,7 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
 }
 CompileWrapper::~CompileWrapper() {
   // simulate crash during compilation
-  assert(CICrashAt >= UINT_MAX || _compile->compile_id() != CICrashAt, "just as planned");
+  assert(CICrashAt < 0 || _compile->compile_id() != CICrashAt, "just as planned");
 
   _compile->end_method();
   _compile->env()->set_compiler_data(NULL);
