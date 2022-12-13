@@ -3103,7 +3103,6 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
     }
 
     const uint compile_id = CompileBroker::assign_compile_id(method, CompileBroker::standard_entry_bci);
-    assert(compile_id > 0, "Must generate native wrapper");
 
 
     ResourceMark rm;

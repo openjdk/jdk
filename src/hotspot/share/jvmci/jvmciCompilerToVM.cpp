@@ -1179,7 +1179,7 @@ C2V_VMENTRY_0(jboolean, setCountersSize, (JNIEnv* env, jobject, jint new_size))
   return JavaThread::resize_all_jvmci_counters(new_size);
 C2V_END
 
-C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), int entry_bci))
+C2V_VMENTRY_0(juint, allocateCompileId, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), int entry_bci))
   HandleMark hm(THREAD);
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   if (method.is_null()) {
@@ -1188,9 +1188,7 @@ C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, ARGUMENT_PAIR(meth
   if (entry_bci >= method->code_size() || entry_bci < -1) {
     JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Unexpected bci %d", entry_bci));
   }
-  uint id = CompileBroker::assign_compile_id_unlocked(THREAD, method, entry_bci);
-  assert(id <= INT_MAX, "compile id too big");
-  return (jint) id;
+  return CompileBroker::assign_compile_id_unlocked(THREAD, method, entry_bci);
 C2V_END
 
 
