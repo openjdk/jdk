@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -10913,86 +10913,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und el</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname}</namePattern>
+			<namePattern draft="provisional">{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern draft="provisional">{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{given}</namePattern>
+			<namePattern draft="provisional">{given}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern draft="provisional">{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern draft="provisional">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {given-informal}</namePattern>
+			<namePattern draft="provisional">{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern draft="provisional">{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+			<namePattern draft="provisional">{surname} {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {given-initial}</namePattern>
+			<namePattern draft="provisional">{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern draft="provisional">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern draft="provisional">{given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname-core}, {surname-prefix} {given} {given2}</namePattern>
+			<namePattern draft="provisional">{surname-core}, {surname-prefix} {given} {given2}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given">Δημήτρης</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">Δημήτρης</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">Ειρήνη</nameField>
-			<nameField type="surname">Πολίτη</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">Ειρήνη</nameField>
+			<nameField type="surname" draft="provisional">Πολίτη</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">Πέτρος</nameField>
-			<nameField type="given2">Νικόλαος</nameField>
-			<nameField type="surname">Καρατζής</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">Πέτρος</nameField>
+			<nameField type="given2" draft="provisional">Νικόλαος</nameField>
+			<nameField type="surname" draft="provisional">Καρατζής</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Καθ. δρ.</nameField>
-			<nameField type="given">Άννα Μαρία</nameField>
-			<nameField type="given-informal">Σωτήρης</nameField>
-			<nameField type="given2">Βεατρίκη Μαρίνα</nameField>
-			<nameField type="surname-prefix">φαν ντεν</nameField>
-			<nameField type="surname-core">Δεληγιάννης</nameField>
-			<nameField type="surname2">Δημητρίου Αργυρακάκης</nameField>
-			<nameField type="suffix">M.D. Ph.D.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">Καθ. δρ.</nameField>
+			<nameField type="given" draft="provisional">Άννα Μαρία</nameField>
+			<nameField type="given-informal" draft="provisional">Σωτήρης</nameField>
+			<nameField type="given2" draft="provisional">Βεατρίκη Μαρίνα</nameField>
+			<nameField type="surname-prefix" draft="provisional">φαν ντεν</nameField>
+			<nameField type="surname-core" draft="provisional">Δεληγιάννης</nameField>
+			<nameField type="surname2" draft="provisional">Δημητρίου Αργυρακάκης</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

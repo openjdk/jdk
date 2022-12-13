@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1864,9 +1864,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="surnameFirst"/>
-		<sampleName item="full">
-			<nameField type="prefix">ɔ̀jɔ̀gbɔ́n. omɔ́wé</nameField>
-			<nameField type="surname-prefix">fanú dɛ́ni</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">ɔ̀jɔ̀gbɔ́n. omɔ́wé</nameField>
+			<nameField type="surname-prefix" draft="provisional">fanú dɛ́ni</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

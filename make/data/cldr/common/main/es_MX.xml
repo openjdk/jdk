@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -643,8 +643,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
+					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billones</pattern>
+					<pattern type="10000000000000" count="one">00 billones</pattern>
 					<pattern type="10000000000000" count="other">00 billones</pattern>
+					<pattern type="100000000000000" count="one">000 billones</pattern>
 					<pattern type="100000000000000" count="other">000 billones</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -1029,7 +1032,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<foreignSpaceReplacement xml:space="preserve" draft="contributed"> </foreignSpaceReplacement>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="contributed">{prefix} {given} {given2} {surname} {surname2}</namePattern>
+			<namePattern draft="contributed">{title} {given} {given2} {surname} {surname2}</namePattern>
 		</personName>
 	</personNames>
 </ldml>

@@ -280,7 +280,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mwblz" description="Blantyre, Malawi" alias="Africa/Blantyre"/>
             <type name="mxchi" description="Chihuahua, Mexico" alias="America/Chihuahua"/>
             <type name="mxcun" description="Cancún, Mexico" alias="America/Cancun"/>
-            <type name="mxcjs" description="Ciudad Juárez, Mexico" alias="America/Ciudad_Juarez"/>
+            <type name="mxcjs" description="Ciudad Juárez, Mexico" alias="America/Ciudad_Juarez" since="43"/>
             <type name="mxhmo" description="Hermosillo, Mexico" alias="America/Hermosillo"/>
             <type name="mxmam" description="Matamoros, Mexico" alias="America/Matamoros"/>
             <type name="mxmex" description="Mexico City, Mexico" alias="America/Mexico_City Mexico/General"/>
@@ -390,7 +390,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="tmasb" description="Ashgabat, Turkmenistan" alias="Asia/Ashgabat Asia/Ashkhabad"/>
             <type name="tntun" description="Tunis, Tunisia" alias="Africa/Tunis"/>
             <type name="totbu" description="Tongatapu, Tonga" alias="Pacific/Tongatapu"/>
-            <type name="trist" description="Istanbul, Turkey" alias="Europe/Istanbul Asia/Istanbul Turkey"/>
+            <type name="trist" description="Istanbul, Türkiye" alias="Europe/Istanbul Asia/Istanbul Turkey"/>
             <type name="ttpos" description="Port of Spain, Trinidad and Tobago" alias="America/Port_of_Spain"/>
             <type name="tvfun" description="Funafuti, Tuvalu" alias="Pacific/Funafuti"/>
             <type name="twtpe" description="Taipei, Taiwan" alias="Asia/Taipei ROC"/>

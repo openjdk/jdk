@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -8359,27 +8359,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
-		<sampleName item="givenOnly">
-			<nameField type="given">राज</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">राज</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">कुमार</nameField>
-			<nameField type="surname">सिंग</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">कुमार</nameField>
+			<nameField type="surname" draft="provisional">सिंग</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">जय</nameField>
-			<nameField type="given2">प्रसाद</nameField>
-			<nameField type="surname">पटेल</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">जय</nameField>
+			<nameField type="given2" draft="provisional">प्रसाद</nameField>
+			<nameField type="surname" draft="provisional">पटेल</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">प्रो. डॉ.</nameField>
-			<nameField type="given">विक्रम सिंह</nameField>
-			<nameField type="given-informal">विकी</nameField>
-			<nameField type="given2">रामचरण दास</nameField>
-			<nameField type="surname-prefix">राज पुरोहित</nameField>
-			<nameField type="surname-core">शर्मा</nameField>
-			<nameField type="surname2">सरनाईक पाटिल</nameField>
-			<nameField type="suffix">बी.ए. एल.एल.बी</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">प्रो. डॉ.</nameField>
+			<nameField type="given" draft="provisional">विक्रम सिंह</nameField>
+			<nameField type="given-informal" draft="provisional">विकी</nameField>
+			<nameField type="given2" draft="provisional">रामचरण दास</nameField>
+			<nameField type="surname-prefix" draft="provisional">राज पुरोहित</nameField>
+			<nameField type="surname-core" draft="provisional">शर्मा</nameField>
+			<nameField type="surname2" draft="provisional">सरनाईक पाटिल</nameField>
+			<nameField type="credentials" draft="provisional">बी.ए. एल.एल.बी</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

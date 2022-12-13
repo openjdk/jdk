@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -7978,27 +7978,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ps</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">سنباد</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">سنباد</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">ارین</nameField>
-			<nameField type="surname">اډلر</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">ارین</nameField>
+			<nameField type="surname" draft="provisional">اډلر</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">جان</nameField>
-			<nameField type="given2">همیش</nameField>
-			<nameField type="surname">واټسن</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">جان</nameField>
+			<nameField type="given2" draft="provisional">همیش</nameField>
+			<nameField type="surname" draft="provisional">واټسن</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">پروفیسور ډاکټر</nameField>
-			<nameField type="given">اډا کورنیلیا</nameField>
-			<nameField type="given-informal">نیلي</nameField>
-			<nameField type="given2">ایوا سوفیا</nameField>
-			<nameField type="surname-prefix">van den</nameField>
-			<nameField type="surname-core">لیوه</nameField>
-			<nameField type="surname2">بیکر شمیت</nameField>
-			<nameField type="suffix">M.D. Ph.D.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">پروفیسور ډاکټر</nameField>
+			<nameField type="given" draft="provisional">اډا کورنیلیا</nameField>
+			<nameField type="given-informal" draft="provisional">نیلي</nameField>
+			<nameField type="given2" draft="provisional">ایوا سوفیا</nameField>
+			<nameField type="surname-core" draft="provisional">لیوه</nameField>
+			<nameField type="surname2" draft="provisional">بیکر شمیت</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

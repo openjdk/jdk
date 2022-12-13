@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -9318,27 +9318,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und am</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">ሲንባድ</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">ሲንባድ</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">ኢሬን</nameField>
-			<nameField type="surname">አድለር</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">ኢሬን</nameField>
+			<nameField type="surname" draft="provisional">አድለር</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">ጆን</nameField>
-			<nameField type="given2">ሃሚሽ</nameField>
-			<nameField type="surname">ዋትሰን</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">ጆን</nameField>
+			<nameField type="given2" draft="provisional">ሃሚሽ</nameField>
+			<nameField type="surname" draft="provisional">ዋትሰን</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">ፕ/ር ዶ/ር</nameField>
-			<nameField type="given">አዳ ኮርኔሊያ</nameField>
-			<nameField type="given-informal">ኒል</nameField>
-			<nameField type="given2">ኢቫ ሶፊያ</nameField>
-			<nameField type="surname-prefix">ቫን ደን</nameField>
-			<nameField type="surname-core">ዎልፍ</nameField>
-			<nameField type="surname2">ቤከር ሽሚት</nameField>
-			<nameField type="suffix">ሚ/ዶ ዶ/ር</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">ፕ/ር ዶ/ር</nameField>
+			<nameField type="given" draft="provisional">አዳ ኮርኔሊያ</nameField>
+			<nameField type="given-informal" draft="provisional">ኒል</nameField>
+			<nameField type="given2" draft="provisional">ኢቫ ሶፊያ</nameField>
+			<nameField type="surname-prefix" draft="provisional">ቫን ደን</nameField>
+			<nameField type="surname-core" draft="provisional">ዎልፍ</nameField>
+			<nameField type="surname2" draft="provisional">ቤከር ሽሚት</nameField>
+			<nameField type="credentials" draft="provisional">ሚ/ዶ ዶ/ር</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

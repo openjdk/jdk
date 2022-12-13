@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -11777,27 +11777,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und sv</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<initialPattern type="initial">{0}</initialPattern>
-		<sampleName item="givenOnly">
-			<nameField type="given">Stefan</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">Stefan</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">Ingrid</nameField>
-			<nameField type="surname">Andersson</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">Ingrid</nameField>
+			<nameField type="surname" draft="provisional">Andersson</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">Johan</nameField>
-			<nameField type="given2">Harald</nameField>
-			<nameField type="surname">Wallin</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">Johan</nameField>
+			<nameField type="given2" draft="provisional">Harald</nameField>
+			<nameField type="surname" draft="provisional">Wallin</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Prof. dr</nameField>
-			<nameField type="given">Ann-Christine</nameField>
-			<nameField type="given-informal">Anki</nameField>
-			<nameField type="given2">Eva Sofia</nameField>
-			<nameField type="surname-prefix">van den</nameField>
-			<nameField type="surname-core">Karlsson</nameField>
-			<nameField type="surname2">Beck Strand</nameField>
-			<nameField type="suffix">med. dr. fil. dr. jur. dr.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">Prof. dr</nameField>
+			<nameField type="given" draft="provisional">Ann-Christine</nameField>
+			<nameField type="given-informal" draft="provisional">Anki</nameField>
+			<nameField type="given2" draft="provisional">Eva Sofia</nameField>
+			<nameField type="surname-prefix" draft="provisional">van den</nameField>
+			<nameField type="surname-core" draft="provisional">Karlsson</nameField>
+			<nameField type="surname2" draft="provisional">Beck Strand</nameField>
+			<nameField type="credentials" draft="provisional">med. dr. fil. dr. jur. dr.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

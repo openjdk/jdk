@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -11075,27 +11075,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kn</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">ಸಿನ್‌ಬಾದ್</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">ಸಿನ್‌ಬಾದ್</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">ಐರಿನ್</nameField>
-			<nameField type="surname">ಆ್ಯಡ್ಲರ್</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">ಐರಿನ್</nameField>
+			<nameField type="surname" draft="provisional">ಆ್ಯಡ್ಲರ್</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">ಜಾನ್</nameField>
-			<nameField type="given2">ಹಮಿಶ್</nameField>
-			<nameField type="surname">ವ್ಯಾಟ್ಸನ್</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">ಜಾನ್</nameField>
+			<nameField type="given2" draft="provisional">ಹಮಿಶ್</nameField>
+			<nameField type="surname" draft="provisional">ವ್ಯಾಟ್ಸನ್</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">ಪ್ರೊ. ಡಾ.</nameField>
-			<nameField type="given">ಅಡಾ ಕಾರ್ನೆಲಿಯಾ</nameField>
-			<nameField type="given-informal">ನೀಲ್</nameField>
-			<nameField type="given2">ಇವಾ ಸೋಫಿಯಾ</nameField>
-			<nameField type="surname-prefix">ವ್ಯಾನ್ ಡೆನ್</nameField>
-			<nameField type="surname-core">ವೋಲ್ಫ್</nameField>
-			<nameField type="surname2">ಬೆಕರ್ ಸ್ಮಿತ್</nameField>
-			<nameField type="suffix">ಎಂ.ಡಿ. ಪಿ.ಎಚ್.ಡಿ.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">ಪ್ರೊ. ಡಾ.</nameField>
+			<nameField type="given" draft="provisional">ಅಡಾ ಕಾರ್ನೆಲಿಯಾ</nameField>
+			<nameField type="given-informal" draft="provisional">ನೀಲ್</nameField>
+			<nameField type="given2" draft="provisional">ಇವಾ ಸೋಫಿಯಾ</nameField>
+			<nameField type="surname-prefix" draft="provisional">ವ್ಯಾನ್ ಡೆನ್</nameField>
+			<nameField type="surname-core" draft="provisional">ವೋಲ್ಫ್</nameField>
+			<nameField type="surname2" draft="provisional">ಬೆಕರ್ ಸ್ಮಿತ್</nameField>
+			<nameField type="credentials" draft="provisional">ಎಂ.ಡಿ. ಪಿ.ಎಚ್.ಡಿ.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

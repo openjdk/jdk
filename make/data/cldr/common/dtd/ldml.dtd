@@ -42,7 +42,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "42" >
+<!ATTLIST version cldrVersion CDATA #FIXED "43" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -3195,13 +3195,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ELEMENT personName ( alias | ( namePattern+, special* ) ) >
     <!--@TECHPREVIEW-->
 <!ATTLIST personName order NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/givenFirst, surnameFirst, sorting-->
+    <!--@MATCH:literal/givenFirst, surnameFirst, sorting-->
 <!ATTLIST personName length NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/long, medium, short-->
+    <!--@MATCH:literal/long, medium, short-->
 <!ATTLIST personName usage NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/referring, addressing, monogram-->
+    <!--@MATCH:literal/referring, addressing, monogram-->
 <!ATTLIST personName formality NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/formal, informal-->
+    <!--@MATCH:literal/formal, informal-->
 
 <!ELEMENT namePattern ( #PCDATA ) >
     <!--@TECHPREVIEW-->
@@ -3214,12 +3214,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ELEMENT sampleName ( alias | ( nameField+, special* ) ) >
     <!--@TECHPREVIEW-->
 <!ATTLIST sampleName item NMTOKENS #REQUIRED >
-    <!--@MATCH:literal/givenOnly, givenSurnameOnly, given12Surname, full-->
+    <!--@MATCH:literal/nativeG, nativeGS, nativeGGS, nativeFull, foreignG, foreignGS, foreignGGS, foreignFull -->
 
 <!ELEMENT nameField ( #PCDATA ) >
     <!--@TECHPREVIEW-->
 <!ATTLIST nameField type CDATA #REQUIRED >
-    <!--@MATCH:literal/prefix, given, given-informal, given2, surname, surname-prefix, surname-core, surname2, suffix-->
+    <!--@MATCH:literal/title, given, given-informal, given2, surname, surname-prefix, surname-core, surname2, generation, credentials-->
 <!ATTLIST nameField alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST nameField draft (approved | contributed | provisional | unconfirmed) #IMPLIED >

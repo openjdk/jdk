@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -8190,27 +8190,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und sd</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">سنباد</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">سنباد</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">آئرين</nameField>
-			<nameField type="surname">ائڊلر</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">آئرين</nameField>
+			<nameField type="surname" draft="provisional">ائڊلر</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">جان</nameField>
-			<nameField type="given2">ھامش</nameField>
-			<nameField type="surname">واٽسن</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">جان</nameField>
+			<nameField type="given2" draft="provisional">ھامش</nameField>
+			<nameField type="surname" draft="provisional">واٽسن</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">پروفيسر ڊاڪٽر</nameField>
-			<nameField type="given">ايڊا ڪورنيليا</nameField>
-			<nameField type="given-informal">نيل</nameField>
-			<nameField type="given2">ايوا سوفيه</nameField>
-			<nameField type="surname-prefix">وين ڊين</nameField>
-			<nameField type="surname-core">ولف</nameField>
-			<nameField type="surname2">بيڪر شمڊٽ</nameField>
-			<nameField type="suffix">ايم ڊي پي ايڇ ڊي</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">پروفيسر ڊاڪٽر</nameField>
+			<nameField type="given" draft="provisional">ايڊا ڪورنيليا</nameField>
+			<nameField type="given-informal" draft="provisional">نيل</nameField>
+			<nameField type="given2" draft="provisional">ايوا سوفيه</nameField>
+			<nameField type="surname-prefix" draft="provisional">وين ڊين</nameField>
+			<nameField type="surname-core" draft="provisional">ولف</nameField>
+			<nameField type="surname2" draft="provisional">بيڪر شمڊٽ</nameField>
+			<nameField type="credentials" draft="provisional">ايم ڊي پي ايڇ ڊي</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

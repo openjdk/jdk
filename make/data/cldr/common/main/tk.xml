@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -8354,7 +8354,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern draft="contributed">{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+			<namePattern draft="contributed">{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern draft="contributed">{given-informal}</namePattern>
@@ -8366,13 +8366,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern draft="contributed">{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern draft="contributed">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern draft="contributed">{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+			<namePattern draft="contributed">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern draft="contributed">{given-informal}</namePattern>
@@ -8384,13 +8384,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern draft="contributed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern draft="contributed">{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern draft="contributed">{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern draft="contributed">{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+			<namePattern draft="contributed">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern draft="contributed">{given-informal}</namePattern>
@@ -8408,7 +8408,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern draft="contributed">{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+			<namePattern draft="contributed">{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern draft="contributed">{given-informal}</namePattern>
@@ -8437,27 +8437,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern draft="contributed">{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given" draft="contributed">Gurban</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">Gurban</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given" draft="contributed">Amangeldi</nameField>
-			<nameField type="surname" draft="contributed">Saparow</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">Amangeldi</nameField>
+			<nameField type="surname" draft="provisional">Saparow</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given" draft="contributed">Meretgeldi</nameField>
-			<nameField type="given2" draft="contributed">Durdyýewiç</nameField>
-			<nameField type="surname" draft="contributed">Gurbanow</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">Meretgeldi</nameField>
+			<nameField type="given2" draft="provisional">Durdyýewiç</nameField>
+			<nameField type="surname" draft="provisional">Gurbanow</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix" draft="contributed">Prof. Dr.</nameField>
-			<nameField type="given" draft="contributed">Gurban Saparow</nameField>
-			<nameField type="given-informal" draft="contributed">Aman</nameField>
-			<nameField type="given2" draft="contributed">Aman Saparow</nameField>
-			<nameField type="surname-prefix" draft="contributed">wan den</nameField>
-			<nameField type="surname-core" draft="contributed">Gurdow</nameField>
-			<nameField type="surname2" draft="contributed">Gurbangeldiýew</nameField>
-			<nameField type="suffix" draft="contributed">magistr, ylymlaryň kandidaty</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title" draft="provisional">Prof. Dr.</nameField>
+			<nameField type="given" draft="provisional">Gurban Saparow</nameField>
+			<nameField type="given-informal" draft="provisional">Aman</nameField>
+			<nameField type="given2" draft="provisional">Aman Saparow</nameField>
+			<nameField type="surname-prefix" draft="provisional">wan den</nameField>
+			<nameField type="surname-core" draft="provisional">Gurdow</nameField>
+			<nameField type="surname2" draft="provisional">Gurbangeldiýew</nameField>
+			<nameField type="credentials" draft="provisional">magistr, ylymlaryň kandidaty</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

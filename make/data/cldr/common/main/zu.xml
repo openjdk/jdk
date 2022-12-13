@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -7888,27 +7888,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und zu</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">Sinbad</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">Sinbad</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">u-Irene</nameField>
-			<nameField type="surname">u-Adier</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="provisional">u-Irene</nameField>
+			<nameField type="surname" draft="provisional">u-Adier</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">u-John</nameField>
-			<nameField type="given2">u-Hamish</nameField>
-			<nameField type="surname">u-Watson</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">u-John</nameField>
+			<nameField type="given2" draft="provisional">u-Hamish</nameField>
+			<nameField type="surname" draft="provisional">u-Watson</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">u-Prof. Dr.</nameField>
-			<nameField type="given">u-Ada Cornelia</nameField>
-			<nameField type="given-informal">u-Neele</nameField>
-			<nameField type="given2">u-Eva Sophia</nameField>
-			<nameField type="surname-prefix">u-van den</nameField>
-			<nameField type="surname-core">u-Wold</nameField>
-			<nameField type="surname2">u-Becker Schmidt</nameField>
-			<nameField type="suffix">M.D. Ph.D.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">u-Prof. Dr.</nameField>
+			<nameField type="given" draft="provisional">u-Ada Cornelia</nameField>
+			<nameField type="given-informal" draft="provisional">u-Neele</nameField>
+			<nameField type="given2" draft="provisional">u-Eva Sophia</nameField>
+			<nameField type="surname-prefix" draft="provisional">u-van den</nameField>
+			<nameField type="surname-core" draft="provisional">u-Wold</nameField>
+			<nameField type="surname2" draft="provisional">u-Becker Schmidt</nameField>
+			<nameField type="credentials" draft="provisional">M.D. Ph.D.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

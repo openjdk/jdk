@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1025,8 +1025,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
+					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billón</pattern>
+					<pattern type="10000000000000" count="one">00 billones</pattern>
 					<pattern type="10000000000000" count="other">00 billones</pattern>
+					<pattern type="100000000000000" count="one">000 billones</pattern>
 					<pattern type="100000000000000" count="other">000 billones</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
@@ -1570,34 +1573,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+			<namePattern draft="provisional">{given} {given2-initial} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {given} {given2} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname} {surname2}</namePattern>
+			<namePattern draft="provisional">{title} {surname} {surname2}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given">Diego</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="provisional">Diego</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="surname">García</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="surname" draft="provisional">García</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">Juan</nameField>
-			<nameField type="given2">Manuel</nameField>
-			<nameField type="surname">Rodríguez</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="provisional">Juan</nameField>
+			<nameField type="given2" draft="provisional">Manuel</nameField>
+			<nameField type="surname" draft="provisional">Rodríguez</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Prof. Dra.</nameField>
-			<nameField type="given">Mercedes Inés</nameField>
-			<nameField type="given-informal">Juanma</nameField>
-			<nameField type="given2">Ana Laura</nameField>
-			<nameField type="suffix">Dr./Dra.</nameField>
+		<sampleName item="foreignFull">
+			<nameField type="title" draft="provisional">Prof. Dra.</nameField>
+			<nameField type="given" draft="provisional">Mercedes Inés</nameField>
+			<nameField type="given-informal" draft="provisional">Juanma</nameField>
+			<nameField type="given2" draft="provisional">Ana Laura</nameField>
+			<nameField type="credentials" draft="provisional">Dr./Dra.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>
