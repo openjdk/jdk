@@ -95,14 +95,14 @@ inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* m
 }
 
 template<typename IN, typename OUT>
-inline OUT MallocHeader::resolve_checked_impl(IN memblock){
+inline OUT MallocHeader::resolve_checked_impl(IN memblock) {
   char msg[256];
   address corruption = nullptr;
   if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
     fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
   OUT header_pointer = (OUT)memblock - 1;
-  if (!header_pointer->check_block_integrity( msg, sizeof(msg), &corruption)) {
+  if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
     header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer);
     fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
@@ -147,7 +147,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   if (get_footer() != _footer_canary_life_mark) {
     *p_corruption = footer_address();
     jio_snprintf(msg, msglen, "footer canary broken at " PTR_FORMAT " (buffer overflow?)",
-                p2i(footer_address()));
+                 p2i(footer_address()));
     return false;
   }
   return true;
