@@ -176,7 +176,7 @@ final class DCmdStart extends AbstractDCmd {
         } else if (duration != null && path == null) {
             try {
                 if (dumpOnExit == null) {
-                    // default to dumponexit=true if user specified filename
+                    //Generate a filename and set default to dumponexit=true
                     dumpOnExit = Boolean.TRUE;
                 }
                 safePath = resolvePath(recording, null);
