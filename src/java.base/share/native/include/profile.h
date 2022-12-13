@@ -119,19 +119,16 @@ enum ASGST_Options {
 // void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options)
 //
 // Called by the profiler to obtain the current method call stack trace for
-// a given thread. The thread is identified by the env_id field in the
-// ASGST_CallTrace structure. The profiler agent should allocate a ASGST_CallTrace
+// a given thread. The profiler agent should allocate a ASGST_CallTrace
 // structure with enough memory for the requested stack depth. The VM fills in
-// the frames buffer and the num_frames field.
+// the frames buffer, the num_frames and the kind field.
 //
 // Arguments:
 //
 //   trace    - trace data structure to be filled by the VM.
 //   depth    - depth of the call stack trace.
 //   ucontext - ucontext_t of the LWP
-//   options  - bit flags for additional configuration,
-//              currently only the lowest bit is used: setting it to 1 enables capturing C frames
-
+//   options  - bit flags for additional configuration
 extern "C" JNIEXPORT
 void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth, void* ucontext, int32_t options);
 
