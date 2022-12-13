@@ -258,7 +258,7 @@ static unsigned int    used_topSizeBlocks = 0;
 
 static struct SizeDistributionElement*  SizeDistributionArray = NULL;
 
-static int  latest_compilation_id   = 0;
+static int           latest_compilation_id   = 0;
 static volatile bool initialization_complete = false;
 
 const char* CodeHeapState::get_heapName(CodeHeap* heap) {
@@ -659,20 +659,20 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     prepare_SizeDistArray(out, nSizeDistElements, heapName);
 
     latest_compilation_id = CompileBroker::get_compilation_id();
-    int highest_compilation_id = 0;
-    size_t       usedSpace     = 0;
-    size_t       t1Space       = 0;
-    size_t       t2Space       = 0;
-    size_t       aliveSpace    = 0;
-    size_t       disconnSpace  = 0;
-    size_t       notentrSpace  = 0;
-    size_t       stubSpace     = 0;
-    size_t       freeSpace     = 0;
-    size_t       maxFreeSize   = 0;
-    HeapBlock*   maxFreeBlock  = NULL;
-    bool         insane        = false;
+    int          highest_compilation_id = 0;
+    size_t       usedSpace              = 0;
+    size_t       t1Space                = 0;
+    size_t       t2Space                = 0;
+    size_t       aliveSpace             = 0;
+    size_t       disconnSpace           = 0;
+    size_t       notentrSpace           = 0;
+    size_t       stubSpace              = 0;
+    size_t       freeSpace              = 0;
+    size_t       maxFreeSize            = 0;
+    HeapBlock*   maxFreeBlock           = NULL;
+    bool         insane                 = false;
 
-    unsigned int n_methods     = 0;
+    unsigned int n_methods              = 0;
 
     for (HeapBlock *h = heap->first_block(); h != NULL && !insane; h = heap->next_block(h)) {
       unsigned int hb_len     = (unsigned int)h->length();  // despite being size_t, length can never overflow an unsigned int.
