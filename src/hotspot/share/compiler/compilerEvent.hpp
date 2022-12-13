@@ -52,7 +52,7 @@ class CompilerEvent : AllStatic {
 
   class CompilationEvent : AllStatic {
    public:
-    static void post(EventCompilation& event, uint compile_id, CompilerType type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) NOT_JFR_RETURN();
+    static void post(EventCompilation& event, uint compile_id, CompilerType compiler_type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) NOT_JFR_RETURN();
   };
 
   class CompilationFailureEvent : AllStatic {
