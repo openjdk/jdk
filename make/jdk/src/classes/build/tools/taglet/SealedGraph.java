@@ -204,7 +204,7 @@ public final class SealedGraph implements Taglet {
             // This implies the module is always the same.
             private static String relativeLink(TypeElement rootNode, TypeElement node) {
                 var backNavigator = rootNode.getQualifiedName().toString().chars()
-                        .filter(c -> '.' == c)
+                        .filter(c -> c == '.')
                         .mapToObj(c -> "../")
                         .collect(joining());
                 var forwardNavigator = node.getQualifiedName().toString()
