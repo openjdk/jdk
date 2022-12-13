@@ -1789,8 +1789,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     C2CheckLockStackStub* stub = new (C->comp_arena()) C2CheckLockStackStub();
     C->output()->add_stub(stub);
     __ ldr(r9, Address(rthread, JavaThread::lock_stack_current_offset()));
-    __ add(r9, r9, max_monitors * oopSize);
     __ ldr(r10, Address(rthread, JavaThread::lock_stack_limit_offset()));
+    __ add(r9, r9, max_monitors * oopSize);
     __ cmp(r9, r10);
     __ br(Assembler::GE, stub->entry());
     __ bind(stub->continuation());

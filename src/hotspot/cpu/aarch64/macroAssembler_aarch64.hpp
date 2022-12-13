@@ -33,7 +33,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-
 class OopMap;
 
 // MacroAssembler extends Assembler by frequently used macros.

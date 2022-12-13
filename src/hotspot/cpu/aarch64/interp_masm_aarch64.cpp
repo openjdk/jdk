@@ -855,14 +855,20 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     save_bcp(); // Save in case of exception
 
+    if (!UseFastLocking) {
+      // Convert from BasicObjectLock structure to object and BasicLock
+      // structure Store the BasicLock address into %r0
+      lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+    }
+
+    // Load oop into obj_reg(%c_rarg3)
+    ldr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+
+    // Free entry
+    str(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+
     if (UseFastLocking) {
       Label slow_case;
-
-      // Load oop into obj_reg(%c_rarg3)
-      ldr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
-      // Free entry
-      str(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
 
       // Check for non-symmetric locking. This is allowed by the spec and the interpreter
       // must handle it.
@@ -875,16 +881,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       b(count);
       bind(slow_case);
     } else {
-      // Convert from BasicObjectLock structure to object and BasicLock
-      // structure Store the BasicLock address into %r0
-      lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
-
-      // Load oop into obj_reg(%c_rarg3)
-      ldr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
-      // Free entry
-      str(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
-
       // Load the old header from BasicLock structure
       ldr(header_reg, Address(swap_reg,
                               BasicLock::displaced_header_offset_in_bytes()));

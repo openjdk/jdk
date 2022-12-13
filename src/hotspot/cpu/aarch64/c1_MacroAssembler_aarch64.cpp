@@ -117,9 +117,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     str(hdr, Address(disp_hdr, 0));
     // otherwise we don't care about the result and handle locking via runtime call
     cbnz(hdr, slow_case);
-    // done
-    bind(done);
   }
+  // done
+  bind(done);
   increment(Address(rthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
@@ -131,21 +131,22 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
   Label done;
 
-  if (UseFastLocking) {
-    // load object
-    ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    verify_oop(obj);
-    ldr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
-    fast_unlock(obj, hdr, rscratch1, rscratch2, slow_case);
-  } else {
+  if (!UseFastLocking) {
     // load displaced header
     ldr(hdr, Address(disp_hdr, 0));
     // if the loaded hdr is NULL we had recursive locking
     // if we had recursive locking, we are done
     cbz(hdr, done);
-    // load object
-    ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    verify_oop(obj);
+  }
+
+  // load object
+  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  verify_oop(obj);
+
+  if (UseFastLocking) {
+    ldr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+    fast_unlock(obj, hdr, rscratch1, rscratch2, slow_case);
+  } else {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to
     // the displaced header, get the object header instead
@@ -311,13 +312,12 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes, int m
   if (UseFastLocking && max_monitors > 0) {
     Label ok;
     ldr(r9, Address(rthread, JavaThread::lock_stack_current_offset()));
-    add(r9, r9, max_monitors * oopSize);
     ldr(r10, Address(rthread, JavaThread::lock_stack_limit_offset()));
+    add(r9, r9, max_monitors * oopSize);
     cmp(r9, r10);
     br(Assembler::LT, ok);
     assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");
-    movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::check_lock_stack());
-    blr(rscratch1);
+    far_call(StubRoutines::aarch64::check_lock_stack());
     bind(ok);
   }
 
