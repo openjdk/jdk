@@ -92,7 +92,7 @@ public:
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
   bool is_in_infinite_subgraph();
-  static bool are_all_in_infinite_subgraph(Unique_Node_List &worklist);
+  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual bool pinned() const { return (const Node*)in(0) == this; }

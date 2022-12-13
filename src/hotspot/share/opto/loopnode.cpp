@@ -4201,7 +4201,7 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     assert(head->is_Region(), "");
     worklist.push(head);
   }
-  return RegionNode::are_all_in_infinite_subgraph(worklist);
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 #endif
 

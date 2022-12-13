@@ -400,13 +400,13 @@ bool RegionNode::is_in_infinite_subgraph() {
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(this);
-  return RegionNode::are_all_in_infinite_subgraph(worklist);
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 
 // Are all nodes in worklist in infinite subgraph?
 // (no path to root except through false NeverBranch exit)
 // worklist is directly used for the traversal
-bool RegionNode::are_all_in_infinite_subgraph(Unique_Node_List &worklist) {
+bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) {
   // BFS traversal down the CFG, except through NeverBranch exits
   for (uint i = 0; i < worklist.size(); ++i) {
     Node* n = worklist.at(i);
