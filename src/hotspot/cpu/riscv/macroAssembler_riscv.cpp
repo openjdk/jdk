@@ -4460,8 +4460,8 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
   // Check if we would have space on lock-stack for the object.
-  ld(tmp1, Address(xthread, Thread::lock_stack_current_offset()));
-  ld(tmp2, Address(xthread, Thread::lock_stack_limit_offset()));
+  ld(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
+  ld(tmp2, Address(xthread, JavaThread::lock_stack_limit_offset()));
   bge(tmp1, tmp2, slow, true);
 
   // Load (object->mark() | 1) into hdr
@@ -4476,10 +4476,10 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   // After successful lock, push object on lock-stack
   // TODO: Can we avoid re-loading the current offset? The CAS above clobbers it.
   // Maybe we could ensure that we have enough space on the lock stack more cleverly.
-  ld(tmp1, Address(xthread, Thread::lock_stack_current_offset()));
+  ld(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
   sd(obj, Address(tmp1, 0));
   add(tmp1, tmp1, oopSize);
-  sd(tmp1, Address(xthread, Thread::lock_stack_current_offset()));
+  sd(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
 }
 
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
@@ -4499,7 +4499,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Regi
   bind(success);
 
   // After successful unlock, pop object from lock-stack
-  ld(tmp1, Address(xthread, Thread::lock_stack_current_offset()));
+  ld(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
   sub(tmp1, tmp1, oopSize);
-  sd(tmp1, Address(xthread, Thread::lock_stack_current_offset()));
+  sd(tmp1, Address(xthread, JavaThread::lock_stack_current_offset()));
 }
