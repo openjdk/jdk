@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,12 @@ import sun.java2d.xr.*;
  *
  * @author Clemens Eisserer
  */
-
 public class XRGlyphCache implements GlyphDisposedListener {
     XRBackend con;
     XRCompositeManager maskBuffer;
-    HashMap<MutableInteger, XRGlyphCacheEntry> cacheMap = new HashMap<MutableInteger, XRGlyphCacheEntry>(256);
+    HashMap<Integer, XRGlyphCacheEntry> cacheMap = new HashMap<>(256);
 
     int nextID = 1;
-    MutableInteger tmp = new MutableInteger(0);
 
     int grayGlyphSet;
     int lcdGlyphSet;
@@ -96,12 +94,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
     protected XRGlyphCacheEntry getEntryForPointer(long imgPtr) {
         int id = XRGlyphCacheEntry.getGlyphID(imgPtr);
 
-        if (id == 0) {
-            return null;
-        }
-
-        tmp.setValue(id);
-        return cacheMap.get(tmp);
+        return id == 0 ? null : cacheMap.get(id);
     }
 
     public XRGlyphCacheEntry[] cacheGlyphs(GlyphList glyphList) {
@@ -121,7 +114,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
             if ((glyph = getEntryForPointer(imgPtrs[i])) == null) {
                 glyph = new XRGlyphCacheEntry(imgPtrs[i], glyphList);
                 glyph.setGlyphID(getFreeGlyphID());
-                cacheMap.put(new MutableInteger(glyph.getGlyphID()), glyph);
+                cacheMap.put(glyph.getGlyphID(), glyph);
 
                 if (uncachedGlyphs == null) {
                     uncachedGlyphs = new ArrayList<XRGlyphCacheEntry>();
@@ -283,10 +276,8 @@ public class XRGlyphCache implements GlyphDisposedListener {
             int glyphId = glyphIdList.getInt(i);
             freeGlyphIDs.add(glyphId);
 
-            tmp.setValue(glyphId);
-            XRGlyphCacheEntry entry = cacheMap.get(tmp);
+            XRGlyphCacheEntry entry = cacheMap.remove(glyphId);
             cachedPixels -= entry.getPixelCnt();
-            cacheMap.remove(tmp);
 
             if (entry.getGlyphSet() == grayGlyphSet) {
                 removedGrayscaleGlyphs.addInt(glyphId);
