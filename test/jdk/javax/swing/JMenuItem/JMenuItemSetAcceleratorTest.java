@@ -58,7 +58,7 @@ public class JMenuItemSetAcceleratorTest {
 
         JMenuBar bar = new JMenuBar();
         JMenu menu = new JMenu("File Menu");
-        JMenuItem menuItem = new JMenuItem("File Menu Item");
+        JMenuItem menuItem = new JMenuItem("File");
 
         menuItem.setAccelerator(
             KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.META_DOWN_MASK));
@@ -71,7 +71,7 @@ public class JMenuItemSetAcceleratorTest {
         bar.add(menu);
 
         frame.setJMenuBar(bar);
-        frame.pack();
+        frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
@@ -88,6 +88,7 @@ public class JMenuItemSetAcceleratorTest {
                 frameAt = frame.getLocationOnScreen();
                 frameSize = frame.getSize();
             });
+
             robot.mouseMove(frameAt.x + frameSize.width / 2,
                 frameAt.y + frameSize.height / 2);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -104,8 +105,7 @@ public class JMenuItemSetAcceleratorTest {
                     "Hasn't received the JMenuItem action event by pressing "
                         + "accelerator keys, test fails.");
             }
-            System.out
-                .println("Test passed, received action event on menu item.");
+            System.out.println("Test passed, received action event on menu item.");
         } finally {
             SwingUtilities.invokeAndWait(JMenuItemSetAcceleratorTest::disposeFrame);
         }
