@@ -41,6 +41,7 @@ class Array: public MetaspaceObj {
   friend class JVMCIVMStructs;
   friend class MethodHandleCompiler;           // special case
   friend class WhiteBox;
+  friend class FieldInfoStream;
 protected:
   int _length;                                 // the number of array elements
   T   _data[1];                                // the array memory

@@ -84,21 +84,21 @@ enum {
   // These bits must not conflict with any other field-related access flags
   // (e.g., ACC_ENUM).
   // Note that the class-related ACC_ANNOTATION bit conflicts with these flags.
-  JVM_ACC_FIELD_ACCESS_WATCHED            = 0x00002000, // field access is watched by JVMTI
-  JVM_ACC_FIELD_MODIFICATION_WATCHED      = 0x00008000, // field modification is watched by JVMTI
-  JVM_ACC_FIELD_INTERNAL                  = 0x00000400, // internal field, same as JVM_ACC_ABSTRACT
-  JVM_ACC_FIELD_STABLE                    = 0x00000020, // @Stable field, same as JVM_ACC_SYNCHRONIZED and JVM_ACC_SUPER
-  JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE  = 0x00000100, // (static) final field updated outside (class) initializer, same as JVM_ACC_NATIVE
-  JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE     = 0x00000800, // field has generic signature
+  // JVM_ACC_FIELD_ACCESS_WATCHED            = 0x00002000, // field access is watched by JVMTI
+  // JVM_ACC_FIELD_MODIFICATION_WATCHED      = 0x00008000, // field modification is watched by JVMTI
+  // JVM_ACC_FIELD_INTERNAL                  = 0x00000400, // internal field, same as JVM_ACC_ABSTRACT
+  // JVM_ACC_FIELD_STABLE                    = 0x00000020, // @Stable field, same as JVM_ACC_SYNCHRONIZED and JVM_ACC_SUPER
+  // JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE  = 0x00000100, // (static) final field updated outside (class) initializer, same as JVM_ACC_NATIVE
+  // JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE     = 0x00000800, // field has generic signature
 
-  JVM_ACC_FIELD_INTERNAL_FLAGS       = JVM_ACC_FIELD_ACCESS_WATCHED |
-                                       JVM_ACC_FIELD_MODIFICATION_WATCHED |
-                                       JVM_ACC_FIELD_INTERNAL |
-                                       JVM_ACC_FIELD_STABLE |
-                                       JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE,
+  // JVM_ACC_FIELD_INTERNAL_FLAGS       = JVM_ACC_FIELD_ACCESS_WATCHED |
+  //                                      JVM_ACC_FIELD_MODIFICATION_WATCHED |
+  //                                      JVM_ACC_FIELD_INTERNAL |
+  //                                      JVM_ACC_FIELD_STABLE |
+  //                                      JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE,
 
                                                     // flags accepted by set_field_flags()
-  JVM_ACC_FIELD_FLAGS                = JVM_RECOGNIZED_FIELD_MODIFIERS | JVM_ACC_FIELD_INTERNAL_FLAGS
+  JVM_ACC_FIELD_FLAGS                = JVM_RECOGNIZED_FIELD_MODIFIERS /*| JVM_ACC_FIELD_INTERNAL_FLAGS */
 
 };
 
@@ -169,16 +169,16 @@ class AccessFlags {
   void set_has_resolved_methods()       { atomic_set_bits(JVM_ACC_HAS_RESOLVED_METHODS); }
 
   // field flags
-  bool is_field_access_watched() const  { return (_flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }
-  bool is_field_modification_watched() const
-                                        { return (_flags & JVM_ACC_FIELD_MODIFICATION_WATCHED) != 0; }
-  bool has_field_initialized_final_update() const
-                                        { return (_flags & JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE) != 0; }
+  // bool is_field_access_watched() const  { return (_flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }
+  // bool is_field_modification_watched() const
+  //                                       { return (_flags & JVM_ACC_FIELD_MODIFICATION_WATCHED) != 0; }
+  // bool has_field_initialized_final_update() const
+  //                                       { return (_flags & JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE) != 0; }
   bool on_stack() const                 { return (_flags & JVM_ACC_ON_STACK) != 0; }
-  bool is_internal() const              { return (_flags & JVM_ACC_FIELD_INTERNAL) != 0; }
-  bool is_stable() const                { return (_flags & JVM_ACC_FIELD_STABLE) != 0; }
-  bool field_has_generic_signature() const
-                                        { return (_flags & JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE) != 0; }
+  // bool is_internal() const              { return (_flags & JVM_ACC_FIELD_INTERNAL) != 0; }
+  // bool is_stable() const                { return (_flags & JVM_ACC_FIELD_STABLE) != 0; }
+  // bool field_has_generic_signature() const
+  //                                       { return (_flags & JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE) != 0; }
 
   // get .class file flags
   jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
@@ -239,35 +239,35 @@ class AccessFlags {
 
  public:
   // field flags
-  void set_is_field_access_watched(const bool value)
-                                       {
-                                         if (value) {
-                                           atomic_set_bits(JVM_ACC_FIELD_ACCESS_WATCHED);
-                                         } else {
-                                           atomic_clear_bits(JVM_ACC_FIELD_ACCESS_WATCHED);
-                                         }
-                                       }
-  void set_is_field_modification_watched(const bool value)
-                                       {
-                                         if (value) {
-                                           atomic_set_bits(JVM_ACC_FIELD_MODIFICATION_WATCHED);
-                                         } else {
-                                           atomic_clear_bits(JVM_ACC_FIELD_MODIFICATION_WATCHED);
-                                         }
-                                       }
+  // void set_is_field_access_watched(const bool value)
+  //                                      {
+  //                                        if (value) {
+  //                                          atomic_set_bits(JVM_ACC_FIELD_ACCESS_WATCHED);
+  //                                        } else {
+  //                                          atomic_clear_bits(JVM_ACC_FIELD_ACCESS_WATCHED);
+  //                                        }
+  //                                      }
+  // void set_is_field_modification_watched(const bool value)
+  //                                      {
+  //                                        if (value) {
+  //                                          atomic_set_bits(JVM_ACC_FIELD_MODIFICATION_WATCHED);
+  //                                        } else {
+  //                                          atomic_clear_bits(JVM_ACC_FIELD_MODIFICATION_WATCHED);
+  //                                        }
+  //                                      }
 
-  void set_has_field_initialized_final_update(const bool value) {
-    if (value) {
-      atomic_set_bits(JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE);
-    } else {
-      atomic_clear_bits(JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE);
-    }
-  }
+  // void set_has_field_initialized_final_update(const bool value) {
+  //   if (value) {
+  //     atomic_set_bits(JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE);
+  //   } else {
+  //     atomic_clear_bits(JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE);
+  //   }
+  // }
 
-  void set_field_has_generic_signature()
-                                       {
-                                         atomic_set_bits(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE);
-                                       }
+  // void set_field_has_generic_signature()
+  //                                      {
+  //                                        atomic_set_bits(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE);
+  //                                      }
 
   void set_on_stack(const bool value)
                                        {

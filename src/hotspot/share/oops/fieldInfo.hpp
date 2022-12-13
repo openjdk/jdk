@@ -25,10 +25,28 @@
 #ifndef SHARE_OOPS_FIELDINFO_HPP
 #define SHARE_OOPS_FIELDINFO_HPP
 
+#include "memory/allocation.hpp"
+#include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/vmEnums.hpp"
+
+static constexpr u4 flag_mask(int pos) {
+  return (u4)1 << pos;
+}
+
+
+// Helper class for access to the underlying Array<u1> used to
+// store the compressed stream of FieldInfo
+template<typename ARR, typename OFF>
+struct ArrayHelper {
+  uint8_t operator()(ARR a, OFF i) const { return a->at(i); };
+  void operator()(ARR a, OFF i, uint8_t b) const { a->at_put(i,b); };
+  // So, an expression ArrayWriterHelper() acts like these lambdas:
+  // auto get = [&](ARR a, OFF i){ return a[i]; };
+  // auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
+};
 
 // This class represents the field information contained in the fields
 // array of an InstanceKlass.  Currently it's laid on top an array of
@@ -40,135 +58,418 @@ class FieldInfo {
   friend class fieldDescriptor;
   friend class JavaFieldStream;
   friend class ClassFileParser;
+  friend class FieldInfoStream;
+  friend class FieldStreamBase;
+  friend class FieldInfoReader;
 
  public:
   // fields
   // Field info extracted from the class file and stored
   // as an array of 6 shorts.
 
-#define FIELDINFO_TAG_SIZE             2
-#define FIELDINFO_TAG_OFFSET           1 << 0
-#define FIELDINFO_TAG_CONTENDED        1 << 1
+  class FieldFlags {
+    // The ordering of this enum is totally internal.  More frequent
+    // flags should come earlier than less frequent ones, because
+    // earlier ones compress better.
+    enum FieldFlagBitPosition {
+      _ff_initialized,  // has ConstantValue initializer attribute
+      _ff_injected,     // internal field injected by the JVM
+      _ff_generic,      // has a generic signature
+      _ff_stable,       // trust as stable b/c declared as @Stable
+      _ff_contended,    // is contended, may have contention-group
+    };
 
-  // Packed field has the tag, and can be either of:
-  //    hi bits <--------------------------- lo bits
-  //   |---------high---------|---------low---------|
-  //    ..........................................CO
-  //    ..........................................00  - non-contended field
-  //    [--contention_group--]....................10  - contended field with contention group
-  //    [------------------offset----------------]01  - real field offset
+    // Some but not all of the flag bits signal the presence of an
+    // additional 32-bit item in the field record.
+    static const u4 _optional_item_bit_mask =
+      flag_mask((int)_ff_initialized) |
+      flag_mask((int)_ff_generic)     |
+      flag_mask((int)_ff_contended);
 
-  // Bit O indicates if the packed field contains an offset (O=1) or not (O=0)
-  // Bit C indicates if the field is contended (C=1) or not (C=0)
-  //       (if it is contended, the high packed field contains the contention group)
+    // boilerplate:
+    u4 _flags;
 
-  enum FieldOffset {
-    access_flags_offset      = 0,
-    name_index_offset        = 1,
-    signature_index_offset   = 2,
-    initval_index_offset     = 3,
-    low_packed_offset        = 4,
-    high_packed_offset       = 5,
-    field_slots              = 6
+    bool test_flag(FieldFlagBitPosition pos) const {
+      return (_flags & flag_mask(pos)) != 0;
+    }
+    void update_flag(FieldFlagBitPosition pos, bool z) {
+      if (z)    _flags |=  flag_mask(pos);
+      else      _flags &= ~flag_mask(pos);
+    }
+
+   public:
+    FieldFlags(u4 flags) {
+      _flags = flags;
+    }
+    u4 as_uint() const { return _flags; }
+    bool has_any_optionals() const {
+      return (_flags & _optional_item_bit_mask) != 0;
+    }
+
+    bool is_initialized() const     { return test_flag(_ff_initialized); }
+    bool is_injected() const        { return test_flag(_ff_injected); }
+    bool is_generic() const         { return test_flag(_ff_generic); }
+    bool is_stable() const          { return test_flag(_ff_stable); }
+    bool is_contended() const       { return test_flag(_ff_contended); }
+
+    void update_initialized(bool z) { update_flag(_ff_initialized, z); }
+    void update_injected(bool z)    { update_flag(_ff_injected, z); }
+    void update_generic(bool z)     { update_flag(_ff_generic, z); }
+    void update_stable(bool z)      { update_flag(_ff_stable, z); }
+    void update_contended(bool z)   { update_flag(_ff_contended, z); }
   };
 
  private:
-  u2 _shorts[field_slots];
-
-  void set_name_index(u2 val)                    { _shorts[name_index_offset] = val;         }
-  void set_signature_index(u2 val)               { _shorts[signature_index_offset] = val;    }
-  void set_initval_index(u2 val)                 { _shorts[initval_index_offset] = val;      }
-
-  u2 name_index() const                          { return _shorts[name_index_offset];        }
-  u2 signature_index() const                     { return _shorts[signature_index_offset];   }
-  u2 initval_index() const                       { return _shorts[initval_index_offset];     }
+  // The following items are the unpacked bitwise information content
+  // of a field record.  Per-field metadata extracted from the class
+  // file are stored logically as a group of these items.  The
+  // classfile parser produces these records in a temporary array, and
+  // then compresses them into a FieldInfoStream.
+  //
+  u4 _index;                    // which field it is
+  u2 _name_index;               // index in CP of name
+  u2 _signature_index;          // index in CP of descriptor
+  u4 _offset;                   // offset in object layout
+  AccessFlags _access_flags;    // access flags (JVM spec)
+  FieldFlags _internal_flags;   // internal flags (not JVM spec)
+  u2 _initializer_index;        // index from ConstantValue attr (or 0)
+  u2 _generic_signature_index;  // index from GenericSignature attr (or 0)
+  u2 _contention_group;         // index from @Contended group item (or 0)
 
  public:
-  static FieldInfo* from_field_array(Array<u2>* fields, int index) {
-    return ((FieldInfo*)fields->adr_at(index * field_slots));
-  }
-  static FieldInfo* from_field_array(u2* fields, int index) {
-    return ((FieldInfo*)(fields + index * field_slots));
-  }
 
-  void initialize(u2 access_flags,
-                  u2 name_index,
-                  u2 signature_index,
-                  u2 initval_index) {
-    _shorts[access_flags_offset] = access_flags;
-    _shorts[name_index_offset] = name_index;
-    _shorts[signature_index_offset] = signature_index;
-    _shorts[initval_index_offset] = initval_index;
-    _shorts[low_packed_offset] = 0;
-    _shorts[high_packed_offset] = 0;
-  }
+  FieldInfo() : _name_index(0),
+                _signature_index(0),
+                _offset(0),
+                _access_flags(AccessFlags(0)),
+                _internal_flags(FieldFlags(0)),
+                _initializer_index(0),
+                _generic_signature_index(0),
+                _contention_group(0) { }
 
-  u2 access_flags() const                        { return _shorts[access_flags_offset];            }
-  u4 offset() const {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) != 0, "Offset must have been set");
-    return build_int_from_shorts(_shorts[low_packed_offset], _shorts[high_packed_offset]) >> FIELDINFO_TAG_SIZE;
-  }
+  FieldInfo(AccessFlags access_flags, u2 name_index, u2 signature_index, u2 initval_index, FieldInfo::FieldFlags fflags) :
+            _name_index(name_index),
+            _signature_index(signature_index),
+            _offset(0),
+            _access_flags(access_flags),
+            _internal_flags(fflags),
+            _initializer_index(initval_index),
+            _generic_signature_index(0),
+            _contention_group(0) {
+              if (initval_index != 0) {
+                _internal_flags.update_initialized(true);
+              }
+            }
+
+  u4 index() const { return _index; }
+  void set_index(u4 index) { _index = index; }
+  u2 name_index() const { return _name_index; }
+  void set_name_index(u2 index) { _name_index = index; }
+  u2 signature_index() const { return _signature_index; }
+  void set_signature_index(u2 index) { _signature_index = index; }
+  u4 offset() const { return _offset; }
+  void set_offset(u4 offset) { _offset = offset; }
+  AccessFlags access_flags() const { return _access_flags; }
+  FieldFlags field_flags() const { return _internal_flags; }
+  FieldInfo::FieldFlags* internal_flags_addr() { return &_internal_flags; }
+  u2 initializer_index() const { return _initializer_index; }
+  void set_initializer_index(u2 index) { _initializer_index = index; }
+  u2 generic_signature_index() const { return _generic_signature_index; }
+  void set_generic_signature_index(u2 index) { _generic_signature_index = index; }
+  u2 contention_group() const { return _contention_group; }
 
   bool is_contended() const {
-    return (_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) != 0;
+    return _internal_flags.is_contended();
   }
 
   u2 contended_group() const {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) != 0, "Field must be contended");
-    return _shorts[high_packed_offset];
- }
+    assert(is_contended(), "");
+    return _contention_group;
+  }
+
+  void set_contended_group(u2 group) {
+    _internal_flags.update_contended(true);
+    _contention_group = group;
+  }
 
   bool is_offset_set() const {
-    return (_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET)!= 0;
+    return _offset != 0;
   }
 
   Symbol* name(ConstantPool* cp) const {
-    int index = name_index();
-    if (is_internal()) {
+    int index = _name_index;
+    if (_internal_flags.is_injected()) {
       return lookup_symbol(index);
     }
     return cp->symbol_at(index);
   }
 
   Symbol* signature(ConstantPool* cp) const {
-    int index = signature_index();
-    if (is_internal()) {
+    int index = _signature_index;
+    if (_internal_flags.is_injected()) {
       return lookup_symbol(index);
     }
     return cp->symbol_at(index);
   }
 
-  void set_access_flags(u2 val)                  { _shorts[access_flags_offset] = val;             }
-  void set_offset(u4 val)                        {
-    val = val << FIELDINFO_TAG_SIZE; // make room for tag
-    _shorts[low_packed_offset] = extract_low_short_from_int(val) | FIELDINFO_TAG_OFFSET;
-    _shorts[high_packed_offset] = extract_high_short_from_int(val);
-  }
-
-  void set_contended_group(u2 val) {
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) == 0, "Overwriting contended group");
-    _shorts[low_packed_offset] |= FIELDINFO_TAG_CONTENDED;
-    _shorts[high_packed_offset] = val;
-  }
-
-  bool is_internal() const {
-    return (access_flags() & JVM_ACC_FIELD_INTERNAL) != 0;
-  }
-
-  bool is_stable() const {
-    return (access_flags() & JVM_ACC_FIELD_STABLE) != 0;
-  }
-  void set_stable(bool z) {
-    if (z) _shorts[access_flags_offset] |=  JVM_ACC_FIELD_STABLE;
-    else   _shorts[access_flags_offset] &= ~JVM_ACC_FIELD_STABLE;
-  }
-
   Symbol* lookup_symbol(int symbol_index) const {
-    assert(is_internal(), "only internal fields");
+    assert(_internal_flags.is_injected(), "only injected fields");
     return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
   }
+
+  void print(outputStream* os, ConstantPool* cp) {
+    os->print_cr("index=%d name_index=%d name=%s signature_index=%d signature=%s AccessFlags=%d FieldFlags=%d initval_index=%d offset=%d",
+                 index(),
+                 name_index(), name(cp)->as_utf8(),
+                 signature_index(), signature(cp)->as_utf8(),
+                 access_flags().as_int(),
+                 field_flags().as_uint(),
+                 initializer_index(),
+                 offset());
+  }
+
+  void static print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp) {
+    for (int i = 0; i < array->length(); i++) {
+      array->adr_at(i)->print(os, cp);
+    }
+  }
+};
+
+class FieldInfoStream;
+
+// Gadget for sizing and/or writing a stream of field records.
+template<typename CON>
+class Mapper {
+  CON* _consumer;  // can be UNSIGNED5::Writer or UNSIGNED5::Sizer
+  int _next_index;
+public:
+  Mapper(CON* consumer) : _consumer(consumer) { _next_index = 0; }
+  int next_index() { return _next_index; }
+  void set_next_index(int next_index) {
+    _next_index = next_index;
+  }
+  CON* consumer() const { return _consumer; }
+  bool map_required_field_info(u2 name_index,
+                                u2 signature_index,
+                                u4 offset,
+                                AccessFlags access_flags,
+                                FieldInfo::FieldFlags field_flags) {
+    _next_index++;  // pre-increment
+    _consumer->accept_uint(name_index);
+    _consumer->accept_uint(signature_index);
+    _consumer->accept_uint(offset);
+    _consumer->accept_uint(access_flags.as_int());
+    _consumer->accept_uint(field_flags.as_uint());
+    // tell caller whether there were optional fields:
+    return field_flags.has_any_optionals();
+  }
+  // visit the fixed items; optional items must be visited next
+  bool map_required_field_info(const FieldInfo& fi) {
+    _next_index++;  // pre-increment
+    _consumer->accept_uint(fi._name_index);
+    _consumer->accept_uint(fi._signature_index);
+    _consumer->accept_uint(fi._offset);
+    _consumer->accept_uint(fi._access_flags.as_int());
+    _consumer->accept_uint(fi._internal_flags.as_uint());
+    // tell caller whether there were optional fields:
+    return fi._internal_flags.has_any_optionals();
+  }
+  // based on the internal flags item just written, visit any optional items
+  void map_optional_field_info(FieldInfo::FieldFlags internal_flags,
+                                  int initializer_index,
+                                  int generic_signature_index,
+                                  int contention_group) {
+    if (!internal_flags.has_any_optionals()) {
+      assert(initializer_index == 0, "");
+      assert(generic_signature_index == 0, "");
+      assert(contention_group == 0, "");
+    } else {
+      if (internal_flags.is_initialized()) {
+        _consumer->accept_uint(initializer_index);
+      }
+      if (internal_flags.is_generic()) {
+        _consumer->accept_uint(generic_signature_index);
+      }
+      if (internal_flags.is_contended()) {
+        _consumer->accept_uint(contention_group);
+      }
+    }
+  }
+};
+
+
+// Gadget for decoding and reading the stream of field records.
+class FieldInfoReader {
+  friend class FieldInfoStream;
+  friend class ClassFileParser;
+  friend class FieldStreamBase;
+  friend class FieldInfo;
+
+  UNSIGNED5::Reader<const u1*, int> _r;
+  int _next_index;
+
+  public:
+  FieldInfoReader(const Array<u1>* fi);
+    // : _r(fi->data(), 0),
+    //   _next_index(0) { }
+
+  private:
+  uint32_t next_uint() { return _r.next_uint(); }
+  void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
+
+  // void skip_header() {
+  //   const int jf_intf = 2;  // two items
+  //   skip(jf_intf);
+  // }
+public:
+  int has_next() { return _r.has_next(); }
+  int position() { return _r.position(); }
+  int next_index() { return _next_index; }
+  // read the fixed items; optional items must be read next
+  bool read_required_field_info(FieldInfo& fi) {
+    fi._index = _next_index++;
+    fi._name_index = next_uint();
+    fi._signature_index = next_uint();
+    fi._offset = next_uint();
+    fi._access_flags = AccessFlags(next_uint());
+    fi._internal_flags = FieldInfo::FieldFlags(next_uint());
+    return fi._internal_flags.has_any_optionals();
+  }
+  // based on the internal flags item just read, read any optional items
+  bool read_optional_field_info(FieldInfo& fi) {
+    FieldInfo::FieldFlags internal_flags = fi._internal_flags;
+    if (!internal_flags.has_any_optionals()) {
+      return false;  // tell caller there was nothing
+    } else {
+      if (internal_flags.is_initialized()) {
+        fi._initializer_index = next_uint();
+      } else {
+        fi._initializer_index = 0;
+      }
+      if (internal_flags.is_generic()) {
+        fi._generic_signature_index = next_uint();
+      } else {
+        fi._generic_signature_index = 0;
+      }
+      if (internal_flags.is_contended()) {
+        fi._contention_group = next_uint();
+      } else {
+        fi._contention_group = 0;
+      }
+      return true;  // tell caller there was something
+    }
+  }
+  // skip a whole field record, both required and optional bits
+  FieldInfoReader&  skip_field_info() {
+    _next_index++;
+    const int name_sig_af_off = 4;  // four items
+    skip(name_sig_af_off);
+    FieldInfo::FieldFlags ff(next_uint());
+    if (ff.has_any_optionals()) {
+      const int init_gen_cont = (ff.is_initialized() +
+                                  ff.is_generic() +
+                                  ff.is_contended());
+      skip(init_gen_cont);  // up to three items
+    }
+    return *this;
+  }
+
+  // Skip to the nth field.  If the reader is freshly initialized to
+  // the zero index, this will call skip_field_info() n times.
+  FieldInfoReader& skip_to_field_info(int n) {
+    assert(n >= _next_index, "already past that index");
+    const int count = n - _next_index;
+    for (int i = 0; i < count; i++)  skip_field_info();
+    assert(_next_index == n, "");
+    return *this;
+  }
+
+  // for random access, if you know where to go up front:
+  FieldInfoReader& set_position_and_next_index(int position, int next_index) {
+    _r.set_position(position);
+    _next_index = next_index;
+    return *this;
+  }
+};
+
+// The format of the stream, after decompression, is a series of
+// integers organized like this:
+//
+//   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
+//   Field := name sig offset access internal Optionals(internal)
+//   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
+//                   gsig?[i&is_generic]     // signature attr
+//                   group?[i&is_contended]  // Contended anno (group)
+//   End = 0
+//
+class FieldInfoStream : AllStatic {
+  // a FieldInfo is a repurposed Array<u1> with no additional fields
+
+  friend class fieldDescriptor;
+  friend class JavaFieldStream;
+  friend class FieldStreamBase;
+  friend class ClassFileParser;
+
+  // Return num_java_fields from the header.  As the most frequently
+  // used item it comes first.
+  public:
+  static int num_java_fields(const Array<u1>* fis) {
+    return FieldInfoReader(fis).next_uint();
+  }
+  static int num_injected_java_fields(const Array<u1>* fis) {
+    FieldInfoReader fir(fis);
+    fir.skip(1);
+    return fir.next_uint();
+  }
+  static int num_total_fields(const Array<u1>* fis) {
+    FieldInfoReader fir(fis);
+    return fir.next_uint() + fir.next_uint();
+  }
+
+  static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
+                                                          ClassLoaderData* loader_data, TRAPS);
+  static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
+  static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
+};
+
+class FieldStatus {
+  enum FieldStatusBitPosition {
+    _fs_access_watched,       // field access is watched by JVMTI
+    _fs_modification_watched, // field modification is watched by JVMTI
+    _initialized_final_update // (static) final field updated outside (class) initializer
+  };
+
+  // boilerplate:
+  u1 _flags;
+  static constexpr u1 flag_mask(FieldStatusBitPosition pos) {
+    return (u1)1 << (int)pos;
+  }
+  bool test_flag(FieldStatusBitPosition pos) {
+    return (_flags & flag_mask(pos)) != 0;
+  }
+  // this performs an atomic update on a live status byte!
+  void update_flag(FieldStatusBitPosition pos, bool z) {
+    if (z)    atomic_set_bits(  _flags, flag_mask(pos));
+    else      atomic_clear_bits(_flags, flag_mask(pos));
+  }
+  // out-of-line functions do a CAS-loop
+  static void atomic_set_bits(u1& flags, u1 mask);
+  static void atomic_clear_bits(u1& flags, u1 mask);
+
+  public:
+  FieldStatus() { _flags = 0; }
+  FieldStatus(u1 flags) {
+    _flags = flags;
+  }
+  u1 as_uint() { return _flags; }
+
+  bool is_access_watched()        { return test_flag(_fs_access_watched); }
+  bool is_modification_watched()  { return test_flag(_fs_modification_watched); }
+  bool is_initialized_final_update() { return test_flag(_initialized_final_update); }
+
+  void update_access_watched(bool z) { update_flag(_fs_access_watched, z); }
+  void update_modification_watched(bool z) { update_flag(_fs_modification_watched, z); }
+  void update_initialized_final_update(bool z) {update_flag(_initialized_final_update, z); }
 };
 
 #endif // SHARE_OOPS_FIELDINFO_HPP
