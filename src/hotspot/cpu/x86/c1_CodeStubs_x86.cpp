@@ -267,7 +267,6 @@ MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitIn
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
-
   ce->store_parameter(_obj_reg->as_register(),  1);
   ce->store_parameter(_lock_reg->as_register(), 0);
   Runtime1::StubID enter_id;
@@ -285,7 +284,6 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-
   if (_compute_lock) {
     // lock_reg was destroyed by fast unlocking attempt => recompute it
     ce->monitor_address(_monitor_ix, _lock_reg);

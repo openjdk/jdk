@@ -745,6 +745,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   xorl(tmpReg, tmpReg); // Set ZF == 1
 
   bind(NO_COUNT);
+
   // At NO_COUNT the icc ZFlag is set as follows ...
   // fast_unlock uses the same protocol.
   // ZFlag == 1 -> Success
