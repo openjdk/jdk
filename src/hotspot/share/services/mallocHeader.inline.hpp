@@ -64,8 +64,8 @@ inline void MallocHeader::mark_block_as_dead() {
 inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* msg, size_t msglen) {
   // Handle the pointer as an integral type
   uintptr_t ptr = reinterpret_cast<uintptr_t>(payload);
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
+  // Weed out obviously wrong block addresses of nullptr or very low
+  // values. Note that we should not call this for ::free(nullptr),
   // which should be handled by os::free() above us.
   if (ptr < K) {
     jio_snprintf(msg, msglen, "invalid block address");
@@ -97,13 +97,13 @@ inline bool MallocHeader::is_valid_malloced_pointer(const void* payload, char* m
 template<typename IN, typename OUT>
 inline OUT MallocHeader::resolve_checked_impl(IN memblock){
   char msg[256];
-  address corruption = NULL;
+  address corruption = nullptr;
   if (!is_valid_malloced_pointer(memblock, msg, sizeof(msg))) {
     fatal("Not a valid malloc pointer: " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
   OUT header_pointer = (OUT)memblock - 1;
   if (!header_pointer->check_block_integrity( msg, sizeof(msg), &corruption)) {
-    header_pointer->print_block_on_error(tty, corruption != NULL ? corruption : (address)header_pointer);
+    header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer);
     fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
   return header_pointer;
