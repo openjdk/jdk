@@ -76,7 +76,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
  private:
   static CompileTask*  _task_free_list;
   Monitor*             _lock;
-  uint                 _compile_id;
+  int                  _compile_id;
   Method*              _method;
   jobject              _method_holder;
   int                  _osr_bci;

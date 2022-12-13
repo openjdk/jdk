@@ -1566,7 +1566,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 // CompileBroker::assign_compile_id_unlocked
 //
 // Public wrapper for assign_compile_id that acquires the needed locks
-uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci) {
+int CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci) {
   MutexLocker locker(thread, MethodCompileQueue_lock);
   return assign_compile_id(method, osr_bci);
 }
@@ -2109,7 +2109,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   }
 
   // Common flags.
-  uint compile_id = task->compile_id();
+  int compile_id = task->compile_id();
   int osr_bci = task->osr_bci();
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != NULL);
@@ -2432,7 +2432,7 @@ void CompileBroker::update_compile_perf_data(CompilerThread* thread, const metho
 void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task) {
   bool success = task->is_success();
   methodHandle method (thread, task->method());
-  uint compile_id = task->compile_id();
+  int compile_id = task->compile_id();
   bool is_osr = (task->osr_bci() != standard_entry_bci);
   const int comp_level = task->comp_level();
   CompilerCounters* counters = thread->counters();
