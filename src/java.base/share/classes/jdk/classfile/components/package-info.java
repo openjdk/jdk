@@ -40,16 +40,13 @@
  * to support automated offline processing.
  * <p>
  * The most frequent use case is to simply print a class:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="printClass"}
+ * {@snippet lang="java" class="PackageSnippets" region="printClass"}
  * <p>
  * {@link ClassPrinter} allows to traverse tree of simple printable nodes to hook custom printer:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="customPrint"}
+ * {@snippet lang="java" class="PackageSnippets" region="customPrint"}
  * <p>
  * Another use case for {@link ClassPrinter} is to simplify writing of automated tests:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="printNodesInTest"}
+ * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
  *
  * <h3>{@link ClassRemapper}</h3>
  * ClassRemapper is a {@link jdk.classfile.ClassTransform}, {@link jdk.classfile.FieldTransform},
@@ -65,12 +62,10 @@
  * Arrays of reference types are always decomposed, mapped as the base reference types and composed back to arrays.
  * <p>
  * Single class remappigng example:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="singleClassRemap"}
+ * {@snippet lang="java" class="PackageSnippets" region="singleClassRemap"}
  * <p>
  * Remapping of all classes under specific package:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="allPackageRemap"}
+ * {@snippet lang="java" class="PackageSnippets" region="allPackageRemap"}
  *
  * <h3>{@link CodeLocalsShifter}</h3>
  * {@link CodeLocalsShifter} is a {@link jdk.classfile.CodeTransform} shifting locals to
@@ -79,8 +74,7 @@
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
  * <p>
  * Sample of code transformation shifting all locals in all methods:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="codeLocalsShifting"}
+ * {@snippet lang="java" class="PackageSnippets" region="codeLocalsShifting"}
  *
  * <h3>{@link CodeRelabeler}</h3>
  * {@link CodeRelabeler} is a {@link jdk.classfile.CodeTransform} replacing all occurences
@@ -93,12 +87,11 @@
  * {@link jdk.classfile.Label} is bound in the target bytecode exactly once.
  * <p>
  * Sample transformation relabeling all methods:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="codeRelabeling"}
+ * {@snippet lang="java" class="PackageSnippets" region="codeRelabeling"}
  *
  * <h3>Class Instrumentation Sample</h3>
  * Following snippet is sample composition of {@link ClassRemapper}, {@link CodeLocalsShifter}
  * and {@link CodeRelabeler} into fully functional class instrumenting transformation:
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="classInstrumentation"}
+ * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
  */
 package jdk.classfile.components;

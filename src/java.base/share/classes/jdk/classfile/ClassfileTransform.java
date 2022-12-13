@@ -62,12 +62,12 @@ import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * its state must be reset for each traversal; this will happen automatically if
  * the transform is created with {@link ClassTransform#ofStateful(Supplier)} (or
  * corresponding methods for other classfile locations.)
- *
- * <p>Class transformation sample where code transformation is stateful:
- * <p>{@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="codeRelabeling"}
- *
- * <p>Complex class instrumentation sample chaining multiple transformations:
- * <p>{@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="classInstrumentation"}
+ * <p>
+ * Class transformation sample where code transformation is stateful:
+ * {@snippet lang="java" class="PackageSnippets" region="codeRelabeling"}
+ * <p>
+ * Complex class instrumentation sample chaining multiple transformations:
+ * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
  */
 sealed public interface ClassfileTransform<
         C extends ClassfileTransform<C, E, B>,

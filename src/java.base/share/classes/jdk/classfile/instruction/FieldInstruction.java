@@ -83,7 +83,7 @@ sealed public interface FieldInstruction extends Instruction
      * {@return a field access instruction}
      *
      * @param op the opcode for the specific type of field access instruction,
-     *           which must be of kind {@link Kind#FIELD_ACCESS}
+     *           which must be of kind {@link Opcode.Kind#FIELD_ACCESS}
      * @param field a constant pool entry describing the field
      */
     static FieldInstruction of(Opcode op, FieldRefEntry field) {
@@ -95,7 +95,7 @@ sealed public interface FieldInstruction extends Instruction
      * {@return a field access instruction}
      *
      * @param op the opcode for the specific type of field access instruction,
-     *           which must be of kind {@link Kind#FIELD_ACCESS}
+     *           which must be of kind {@link Opcode.Kind#FIELD_ACCESS}
      * @param owner the class holding the field
      * @param name the name of the field
      * @param type the field descriptor
@@ -111,7 +111,7 @@ sealed public interface FieldInstruction extends Instruction
      * {@return a field access instruction}
      *
      * @param op the opcode for the specific type of field access instruction,
-     *           which must be of kind {@link Kind#FIELD_ACCESS}
+     *           which must be of kind {@link Opcode.Kind#FIELD_ACCESS}
      * @param owner the class holding the field
      * @param nameAndType the name and field descriptor of the field
      */

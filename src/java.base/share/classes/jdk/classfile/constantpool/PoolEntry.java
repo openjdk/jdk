@@ -46,7 +46,6 @@ sealed public interface PoolEntry extends WritableElement<PoolEntry>
 
     /**
      * {@return the index within the constant pool corresponding to this entry}
-     * @return
      */
     int index();
 

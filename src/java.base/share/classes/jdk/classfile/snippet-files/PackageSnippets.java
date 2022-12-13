@@ -50,8 +50,6 @@ import jdk.classfile.instruction.FieldInstruction;
 import jdk.classfile.instruction.InvokeInstruction;
 
 import static java.util.stream.Collectors.toSet;
-import jdk.classfile.MethodTransform;
-import jdk.classfile.components.ClassPrinter;
 import jdk.classfile.components.ClassRemapper;
 import jdk.classfile.components.CodeLocalsShifter;
 import jdk.classfile.components.CodeRelabeler;
@@ -229,91 +227,6 @@ class PackageSnippets {
                       classBuilder.with(ce);
                   }
               });
-        // @end
-    }
-
-    void printClass(ClassModel classModel) {
-        // @start region="printClass"
-        ClassPrinter.toJson(classModel, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
-        // @end
-    }
-
-    // @start region="customPrint"
-    void customPrint(ClassModel classModel) {
-        print(ClassPrinter.toTree(classModel, ClassPrinter.Verbosity.TRACE_ALL));
-    }
-
-    void print(ClassPrinter.Node node) {
-        switch (node) {
-            case ClassPrinter.MapNode mn -> {
-                // print map header
-                mn.values().forEach(this::print);
-            }
-            case ClassPrinter.ListNode ln -> {
-                // print list header
-                ln.forEach(this::print);
-            }
-            case ClassPrinter.LeafNode n -> {
-                // print leaf node
-            }
-        }
-    }
-    // @end
-
-    // @start region="printNodesInTest"
-    @Test
-    void printNodesInTest(ClassModel classModel) {
-        var classNode = ClassPrinter.toTree(classModel, ClassPrinter.Verbosity.TRACE_ALL);
-        assertContains(classNode, "method name", "myFooMethod");
-        assertContains(classNode, "field name", "myBarField");
-        assertContains(classNode, "inner class", "MyInnerFooClass");
-    }
-
-    void assertContains(ClassPrinter.Node node, ConstantDesc key, ConstantDesc value) {
-        if (!node.walk().anyMatch(n -> n instanceof ClassPrinter.LeafNode ln
-                               && ln.name().equals(key)
-                               && ln.value().equals(value))) {
-            node.toYaml(System.out::print);
-            throw new AssertionError("expected %s: %s".formatted(key, value));
-        }
-    }
-    // @end
-    @interface Test{}
-
-    void singleClassRemap(ClassModel... allMyClasses) {
-        // @start region="singleClassRemap"
-        var classRemapper = ClassRemapper.of(
-                Map.of(ClassDesc.of("Foo"), ClassDesc.of("Bar")));
-
-        for (var classModel : allMyClasses) {
-            byte[] newBytes = classRemapper.remapClass(classModel);
-
-        }
-        // @end
-    }
-
-    void allPackageRemap(ClassModel... allMyClasses) {
-        // @start region="allPackageRemap"
-        var classRemapper = ClassRemapper.of(cd ->
-                ClassDesc.ofDescriptor(cd.descriptorString().replace("Lcom/oldpackage/", "Lcom/newpackage/")));
-
-        for (var classModel : allMyClasses) {
-            byte[] newBytes = classRemapper.remapClass(classModel);
-
-        }
-        // @end
-    }
-
-    void codeLocalsShifting(ClassModel classModel) {
-        // @start region="codeLocalsShifting"
-        byte[] newBytes = classModel.transform((classBuilder, classElement) -> {
-                if (classElement instanceof MethodModel method)
-                    classBuilder.transformMethod(method,
-                            MethodTransform.transformingCode(
-                                    CodeLocalsShifter.of(method.flags(), method.methodTypeSymbol())));
-                else
-                    classBuilder.accept(classElement);
-            });
         // @end
     }
 

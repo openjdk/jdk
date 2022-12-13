@@ -24,7 +24,7 @@
  */
 
 /**
- * <h1>Classfile parsing, generation, and transformation</h1>
+ * <h2>Classfile parsing, generation, and transformation</h2>
  * The {@code jdk.classfile} package contains classes for reading, writing, and
  * modifying Java class files, as specified in Chapter 4 of the <a
  * href="https://docs.oracle.com/javase/specs/jvms/se17/html/index.html">Java
@@ -51,8 +51,7 @@
  * not parsed until they are actually needed.
  * <p>
  * We can enumerate the names of the fields and methods in a class by:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="enumerateFieldsMethods1"}
+ * {@snippet lang="java" class="PackageSnippets" region="enumerateFieldsMethods1"}
  * <p>
  * When we enumerate the methods, we get a {@link jdk.classfile.MethodModel} for each method; like a
  * {@code ClassModel}, it gives us access to method metadata and
@@ -69,8 +68,7 @@
  * series of class <em>elements</em>, which may include methods, fields, attributes,
  * and more, and which can be distinguished with pattern matching.  We could
  * rewrite the above example as:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="enumerateFieldsMethods2"}
+ * {@snippet lang="java" class="PackageSnippets" region="enumerateFieldsMethods2"}
  * <p>
  * The models returned as elements from traversing {@code ClassModel} can in
  * turn be sources of elements.  If we wanted to
@@ -79,13 +77,11 @@
  * in turn pick out the method elements that describe the code attribute, and
  * finally pick out the code elements that describe field access and invocation
  * instructions:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="gatherDependencies1"}
+ * {@snippet lang="java" class="PackageSnippets" region="gatherDependencies1"}
  * <p>
  * This same query could alternately be processed as a stream pipeline over
  * class elements:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="gatherDependencies2"}
+ * {@snippet lang="java" class="PackageSnippets" region="gatherDependencies2"}
  *
  * <h3>Models and elements</h3>
  * The view of classfiles presented by this API is framed in terms of
@@ -168,14 +164,13 @@
  * classfile option.  Implementations of custom attributes should extend {@link
  * jdk.classfile.CustomAttribute}. Custom attributes will be delivered as
  * elements in all of the contexts specified by {@link jdk.classfile.AttributeMapper#whereApplicable()}.
- * <p>
+ *
  * <h3>Options</h3>
  * <p>
  * {@link jdk.classfile.Classfile#parse(byte[], jdk.classfile.Classfile.Option[])}
  * accepts a list of options.  {@link jdk.classfile.Classfile.Option} exports some
  * static boolean options, as well as factories for more complex options,
  * including:
- * <p>
  * <ul>
  *   <li>{@link jdk.classfile.Classfile.Option#generateStackmap(boolean)} -- generate stackmaps (default is true)</li>
  *   <li>{@link jdk.classfile.Classfile.Option#processDebug(boolean)} -- processing of debug information, such as local variable metadata (default is true) </li>
@@ -207,8 +202,7 @@
  * builders for the constructor and {@code main} method, and in turn use the
  * method builders to create a {@code Code} attribute and use the code builders
  * to generate the instructions:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="helloWorld"}
+ * {@snippet lang="java" class="PackageSnippets" region="helloWorld"}
  * <p>
  * Builders often support multiple ways of expressing the same entity at
  * different levels of abstraction.  For example, the {@code invokevirtual}
@@ -253,8 +247,7 @@
  * provides a {@link jdk.classfile.ClassBuilder}, iterate the elements of the
  * original {@link jdk.classfile.ClassModel}, and pass through all of them to
  * the builder except the methods we want to drop:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="stripDebugMethods1"}
+ * {@snippet lang="java" class="PackageSnippets" region="stripDebugMethods1"}
  * <p>
  * This hands every class element, except for those corresponding to methods
  * whose names start with {@code debug}, back to the builder.  Transformations
@@ -272,8 +265,7 @@
  * its child models.  A transform is simply a functional interface that takes a
  * builder and an element, and an implementation "flatMap"s elements
  * into the builder.  We could express the above as:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="stripDebugMethods2"}
+ * {@snippet lang="java" class="PackageSnippets" region="stripDebugMethods2"}
  *
  * <h3>Lifting transforms</h3>
  * While the second example is only slightly shorter than the first, the
@@ -282,44 +274,38 @@
  * invocations of static methods on {@code Foo} to the corresponding method on
  * {@code Bar} instead.  We could express this as a transformation on {@link
  * jdk.classfile.CodeElement}:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="fooToBarTransform"}
+ * {@snippet lang="java" class="PackageSnippets" region="fooToBarTransform"}
  * <p>
  * We can then <em>lift</em> this transformation on code elements into a
  * transformation on method elements.  This intercepts method elements that
  * correspond to a {@code Code} attribute, dives into its code elements, and
  * applies the code transform to them, and passes other method elements through
  * unchanged:
- * <p>
  * {@snippet lang=java :
  * MethodTransform mt = MethodTransform.transformingCode(fooToBar);
  * }
  * <p>
  * and further lift the transform on method elements into one on class
  * elements:
- * <p>
  * {@snippet lang=java :
  * ClassTransform ct = ClassTransform.transformingMethods(mt);
  * }
  * <p>
  * and then transform the classfile:
- * <p>
  * {@snippet lang=java :
  * byte[] newBytes = ClassModel.of(bytes).transform(ct);
  * }
  * <p>
  * This is much more concise (and less error-prone) than the equivalent
  * expressed by traversing the classfile structure directly:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="fooToBarUnrolled"}
+ * {@snippet lang="java" class="PackageSnippets" region="fooToBarUnrolled"}
  *
  * <h3>Composing transforms</h3>
  * Transforms on the same type of element can be composed in sequence, where the
  * output of the first is fed to the input of the second.  Suppose we want to
  * instrument all method calls, where we print the name of a method before
  * calling it:
- * <p>
- * {@snippet lang="java" class="jdk.classfile.snippet-files.PackageSnippets" region="instrumentCallsTransform"}
+ * {@snippet lang="java" class="PackageSnippets" region="instrumentCallsTransform"}
  * <p>
  * Then we can compose {@code fooToBar} and {@code instrumentCalls} with {@link
  * jdk.classfile.CodeTransform#andThen(jdk.classfile.CodeTransform)}:

@@ -98,7 +98,7 @@ sealed public interface InvokeInstruction extends Instruction
      * {@return an invocation instruction}
      *
      * @param op the opcode for the specific type of invocation instruction,
-     *           which must be of kind {@link Kind#INVOKE}
+     *           which must be of kind {@link Opcode.Kind#INVOKE}
      * @param method a constant pool entry describing the method
      */
     static InvokeInstruction of(Opcode op, MemberRefEntry method) {
@@ -110,7 +110,7 @@ sealed public interface InvokeInstruction extends Instruction
      * {@return an invocation instruction}
      *
      * @param op the opcode for the specific type of invocation instruction,
-     *           which must be of kind {@link Kind#INVOKE}
+     *           which must be of kind {@link Opcode.Kind#INVOKE}
      * @param owner the class holding the method
      * @param name the name of the method
      * @param type the method descriptor
@@ -128,7 +128,7 @@ sealed public interface InvokeInstruction extends Instruction
      * {@return an invocation instruction}
      *
      * @param op the opcode for the specific type of invocation instruction,
-     *           which must be of kind {@link Kind#INVOKE}
+     *           which must be of kind {@link Opcode.Kind#INVOKE}
      * @param owner the class holding the method
      * @param nameAndType the name and type of the method
      * @param isInterface whether the class holding the method is an interface

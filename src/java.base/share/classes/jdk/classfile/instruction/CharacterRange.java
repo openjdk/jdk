@@ -69,7 +69,8 @@ sealed public interface CharacterRange extends PseudoInstruction
 
     /**
      * A flags word, indicating the kind of range.  Multiple flag bits
-     * may be set.  Valid flags include {@link jdk.classfile.Classfile#CRT_STATEMENT},
+     * may be set.  Valid flags include
+     * {@link jdk.classfile.Classfile#CRT_STATEMENT},
      * {@link jdk.classfile.Classfile#CRT_BLOCK},
      * {@link jdk.classfile.Classfile#CRT_ASSIGNMENT},
      * {@link jdk.classfile.Classfile#CRT_FLOW_CONTROLLER},
@@ -79,7 +80,7 @@ sealed public interface CharacterRange extends PseudoInstruction
      * {@link jdk.classfile.Classfile#CRT_BRANCH_TRUE},
      * {@link jdk.classfile.Classfile#CRT_BRANCH_FALSE}.
      *
-     * @@@ Need reference for interpretation of flags.
+     * @see jdk.classfile.attribute.CharacterRangeInfo#flags()
      *
      * @return the flags
      */
