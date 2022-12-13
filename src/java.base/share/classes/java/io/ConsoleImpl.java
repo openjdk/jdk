@@ -190,12 +190,12 @@ final class ConsoleImpl extends Console
         return CHARSET;
     }
 
-    private Object readLock;
-    private Object writeLock;
-    private Reader reader;
-    private Writer out;
-    private PrintWriter pw;
-    private Formatter formatter;
+    private final Object readLock;
+    private final Object writeLock;
+    private final Reader reader;
+    private final Writer out;
+    private final PrintWriter pw;
+    private final Formatter formatter;
     private char[] rcb;
     private boolean restoreEcho;
     private boolean shutdownHookInstalled;
@@ -230,8 +230,8 @@ final class ConsoleImpl extends Console
     }
 
     class LineReader extends Reader {
-        private Reader in;
-        private char[] cb;
+        private final Reader in;
+        private final char[] cb;
         private int nChars, nextChar;
         boolean leftoverLF;
         LineReader(Reader in) {
@@ -257,10 +257,10 @@ final class ConsoleImpl extends Console
             }
             synchronized(readLock) {
                 boolean eof = false;
-                char c = 0;
+                char c;
                 for (;;) {
                     if (nextChar >= nChars) {   //fill
-                        int n = 0;
+                        int n;
                         do {
                             n = in.read(cb, 0, cb.length);
                         } while (n == 0);
@@ -271,7 +271,7 @@ final class ConsoleImpl extends Console
                                     cb[n-1] != '\n' && cb[n-1] != '\r') {
                                 /*
                                  * we're in canonical mode so each "fill" should
-                                 * come back with an eol. if there no lf or nl at
+                                 * come back with an eol. if there is no lf or nl at
                                  * the end of returned bytes we reached an eof.
                                  */
                                 eof = true;
@@ -303,7 +303,6 @@ final class ConsoleImpl extends Console
                                  */
                                 if (cbuf == rcb) {
                                     cbuf = grow();
-                                    end = cbuf.length;
                                 } else {
                                     leftoverLF = true;
                                     return off - offset;

@@ -94,7 +94,6 @@ import sun.security.action.GetPropertyAction;
  * @since   1.6
  * @sealedGraph
  */
-
 public sealed class Console implements Flushable permits ConsoleImpl, ProxyingConsole
 {
    /**
