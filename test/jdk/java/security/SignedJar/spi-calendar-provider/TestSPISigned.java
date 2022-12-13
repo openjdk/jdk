@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.Files;
+import java.io.File;
 import static java.util.Calendar.WEDNESDAY;
 
 /*
@@ -95,7 +96,7 @@ public class TestSPISigned {
             testRun.add("-Djava.locale.providers=SPI");
             testRun.add("-cp");
             String classPath = System.getProperty("java.class.path");
-            classPath = classPath + ":" + SIGNED_JAR.toAbsolutePath().toString();
+            classPath = classPath + File.pathSeparator + SIGNED_JAR.toAbsolutePath().toString();
             testRun.add(classPath);
             testRun.add(TestSPISigned.class.getSimpleName());
             testRun.add("run-test");
