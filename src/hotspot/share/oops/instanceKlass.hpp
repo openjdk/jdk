@@ -1012,7 +1012,7 @@ public:
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
 
-  virtual void release_C_heap_structures(bool release_constant_pool = true);
+  virtual void release_C_heap_structures(bool release_sub_metadata = true);
 
   // Naming
   const char* signature_name() const;

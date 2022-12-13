@@ -84,6 +84,11 @@ bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
 GrowableArrayCHeap<Metadata**, mtClassShared>* HeapShared::_native_pointers = NULL;
 
+size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_total_obj_count;
+size_t HeapShared::_total_obj_size;
+
 #ifndef PRODUCT
 #define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
 static Array<char>* _archived_ArchiveHeapTestClass = NULL;
@@ -301,6 +306,7 @@ oop HeapShared::archive_object(oop obj) {
 
   oop archived_oop = cast_to_oop(G1CollectedHeap::heap()->archive_mem_allocate(len));
   if (archived_oop != NULL) {
+    count_allocation(len);
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     // Reinitialize markword to remove age/marking/locking/etc.
     //
@@ -586,6 +592,7 @@ void HeapShared::copy_roots() {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
   log_info(cds)("archived obj roots[%d] = " SIZE_FORMAT " words, klass = %p, obj = %p", length, size, k, mem);
+  count_allocation(roots()->size());
 }
 
 //
@@ -831,6 +838,9 @@ void HeapShared::write_subgraph_info_table() {
     _archived_ArchiveHeapTestClass = array;
   }
 #endif
+  if (log_is_enabled(Info, cds, heap)) {
+    print_stats();
+  }
 }
 
 void HeapShared::serialize_root(SerializeClosure* soc) {
@@ -1856,6 +1866,51 @@ ResourceBitMap HeapShared::calculate_ptrmap(MemRegion region) {
   } else {
     return ResourceBitMap(0);
   }
+}
+
+void HeapShared::count_allocation(size_t size) {
+  _total_obj_count ++;
+  _total_obj_size += size;
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    if (size <= (size_t(1) << i)) {
+      _alloc_count[i] ++;
+      _alloc_size[i] += size;
+      return;
+    }
+  }
+}
+
+static double avg_size(size_t size, size_t count) {
+  double avg = 0;
+  if (count > 0) {
+    avg = double(size * HeapWordSize) / double(count);
+  }
+  return avg;
+}
+
+void HeapShared::print_stats() {
+  size_t huge_count = _total_obj_count;
+  size_t huge_size = _total_obj_size;
+
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    size_t byte_size_limit = (size_t(1) << i) * HeapWordSize;
+    size_t count = _alloc_count[i];
+    size_t size = _alloc_size[i];
+    log_info(cds, heap)(SIZE_FORMAT_W(8) " objects are <= " SIZE_FORMAT_W(-6)
+                        " bytes (total " SIZE_FORMAT_W(8) " bytes, avg %8.1f bytes)",
+                        count, byte_size_limit, size * HeapWordSize, avg_size(size, count));
+    huge_count -= count;
+    huge_size -= size;
+  }
+
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " huge  objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      huge_count, huge_size * HeapWordSize,
+                      avg_size(huge_size, huge_count));
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " total objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      _total_obj_count, _total_obj_size * HeapWordSize,
+                      avg_size(_total_obj_size, _total_obj_count));
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

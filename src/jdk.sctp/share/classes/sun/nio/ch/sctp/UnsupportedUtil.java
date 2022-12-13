@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,28 +21,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
-#include "runtime/sharedRuntime.hpp"
+package sun.nio.ch.sctp;
 
-#define __ masm.
-void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
-         "polling page return stub not created yet");
-  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+/**
+ * Utility class used by implementations on platforms <em>not</em> supporting SCTP.
+ * <p>
+ * This class is not present on the "unix" platform because unix can support SCTP.
+ */
+public final class UnsupportedUtil {
 
-  RuntimeAddress callback_addr(stub);
+    private static final String MESSAGE = "SCTP not supported on this platform";
 
-  __ bind(entry->_stub_label);
-  InternalAddress safepoint_pc(masm.pc() - masm.offset() + entry->_safepoint_offset);
-  __ adr(rscratch1, safepoint_pc);
-  __ str(rscratch1, Address(rthread, JavaThread::saved_exception_pc_offset()));
-  __ far_jump(callback_addr);
+    // Suppresses default constructor, ensuring non-instantiability.
+    private UnsupportedUtil() {}
+
+    static UnsupportedOperationException sctpUnsupported() {
+        return new UnsupportedOperationException(MESSAGE);
+    }
+
 }
-#undef __

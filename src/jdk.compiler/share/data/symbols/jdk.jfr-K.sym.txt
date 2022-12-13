@@ -29,3 +29,6 @@
 class name jdk/jfr/consumer/RecordedObject
 header extends java/lang/Object sealed true flags 21
 
+class name jdk/jfr/consumer/RecordingStream
+method name stop descriptor ()Z flags 1
+
