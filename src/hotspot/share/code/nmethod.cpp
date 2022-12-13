@@ -635,16 +635,16 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 
 // For native wrappers
 nmethod::nmethod(
-  Method* method,
-  CompilerType type,
-  int nmethod_size,
-  uint compile_id,
-  CodeOffsets* offsets,
-  CodeBuffer* code_buffer,
-  int frame_size,
-  ByteSize basic_lock_owner_sp_offset,
-  ByteSize basic_lock_sp_offset,
-  OopMapSet* oop_maps )
+    Method* method,
+    CompilerType type,
+    int nmethod_size,
+    uint compile_id,
+    CodeOffsets* offsets,
+    CodeBuffer* code_buffer,
+    int frame_size,
+    ByteSize basic_lock_owner_sp_offset,
+    ByteSize basic_lock_sp_offset,
+    OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
   _unlinked_next(NULL),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),

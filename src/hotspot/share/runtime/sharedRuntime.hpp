@@ -480,8 +480,8 @@ class SharedRuntime: AllStatic {
   static nmethod* generate_native_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           uint compile_id,
-                                          BasicType* sig_bt,
-                                          VMRegPair* regs,
+                                          BasicType* in_sig_bt,
+                                          VMRegPair* in_regs,
                                           BasicType ret_type);
 
   // A compiled caller has just called the interpreter, but compiled code

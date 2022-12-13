@@ -660,7 +660,7 @@
   nonstatic_field(nmethod,                     _entry_point,                                  address)                               \
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
-  nonstatic_field(nmethod,                     _compile_id,                                   uint)                                  \
+  nonstatic_field(nmethod,                     _compile_id,                                   uint)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
@@ -884,7 +884,7 @@
   c2_nonstatic_field(Compile,                  _cfg,                                          PhaseCFG*)                             \
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
-  c2_nonstatic_field(Compile,                  _compile_id,                                   const uint)                            \
+  c2_nonstatic_field(Compile,                  _compile_id,                                   const uint)                             \
   c2_nonstatic_field(Compile,                  _options,                                      const Options)                         \
   c2_nonstatic_field(Compile,                  _ilt,                                          InlineTree*)                           \
                                                                                                                                      \
