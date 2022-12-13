@@ -116,8 +116,8 @@ class MallocHeader {
 
   template<typename IN, typename OUT>
   inline static OUT resolve_checked_impl(IN memblock);
+
 public:
- public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
