@@ -984,7 +984,6 @@ source %{
 
 #include "opto/c2_CodeStubs.hpp"
 #include "oops/klass.inline.hpp"
-#include "opto/c2_CodeStubs.hpp"
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
 }
