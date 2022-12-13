@@ -139,9 +139,9 @@ CompileLog** CompileBroker::_compiler1_logs = NULL;
 CompileLog** CompileBroker::_compiler2_logs = NULL;
 
 // These counters are used to assign an unique ID to each compilation.
-volatile uint CompileBroker::_compilation_id     = 0;
-volatile uint CompileBroker::_osr_compilation_id = 0;
-volatile uint CompileBroker::_native_compilation_id = 0;
+volatile jint CompileBroker::_compilation_id     = 0;
+volatile jint CompileBroker::_osr_compilation_id = 0;
+volatile jint CompileBroker::_native_compilation_id = 0;
 
 // Performance counters
 PerfCounter* CompileBroker::_perf_total_compilation = NULL;
@@ -1191,7 +1191,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     // We now know that this compilation is not pending, complete,
     // or prohibited.  Assign a compile_id to this compilation
     // and check to see if it is in our [Start..Stop) range.
-    uint compile_id = assign_compile_id(method, osr_bci);
+    int compile_id = assign_compile_id(method, osr_bci);
     if (compile_id == 0) {
       // The compilation falls outside the allowed range.
       return;
@@ -1531,22 +1531,22 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
  * and the ID is not within the specified range, the method is not compiled and 0 is returned.
  * The function also allows to generate separate compilation IDs for OSR compilations.
  */
-uint CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
+int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #ifdef ASSERT
   bool is_osr = (osr_bci != standard_entry_bci);
-  uint id;
+  int id;
   if (method->is_native()) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1u);
+    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
-    id = Atomic::add(&_osr_compilation_id, 1u);
+    id = Atomic::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
       return id;
     }
   } else {
-    id = Atomic::add(&_compilation_id, 1u);
+    id = Atomic::add(&_compilation_id, 1);
     if (CIStart <= id && id < CIStop) {
       return id;
     }
@@ -1577,7 +1577,7 @@ uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandl
 // Create a CompileTask object representing the current request for
 // compilation.  Add this task to the queue.
 CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
-                                                uint                compile_id,
+                                                int                 compile_id,
                                                 const methodHandle& method,
                                                 int                 osr_bci,
                                                 int                 comp_level,
@@ -1625,7 +1625,7 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
     if (jvmci_compile_state != NULL) {
       jint ticks = jvmci_compile_state->compilation_ticks();
       progress = (ticks - thread_jvmci_compilation_ticks) != 0;
-      JVMCI_event_1("waiting on compilation %u [ticks=%d]", task->compile_id(), ticks);
+      JVMCI_event_1("waiting on compilation %d [ticks=%d]", task->compile_id(), ticks);
       thread_jvmci_compilation_ticks = ticks;
     } else {
       // Still waiting on JVMCI compiler queue. This thread may be holding a lock
@@ -1634,7 +1634,7 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
       // is still making progress through the JVMCI compiler queue.
       jint ticks = jvmci->global_compilation_ticks();
       progress = (ticks - global_jvmci_compilation_ticks) != 0;
-      JVMCI_event_1("waiting on compilation %u to be queued [ticks=%d]", task->compile_id(), ticks);
+      JVMCI_event_1("waiting on compilation %d to be queued [ticks=%d]", task->compile_id(), ticks);
       global_jvmci_compilation_ticks = ticks;
     }
 
@@ -1643,7 +1643,7 @@ bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask*
         if (PrintCompilation) {
           task->print(tty, "wait for blocking compilation timed out");
         }
-        JVMCI_event_1("waiting on compilation %u timed out", task->compile_id());
+        JVMCI_event_1("waiting on compilation %d timed out", task->compile_id());
         break;
       }
     } else {
@@ -2293,7 +2293,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   if (PrintCompilation && PrintCompilation2) {
     tty->print("%7d ", (int) tty->time_stamp().milliseconds());  // print timestamp
-    tty->print("%4u ", compile_id);    // print compilation number
+    tty->print("%4d ", compile_id);    // print compilation number
     tty->print("%s ", (is_osr ? "%" : " "));
     if (task->is_success()) {
       tty->print("size: %d(%d) ", task->nm_total_size(), task->nm_insts_size());
@@ -2529,7 +2529,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     if (CITimeEach) {
       double compile_time = time.seconds();
       double bytes_per_sec = compile_time == 0.0 ? 0.0 : (double)(method->code_size() + task->num_inlined_bytecodes()) / compile_time;
-      tty->print_cr("%3u   seconds: %6.3f bytes/sec : %f (bytes %d + %d inlined)",
+      tty->print_cr("%3d   seconds: %6.3f bytes/sec : %f (bytes %d + %d inlined)",
                     compile_id, compile_time, bytes_per_sec, method->code_size(), task->num_inlined_bytecodes());
     }
 

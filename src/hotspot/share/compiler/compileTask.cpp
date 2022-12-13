@@ -86,7 +86,7 @@ void CompileTask::free(CompileTask* task) {
   }
 }
 
-void CompileTask::initialize(uint compile_id,
+void CompileTask::initialize(int compile_id,
                              const methodHandle& method,
                              int osr_bci,
                              int comp_level,
@@ -219,7 +219,7 @@ void CompileTask::print_tty() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_impl
-void CompileTask::print_impl(outputStream* st, Method* method, uint compile_id, int comp_level,
+void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                              bool is_osr_method, int osr_bci, bool is_blocking,
                              const char* msg, bool short_form, bool cr,
                              jlong time_queued, jlong time_started) {
@@ -239,7 +239,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, uint compile_id, 
   if (CIPrintCompilerName) {
     st->print("%s:", CompileBroker::compiler_name(comp_level));
   }
-  st->print("%4u ", compile_id);    // print compilation number
+  st->print("%4d ", compile_id);    // print compilation number
 
   bool is_synchronized = false;
   bool has_exception_handler = false;
@@ -316,7 +316,7 @@ void CompileTask::log_task(xmlStream* log) {
   ResourceMark rm(thread);
 
   // <task id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
-  log->print(" compile_id='%u'", _compile_id);
+  log->print(" compile_id='%d'", _compile_id);
   if (_osr_bci != CompileBroker::standard_entry_bci) {
     log->print(" compile_kind='osr'");  // same as nmethod::compile_kind
   } // else compile_kind='c2c'
@@ -400,7 +400,7 @@ void CompileTask::log_task_done(CompileLog* log) {
 // ------------------------------------------------------------------
 // CompileTask::check_break_at_flags
 bool CompileTask::check_break_at_flags() {
-  uint compile_id = this->_compile_id;
+  int compile_id = this->_compile_id;
   bool is_osr = (_osr_bci != CompileBroker::standard_entry_bci);
 
   if (CICountOSR && is_osr && (compile_id == CIBreakAtOSR)) {

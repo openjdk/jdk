@@ -613,7 +613,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 
 Compilation::~Compilation() {
   // simulate crash during compilation
-  assert(CICrashAt < 0 || _env->compile_id() != CICrashAt, "just as planned");
+  assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
 
   _env->set_compiler_data(NULL);
 }

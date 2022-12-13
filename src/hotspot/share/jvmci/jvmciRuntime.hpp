@@ -406,7 +406,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                            AbstractCompiler*         compiler,
                                            DebugInformationRecorder* debug_info,
                                            Dependencies*             dependencies,
-                                           uint                       compile_id,
+                                           int                       compile_id,
                                            bool                      has_monitors,
                                            bool                      has_unsafe_access,
                                            bool                      has_wide_vector,

@@ -815,7 +815,7 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
   if ((head & 0x1) == 0x1) {
     stringStream st;
     if (nm != NULL) {
-      st.print("%u", nm->compile_id());
+      st.print("%d", nm->compile_id());
       Method* method = nm->method();
       st.print_raw("{");
       if (method != NULL) {

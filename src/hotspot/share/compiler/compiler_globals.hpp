@@ -95,7 +95,7 @@
   product(bool, CICompilerCountPerCPU, false,                               \
           "1 compiler thread for log(N CPUs)")                              \
                                                                             \
-  notproduct(uintx, CICrashAt, UINT_MAX,                                           \
+  notproduct(intx, CICrashAt, -1,                                           \
           "id of compilation to trigger assert in compiler thread for "     \
           "the purpose of testing, e.g. generation of replay data")         \
                                                                             \
@@ -116,10 +116,10 @@
           "The id of the last osr compilation to permit "                   \
           "(CICountOSR must be on)")                                        \
                                                                             \
-  develop(uintx, CIBreakAtOSR, UINT_MAX,                                           \
+  develop(intx, CIBreakAtOSR, -1,                                           \
           "The id of osr compilation to break at")                          \
                                                                             \
-  develop(uintx, CIBreakAt, UINT_MAX,                                              \
+  develop(intx, CIBreakAt, -1,                                              \
           "The id of compilation to break at")                              \
                                                                             \
   /* recompilation */                                                       \

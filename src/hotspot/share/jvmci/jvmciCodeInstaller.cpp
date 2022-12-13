@@ -668,14 +668,14 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   jint entry_bci = -1;
   JVMCICompileState* compile_state = nullptr;
   bool has_unsafe_access = false;
-  uint id = UINT_MAX;
+  jint id = -1;
 
   if (is_nmethod) {
     method = methodHandle(thread, stream->read_method("method"));
     entry_bci = is_nmethod ? stream->read_s4("entryBCI") : -1;
     compile_state = (JVMCICompileState*) stream->read_u8("compileState");
     has_unsafe_access = stream->read_bool("hasUnsafeAccess");
-    id = stream->read_u4("id");
+    id = stream->read_s4("id");
   }
   stream->set_code_desc(name, method);
 
@@ -718,7 +718,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       jvmci_env()->set_compile_state(compile_state);
     }
 
-    if (id == UINT_MAX) {
+    if (id == -1) {
       // Make sure a valid compile_id is associated with every compile
       id = CompileBroker::assign_compile_id_unlocked(thread, method, entry_bci);
       jvmci_env()->set_HotSpotCompiledNmethod_id(compiled_code, id);

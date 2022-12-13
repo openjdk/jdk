@@ -227,7 +227,7 @@ class nmethod : public CompiledMethod {
   // pc during a deopt.
   int _orig_pc_offset;
 
-  uint _compile_id;                           // which compilation made this nmethod
+  int _compile_id;                           // which compilation made this nmethod
 
 #if INCLUDE_RTM_OPT
   // RTM state at compile time. Used during deoptimization to decide
@@ -264,7 +264,7 @@ class nmethod : public CompiledMethod {
   nmethod(Method* method,
           CompilerType type,
           int nmethod_size,
-          uint compile_id,
+          int compile_id,
           CodeOffsets* offsets,
           CodeBuffer *code_buffer,
           int frame_size,
@@ -276,7 +276,7 @@ class nmethod : public CompiledMethod {
   nmethod(Method* method,
           CompilerType type,
           int nmethod_size,
-          uint compile_id,
+          int compile_id,
           int entry_bci,
           CodeOffsets* offsets,
           int orig_pc_offset,
@@ -327,7 +327,7 @@ class nmethod : public CompiledMethod {
  public:
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
-                              uint compile_id,
+                              int compile_id,
                               int entry_bci,
                               CodeOffsets* offsets,
                               int orig_pc_offset,
@@ -358,7 +358,7 @@ class nmethod : public CompiledMethod {
 
 
   static nmethod* new_native_nmethod(const methodHandle& method,
-                                     uint compile_id,
+                                     int compile_id,
                                      CodeBuffer *code_buffer,
                                      int vep_offset,
                                      int frame_complete,
@@ -671,7 +671,7 @@ public:
   // are numbered in an independent sequence if CICountOSR is true,
   // and native method wrappers are also numbered independently if
   // CICountNative is true.
-  virtual uint compile_id() const { return _compile_id; }
+  virtual int compile_id() const { return _compile_id; }
   const char* compile_kind() const;
 
   // tells if any of this method's dependencies have been invalidated

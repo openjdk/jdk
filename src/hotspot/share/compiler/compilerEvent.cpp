@@ -127,7 +127,7 @@ static inline void commit(EventType& event) {
   event.commit();
  }
 
-void CompilerEvent::CompilationEvent::post(EventCompilation& event, uint compile_id, CompilerType compiler_type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) {
+void CompilerEvent::CompilationEvent::post(EventCompilation& event, int compile_id, CompilerType compiler_type, Method* method, int compile_level, bool success, bool is_osr, int code_size, int inlined_bytecodes) {
   event.set_compileId(compile_id);
   event.set_compiler(compiler_type);
   event.set_method(method);
@@ -139,13 +139,13 @@ void CompilerEvent::CompilationEvent::post(EventCompilation& event, uint compile
   commit(event);
 }
 
-void CompilerEvent::CompilationFailureEvent::post(EventCompilationFailure& event, uint compile_id, const char* reason) {
+void CompilerEvent::CompilationFailureEvent::post(EventCompilationFailure& event, int compile_id, const char* reason) {
   event.set_compileId(compile_id);
   event.set_failureMessage(reason);
   event.commit();
 }
 
-void CompilerEvent::PhaseEvent::post(EventCompilerPhase& event, const Ticks& start_time, int phase, uint compile_id, int level) {
+void CompilerEvent::PhaseEvent::post(EventCompilerPhase& event, const Ticks& start_time, int phase, int compile_id, int level) {
   event.set_starttime(start_time);
   event.set_phase((u1) phase);
   event.set_compileId(compile_id);
@@ -153,7 +153,7 @@ void CompilerEvent::PhaseEvent::post(EventCompilerPhase& event, const Ticks& sta
   event.commit();
 }
 
-void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, uint compile_id, Method* caller, const JfrStructCalleeMethod& callee, bool success, const char* msg, int bci) {
+void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, int compile_id, Method* caller, const JfrStructCalleeMethod& callee, bool success, const char* msg, int bci) {
   event.set_compileId(compile_id);
   event.set_caller(caller);
   event.set_callee(callee);
@@ -163,7 +163,7 @@ void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, uint compile
   commit(event);
 }
 
-void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, uint compile_id, Method* caller, Method* callee, bool success, const char* msg, int bci) {
+void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, int compile_id, Method* caller, Method* callee, bool success, const char* msg, int bci) {
   JfrStructCalleeMethod callee_struct;
   callee_struct.set_type(callee->klass_name()->as_utf8());
   callee_struct.set_name(callee->name()->as_utf8());
@@ -171,7 +171,7 @@ void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, uint compile
   post(event, compile_id, caller, callee_struct, success, msg, bci);
 }
 
-void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, uint compile_id, Method* caller, ciMethod* callee, bool success, const char* msg, int bci) {
+void CompilerEvent::InlineEvent::post(EventCompilerInlining& event, int compile_id, Method* caller, ciMethod* callee, bool success, const char* msg, int bci) {
   JfrStructCalleeMethod callee_struct;
   callee_struct.set_type(callee->holder()->name()->as_utf8());
   callee_struct.set_name(callee->name()->as_utf8());

@@ -1817,17 +1817,17 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
       if (xtty != NULL) {
-        xtty->head("opto_assembly compile_id='%u'%s", C->compile_id(),
+        xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
                    C->is_osr_compilation() ? " compile_kind='osr'" : "");
       }
       if (C->method() != NULL) {
-        tty->print_cr("----------------------- MetaData before Compile_id = %u ------------------------", C->compile_id());
+        tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
         tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
-      tty->print_cr("------------------------ OptoAssembly for Compile_id = %u -----------------------", C->compile_id());
+      tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
       tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {

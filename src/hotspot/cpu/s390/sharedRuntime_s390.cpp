@@ -1297,7 +1297,7 @@ static void move32_64(MacroAssembler *masm,
 #undef USE_RESIZE_FRAME
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 const methodHandle& method,
-                                                uint compile_id,
+                                                int compile_id,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {

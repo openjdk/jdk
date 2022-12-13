@@ -1179,7 +1179,7 @@ C2V_VMENTRY_0(jboolean, setCountersSize, (JNIEnv* env, jobject, jint new_size))
   return JavaThread::resize_all_jvmci_counters(new_size);
 C2V_END
 
-C2V_VMENTRY_0(juint, allocateCompileId, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), int entry_bci))
+C2V_VMENTRY_0(jint, allocateCompileId, (JNIEnv* env, jobject, ARGUMENT_PAIR(method), int entry_bci))
   HandleMark hm(THREAD);
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   if (method.is_null()) {
@@ -2724,8 +2724,7 @@ C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase
 C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
   EventCompilerPhase event;
   if (event.should_commit()) {
-    assert(compileId >= 0, "negative compile id");
-    CompilerEvent::PhaseEvent::post(event, startTime, phase, (uint) compileId, level);
+    CompilerEvent::PhaseEvent::post(event, startTime, phase, compileId, level);
   }
 }
 
@@ -2735,8 +2734,7 @@ C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compi
     Method* caller = UNPACK_PAIR(Method, caller);
     Method* callee = UNPACK_PAIR(Method, callee);
     JVMCIObject message = JVMCIENV->wrap(jmessage);
-    assert(compileId >= 0, "negative compile id");
-    CompilerEvent::InlineEvent::post(event, (uint) compileId, caller, callee, succeeded, JVMCIENV->as_utf8_string(message), bci);
+    CompilerEvent::InlineEvent::post(event, compileId, caller, callee, succeeded, JVMCIENV->as_utf8_string(message), bci);
   }
 }
 

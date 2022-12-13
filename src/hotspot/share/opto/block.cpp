@@ -1107,7 +1107,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
         if (TracePostallocExpand) {
           if (!foundNode) {
             foundNode = true;
-            tty->print("POSTALLOC EXPANDING %u %s\n", C->compile_id(),
+            tty->print("POSTALLOC EXPANDING %d %s\n", C->compile_id(),
                        C->method() ? C->method()->name()->as_utf8() : C->stub_name());
           }
           tty->print("  postalloc expanding "); n->dump();
@@ -1241,7 +1241,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
 
 #ifdef ASSERT
   if (foundNode) {
-    tty->print("FINISHED %u %s\n", C->compile_id(),
+    tty->print("FINISHED %d %s\n", C->compile_id(),
                C->method() ? C->method()->name()->as_utf8() : C->stub_name());
     tty->flush();
   }

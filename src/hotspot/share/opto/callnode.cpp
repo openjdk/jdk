@@ -2180,7 +2180,7 @@ void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag, Node*
     int box_id = box != NULL ? box->_idx : -1;
     int obj_id = obj != NULL ? obj->_idx : -1;
 
-    log->begin_head("%s compile_id='%u' lock_id='%d' class='%s' kind='%s' box_id='%d' obj_id='%d' bad_id='%d'",
+    log->begin_head("%s compile_id='%d' lock_id='%d' class='%s' kind='%s' box_id='%d' obj_id='%d' bad_id='%d'",
           tag, C->compile_id(), this->_idx,
           is_Unlock() ? "unlock" : is_Lock() ? "lock" : "?",
           kind_as_string(), box_id, obj_id, (bad_lock != NULL ? bad_lock->_idx : -1));

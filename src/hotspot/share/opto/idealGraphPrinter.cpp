@@ -228,12 +228,6 @@ void IdealGraphPrinter::print_prop(const char *name, int val) {
   print_prop(name, stream.freeze());
 }
 
-void IdealGraphPrinter::print_prop(const char *name, unsigned int val) {
-  stringStream stream;
-  stream.print("%u", val);
-  print_prop(name, stream.freeze());
-}
-
 void IdealGraphPrinter::print_prop(const char *name, const char *val) {
   begin_head(PROPERTY_ELEMENT);
   print_attr(PROPERTY_NAME_PROPERTY, name);

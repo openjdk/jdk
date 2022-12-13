@@ -2020,9 +2020,8 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     return;
   }
 
-  assert(compile_state->task()->compile_id() >= 0, "negative compile id");
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
-                                                                     (jlong) compile_state, (int) compile_state->task()->compile_id());
+                                                                     (jlong) compile_state, compile_state->task()->compile_id());
   if (!JVMCIENV->has_pending_exception()) {
     if (result_object.is_non_null()) {
       JVMCIObject failure_message = JVMCIENV->get_HotSpotCompilationRequestResult_failureMessage(result_object);
@@ -2079,7 +2078,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        AbstractCompiler* compiler,
                                                        DebugInformationRecorder* debug_info,
                                                        Dependencies* dependencies,
-                                                       uint compile_id,
+                                                       int compile_id,
                                                        bool has_monitors,
                                                        bool has_unsafe_access,
                                                        bool has_wide_vector,

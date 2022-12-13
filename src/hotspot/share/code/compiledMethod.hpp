@@ -208,7 +208,7 @@ public:
 
   virtual bool  is_in_use() const = 0;
   virtual int   comp_level() const = 0;
-  virtual uint  compile_id() const = 0;
+  virtual int   compile_id() const = 0;
 
   virtual address verified_entry_point() const = 0;
   virtual void log_identity(xmlStream* log) const = 0;

@@ -737,7 +737,7 @@ bool CompiledMethod::has_evol_metadata() {
   if (check_evol.has_evol_dependency() && log_is_enabled(Debug, redefine, class, nmethod)) {
     ResourceMark rm;
     log_debug(redefine, class, nmethod)
-            ("Found evol dependency of nmethod %s.%s(%s) compile_id=%u on in nmethod metadata",
+            ("Found evol dependency of nmethod %s.%s(%s) compile_id=%d on in nmethod metadata",
              _method->method_holder()->external_name(),
              _method->name()->as_C_string(),
              _method->signature()->as_C_string(),

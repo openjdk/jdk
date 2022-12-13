@@ -69,7 +69,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 const methodHandle& method,
-                                                uint compile_id,
+                                                int compile_id,
                                                 BasicType *sig_bt,
                                                 VMRegPair *regs,
                                                 BasicType ret_type) {
