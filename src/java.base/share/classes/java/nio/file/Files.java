@@ -2940,8 +2940,10 @@ public final class Files {
      * <p> The {@code Writer} methods to write text throw {@code IOException}
      * if the text cannot be encoded using the specified charset. Due to
      * buffering, an {@code IOException} caused by an encoding error
-     * (unmappable-character or malformed-input) may be thrown when writing,
-     * flushing, or closing the buffered writer.
+     * (unmappable-character or malformed-input) may be thrown when {@linkplain
+     * BufferedWriter#write(char[],int,int) writing}, {@linkplain
+     * BufferedWriter#flush flushing}, or {@linkplain BufferedWriter#close
+     * closing} the buffered writer.
      *
      * @param   path
      *          the path to the file
