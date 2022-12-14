@@ -171,11 +171,6 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
   size_t committed_amount = committed_total(malloc_memory, virtual_memory);
-  size_t read_only_bytes = 0;
-
-#if INCLUDE_CDS
-  read_only_bytes = FileMapInfo::readonly_total();
-#endif
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
@@ -201,10 +196,13 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     const char*   scale = current_scale();
     out->print("-%26s (", NMTUtil::flag_to_name(flag));
     print_total(reserved_amount, committed_amount);
+#if INCLUDE_CDS
     if (flag == mtClassShared) {
+        size_t read_only_bytes = FileMapInfo::readonly_total();
       output()->print(", readonly=" SIZE_FORMAT "%s",
                       amount_in_current_scale(read_only_bytes), scale);
     }
+#endif
     out->print_cr(")");
 
     if (flag == mtClass) {
