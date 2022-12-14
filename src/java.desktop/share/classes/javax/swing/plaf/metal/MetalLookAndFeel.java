@@ -252,6 +252,9 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * used. For example, metal does not have a class named {@code
      * "MetalColorChooserUI"}, as such, {@code
      * javax.swing.plaf.basic.BasicColorChooserUI} is used.
+     * Also, class {@code MetalMenubarUI} is used only for {@code OceanTheme}
+     * which is used by {@code MetalLookAndFeel} by default so
+     * it is registered in Ocean theme's entries.
      *
      * @param table the {@code UIDefaults} instance the entries are
      *        added to
@@ -272,7 +275,6 @@ public class MetalLookAndFeel extends BasicLookAndFeel
               "FileChooserUI", metalPackageName + "MetalFileChooserUI",
             "InternalFrameUI", metalPackageName + "MetalInternalFrameUI",
                     "LabelUI", metalPackageName + "MetalLabelUI",
-                  "MenuBarUI", metalPackageName + "MetalMenuBarUI",
        "PopupMenuSeparatorUI", metalPackageName + "MetalPopupMenuSeparatorUI",
               "ProgressBarUI", metalPackageName + "MetalProgressBarUI",
               "RadioButtonUI", metalPackageName + "MetalRadioButtonUI",
