@@ -29,10 +29,11 @@ import java.io.IOException;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 import static sun.nio.fs.BsdNativeDispatcher.*;
+import static sun.nio.fs.UnixNativeDispatcher.lutimes;
 
 class BsdFileAttributeViews {
     //
-    // Use fsetattrlist(2) system call which can set creation, modification,
+    // Use setattrlist(2) system call which can set creation, modification,
     // and access times.
     //
     private static void setTimes(UnixPath path, FileTime lastModifiedTime,
@@ -49,15 +50,25 @@ class BsdFileAttributeViews {
         // permission check
         path.checkWrite();
 
-        int fd = -1;
+        boolean useLutimes = false;
         try {
-            fd = path.openForAttributeAccess(followLinks);
+            useLutimes = !followLinks &&
+                UnixFileAttributes.get(path, false).isSymbolicLink();
         } catch (UnixException x) {
             x.rethrowAsIOException(path);
         }
 
+        int fd = -1;
+        if (!useLutimes) {
+            try {
+                fd = path.openForAttributeAccess(followLinks);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(path);
+            }
+        }
+
         try {
-            // not all volumes support fsetattrlist(2), so set the last
+            // not all volumes support setattrlist(2), so set the last
             // modified and last access times using futimens(2)
             if (lastModifiedTime != null || lastAccessTime != null) {
                 // if not changing both attributes then need existing attributes
@@ -74,12 +85,17 @@ class BsdFileAttributeViews {
                 }
 
                 // update times
-                long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
-                long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
+                TimeUnit timeUnit = useLutimes ?
+                    TimeUnit.MICROSECONDS : TimeUnit.NANOSECONDS;
+                long modValue = lastModifiedTime.to(timeUnit);
+                long accessValue= lastAccessTime.to(timeUnit);
 
                 boolean retry = false;
                 try {
-                    futimens(fd, accessValue, modValue);
+                    if (useLutimes)
+                        lutimes(path, accessValue, modValue);
+                    else
+                        futimens(fd, accessValue, modValue);
                 } catch (UnixException x) {
                     // if futimens fails with EINVAL and one/both of the times is
                     // negative then we adjust the value to the epoch and retry.
@@ -94,26 +110,34 @@ class BsdFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        futimens(fd, accessValue, modValue);
+                        if (useLutimes)
+                            lutimes(path, accessValue, modValue);
+                        else
+                            futimens(fd, accessValue, modValue);
                     } catch (UnixException x) {
                         x.rethrowAsIOException(path);
                     }
                 }
             }
 
-            // set the creation time using fsetattrlist
+            // set the creation time using setattrlist
             if (createTime != null) {
                 long createValue = createTime.to(TimeUnit.NANOSECONDS);
                 int commonattr = UnixConstants.ATTR_CMN_CRTIME;
                 try {
-                    fsetattrlist(fd, commonattr, 0L, 0L, createValue,
-                                 followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                    if (useLutimes)
+                        setattrlist(path, commonattr, 0L, 0L, createValue,
+                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                    else
+                        fsetattrlist(fd, commonattr, 0L, 0L, createValue,
+                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
                 } catch (UnixException x) {
                     x.rethrowAsIOException(path);
                 }
             }
         } finally {
-            close(fd, e -> null);
+            if (!useLutimes)
+                close(fd, e -> null);
         }
     }
 
