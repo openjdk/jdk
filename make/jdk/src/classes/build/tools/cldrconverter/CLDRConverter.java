@@ -1028,6 +1028,7 @@ public class CLDRConverter {
     private static void setupBaseLocales(String localeList) {
         Arrays.stream(localeList.split(","))
             .map(Locale::forLanguageTag)
+            .map(l -> new Locale.Builder().setLocale(l).setScript("Latn").build())
             .map(l -> Control.getControl(Control.FORMAT_DEFAULT)
                              .getCandidateLocales("", l))
             .forEach(BASE_LOCALES::addAll);
