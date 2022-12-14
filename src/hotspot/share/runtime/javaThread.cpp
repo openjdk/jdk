@@ -157,7 +157,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
   _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _extentLocalCache = OopHandle(_thread_oop_storage, NULL);
+  _scopedValueCache = OopHandle(_thread_oop_storage, NULL);
 }
 
 oop JavaThread::threadObj() const {
@@ -186,13 +186,26 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-oop JavaThread::extentLocalCache() const {
-  return _extentLocalCache.resolve();
+oop JavaThread::scopedValueCache() const {
+  return _scopedValueCache.resolve();
 }
 
-void JavaThread::set_extentLocalCache(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
-  _extentLocalCache.replace(p);
+void JavaThread::set_scopedValueCache(oop p) {
+  if (_scopedValueCache.ptr_raw() != NULL) { // i.e. if the OopHandle has been allocated
+    _scopedValueCache.replace(p);
+  } else {
+    assert(p == NULL, "not yet initialized");
+  }
+}
+
+void JavaThread::clear_scopedValueBindings() {
+  set_scopedValueCache(NULL);
+  oop vthread_oop = vthread();
+  // vthread may be null here if we get a VM error during startup,
+  // before the java.lang.Thread instance has been created.
+  if (vthread_oop != NULL) {
+    java_lang_Thread::clear_scopedValueBindings(vthread_oop);
+  }
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
@@ -1040,11 +1053,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   // We cannot call Exceptions::_throw(...) here because we cannot block
   set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-  // Clear any extent-local bindings
-  set_extentLocalCache(NULL);
-  oop threadOop = threadObj();
-  assert(threadOop != NULL, "must be");
-  java_lang_Thread::clear_extentLocalBindings(threadOop);
+  clear_scopedValueBindings();
 
   LogTarget(Info, exceptions) lt;
   if (lt.is_enabled()) {
@@ -1664,6 +1673,16 @@ oop JavaThread::current_park_blocker() {
   return NULL;
 }
 
+// Print stack trace for checked JNI warnings and JNI fatal errors.
+// This is the external format from above, but selecting the platform
+// or vthread as applicable.
+void JavaThread::print_jni_stack() {
+  if (is_vthread_mounted()) {
+    print_vthread_stack_on(tty);
+  } else {
+    print_stack_on(tty);
+  }
+}
 
 void JavaThread::print_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
@@ -1679,6 +1698,48 @@ void JavaThread::print_stack_on(outputStream* st) {
   vframe* start_vf = platform_thread_last_java_vframe(&reg_map);
   int count = 0;
   for (vframe* f = start_vf; f != NULL; f = f->sender()) {
+    if (f->is_java_frame()) {
+      javaVFrame* jvf = javaVFrame::cast(f);
+      java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
+
+      // Print out lock information
+      if (JavaMonitorsInStackTrace) {
+        jvf->print_lock_info_on(st, count);
+      }
+    } else {
+      // Ignore non-Java frames
+    }
+
+    // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
+    count++;
+    if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
+  }
+}
+
+void JavaThread::print_vthread_stack_on(outputStream* st) {
+  assert(is_vthread_mounted(), "Caller should have checked this");
+  assert(has_last_Java_frame(), "must be");
+
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
+  ContinuationEntry* cont_entry = last_continuation();
+  vframe* start_vf = last_java_vframe(&reg_map);
+  int count = 0;
+  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
+    // Watch for end of vthread stack
+    if (Continuation::is_continuation_enterSpecial(f->fr())) {
+      assert(cont_entry == Continuation::get_continuation_entry_for_entry_frame(this, f->fr()), "");
+      if (cont_entry->is_virtual_thread()) {
+        break;
+      }
+      cont_entry = cont_entry->parent();
+    }
     if (f->is_java_frame()) {
       javaVFrame* jvf = javaVFrame::cast(f);
       java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
@@ -2097,7 +2158,7 @@ void JavaThread::add_oop_handles_for_release() {
   new_head->add(_threadObj);
   new_head->add(_vthread);
   new_head->add(_jvmti_vthread);
-  new_head->add(_extentLocalCache);
+  new_head->add(_scopedValueCache);
   _oop_handle_list = new_head;
   Service_lock->notify_all();
 }

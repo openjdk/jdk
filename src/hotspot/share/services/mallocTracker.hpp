@@ -153,7 +153,12 @@ class MallocMemorySnapshot : public ResourceObj {
 
 
  public:
-  inline MallocMemory*  by_type(MEMFLAGS flags) {
+  inline MallocMemory* by_type(MEMFLAGS flags) {
+    int index = NMTUtil::flag_to_index(flags);
+    return &_malloc[index];
+  }
+
+  inline const MallocMemory* by_type(MEMFLAGS flags) const {
     int index = NMTUtil::flag_to_index(flags);
     return &_malloc[index];
   }
@@ -298,8 +303,11 @@ class MallocTracker : AllStatic {
   static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
     const NativeCallStack& stack);
 
-  // Record free on specified memory block
-  static void* record_free(void* memblock);
+  // Given a block returned by os::malloc() or os::realloc():
+  // deaccount block from NMT, mark its header as dead and return pointer to header.
+  static void* record_free_block(void* memblock);
+  // Given the free info from a block, de-account block from NMT.
+  static void deaccount(MallocHeader::FreeInfo free_info);
 
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);

@@ -412,8 +412,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
-  const double sum_ms = _root_region_scan_wait_time_ms +
-                        _cur_prepare_tlab_time_ms +
+  const double sum_ms = _cur_prepare_tlab_time_ms +
                         _cur_concatenate_dirty_card_logs_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
@@ -423,9 +422,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  if (_root_region_scan_wait_time_ms > 0.0) {
-    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
-  }
   debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
   debug_time("Concatenate Dirty Card Logs", _cur_concatenate_dirty_card_logs_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
@@ -557,6 +553,10 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print(bool evacuation_failed) {
+  if (_root_region_scan_wait_time_ms > 0.0) {
+    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+  }
+
   // Check if some time has been recorded for verification and only then print
   // the message. We do not use Verify*GC here to print because VerifyGCType
   // further limits actual verification.
@@ -565,10 +565,17 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
   }
 
   double accounted_ms = 0.0;
+
+  accounted_ms += _root_region_scan_wait_time_ms;
+  accounted_ms += _cur_verify_before_time_ms;
+
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
+
+  accounted_ms += _cur_verify_after_time_ms;
+
   print_other(accounted_ms);
 
   // See above comment on the _cur_verify_before_time_ms check.

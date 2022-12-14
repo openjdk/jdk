@@ -364,16 +364,6 @@ class LambdaForm {
         this(arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
     }
 
-    private static Name[] buildNames(Name[] formals, Name[] temps, Name result) {
-        int arity = formals.length;
-        int length = arity + temps.length + (result == null ? 0 : 1);
-        Name[] names = Arrays.copyOf(formals, length);
-        System.arraycopy(temps, 0, names, arity, temps.length);
-        if (result != null)
-            names[length - 1] = result;
-        return names;
-    }
-
     private LambdaForm(MethodType mt) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
@@ -1338,13 +1328,15 @@ class LambdaForm {
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;
 
+        private static final Object[] EMPTY_ARGS = new Object[0];
+
         private Name(int index, BasicType type, NamedFunction function, Object[] arguments) {
             this.index = (short)index;
             this.type = type;
             this.function = function;
             this.arguments = arguments;
             this.constraint = null;
-            assert(this.index == index);
+            assert(this.index == index && typesMatch(function, this.arguments));
         }
         private Name(Name that, Object constraint) {
             this.index = that.index;
@@ -1365,9 +1357,17 @@ class LambdaForm {
         Name(MemberName function, Object... arguments) {
             this(new NamedFunction(function), arguments);
         }
+        Name(NamedFunction function) {
+            this(-1, function.returnType(), function, EMPTY_ARGS);
+        }
+        Name(NamedFunction function, Object arg) {
+            this(-1, function.returnType(), function, new Object[] { arg });
+        }
+        Name(NamedFunction function, Object arg0, Object arg1) {
+            this(-1, function.returnType(), function, new Object[] { arg0, arg1 });
+        }
         Name(NamedFunction function, Object... arguments) {
-            this(-1, function.returnType(), function, arguments = Arrays.copyOf(arguments, arguments.length, Object[].class));
-            assert(typesMatch(function, arguments));
+            this(-1, function.returnType(), function, Arrays.copyOf(arguments, arguments.length, Object[].class));
         }
         /** Create a raw parameter of the given type, with an expected index. */
         Name(int index, BasicType type) {
@@ -1534,6 +1534,10 @@ class LambdaForm {
         }
 
         private boolean typesMatch(NamedFunction function, Object ... arguments) {
+            if (arguments == null) {
+                assert(function == null);
+                return true;
+            }
             assert(arguments.length == function.arity()) : "arity mismatch: arguments.length=" + arguments.length + " == function.arity()=" + function.arity() + " in " + debugString();
             for (int i = 0; i < arguments.length; i++) {
                 assert (typesMatch(function.parameterType(i), arguments[i])) : "types don't match: function.parameterType(" + i + ")=" + function.parameterType(i) + ", arguments[" + i + "]=" + arguments[i] + " in " + debugString();

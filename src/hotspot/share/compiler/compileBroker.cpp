@@ -932,7 +932,7 @@ void CompileBroker::init_compiler_threads() {
     // for JVMCI compiler which can create further ones on demand.
     JVMCI_ONLY(if (!UseJVMCICompiler || !UseDynamicNumberOfCompilerThreads || i == 0) {)
     // Create a name for our thread.
-    sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
     Handle thread_oop = create_thread_oop(name_buffer, CHECK);
     thread_handle = JNIHandles::make_global(thread_oop);
     JVMCI_ONLY(})
@@ -954,7 +954,7 @@ void CompileBroker::init_compiler_threads() {
 
   for (int i = 0; i < _c1_count; i++) {
     // Create a name for our thread.
-    sprintf(name_buffer, "C1 CompilerThread%d", i);
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "C1 CompilerThread%d", i);
     Handle thread_oop = create_thread_oop(name_buffer, CHECK);
     jobject thread_handle = JNIHandles::make_global(thread_oop);
     _compiler1_objects[i] = thread_handle;
@@ -1018,7 +1018,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         // transitions if we bind them to new JavaThreads.
         if (!THREAD->can_call_java()) break;
         char name_buffer[256];
-        sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
+        os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
         Handle thread_oop;
         {
           // We have to give up the lock temporarily for the Java calls.
@@ -2600,7 +2600,7 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     char tier_name[256];
     for (int tier = CompLevel_simple; tier <= CompilationPolicy::highest_compile_level(); tier++) {
       CompilerStatistics* stats = &_stats_per_level[tier-1];
-      sprintf(tier_name, "Tier%d", tier);
+      os::snprintf_checked(tier_name, sizeof(tier_name), "Tier%d", tier);
       print_times(tier_name, stats);
     }
   }

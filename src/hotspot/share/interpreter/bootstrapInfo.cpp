@@ -230,9 +230,9 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   st = st ? st : tty;
 
   if (_indy_index != -1)
-    sprintf(what, "indy#%d", decode_indy_index());
+    os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
   else
-    sprintf(what, "condy");
+    os::snprintf_checked(what, sizeof(what), "condy");
   bool have_msg = (msg != NULL && strlen(msg) > 0);
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",
                 (have_msg ? msg : ""), (have_msg ? " " : ""),
@@ -251,11 +251,11 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     for (int i = 0; i < _argc; i++) {
       int pos = (int) strlen(argbuf);
       if (pos + 20 > (int)sizeof(argbuf)) {
-        sprintf(argbuf + pos, "...");
+        os::snprintf_checked(argbuf + pos, sizeof(argbuf) - pos, "...");
         break;
       }
       if (i > 0)  argbuf[pos++] = ',';
-      sprintf(argbuf+pos, "%d", arg_index(i));
+      os::snprintf_checked(argbuf+pos, sizeof(argbuf) - pos, "%d", arg_index(i));
     }
     st->print_cr("  argument indexes: {%s}", argbuf);
   }

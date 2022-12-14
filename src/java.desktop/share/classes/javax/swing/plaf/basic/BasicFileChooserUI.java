@@ -1408,22 +1408,25 @@ public class BasicFileChooserUI extends FileChooserUI {
     private void changeDirectory(File dir) {
         JFileChooser fc = getFileChooser();
         // Traverse shortcuts on Windows
-        if (dir != null && FilePane.usesShellFolder(fc)) {
+        if (dir != null) {
             try {
-                ShellFolder shellFolder = ShellFolder.getShellFolder(dir);
-
-                if (shellFolder.isLink()) {
-                    File linkedTo = shellFolder.getLinkLocation();
-
-                    // If linkedTo is null we try to use dir
-                    if (linkedTo != null) {
-                        if (fc.isTraversable(linkedTo)) {
-                            dir = linkedTo;
-                        } else {
-                            return;
+                File linkedTo = null;
+                if (FilePane.usesShellFolder(fc)) {
+                    ShellFolder shellFolder = ShellFolder.getShellFolder(dir);
+                    if (shellFolder.isLink()) {
+                        linkedTo = shellFolder.getLinkLocation();
+                        if (linkedTo == null) {
+                            dir = shellFolder;
                         }
+                    }
+                } else if ( fc.getFileSystemView().isLink(dir)){
+                    linkedTo = fc.getFileSystemView().getLinkLocation(dir);
+                }
+                if (linkedTo != null) {
+                    if (fc.isTraversable(linkedTo)) {
+                        dir = linkedTo;
                     } else {
-                        dir = shellFolder;
+                        return;
                     }
                 }
             } catch (FileNotFoundException ex) {

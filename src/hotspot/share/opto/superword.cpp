@@ -2712,7 +2712,7 @@ bool SuperWord::output() {
         assert(n->req() == 2, "only one input expected");
         BasicType bt = velt_basic_type(n);
         Node* in = vector_opd(p, 1);
-        int vopc = VectorCastNode::opcode(in->bottom_type()->is_vect()->element_basic_type());
+        int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {

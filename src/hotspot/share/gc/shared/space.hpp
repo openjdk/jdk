@@ -132,7 +132,6 @@ class Space: public CHeapObj<mtGC> {
 
   // Testers
   bool is_empty() const              { return used() == 0; }
-  bool not_empty() const             { return used() > 0; }
 
   // Returns true iff the given the space contains the
   // given address as part of an allocated object. For
@@ -173,14 +172,6 @@ class Space: public CHeapObj<mtGC> {
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
   virtual void object_iterate(ObjectClosure* blk) = 0;
-
-  // Create and return a new dirty card to oop closure. Can be
-  // overridden to return the appropriate type of closure
-  // depending on the type of space in which the closure will
-  // operate. ResourceArea allocated.
-  virtual DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                             CardTable::PrecisionStyle precision,
-                                             HeapWord* boundary);
 
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
@@ -285,15 +276,6 @@ public:
   }
 
   void do_MemRegion(MemRegion mr) override;
-
-  void set_min_done(HeapWord* min_done) {
-    _min_done = min_done;
-  }
-#ifndef PRODUCT
-  void set_last_bottom(HeapWord* last_bottom) {
-    _last_bottom = last_bottom;
-  }
-#endif
 };
 
 // A structure to represent a point at which objects are being copied
@@ -396,13 +378,6 @@ public:
   // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
-
-  // Return a size with adjustments as required of the space.
-  virtual size_t adjust_object_size_v(size_t size) const { return size; }
-
-  void set_first_dead(HeapWord* value) { _first_dead = value; }
-  void set_end_of_live(HeapWord* value) { _end_of_live = value; }
-
 protected:
   // Used during compaction.
   HeapWord* _first_dead;
@@ -491,10 +466,9 @@ class ContiguousSpace: public CompactibleSpace {
     set_top(compaction_top());
   }
 
-  // Override.
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
-                                     HeapWord* boundary) override;
+                                     HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
