@@ -101,16 +101,16 @@ char* CgroupV2Subsystem::cpu_quota_val() {
   return os::strdup(quota);
 }
 
-int CgroupV2Subsystem::cpu_period() {
-  GET_CONTAINER_INFO(int, _unified, "/cpu.max",
-                     "CPU Period is: %d", "%*s %d", period);
-  return period;
-}
-
 char * CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpuset.mems",
                      "cpuset.mems is: %s", "%1023s", mems, 1024);
   return os::strdup(mems);
+}
+
+int CgroupV2Subsystem::cpu_period() {
+  GET_CONTAINER_INFO(int, _unified, "/cpu.max",
+                     "CPU Period is: %d", "%*s %d", period);
+  return period;
 }
 
 /* memory_usage_in_bytes
