@@ -92,6 +92,8 @@ public:
   inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
+  template<typename P>
+  inline oop cont() const;
   inline void set_cont(oop value);
   template<typename P>
   inline void set_cont_raw(oop value);
