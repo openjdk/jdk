@@ -101,9 +101,11 @@ public class JInternalFrameTest {
                     throw new RuntimeException("Exception thrown");
                 }
             } finally {
-                if (jFrame != null) {
-                    SwingUtilities.invokeAndWait(() -> jFrame.dispose());
-                }
+                SwingUtilities.invokeAndWait(() -> {
+                    if (jFrame != null) {
+                        jFrame.dispose();
+                    }
+                });
             }
         }
     }
