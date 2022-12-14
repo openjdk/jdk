@@ -292,6 +292,7 @@ void ShenandoahControlThread::run_service() {
           }
           case servicing_old: {
             assert(generation == OLD, "Expected old generation here");
+            GCIdMark gc_id_mark;
             service_concurrent_old_cycle(heap, cause);
             break;
           }

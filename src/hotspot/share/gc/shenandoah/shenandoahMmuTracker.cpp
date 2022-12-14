@@ -141,7 +141,7 @@ bool ShenandoahMmuTracker::transfer_capacity(ShenandoahGeneration* from, Shenand
     return false;
   }
 
-  size_t regions_to_transfer = MAX2(1UL, size_t(double(available_regions) * _resize_increment));
+  size_t regions_to_transfer = MAX2(1u, uint(double(available_regions) * _resize_increment));
   size_t bytes_to_transfer = regions_to_transfer * ShenandoahHeapRegion::region_size_bytes();
   if (from->generation_mode() == YOUNG) {
     size_t new_young_size = from->max_capacity() - bytes_to_transfer;
