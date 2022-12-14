@@ -102,34 +102,8 @@ public class TestFileChooserCtrlASelection {
                 createAndShowUI();
             });
             robot.delay(1000);
-            Point frameLocation = fileChooser.getLocationOnScreen();
-            int frameHeight = frame.getHeight();
-
-            // check Ctrl+A on folders list
-            doMouseClick(frameLocation, frameHeight, 50);
-            doKeyPressAction();
-            File files[] = fileChooser.getSelectedFiles();
-            System.out.println("files length: " + files.length);
-            if (files.length > 1) {
-                passed_1 = true;
-            }
-
-            // check Ctrl+A on files list
-            fileChooser.setCurrentDirectory(testFile);
-            doMouseClick(frameLocation, frameHeight, 230);
-            doKeyPressAction();
-            files = fileChooser.getSelectedFiles();
-            System.out.println("files length: " + files.length);
-            if (files.length > 1) {
-                passed_2 = true;
-            }
-
-            if (passed_1 && passed_2) {
-                System.out.println("Passed");
-            } else {
-                throw new RuntimeException("Unable to select all files " +
-                        "or folder");
-            }
+            checkMultiSelectionDefault();
+            checkMultiSelectionDisabled();
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -150,6 +124,77 @@ public class TestFileChooserCtrlASelection {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+    }
+
+    /*
+     * JFileChooser MultiSelection property is set true by default.
+     */
+    private static void checkMultiSelectionDefault() {
+        System.out.println("Testing MultiSelection enabled by default");
+        Point frameLocation = fileChooser.getLocationOnScreen();
+        int frameHeight = frame.getHeight();
+
+        // check Ctrl+A on folders list
+        doMouseClick(frameLocation, frameHeight, 50);
+        doKeyPressAction();
+        File files[] = fileChooser.getSelectedFiles();
+        System.out.println("files length: " + files.length);
+        if (files.length > 1) {
+            passed_1 = true;
+        }
+
+        // check Ctrl+A on files list
+        fileChooser.setCurrentDirectory(testFile);
+        doMouseClick(frameLocation, frameHeight, 230);
+        doKeyPressAction();
+        files = fileChooser.getSelectedFiles();
+        System.out.println("files length: " + files.length);
+        if (files.length > 1) {
+            passed_2 = true;
+        }
+
+        if (passed_1 && passed_2) {
+            System.out.println("Passed");
+        } else {
+            throw new RuntimeException("Unable to select all files " +
+                    "or folder");
+        }
+    }
+
+    private static void checkMultiSelectionDisabled() {
+        System.out.println("Testing MultiSelection disabled");
+        passed_1 = false;
+        passed_2 = false;
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setCurrentDirectory(testDir);
+        Point frameLocation = fileChooser.getLocationOnScreen();
+        int frameHeight = frame.getHeight();
+
+        // check Ctrl+A on folders list
+        doMouseClick(frameLocation, frameHeight, 50);
+        doKeyPressAction();
+        File files[] = fileChooser.getSelectedFiles();
+        System.out.println("files length: " + files.length);
+        if (files.length == 0) {
+            passed_1 = true;
+        }
+
+        // check Ctrl+A on files list
+        fileChooser.setCurrentDirectory(testFile);
+        doMouseClick(frameLocation, frameHeight, 230);
+        doKeyPressAction();
+        files = fileChooser.getSelectedFiles();
+        System.out.println("files length: " + files.length);
+        if (files.length == 0) {
+            passed_2 = true;
+        }
+
+        if (passed_1 && passed_2) {
+            System.out.println("Passed");
+        } else {
+            throw new RuntimeException("All files or folder selected for" +
+                    "MultiSelection disabled");
+        }
     }
 
     private static void doMouseClick(Point frameLocation, int frameHeight,
