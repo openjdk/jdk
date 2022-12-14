@@ -129,6 +129,18 @@ TEST(cgroupTest, SubSystemFileLineContentsMultipleLines) {
   err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
   EXPECT_EQ(err, 0);
   EXPECT_STREQ(s, "1");
+
+  s[0] = '\0';
+  fill_file(test_file, "max 10000");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%s %*d", &s);
+  EXPECT_EQ(err, 0);
+  EXPECT_STREQ(s, "max");
+
+  x = -3;
+  fill_file(test_file, "max 10001");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%*s %d", &x);
+  EXPECT_EQ(err, 0);
+  EXPECT_EQ(x, 10001);
 }
 
 TEST(cgroupTest, SubSystemFileLineContentsSingleLine) {
