@@ -26,6 +26,7 @@
 package sun.nio.fs;
 
 import java.nio.file.FileSystem;
+import java.nio.file.spi.FileSystemProvider;
 
 /**
  * Creates this platform's default FileSystemProvider.
@@ -40,7 +41,7 @@ public class DefaultFileSystemProvider {
     /**
      * Returns the platform's default file system provider.
      */
-    public static LinuxFileSystemProvider instance() {
+    public static FileSystemProvider instance() {
         return INSTANCE;
     }
 
