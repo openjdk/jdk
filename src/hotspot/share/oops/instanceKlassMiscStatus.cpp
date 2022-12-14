@@ -58,6 +58,7 @@ void InstanceKlassMiscStatus::assign_class_loader_type(const ClassLoaderData* cl
     set_shared_class_loader_type(ClassLoader::APP_LOADER);
   }
 }
+#endif // INCLUDE_CDS
 
 #ifdef ASSERT
 void InstanceKlassMiscStatus::assert_is_safe(bool set) {
@@ -66,5 +67,3 @@ void InstanceKlassMiscStatus::assert_is_safe(bool set) {
   assert(!set || SafepointSynchronize::is_at_safepoint(), "set once or at safepoint");
 }
 #endif // ASSERT
-
-#endif // INCLUDE_CDS
