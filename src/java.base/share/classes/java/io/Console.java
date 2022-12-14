@@ -94,8 +94,12 @@ import sun.security.action.GetPropertyAction;
  * @since   1.6
  * @sealedGraph
  */
-public sealed class Console implements Flushable permits ConsoleImpl, ProxyingConsole
-{
+public sealed class Console implements Flushable permits ConsoleImpl, ProxyingConsole {
+    /**
+     * Package private no-arg constructor.
+     */
+    Console() {}
+
    /**
     * Retrieves the unique {@link java.io.PrintWriter PrintWriter} object
     * associated with this console.
@@ -349,14 +353,6 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
     }
 
     private static native String encoding();
-    /*
-     * Sets the console echo status to {@code on} and returns the previous
-     * console on/off status.
-     * @param on    the echo status to set to. {@code true} for echo on and
-     *              {@code false} for echo off
-     * @return true if the previous console echo status is on
-     */
-    static native boolean echo(boolean on) throws IOException;
     static final Charset CHARSET;
     static {
         Charset cs = null;
@@ -413,6 +409,4 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
 
     private static final Console cons;
     private static native boolean istty();
-
-    Console() {}
 }

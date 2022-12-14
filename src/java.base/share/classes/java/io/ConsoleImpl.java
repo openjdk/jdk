@@ -35,8 +35,7 @@ import sun.nio.cs.StreamEncoder;
  * Console implementation based on the platform's TTY.
  */
 
-final class ConsoleImpl extends Console
-{
+final class ConsoleImpl extends Console {
     /**
      * {@inheritDoc}
      */
@@ -110,7 +109,7 @@ final class ConsoleImpl extends Console
             synchronized(readLock) {
                 installShutdownHook();
                 try {
-                    restoreEcho = Console.echo(false);
+                    restoreEcho = echo(false);
                 } catch (IOException x) {
                     throw new IOError(x);
                 }
@@ -124,7 +123,7 @@ final class ConsoleImpl extends Console
                 } finally {
                     try {
                         if (restoreEcho)
-                            restoreEcho = Console.echo(true);
+                            restoreEcho = echo(true);
                     } catch (IOException x) {
                         if (ioe == null)
                             ioe = new IOError(x);
@@ -153,7 +152,7 @@ final class ConsoleImpl extends Console
                                 public void run() {
                                     try {
                                         if (restoreEcho) {
-                                            Console.echo(true);
+                                            echo(true);
                                         }
                                     } catch (IOException x) { }
                                 }
@@ -228,6 +227,15 @@ final class ConsoleImpl extends Console
         rcb = t;
         return rcb;
     }
+
+    /*
+     * Sets the console echo status to {@code on} and returns the previous
+     * console on/off status.
+     * @param on    the echo status to set to. {@code true} for echo on and
+     *              {@code false} for echo off
+     * @return true if the previous console echo status is on
+     */
+    private static native boolean echo(boolean on) throws IOException;
 
     class LineReader extends Reader {
         private final Reader in;
