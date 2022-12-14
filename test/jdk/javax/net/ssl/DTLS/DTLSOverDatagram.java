@@ -329,8 +329,8 @@ public class DTLSOverDatagram {
 
     /*
     Some tests failed with receive time-out errors when the client tried to read
-    from the server. The server thread had exitted normally so the read _should_
-    succeed. So let's try to read a couple times before giving up.
+    from the server. The server thread had exited normally so the read _should_
+    succeed. So let's try to read a couple of times before giving up.
      */
     DatagramPacket readFromSocket(DatagramSocket socket, byte[] buffer) throws IOException {
         for (int i = 1 ; i <= 2 ; ++i) {
@@ -402,7 +402,7 @@ public class DTLSOverDatagram {
         return false;
     }
 
-    DatagramPacket createHandshakePacket(byte[] ba, SocketAddress socketAddr){
+    DatagramPacket createHandshakePacket(byte[] ba, SocketAddress socketAddr) {
         return new DatagramPacket(ba, ba.length, socketAddr);
     }
 
@@ -576,7 +576,6 @@ public class DTLSOverDatagram {
 
         try {
             testCase.doClientSide(socket, serverSocketAddr);
-
         } catch (Exception exc) {
             exceptionOccurred.set(true);
 
