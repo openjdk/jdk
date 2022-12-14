@@ -135,8 +135,10 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
     const int key_len = strlen(key);
     for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
       char* key_substr = strstr(line, key);
-      // key should be at beginning of line and next character space
-      if (key_substr == line && line[key_len] == ' ') {
+      char after_key = line[key_len];
+      if (key_substr == line
+          && isspace(after_key) != 0
+          && after_key != '\n') {
         // Skip key, skip space
         const char* value_substr = line + key_len + 1;
         int matched = sscanf(value_substr, scan_fmt, returnval);

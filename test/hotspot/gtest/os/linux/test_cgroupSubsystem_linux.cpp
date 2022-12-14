@@ -115,6 +115,12 @@ TEST(CgroupTest, SubSystemFileLineContentsTests) {
   EXPECT_STREQ(s, "bar") << "Incorrect!";
 
   s[0] = '\0';
+  fill_file(test_file, "foo\tbar");
+  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
+  EXPECT_EQ(err, 0);
+  EXPECT_STREQ(s, "bar") << "Incorrect!";
+
+  s[0] = '\0';
   fill_file(test_file, "faulty_start foo bar");
   err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
   EXPECT_NE(err, 0) << "Key must be at start";
