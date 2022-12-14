@@ -28,6 +28,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.time.Duration;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
@@ -35,6 +36,8 @@ import javax.net.ssl.HttpsURLConnection;
  * @author danielfuchs
  */
 public class HTTPTestClient extends HTTPTest {
+
+    public static final long DELAY_BEFORE_RETRY = 2500; // milliseconds
 
     public static void connect(HttpProtocolType protocol,
                                HTTPTestServer server,
@@ -47,13 +50,17 @@ public class HTTPTestClient extends HTTPTest {
             // sleep a bit then try again once
             System.out.println("WARNING: Unexpected BindException: " + ex);
             System.out.println("\tSleeping a bit and try again...");
+            long start = System.nanoTime();
             System.gc();
             try {
-                Thread.sleep(500);
+                Thread.sleep(DELAY_BEFORE_RETRY);
             } catch (InterruptedException iex) {
                 // ignore
             }
             System.gc();
+            System.out.println("\tRetrying after "
+                    + Duration.ofNanos(System.nanoTime() - start).toMillis()
+                    + " milliseconds");
             doConnect(protocol, server, authType, auth);
         }
     }
