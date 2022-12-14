@@ -135,6 +135,17 @@ TEST(CgroupTest, SubSystemFileLineContentsTests) {
   err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
   EXPECT_EQ(err, 0);
   EXPECT_STREQ(s, "1");
+
+  jlong y;
+  fill_file(test_file, "1337");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, JLONG_FORMAT, &y);
+  EXPECT_EQ(err, 0);
+  EXPECT_EQ(y, 1337) << "Wrong value for y";
+  julong z;
+  fill_file(test_file, "1337");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, JULONG_FORMAT, &z);
+  EXPECT_EQ(err, 0);
+  EXPECT_EQ(z, 1337) << "Wrong value for z";
 }
 
 #endif // LINUX
