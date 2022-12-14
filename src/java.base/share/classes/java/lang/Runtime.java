@@ -89,10 +89,14 @@ import jdk.internal.reflect.Reflection;
  * shutdown sequence.
  *
  * <p>When the JVM terminates, all threads are immediately prevented from executing any further
- * Java code. This includes shutdown hooks as well as daemon and non-daemon threads. The
- * threads' current methods do not complete normally or abruptly; no {@code finally} clause
- * of any method is executed, nor is any {@linkplain Thread.UncaughtExceptionHandler
- * uncaught exception handler}.
+ * Java code. This includes shutdown hooks as well as daemon and non-daemon threads.
+ * This means, for example, that:
+ * <ul>
+ * <li>threads' current methods do not complete normally or abruptly;</li>
+ * <li>{@code finally} clauses are not executed;</li>
+ * <li>{@linkplain Thread.UncaughtExceptionHandler uncaught exception handlers} are not run; and</li>
+ * <li>resources opened with try-with-resources are not {@linkplain AutoCloseable closed};</li>
+ * </ul>
  *
  * @implNote
  * Native code typically uses the
@@ -278,7 +282,8 @@ public class Runtime {
      * @apiNote
      * This method should be used with extreme caution. Using it may circumvent or disrupt
      * any cleanup actions intended to be performed by shutdown hooks, possibly leading to
-     * data corruption.
+     * data corruption. See the <a href="#termination">termination</a> section above
+     * for other possible consequences of halting the Java Virtual Machine.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code

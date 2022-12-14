@@ -174,6 +174,9 @@ module java.base {
         jdk.incubator.vector;
     exports jdk.internal.event to
         jdk.jfr;
+    exports jdk.internal.io to
+        jdk.internal.le,
+        jdk.jshell;
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
@@ -409,6 +412,7 @@ module java.base {
 
     // JDK-internal service types
 
+    uses jdk.internal.io.JdkConsoleProvider;
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;

@@ -97,7 +97,7 @@ char * CgroupV2Subsystem::cpu_cpuset_cpus() {
 
 char* CgroupV2Subsystem::cpu_quota_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpu.max",
-                     "Raw value for CPU quota is: %s", "%s %*d", quota, 1024);
+                     "Raw value for CPU quota is: %s", "%1023s %*d", quota, 1024);
   return os::strdup(quota);
 }
 
@@ -141,7 +141,7 @@ jlong CgroupV2Subsystem::memory_max_usage_in_bytes() {
 
 char* CgroupV2Subsystem::mem_soft_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.low",
-                         "Memory Soft Limit is: %s", "%s", mem_soft_limit_str, 1024);
+                         "Memory Soft Limit is: %s", "%1023s", mem_soft_limit_str, 1024);
   return os::strdup(mem_soft_limit_str);
 }
 
@@ -163,14 +163,14 @@ jlong CgroupV2Subsystem::memory_and_swap_limit_in_bytes() {
 
 char* CgroupV2Subsystem::mem_swp_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.swap.max",
-                         "Memory and Swap Limit is: %s", "%s", mem_swp_limit_str, 1024);
+                         "Memory and Swap Limit is: %s", "%1023s", mem_swp_limit_str, 1024);
   return os::strdup(mem_swp_limit_str);
 }
 
 // memory.swap.current : total amount of swap currently used by the cgroup and its descendants
 char* CgroupV2Subsystem::mem_swp_current_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.swap.current",
-                         "Swap currently used is: %s", "%s", mem_swp_current_str, 1024);
+                         "Swap currently used is: %s", "%1023s", mem_swp_current_str, 1024);
   return os::strdup(mem_swp_current_str);
 }
 
@@ -197,7 +197,7 @@ jlong CgroupV2Subsystem::read_memory_limit_in_bytes() {
 
 char* CgroupV2Subsystem::mem_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.max",
-                         "Raw value for memory limit is: %s", "%s", mem_limit_str, 1024);
+                         "Raw value for memory limit is: %s", "%1023s", mem_limit_str, 1024);
   return os::strdup(mem_limit_str);
 }
 
@@ -223,7 +223,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
 
 char* CgroupV2Subsystem::pids_max_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.max",
-                     "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
+                     "Maximum number of tasks is: %s", "%1023s %*d", pidsmax, 1024);
   return os::strdup(pidsmax);
 }
 

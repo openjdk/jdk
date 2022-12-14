@@ -595,10 +595,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // Release C heap allocated data that this points to, which includes
   // reference counting symbol names.
-  // Can't release the constant pool here because the constant pool can be
-  // deallocated separately from the InstanceKlass for default methods and
-  // redefine classes.
-  release_C_heap_structures(/* release_constant_pool */ false);
+  // Can't release the constant pool or MethodData C heap data here because the constant
+  // pool can be deallocated separately from the InstanceKlass for default methods and
+  // redefine classes.  MethodData can also be released separately.
+  release_C_heap_structures(/* release_sub_metadata */ false);
 
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
@@ -2148,15 +2148,8 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
       // the cache can't grow so we can just get the current values
       get_jmethod_id_length_value(jmeths, idnum, &length, &id);
     } else {
-      // cache can grow so we have to be more careful
-      if (Threads::number_of_threads() == 0 ||
-          SafepointSynchronize::is_at_safepoint()) {
-        // we're single threaded or at a safepoint - no locking needed
-        get_jmethod_id_length_value(jmeths, idnum, &length, &id);
-      } else {
-        MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-        get_jmethod_id_length_value(jmeths, idnum, &length, &id);
-      }
+      MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+      get_jmethod_id_length_value(jmeths, idnum, &length, &id);
     }
   }
   // implied else:
@@ -2166,8 +2159,8 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
       length <= idnum ||  // cache is too short
       id == NULL) {       // cache doesn't contain entry
 
-    // This function can be called by the VMThread so we have to do all
-    // things that might block on a safepoint before grabbing the lock.
+    // This function can be called by the VMThread or GC worker threads so we
+    // have to do all things that might block on a safepoint before grabbing the lock.
     // Otherwise, we can deadlock with the VMThread or have a cache
     // consistency issue. These vars keep track of what we might have
     // to free after the lock is dropped.
@@ -2186,25 +2179,20 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
     }
 
     // allocate a new jmethodID that might be used
-    jmethodID new_id = NULL;
-    if (method_h->is_old() && !method_h->is_obsolete()) {
-      // The method passed in is old (but not obsolete), we need to use the current version
-      Method* current_method = method_with_idnum((int)idnum);
-      assert(current_method != NULL, "old and but not obsolete, so should exist");
-      new_id = Method::make_jmethod_id(class_loader_data(), current_method);
-    } else {
-      // It is the current version of the method or an obsolete method,
-      // use the version passed in
-      new_id = Method::make_jmethod_id(class_loader_data(), method_h());
-    }
-
-    if (Threads::number_of_threads() == 0 ||
-        SafepointSynchronize::is_at_safepoint()) {
-      // we're single threaded or at a safepoint - no locking needed
-      id = get_jmethod_id_fetch_or_update(idnum, new_id, new_jmeths,
-                                          &to_dealloc_id, &to_dealloc_jmeths);
-    } else {
+    {
       MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+      jmethodID new_id = NULL;
+      if (method_h->is_old() && !method_h->is_obsolete()) {
+        // The method passed in is old (but not obsolete), we need to use the current version
+        Method* current_method = method_with_idnum((int)idnum);
+        assert(current_method != NULL, "old and but not obsolete, so should exist");
+        new_id = Method::make_jmethod_id(class_loader_data(), current_method);
+      } else {
+        // It is the current version of the method or an obsolete method,
+        // use the version passed in
+        new_id = Method::make_jmethod_id(class_loader_data(), method_h());
+      }
+
       id = get_jmethod_id_fetch_or_update(idnum, new_id, new_jmeths,
                                           &to_dealloc_id, &to_dealloc_jmeths);
     }
@@ -2254,9 +2242,7 @@ jmethodID InstanceKlass::get_jmethod_id_fetch_or_update(
   assert(new_id != NULL, "sanity check");
   assert(to_dealloc_id_p != NULL, "sanity check");
   assert(to_dealloc_jmeths_p != NULL, "sanity check");
-  assert(Threads::number_of_threads() == 0 ||
-         SafepointSynchronize::is_at_safepoint() ||
-         JmethodIdCreation_lock->owned_by_self(), "sanity check");
+  assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
 
   // reacquire the cache - we are locked, single threaded or at a safepoint
   jmethodID* jmeths = methods_jmethod_ids_acquire();
@@ -2664,13 +2650,15 @@ static void method_release_C_heap_structures(Method* m) {
   m->release_C_heap_structures();
 }
 
-// Called also by InstanceKlass::deallocate_contents, with false for release_constant_pool.
-void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
+// Called also by InstanceKlass::deallocate_contents, with false for release_sub_metadata.
+void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   // Clean up C heap
   Klass::release_C_heap_structures();
 
   // Deallocate and call destructors for MDO mutexes
-  methods_do(method_release_C_heap_structures);
+  if (release_sub_metadata) {
+    methods_do(method_release_C_heap_structures);
+  }
 
   // Destroy the init_monitor
   delete _init_monitor;
@@ -2710,7 +2698,7 @@ void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
 
   FREE_C_HEAP_ARRAY(char, _source_debug_extension);
 
-  if (release_constant_pool) {
+  if (release_sub_metadata) {
     constants()->release_C_heap_structures();
   }
 }
