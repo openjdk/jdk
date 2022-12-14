@@ -911,8 +911,10 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
     return result->make_narrowklass();
   }
 
+#ifdef ASSERT
   Compile* C = Compile::current();
   TypeVerif verif(C);
+#endif
 
   const Type *this_t = maybe_remove_speculative(include_speculative);
   t = t->maybe_remove_speculative(include_speculative);
