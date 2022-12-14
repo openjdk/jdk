@@ -66,20 +66,34 @@ class MemReporterBase : public StackObj {
   }
 
   // Convert diff amount in bytes to current reporting scale
-  inline long diff_in_current_scale(size_t s1, size_t s2) const {
+  inline int64_t diff_in_current_scale(size_t s1, size_t s2) const {
+    // _scale should not be 0, otherwise division by zero at return.
+    assert(_scale != 0, "wrong scale");
+
     // Since size_t is unsigned, the amount >= 0 is always true.
     // Therefore, shifting the amount half the scale down/up is
-    // decided based on the s1 and s2. Thus, s1 >= s2 means amount >= 0,
-    // and amount >= _scale/2 is equivalent to (amount - _scale / 2) >= 0.
-    size_t amount = s1 - s2;
-    if (s1 >= s2) {
-      assert((amount + _scale / 2) <= SIZE_MAX, "difference is gretaer than the upper limit.");
-      amount += _scale / 2;
-    } else {
-      assert(amount >= _scale / 2, "difference is less than the lower limit.");
-      amount -= _scale / 2;
+    // decided based on the s1 and s2. Thus, s1 >= s2 means amount >= 0.
+    // ((a + b) > a) where b != 0, is used to check wrap-around of adding two size_t variables.
+    // ((a - b) < a) where b != 0, is used to check wrap-around of subtracting two size_t variables.
+    int64_t amount = s1 - s2;
+    int64_t scale = (int64_t)_scale;
+    if (amount == 0){
+      return 0L;
     }
-    return amount / _scale;
+
+    if (s1 >= s2) {
+      if ((scale / 2) != 0) {
+        assert((amount + scale / 2) > amount, "difference is greater than the upper limit.");
+        amount += scale / 2;
+      }
+      return (amount / scale);
+    }
+
+    if ((scale / 2) != 0){
+      assert((amount - scale / 2) < amount, "difference is less than the lower limit.");
+      amount -= scale / 2;
+    }
+    return amount / scale;
   }
 
   // Helper functions
