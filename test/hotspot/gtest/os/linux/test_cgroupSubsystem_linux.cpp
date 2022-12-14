@@ -78,30 +78,12 @@ void fill_file(const char* path, const char* content) {
   fclose(fp);
 }
 
-TEST(cgroupTest, SubSystemFileLineContentsTests) {
+TEST(cgroupTest, SubSystemFileLineContentsMultipleLines) {
   TestController my_controller{};
   const char* test_file = temp_file("cgroups");
   int x = 0;
   char s[1024];
   int err = 0;
-
-  fill_file(test_file, "1337");
-  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%d", &x);
-  EXPECT_EQ(err, 0);
-  EXPECT_EQ(x, 1337) << "Wrong value for x";
-
-  s[0] = '\0';
-  fill_file(test_file, "1337");
-  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%s", &s);
-  EXPECT_EQ(err, 0);
-  EXPECT_STREQ(s, "1337");
-
-  x = -1;
-  fill_file(test_file, nullptr);
-  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%d", &x);
-  EXPECT_NE(err, 0) << "Empty file should've failed";
-  EXPECT_EQ(x, -1) << "x was altered";
-
 
   fill_file(test_file, "foo");
   err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%s", &s);
@@ -137,10 +119,41 @@ TEST(cgroupTest, SubSystemFileLineContentsTests) {
   EXPECT_STREQ(s, "car");
 
   s[0] = '\0';
+  fill_file(test_file, "foo\ttest\nfoot car");
+  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
+  EXPECT_EQ(err, 0);
+  EXPECT_STREQ(s, "test");
+
+  s[0] = '\0';
   fill_file(test_file, "foo 1\nfoo car");
   err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
   EXPECT_EQ(err, 0);
   EXPECT_STREQ(s, "1");
+}
+
+TEST(cgroupTest, SubSystemFileLineContentsSingleLine) {
+  TestController my_controller{};
+  const char* test_file = temp_file("cgroups");
+  int x = 0;
+  char s[1024];
+  int err = 0;
+
+  fill_file(test_file, "1337");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%d", &x);
+  EXPECT_EQ(err, 0);
+  EXPECT_EQ(x, 1337) << "Wrong value for x";
+
+  s[0] = '\0';
+  fill_file(test_file, "1337");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%s", &s);
+  EXPECT_EQ(err, 0);
+  EXPECT_STREQ(s, "1337");
+
+  x = -1;
+  fill_file(test_file, nullptr);
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%d", &x);
+  EXPECT_NE(err, 0) << "Empty file should've failed";
+  EXPECT_EQ(x, -1) << "x was altered";
 
   jlong y;
   fill_file(test_file, "1337");
