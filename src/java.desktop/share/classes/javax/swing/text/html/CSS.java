@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Locale;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -1447,84 +1448,183 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Parses a String in the format <code>rgb(r, g, b)</code> where
-     * each of the Color components is either an integer, or a floating number
-     * with a % after indicating a percentage value of 255. Values are
-     * constrained to fit with 0-255. The resulting Color is returned.
+     * Parses a String in the format <code>rgb(rc gc bc)</code> or
+     * <code>rgb(rc gc bc / ac)</code>. Each of the rc, gc, bc Color components
+     * is either an integer, or a floating number with a % after, indicating a
+     * percentage value of 255. These values are constrained to fit with 0-255
+     * or 0%-100%. The ac Color component is a single floating number or
+     * floating number with a %. This value is constrained to fit with 0-1 or
+     * 0%-100%. The resulting Color is returned.
      */
     private static Color parseRGB(String string) {
         // Find the next numeric char
-        int[] index = new int[1];
+        byte[] index = new byte[2];
 
-        index[0] = 4;
-        int red = (int)getColorComponent(string, index);
-        int green = (int)getColorComponent(string, index);
-        int blue = (int)getColorComponent(string, index);
-
-        return new Color(red, green, blue);
+        index[0] = 3;
+        index[1] = 1;
+        //index[2] = 0;
+        float red = getColorComponent(string, index);
+        if (red < 0) return new Color(0, 0, 0);
+        float green = getColorComponent(string, index);
+        if (green < 0) return new Color(0, 0, 0);
+        float blue = getColorComponent(string, index);
+        if (blue < 0) return new Color(0, 0, 0);
+        float alpha = getColorComponent(string, index);
+        if (alpha == -1) return new Color(0, 0, 0);
+        if (alpha < 0) {
+            return new Color(red, green, blue);
+        } else {
+            return new Color(red, green, blue, alpha);
+        }
     }
 
     private static Color parseRGBA(String string) {
         // Find the next numeric char
-        int[] index = new int[1];
+        byte[] index = new byte[2];
 
         index[0] = 4;
-        float red = getColorComponent(string, index)/255f;
-        float green = getColorComponent(string, index)/255f;
-        float blue = getColorComponent(string, index)/255f;
+        index[1] = 1;
+        //index[2] = 0;
+        float red = getColorComponent(string, index);
+        if (red < 0) return new Color(0f, 0f, 0f);
+        float green = getColorComponent(string, index);
+        if (green < 0) return new Color(0f, 0f, 0f);
+        float blue = getColorComponent(string, index);
+        if (blue < 0) return new Color(0f, 0f, 0f);
         float alpha = getColorComponent(string, index);
-
-        return new Color(red, green, blue, alpha);
+        if (alpha == -1) return new Color(0f, 0f, 0f);
+        if (alpha < 0) {
+            return new Color(red, green, blue);
+        } else {
+            return new Color(red, green, blue, alpha);
+        }
     }
 
     /**
      * Returns the next integer value from <code>string</code> starting
      * at <code>index[0]</code>. The value can either can an integer, or
      * a percentage (floating number ending with %), in which case it is
-     * multiplied by 255.
+     * multiplied by 255 except for the alpha Color component.
      */
-    private static float getColorComponent(String string, int[] index) {
+    private static float getColorComponent(String string, byte[] index) {
         int length = string.length();
-        char aChar;
+        char aChar = '?';
+        boolean sep = false;
+        boolean oosep = false;
 
-        // Skip non-decimal chars
-        while(index[0] < length && (aChar = string.charAt(index[0])) != '-' &&
-              !Character.isDigit(aChar) && aChar != '.') {
+        // Principles
+        // - the attribute value is supposed to be well-formed i.e. :
+        //   - match the sequence directly following the name of the rgb or rgba functions.
+        //   - contains correctly formed blocks () (this is ensured by the parser CSSParser.java).
+        //   - Does not contain white space at the beginning of the string and the end of the string (this is ensured by the parser CSSParser.java).
+        //   - Components are well-formed.
+        //   - The sequence of characters is predictable.
+        // - Any deviation from the expected, generates a rejection of the component
+
+        // Must return :
+        // - a positive float if succeed to parse a decimal value ou percent value.
+        // - the value -1 if the argument format is wrong.
+        // - the value -2 if failed to parse expected separator
+
+        // Alphabet :
+        // - "( ,.-+0123456789/%)noe"
+
+        // Keyword :
+        // - Only one : none
+
+        // Grammar
+        // - argument :== ("rgb" | "rgba") "(" {<decimal-number> "%"? (" "* | ",")}3 ["/" <decimal-number> "%"?] ")"
+        // - decimal-number :== ["+" | "-"] digit* ["." digit*]
+        // - digit :== "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+        // - rgbc :: 'rgb'
+        // - delimitors :: = ( none
+        //
+        // Skip unauthorized characters :
+        // - Starting number alphabet
+        //   - non-number sign,
+        //   - non-decimal digit,
+        // - Separator signs
+        //   - non-whitespace,
+        //   - non-comma,
+        //   - non-slash,
+        // And store last word of 6 characters, may contain keyword "none"
+        //
+        // Try to detect the rigth separator and reach the first character different from ' '.
+        String seplist = index[1] == 1 ? "(" :
+                         index[1] > 3 ? " ,/" : " ,";
+        while(index[0] < length
+              && ((aChar = string.charAt(index[0])) != ')')) {
+
+            if (seplist.contains("" + aChar) || Character.isSpaceChar(aChar)) {
+                sep = true;
+                if (oosep && !Character.isSpaceChar(aChar) ) {
+                    // Two consecutive non space separator.
+                    return -1;
+                } else {
+                    if (!Character.isSpaceChar(aChar)) oosep = true;
+                }
+            } else {
+                break;
+            }
             index[0]++;
         }
+        // No separator detected, terminate.
+        if (!sep) return -2;
 
-        int start = index[0];
-
-        if (start < length && string.charAt(index[0]) == '-') {
-            index[0]++;
-        }
-        while(index[0] < length &&
-                         Character.isDigit(string.charAt(index[0]))) {
-            index[0]++;
-        }
-        if (index[0] < length && string.charAt(index[0]) == '.') {
-            // Decimal value
-            index[0]++;
-            while(index[0] < length &&
-                  Character.isDigit(string.charAt(index[0]))) {
+        // From here start build value
+        //           current char is in +-0123456789n
+        if (aChar == 'n'){
+            String snkw = string.substring(index[0], Math.min(index[0] + 4, length)).toLowerCase(Locale.ROOT);
+            if (snkw.equals("none")) {
+                index[1]++;
+                index[0] += 4;
+                return 0;
+            } else {
+                return -1;
+            }
+        } else {
+            // From here, next expected char is only +-0123456789
+            int start = index[0];
+            if (start < length && (string.charAt(index[0]) == '-' || string.charAt(index[0]) == '+')) {
                 index[0]++;
             }
-        }
-        if (start != index[0]) {
-            try {
-                float value = Float.parseFloat(string.substring
-                                               (start, index[0]));
-
-                if (index[0] < length && string.charAt(index[0]) == '%') {
+            // From here next expected chars are only 0123456789
+            while(index[0] < length
+                  && ((aChar = string.charAt(index[0])) != ')')
+                  && Character.isDigit(string.charAt(index[0]))) {
+                index[0]++;
+            }
+            if (index[0] < length && string.charAt(index[0]) == '.') {
+                // Decimal value
+                index[0]++;
+                // From here next expected chars are only 0123456789
+                while(index[0] < length
+                      && ((aChar = string.charAt(index[0])) != ')')
+                      && Character.isDigit(string.charAt(index[0]))) {
                     index[0]++;
-                    value = value * 255f / 100f;
                 }
-                return Math.min(255f, Math.max(0, value));
-            } catch (NumberFormatException nfe) {
-                // Treat as 0
+            }
+            if (start != index[0]) {
+                try {
+                    float value = Float.parseFloat(string.substring
+                                               (start, index[0]));
+                    if (index[0] < length && string.charAt(index[0]) == '%') {
+                        index[0]++;
+                        value = value / 100f;
+                    } else if (index[1] < 4) {
+                        value = value / 255f;
+                    }
+                    index[1]++;
+
+                    return Math.min(1, Math.max(0, value));
+                } catch (NumberFormatException nfe) {
+                    // Treat as rgb argument is wrong.
+                    return -1;
+                }
             }
         }
-        return 0;
+        // If not match return -1
+        return -1;
     }
 
     static int getIndexOfSize(float pt, int[] sizeMap) {
