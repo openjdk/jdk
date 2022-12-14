@@ -173,14 +173,6 @@ class Space: public CHeapObj<mtGC> {
   // included in the iteration.
   virtual void object_iterate(ObjectClosure* blk) = 0;
 
-  // Create and return a new dirty card to oop closure. Can be
-  // overridden to return the appropriate type of closure
-  // depending on the type of space in which the closure will
-  // operate. ResourceArea allocated.
-  virtual DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                             CardTable::PrecisionStyle precision,
-                                             HeapWord* boundary);
-
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
   // some heaps may not pack objects densely; a chunk may either be an
@@ -474,10 +466,9 @@ class ContiguousSpace: public CompactibleSpace {
     set_top(compaction_top());
   }
 
-  // Override.
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
-                                     HeapWord* boundary) override;
+                                     HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's

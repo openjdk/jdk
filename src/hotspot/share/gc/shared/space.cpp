@@ -161,12 +161,6 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   _min_done = bottom;
 }
 
-DirtyCardToOopClosure* Space::new_dcto_cl(OopIterateClosure* cl,
-                                          CardTable::PrecisionStyle precision,
-                                          HeapWord* boundary) {
-  return new DirtyCardToOopClosure(this, cl, precision, boundary);
-}
-
 HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
                                                HeapWord* top_obj) {
   if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
