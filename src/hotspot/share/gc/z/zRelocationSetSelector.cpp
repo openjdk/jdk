@@ -115,6 +115,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   const int npages = _live_pages.length();
   int selected_from = 0;
   int selected_to = 0;
+  size_t npages_selected[ZPageAgeMax + 1] = { 0 };
   size_t selected_live_bytes[ZPageAgeMax + 1] = { 0 };
   size_t selected_forwarding_entries = 0;
 
@@ -147,6 +148,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
       selected_from = from;
       selected_to = to;
       selected_live_bytes[static_cast<uint>(page->age())] += page_live_bytes;
+      npages_selected[static_cast<uint>(page->age())] += 1;
       selected_forwarding_entries = from_forwarding_entries;
     }
 
@@ -170,6 +172,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   // Update statistics
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     _stats[i]._relocate = selected_live_bytes[i];
+    _stats[i]._npages_selected = npages_selected[i];
   }
 
   log_debug(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
