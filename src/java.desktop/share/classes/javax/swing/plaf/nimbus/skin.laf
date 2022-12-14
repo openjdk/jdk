@@ -13389,8 +13389,32 @@
                   </layer>
                </canvas>
             </state>
+            <state stateKeys="Enabled">
+               <style>
+                  <textForeground>
+                     <matte red="0" green="0" blue="0" alpha="255" uiDefaultParentName="text" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                  </textForeground>
+                  <textBackground/>
+                  <background/>
+                  <uiproperties/>
+               </style>
+               <canvas>
+                  <size width="100" height="30"/>
+                  <nextLayerNameIndex>2</nextLayerNameIndex>
+                  <stretchingInsets top="5" bottom="5" left="5" right="5"/>
+                  <layer name="Layer 1">
+                     <opacity>1.0</opacity>
+                     <fillOpacity>1.0</fillOpacity>
+                     <blendingMode>NORMAL</blendingMode>
+                     <locked>false</locked>
+                     <visible>true</visible>
+                     <shapes/>
+                     <effects/>
+                  </layer>
+               </canvas>
+            </state>
          </backgroundStates>
-         <foregroundStates/>
+	 <foregroundStates/>
          <borderStates/>
          <regions/>
       </uiComponent>
