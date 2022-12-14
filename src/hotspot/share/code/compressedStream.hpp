@@ -118,7 +118,7 @@ protected:
   size_t  _bit_position {0}; // current bit offset
 
 public:
-  CompressedSparseData(int position = 0) {
+  explicit CompressedSparseData(int position = 0) {
     _position = position;
   }
 };
@@ -198,15 +198,15 @@ public:
 public:
   // Start grouped data. Return a byte offset position in the stream where grouped data begins
   int start_scope() {
-    align(); // a side effect!
+    align();
     return _position;
   }
 
   // Roll the stream state back to the given position
   void roll_back(int pos) {
+    assert(pos <= _position, "new position must be rollback the current position");
     _position = pos;
     _bit_position = 0;
-    assert(_position < _size, "set_position is only used for rollback");
   }
 
   // Return the number of bytes used

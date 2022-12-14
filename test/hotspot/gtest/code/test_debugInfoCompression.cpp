@@ -91,7 +91,7 @@ public:
   void check_buffer_grow() {
     ResourceMark rm;
     DebugInfoWriteStream out(NULL, 100);
-    out.roll_back(99);
+    for (int i = 0; i < 99; i++) { out.write_int(1); }
     out.write_int(0);
     out.align();
     out.write_int(1);
