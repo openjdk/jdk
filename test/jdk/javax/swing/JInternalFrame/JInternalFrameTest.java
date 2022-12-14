@@ -64,7 +64,7 @@ public class JInternalFrameTest {
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-	EventQueue.invokeAndWait(
+        EventQueue.invokeAndWait(
             () -> Thread.currentThread().setUncaughtExceptionHandler(
                 (t, e) -> {
                     failed = true;
@@ -107,27 +107,27 @@ public class JInternalFrameTest {
             }
         }
     }
-   
-    private static void createUI() {	
-     	jFrame = new JFrame();
 
-	JDesktopPane desktopPane = new JDesktopPane();
+    private static void createUI() {
+        jFrame = new JFrame();
+
+        JDesktopPane desktopPane = new JDesktopPane();
 
         iFrame =  new JInternalFrame("Test");
-	iFrame.setTitle("InternalFrame");
-	iFrame.setLocation(50, 50);
+        iFrame.setTitle("InternalFrame");
+        iFrame.setLocation(50, 50);
         iFrame.setSize(200, 200);
         iFrame.setVisible(true);
 
-	desktopPane.add(iFrame);
+        desktopPane.add(iFrame);
 
-	JPanel panel = new JPanel();
-	panel.setLayout(new BorderLayout());
-	panel.add(desktopPane, BorderLayout.CENTER);
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.add(desktopPane, BorderLayout.CENTER);
 
-	jFrame.add(panel, BorderLayout.CENTER);
+        jFrame.add(panel, BorderLayout.CENTER);
         jFrame.setSize(400, 400);
-	jFrame.setLocationRelativeTo(null);
+        jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
     }
-}    
+}
