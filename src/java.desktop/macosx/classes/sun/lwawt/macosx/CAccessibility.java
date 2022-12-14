@@ -817,7 +817,7 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
-
+    // This method is called from the native in ComboBoxAccessibility.m
     private static Accessible getAccessibleComboboxValue(Accessible a, Component c) {
         if (a == null) return null;
 
