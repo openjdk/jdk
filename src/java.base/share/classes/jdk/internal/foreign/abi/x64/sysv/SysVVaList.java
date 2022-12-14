@@ -130,8 +130,8 @@ public non-sealed class SysVVaList implements VaList {
         this.fpLimit = fpLimit;
     }
 
-    private static SysVVaList readFromAddress(long address, SegmentScope session) {
-        MemorySegment segment = MemorySegment.ofAddress(address, LAYOUT.byteSize(), session);
+    private static SysVVaList readFromAddress(long address, SegmentScope scope) {
+        MemorySegment segment = MemorySegment.ofAddress(address, LAYOUT.byteSize(), scope);
         MemorySegment regSaveArea = getRegSaveArea(segment);
         MemorySegment overflowArgArea = getArgOverflowArea(segment);
         return new SysVVaList(segment, overflowArgArea, regSaveArea, MAX_GP_OFFSET, MAX_FP_OFFSET);
@@ -322,12 +322,12 @@ public non-sealed class SysVVaList implements VaList {
         }
     }
 
-    static SysVVaList.Builder builder(SegmentScope session) {
-        return new SysVVaList.Builder(session);
+    static SysVVaList.Builder builder(SegmentScope scope) {
+        return new SysVVaList.Builder(scope);
     }
 
-    public static VaList ofAddress(long address, SegmentScope session) {
-        return readFromAddress(address, session);
+    public static VaList ofAddress(long address, SegmentScope scope) {
+        return readFromAddress(address, scope);
     }
 
     @Override
@@ -359,15 +359,15 @@ public non-sealed class SysVVaList implements VaList {
     }
 
     public static non-sealed class Builder implements VaList.Builder {
-        private final SegmentScope session;
+        private final SegmentScope scope;
         private final MemorySegment reg_save_area;
         private long currentGPOffset = 0;
         private long currentFPOffset = FP_OFFSET;
         private final List<SimpleVaArg> stackArgs = new ArrayList<>();
 
-        public Builder(SegmentScope session) {
-            this.session = session;
-            this.reg_save_area = MemorySegment.allocateNative(LAYOUT_REG_SAVE_AREA, session);
+        public Builder(SegmentScope scope) {
+            this.scope = scope;
+            this.reg_save_area = MemorySegment.allocateNative(LAYOUT_REG_SAVE_AREA, scope);
         }
 
         @Override
@@ -446,12 +446,12 @@ public non-sealed class SysVVaList implements VaList {
                 return EMPTY;
             }
 
-            MemorySegment vaListSegment = MemorySegment.allocateNative(LAYOUT, session);
+            MemorySegment vaListSegment = MemorySegment.allocateNative(LAYOUT, scope);
             MemorySegment stackArgsSegment;
             if (!stackArgs.isEmpty()) {
                 long stackArgsSize = stackArgs.stream().reduce(0L,
                         (acc, e) -> acc + Utils.alignUp(e.layout.byteSize(), STACK_SLOT_SIZE), Long::sum);
-                stackArgsSegment = MemorySegment.allocateNative(stackArgsSize, 16, session);
+                stackArgsSegment = MemorySegment.allocateNative(stackArgsSize, 16, scope);
                 MemorySegment writeCursor = stackArgsSegment;
                 for (SimpleVaArg arg : stackArgs) {
                     if (arg.layout.byteSize() > 8) {
