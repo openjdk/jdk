@@ -72,7 +72,7 @@ enum {
   JVM_ACC_IS_BEING_REDEFINED      = 0x00100000,     // True if the klass is being redefined.
   JVM_ACC_HAS_RESOLVED_METHODS    = 0x00200000,     // True if the klass has resolved methods
 
-  // Klass* and Method* flags
+  // Method* flags
   JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00400000,
 
   // field flags
