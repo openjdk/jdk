@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -908,7 +908,7 @@ public:
         if (is_offset_in_range(adr.offset(), 12)) {                                                \
           Assembler::NAME(Rs, adr.base(), adr.offset());                                           \
         } else {                                                                                   \
-          int32_t offset= 0;                                                                       \
+          int32_t offset = 0;                                                                      \
           assert_different_registers(Rs, temp);                                                    \
           baseOffset32(temp, adr, offset);                                                         \
           Assembler::NAME(Rs, temp, offset);                                                       \
@@ -1313,8 +1313,6 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
-  void move_double_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp = t0);
-  void move_float_to_integer_or_stack(VMRegPair src, VMRegPair dst, Register tmp = t0);
   void rt_call(address dest, Register tmp = t0);
 
   void call(const address dest, Register temp = t0) {

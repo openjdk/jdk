@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences. All rights reserved.
+ * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
+ * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,10 @@ package jdk.internal.foreign.abi.riscv64.linux;
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 
-import java.lang.foreign.*;
+import java.lang.foreign.SegmentScope;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.function.Consumer;
@@ -58,14 +62,13 @@ public final class LinuxRISCV64Linker extends AbstractLinker {
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        LinuxRISCV64VaList.Builder builder = new LinuxRISCV64VaList.Builder(scope);
+        LinuxRISCV64VaList.Builder builder = LinuxRISCV64VaList.builder(scope);
         actions.accept(builder);
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope session) {
-        MemorySegment segment = MemorySegment.ofAddress(address, Long.MAX_VALUE, session); // size unknown
-        return new LinuxRISCV64VaList(segment, 0);
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
+        return LinuxRISCV64VaList.ofAddress(address, scope);
     }
 
     public static VaList emptyVaList() {

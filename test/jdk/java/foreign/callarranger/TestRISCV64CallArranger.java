@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences. All rights reserved.
+ * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 /*
  * @test
  * @enablePreview
+ * @requires sun.arch.data.model == "64"
  * @modules java.base/jdk.internal.foreign
  *          java.base/jdk.internal.foreign.abi
  *          java.base/jdk.internal.foreign.abi.riscv64
@@ -37,10 +38,13 @@
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64CallArranger;
+import jdk.internal.foreign.abi.StubLocations;
+import jdk.internal.foreign.abi.VMStorage;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -51,12 +55,17 @@ import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.PlatformLayouts.RISCV64.*;
 import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
+import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class TestRISCV64CallArranger extends CallArrangerTestBase {
+
+    private static final short STACK_SLOT_SIZE = 8;
+    private static final VMStorage TARGET_ADDRESS_STORAGE = StubLocations.TARGET_ADDRESS.storage(StorageType.PLACEHOLDER);
+    private static final VMStorage RETURN_BUFFER_STORAGE = StubLocations.RETURN_BUFFER.storage(StorageType.PLACEHOLDER);
 
     @Test
     public void testEmpty() {
@@ -70,7 +79,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) }
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -94,7 +103,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { cast(byte.class, int.class), vmStore(x10, int.class) },
             { cast(short.class, int.class), vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
@@ -103,8 +112,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             { vmStore(x15, int.class) },
             { vmStore(x16, long.class) },
             { vmStore(x17, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { cast(byte.class, int.class), vmStore(stackStorage(1), int.class) }
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 0), int.class) },
+            { cast(byte.class, int.class), vmStore(stackStorage(STACK_SLOT_SIZE, 8), int.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -122,7 +131,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(x10, int.class) },
             { vmStore(x11, int.class) },
             { vmStore(f10, float.class) },
@@ -144,7 +153,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             expectedBindings
         });
 
@@ -241,8 +250,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x30, long.class) },
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(f10, float.class) },
             { vmStore(x10, int.class) },
             {
@@ -279,8 +288,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x30, long.class) },
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(f10, float.class) },
             { vmStore(x10, int.class) },
             {
@@ -320,7 +329,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(f10, float.class) },
             { vmStore(f11, float.class) },
             { vmStore(f12, float.class) },
@@ -351,7 +360,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             {
                 dup(),
                 bufferLoad(0, int.class),
@@ -399,7 +408,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { copy(struct), unboxAddress(), vmStore(x10, long.class) },
             { copy(struct), unboxAddress(), vmStore(x11, long.class) },
             { vmStore(x12, int.class) },
@@ -408,8 +417,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             { vmStore(x15, int.class) },
             { vmStore(x16, int.class) },
             { vmStore(x17, int.class) },
-            { copy(struct), unboxAddress(), vmStore(stackStorage(0), long.class) },
-            { vmStore(stackStorage(1), int.class) }
+            { copy(struct), unboxAddress(), vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 8), int.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -420,7 +429,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         MethodType mt = MethodType.methodType(void.class, int.class, int.class, float.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_INT, C_FLOAT);
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_INT, C_FLOAT);
-        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false, LinkerOptions.of(firstVariadicArg(1)));
+        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false, LinkerOptions.forDowncall(fd, firstVariadicArg(1)));
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
@@ -429,7 +438,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(x10, int.class) },
             { vmStore(x11, int.class) },
             { vmStore(x12, float.class) }
@@ -449,7 +458,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_INT, C_INT, C_DOUBLE,
             C_DOUBLE, C_LONG, C_LONG, C_INT,
             C_DOUBLE, C_DOUBLE, C_LONG);
-        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false, LinkerOptions.of(firstVariadicArg(1)));
+        LinuxRISCV64CallArranger.Bindings bindings = LinuxRISCV64CallArranger.getBindings(mt, fd, false, LinkerOptions.forDowncall(fd, firstVariadicArg(1)));
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
@@ -458,7 +467,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { vmStore(x10, int.class) },
             { vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
@@ -467,9 +476,9 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             { vmStore(x15, long.class) },
             { vmStore(x16, long.class) },
             { vmStore(x17, int.class) },
-            { vmStore(stackStorage(0), double.class) },
-            { vmStore(stackStorage(1), double.class) },
-            { vmStore(stackStorage(2), long.class) }
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 0), double.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 8), double.class) },
+            { vmStore(stackStorage(STACK_SLOT_SIZE, 16), long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -492,7 +501,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             FunctionDescriptor.ofVoid(ADDRESS, C_POINTER, C_INT, C_INT, C_FLOAT));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x29, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
             { unboxAddress(), vmStore(x10, long.class) },
             { vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
@@ -516,8 +525,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS, ADDRESS));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(x30, long.class) },
-            { unboxAddress(), vmStore(x29, long.class) }
+            { unboxAddress(), vmStore(RETURN_BUFFER_STORAGE, long.class) },
+            { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{
