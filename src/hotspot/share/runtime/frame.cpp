@@ -1565,7 +1565,7 @@ void FrameValues::validate() {
       prev = fv;
     }
   }
-  // if (error) { tty->cr(); print_on((JavaThread*)nullptr, tty); }
+  // if (error) { tty->cr(); print_on(nullptr, tty); }
   assert(!error, "invalid layout");
 }
 #endif // ASSERT

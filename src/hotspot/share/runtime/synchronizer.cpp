@@ -372,7 +372,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     if (m->object_peek() == NULL) {
       return false;
     }
-    JavaThread* const owner = (JavaThread*) m->owner_raw();
+    JavaThread* const owner = static_cast<JavaThread*>(m->owner_raw());
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability
