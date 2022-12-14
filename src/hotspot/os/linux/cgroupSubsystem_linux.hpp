@@ -153,7 +153,8 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   if (found_match) {
     return 0;
   }
-  log_debug(os, container)("Type %s not found in file %s", scan_fmt, absolute_path);
+  log_debug(os, container)("Type %s (key == %s) not found in file %s", scan_fmt,
+                           (key == nullptr ? "null" : key), absolute_path);
   return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP
