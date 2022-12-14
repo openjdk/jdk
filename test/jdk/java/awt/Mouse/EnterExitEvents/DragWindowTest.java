@@ -147,6 +147,7 @@ public class DragWindowTest {
         panel.add(button, BorderLayout.CENTER);
 
         frame.getContentPane().add(panel);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
     }
