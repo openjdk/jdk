@@ -76,6 +76,7 @@ import javax.swing.text.Position;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
+import sun.swing.AccessibleComponentAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 
@@ -3227,6 +3228,11 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             private AccessibleContext accessibleContext = null;
             private ListModel<E> listModel;
             private ListCellRenderer<? super E> cellRenderer = null;
+
+              static {
+                  AccessibleComponentAccessor.addAccessor(c ->
+                          c instanceof JList.AccessibleJList.AccessibleJListChild ? ((JList.AccessibleJList.AccessibleJListChild) c).getCurrentComponent() : null);
+              }
 
             /**
              * Constructs an {@code AccessibleJListChild}.

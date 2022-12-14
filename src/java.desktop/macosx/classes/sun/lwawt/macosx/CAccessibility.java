@@ -67,6 +67,7 @@ import javax.swing.KeyStroke;
 
 import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
+import sun.swing.AccessibleComponentAccessor;
 
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
@@ -814,6 +815,15 @@ class CAccessibility implements PropertyChangeListener {
 
                 return allChildren.toArray();
             }
+        }, c);
+    }
+
+    // This method is called from the native in OutlineRowAccessibility.m
+    private static Accessible getAccessibleCurrentAccessible(Accessible a, Component c) {
+        if (a == null) return null;
+        return invokeAndWait(() -> {
+            AccessibleContext ac = a.getAccessibleContext();
+            return ac == null ? null : AccessibleComponentAccessor.getAccessible(ac);
         }, c);
     }
 
