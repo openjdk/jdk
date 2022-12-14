@@ -78,7 +78,7 @@ void fill_file(const char* path, const char* content) {
   fclose(fp);
 }
 
-TEST(CgroupTest, SubSystemFileLineContentsTests) {
+TEST(cgroupTest, SubSystemFileLineContentsTests) {
   TestController my_controller{};
   const char* test_file = temp_file("cgroups");
   int x = 0;
