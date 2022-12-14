@@ -1545,35 +1545,66 @@ void ZStatRelocation::print_age_table() {
            .fill()
            .center("Live")
            .center("Garbage")
+           .center("Small")
+           .center("Medium")
+           .center("Large")
            .end());
+
+  size_t live[ZPageAgeMax + 1] = {};
+  size_t total[ZPageAgeMax + 1] = {};
+
+  uint oldest_none_empty_age = 0;
 
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     ZPageAge age = static_cast<ZPageAge>(i);
-    size_t live = 0;
-    size_t total = 0;
     auto summarize_pages = [&](const ZRelocationSetSelectorGroupStats& stats) {
-      live += stats.live();
-      total += stats.total();
+      live[i] += stats.live();
+      total[i] += stats.total();
     };
 
     summarize_pages(_selector_stats.small(age));
     summarize_pages(_selector_stats.medium(age));
     summarize_pages(_selector_stats.large(age));
 
-    if (total != 0) {
-      FormatBuffer<> age_str("");
-      if (age == ZPageAge::eden) {
-        age_str.append("Eden");
-      } else if (age != ZPageAge::old) {
-        age_str.append("Survivor %d", i);
-      }
-
-      lt.print("%s", age_table()
-               .left("%s", age_str.buffer())
-               .left(ZTABLE_ARGS(live))
-               .left(ZTABLE_ARGS(total - live))
-               .end());
+    if (total[i] != 0) {
+      oldest_none_empty_age = i;
     }
+  }
+
+  for (uint i = 0; i <= oldest_none_empty_age; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+
+    FormatBuffer<> age_str("");
+    if (age == ZPageAge::eden) {
+      age_str.append("Eden");
+    } else if (age != ZPageAge::old) {
+      age_str.append("Survivor %d", i);
+    }
+
+    auto create_age_table = [&]() {
+      if (live[i] == 0) {
+        return age_table()
+              .left("%s", age_str.buffer())
+              .left(ZTABLE_ARGS_NA);
+      } else {
+        return age_table()
+              .left("%s", age_str.buffer())
+              .left(ZTABLE_ARGS(live[i]));
+      }
+    };
+
+    lt.print("%s", create_age_table()
+              .left(ZTABLE_ARGS(total[i] - live[i]))
+              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+                    _selector_stats.small(age).npages_candidates(),
+                    _selector_stats.small(age).npages_selected())
+              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+                    _selector_stats.medium(age).npages_candidates(),
+                    _selector_stats.medium(age).npages_selected())
+              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+                    _selector_stats.large(age).npages_candidates(),
+                    _selector_stats.large(age).npages_selected())
+              .end());
   }
 }
 
