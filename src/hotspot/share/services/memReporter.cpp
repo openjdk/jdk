@@ -43,8 +43,7 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
 void MemReporterBase::print_total(size_t reserved, size_t committed) const {
   const char* scale = current_scale();
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
-                  amount_in_current_scale(reserved), scale,
-                  amount_in_current_scale(committed), scale);
+    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
 }
 
 void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const {

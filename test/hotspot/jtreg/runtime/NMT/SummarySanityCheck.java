@@ -85,7 +85,8 @@ public class SummarySanityCheck {
           long typeCommitted = Long.parseLong(typeMatcher.group("committed"));
           long typeReserved = Long.parseLong(typeMatcher.group("reserved"));
 
-          if(typeMatcher.group("readonly") != null) {
+          // Only Shared class space has readonly component
+          if (lines[i].contains("Shared class space") && typeMatcher.group("readonly") != null) {
             long typeReadOnly = Long.parseLong(typeMatcher.group("readonly"));
             // Make sure readonly is always less or equal to committed
             if (typeReadOnly > typeCommitted) {
