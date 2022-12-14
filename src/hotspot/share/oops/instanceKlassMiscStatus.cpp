@@ -26,6 +26,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/instanceKlassMiscStatus.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_CDS
@@ -57,4 +58,13 @@ void InstanceKlassMiscStatus::assign_class_loader_type(const ClassLoaderData* cl
     set_shared_class_loader_type(ClassLoader::APP_LOADER);
   }
 }
+
+#ifdef ASSERT
+void InstanceKlassMiscStatus::assert_is_safe(bool set) {
+  // Setting a flag is safe if it's set once or at a safepoint. RedefineClasses can set or
+  // reset flags at a safepoint.
+  assert(!set || SafepointSynchronize::is_at_safepoint(), "set once or at safepoint");
+}
+#endif // ASSERT
+
 #endif // INCLUDE_CDS
