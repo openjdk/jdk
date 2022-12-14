@@ -63,8 +63,9 @@ public class TestFileChooserCtrlASelection {
 
             // Create a test directory that contains only folders
             testDir = new File(tmpDir, "testDir");
-            if (!testDir.exists())
+            if (!testDir.exists()) {
                 testDir.mkdir();
+            }
             testDir.deleteOnExit();
 
             // create sub directories inside test directory
@@ -77,8 +78,9 @@ public class TestFileChooserCtrlASelection {
 
             // Create a test directory that contains only files
             testFile = new File(tmpDir, "testFile");
-            if (!testFile.exists())
+            if (!testFile.exists()) {
                 testFile.mkdir();
+            }
             testFile.deleteOnExit();
 
             // create temporary files inside testFile

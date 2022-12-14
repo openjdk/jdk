@@ -384,9 +384,12 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     protected void doMultiSelectionChanged(PropertyChangeEvent e) {
         if (getFileChooser().isMultiSelectionEnabled()) {
             fileList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            directoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         } else {
             fileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            directoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             fileList.clearSelection();
+            directoryList.clearSelection();
         }
 
         super.doMultiSelectionChanged(e);
@@ -939,6 +942,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         directoryList = new JList<>();
         directoryList.setName("GTKFileChooser.directoryList");
         directoryList.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, foldersLabelText);
+        if (getFileChooser().isMultiSelectionEnabled()) {
+            directoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        } else {
+            directoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        }
         align(directoryList);
 
         directoryList.setCellRenderer(new DirectoryCellRenderer());
