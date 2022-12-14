@@ -102,9 +102,9 @@
   product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
           "Verify forwarding tables")                                       \
                                                                             \
-  product(uint, ZTenuringThreshold, 0, DIAGNOSTIC,                          \
-          "Young generation tenuring threshold, 0 means dynamic")           \
-          range(0, ZPageAgeMax)
+  product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
+          "Young generation tenuring threshold, -1 for dynamic computation")\
+          range(-1, static_cast<int>(ZPageAgeMax))
 
 // end of GC_Z_FLAGS
 

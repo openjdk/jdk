@@ -77,8 +77,11 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
-  if (!FLAG_IS_DEFAULT(ZTenuringThreshold)) {
+  if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold != -1) {
     FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
+    if (MaxTenuringThreshold == 0) {
+      FLAG_SET_ERGO_IF_DEFAULT(AlwaysTenure, true);
+    }
   }
 
   if (FLAG_IS_DEFAULT(MaxTenuringThreshold)) {
@@ -109,7 +112,7 @@ void ZArguments::initialize() {
                                           ZGranuleSize / M));
   }
 
-  if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold > MaxTenuringThreshold) {
+  if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold > static_cast<int>(MaxTenuringThreshold)) {
     vm_exit_during_initialization(err_msg("ZTenuringThreshold must be be within bounds of "
                                           "MaxTenuringThreshold"));
   }

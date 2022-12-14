@@ -656,14 +656,18 @@ void ZGenerationYoung::concurrent_reset_relocation_set() {
 }
 
 void ZGenerationYoung::select_tenuring_threshold(ZRelocationSetSelectorStats stats, bool promote_all) {
+  const char* reason = "";
   if (promote_all) {
     _tenuring_threshold = 0;
-  } else if (ZTenuringThreshold != 0) {
-    _tenuring_threshold = ZTenuringThreshold;
+    reason = "Promote All";
+  } else if (ZTenuringThreshold != -1) {
+    _tenuring_threshold = static_cast<uint>(ZTenuringThreshold);
+    reason = "ZTenuringThreshold";
   } else {
     _tenuring_threshold = compute_tenuring_threshold(stats);
+    reason = "Computed";
   }
-  log_info(gc, reloc)("Using tenuring threshold: %d", _tenuring_threshold);
+  log_info(gc, reloc)("Using tenuring threshold: %d (%s)", _tenuring_threshold, reason);
 }
 
 uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats stats) {
@@ -677,6 +681,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     const ZPageAge age = static_cast<ZPageAge>(i);
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+    assert(age != ZPageAge::old || young_live == 0, "old data");
     if (young_live > 0 && young_live_last > 0) {
       young_life_expectancy_sum += double(young_live) / double(young_live_last);
       young_life_expectancy_samples++;
