@@ -394,6 +394,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   return true; // The Region node is unreachable - it is dead.
 }
 
+#ifdef ASSERT
 // Is this region in an infinite subgraph?
 // (no path to root except through false NeverBranch exit)
 bool RegionNode::is_in_infinite_subgraph() {
@@ -432,6 +433,7 @@ bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) 
   // No exit found for any loop -> all are infinite
   return true;
 }
+#endif //ASSERT
 
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
