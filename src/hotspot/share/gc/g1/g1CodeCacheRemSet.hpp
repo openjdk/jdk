@@ -47,11 +47,6 @@ class G1CodeRootSetTable : public CHeapObj<mtGC>  {
   Table _table;
   G1CodeRootSetTable* _purge_next;
 
-  unsigned int compute_hash(nmethod* nm) {
-    uintptr_t hash = (uintptr_t)nm;
-    return hash ^ (hash >> 7); // code heap blocks are 128byte aligned
-  }
-
  public:
   G1CodeRootSetTable(int size) : _table(size, size), _purge_next(NULL) {}
   // Needs to be protected by locks
