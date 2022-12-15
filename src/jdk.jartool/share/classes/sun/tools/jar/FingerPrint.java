@@ -268,27 +268,34 @@ final class FingerPrint {
             switch (cle) {
                 case InnerClassesAttribute ica -> {
                     for (var icm : ica.classes()) {
-                        if (this.nestedClass && icm.outerClass().isPresent() && this.name.equals(icm.innerClass().asInternalName()) && this.outerClassName == null) {
+                        if (this.nestedClass && icm.outerClass().isPresent()
+                                && this.name.equals(icm.innerClass().asInternalName())
+                                && this.outerClassName == null) {
                             this.outerClassName = icm.outerClass().get().asInternalName();
                         }
                     }
                 }
                 case FieldModel fm -> {
                     if (isPublic(fm.flags())) {
-                        fields.add(new Field(fm.flags().flagsMask(), fm.fieldName().stringValue(), fm.fieldType().stringValue()));
+                        fields.add(new Field(fm.flags().flagsMask(),
+                                fm.fieldName().stringValue(),
+                                fm.fieldType().stringValue()));
                     }
                 }
                 case MethodModel mm -> {
                     if (isPublic(mm.flags())) {
                         Set<String> exceptionSet = new HashSet<>();
-                        mm.findAttribute(Attributes.EXCEPTIONS).ifPresent(ea -> ea.exceptions().forEach(e -> exceptionSet.add(e.asInternalName())));
+                        mm.findAttribute(Attributes.EXCEPTIONS).ifPresent(ea ->
+                                ea.exceptions().forEach(e ->
+                                        exceptionSet.add(e.asInternalName())));
                         // treat type descriptor as a proxy for signature because signature
                         // is usually null, need to strip off the return type though
                         int n;
                         var desc = mm.methodType().stringValue();
                         if (desc != null && (n = desc.lastIndexOf(')')) != -1) {
                             desc = desc.substring(0, n + 1);
-                            methods.add(new Method(mm.flags().flagsMask(), mm.methodName().stringValue(), desc, exceptionSet));
+                            methods.add(new Method(mm.flags().flagsMask(),
+                                    mm.methodName().stringValue(), desc, exceptionSet));
                         }
                     }
                 }
