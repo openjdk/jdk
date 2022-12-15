@@ -155,8 +155,9 @@ class arrayOopDesc : public oopDesc {
       // How many words does the header need? It's ok to ignore the alignment,
       // because elements are always aligned to their respective sizes, and
       // we really only care about (at least) word-sized elements here.
-      int header_size_words = heap_word_size(base_offset_in_bytes(type));
-      int header_size_elems = header_size_words * words_per_elem;
+      size_t header_size_words = heap_word_size(base_offset_in_bytes(type));
+      assert(header_size_words < max_jint, "safe narrowing cast");
+      int header_size_elems = words_per_elem * (int)header_size_words;
       return max_jint - header_size_elems;
     }
     return (int32_t)max_elements_per_size_t;
