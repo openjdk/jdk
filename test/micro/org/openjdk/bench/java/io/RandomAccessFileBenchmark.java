@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 @Fork(2)
 @State(Scope.Thread)
-@Warmup(iterations=5, time = 1)
+@Warmup(iterations = 5, time = 1)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Measurement(iterations = 5, time = 2)
@@ -44,6 +44,8 @@ public class RandomAccessFileBenchmark {
     private int kiloBytes;
     private int size;
     private File file;
+
+    private RandomAccessFile raf;
 
     private short[] shorts;
     private int[] ints;
@@ -63,64 +65,64 @@ public class RandomAccessFileBenchmark {
         }
         ints = rnd.ints(size / Integer.BYTES).toArray();
         longs = rnd.longs(size / Long.BYTES).toArray();
+        raf = new RandomAccessFile(file, "rw");
+        // Make it more likely file content is directly available
+        for (int i = 0; i < size / Integer.BYTES; i++) {
+            raf.readInt();
+        }
     }
 
     @TearDown(Level.Iteration)
-    public void afterRun() {
+    public void afterRun() throws IOException {
+        raf.close();
         file.delete();
     }
 
     @Benchmark
     public void readShort(Blackhole bh) throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            for (int i = 0; i < size / Short.BYTES; i++) {
-                bh.consume(raf.readShort());
-            }
+        raf.seek(0);
+        for (int i = 0; i < size / Short.BYTES; i++) {
+            bh.consume(raf.readShort());
         }
     }
 
     @Benchmark
     public void readInt(Blackhole bh) throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            for (int i = 0; i < size / Integer.BYTES; i++) {
-                bh.consume(raf.readInt());
-            }
+        raf.seek(0);
+        for (int i = 0; i < size / Integer.BYTES; i++) {
+            bh.consume(raf.readInt());
         }
     }
 
     @Benchmark
     public void readLong(Blackhole bh) throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-            for (int i = 0; i < size / Long.BYTES; i++) {
-                bh.consume(raf.readLong());
-            }
+        raf.seek(0);
+        for (int i = 0; i < size / Long.BYTES; i++) {
+            bh.consume(raf.readLong());
         }
     }
 
     @Benchmark
     public void writeShort() throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            for (int i = 0; i < size / Short.BYTES; i++) {
-                raf.writeShort(shorts[i]);
-            }
+        raf.seek(0);
+        for (int i = 0; i < size / Short.BYTES; i++) {
+            raf.writeShort(shorts[i]);
         }
     }
 
     @Benchmark
     public void writeInt() throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            for (int i = 0; i < size / Integer.BYTES; i++) {
-                raf.writeInt(ints[i]);
-            }
+        raf.seek(0);
+        for (int i = 0; i < size / Integer.BYTES; i++) {
+            raf.writeInt(ints[i]);
         }
     }
 
     @Benchmark
     public void writeLong() throws IOException {
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            for (int i = 0; i < size / Long.BYTES; i++) {
-                raf.writeLong(longs[i]);
-            }
+        raf.seek(0);
+        for (int i = 0; i < size / Long.BYTES; i++) {
+            raf.writeLong(longs[i]);
         }
     }
 
