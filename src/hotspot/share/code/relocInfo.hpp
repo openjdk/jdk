@@ -492,15 +492,13 @@ class RelocationHolder {
     void* alignment_dummy;
   };
 
-  template<typename Reloc>
-  void check_reloc_type() {
+  template<typename Reloc, typename... Args>
+  void emplace_relocation(const Args&... args) {
     static_assert(std::is_base_of<Relocation, Reloc>::value, "not Relocation");
     static_assert(sizeof(Reloc) <= sizeof(_relocbuf), "_relocbuf too small");
-  }
-
-  // Used to verify that the base class subobject of the object constructed
-  // into _relocbuf is at the same address as the derived object.
-  void check_reloc_placement(const Relocation* reloc) const {
+    Relocation* reloc = ::new (_relocbuf) Reloc(args...);
+    // Verify the base class subobject of the object constructed into
+    // _relocbuf is at the same address as the derived object.
     assert(static_cast<const void*>(reloc) == _relocbuf, "invariant");
   }
 
@@ -508,23 +506,18 @@ class RelocationHolder {
   // reloc should be a most derived object.
   template<typename Reloc>
   void copy_into_impl(const Reloc& reloc) {
-    check_reloc_type<Reloc>();
-    Relocation* copy = ::new (_relocbuf) Reloc(reloc);
-    check_reloc_placement(copy);
+    emplace_relocation<Reloc>(reloc);
   }
 
-  // Support for construct().
-  // ctor is a function object of one argument, the _relocbuf.  It should
-  // construct a relocation object in the given buffer and return a pointer to
-  // that new relocation object.
-  struct Construct {};          // Tag for selecting this constructor.
-  template<typename C> RelocationHolder(Construct, C ctor) {
-    using RelocPtr = decltype(ctor(_relocbuf));
-    static_assert(std::is_pointer<RelocPtr>::value, "expected relocation pointer");
-    using Reloc = std::remove_pointer_t<RelocPtr>;
-    check_reloc_type<Reloc>();
-    Relocation* reloc = ctor(_relocbuf);
-    check_reloc_placement(reloc);
+  // Tag for selecting the constructor below and carrying the type of the
+  // relocation object the new holder will (initially) contain.
+  template<typename Reloc> struct Construct {};
+
+  // Constructor used by construct().  Constructs a new holder containing a
+  // relocation of type Reloc that is constructed using the provided args.
+  template<typename Reloc, typename... Args>
+  RelocationHolder(Construct<Reloc>, const Args&... args) {
+    emplace_relocation<Reloc>(args...);
   }
 
  public:
@@ -534,13 +527,10 @@ class RelocationHolder {
   // Add a constant offset to a relocation.  Helper for class Address.
   RelocationHolder plus(int offset) const;
 
-  // Return a holder containing a relocation of type T, constructed using args.
-  template<typename T, typename... Args>
+  // Return a holder containing a relocation of type Reloc, constructed using args.
+  template<typename Reloc, typename... Args>
   static RelocationHolder construct(const Args&... args) {
-    return RelocationHolder(Construct(),
-                            [&] (void* p) {
-                              return ::new (p) T(args...);
-                            });
+    return RelocationHolder(Construct<Reloc>(), args...);
   }
 
   RelocationHolder();           // Initializes type to none.
@@ -888,7 +878,7 @@ class Relocation {
 // certain inlines must be deferred until class Relocation is defined:
 
 inline RelocationHolder::RelocationHolder() :
-  RelocationHolder(Construct(), [&] (void* p) { return ::new (p) Relocation(); })
+  RelocationHolder(Construct<Relocation>())
 {}
 
 inline RelocationHolder::RelocationHolder(const RelocationHolder& from) {
