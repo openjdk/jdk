@@ -73,8 +73,7 @@ void G1CodeRootSetTable::nmethods_do(CodeBlobClosure* blk) {
   });
 }
 
-template<typename CB>
-void G1CodeRootSetTable::remove_if(CB& should_remove) {
+void G1CodeRootSetTable::remove_if(CleanCallback& should_remove) {
   _table.unlink(&should_remove);
 }
 

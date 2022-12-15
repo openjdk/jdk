@@ -29,6 +29,7 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/resourceHash.hpp"
 
+class CleanCallback;
 class nmethod;
 
 class G1CodeRootSetTable : public CHeapObj<mtGC>  {
@@ -57,8 +58,7 @@ class G1CodeRootSetTable : public CHeapObj<mtGC>  {
   void copy_to(G1CodeRootSetTable* new_table);
   void nmethods_do(CodeBlobClosure* blk);
 
-  template<typename CB>
-  void remove_if(CB& should_remove);
+  void remove_if(CleanCallback& should_remove);
   int number_of_entries() const {return _table.number_of_entries();}
 
   static void purge_list_append(G1CodeRootSetTable* tbl);
