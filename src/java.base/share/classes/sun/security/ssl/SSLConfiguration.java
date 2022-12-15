@@ -64,6 +64,9 @@ final class SSLConfiguration implements Cloneable {
     // "signature_algorithms_cert" extensions
     String[]                   signatureSchemes;
 
+    // the configured named groups for the "supported_groups" extensions
+    String[]                   namedGroups;
+
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
 
@@ -109,6 +112,10 @@ final class SSLConfiguration implements Cloneable {
     static final int maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.maxCertificateChainLength", 10);
 
+    // To switch off the supported_groups extension for DHE cipher suite.
+    static final boolean enableFFDHE =
+            Utilities.getBooleanProperty("jsse.enableFFDHE", true);
+
     // Is the extended_master_secret extension supported?
     static {
         boolean supportExtendedMasterSecret = Utilities.getBooleanProperty(
@@ -146,6 +153,7 @@ final class SSLConfiguration implements Cloneable {
         this.signatureSchemes = isClientMode ?
                 CustomizedClientSignatureSchemes.signatureSchemes :
                 CustomizedServerSignatureSchemes.signatureSchemes;
+        this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
             if (pv.compareTo(maximumProtocolVersion) > 0) {
@@ -201,6 +209,7 @@ final class SSLConfiguration implements Cloneable {
         params.setEnableRetransmissions(this.enableRetransmissions);
         params.setMaximumPacketSize(this.maximumPacketSize);
         params.setSignatureSchemes(this.signatureSchemes);
+        params.setNamedGroups(this.namedGroups);
 
         return params;
     }
@@ -264,6 +273,15 @@ final class SSLConfiguration implements Cloneable {
             // specified over the connections.
             this.signatureSchemes = ss;
         }   // Otherwise, use the default values
+
+        String[] ngs = params.getNamedGroups();
+        if (ngs != null) {
+            // Note if 'ngs' is empty, then no named groups should be
+            // specified over the connections.
+            this.namedGroups = ngs;
+        } else {    // Otherwise, use the default values.
+            this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
+        }
 
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();

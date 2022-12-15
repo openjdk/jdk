@@ -141,3 +141,16 @@ TEST_VM(NMT, random_reallocs) {
 
   os::free(p);
 }
+
+TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
+  if (!MemTracker::enabled()) {
+    return;
+  }
+  size_t some_size = 16;
+  void* p = os::malloc(some_size, mtTest);
+  ASSERT_NOT_NULL(p) << "Failed to malloc()";
+  MallocHeader* hdr = MallocTracker::malloc_header(p);
+  hdr->mark_block_as_dead();
+  hdr->revive();
+  check_expected_malloc_header(p, mtTest, some_size);
+}

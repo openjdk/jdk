@@ -109,7 +109,11 @@ class MemTracker : AllStatic {
     if (!enabled()) {
       return memblock;
     }
-    return MallocTracker::record_free(memblock);
+    return MallocTracker::record_free_block(memblock);
+  }
+  static inline void deaccount(MallocHeader::FreeInfo free_info) {
+    assert(enabled(), "NMT must be enabled");
+    MallocTracker::deaccount(free_info);
   }
 
   // Record creation of an arena
@@ -231,10 +235,7 @@ class MemTracker : AllStatic {
 
  private:
   // Tracking level
-  static volatile NMT_TrackingLevel   _tracking_level;
-  // If NMT option value passed by launcher through environment
-  // variable is valid
-  static bool                         _is_nmt_env_valid;
+  static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
   static MemBaseline      _baseline;
   // Query lock

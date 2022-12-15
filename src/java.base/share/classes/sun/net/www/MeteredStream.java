@@ -27,7 +27,6 @@ package sun.net.www;
 
 import java.io.*;
 import java.util.concurrent.locks.ReentrantLock;
-import sun.net.ProgressSource;
 import sun.net.www.http.ChunkedInputStream;
 
 
@@ -42,19 +41,13 @@ public class MeteredStream extends FilterInputStream {
     protected long count = 0;
     protected long markedCount = 0;
     protected int markLimit = -1;
-    protected ProgressSource pi;
     private final ReentrantLock readLock = new ReentrantLock();
 
-    public MeteredStream(InputStream is, ProgressSource pi, long expected)
+    public MeteredStream(InputStream is, long expected)
     {
         super(is);
 
-        this.pi = pi;
         this.expected = expected;
-
-        if (pi != null) {
-            pi.updateProgress(0, expected);
-        }
     }
 
     private final void justRead(long n) throws IOException {
@@ -80,9 +73,6 @@ public class MeteredStream extends FilterInputStream {
         if (count - markedCount > markLimit) {
             markLimit = -1;
         }
-
-        if (pi != null)
-            pi.updateProgress(count, expected);
 
         if (isMarked()) {
             return;
@@ -170,8 +160,6 @@ public class MeteredStream extends FilterInputStream {
         lock();
         try {
             if (closed) return;
-            if (pi != null)
-                pi.finishTracking();
 
             closed = true;
             in.close();
@@ -240,18 +228,5 @@ public class MeteredStream extends FilterInputStream {
 
     public final boolean isLockHeldByCurrentThread() {
         return readLock.isHeldByCurrentThread();
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        try {
-            close();
-            if (pi != null)
-                pi.close();
-        }
-        finally {
-            // Call super class
-            super.finalize();
-        }
     }
 }

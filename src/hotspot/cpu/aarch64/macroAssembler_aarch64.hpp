@@ -113,7 +113,6 @@ class MacroAssembler: public Assembler {
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
-    code_section()->relocate(inst_mark(), a.rspec());
     a.lea(this, r);
   }
 
@@ -1178,7 +1177,7 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Check if branches to the the non nmethod section require a far jump
+  // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
@@ -1449,6 +1448,13 @@ public:
                       FloatRegister data = v0, int unrolls = 1);
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
+
+  // ChaCha20 functions support block
+  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
+          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
+          FloatRegister tbl);
+  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
+          FloatRegister dVec, bool colToDiag);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

@@ -109,7 +109,7 @@ protected:
                                                  // that range. There is a similar range(s) on returns
                                                  // which we don't detect.
   int        _data_offset;                       // offset to where data region begins
-  int        _frame_size;                        // size of stack frame
+  int        _frame_size;                        // size of stack frame in words (NOT slots. On x64 these are 64bit words)
 
   bool                _caller_must_gc_arguments;
 

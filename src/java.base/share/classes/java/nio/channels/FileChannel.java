@@ -27,7 +27,7 @@ package java.nio.channels;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -1001,6 +1001,9 @@ public abstract class FileChannel
     /**
      * Maps a region of this channel's file into a new mapped memory segment,
      * with the given offset, size and memory session.
+     * The {@linkplain MemorySegment#address() address} of the returned memory
+     * segment is the starting address of the mapped off-heap region backing
+     * the segment.
      *
      * <p> If the specified mapping mode is
      * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
@@ -1053,11 +1056,11 @@ public abstract class FileChannel
      *
      * @throws  IllegalStateException
      *          If the {@code session} is not
-     *          {@linkplain MemorySession#isAlive() alive}.
+     *          {@linkplain SegmentScope#isAlive() alive}.
      *
      * @throws  WrongThreadException
      *          If this method is called from a thread other than the thread
-     *          {@linkplain MemorySession#ownerThread() owning} the
+     *          {@linkplain SegmentScope#isAccessibleBy(Thread) owning} the
      *          {@code session}.
      *
      * @throws  NonReadableChannelException
@@ -1080,7 +1083,7 @@ public abstract class FileChannel
      * @since   19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public MemorySegment map(MapMode mode, long offset, long size, MemorySession session)
+    public MemorySegment map(MapMode mode, long offset, long size, SegmentScope session)
         throws IOException
     {
         throw new UnsupportedOperationException();

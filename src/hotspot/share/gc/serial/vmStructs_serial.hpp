@@ -59,15 +59,14 @@
   nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold, HeapWord*)               \
   nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,     size_t)                  \
                                                                                                 \
-  nonstatic_field(OffsetTableContigSpace,      _offsets,               BlockOffsetArray)
+  nonstatic_field(TenuredSpace,                _offsets,               BlockOffsetArray)
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
   declare_type(SerialHeap,                   GenCollectedHeap)                \
   declare_type(TenuredGeneration,            Generation)                      \
-  declare_type(TenuredSpace,                 OffsetTableContigSpace)          \
-  declare_type(OffsetTableContigSpace,       ContiguousSpace)                 \
+  declare_type(TenuredSpace,                 ContiguousSpace)                 \
                                                                               \
   declare_type(DefNewGeneration,             Generation)                      \
                                                                               \
@@ -76,8 +75,7 @@
   declare_toplevel_type(BlockOffsetTable)                                     \
            declare_type(BlockOffsetArray,             BlockOffsetTable)       \
            declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)       \
-  declare_toplevel_type(BlockOffsetSharedArray*)                              \
-  declare_toplevel_type(OffsetTableContigSpace*)
+  declare_toplevel_type(BlockOffsetSharedArray*)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \
                                   declare_constant_with_value)
