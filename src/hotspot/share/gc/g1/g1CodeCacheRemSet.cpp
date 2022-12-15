@@ -75,7 +75,7 @@ void G1CodeRootSetTable::nmethods_do(CodeBlobClosure* blk) {
 
 template<typename CB>
 void G1CodeRootSetTable::remove_if(CB& should_remove) {
-  _table.unlink_destruct([&](nmethod* nm, nmethod* nm2){ return should_remove(nm);});
+  _table.unlink(&should_remove);
 }
 
 G1CodeRootSet::~G1CodeRootSet() {
@@ -180,6 +180,7 @@ void G1CodeRootSet::nmethods_do(CodeBlobClosure* blk) const {
 }
 
 class CleanCallback : public StackObj {
+  NONCOPYABLE(CleanCallback); // can not copy, _blobs will point to old copy
   class PointsIntoHRDetectionClosure : public OopClosure {
     HeapRegion* _hr;
    public:
@@ -208,7 +209,7 @@ class CleanCallback : public StackObj {
  public:
   CleanCallback(HeapRegion* hr) : _detector(hr), _blobs(&_detector, !CodeBlobToOopClosure::FixRelocations) {}
 
-  bool operator() (nmethod* nm) {
+  bool do_entry(nmethod* nm, nmethod* _) {
     _detector._points_into = false;
     _blobs.do_code_blob(nm);
     return !_detector._points_into;

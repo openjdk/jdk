@@ -274,36 +274,6 @@ class ResourceHashtableBase : public STORAGE {
     }
   }
 
-  // The argument should_remove() have the signature: bool Function(K const&, V const&).
-  // The predicate should_remove() will be called for each entry in the table.
-  // If should_remove() returns true, the element will be removed from the table.
-  // If the Node is C_HEAP allocated the entry is deleted, else the destructor
-  // of the Node will be called. Unlike unlink (above), this method uses a functor
-  // interface and will call the destructor of the Node, and thus the destructor
-  // of the element (even if the Node is resource allocated).
-  template<typename Function>
-  void unlink_destruct(Function&& should_remove) {
-    const unsigned sz = table_size();
-    for (unsigned index = 0; index < sz; index++) {
-      Node** ptr = bucket_at(index);
-      while (*ptr != nullptr) {
-        Node* node = *ptr;
-        bool clean = should_remove(node->_key, node->_value);
-        if (clean) {
-          *ptr = node->_next;
-          if (ALLOC_TYPE == AnyObj::C_HEAP) {
-            delete node;
-          } else {
-            node->~Node();
-          }
-          _number_of_entries --;
-        } else {
-          ptr = &(node->_next);
-        }
-      }
-    }
-  }
-
   template<typename Function>
   TableStatistics statistics_calculate(Function size_function) const {
     NumberSeq summary;
