@@ -39,7 +39,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Test that if handshake messages are crasged, the handshake would fail
+ * Test that if handshake messages are changed, the handshake would fail
  * because of handshaking hash verification.
  */
 public class InvalidRecords extends DTLSOverDatagram {
