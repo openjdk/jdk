@@ -152,7 +152,7 @@ public class CipherInputStream extends FilterInputStream {
                     ofinish = cipher.doFinal(obuffer, 0);
                 } else {
                     obuffer = cipher.doFinal();
-                    ofinish = obuffer.length;
+                    ofinish = (obuffer != null) ? obuffer.length : 0;
                 }
             } catch (IllegalBlockSizeException | BadPaddingException
                     | ShortBufferException e) {

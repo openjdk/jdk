@@ -268,7 +268,7 @@ public class CipherOutputStream extends FilterOutputStream {
                 ostored = cipher.doFinal(obuffer, 0);
             } else {
                 obuffer = cipher.doFinal();
-                ostored = obuffer.length;
+                ostored = (obuffer != null) ? obuffer.length : 0;
             }
             if (ostored > 0) {
                 output.write(obuffer, 0, ostored);
