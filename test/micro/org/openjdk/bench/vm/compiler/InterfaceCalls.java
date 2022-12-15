@@ -44,66 +44,66 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class InterfaceCalls {
 
-    interface AnInterface {
-        public int getInt();
+    interface FirstInterface {
+        public int getIntFirst();
     }
 
     interface SecondInterface {
-        public int get2();
+        public int getIntSecond();
     }
 
-    class FirstClass implements AnInterface, SecondInterface {
-        public int getInt() {
+    class FirstClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return 1;
         }
 
-        public int get2() {
+        public int getIntSecond() {
             return 1;
         }
     }
 
-    class SecondClass implements AnInterface, SecondInterface {
-        public int getInt() {
+    class SecondClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return 2;
         }
 
-        public int get2() {
+        public int getIntSecond() {
             return 1;
         }
     }
 
-    class ThirdClass implements AnInterface, SecondInterface {
-        public int getInt() {
+    class ThirdClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return -3;
         }
 
-        public int get2() {
+        public int getIntSecond() {
             return 1;
         }
     }
 
-    class FourthClass implements AnInterface, SecondInterface {
-        public int getInt() {
+    class FourthClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return -4;
         }
 
-        public int get2() {
+        public int getIntSecond() {
             return 1;
         }
     }
 
-    class FifthClass implements AnInterface, SecondInterface {
-        public int getInt() {
+    class FifthClass implements FirstInterface, SecondInterface {
+        public int getIntFirst() {
             return -5;
         }
 
-        public int get2() {
+        public int getIntSecond() {
             return 1;
         }
     }
 
     final int asLength = 5;
-    public AnInterface[] as = new AnInterface[asLength];
+    public FirstInterface[] as = new FirstInterface[asLength];
 
 
     @Setup
@@ -121,7 +121,7 @@ public class InterfaceCalls {
      */
     @Benchmark
     public int testMonomorphic() {
-        return as[0].getInt();
+        return as[0].getIntFirst();
     }
 
     int l = 0;
@@ -132,44 +132,44 @@ public class InterfaceCalls {
      */
     @Benchmark
     public int test1stInt2Types() {
-        AnInterface ai = as[l];
+        FirstInterface ai = as[l];
         l = 1 - l;
-        return ai.getInt();
+        return ai.getIntFirst();
     }
 
     @Benchmark
     public int test1stInt3Types() {
-        AnInterface ai = as[l];
+        FirstInterface ai = as[l];
         l = ++ l % 3;
-        return ai.getInt();
+        return ai.getIntFirst();
     }
 
     @Benchmark
     public int test1stInt5Types() {
-        AnInterface ai = as[l];
+        FirstInterface ai = as[l];
         l = ++ l % asLength;
-        return ai.getInt();
+        return ai.getIntFirst();
     }
 
     @Benchmark
     public int test2ndInt2Types() {
         SecondInterface ai = (SecondInterface) as[l];
         l = 1 - l;
-        return ai.get2();
+        return ai.getIntSecond();
     }
 
     @Benchmark
     public int test2ndInt3Types() {
         SecondInterface ai = (SecondInterface) as[l];
         l = ++ l % 3;
-        return ai.get2();
+        return ai.getIntSecond();
     }
 
     @Benchmark
     public int test2ndInt5Types() {
         SecondInterface ai = (SecondInterface) as[l];
         l = ++ l % asLength;
-        return ai.get2();
+        return ai.getIntSecond();
     }
 
 }
