@@ -2164,13 +2164,19 @@ encode %{
     // determine who we intended to call.
     MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
-    $$$emit8$primary;
 
     if (!_method) {
+      $$$emit8$primary;
       emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
+    } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
+      // The NOP here is purely to ensure that eliding a call to
+      // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
+      __ addr_nop_5();
+      __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
+      $$$emit8$primary;
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);

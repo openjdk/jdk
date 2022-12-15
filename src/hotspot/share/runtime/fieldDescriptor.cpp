@@ -35,11 +35,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
-
-oop fieldDescriptor::loader() const {
-  return _cp->pool_holder()->class_loader();
-}
-
 Symbol* fieldDescriptor::generic_signature() const {
   if (!has_generic_signature()) {
     return NULL;

@@ -117,7 +117,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
 
   ThreadsListHandle java_threads_iterator;
   ShenandoahStatAggregator aggregate_mutators(&mutators);
-  java_threads_iterator.threads_do(&aggregate_mutators);
+  java_threads_iterator.list()->threads_do(&aggregate_mutators);
 
   ShenandoahStatAggregator aggregate_workers(&workers);
   ShenandoahHeap::heap()->gc_threads_do(&aggregate_workers);
