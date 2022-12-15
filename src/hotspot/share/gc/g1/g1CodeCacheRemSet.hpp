@@ -26,12 +26,57 @@
 #define SHARE_GC_G1_G1CODECACHEREMSET_HPP
 
 #include "utilities/globalDefinitions.hpp"
-#include "gc/g1/g1CodeRootSetTable.hpp"
 
+#include "code/codeCache.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resourceHash.hpp"
+
+class CleanCallback;
 class CodeBlobClosure;
 class G1CodeRootSetTable;
 class HeapRegion;
 class nmethod;
+
+class G1CodeRootSetTable : public CHeapObj<mtGC>  {
+  friend class G1CodeRootSetTest;
+
+  static G1CodeRootSetTable* volatile _purge_list;
+
+  using Table = ResizeableResourceHashtable<nmethod*, nmethod*, AnyObj::C_HEAP, mtGC>;
+  Table _table;
+  G1CodeRootSetTable* _purge_next;
+
+  unsigned int compute_hash(nmethod* nm) {
+    uintptr_t hash = (uintptr_t)nm;
+    return hash ^ (hash >> 7); // code heap blocks are 128byte aligned
+  }
+
+ public:
+  G1CodeRootSetTable(int size) : _table(size, size), _purge_next(NULL) {}
+  // Needs to be protected by locks
+  bool add(nmethod* nm);
+  bool remove(nmethod* nm);
+
+  // Can be called without locking
+  bool contains(nmethod* nm);
+
+  void copy_to(G1CodeRootSetTable* new_table);
+  void nmethods_do(CodeBlobClosure* blk);
+
+  void remove_if(CleanCallback& should_remove);
+  int number_of_entries() const {return _table.number_of_entries();}
+
+  static void purge_list_append(G1CodeRootSetTable* tbl);
+  static void purge();
+
+  static size_t static_mem_size() {
+    return sizeof(_purge_list);
+  }
+
+  size_t mem_size();
+};
+
 
 // Implements storage for a set of code roots.
 // All methods that modify the set are not thread-safe except if otherwise noted.
