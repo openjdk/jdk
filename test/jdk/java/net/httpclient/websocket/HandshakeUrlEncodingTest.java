@@ -123,12 +123,9 @@ public class HandshakeUrlEncodingTest {
                 final String rawQuery = wse.getResponse().uri().getRawQuery();
                 final String expectedRawQuery = "&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
                 assertEquals(rawQuery, expectedRawQuery);
-                if (wse.getResponse().body() != null &&
-                        (wse.getResponse().body().getClass().equals(String.class))) {
-                    final String body = (String) wse.getResponse().body();
-                    final String expectedBody = "/?" + expectedRawQuery;
-                    assertEquals(body, expectedBody);
-                }
+                final String body = (String) wse.getResponse().body();
+                final String expectedBody = "/?" + expectedRawQuery;
+                assertEquals(body, expectedBody);
                 out.println("Status code is " + wse.getResponse().statusCode());
                 out.println("Response is " + wse.getResponse());
                 assertEquals(wse.getResponse().statusCode(), 400);
