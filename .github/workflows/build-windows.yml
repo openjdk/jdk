@@ -98,14 +98,6 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
-      - name: 'Check Echo'
-        run: >
-          echo "Echo Works"
-
-      - name: 'Check User'
-        run: >
-          echo $USER
-
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Visual Studio Installer
