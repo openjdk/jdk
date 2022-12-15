@@ -41,7 +41,7 @@ public class TestLSMMissedEmptyLoop {
     }
 
     static double doubleField;
-    
+
     @ForceInline
     public static void testHelper(int i, double d) {
         if (i != 42) {
