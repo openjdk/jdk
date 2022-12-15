@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,29 +31,6 @@
 
 #define FUNCTIONALITY_NOT_IMPLEMENTED -8
 
-class EnvironmentVariable : public CHeapObj<mtInternal> {
- public:
-  char* _key;
-  char* _value;
-
-  EnvironmentVariable() {
-    _key = NULL;
-    _value = NULL;
-  }
-
-  ~EnvironmentVariable() {
-    FREE_C_HEAP_ARRAY(char, _key);
-    FREE_C_HEAP_ARRAY(char, _value);
-  }
-
-  EnvironmentVariable(char* key, char* value) {
-    _key = key;
-    _value = value;
-  }
-
-};
-
-
 class CPUInformation : public CHeapObj<mtInternal> {
  private:
   int   _no_of_sockets;
@@ -63,13 +40,12 @@ class CPUInformation : public CHeapObj<mtInternal> {
   const char* _name;
 
  public:
-  CPUInformation() {
-    _no_of_sockets = 0;
-    _no_of_cores = 0;
-    _no_of_hw_threads = 0;
-    _description = NULL;
-    _name = NULL;
-  }
+  CPUInformation() :
+    _no_of_sockets(0),
+    _no_of_cores(0),
+    _no_of_hw_threads(0),
+    _description(nullptr),
+    _name(nullptr) {}
 
   int number_of_sockets(void) const {
     return _no_of_sockets;
@@ -121,21 +97,19 @@ class SystemProcess : public CHeapObj<mtInternal> {
   SystemProcess* _next;
 
  public:
-  SystemProcess() {
-    _pid  = 0;
-    _name = NULL;
-    _path = NULL;
-    _command_line = NULL;
-    _next = NULL;
-  }
+  SystemProcess() :
+    _pid (0),
+    _name(nullptr),
+    _path(nullptr),
+    _command_line(nullptr),
+    _next(nullptr) {}
 
-  SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) {
-    _pid = pid;
-    _name = name;
-    _path = path;
-    _command_line = command_line;
-    _next = next;
-  }
+  SystemProcess(int pid, char* name, char* path, char* command_line, SystemProcess* next) :
+    _pid(pid),
+    _name(name),
+    _path(path),
+    _command_line(command_line),
+    _next(next) {}
 
   void set_next(SystemProcess* sys_process) {
     _next = sys_process;
@@ -195,13 +169,12 @@ class NetworkInterface : public ResourceObj {
 
  public:
   NetworkInterface(const char* name, uint64_t bytes_in, uint64_t bytes_out, NetworkInterface* next) :
-  _name(NULL),
+  _name(nullptr),
   _bytes_in(bytes_in),
   _bytes_out(bytes_out),
   _next(next) {
-    assert(name != NULL, "invariant");
+    assert(name != nullptr, "invariant");
     const size_t length = strlen(name);
-    assert(allocated_on_res_area(), "invariant");
     _name = NEW_RESOURCE_ARRAY(char, length + 1);
     strncpy(_name, name, length + 1);
     assert(strncmp(_name, name, length) == 0, "invariant");

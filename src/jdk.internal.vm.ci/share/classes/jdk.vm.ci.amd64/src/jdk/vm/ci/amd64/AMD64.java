@@ -226,6 +226,12 @@ public class AMD64 extends Architecture {
         FSRM,
         GFNI,
         AVX512_BITALG,
+        F16C,
+        PKU,
+        OSPKE,
+        CET_IBT,
+        CET_SS,
+        AVX512_IFMA,
     }
 
     private final EnumSet<CPUFeature> features;

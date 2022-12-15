@@ -79,7 +79,6 @@ private:
   bool  _jvmti_can_walk_any_space;
 
   // Cache DTrace flags
-  bool  _dtrace_extended_probes;
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
 
@@ -358,7 +357,6 @@ public:
 
   // Cache DTrace flags
   void  cache_dtrace_flags();
-  bool  dtrace_extended_probes() const { return _dtrace_extended_probes; }
   bool  dtrace_method_probes()   const { return _dtrace_method_probes; }
   bool  dtrace_alloc_probes()    const { return _dtrace_alloc_probes; }
 

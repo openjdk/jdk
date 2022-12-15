@@ -78,11 +78,15 @@ handleClassPrepare(JNIEnv *env, EventInfo *evinfo,
 
 /* HandlerFunction - Invoked from event_callback() */
 static void
-handleGarbageCollectionFinish(JNIEnv *env, EventInfo *evinfo,
+handleClassUnload(JNIEnv *env, EventInfo *evinfo,
                   HandlerNode *node,
                   struct bag *eventBag)
 {
-    JDI_ASSERT_MSG(JNI_FALSE, "Should never call handleGarbageCollectionFinish");
+  /*
+   * CLASS_UNLOAD events are synthesized by the class tracking code, so
+   * we should never have this handler called.
+   */
+    JDI_ASSERT_MSG(JNI_FALSE, "Should never call handleClassUnload");
 }
 
 /* HandlerFunction - Invoked from event_callback() for METHOD_ENTRY and METHOD_EXIT. */
@@ -162,8 +166,8 @@ standardHandlers_defaultHandler(EventIndex ei)
         case EI_CLASS_PREPARE:
             return &handleClassPrepare;
 
-        case EI_GC_FINISH:
-            return &handleGarbageCollectionFinish;
+        case EI_CLASS_UNLOAD:
+            return &handleClassUnload;
 
         case EI_METHOD_ENTRY:
         case EI_METHOD_EXIT:

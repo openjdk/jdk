@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Subscription;
 
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
@@ -208,12 +209,25 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
+        protected void onSubscribed() {
+            exchange.registerResponseSubscriber(this);
+        }
+
+        @Override
         protected void complete(Throwable t) {
             try {
-                exchange.responseSubscriberCompleted(this);
+                exchange.unregisterResponseSubscriber(this);
             } finally {
                 super.complete(t);
             }
+        }
+
+        @Override
+        protected void onCancel() {
+            // If the subscription is cancelled the
+            // subscriber may or may not get completed.
+            // Therefore we need to unregister it
+            exchange.unregisterResponseSubscriber(this);
         }
     }
 
@@ -264,7 +278,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // The Http1ResponseBodySubscriber is registered with the HttpClient
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
-    void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+    private void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
         Throwable failed = null;
         synchronized (lock) {
             failed = this.failed;
@@ -279,8 +293,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
     }
 
-    void responseSubscriberCompleted(HttpBodySubscriberWrapper<T> subscriber) {
-        client.subscriberCompleted(subscriber);
+    private void unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+        client.unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -450,7 +464,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         BodySubscriber<T> subscriber = handler.apply(response);
         Http1ResponseBodySubscriber<T> bs =
                 new Http1ResponseBodySubscriber<T>(subscriber, this);
-        registerResponseSubscriber(bs);
         return bs;
     }
 

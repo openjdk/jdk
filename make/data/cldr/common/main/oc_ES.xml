@@ -1,0 +1,3034 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="oc"/>
+		<territory type="ES"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ar" draft="unconfirmed">arab</language>
+			<language type="ar_001" draft="unconfirmed">arab estandard modèrne</language>
+			<language type="bn" draft="unconfirmed">bengalí</language>
+			<language type="de_AT" draft="unconfirmed">alemand austriac</language>
+			<language type="de_CH" draft="unconfirmed">naut alemand suís</language>
+			<language type="en_CA" draft="unconfirmed">anglés canadienc</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">anglés (Regne Unit)</language>
+			<language type="es" draft="unconfirmed">espanhòu</language>
+			<language type="es_419" draft="unconfirmed">espanhòu latinoamerican</language>
+			<language type="es_ES" draft="unconfirmed">espanhòu d’Espanha</language>
+			<language type="es_MX" draft="unconfirmed">espanhòu de Mexic</language>
+			<language type="fi" draft="unconfirmed">finés</language>
+			<language type="fr_CA" draft="unconfirmed">francés canadienc</language>
+			<language type="fr_CH" draft="unconfirmed">francés suís</language>
+			<language type="hi_Latn" draft="unconfirmed">hindi (latin)</language>
+			<language type="hi_Latn" alt="variant" draft="unconfirmed">hinglish</language>
+			<language type="hu" draft="unconfirmed">hongarés</language>
+			<language type="id" draft="unconfirmed">indonesi</language>
+			<language type="pt_BR" draft="unconfirmed">portugés de Brasil</language>
+			<language type="pt_PT" draft="unconfirmed">portugués de Portugal</language>
+			<language type="sl" draft="unconfirmed">esloven</language>
+			<language type="sv" draft="unconfirmed">suec</language>
+			<language type="th" draft="unconfirmed">tailandés</language>
+			<language type="und" draft="unconfirmed">lengua desconeishuda</language>
+			<language type="zh" draft="unconfirmed">chinés</language>
+			<language type="zh" alt="menu" draft="unconfirmed">chinés mandarin</language>
+			<language type="zh_Hans" draft="unconfirmed">shinés simplificat</language>
+			<language type="zh_Hant" draft="unconfirmed">chinés tradicionau</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">chinés mandarin tradicionau</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">arab</script>
+			<script type="Hans" draft="unconfirmed">simplificat</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">han simplificat</script>
+			<script type="Hant" draft="unconfirmed">tradicionau</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">han tradicionau</script>
+			<script type="Latn" draft="unconfirmed">latino</script>
+			<script type="Zxxx" draft="unconfirmed">no escrit</script>
+			<script type="Zzzz" draft="unconfirmed">alfabet desconeishut</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">Mon</territory>
+			<territory type="003" draft="unconfirmed">America deth Nòrd</territory>
+			<territory type="005" draft="unconfirmed">Sudamerica</territory>
+			<territory type="011" draft="unconfirmed">Africa occidentau</territory>
+			<territory type="013" draft="unconfirmed">Centreamerica</territory>
+			<territory type="014" draft="unconfirmed">Africa orientau</territory>
+			<territory type="015" draft="unconfirmed">Africa septentrionau</territory>
+			<territory type="017" draft="unconfirmed">Africa centrau</territory>
+			<territory type="018" draft="unconfirmed">Africa meridionau</territory>
+			<territory type="019" draft="unconfirmed">America</territory>
+			<territory type="021" draft="unconfirmed">Nòrt America</territory>
+			<territory type="030" draft="unconfirmed">Asia orientau</territory>
+			<territory type="034" draft="unconfirmed">Asia meridionau</territory>
+			<territory type="035" draft="unconfirmed">Sudèst aisatic</territory>
+			<territory type="039" draft="unconfirmed">Euròpa meridionau</territory>
+			<territory type="053" draft="unconfirmed">Australasia</territory>
+			<territory type="057" draft="unconfirmed">Region de Micronesia</territory>
+			<territory type="143" draft="unconfirmed">Asia centrau</territory>
+			<territory type="145" draft="unconfirmed">Asia occidentau</territory>
+			<territory type="151" draft="unconfirmed">Euròpa orientau</territory>
+			<territory type="154" draft="unconfirmed">Euròpa septentrionau</territory>
+			<territory type="155" draft="unconfirmed">Euròpa occidentau</territory>
+			<territory type="419" draft="unconfirmed">Latinoamerica</territory>
+			<territory type="AI" draft="unconfirmed">Anguila</territory>
+			<territory type="AQ" draft="unconfirmed">Antartida</territory>
+			<territory type="AS" draft="unconfirmed">Samoa Americana</territory>
+			<territory type="AU" draft="unconfirmed">Australia</territory>
+			<territory type="AX" draft="unconfirmed">Isles Åland</territory>
+			<territory type="BF" draft="unconfirmed">Burquina Faso</territory>
+			<territory type="BH" draft="unconfirmed">Barein</territory>
+			<territory type="BI" draft="unconfirmed">Borondi</territory>
+			<territory type="BL" draft="unconfirmed">Sant Bartolomé</territory>
+			<territory type="BM" draft="unconfirmed">Bermudes</territory>
+			<territory type="BO" draft="unconfirmed">Bolivia</territory>
+			<territory type="BQ" draft="unconfirmed">Carib neerlandés</territory>
+			<territory type="BW" draft="unconfirmed">Botsuana</territory>
+			<territory type="BZ" draft="unconfirmed">Belice</territory>
+			<territory type="CC" draft="unconfirmed">Isles Còcos</territory>
+			<territory type="CD" draft="unconfirmed">Republica Democratica deth Còngo</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">Còngo (RDC)</territory>
+			<territory type="CF" draft="unconfirmed">Republica Centreafricana</territory>
+			<territory type="CG" draft="unconfirmed">Còngo</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">Còngo (Republica)</territory>
+			<territory type="CI" draft="unconfirmed">Còsta d’Ivoire</territory>
+			<territory type="CI" alt="variant" draft="unconfirmed">Còsta de Marfil</territory>
+			<territory type="CK" draft="unconfirmed">Isles Cook</territory>
+			<territory type="CO" draft="unconfirmed">Colòmbia</territory>
+			<territory type="CP" draft="unconfirmed">Isla Clipperton</territory>
+			<territory type="CV" draft="unconfirmed">Cabo Verde</territory>
+			<territory type="CX" draft="unconfirmed">Isla de Nadau</territory>
+			<territory type="DJ" draft="unconfirmed">Yibuti</territory>
+			<territory type="DK" draft="unconfirmed">Dinamarca</territory>
+			<territory type="DO" draft="unconfirmed">Republica Dominicana</territory>
+			<territory type="DZ" draft="unconfirmed">Argelia</territory>
+			<territory type="EC" draft="unconfirmed">Equador</territory>
+			<territory type="EH" draft="unconfirmed">Sahara Occidentau</territory>
+			<territory type="ER" draft="unconfirmed">Eritrea</territory>
+			<territory type="EZ" draft="unconfirmed">zòna euro</territory>
+			<territory type="FI" draft="unconfirmed">Finlandia</territory>
+			<territory type="FJ" draft="unconfirmed">Fiyi</territory>
+			<territory type="FK" draft="unconfirmed">Isles Malvines</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">Isles Malvines (Isles Falkland)</territory>
+			<territory type="FO" draft="unconfirmed">Isles Faròe</territory>
+			<territory type="GA" draft="unconfirmed">Gabòn</territory>
+			<territory type="GB" draft="unconfirmed">Regne Unit</territory>
+			<territory type="GD" draft="unconfirmed">Granada</territory>
+			<territory type="GF" draft="unconfirmed">Guaiana Francesa</territory>
+			<territory type="GG" draft="unconfirmed">Guernesey</territory>
+			<territory type="GH" draft="unconfirmed">Ghana</territory>
+			<territory type="GI" draft="unconfirmed">Gibraltar</territory>
+			<territory type="GM" draft="unconfirmed">Gambia</territory>
+			<territory type="GN" draft="unconfirmed">Guinea</territory>
+			<territory type="GP" draft="unconfirmed">Guadalupe</territory>
+			<territory type="GQ" draft="unconfirmed">Guinèa Equatorial</territory>
+			<territory type="GS" draft="unconfirmed">Isles Geòrgia deth Sud e Sandwich deth Sud</territory>
+			<territory type="GW" draft="unconfirmed">Guinea-Bissau</territory>
+			<territory type="GY" draft="unconfirmed">Guyana</territory>
+			<territory type="HK" draft="unconfirmed">RAE de Hong Kong (China)</territory>
+			<territory type="HM" draft="unconfirmed">Isles Heard e McDonald</territory>
+			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HT" draft="unconfirmed">Aití</territory>
+			<territory type="IC" draft="unconfirmed">Isles Canàries</territory>
+			<territory type="IL" draft="unconfirmed">Israel</territory>
+			<territory type="IM" draft="unconfirmed">Isla de Man</territory>
+			<territory type="IO" draft="unconfirmed">Territòri Britanic der Ocean Índic</territory>
+			<territory type="JM" draft="unconfirmed">Jamaica</territory>
+			<territory type="KG" draft="unconfirmed">Kirguistan</territory>
+			<territory type="KH" draft="unconfirmed">Cambòya</territory>
+			<territory type="KI" draft="unconfirmed">Kiribati</territory>
+			<territory type="KM" draft="unconfirmed">Comores</territory>
+			<territory type="KN" draft="unconfirmed">Sant Critòbal e Nieves</territory>
+			<territory type="KP" draft="unconfirmed">Corèa deth Nòrd</territory>
+			<territory type="KR" draft="unconfirmed">Corèa deth Sud</territory>
+			<territory type="KY" draft="unconfirmed">Isles Caiman</territory>
+			<territory type="KZ" draft="unconfirmed">Kazajistan</territory>
+			<territory type="LR" draft="unconfirmed">Liberia</territory>
+			<territory type="LS" draft="unconfirmed">Lesoto</territory>
+			<territory type="LT" draft="unconfirmed">Lituania</territory>
+			<territory type="MC" draft="unconfirmed">Mònaco</territory>
+			<territory type="MH" draft="unconfirmed">Isles Marshall</territory>
+			<territory type="MK" draft="unconfirmed">Macedònia deth Nòrd</territory>
+			<territory type="MO" draft="unconfirmed">RAE de Macao (China)</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">Macao</territory>
+			<territory type="MP" draft="unconfirmed">Isles Marianes deth Nòrd</territory>
+			<territory type="MR" draft="unconfirmed">Mauritania</territory>
+			<territory type="MV" draft="unconfirmed">Maldives</territory>
+			<territory type="MW" draft="unconfirmed">Malawi</territory>
+			<territory type="NC" draft="unconfirmed">Nòva Caledònia</territory>
+			<territory type="NE" draft="unconfirmed">Níger</territory>
+			<territory type="NF" draft="unconfirmed">Isla Norfolk</territory>
+			<territory type="NG" draft="unconfirmed">Nigeria</territory>
+			<territory type="NI" draft="unconfirmed">Nicaragua</territory>
+			<territory type="NL" draft="unconfirmed">Païsi Baishi</territory>
+			<territory type="NO" draft="unconfirmed">Noroega</territory>
+			<territory type="NZ" alt="variant" draft="unconfirmed">Aotearoa (Nòva Zelanda)</territory>
+			<territory type="PF" draft="unconfirmed">Polinesia Francesa</territory>
+			<territory type="PH" draft="unconfirmed">Filipines</territory>
+			<territory type="PL" draft="unconfirmed">Polonia</territory>
+			<territory type="PM" draft="unconfirmed">Sant Pèir e Miquelon</territory>
+			<territory type="PN" draft="unconfirmed">Isla Pitcairn</territory>
+			<territory type="PS" draft="unconfirmed">Territòris Palestins</territory>
+			<territory type="PW" draft="unconfirmed">Palaos</territory>
+			<territory type="QA" draft="unconfirmed">Quatar</territory>
+			<territory type="QO" draft="unconfirmed">Territòris aluenhats d’Oceania</territory>
+			<territory type="RE" draft="unconfirmed">Reunion</territory>
+			<territory type="RU" draft="unconfirmed">Rossia</territory>
+			<territory type="SB" draft="unconfirmed">Isles Salomon</territory>
+			<territory type="SC" draft="unconfirmed">Seychelles</territory>
+			<territory type="SD" draft="unconfirmed">Sudan</territory>
+			<territory type="SE" draft="unconfirmed">Suecia</territory>
+			<territory type="SL" draft="unconfirmed">Sierra Leona</territory>
+			<territory type="SM" draft="unconfirmed">Sant Marino</territory>
+			<territory type="SS" draft="unconfirmed">Sudan deth Sud</territory>
+			<territory type="ST" draft="unconfirmed">Sant Tomé e Príncipe</territory>
+			<territory type="SV" draft="unconfirmed">El Salvador</territory>
+			<territory type="SX" draft="unconfirmed">Sint Maarten</territory>
+			<territory type="SY" draft="unconfirmed">Siria</territory>
+			<territory type="SZ" draft="unconfirmed">Esoatini</territory>
+			<territory type="SZ" alt="variant" draft="unconfirmed">Suazilandia</territory>
+			<territory type="TC" draft="unconfirmed">Isles Turques e Caicos</territory>
+			<territory type="TF" draft="unconfirmed">Territòris Australs Francesi</territory>
+			<territory type="TJ" draft="unconfirmed">Tayikistan</territory>
+			<territory type="TL" draft="unconfirmed">Timòr-Leste</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">Timòr Orientau</territory>
+			<territory type="TM" draft="unconfirmed">Turkmenistan</territory>
+			<territory type="TT" draft="unconfirmed">Trinitat e Tobago</territory>
+			<territory type="UM" draft="unconfirmed">Islas menors aluenhades d’EE. UU.</territory>
+			<territory type="UN" draft="unconfirmed">Nacions Unides</territory>
+			<territory type="US" alt="short" draft="unconfirmed">EE. UU.</territory>
+			<territory type="VA" draft="unconfirmed">Ciutat deth Vatican</territory>
+			<territory type="VC" draft="unconfirmed">Sant Vicent e Granadines</territory>
+			<territory type="VE" draft="unconfirmed">Veneçuela</territory>
+			<territory type="VG" draft="unconfirmed">Isles Verges Britaniques</territory>
+			<territory type="VI" draft="unconfirmed">Isles Verges EE. UU.</territory>
+			<territory type="XA" draft="unconfirmed">pseudoaccents</territory>
+			<territory type="XB" draft="unconfirmed">pseudobidi</territory>
+			<territory type="XK" draft="unconfirmed">Kosovo</territory>
+			<territory type="YE" draft="unconfirmed">Yemen</territory>
+			<territory type="ZA" draft="unconfirmed">Sudafrica</territory>
+			<territory type="ZW" draft="unconfirmed">Zimbabue</territory>
+			<territory type="ZZ" draft="unconfirmed">region desconeishuda</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian" draft="unconfirmed">calendari gregorian</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">calendari ISO-8601</type>
+			<type key="collation" type="standard" draft="unconfirmed">ordre estandard</type>
+			<type key="numbers" type="latn" draft="unconfirmed">digits occidentaus</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">métric</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">anglosajon</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">estadounidenc</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Lengua: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Escritura: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Region: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C Ç D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡ ⋅]</exemplarCharacters>
+		<ellipsis type="initial" draft="unconfirmed">… {0}</ellipsis>
+		<ellipsis type="medial" draft="unconfirmed">{0}… {1}</ellipsis>
+		<ellipsis type="word-initial" draft="unconfirmed">… {0}</ellipsis>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="unconfirmed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="’" draft="unconfirmed">['ʼ՚ߴ᾽᾿’＇]</parseLenient>
+			<parseLenient sample="%" draft="unconfirmed">[%٪﹪％]</parseLenient>
+			<parseLenient sample="‰" draft="unconfirmed">[؉‰]</parseLenient>
+			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
+			<parseLenient sample="¥" draft="unconfirmed">[¥￥]</parseLenient>
+			<parseLenient sample="₩" draft="unconfirmed">[₩￦]</parseLenient>
+			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="unconfirmed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="unconfirmed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
+	</characters>
+	<delimiters>
+		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d 'de' MMMM 'de' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d 'de' MMMM 'de' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d 'de' MMM 'de' y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d/M/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="GyMd" draft="unconfirmed">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM" draft="provisional">MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd" draft="provisional">d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd" draft="provisional">E, d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="provisional">E, d 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="unconfirmed">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="unconfirmed">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="unconfirmed">E, d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="unconfirmed">d MMM, y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="unconfirmed">EEE, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="unconfirmed">MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd" draft="provisional">d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd" draft="provisional">EEE, d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="unconfirmed">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">QQQQ y G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM 'de' y G – MMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM 'de' y – MMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d 'de' MMM 'de' y G – d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d 'de' MMM – d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d 'de' MMM 'de' y – d 'de' MMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d 'de' MMM – E d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d 'de' MMM 'de' y G – E d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d 'de' MMM – E d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d 'de' MMM 'de' y – E d 'de' MMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d/M – E, d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d 'de' MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d 'de' MMM – d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d 'de' MMM – E, d 'de' MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d 'de' MMM – E, d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM–MMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM 'de' y – MMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d 'de' MMM – d 'de' MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d 'de' MMM 'de' y – d 'de' MMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d 'de' MMM – E, d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d 'de' MMM – E, d 'de' MMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d 'de' MMM 'de' y – E, d 'de' MMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM 'de' y – MMMM 'de' y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">gèr</month>
+							<month type="2" draft="unconfirmed">her</month>
+							<month type="3" draft="unconfirmed">mar</month>
+							<month type="4" draft="unconfirmed">abr</month>
+							<month type="5" draft="unconfirmed">mai</month>
+							<month type="6" draft="unconfirmed">jun</month>
+							<month type="7" draft="unconfirmed">jur</month>
+							<month type="8" draft="unconfirmed">ago</month>
+							<month type="9" draft="unconfirmed">set</month>
+							<month type="10" draft="unconfirmed">oct</month>
+							<month type="11" draft="unconfirmed">nov</month>
+							<month type="12" draft="unconfirmed">dec</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">G</month>
+							<month type="2" draft="unconfirmed">H</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">J</month>
+							<month type="7" draft="unconfirmed">J</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">O</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">gèr</month>
+							<month type="2" draft="unconfirmed">hereuèr</month>
+							<month type="3" draft="unconfirmed">març</month>
+							<month type="4" draft="unconfirmed">abriu</month>
+							<month type="5" draft="unconfirmed">mai</month>
+							<month type="6" draft="unconfirmed">junh</month>
+							<month type="7" draft="unconfirmed">juriòl</month>
+							<month type="8" draft="unconfirmed">agost</month>
+							<month type="9" draft="unconfirmed">seteme</month>
+							<month type="10" draft="unconfirmed">octobre</month>
+							<month type="11" draft="unconfirmed">noveme</month>
+							<month type="12" draft="unconfirmed">deseme</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">gèr</month>
+							<month type="2" draft="unconfirmed">her</month>
+							<month type="3" draft="unconfirmed">mar</month>
+							<month type="4" draft="unconfirmed">abr</month>
+							<month type="5" draft="unconfirmed">mai</month>
+							<month type="6" draft="unconfirmed">jun</month>
+							<month type="7" draft="unconfirmed">jur</month>
+							<month type="8" draft="unconfirmed">ago</month>
+							<month type="9" draft="unconfirmed">set</month>
+							<month type="10" draft="unconfirmed">oct</month>
+							<month type="11" draft="unconfirmed">nov</month>
+							<month type="12" draft="unconfirmed">dec</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">gèr</month>
+							<month type="2" draft="unconfirmed">hereuèr</month>
+							<month type="3" draft="unconfirmed">març</month>
+							<month type="4" draft="unconfirmed">abriu</month>
+							<month type="5" draft="unconfirmed">mai</month>
+							<month type="6" draft="unconfirmed">junh</month>
+							<month type="7" draft="unconfirmed">juriòl</month>
+							<month type="8" draft="unconfirmed">agost</month>
+							<month type="9" draft="unconfirmed">seteme</month>
+							<month type="10" draft="unconfirmed">octobre</month>
+							<month type="11" draft="unconfirmed">noveme</month>
+							<month type="12" draft="unconfirmed">deseme</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">dim</day>
+							<day type="mon" draft="unconfirmed">del</day>
+							<day type="tue" draft="unconfirmed">dma</day>
+							<day type="wed" draft="unconfirmed">dmè</day>
+							<day type="thu" draft="unconfirmed">dij</day>
+							<day type="fri" draft="unconfirmed">diu</day>
+							<day type="sat" draft="unconfirmed">dis</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">D</day>
+							<day type="mon" draft="unconfirmed">L</day>
+							<day type="tue" draft="unconfirmed">M</day>
+							<day type="wed" draft="unconfirmed">X</day>
+							<day type="thu" draft="unconfirmed">J</day>
+							<day type="fri" draft="unconfirmed">U</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">di</day>
+							<day type="mon" draft="unconfirmed">de</day>
+							<day type="tue" draft="unconfirmed">da</day>
+							<day type="wed" draft="unconfirmed">dm</day>
+							<day type="thu" draft="unconfirmed">dj</day>
+							<day type="fri" draft="unconfirmed">du</day>
+							<day type="sat" draft="unconfirmed">ds</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">dimenge</day>
+							<day type="mon" draft="unconfirmed">deluns</day>
+							<day type="tue" draft="unconfirmed">dimars</day>
+							<day type="wed" draft="unconfirmed">dimèrcles</day>
+							<day type="thu" draft="unconfirmed">dijaus</day>
+							<day type="fri" draft="unconfirmed">diuendres</day>
+							<day type="sat" draft="unconfirmed">dissabte</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">dim</day>
+							<day type="mon" draft="unconfirmed">del</day>
+							<day type="tue" draft="unconfirmed">dma</day>
+							<day type="wed" draft="unconfirmed">dmè</day>
+							<day type="thu" draft="unconfirmed">dij</day>
+							<day type="fri" draft="unconfirmed">diu</day>
+							<day type="sat" draft="unconfirmed">dis</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">D</day>
+							<day type="mon" draft="unconfirmed">L</day>
+							<day type="tue" draft="unconfirmed">M</day>
+							<day type="wed" draft="unconfirmed">X</day>
+							<day type="thu" draft="unconfirmed">J</day>
+							<day type="fri" draft="unconfirmed">U</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">di</day>
+							<day type="mon" draft="unconfirmed">de</day>
+							<day type="tue" draft="unconfirmed">da</day>
+							<day type="wed" draft="unconfirmed">dm</day>
+							<day type="thu" draft="unconfirmed">dj</day>
+							<day type="fri" draft="unconfirmed">du</day>
+							<day type="sat" draft="unconfirmed">ds</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">dimenge</day>
+							<day type="mon" draft="unconfirmed">deluns</day>
+							<day type="tue" draft="unconfirmed">dimars</day>
+							<day type="wed" draft="unconfirmed">dimèrcles</day>
+							<day type="thu" draft="unconfirmed">dijaus</day>
+							<day type="fri" draft="unconfirmed">diuendres</day>
+							<day type="sat" draft="unconfirmed">dissabte</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1èr trimèstre</quarter>
+							<quarter type="2" draft="unconfirmed">2au trimèstre</quarter>
+							<quarter type="3" draft="unconfirmed">3au trimèstre</quarter>
+							<quarter type="4" draft="unconfirmed">4au trimèstre</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1èr trimèstre</quarter>
+							<quarter type="2" draft="unconfirmed">2au trimèstre</quarter>
+							<quarter type="3" draft="unconfirmed">3au trimèstre</quarter>
+							<quarter type="4" draft="unconfirmed">4au trimèstre</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">abans Jesucrist</era>
+						<era type="0" alt="variant" draft="unconfirmed">abans dera èra comun</era>
+						<era type="1" draft="unconfirmed">dempús de Crist</era>
+						<era type="1" alt="variant" draft="unconfirmed">era comun</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">a. C.</era>
+						<era type="0" alt="variant" draft="unconfirmed">a. e. c.</era>
+						<era type="1" draft="unconfirmed">d. C.</era>
+						<era type="1" alt="variant" draft="unconfirmed">e. c.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d 'de' MMMM 'de' y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d 'de' MMMM 'de' y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d/MM/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm:ss (zzzz)</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">H:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Bh" draft="unconfirmed">h B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="unconfirmed">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="unconfirmed">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="unconfirmed">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="unconfirmed">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="unconfirmed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="unconfirmed">E, H:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="unconfirmed">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="unconfirmed">E, H:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">d/M/y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMM" draft="provisional">MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd" draft="provisional">d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd" draft="provisional">E, d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="h" draft="unconfirmed">h a</dateFormatItem>
+						<dateFormatItem id="H" draft="unconfirmed">H</dateFormatItem>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm" draft="unconfirmed">H:mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms" draft="unconfirmed">H:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="unconfirmed">H:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv" draft="unconfirmed">H:mm v</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d/M</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="provisional">E, d 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">'setmana' W 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="ms" draft="unconfirmed">mm:ss</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">M/y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">EEE, d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">EEE, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="provisional">d 'de' MMMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="provisional">EEE, d 'de' MMMM 'de' y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">M/y G – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d/M/y G – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d/M/y – E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d MMM – E, d MMM, y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM, y – E, d MMM, y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d/M – E, d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d" draft="provisional">d–d 'de' MMMM</greatestDifference>
+							<greatestDifference id="M" draft="provisional">d 'de' MMMM – d 'de' MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMEd">
+							<greatestDifference id="d" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM</greatestDifference>
+							<greatestDifference id="M" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">M/y – M/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d/M/y – E, d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d MMM – E, d MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM y – E, d MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMMd">
+							<greatestDifference id="d" draft="provisional">d–d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="provisional">d 'de' MMMM – d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="provisional">d 'de' MMMM 'de' y – d 'de' MMMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMMEd">
+							<greatestDifference id="d" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="provisional">E, d 'de' MMMM 'de' y – E, d 'de' MMMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">an</displayName>
+				<relative type="-1" draft="unconfirmed">er an passat</relative>
+				<relative type="0" draft="unconfirmed">enguan</relative>
+				<relative type="1" draft="unconfirmed">er an que ven</relative>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">an</displayName>
+				<relative type="-1" draft="unconfirmed">an pas.</relative>
+				<relative type="0" draft="unconfirmed">enguan</relative>
+				<relative type="1" draft="unconfirmed">an q. ven</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">an</displayName>
+				<relative type="-1" draft="unconfirmed">an pas.</relative>
+				<relative type="0" draft="unconfirmed">enguan</relative>
+				<relative type="1" draft="unconfirmed">an q. ven</relative>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">trim</displayName>
+			</field>
+			<field type="month">
+				<relative type="-1" draft="unconfirmed">eth mes passat</relative>
+				<relative type="0" draft="unconfirmed">aguest mes</relative>
+				<relative type="1" draft="unconfirmed">eth mes que ven</relative>
+			</field>
+			<field type="month-short">
+				<relative type="-1" draft="unconfirmed">mes pas.</relative>
+				<relative type="0" draft="unconfirmed">ague. mes</relative>
+				<relative type="1" draft="unconfirmed">mes q. ven</relative>
+			</field>
+			<field type="month-narrow">
+				<relative type="-1" draft="unconfirmed">mes pas.</relative>
+				<relative type="0" draft="unconfirmed">ague. mes</relative>
+				<relative type="1" draft="unconfirmed">mes q. ven</relative>
+			</field>
+			<field type="week">
+				<relative type="-1" draft="unconfirmed">era setmana passada</relative>
+				<relative type="0" draft="unconfirmed">aguesta setmana</relative>
+				<relative type="1" draft="unconfirmed">era setmana que ven</relative>
+				<relativePeriod draft="unconfirmed">era setmana deth {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">set.</displayName>
+				<relative type="-1" draft="unconfirmed">set. pas.</relative>
+				<relative type="0" draft="unconfirmed">ague. set.</relative>
+				<relative type="1" draft="unconfirmed">set. q. ven</relative>
+				<relativePeriod draft="unconfirmed">era set. deth {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">set</displayName>
+				<relative type="-1" draft="unconfirmed">set. pas.</relative>
+				<relative type="0" draft="unconfirmed">ague. set.</relative>
+				<relative type="1" draft="unconfirmed">set. q. ven</relative>
+				<relativePeriod draft="unconfirmed">era setmana deth {0}</relativePeriod>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">dia</displayName>
+				<relative type="-1" draft="unconfirmed">ager</relative>
+				<relative type="0" draft="unconfirmed">aué</relative>
+				<relative type="1" draft="unconfirmed">deman</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">dia</displayName>
+				<relative type="-1" draft="unconfirmed">ager</relative>
+				<relative type="0" draft="unconfirmed">aué</relative>
+				<relative type="1" draft="unconfirmed">deman</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">dia</displayName>
+				<relative type="-1" draft="unconfirmed">ager</relative>
+				<relative type="0" draft="unconfirmed">aué</relative>
+				<relative type="1" draft="unconfirmed">deman</relative>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">dia dera setmana</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">deth maitin/deth vèspre</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">or.</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">or</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName draft="unconfirmed">min</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">segon</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName draft="unconfirmed">seg</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
+			<regionFormat type="daylight" draft="unconfirmed">orari d’estiu de {0}</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">orari estandard de {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">ora universau coordinada</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">ciutat desconeishuda</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity draft="unconfirmed">Dubai</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">Tirana</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">Ereván</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="unconfirmed">Río Gallegos</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="unconfirmed">Tucumán</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">Còdoba</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">Viena</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">Adelaida</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">Sídney</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity draft="unconfirmed">Bakú</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">Daca</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Brusèles</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">Uagadugú</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity draft="unconfirmed">Sofía</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity draft="unconfirmed">Baréin</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity draft="unconfirmed">Portonovo</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity draft="unconfirmed">Sant Bartolomé</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">Bermudes</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="unconfirmed">Eirunepé</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="unconfirmed">MmManaos</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="unconfirmed">Cuiabá</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity draft="unconfirmed">Santarém</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="unconfirmed">Belén</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="unconfirmed">Araguaína</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="unconfirmed">Sao paulo</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="unconfirmed">Bahia</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="unconfirmed">Maceió</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity draft="unconfirmed">Timbu</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">Belice</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">Sant Joan de Terranòva</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">Zúrich</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">Abiyan</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="unconfirmed">Isla de Pasqua</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity draft="unconfirmed">Santiago de Chile</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">Ürümqi</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity draft="unconfirmed">Bogotá</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">Còsta Rica</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">Era Havana</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">Cabo Verde</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">Curaçao</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="unconfirmed">Nadau</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">Yibuti</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">Argel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">Galápagos</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">Tallin</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">Eth Cairo</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">Canaries</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity draft="unconfirmed">Adís Abeba</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity draft="unconfirmed">Fiyi</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">Isles Feroe</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight draft="unconfirmed">ora d’estiu britanica</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">Lòndres</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">Granada</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity draft="unconfirmed">Tiflies</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity draft="unconfirmed">Cayena</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">Acra</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">Guadalupe</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity draft="unconfirmed">Geòrgia deth Sud</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="unconfirmed">Bisau</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">Puerto Príncipe</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="unconfirmed">Makasar</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="unconfirmed">ora d’estiu d’Irlanda</daylight>
+				</long>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">Jerusalen</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">Isla de Man</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">Calcuta</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">Bagdad</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">Teheran</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">Reikiavik</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity draft="unconfirmed">Amman</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">Tokio</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity draft="unconfirmed">Comores</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">Sant Cristòbal</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity draft="unconfirmed">Seol</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">Caiman</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="unconfirmed">Aktau</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">Aktobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="unconfirmed">Kostanai</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">Kyzylorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">Vientian</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">Santa Lucía</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">Vilna</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">Trípoli</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">Mònaco</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity draft="unconfirmed">Skopie</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">Ulan Bator</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">Martinica</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity draft="unconfirmed">Nuakchot</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity draft="unconfirmed">Maurici</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity draft="unconfirmed">Bahia de Banderas</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">Ciutat de Méxic</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">Mérida</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">Ámsterdam</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity draft="unconfirmed">Katmandú</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity draft="unconfirmed">Mascate</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">Panamà</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity draft="unconfirmed">Tahití</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="unconfirmed">Marqueses</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">Varsòvia</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">Puerto Rico</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity draft="unconfirmed">Lisboa</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity draft="unconfirmed">Palaos</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="unconfirmed">Catar</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Bucarest</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">Moscú</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity draft="unconfirmed">Sarátov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="unconfirmed">Astracan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="unconfirmed">Uliánovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity draft="unconfirmed">Kírov</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">Ekaterimburg</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="unconfirmed">Barnaúl</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity draft="unconfirmed">Chitá</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">Sajalín</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity draft="unconfirmed">Srednekolimsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">Anádyr</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity draft="unconfirmed">Riad</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity draft="unconfirmed">Mahé</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">Jartum</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity draft="unconfirmed">Estocolm</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">Singapor</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity draft="unconfirmed">Santa Elena</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">Liubliana</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity draft="unconfirmed">Sant Marino</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">Mogadiscio</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity draft="unconfirmed">Sant Tomé</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">Damasco</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">Gran Turca</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity draft="unconfirmed">Yamena</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity draft="unconfirmed">Lomé</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="unconfirmed">Dusambé</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity draft="unconfirmed">Asjabad</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">Túnez</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">Estambul</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity draft="unconfirmed">Puerto Espanha</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="unconfirmed">Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">Simferòpol</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="unconfirmed">Zaporiyia</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">Beulah, Dakota deth Nòrd</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">New Salem, Dakota deth Nòrd</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">Center, Dakota deth Nòrd</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">Nòva York</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="unconfirmed">Samarcanda</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity draft="unconfirmed">Taskent</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">Eth Vatican</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">Sant Vicent</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">Tòrtola</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity draft="unconfirmed">Ciutat Ho Chi Minh</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity draft="unconfirmed">Aden</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">ora de Afganistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="unconfirmed">ora d’Africa central</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="unconfirmed">ora d’Africa orientau</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="unconfirmed">ora de Sudafrica</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="unconfirmed">ora d’Africa occidentau</generic>
+					<standard draft="unconfirmed">ora esdandard d’Africa occidentau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Africa occidentau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="unconfirmed">ora d’Alaska</generic>
+					<standard draft="unconfirmed">ora estandard d’Alaska</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="unconfirmed">ora der Amazònes</generic>
+					<standard draft="unconfirmed">ora estandard der Amazònes</standard>
+					<daylight draft="unconfirmed">ora d’estiu der Amazònes</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">ora centrau</generic>
+					<standard draft="unconfirmed">ora estandard centrau</standard>
+					<daylight draft="unconfirmed">ora d’estiu centrau</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora orientau</generic>
+					<standard draft="unconfirmed">ora estandard orientau</standard>
+					<daylight draft="unconfirmed">ora d’estiu orientau</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">ora des Montanhes Rocoses</generic>
+					<standard draft="unconfirmed">ora estandard des Montanhes Rocoses</standard>
+					<daylight draft="unconfirmed">ora d’estiu des Montanhes Rocoses</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">ora deth Pacific</generic>
+					<standard draft="unconfirmed">ora estandard deth Pacific</standard>
+					<daylight draft="unconfirmed">ora d’estiu deth Pacific</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">ora d’Apia</generic>
+					<standard draft="unconfirmed">ora estandard d’Apia</standard>
+					<daylight draft="unconfirmed">ora d’esiu d’Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="unconfirmed">ora d’Arabia</generic>
+					<standard draft="unconfirmed">ora estandard d’Arabia</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’arabia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="unconfirmed">ora d’Argentina</generic>
+					<standard draft="unconfirmed">ora estandard d’Argentina</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="unconfirmed">ora d’Agertina occidentau</generic>
+					<standard draft="unconfirmed">ora estandard d’Argentina occidentau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Argentina occidentau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="unconfirmed">ora d’Armenia</generic>
+					<standard draft="unconfirmed">ora estandard d’Armenia</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Armenia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">ora der Atlantic</generic>
+					<standard draft="unconfirmed">ora estandard der Atlantic</standard>
+					<daylight draft="unconfirmed">ora d’estiu der Atlantic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="unconfirmed">ora d’Australia centrau</generic>
+					<standard draft="unconfirmed">ora estandard d’Australia centrau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Australia centrau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="unconfirmed">ora d’Australia centreoccientau</generic>
+					<standard draft="unconfirmed">ora estandard d’Australia centreoccientau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Australia centreoccientau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora d’Australia orientau</generic>
+					<standard draft="unconfirmed">ora estandard d’Australia orientau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Australia orientau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="unconfirmed">ora d’Australia occidentau</generic>
+					<standard draft="unconfirmed">ora estandard d’Australia occidentau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Australia occidentau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="unconfirmed">ora d’Azerbaiyan</generic>
+					<standard draft="unconfirmed">ora estandard d’Azerbaiyan</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Azerbaiyan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">ora des Azores</generic>
+					<standard draft="unconfirmed">ora estandard des Azores</standard>
+					<daylight draft="unconfirmed">ora d’estiu des Azores</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="unconfirmed">ora de Bangladés</generic>
+					<standard draft="unconfirmed">ora estandard de Bangladés</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Bangladés</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="unconfirmed">ora de Butan</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="unconfirmed">ora de Brasilia</generic>
+					<standard draft="unconfirmed">ora estandard de Brasilia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="unconfirmed">ora de Brunei</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="unconfirmed">ora de Cabo Verde</generic>
+					<standard draft="unconfirmed">ora estandard de Cabo Verde</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Cabo Verde</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="unconfirmed">ora estandard de Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="unconfirmed">ora de Chatham</generic>
+					<standard draft="unconfirmed">ora estandard de Chatham</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Chatham</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="unconfirmed">ora de Chile</generic>
+					<standard draft="unconfirmed">ora estandard de Chile</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Chile</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="unconfirmed">ora de China</generic>
+					<standard draft="unconfirmed">ora estandard de China</standard>
+					<daylight draft="unconfirmed">ora d’estiu de China</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic draft="unconfirmed">ora de Choibalsan</generic>
+					<standard draft="unconfirmed">ora estamdard de Choibalsan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Choibalsan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="unconfirmed">ora dera Isla de Nadau</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="unconfirmed">ora dera isla de Cocos</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">ora de Colòmbia</generic>
+					<standard draft="unconfirmed">ora estandard de Colòmbia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Colòmbia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="unconfirmed">ora des Isles Cook</generic>
+					<standard draft="unconfirmed">ora estandard des Isles Cook</standard>
+					<daylight draft="unconfirmed">ora d’estiu mieja des Isles Cook</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">ora de Cuba</generic>
+					<standard draft="unconfirmed">ora estandard de Cuba</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Cuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="unconfirmed">ora de Davis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="unconfirmed">ora de Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="unconfirmed">ora de Timòr orientau</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="unconfirmed">ora dera isla de Pasqua</generic>
+					<standard draft="unconfirmed">ora estandard dera isla de Pasqua</standard>
+					<daylight draft="unconfirmed">ora d’estiu dera isla de Pasqua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">ora d’Equador</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">ora d’Euròpa centrau</generic>
+					<standard draft="unconfirmed">ora estandard d’Euròpa centrau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Euròpa centrau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora d’Euròpa orientau</generic>
+					<standard draft="unconfirmed">ora estandard d’Euròpa orientau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Euròpa orientau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">ora der extrem d’Euròpa orientau</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">ora d’Euròpa occidentau</generic>
+					<standard draft="unconfirmed">ora estandard d’Euròpa occidentau</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Euròpa occidentau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="unconfirmed">ora des isles Maldives</generic>
+					<standard draft="unconfirmed">ora estandard des isles Maldives</standard>
+					<daylight draft="unconfirmed">ora d’estiu des isles Maldives</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="unconfirmed">ora de Fiyi</generic>
+					<standard draft="unconfirmed">ora estandard de Fiyi</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Fiyi</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="unconfirmed">ora dera Guayana Francesa</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="unconfirmed">hora d’Antartida e Territoris Australs Francesi</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">ora de Galápagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="unconfirmed">ora de Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="unconfirmed">ora de Geòrgia</generic>
+					<standard draft="unconfirmed">ora estandard de Geòrgia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Geòrgia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="unconfirmed">ora des Isles Gilbert</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">ora deth meridian de Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora de Groenlandia orientau</generic>
+					<standard draft="unconfirmed">ora estandard de Groenlandia orientau</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Groenlandia orientau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">ora de Groenlandia occidentau</generic>
+					<standard draft="unconfirmed">ora estandard de Groenlandia occidentau</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Groenlandia occidentau</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="unconfirmed">ora estandard deth Golf</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="unconfirmed">ora de Guyana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">ora de Hawai-Aleutianes</generic>
+					<standard draft="unconfirmed">ora estandard de Hawai-Aleutianes</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Hawai-Aleutianes</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="unconfirmed">ora de Hong Kong</generic>
+					<standard draft="unconfirmed">ora estandard de Hong Kong</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Hong Kong</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="unconfirmed">ora de Hovd</generic>
+					<standard draft="unconfirmed">ora estandard de Hovd</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Hovd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="unconfirmed">ora estandard dera India</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">ora der Ocean Indic</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="unconfirmed">ora d’Indochina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="unconfirmed">hora d’Indonesia centrau</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="unconfirmed">hora d’Indonesia orientau</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="unconfirmed">hora d’Indonesia occidentau</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="unconfirmed">ora d’Iran</generic>
+					<standard draft="unconfirmed">ora estandard d’Iran</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">ora d’Irkutsk</generic>
+					<standard draft="unconfirmed">ora estandard d’Irkutsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Irkutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="unconfirmed">ora d’Israel</generic>
+					<standard draft="unconfirmed">ora estandard d’Israel</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Israel</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="unconfirmed">ora de Japon</generic>
+					<standard draft="unconfirmed">ora estandard de Japon</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Japon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">ora de Kazajistan orientau</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">ora de Kazajistan occidentau</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="unconfirmed">ora de Corea</generic>
+					<standard draft="unconfirmed">ora estandard de Corea</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Corea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">ora de Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">ora de Krasnoyarsk</generic>
+					<standard draft="unconfirmed">ora estandard de Krasnoyarsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Krasnoyarsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">ora de Kirguistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="unconfirmed">ora des Espòrades Equatorials</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="unconfirmed">ora de Lord Howe</generic>
+					<standard draft="unconfirmed">ora estandard de Lord Howe</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Lord Howe</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard draft="unconfirmed">ora dera Isla Macquarie</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">ora de Magadan</generic>
+					<standard draft="unconfirmed">ora estandard de Magadan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Magadan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="unconfirmed">ora de Malasia</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="unconfirmed">ora des Maldives</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="unconfirmed">ora des Isles Marqueses</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="unconfirmed">ora des Isles Marshall</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="unconfirmed">ora de Maurici</generic>
+					<standard draft="unconfirmed">ora estandard de Maurici</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Maurici</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="unconfirmed">ora de Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic draft="unconfirmed">ora deth nòrdest de Mexic</generic>
+					<standard draft="unconfirmed">ora estandard deth nòrdest de Mexic</standard>
+					<daylight draft="unconfirmed">ora d’estiu deth nòrdest de Mexic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">ora deth Pacífic de Mexic</generic>
+					<standard draft="unconfirmed">ora estandard deth Pacífic de Mexic</standard>
+					<daylight draft="unconfirmed">ora d’estiu deth Pacífic de Mexic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="unconfirmed">ora de Ulan Bator</generic>
+					<standard draft="unconfirmed">ora estandard de Ulan Bator</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Ulan Bator</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="unconfirmed">ora de Moscú</generic>
+					<standard draft="unconfirmed">ora estandard de Moscú</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Moscú</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="unconfirmed">ora de Myanmar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="unconfirmed">ora de Nauru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="unconfirmed">ora deth Nepal</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="unconfirmed">ora de Nòva Caledònia</generic>
+					<standard draft="unconfirmed">ora estandard de Nòva Caledònia</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Nòva Caledònia</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="unconfirmed">ora de Nòva Zelanda</generic>
+					<standard draft="unconfirmed">ora estandard de Nòva Zelanda</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Nòva Zelanda</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">ora de Terranòva</generic>
+					<standard draft="unconfirmed">ora estandard de Terranòva</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Terranòva</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="unconfirmed">ora de Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="unconfirmed">ora dera Isla Norfolk</generic>
+					<standard draft="unconfirmed">ora estandard dera Isla Norfolk</standard>
+					<daylight draft="unconfirmed">ora d’estiu dera Isla Norfolk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="unconfirmed">ora de Fernando de Noronha</generic>
+					<standard draft="unconfirmed">ora estandard de Fernando de Noronha</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Fernando de Noronha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">ora de Novosibirsk</generic>
+					<standard draft="unconfirmed">ora estandard de Novosibirsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Novosibirsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">ora d’Omsk</generic>
+					<standard draft="unconfirmed">ora estandard d’Omsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Omsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="unconfirmed">ora deth Pakistan</generic>
+					<standard draft="unconfirmed">ora estandard deth Pakistan</standard>
+					<daylight draft="unconfirmed">ora d’estiu deth Pakistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="unconfirmed">ora de Palaos</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="unconfirmed">ora de Papua Nòva Guinea</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="unconfirmed">ora de Paraguay</generic>
+					<standard draft="unconfirmed">ora estandard de Paraguay</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Paraguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="unconfirmed">ora de Perú</generic>
+					<standard draft="unconfirmed">ora estandard de Perú</standard>
+					<daylight draft="unconfirmed">ora d’estu de Perú</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="unconfirmed">ora de Filipines</generic>
+					<standard draft="unconfirmed">ora estandard de Filipines</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Filipines</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="unconfirmed">ora des Isles Fénix</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">ora de St. Pierre e Miquelon</generic>
+					<standard draft="unconfirmed">ora estandard de St. Pierre e Miquelon</standard>
+					<daylight draft="unconfirmed">ora d’estiu de St. Pierre e Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="unconfirmed">ora de Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="unconfirmed">ora de Pohnpei</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">ora de Pyongyang</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="unconfirmed">ora de Reunion</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="unconfirmed">ora de Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">ora de Sajalin</generic>
+					<standard draft="unconfirmed">ora estandard de Sajalin</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Sajalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="unconfirmed">ora de Samoa</generic>
+					<standard draft="unconfirmed">ora estandard de Samoa</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Samoa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="unconfirmed">ora de Seychelles</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="unconfirmed">ora de Singapor</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="unconfirmed">ora des Isles Salomon</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="unconfirmed">ora de Geòrgia deth Sud</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="unconfirmed">ora de Surinam</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="unconfirmed">ora de Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="unconfirmed">ora de Tahití</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="unconfirmed">ora de Taipei</generic>
+					<standard draft="unconfirmed">ora estandard de Taipei</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Taipei</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="unconfirmed">ora de Tayikistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="unconfirmed">ora de Tokelau</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="unconfirmed">ora de Tonga</generic>
+					<standard draft="unconfirmed">ora estandard de Tonga</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Tonga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="unconfirmed">ora de Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="unconfirmed">ora de Turkmenistan</generic>
+					<standard draft="unconfirmed">ora estandard de Turkmenistan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Turkmenistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="unconfirmed">ora de Tuvalu</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="unconfirmed">ora d’Uruguay</generic>
+					<standard draft="unconfirmed">ora estandard d’Uruguay</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="unconfirmed">ora de Uzbekistan</generic>
+					<standard draft="unconfirmed">ora estandard de Uzbekistan</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Uzbekistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="unconfirmed">ora de Vanuatu</generic>
+					<standard draft="unconfirmed">ora estandard de Vanuatu</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Vanuatu</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">ora de Veneçuela</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">ora de Vladivostok</generic>
+					<standard draft="unconfirmed">ora estandard de Vladivostok</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Vladivostok</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">ora de Volgograd</generic>
+					<standard draft="unconfirmed">ora estandard de Volgograd</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Volgograd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="unconfirmed">ora de Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="unconfirmed">ora dera Isla Wake</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="unconfirmed">ora de Wallis e Futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">ora de Yakutsk</generic>
+					<standard draft="unconfirmed">ora estandard de Yakutsk</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Yakutsk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">ora d’Ekaterimburg</generic>
+					<standard draft="unconfirmed">ora estandard d’Ekaterimburg</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Ekaterimburg</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<minimumGroupingDigits draft="unconfirmed">2</minimumGroupingDigits>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">dírham des Emirats Arabi Units</displayName>
+				<displayName count="other" draft="unconfirmed">dírhams des Emirats Arabi Units</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">afgani</displayName>
+				<displayName count="other" draft="unconfirmed">afganis</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">lek</displayName>
+				<displayName count="other" draft="unconfirmed">leks</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">dram</displayName>
+				<displayName count="other" draft="unconfirmed">drams</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="unconfirmed">florin atillan</displayName>
+				<displayName count="other" draft="unconfirmed">florins atillans</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">kuanza</displayName>
+				<displayName count="other" draft="unconfirmed">kuances</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">peso artentí</displayName>
+				<displayName count="other" draft="unconfirmed">pesi artentís</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName count="other" draft="unconfirmed">dòlars australians</displayName>
+				<symbol draft="unconfirmed">AUD</symbol>
+			</currency>
+			<currency type="AWG">
+				<displayName draft="unconfirmed">florin arubenc</displayName>
+				<displayName count="other" draft="unconfirmed">florins arubencs</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">manat azerbaiyan</displayName>
+				<displayName count="other" draft="unconfirmed">manats azerbaiyans</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName draft="unconfirmed">marc convertible de Bosnia e Herzegovina</displayName>
+				<displayName count="other" draft="unconfirmed">marcs convertibles de Bosnia e Herzegovina</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">dòlar barbadenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars barbadencs</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">taka</displayName>
+				<displayName count="other" draft="unconfirmed">takes</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">leva búlgara</displayName>
+				<displayName count="other" draft="unconfirmed">leves búlgares</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">dinar bareiní</displayName>
+				<displayName count="other" draft="unconfirmed">dinars bareinís</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">francs burundés</displayName>
+				<displayName count="other" draft="unconfirmed">francs burundessi</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">dòlar bermudenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars bermudencs</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">dòlar bruneian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars bruneians</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName draft="unconfirmed">bolivian</displayName>
+				<displayName count="other" draft="unconfirmed">bolivians</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">real brasilian</displayName>
+				<symbol draft="unconfirmed">BRL</symbol>
+			</currency>
+			<currency type="BSD">
+				<displayName draft="unconfirmed">dòlar bahamenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars bahamencs</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="unconfirmed">gultrum</displayName>
+				<displayName count="other" draft="unconfirmed">gultrums</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="unconfirmed">pules</displayName>
+				<displayName count="other" draft="unconfirmed">pules</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName draft="unconfirmed">roble bielorrús</displayName>
+				<displayName count="other" draft="unconfirmed">robles bielorrussi</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName draft="unconfirmed">dòlar belizenh</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars belizenhs</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName draft="unconfirmed">dòlar canadiense</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars canadienses</displayName>
+				<symbol draft="unconfirmed">CAD</symbol>
+			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">franc congolenc</displayName>
+				<displayName count="other" draft="unconfirmed">francs congolencs</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="unconfirmed">franc suís</displayName>
+				<displayName count="other" draft="unconfirmed">fracs suissi</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName draft="unconfirmed">peso chilen</displayName>
+				<displayName count="other" draft="unconfirmed">pesi chilens</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">yuan chinés (extracontinanetau)</displayName>
+				<displayName count="other" draft="unconfirmed">yuans chinessi (extracontinanetaus)</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">yuan chinés</displayName>
+				<displayName count="other" draft="unconfirmed">yuans chinessi</displayName>
+				<symbol draft="unconfirmed">CNY</symbol>
+			</currency>
+			<currency type="COP">
+				<displayName draft="unconfirmed">peso colombian</displayName>
+				<displayName count="other" draft="unconfirmed">pesi colombians</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName draft="unconfirmed">colon corarricense</displayName>
+				<displayName count="other" draft="unconfirmed">colons corarricenses</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName draft="unconfirmed">peso convertible cuban</displayName>
+				<displayName count="other" draft="unconfirmed">pesi convertibles cubans</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName draft="unconfirmed">peso cuban</displayName>
+				<displayName count="other" draft="unconfirmed">pesi cubans</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName draft="unconfirmed">escut de Cabo Verde</displayName>
+				<displayName count="other" draft="unconfirmed">escuts de Cabo Verde</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">corona checa</displayName>
+				<displayName count="other" draft="unconfirmed">corones cheques</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName draft="unconfirmed">franc yibutian</displayName>
+				<displayName count="other" draft="unconfirmed">francs yibutians</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">corona danesa</displayName>
+				<displayName count="other" draft="unconfirmed">corones daneses</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName draft="unconfirmed">peso dominican</displayName>
+				<displayName count="other" draft="unconfirmed">pesi dominicans</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName draft="unconfirmed">dinar argelin</displayName>
+				<displayName count="other" draft="unconfirmed">dinars argelins</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="unconfirmed">libra egipcia</displayName>
+				<displayName count="other" draft="unconfirmed">libres egipcies</displayName>
+				<symbol draft="unconfirmed">EGP</symbol>
+				<symbol alt="narrow" draft="unconfirmed">EGP</symbol>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="unconfirmed">nakfa</displayName>
+				<displayName count="other" draft="unconfirmed">nakfes</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="unconfirmed">bir</displayName>
+				<displayName count="other" draft="unconfirmed">bires</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="unconfirmed">dòlar fiyian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars fiyians</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="unconfirmed">libra malvinenca</displayName>
+				<displayName count="other" draft="unconfirmed">libres malvinenques</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName count="other" draft="unconfirmed">liures esterlines</displayName>
+				<symbol draft="unconfirmed">GBP</symbol>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="unconfirmed">lari</displayName>
+				<displayName count="other" draft="unconfirmed">laris</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">cedi</displayName>
+				<displayName count="other" draft="unconfirmed">cedis</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="unconfirmed">libre gibraltarenca</displayName>
+				<displayName count="other" draft="unconfirmed">libres gibraltarenques</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="unconfirmed">calasi</displayName>
+				<displayName count="other" draft="unconfirmed">dalasis</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="unconfirmed">franc guinean</displayName>
+				<displayName count="other" draft="unconfirmed">francs guineans</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="unconfirmed">quetzal gautemaltec</displayName>
+				<displayName count="other" draft="unconfirmed">quetzals gautemaltecs</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="unconfirmed">dòlar guayanés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars guayanesi</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="unconfirmed">dòlar hongkonés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars hongkonessi</displayName>
+				<symbol draft="unconfirmed">HKD</symbol>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="unconfirmed">lempira hondurenh</displayName>
+				<displayName count="other" draft="unconfirmed">lempires hondurenhs</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="unconfirmed">kuna</displayName>
+				<displayName count="other" draft="unconfirmed">kunes</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="unconfirmed">gorde haitian</displayName>
+				<displayName count="other" draft="unconfirmed">gordes haitians</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="unconfirmed">forinto húngar</displayName>
+				<displayName count="other" draft="unconfirmed">forintos húngars</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">rupia indonesia</displayName>
+				<displayName count="other" draft="unconfirmed">rupies indonesies</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="unconfirmed">nau séquel israelí</displayName>
+				<displayName count="other" draft="unconfirmed">naus séquels israelís</displayName>
+				<symbol draft="unconfirmed">ILS</symbol>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">ropia inidia</displayName>
+				<displayName count="other" draft="unconfirmed">ropies indies</displayName>
+				<symbol draft="unconfirmed">INR</symbol>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="unconfirmed">dinar iraquí</displayName>
+				<displayName count="other" draft="unconfirmed">dinars iraquís</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="unconfirmed">rial iraní</displayName>
+				<displayName count="other" draft="unconfirmed">rials iranís</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">corona islandesa</displayName>
+				<displayName count="other" draft="unconfirmed">corones islandeses</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">dòlar jamaican</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars jamaicans</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">dinar jordan</displayName>
+				<displayName count="other" draft="unconfirmed">dinars jordans</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">yen</displayName>
+				<displayName count="other" draft="unconfirmed">yens</displayName>
+				<symbol draft="unconfirmed">JPY</symbol>
+			</currency>
+			<currency type="KES">
+				<displayName draft="unconfirmed">chelin kenian</displayName>
+				<displayName count="other" draft="unconfirmed">chelins kenians</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">sòm</displayName>
+				<displayName count="other" draft="unconfirmed">sòms</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="unconfirmed">riel</displayName>
+				<displayName count="other" draft="unconfirmed">riels</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="unconfirmed">franc comorens</displayName>
+				<displayName count="other" draft="unconfirmed">francs comorensi</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="unconfirmed">won nordcorean</displayName>
+				<displayName count="other" draft="unconfirmed">wons nordcoreans</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="unconfirmed">won sudcorean</displayName>
+				<displayName count="other" draft="unconfirmed">wons sudcoreans</displayName>
+				<symbol draft="unconfirmed">KRW</symbol>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">dinar kuwaitin</displayName>
+				<displayName count="other" draft="unconfirmed">dinars kuwaitins</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName draft="unconfirmed">dòlar des Isles Caiman</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars des Isles Caiman</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">tengue kazaji</displayName>
+				<displayName count="other" draft="unconfirmed">tengues kazajis</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">kip</displayName>
+				<displayName count="other" draft="unconfirmed">kips</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="unconfirmed">libra libanesa</displayName>
+				<displayName count="other" draft="unconfirmed">libres libaneses</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="unconfirmed">ropia esrilanquesa</displayName>
+				<displayName count="other" draft="unconfirmed">ropies esrilanqueses</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="unconfirmed">dòlar liberian</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars liberians</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="unconfirmed">loti lesotenc</displayName>
+				<displayName count="other" draft="unconfirmed">lotis lesotensi</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="unconfirmed">dinar libi</displayName>
+				<displayName count="other" draft="unconfirmed">dinars libis</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="unconfirmed">dírham marroquin</displayName>
+				<displayName count="other" draft="unconfirmed">dírhams marroquins</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="unconfirmed">leu moldau</displayName>
+				<displayName count="other" draft="unconfirmed">leus moldaus</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="unconfirmed">ariari</displayName>
+				<displayName count="other" draft="unconfirmed">ariaris</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="unconfirmed">dinar macedoni</displayName>
+				<displayName count="other" draft="unconfirmed">dinars macedonis</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="unconfirmed">kiat</displayName>
+				<displayName count="other" draft="unconfirmed">kiats</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="unconfirmed">tugrik</displayName>
+				<displayName count="other" draft="unconfirmed">tugriks</displayName>
+				<symbol draft="unconfirmed">MNT</symbol>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="unconfirmed">pataca de Macao</displayName>
+				<displayName count="other" draft="unconfirmed">pataques de Macao</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName draft="unconfirmed">uguiya</displayName>
+				<displayName count="other" draft="unconfirmed">uguiyes</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="unconfirmed">rupia mauriciana</displayName>
+				<displayName count="other" draft="unconfirmed">rupies mauricianes</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="unconfirmed">rufiya</displayName>
+				<displayName count="other" draft="unconfirmed">rufiyes</displayName>
+				<symbol draft="unconfirmed">MVR</symbol>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">kuacha malauí</displayName>
+				<displayName count="other" draft="unconfirmed">kuaches malauies</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="unconfirmed">peso mexican</displayName>
+				<displayName count="other" draft="unconfirmed">pesi mexicans</displayName>
+				<symbol draft="unconfirmed">MXN</symbol>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="unconfirmed">ringits</displayName>
+				<displayName count="other" draft="unconfirmed">ringits</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="unconfirmed">metical</displayName>
+				<displayName count="other" draft="unconfirmed">meticals</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">dòlar namibi</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars namibis</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">naira</displayName>
+				<displayName count="other" draft="unconfirmed">naries</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="unconfirmed">còrdoba aur</displayName>
+				<displayName count="other" draft="unconfirmed">còrdobas aur</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">corona noruegua</displayName>
+				<displayName count="other" draft="unconfirmed">corones noruegues</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">ropia nepalí</displayName>
+				<displayName count="other" draft="unconfirmed">ropies nepalís</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">dòlar neozelandés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars neozelandessi</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">rial omaní</displayName>
+				<displayName count="other" draft="unconfirmed">rials omanís</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="unconfirmed">balboa panamenh</displayName>
+				<displayName count="other" draft="unconfirmed">balboes panamenhs</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="unconfirmed">sòl peruan</displayName>
+				<displayName count="other" draft="unconfirmed">sòls peruans</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="unconfirmed">kina</displayName>
+				<displayName count="other" draft="unconfirmed">kines</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="unconfirmed">peso filipin</displayName>
+				<displayName count="other" draft="unconfirmed">pesi filipins</displayName>
+				<symbol draft="unconfirmed">PHP</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="unconfirmed">ropia pakistaní</displayName>
+				<displayName count="other" draft="unconfirmed">ropies pakistanís</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="unconfirmed">esloti</displayName>
+				<displayName count="other" draft="unconfirmed">eslotis</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="unconfirmed">guaraní paraguayan</displayName>
+				<displayName count="other" draft="unconfirmed">guaranís paraguayans</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="unconfirmed">rial catarí</displayName>
+				<displayName count="other" draft="unconfirmed">rials catarís</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="unconfirmed">leu ruman</displayName>
+				<displayName count="other" draft="unconfirmed">leus rumans</displayName>
+				<symbol draft="unconfirmed">RON</symbol>
+				<symbol alt="narrow" draft="unconfirmed">L</symbol>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="unconfirmed">dinar serbi</displayName>
+				<displayName count="other" draft="unconfirmed">dinars serbis</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName count="other" draft="unconfirmed">robles russi</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="unconfirmed">franc ruandés</displayName>
+				<displayName count="other" draft="unconfirmed">francs ruandessi</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="unconfirmed">rial saudí</displayName>
+				<displayName count="other" draft="unconfirmed">rials saudís</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="unconfirmed">dòlar salomonenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars salomonencs</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="unconfirmed">rupia seychellense</displayName>
+				<displayName count="other" draft="unconfirmed">rupies seychellenses</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="unconfirmed">libra sudanesa</displayName>
+				<displayName count="other" draft="unconfirmed">libres sudaneses</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">corona sueca</displayName>
+				<displayName count="other" draft="unconfirmed">corones sueques</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="unconfirmed">dòlar singapurense</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars singapurenses</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="unconfirmed">libra de Santa Elena</displayName>
+				<displayName count="other" draft="unconfirmed">libres de Santa Elena</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">leona</displayName>
+				<displayName count="other" draft="unconfirmed">leones</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="unconfirmed">chelin somalí</displayName>
+				<displayName count="other" draft="unconfirmed">chelins somalís</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="unconfirmed">dòlar surinamés</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars surinamesi</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName draft="unconfirmed">libra sudsudanesa</displayName>
+				<displayName count="other" draft="unconfirmed">libres sudsudaneses</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName draft="unconfirmed">dobra</displayName>
+				<displayName count="other" draft="unconfirmed">dobres</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="unconfirmed">libra siria</displayName>
+				<displayName count="other" draft="unconfirmed">libres siries</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="unconfirmed">libangeni</displayName>
+				<displayName count="other" draft="unconfirmed">lilangenis</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="unconfirmed">bat</displayName>
+				<displayName count="other" draft="unconfirmed">bats</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">somoni tayiko</displayName>
+				<displayName count="other" draft="unconfirmed">somonis tayikos</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="unconfirmed">manat turcoman</displayName>
+				<displayName count="other" draft="unconfirmed">manats turcomans</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="unconfirmed">dinar tunecin</displayName>
+				<displayName count="other" draft="unconfirmed">dinars tunecins</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="unconfirmed">paanga</displayName>
+				<displayName count="other" draft="unconfirmed">paangues</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="unconfirmed">lira turca</displayName>
+				<displayName count="other" draft="unconfirmed">lires turques</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName draft="unconfirmed">dòlar de Trinidad e Tobago</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars de Trinidad e Tobago</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="unconfirmed">nau dòlar taiwanés</displayName>
+				<displayName count="other" draft="unconfirmed">naus dòlars taiwanessi</displayName>
+				<symbol draft="unconfirmed">TWD</symbol>
+				<symbol alt="narrow" draft="unconfirmed">NT$</symbol>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="unconfirmed">chelin tanzan</displayName>
+				<displayName count="other" draft="unconfirmed">chelins tanzans</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">grivna</displayName>
+				<displayName count="other" draft="unconfirmed">grivnes</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="unconfirmed">chelin ugandés</displayName>
+				<displayName count="other" draft="unconfirmed">chelins ugandessi</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">dòlar estadounidenc</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars estadounidencs</displayName>
+				<symbol draft="unconfirmed">US$</symbol>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="unconfirmed">peso uruguayan</displayName>
+				<displayName count="other" draft="unconfirmed">pesi uruguayans</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">sum</displayName>
+				<displayName count="other" draft="unconfirmed">sums</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName draft="unconfirmed">bolívar venezonan</displayName>
+				<displayName count="other" draft="unconfirmed">bolívars venezonans</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="unconfirmed">dong</displayName>
+				<displayName count="other" draft="unconfirmed">dongs</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="unconfirmed">vatu</displayName>
+				<displayName count="other" draft="unconfirmed">vatus</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="unconfirmed">tala</displayName>
+				<displayName count="other" draft="unconfirmed">tales</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName draft="unconfirmed">franc CFA d’Africa centrau</displayName>
+				<displayName count="other" draft="unconfirmed">francs CFA d’Africa centrau</displayName>
+				<symbol draft="unconfirmed">XAF</symbol>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="unconfirmed">dòlar deth Caribe Occidentau</displayName>
+				<displayName count="other" draft="unconfirmed">dòlars deth Caribe Occidentau</displayName>
+				<symbol draft="unconfirmed">XCD</symbol>
+			</currency>
+			<currency type="XOF">
+				<displayName draft="unconfirmed">franc CFA d’Africa occidentau</displayName>
+				<displayName count="other" draft="unconfirmed">francs CFA d’Africa occidentau</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName draft="unconfirmed">franc CFP</displayName>
+				<displayName count="other" draft="unconfirmed">francs CFP</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">moneda desconeishuda</displayName>
+				<displayName count="other" draft="unconfirmed">(moneda desconeishuda)</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="unconfirmed">rial yemení</displayName>
+				<displayName count="other" draft="unconfirmed">rials yemenís</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="unconfirmed">rand</displayName>
+				<displayName count="other" draft="unconfirmed">rands</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName draft="unconfirmed">kuacha zambiana</displayName>
+				<displayName count="other" draft="unconfirmed">kuaches zambianes</displayName>
+			</currency>
+		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="approximately" draft="unconfirmed">~{0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">Mès de {0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}-{1}</pattern>
+		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} dies</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">Pren era {0}.ª ara dreta.</ordinalMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}-{1}</compoundUnitPattern>
+			</compoundUnit>
+			<coordinateUnit>
+				<displayName draft="unconfirmed">punt cardinau</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">punt</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0} O</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<coordinateUnit>
+				<displayName draft="unconfirmed">punt</displayName>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}O</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<durationUnit type="hm">
+			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
+		</durationUnit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} o {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} o {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} o {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+</ldml>

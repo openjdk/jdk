@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
@@ -38,9 +38,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/stackValue.hpp"
-
 #ifdef COMPILER2
-#include "opto/matcher.hpp" // Matcher::max_vector_size(BasicType)
+#include "opto/matcher.hpp"
 #endif // COMPILER2
 
 #ifdef COMPILER2
@@ -521,8 +520,13 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     }
     case VECTOR_OP_REVERSE_BYTES: {
       switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
+        case T_SHORT: return Op_ReverseBytesS;
+        // Superword requires type consistency between the ReverseBytes*
+        // node and the data. But there's no ReverseBytesB node because
+        // no reverseBytes() method in Java Byte class. T_BYTE can only
+        // appear in VectorAPI calls. We reuse Op_ReverseBytesI for this
+        // to ensure vector intrinsification succeeds.
+        case T_BYTE:  // Intentionally fall-through
         case T_INT:   return Op_ReverseBytesI;
         case T_LONG:  return Op_ReverseBytesL;
         default: fatal("REVERSE_BYTES: %s", type2name(bt));

@@ -27,7 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -337,6 +336,17 @@ public class InferenceContext {
         if (roots.length() == inferencevars.length()) {
             return this;
         }
+        /* if any of the inference vars is a captured variable bail out, this is because
+         * we could end up generating more than necessary captured variables in an outer
+         * inference context and then when we need to propagate back to an inner inference
+         * context that has been minimized it could be that some bounds constraints doesn't
+         * hold like subtyping constraints between bonds etc.
+         */
+        for (Type iv : inferencevars) {
+            if (iv.hasTag(TypeTag.TYPEVAR) && ((TypeVar)iv).isCaptured()) {
+                return this;
+            }
+        }
         ReachabilityVisitor rv = new ReachabilityVisitor();
         rv.scan(roots);
         if (rv.min.size() == inferencevars.length()) {
@@ -540,7 +550,7 @@ public class InferenceContext {
      * This is why the tree is used as the key of the map below. This map
      * stores a Type per AST.
      */
-    Map<JCTree, Type> captureTypeCache = new HashMap<>();
+    Map<JCTree, Type> captureTypeCache = new LinkedHashMap<>();
 
     Type cachedCapture(JCTree tree, Type t, boolean readOnly) {
         Type captured = captureTypeCache.get(tree);

@@ -300,6 +300,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_remainderUnsigned_l:
     if (!Matcher::match_rule_supported(Op_UModL)) return false;
     break;
+  case vmIntrinsics::_float16ToFloat:
+    if (!Matcher::match_rule_supported(Op_ConvHF2F)) return false;
+    break;
+  case vmIntrinsics::_floatToFloat16:
+    if (!Matcher::match_rule_supported(Op_ConvF2HF)) return false;
+    break;
 
   /* CompareAndSet, Object: */
   case vmIntrinsics::_compareAndSetReference:
@@ -674,8 +680,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
@@ -731,8 +737,10 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
+  case vmIntrinsics::_chacha20Block:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
+  case vmIntrinsics::_poly1305_processBlocks:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -770,6 +778,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_VectorInsert:
   case vmIntrinsics::_VectorExtract:
   case vmIntrinsics::_VectorMaskOp:
+  case vmIntrinsics::_IndexVector:
     return EnableVectorSupport;
   case vmIntrinsics::_blackhole:
     break;

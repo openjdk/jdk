@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 
 /* @test
- * @ignore This test has huge disk space requirements
  * @bug 8168628
  * @summary Test extending files to very large sizes without hitting a SIGBUS
  * @requires (os.family == "linux")
+ * @requires (sun.arch.data.model == "64")
+ * @library /test/lib/
  * @run main/othervm/timeout=600 -Xms4g -Xmx4g FileExtensionAndMap
  * @run main/othervm/timeout=600 -Xms4g -Xmx4g FileExtensionAndMap true
  */
@@ -42,11 +43,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
 import java.util.stream.IntStream;
+import jtreg.SkippedException;
 
 public class FileExtensionAndMap {
 
@@ -56,6 +59,9 @@ public class FileExtensionAndMap {
     private static final String TMPDIR = System.getProperty("test.dir", ".");
 
     private static boolean useRaf = false;
+
+    private static final long FILESIZE = 3L * 1024L * 1024L * 1024L;
+    private static final int PARALLELISM = 3;
 
     public static void main(String args[]) throws Exception {
         if (args.length > 2) {
@@ -70,6 +76,7 @@ public class FileExtensionAndMap {
                 defaultFolder = args[1];
             }
         }
+
         final String targetFolder = defaultFolder;
         Path p = Paths.get(targetFolder);
         boolean targetExists = Files.exists(p);
@@ -77,10 +84,12 @@ public class FileExtensionAndMap {
             Files.createDirectory(p);
         }
 
+        checkRequiredDiskSpace(defaultFolder);
+
         System.out.printf("Using RandomAccessFile: %s; target folder: %s%n",
             useRaf, targetFolder);
 
-        ForkJoinPool fjPool = new ForkJoinPool(3);
+        ForkJoinPool fjPool = new ForkJoinPool(PARALLELISM);
         fjPool.submit(() -> {
             IntStream.range(0, 20).parallel().forEach((index) -> {
                 String fileName = "testBigFile_" + index + ".dat";
@@ -117,6 +126,33 @@ public class FileExtensionAndMap {
         }
     }
 
+    private static void checkRequiredDiskSpace(String destinationFolder) throws IOException {
+        Path destinationPath = Path.of(destinationFolder);
+        Path tmpDir = Path.of(TMPDIR);
+
+        long totalDiskSpaceNeeded = FILESIZE * PARALLELISM;
+
+        if (Files.getFileStore(tmpDir).equals(Files.getFileStore(destinationPath))) {
+            totalDiskSpaceNeeded *= 2; // writing and copying to same FS
+            long usableDiskSpace = Files.getFileStore(tmpDir).getUsableSpace();
+            if (usableDiskSpace < totalDiskSpaceNeeded) {
+                throw new SkippedException("Insufficient disk space on " + TMPDIR
+                        + ". Test requires: " + totalDiskSpaceNeeded
+                        + ". Available on disk: " + usableDiskSpace);
+            }
+
+        } else {
+            for (Path p : List.of(destinationPath, tmpDir)) {
+                long usableDiskSpace = Files.getFileStore(p).getUsableSpace();
+                if (usableDiskSpace < totalDiskSpaceNeeded) {
+                    throw new SkippedException("Insufficient disk space on " + p
+                            + ". Test requires: " + totalDiskSpaceNeeded
+                            + ". Available on disk: " + usableDiskSpace);
+                }
+            }
+        }
+    }
+
     private static void testFileCopy(Path source, Path target)
         throws IOException {
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
@@ -127,15 +163,15 @@ public class FileExtensionAndMap {
     private static void testCreateBigFile(Path segmentFile)
         throws IOException {
         final Semaphore concurrencySemaphore = new Semaphore(5);
-        long fileSize = 3L * 1024L * 1024L * 1024L;
+
         int blockSize = 10 * 1024 * 1024;
-        int loopCount = (int) Math.floorDiv(fileSize, blockSize);
+        int loopCount = (int) Math.floorDiv(FILESIZE, blockSize);
 
         String fileName = segmentFile.getFileName().toString();
         if (useRaf) {
             try (RandomAccessFile raf
                 = new RandomAccessFile(segmentFile.toFile(), "rw")) {
-                raf.setLength(fileSize);
+                raf.setLength(FILESIZE);
                 try (FileChannel fc = raf.getChannel()) {
                     for (int i = 0; i < loopCount; i++) {
                         final long startPosition = 1L * blockSize * i;

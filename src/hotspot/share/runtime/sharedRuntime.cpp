@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -42,6 +41,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -143,15 +143,12 @@ int SharedRuntime::_implicit_null_throws = 0;
 int SharedRuntime::_implicit_div0_throws = 0;
 
 int64_t SharedRuntime::_nof_normal_calls = 0;
-int64_t SharedRuntime::_nof_optimized_calls = 0;
 int64_t SharedRuntime::_nof_inlined_calls = 0;
 int64_t SharedRuntime::_nof_megamorphic_calls = 0;
 int64_t SharedRuntime::_nof_static_calls = 0;
 int64_t SharedRuntime::_nof_inlined_static_calls = 0;
 int64_t SharedRuntime::_nof_interface_calls = 0;
-int64_t SharedRuntime::_nof_optimized_interface_calls = 0;
 int64_t SharedRuntime::_nof_inlined_interface_calls = 0;
-int64_t SharedRuntime::_nof_megamorphic_interface_calls = 0;
 
 int SharedRuntime::_new_instance_ctr=0;
 int SharedRuntime::_new_array_ctr=0;
@@ -271,6 +268,10 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #endif
 JRT_END
 
+JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
+  return (jfloat)x;
+JRT_END
+
 #ifdef __SOFTFP__
 JRT_LEAF(jfloat, SharedRuntime::fadd(jfloat x, jfloat y))
   return x + y;
@@ -302,10 +303,6 @@ JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::ddiv(jdouble x, jdouble y))
   return x / y;
-JRT_END
-
-JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
-  return (jfloat)x;
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::i2d(jint x))
@@ -448,6 +445,98 @@ JRT_LEAF(jdouble, SharedRuntime::l2d(jlong x))
   return (jdouble)x;
 JRT_END
 
+// Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
+JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
+  union {jfloat f; jint i;} bits;
+  bits.f = x;
+  jint doppel = bits.i;
+  jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
+  if (g_isnan(x))
+    return (jshort)(sign_bit | 0x7c00 | (doppel & 0x007fe000) >> 13 | (doppel & 0x00001ff0) >> 4 | (doppel & 0x0000000f));
+
+  jfloat abs_f = (x >= 0.0f) ? x : (x * -1.0f);
+
+  // Overflow threshold is halffloat max value + 1/2 ulp
+  if (abs_f >= (65504.0f + 16.0f)) {
+    return (jshort)(sign_bit | 0x7c00); // Positive or negative infinity
+  }
+
+  // Smallest magnitude of Halffloat is 0x1.0p-24, half-way or smaller rounds to zero
+  if (abs_f <= (pow(2, -24) * 0.5f)) { // Covers float zeros and subnormals.
+    return sign_bit; // Positive or negative zero
+  }
+
+  jint exp = ((0x7f800000 & doppel) >> (24 - 1)) - 127;
+
+  // For binary16 subnormals, beside forcing exp to -15, retain
+  // the difference exp_delta = E_min - exp.  This is the excess
+  // shift value, in addition to 13, to be used in the
+  // computations below. Further the (hidden) msb with value 1
+  // in f must be involved as well
+  jint exp_delta = 0;
+  jint msb = 0x00000000;
+  if (exp < -14) {
+    exp_delta = -14 - exp;
+    exp = -15;
+    msb = 0x00800000;
+  }
+  jint f_signif_bits = ((doppel & 0x007fffff) | msb);
+
+  // Significand bits as if using rounding to zero
+  jshort signif_bits = (jshort)(f_signif_bits >> (13 + exp_delta));
+
+  jint lsb = f_signif_bits & (1 << (13 + exp_delta));
+  jint round  = f_signif_bits & (1 << (12 + exp_delta));
+  jint sticky = f_signif_bits & ((1 << (12 + exp_delta)) - 1);
+
+  if (round != 0 && ((lsb | sticky) != 0 )) {
+    signif_bits++;
+  }
+
+  return (jshort)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
+JRT_END
+
+// Reference implementation at src/java.base/share/classes/java/lang/Float.java:float16ToFloat
+JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
+  // Halffloat format has 1 signbit, 5 exponent bits and
+  // 10 significand bits
+  union {jfloat f; jint i;} bits;
+  jint hf_arg = (jint)x;
+  jint hf_sign_bit = 0x8000 & hf_arg;
+  jint hf_exp_bits = 0x7c00 & hf_arg;
+  jint hf_significand_bits = 0x03ff & hf_arg;
+
+  jint significand_shift = 13; //difference between float and halffloat precision
+
+  jfloat sign = (hf_sign_bit != 0) ? -1.0f : 1.0f;
+
+  // Extract halffloat exponent, remove its bias
+  jint hf_exp = (hf_exp_bits >> 10) - 15;
+
+  if (hf_exp == -15) {
+    // For subnormal values, return 2^-24 * significand bits
+    return (sign * (pow(2,-24)) * hf_significand_bits);
+  } else if (hf_exp == 16) {
+    if (hf_significand_bits == 0) {
+      bits.i = 0x7f800000;
+      return sign * bits.f;
+    } else {
+      bits.i = (hf_sign_bit << 16) | 0x7f800000 |
+               (hf_significand_bits << significand_shift);
+      return bits.f;
+    }
+  }
+
+  // Add the bias of float exponent and shift
+  jint float_exp_bits = (hf_exp + 127) << (24 - 1);
+
+  // Combine sign, exponent and significand bits
+  bits.i = (hf_sign_bit << 16) | float_exp_bits |
+           (hf_significand_bits << significand_shift);
+
+  return bits.f;
+JRT_END
+
 // Exception handling across interpreter/compiler boundaries
 //
 // exception_handler_for_return_address(...) returns the continuation address.
@@ -587,17 +676,6 @@ address SharedRuntime::get_poll_stub(address pc) {
                        (intptr_t)pc, (intptr_t)stub);
   return stub;
 }
-
-
-oop SharedRuntime::retrieve_receiver( Symbol* sig, frame caller ) {
-  assert(caller.is_interpreted_frame(), "");
-  int args_size = ArgumentSizeComputer(sig).size() + 1;
-  assert(args_size <= caller.interpreter_frame_expression_stack_size(), "receiver must be on interpreter stack");
-  oop result = cast_to_oop(*caller.interpreter_frame_tos_at(args_size - 1));
-  assert(Universe::heap()->is_in(result) && oopDesc::is_oop(result), "receiver must be an oop");
-  return result;
-}
-
 
 void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception) {
   if (JvmtiExport::can_post_on_exceptions()) {
@@ -806,9 +884,10 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
   }
-  // Remove the ExtentLocal cache in case we got a StackOverflowError
-  // while we were trying to remove ExtentLocal bindings.
-  current->set_extentLocalCache(NULL);
+  // Remove the ScopedValue bindings in case we got a
+  // StackOverflowError while we were trying to remove ScopedValue
+  // bindings.
+  current->clear_scopedValueBindings();
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(current, exception);
@@ -996,15 +1075,15 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
 
-jlong SharedRuntime::get_java_tid(Thread* thread) {
-  if (thread != NULL && thread->is_Java_thread()) {
-    Thread* current = Thread::current();
-    guarantee(current != thread || JavaThread::cast(thread)->is_oop_safe(),
-              "current cannot touch oops after its GC barrier is detached.");
-    oop obj = JavaThread::cast(thread)->threadObj();
-    return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
+jlong SharedRuntime::get_java_tid(JavaThread* thread) {
+  assert(thread != NULL, "No thread");
+  if (thread == NULL) {
+    return 0;
   }
-  return 0;
+  guarantee(Thread::current() != thread || thread->is_oop_safe(),
+            "current cannot touch oops after its GC barrier is detached.");
+  oop obj = thread->threadObj();
+  return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
 }
 
 /**
@@ -1013,14 +1092,14 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
 int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
-  return dtrace_object_alloc(Thread::current(), o, o->size());
+  return dtrace_object_alloc(JavaThread::current(), o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o) {
   return dtrace_object_alloc(thread, o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) {
+int SharedRuntime::dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();
@@ -1032,6 +1111,8 @@ int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) 
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
     JavaThread* current, Method* method))
+  assert(current == JavaThread::current(), "pre-condition");
+
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -1046,6 +1127,7 @@ JRT_END
 
 JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
     JavaThread* current, Method* method))
+  assert(current == JavaThread::current(), "pre-condition");
   assert(DTraceMethodProbes, "wrong call");
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
@@ -2017,8 +2099,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
 
   AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
 
-  address entry_point = moop->from_compiled_entry_no_trampoline();
-
   // It's possible that deoptimization can occur at a call site which hasn't
   // been resolved yet, in which case this function will be called from
   // an nmethod that has been patched for deopt and we can ignore the
@@ -2029,8 +2109,16 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // "to interpreter" stub in order to load up the Method*. Don't
   // ask me how I know this...
 
+  // Result from nmethod::is_unloading is not stable across safepoints.
+  NoSafepointVerifier nsv;
+
+  CompiledMethod* callee = moop->code();
+  if (callee == NULL) {
+    return;
+  }
+
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
-  if (cb == NULL || !cb->is_compiled() || entry_point == moop->get_c2i_entry()) {
+  if (cb == NULL || !cb->is_compiled() || callee->is_unloading()) {
     return;
   }
 
@@ -2088,6 +2176,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         }
       }
       address destination = call->destination();
+      address entry_point = callee->verified_entry_point();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
         call->set_destination_mt_safe(entry_point);
       }
@@ -2229,6 +2318,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 
 // Handles the uncommon cases of monitor unlocking in compiled code
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
 JRT_END
 
@@ -2274,10 +2364,6 @@ void SharedRuntime::print_statistics() {
   AdapterHandlerLibrary::print_statistics();
 
   if (xtty != NULL)  xtty->tail("statistics");
-}
-
-inline double percent(int x, int y) {
-  return 100.0 * x / MAX2(y, 1);
 }
 
 inline double percent(int64_t x, int64_t y) {
@@ -2367,19 +2453,16 @@ int MethodArityHistogram::_max_size;
 void SharedRuntime::print_call_statistics(uint64_t comp_total) {
   tty->print_cr("Calls from compiled code:");
   int64_t total  = _nof_normal_calls + _nof_interface_calls + _nof_static_calls;
-  int64_t mono_c = _nof_normal_calls - _nof_optimized_calls - _nof_megamorphic_calls;
-  int64_t mono_i = _nof_interface_calls - _nof_optimized_interface_calls - _nof_megamorphic_interface_calls;
+  int64_t mono_c = _nof_normal_calls - _nof_megamorphic_calls;
+  int64_t mono_i = _nof_interface_calls;
   tty->print_cr("\t" INT64_FORMAT_W(12) " (100%%)  total non-inlined   ", total);
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- virtual calls       ", _nof_normal_calls, percent(_nof_normal_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_calls, percent(_nof_inlined_calls, _nof_normal_calls));
-  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- optimized        ", _nof_optimized_calls, percent(_nof_optimized_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- monomorphic      ", mono_c, percent(mono_c, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- megamorphic      ", _nof_megamorphic_calls, percent(_nof_megamorphic_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- interface calls     ", _nof_interface_calls, percent(_nof_interface_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_interface_calls, percent(_nof_inlined_interface_calls, _nof_interface_calls));
-  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- optimized        ", _nof_optimized_interface_calls, percent(_nof_optimized_interface_calls, _nof_interface_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- monomorphic      ", mono_i, percent(mono_i, _nof_interface_calls));
-  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- megamorphic      ", _nof_megamorphic_interface_calls, percent(_nof_megamorphic_interface_calls, _nof_interface_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- static/special calls", _nof_static_calls, percent(_nof_static_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_static_calls, percent(_nof_inlined_static_calls, _nof_static_calls));
   tty->cr();
@@ -2598,7 +2681,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
 ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
-                  ResourceObj::C_HEAP, mtCode,
+                  AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals> _adapter_handler_table;
 
@@ -2645,10 +2728,6 @@ BufferBlob* AdapterHandlerLibrary::_buffer = NULL;
 
 BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   return _buffer;
-}
-
-extern "C" void unexpected_adapter_call() {
-  ShouldNotCallThis();
 }
 
 static void post_adapter_creation(const AdapterBlob* new_adapter,
@@ -3033,17 +3112,21 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {
-        buffer.initialize_stubs_size(128);
+        buffer.initialize_stubs_size(192);
       }
 
       struct { double data[20]; } locs_buf;
       struct { double data[20]; } stubs_locs_buf;
       buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-#if defined(AARCH64)
+#if defined(AARCH64) || defined(PPC64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops
       // accesses. For native_wrappers we need a constant.
-      buffer.initialize_consts_size(8);
+      // On PPC64 the continuation enter intrinsic needs the constant pool for the compiled
+      // static java call that is resolved in the runtime.
+      if (PPC64_ONLY(method->is_continuation_enter_intrinsic() &&) true) {
+        buffer.initialize_consts_size(8 PPC64_ONLY(+ 24));
+      }
 #endif
       buffer.stubs()->initialize_shared_locs((relocInfo*)&stubs_locs_buf, sizeof(stubs_locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);
@@ -3177,6 +3260,8 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
+  assert(current == JavaThread::current(), "pre-condition");
+
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed
   // before it gets unwound. This is helpful as the size of the compiled frame could be
@@ -3311,6 +3396,7 @@ void AdapterHandlerLibrary::print_statistics() {
 #endif /* PRODUCT */
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   StackOverflow* overflow_state = current->stack_overflow_state();
   overflow_state->enable_stack_reserved_zone(/*check_if_disabled*/true);
   overflow_state->set_reserved_stack_activation(current->stack_base());

@@ -189,13 +189,13 @@ public class NativeFont extends PhysicalFont {
 
     /* Wildcard all the size fields in the XLFD and retrieve a list of
      * XLFD's that match.
-     * We only look for scaleable fonts, so we can just replace the 0's
+     * We only look for scalable fonts, so we can just replace the 0's
      * with *'s and see what we get back
-     * No matches means even the scaleable version wasn't found. This is
+     * No matches means even the scalable version wasn't found. This is
      * means the X font path isn't set up for this font at all.
-     * One match means only the scaleable version we started with was found
+     * One match means only the scalable version we started with was found
      * -monotype-arial-bold-i-normal--0-0-0-0-p-0-iso8859-1
-     * Two matches apparently means as well as the above, a scaleable
+     * Two matches apparently means as well as the above, a scalable
      * specified for 72 dpi is found, not that there are bitmaps : eg
      * -monotype-arial-bold-i-normal--0-0-72-72-p-0-iso8859-1
      * So require at least 3 matches (no need to parse) to determine that

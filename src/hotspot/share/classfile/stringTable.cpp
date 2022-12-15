@@ -47,10 +47,10 @@
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
@@ -72,16 +72,18 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
+  assert(ArchiveHeapLoader::are_archived_strings_available(), "sanity");
   if (UseCompressedOops) {
     assert(sizeof(narrowOop) == sizeof(offset), "must be");
     narrowOop v = CompressedOops::narrow_oop_cast(offset);
     return ArchiveHeapLoader::decode_from_archive(v);
   } else {
+    assert(!ArchiveHeapLoader::is_loaded(), "Pointer relocation for uncompressed oops is unimplemented");
     intptr_t dumptime_oop = (uintptr_t)offset;
     assert(dumptime_oop != 0, "null strings cannot be interned");
     intptr_t runtime_oop = dumptime_oop +
                            (intptr_t)FileMapInfo::current_info()->header()->heap_begin() +
-                           (intptr_t)ArchiveHeapLoader::runtime_delta();
+                           (intptr_t)ArchiveHeapLoader::mapped_heap_delta();
     return (oop)cast_to_oop(runtime_oop);
   }
 }
@@ -603,11 +605,8 @@ class VerifyStrings : StackObj {
 
 // This verification is part of Universe::verify() and needs to be quick.
 void StringTable::verify() {
-  Thread* thr = Thread::current();
   VerifyStrings vs;
-  if (!_local_table->try_scan(thr, vs)) {
-    log_info(stringtable)("verify unavailable at this moment");
-  }
+  _local_table->do_safepoint_scan(vs);
 }
 
 // Verification and comp
@@ -620,7 +619,7 @@ class VerifyCompStrings : StackObj {
   }
 
   ResizeableResourceHashtable<oop, bool,
-                              ResourceObj::C_HEAP, mtInternal,
+                              AnyObj::C_HEAP, mtInternal,
                               string_hash, string_equals> _table;
  public:
   size_t _errors;
@@ -643,9 +642,7 @@ class VerifyCompStrings : StackObj {
 size_t StringTable::verify_and_compare_entries() {
   Thread* thr = Thread::current();
   VerifyCompStrings vcs;
-  if (!_local_table->try_scan(thr, vcs)) {
-    log_info(stringtable)("verify unavailable at this moment");
-  }
+  _local_table->do_scan(thr, vcs);
   return vcs._errors;
 }
 

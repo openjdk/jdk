@@ -403,7 +403,7 @@ public abstract class RowFilter<M,I> {
         }
 
         /**
-         * Returns the identifer (in the model) of the entry.
+         * Returns the identifier (in the model) of the entry.
          * For a table this corresponds to the index of the row in the model,
          * expressed as an <code>Integer</code>.
          *

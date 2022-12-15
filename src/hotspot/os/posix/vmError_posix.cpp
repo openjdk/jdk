@@ -64,11 +64,11 @@ void VMError::interrupt_reporting_thread() {
   ::pthread_kill(reporter_thread_id, SIGILL);
 }
 
-static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
+static void crash_handler(int sig, siginfo_t* info, void* context) {
 
   PosixSignals::unblock_error_signals();
 
-  ucontext_t* const uc = (ucontext_t*) ucVoid;
+  ucontext_t* const uc = (ucontext_t*) context;
   address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
   // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
@@ -84,13 +84,13 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
   if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
+    if (handle_assert_poison_fault(context, info->si_addr)) {
       return;
     }
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-  VMError::report_and_die(NULL, sig, pc, info, ucVoid);
+  VMError::report_and_die(NULL, sig, pc, info, context);
 }
 
 const void* VMError::crash_handler_address = CAST_FROM_FN_PTR(void *, crash_handler);
@@ -101,7 +101,10 @@ void VMError::install_secondary_signal_handler() {
     0 // end
   };
   for (int i = 0; signals_to_handle[i] != 0; i++) {
-    os::signal(signals_to_handle[i], CAST_FROM_FN_PTR(void *, crash_handler));
+    struct sigaction sigAct, oldSigAct;
+    PosixSignals::install_sigaction_signal_handler(&sigAct, &oldSigAct,
+                                                   signals_to_handle[i], crash_handler);
+    // No point checking the return code during error reporting.
   }
 }
 

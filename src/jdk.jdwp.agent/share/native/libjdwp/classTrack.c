@@ -46,31 +46,67 @@
  */
 static jvmtiEnv* trackingEnv;
 
+static void addPreparedClass(JNIEnv *env, jclass klass);
+
 /*
  * Invoke the callback when classes are freed.
  */
 void JNICALL
 cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 {
+    JDI_ASSERT(jvmti_env == trackingEnv);
     eventHandler_synthesizeUnloadEvent((char*)jlong_to_ptr(tag), getEnv());
 }
 
-void
-classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
+/*
+ * Invoke the callback when classes are prepared.
+ */
+void JNICALL
+cbTrackingClassPrepare(jvmtiEnv* jvmti_env, JNIEnv *env, jthread thread, jclass klass)
+{
+    JDI_ASSERT(jvmti_env == trackingEnv);
+    addPreparedClass(env, klass);
+}
+
+/*
+ * It's ok to get WRONG_PHASE errors once the vm is dead. We can just
+ * ignore the event in that case.
+ */
+static jboolean
+is_wrong_phase(jvmtiError error)
+{
+    if (error == JVMTI_ERROR_WRONG_PHASE) {
+        JDI_ASSERT(gdata->vmDead);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+
+/*
+ * Add a class to the prepared class hash table.
+ */
+static void
+addPreparedClass(JNIEnv *env, jclass klass)
 {
     jvmtiError error;
-    jvmtiEnv* env = trackingEnv;
 
     char* signature;
     error = classSignature(klass, &signature, NULL);
+    if (is_wrong_phase(error)) {
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"signature");
     }
 
-    if (gdata && gdata->assertOn) {
+    if (gdata->assertOn) {
         // Check if already tagged.
         jlong tag;
-        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(env, klass, &tag);
+        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(trackingEnv, klass, &tag);
+        if (is_wrong_phase(error)) {
+            return;
+        }
         if (error != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error, "Unable to GetTag with class trackingEnv");
         }
@@ -83,7 +119,10 @@ classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
         }
     }
 
-    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(env, klass, ptr_to_jlong(signature));
+    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(trackingEnv, klass, ptr_to_jlong(signature));
+    if (is_wrong_phase(error)) {
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         jvmtiDeallocate(signature);
         EXIT_ERROR(error,"SetTag");
@@ -102,15 +141,27 @@ setupEvents()
     }
     jvmtiEventCallbacks cb;
     memset(&cb, 0, sizeof(cb));
+
+    // Setup JVMTI callbacks
     cb.ObjectFree = cbTrackingObjectFree;
+    cb.ClassPrepare = cbTrackingClassPrepare;
     error = JVMTI_FUNC_PTR(trackingEnv, SetEventCallbacks)(trackingEnv, &cb, sizeof(cb));
     if (error != JVMTI_ERROR_NONE) {
         return JNI_FALSE;
     }
+
+    // Enable OBJECT_FREE events
     error = JVMTI_FUNC_PTR(trackingEnv, SetEventNotificationMode)(trackingEnv, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL);
     if (error != JVMTI_ERROR_NONE) {
         return JNI_FALSE;
     }
+
+    // Enable CLASS_PREPARE events
+    error = JVMTI_FUNC_PTR(trackingEnv, SetEventNotificationMode)(trackingEnv, JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+    if (error != JVMTI_ERROR_NONE) {
+        return JNI_FALSE;
+    }
+
     return JNI_TRUE;
 }
 
@@ -143,7 +194,7 @@ classTrack_initialize(JNIEnv *env)
             jint wanted = JVMTI_CLASS_STATUS_PREPARED | JVMTI_CLASS_STATUS_ARRAY;
             status = classStatus(klass);
             if ((status & wanted) != 0) {
-                classTrack_addPreparedClass(env, klass);
+                addPreparedClass(env, klass);
             }
         }
         jvmtiDeallocate(classes);

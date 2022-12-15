@@ -28,7 +28,10 @@ import com.sun.hotspot.igv.view.DiagramViewer;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JTextField;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 
 public final class ZoomLevelAction extends JComboBox<String> implements ChangedListener<DiagramViewer> {

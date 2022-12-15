@@ -276,6 +276,7 @@ void Matcher::match( ) {
     // Permit args to have no register
     _calling_convention_mask[i].Clear();
     if( !vm_parm_regs[i].first()->is_valid() && !vm_parm_regs[i].second()->is_valid() ) {
+      _parm_regs[i].set_bad();
       continue;
     }
     // calling_convention returns stack arguments as a count of

@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test --save-jlink-argfiles plugin
+ * @requires vm.jvmci
  * @library ../../lib
  * @library /test/lib
  * @modules java.base/jdk.internal.jimage

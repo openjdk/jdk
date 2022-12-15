@@ -82,6 +82,12 @@ struct ArchivableStaticFieldInfo {
 
 bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
+GrowableArrayCHeap<Metadata**, mtClassShared>* HeapShared::_native_pointers = NULL;
+
+size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_total_obj_count;
+size_t HeapShared::_total_obj_size;
 
 #ifndef PRODUCT
 #define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
@@ -300,6 +306,7 @@ oop HeapShared::archive_object(oop obj) {
 
   oop archived_oop = cast_to_oop(G1CollectedHeap::heap()->archive_mem_allocate(len));
   if (archived_oop != NULL) {
+    count_allocation(len);
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     // Reinitialize markword to remove age/marking/locking/etc.
     //
@@ -320,6 +327,7 @@ oop HeapShared::archive_object(oop obj) {
     if (_original_object_table != NULL) {
       _original_object_table->put(archived_oop, obj);
     }
+    mark_native_pointers(obj, archived_oop);
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT " : %s",
@@ -350,6 +358,32 @@ void HeapShared::archive_klass_objects() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       ik->constants()->archive_resolved_references();
     }
+  }
+}
+
+void HeapShared::mark_native_pointers(oop orig_obj, oop archived_obj) {
+  if (java_lang_Class::is_instance(orig_obj)) {
+    mark_one_native_pointer(archived_obj, java_lang_Class::klass_offset());
+    mark_one_native_pointer(archived_obj, java_lang_Class::array_klass_offset());
+  }
+}
+
+void HeapShared::mark_one_native_pointer(oop archived_obj, int offset) {
+  Metadata* ptr = archived_obj->metadata_field_acquire(offset);
+  if (ptr != NULL) {
+    // Set the native pointer to the requested address (at runtime, if the metadata
+    // is mapped at the default location, it will be at this address).
+    address buffer_addr = ArchiveBuilder::current()->get_buffered_addr((address)ptr);
+    address requested_addr = ArchiveBuilder::current()->to_requested(buffer_addr);
+    archived_obj->metadata_field_put(offset, (Metadata*)requested_addr);
+
+    // Remember this pointer. At runtime, if the metadata is mapped at a non-default
+    // location, the pointer needs to be patched (see ArchiveHeapLoader::patch_native_pointers()).
+    _native_pointers->append(archived_obj->field_addr<Metadata*>(offset));
+
+    log_debug(cds, heap, mirror)(
+        "Marked metadata field at %d: " PTR_FORMAT " ==> " PTR_FORMAT,
+         offset, p2i(ptr), p2i(requested_addr));
   }
 }
 
@@ -558,6 +592,7 @@ void HeapShared::copy_roots() {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
   log_info(cds)("archived obj roots[%d] = " SIZE_FORMAT " words, klass = %p, obj = %p", length, size, k, mem);
+  count_allocation(roots()->size());
 }
 
 //
@@ -593,7 +628,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
   assert(DumpSharedSpaces, "dump time only");
   if (_subgraph_entry_fields == NULL) {
     _subgraph_entry_fields =
-      new(ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
+      new (mtClass) GrowableArray<int>(10, mtClass);
   }
   _subgraph_entry_fields->append(static_field_offset);
   _subgraph_entry_fields->append(HeapShared::append_root(v));
@@ -607,7 +642,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
 
   if (_subgraph_object_klasses == NULL) {
     _subgraph_object_klasses =
-      new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
+      new (mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
   assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_k), "must be a shared class");
@@ -803,9 +838,12 @@ void HeapShared::write_subgraph_info_table() {
     _archived_ArchiveHeapTestClass = array;
   }
 #endif
+  if (log_is_enabled(Info, cds, heap)) {
+    print_stats();
+  }
 }
 
-void HeapShared::serialize(SerializeClosure* soc) {
+void HeapShared::serialize_root(SerializeClosure* soc) {
   oop roots_oop = NULL;
 
   if (soc->reading()) {
@@ -821,6 +859,9 @@ void HeapShared::serialize(SerializeClosure* soc) {
     roots_oop = roots();
     soc->do_oop(&roots_oop); // write to archive
   }
+}
+
+void HeapShared::serialize_tables(SerializeClosure* soc) {
 
 #ifndef PRODUCT
   soc->do_ptr((void**)&_archived_ArchiveHeapTestClass);
@@ -1559,7 +1600,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 
 void HeapShared::init_subgraph_entry_fields(TRAPS) {
   assert(HeapShared::can_write(), "must be");
-  _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
+  _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields, CHECK);
   init_subgraph_entry_fields(open_archive_subgraph_entry_fields, CHECK);
   if (MetaspaceShared::use_full_module_graph()) {
@@ -1631,7 +1672,8 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
 void HeapShared::init_for_dumping(TRAPS) {
   if (HeapShared::can_write()) {
     setup_test_class(ArchiveHeapTestClass);
-    _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
+    _dumped_interned_strings = new (mtClass)DumpedInternedStrings();
+    _native_pointers = new GrowableArrayCHeap<Metadata**, mtClassShared>(2048);
     init_subgraph_entry_fields(CHECK);
   }
 }
@@ -1795,6 +1837,80 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
   log_info(cds, heap)("calculate_oopmap: objects = %6d, oop fields = %7d (nulls = %7d)",
                       num_objs, finder.num_total_oops(), finder.num_null_oops());
   return oopmap;
+}
+
+
+ResourceBitMap HeapShared::calculate_ptrmap(MemRegion region) {
+  size_t num_bits = region.byte_size() / sizeof(Metadata*);
+  ResourceBitMap oopmap(num_bits);
+
+  Metadata** start = (Metadata**)region.start();
+  Metadata** end   = (Metadata**)region.end();
+
+  int num_non_null_ptrs = 0;
+  int len = _native_pointers->length();
+  for (int i = 0; i < len; i++) {
+    Metadata** p = _native_pointers->at(i);
+    if (start <= p && p < end) {
+      assert(*p != NULL, "must be non-null");
+      num_non_null_ptrs ++;
+      size_t idx = p - start;
+      oopmap.set_bit(idx);
+    }
+  }
+
+  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers out of "
+                      SIZE_FORMAT " possible locations", num_non_null_ptrs, num_bits);
+  if (num_non_null_ptrs > 0) {
+    return oopmap;
+  } else {
+    return ResourceBitMap(0);
+  }
+}
+
+void HeapShared::count_allocation(size_t size) {
+  _total_obj_count ++;
+  _total_obj_size += size;
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    if (size <= (size_t(1) << i)) {
+      _alloc_count[i] ++;
+      _alloc_size[i] += size;
+      return;
+    }
+  }
+}
+
+static double avg_size(size_t size, size_t count) {
+  double avg = 0;
+  if (count > 0) {
+    avg = double(size * HeapWordSize) / double(count);
+  }
+  return avg;
+}
+
+void HeapShared::print_stats() {
+  size_t huge_count = _total_obj_count;
+  size_t huge_size = _total_obj_size;
+
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    size_t byte_size_limit = (size_t(1) << i) * HeapWordSize;
+    size_t count = _alloc_count[i];
+    size_t size = _alloc_size[i];
+    log_info(cds, heap)(SIZE_FORMAT_W(8) " objects are <= " SIZE_FORMAT_W(-6)
+                        " bytes (total " SIZE_FORMAT_W(8) " bytes, avg %8.1f bytes)",
+                        count, byte_size_limit, size * HeapWordSize, avg_size(size, count));
+    huge_count -= count;
+    huge_size -= size;
+  }
+
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " huge  objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      huge_count, huge_size * HeapWordSize,
+                      avg_size(huge_size, huge_count));
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " total objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      _total_obj_count, _total_obj_size * HeapWordSize,
+                      avg_size(_total_obj_size, _total_obj_count));
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

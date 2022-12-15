@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,14 @@ import java.util.Map;
  * It can be consulted by a subclass of {@link MLet} that overrides
  * the {@link MLet#check MLet.check} method.
  *
+ * @deprecated This API is part of Management Applets (m-lets), which is a legacy feature that allows loading
+ * of remote MBeans. This feature is not usable without a Security Manager, which is deprecated and subject to
+ * removal in a future release. Consequently, this API is also deprecated and subject to removal. There is no replacement.
+ *
  * @since 1.6
  */
+@Deprecated(since="20", forRemoval=true)
 public class MLetContent {
-
 
     /**
      * A map of the attributes of the <CODE>MLET</CODE> tag
@@ -102,7 +106,8 @@ public class MLetContent {
                 att += "/";
             }
             try {
-                baseURL = new URL(documentURL, att);
+                @SuppressWarnings("deprecation")
+                var _unused = baseURL = new URL(documentURL, att);
             } catch (MalformedURLException e) {
                 // OK : Move to next block as baseURL could not be initialized.
             }
@@ -112,7 +117,8 @@ public class MLetContent {
             int i = file.lastIndexOf('/');
             if (i >= 0 && i < file.length() - 1) {
                 try {
-                    baseURL = new URL(documentURL, file.substring(0, i + 1));
+                    @SuppressWarnings("deprecation")
+                    var _unused = baseURL = new URL(documentURL, file.substring(0, i + 1));
                 } catch (MalformedURLException e) {
                     // OK : Move to next block as baseURL could not be initialized.
                 }

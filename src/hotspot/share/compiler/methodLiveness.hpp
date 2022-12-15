@@ -56,11 +56,11 @@ class MethodLivenessResult : public ResourceBitMap {
 #endif
 };
 
-class MethodLiveness : public ResourceObj {
+class MethodLiveness : public ArenaObj {
  public:
   // The BasicBlock class is used to represent a basic block in the
   // liveness analysis.
-  class BasicBlock : public ResourceObj {
+  class BasicBlock : public ArenaObj {
    private:
     // This class is only used by the MethodLiveness class.
     friend class MethodLiveness;

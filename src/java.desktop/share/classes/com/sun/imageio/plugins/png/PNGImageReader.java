@@ -332,13 +332,13 @@ public class PNGImageReader extends ImageReader {
         if (metadata.PLTE_present) {
             processWarningOccurred(
 "A PNG image may not contain more than one PLTE chunk.\n" +
-"The chunk wil be ignored.");
+"The chunk will be ignored.");
             return;
         } else if (metadata.IHDR_colorType == PNG_COLOR_GRAY ||
                    metadata.IHDR_colorType == PNG_COLOR_GRAY_ALPHA) {
             processWarningOccurred(
 "A PNG gray or gray alpha image cannot have a PLTE chunk.\n" +
-"The chunk wil be ignored.");
+"The chunk will be ignored.");
             return;
         }
 
@@ -1684,7 +1684,7 @@ public class PNGImageReader extends ImageReader {
              * 2^bitDepth is legal in the view of PNG spec.
              *
              * However the spec of createIndexed() method demands the exact
-             * equality of the palette lengh and number of possible palette
+             * equality of the palette length and number of possible palette
              * entries (2^bitDepth).
              *
              * {@link javax.imageio.ImageTypeSpecifier.html#createIndexed}
@@ -1751,7 +1751,7 @@ public class PNGImageReader extends ImageReader {
         case PNG_COLOR_RGB_ALPHA:
             if (bitDepth == 8) {
                 // some standard types of buffered images
-                // wich can be used as destination
+                // which can be used as destination
                 l.add(ImageTypeSpecifier.createFromBufferedImageType(
                           BufferedImage.TYPE_4BYTE_ABGR));
 

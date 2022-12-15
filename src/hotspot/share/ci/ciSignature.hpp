@@ -34,7 +34,7 @@
 // ciSignature
 //
 // This class represents the signature of a method.
-class ciSignature : public ResourceObj {
+class ciSignature : public ArenaObj {
 private:
   ciSymbol* _symbol;
   ciKlass*  _accessing_klass;

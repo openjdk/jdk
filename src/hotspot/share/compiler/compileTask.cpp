@@ -117,7 +117,8 @@ void CompileTask::initialize(int compile_id,
   _time_started = 0;
   _compile_reason = compile_reason;
   _nm_content_size = 0;
-  _directive = NULL;
+  AbstractCompiler* comp = compiler();
+  _directive = DirectivesStack::getMatchingDirective(method, comp);
   _nm_insts_size = 0;
   _nm_total_size = 0;
   _failure_reason = NULL;

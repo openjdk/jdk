@@ -42,6 +42,8 @@
 bool ArchiveHeapLoader::_closed_regions_mapped = false;
 bool ArchiveHeapLoader::_open_regions_mapped = false;
 bool ArchiveHeapLoader::_is_loaded = false;
+
+bool    ArchiveHeapLoader::_narrow_oop_base_initialized = false;
 address ArchiveHeapLoader::_narrow_oop_base;
 int     ArchiveHeapLoader::_narrow_oop_shift;
 
@@ -59,10 +61,26 @@ intx ArchiveHeapLoader::_runtime_offset_2 = 0;
 intx ArchiveHeapLoader::_runtime_offset_3 = 0;
 bool ArchiveHeapLoader::_loading_failed = false;
 
-// Support for mapped heap (!UseCompressedOops only)
-ptrdiff_t ArchiveHeapLoader::_runtime_delta = 0;
+// Support for mapped heap.
+bool      ArchiveHeapLoader::_mapped_heap_relocation_initialized = false;
+ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
+
+// Every mapped region is offset by _mapped_heap_delta from its requested address.
+// See FileMapInfo::heap_region_requested_address().
+void ArchiveHeapLoader::init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift) {
+  assert(!_mapped_heap_relocation_initialized, "only once");
+  if (!UseCompressedOops) {
+    assert(dumptime_oop_shift == 0, "sanity");
+  }
+  assert(can_map(), "sanity");
+  init_narrow_oop_decoding(CompressedOops::base() + delta, dumptime_oop_shift);
+  _mapped_heap_delta = delta;
+  _mapped_heap_relocation_initialized = true;
+}
 
 void ArchiveHeapLoader::init_narrow_oop_decoding(address base, int shift) {
+  assert(!_narrow_oop_base_initialized, "only once");
+  _narrow_oop_base_initialized = true;
   _narrow_oop_base = base;
   _narrow_oop_shift = shift;
 }
@@ -72,7 +90,7 @@ void ArchiveHeapLoader::fixup_regions() {
   if (is_mapped()) {
     mapinfo->fixup_mapped_heap_regions();
   } else if (_loading_failed) {
-    fill_failed_loaded_region();
+    fill_failed_loaded_heap();
   }
   if (is_fully_available()) {
     if (!MetaspaceShared::use_full_module_graph()) {
@@ -80,7 +98,6 @@ void ArchiveHeapLoader::fixup_regions() {
       ClassLoaderDataShared::clear_archived_oops();
     }
   }
-  SystemDictionaryShared::update_archived_mirror_native_pointers();
 }
 
 // ------------------ Support for Region MAPPING -----------------------------------------
@@ -113,7 +130,7 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
     oop* p = _start + offset;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
-    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::runtime_delta();
+    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
     RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
@@ -171,7 +188,7 @@ struct LoadedArchiveHeapRegion {
 };
 
 void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loaded_regions,
-                                             int num_loaded_regions) {
+                                                    int num_loaded_regions) {
   _dumptime_base_0 = loaded_regions[0]._dumptime_base;
   _dumptime_base_1 = loaded_regions[1]._dumptime_base;
   _dumptime_base_2 = loaded_regions[2]._dumptime_base;
@@ -193,6 +210,10 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 }
 
 bool ArchiveHeapLoader::can_load() {
+  if (!UseCompressedOops) {
+    // Pointer relocation for uncompressed oops is unimplemented.
+    return false;
+  }
   return Universe::heap()->can_load_archived_objects();
 }
 
@@ -228,12 +249,12 @@ class PatchLoadedRegionPointers: public BitMapClosure {
   }
 
   bool do_bit(size_t offset) {
+    assert(UseCompressedOops, "PatchLoadedRegionPointers for uncompressed oops is unimplemented");
     narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     uintptr_t o = cast_from_oop<uintptr_t>(ArchiveHeapLoader::decode_from_archive(v));
     assert(_base_0 <= o && o < _top, "must be");
-
 
     // We usually have only 2 regions for the default archive. Use template to avoid unnecessary comparisons.
     if (NUM_LOADED_REGIONS > 3 && o >= _base_3) {
@@ -257,7 +278,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
   int num_loaded_regions = 0;
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
-    FileMapRegion* r = mapinfo->space_at(i);
+    FileMapRegion* r = mapinfo->region_at(i);
     r->assert_is_heap_region();
     if (r->used() > 0) {
       assert(is_aligned(r->used(), HeapWordSize), "must be");
@@ -265,7 +286,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
       LoadedArchiveHeapRegion* ri = &loaded_regions[num_loaded_regions++];
       ri->_region_index = i;
       ri->_region_size = r->used();
-      ri->_dumptime_base = (uintptr_t)mapinfo->start_address_as_decoded_from_archive(r);
+      ri->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address(r);
     }
   }
 
@@ -310,11 +331,11 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
   uintptr_t load_address = buffer;
   for (int i = 0; i < num_loaded_regions; i++) {
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
-    FileMapRegion* r = mapinfo->space_at(ri->_region_index);
+    FileMapRegion* r = mapinfo->region_at(ri->_region_index);
 
     if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
       // There's no easy way to free the buffer, so we will fill it with zero later
-      // in fill_failed_loaded_region(), and it will eventually be GC'ed.
+      // in fill_failed_loaded_heap(), and it will eventually be GC'ed.
       log_warning(cds)("Loading of heap region %d has failed. Archived objects are disabled", i);
       _loading_failed = true;
       return false;
@@ -339,6 +360,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
       bm.iterate(&patcher);
     }
 
+    r->set_mapped_base((char*)load_address);
     load_address += r->used();
   }
 
@@ -346,6 +368,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
 }
 
 bool ArchiveHeapLoader::load_heap_regions(FileMapInfo* mapinfo) {
+  assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
   LoadedArchiveHeapRegion loaded_regions[MetaspaceShared::max_num_heap_regions];
@@ -386,23 +409,31 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
-    ShouldNotReachHere();
+    // Uncompressed oops are not supported by loaded heaps.
+    Unimplemented();
   }
 };
 
 void ArchiveHeapLoader::finish_initialization() {
   if (is_loaded()) {
-    HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
-    HeapWord* top    = (HeapWord*)_loaded_heap_top;
-
-    MemRegion archive_space = MemRegion(bottom, top);
-    Universe::heap()->complete_loaded_archive_space(archive_space);
+    // These operations are needed only when the heap is loaded (not mapped).
+    finish_loaded_heap();
+    if (VerifyArchivedFields > 0) {
+      verify_loaded_heap();
+    }
   }
+  patch_native_pointers();
+}
 
-  if (VerifyArchivedFields <= 0 || !is_loaded()) {
-    return;
-  }
+void ArchiveHeapLoader::finish_loaded_heap() {
+  HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
+  HeapWord* top    = (HeapWord*)_loaded_heap_top;
 
+  MemRegion archive_space = MemRegion(bottom, top);
+  Universe::heap()->complete_loaded_archive_space(archive_space);
+}
+
+void ArchiveHeapLoader::verify_loaded_heap() {
   log_info(cds, heap)("Verify all oops and pointers in loaded heap");
 
   ResourceMark rm;
@@ -424,7 +455,7 @@ void ArchiveHeapLoader::finish_initialization() {
   }
 }
 
-void ArchiveHeapLoader::fill_failed_loaded_region() {
+void ArchiveHeapLoader::fill_failed_loaded_heap() {
   assert(_loading_failed, "must be");
   if (_loaded_heap_bottom != 0) {
     assert(_loaded_heap_top != 0, "must be");
@@ -434,4 +465,37 @@ void ArchiveHeapLoader::fill_failed_loaded_region() {
   }
 }
 
+class PatchNativePointers: public BitMapClosure {
+  Metadata** _start;
+
+ public:
+  PatchNativePointers(Metadata** start) : _start(start) {}
+
+  bool do_bit(size_t offset) {
+    Metadata** p = _start + offset;
+    *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
+    // Currently we have only Klass pointers in heap objects.
+    // This needs to be relaxed when we support other types of native
+    // pointers such as Method.
+    assert(((Klass*)(*p))->is_klass(), "must be");
+    return true;
+  }
+};
+
+void ArchiveHeapLoader::patch_native_pointers() {
+  if (MetaspaceShared::relocation_delta() == 0) {
+    return;
+  }
+
+  for (int i = MetaspaceShared::first_archive_heap_region;
+       i <= MetaspaceShared::last_archive_heap_region; i++) {
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(i);
+    if (r->mapped_base() != NULL && r->has_ptrmap()) {
+      log_info(cds, heap)("Patching native pointers in heap region %d", i);
+      BitMapView bm = r->ptrmap_view();
+      PatchNativePointers patcher((Metadata**)r->mapped_base());
+      bm.iterate(&patcher);
+    }
+  }
+}
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -1277,7 +1277,7 @@ public class AsyncBoxView extends View {
                     return;
                 }
                 if (child.getParent() == AsyncBoxView.this) {
-                    // this may overwrite anothers threads cached
+                    // this may overwrite another threads cached
                     // value for actively changing... but that just
                     // means it won't use the cache if there is an
                     // overwrite.
