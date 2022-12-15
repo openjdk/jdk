@@ -149,7 +149,7 @@ jvmtiError
 JvmtiEnv::SetThreadLocalStorage(jthread thread, const void* data) {
   JavaThread* current = JavaThread::current();
   JvmtiThreadState* state = NULL;
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);;
   ThreadsListHandle tlh(current);
 
   JavaThread* java_thread = NULL;
@@ -202,7 +202,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 
-    JvmtiVTMSTransitionDisabler disabler;
+    JvmtiVTMSTransitionDisabler disabler(thread);
     ThreadsListHandle tlh(current_thread);
 
     JavaThread* java_thread = NULL;
@@ -575,7 +575,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
   if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
     record_class_file_load_hook_enabled();
   }
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(event_thread);
 
   if (event_thread == NULL) {
     // Can be called at Agent_OnLoad() time with event_thread == NULL
@@ -856,7 +856,7 @@ JvmtiEnv::GetJLocationFormat(jvmtiJlocationFormat* format_ptr) {
 jvmtiError
 JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
   JavaThread* current_thread = JavaThread::current();
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -1181,7 +1181,7 @@ jvmtiError
 JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* current_thread = JavaThread::current();
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread = NULL;
   oop thread_oop = NULL;
@@ -1213,7 +1213,7 @@ JvmtiEnv::InterruptThread(jthread thread) {
   JavaThread* current_thread  = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -1258,7 +1258,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   JavaThread* java_thread = NULL;
   oop thread_oop = NULL;
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   // if thread is NULL the current thread is used
@@ -1358,7 +1358,7 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
   JavaThread* java_thread = NULL;
@@ -1431,7 +1431,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
          new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
   JavaThread* java_thread = NULL;
@@ -1501,7 +1501,7 @@ JvmtiEnv::GetCurrentContendedMonitor(jthread thread, jobject* monitor_ptr) {
   JavaThread* calling_thread = JavaThread::current();
   HandleMark hm(calling_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
   JavaThread* java_thread = NULL;
@@ -1715,7 +1715,7 @@ JvmtiEnv::GetStackTrace(jthread thread, jint start_depth, jint max_frame_count, 
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -1833,7 +1833,7 @@ JvmtiEnv::GetFrameCount(jthread thread, jint* count_ptr) {
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -1877,7 +1877,7 @@ JvmtiEnv::PopFrame(jthread thread) {
   if (thread == NULL) {
     return JVMTI_ERROR_INVALID_THREAD;
   }
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -1925,7 +1925,7 @@ JvmtiEnv::GetFrameLocation(jthread thread, jint depth, jmethodID* method_ptr, jl
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -1965,7 +1965,7 @@ JvmtiEnv::GetFrameLocation(jthread thread, jint depth, jmethodID* method_ptr, jl
 jvmtiError
 JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
   ResourceMark rm;
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh;
 
   JavaThread* java_thread = NULL;
@@ -2243,7 +2243,7 @@ JvmtiEnv::GetLocalObject(jthread thread, jint depth, jint slot, jobject* value_p
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2284,7 +2284,7 @@ JvmtiEnv::GetLocalInstance(jthread thread, jint depth, jobject* value_ptr){
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2326,7 +2326,7 @@ JvmtiEnv::GetLocalInt(jthread thread, jint depth, jint slot, jint* value_ptr) {
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2368,7 +2368,7 @@ JvmtiEnv::GetLocalLong(jthread thread, jint depth, jint slot, jlong* value_ptr) 
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2410,7 +2410,7 @@ JvmtiEnv::GetLocalFloat(jthread thread, jint depth, jint slot, jfloat* value_ptr
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2452,7 +2452,7 @@ JvmtiEnv::GetLocalDouble(jthread thread, jint depth, jint slot, jdouble* value_p
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2493,7 +2493,7 @@ JvmtiEnv::SetLocalObject(jthread thread, jint depth, jint slot, jobject value) {
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2530,7 +2530,7 @@ JvmtiEnv::SetLocalInt(jthread thread, jint depth, jint slot, jint value) {
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2567,7 +2567,7 @@ JvmtiEnv::SetLocalLong(jthread thread, jint depth, jint slot, jlong value) {
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2604,7 +2604,7 @@ JvmtiEnv::SetLocalFloat(jthread thread, jint depth, jint slot, jfloat value) {
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;
@@ -2641,7 +2641,7 @@ JvmtiEnv::SetLocalDouble(jthread thread, jint depth, jint slot, jdouble value) {
   // doit_prologue(), but after doit() is finished with it.
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;

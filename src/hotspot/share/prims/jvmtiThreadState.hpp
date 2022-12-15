@@ -79,19 +79,24 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 //
 class JvmtiVTMSTransitionDisabler {
  private:
-  static volatile bool _SR_mode;                      // there is an active suspender or resumer
-  static volatile int _VTMS_transition_count;         // current number of VTMS transitions
-  static volatile int _VTMS_transition_disable_count; // VTMS transitions are disabled while it is non-zero
+  static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
+  static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
+  static volatile bool _SR_mode;                         // there is an active suspender or resumer
+  static volatile int _VTMS_transition_count;            // current number of VTMS transitions
 
-  bool _is_SR;                                        // is suspender or resumer
-
-  void disable_VTMS_transitions();
-  void enable_VTMS_transitions();
+  bool _is_SR;                                           // is suspender or resumer
+  jthread _vthread;                                      // virtual thread to disable transitions for
 
   DEBUG_ONLY(static void print_info();)
+  void VTMS_transition_disable_for_one();
+  void VTMS_transition_disable_for_all();
+  void VTMS_transition_enable_for_one();
+  void VTMS_transition_enable_for_all();
+
  public:
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
+  JvmtiVTMSTransitionDisabler(jthread vthread);
   ~JvmtiVTMSTransitionDisabler();
 
   static void start_VTMS_transition(jthread vthread, bool is_mount);

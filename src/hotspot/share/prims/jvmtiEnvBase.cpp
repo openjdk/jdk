@@ -1912,7 +1912,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
-  JvmtiVTMSTransitionDisabler disabler;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current_thread);
 
   JavaThread* java_thread = NULL;

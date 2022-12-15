@@ -1679,6 +1679,7 @@ int java_lang_Thread::_contextClassLoader_offset;
 int java_lang_Thread::_inheritedAccessControlContext_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
+int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
 int java_lang_Thread::_interrupted_offset;
 int java_lang_Thread::_tid_offset;
 int java_lang_Thread::_continuation_offset;
@@ -1727,6 +1728,20 @@ JvmtiThreadState* java_lang_Thread::jvmti_thread_state(oop java_thread) {
 
 void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state) {
   java_thread->address_field_put(_jvmti_thread_state_offset, (address)state);
+}
+
+int java_lang_Thread::VTMS_transition_disable_count(oop java_thread) {
+  return java_thread->int_field(_jvmti_VTMS_transition_disable_count_offset);
+}
+ 
+void java_lang_Thread::inc_VTMS_transition_disable_count(oop java_thread) {
+  int val = VTMS_transition_disable_count(java_thread);
+  java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val + 1);
+}
+ 
+void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
+  int val = VTMS_transition_disable_count(java_thread);
+  java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val - 1);
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
