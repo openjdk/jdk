@@ -208,6 +208,16 @@ public interface DocTreeVisitor<R,P> {
     R visitLiteral(LiteralTree node, P p);
 
     /**
+     * Visits a {@code MarkdownTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     *
+     * @since 21
+     */
+    R visitMarkdown(MarkdownTree node, P p);
+
+    /**
      * Visits a {@code ParamTree} node.
      * @param node the node being visited
      * @param p a parameter value

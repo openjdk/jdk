@@ -66,6 +66,7 @@ import com.sun.tools.javac.tree.DCTree.DCIndex;
 import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
 import com.sun.tools.javac.tree.DCTree.DCLink;
 import com.sun.tools.javac.tree.DCTree.DCLiteral;
+import com.sun.tools.javac.tree.DCTree.DCMarkdown;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCProvides;
 import com.sun.tools.javac.tree.DCTree.DCReference;
@@ -334,6 +335,13 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCMarkdown newMarkdownTree(String text) {
+        DCMarkdown tree = new DCMarkdown(text);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public DCParam newParamTree(boolean isTypeParameter, IdentifierTree name, List<? extends DocTree> description) {
         DCParam tree = new DCParam(isTypeParameter, (DCIdentifier) name, cast(description));
         tree.pos = pos;
@@ -538,11 +546,46 @@ public class DocTreeMaker implements DocTreeFactory {
                     continue;
                 }
                 switch (dt.getKind()) {
-                    case RETURN:
-                    case SUMMARY:
+                    case RETURN,
+                        SUMMARY ->
                         foundFirstSentence = true;
-                        break;
-                    case TEXT:
+
+                    // TODO: merge MARKDOWN and TEXT code, perhaps with generic method
+                    case MARKDOWN -> {
+                        DCMarkdown mt = (DCMarkdown) dt;
+                        String s = mt.getCode();
+                        DocTree peekedNext = itr.hasNext()
+                                ? alist.get(itr.nextIndex())
+                                : null;
+                        int sbreak = getSentenceBreak(s, peekedNext);
+                        if (sbreak > 0) {
+                            s = s.substring(0, sbreak).stripTrailing();
+                            DCMarkdown text = this.at(spos).newMarkdownTree(s);
+                            fs.add(text);
+                            foundFirstSentence = true;
+                            int nwPos = skipWhiteSpace(mt.getCode(), sbreak);
+                            if (nwPos > 0) {
+                                DCMarkdown text2 = this.at(spos + nwPos).newMarkdownTree(mt.getCode().substring(nwPos));
+                                body.add(text2);
+                            }
+                            continue;
+                        } else if (itr.hasNext()) {
+                            // if the next doctree is a break, remove trailing spaces
+                            peekedNext = alist.get(itr.nextIndex());
+                            boolean sbrk = isSentenceBreak(peekedNext, false);
+                            if (sbrk) {
+                                DocTree next = itr.next();
+                                s = s.stripTrailing();
+                                DCMarkdown text = this.at(spos).newMarkdownTree(s);
+                                fs.add(text);
+                                body.add((DCMarkdown) next);  // TODO: why the cast?
+                                foundFirstSentence = true;
+                                continue;
+                            }
+                        }
+                    }
+
+                    case TEXT -> {
                         DCText tt = (DCText) dt;
                         String s = tt.getBody();
                         DocTree peekedNext = itr.hasNext()
@@ -574,14 +617,15 @@ public class DocTreeMaker implements DocTreeFactory {
                                 continue;
                             }
                         }
-                        break;
-                    default:
+                    }
+
+                    default -> {
                         if (isSentenceBreak(dt, isFirst)) {
                             body.add((DCTree) dt);
                             foundFirstSentence = true;
                             continue;
                         }
-                        break;
+                    }
                 }
                 fs.add((DCTree) dt);
             }

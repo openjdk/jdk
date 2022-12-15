@@ -27,6 +27,17 @@
  * Provides interfaces to represent documentation comments as abstract syntax
  * trees (AST).
  *
+ * <h2>Markdown</h2>
+ *
+ * Various classes defined in this package contain a list of {@link DocTree} nodes,
+ * which may represent {@linkplain TextTree plain text}, {@linkplain EntityTree entities},
+ * {@linkplain InlineTagTree inline} and {@linkplain BlockTagTree block} tags,
+ * {@linkplain StartElementTree start} and {@linkplain EndElementTree end} HTML elements,
+ * and {@linkplain MarkdownTree Markdown code}. In such lists, if there is at least
+ * one Markdown node, the entire list will be treated as Markdown, although all
+ * non-Markdown nodes will be treated as opaque objects and will not be parsed as
+ * part of the Markdown code.
+ *
  * @author Jonathan Gibbons
  * @since 1.8
  *

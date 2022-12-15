@@ -510,6 +510,11 @@ public class DocCommentTester {
                 return null;
             }
 
+            public Void visitMarkdown(MarkdownTree node, Void p) {
+                header(node, compress(node.getCode()));
+                return null;
+            }
+
             public Void visitParam(ParamTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -917,7 +922,9 @@ public class DocCommentTester {
          * Maintain contents of at-code and at-literal inline tags.
          */
         String normalize(String s) {
-            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
+            String s2 = s.trim()
+                    .replaceFirst("^md\\s+", "md\n")        // Markdown prefix
+                    .replaceFirst("\\.\\s*\\n *@", ".\n@"); // Between block tags
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("\\{@(code|literal)( )?");
             Matcher m = p.matcher(s2);

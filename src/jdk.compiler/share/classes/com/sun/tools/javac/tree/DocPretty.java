@@ -32,6 +32,7 @@ import java.util.List;
 
 import com.sun.source.doctree.*;
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.util.DocTreeScanner;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -188,6 +189,9 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree node, Void p) {
         try {
+            if (isMarkdown(node)) {
+                print("md\n");
+            }
             List<? extends DocTree> b = node.getFullBody();
             List<? extends DocTree> t = node.getBlockTags();
             print(b);
@@ -198,6 +202,36 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             throw new UncheckedIOException(e);
         }
         return null;
+    }
+
+    private static final DocTreeVisitor<Boolean, Void> isMarkdownVisitor = new DocTreeScanner<Boolean,Void>() {
+        @Override
+        public Boolean scan(Iterable<? extends DocTree> nodes, Void ignore) {
+            if (nodes != null) {
+                boolean first = true;
+                for (DocTree node : nodes) {
+                    Boolean b = scan(node, ignore);
+                    if (b != null && b.equals(Boolean.TRUE)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Boolean scan(DocTree node, Void ignore) {
+            return node != null && node.getKind() == DocTree.Kind.MARKDOWN ? Boolean.TRUE : super.scan(node, ignore);
+        }
+
+        @Override
+        public Boolean reduce(Boolean r1, Boolean r2) {
+            return r1 == Boolean.TRUE || r2 == Boolean.TRUE;
+        }
+    };
+
+    private boolean isMarkdown(DocCommentTree node) {
+        return isMarkdownVisitor.visitDocComment(node, null);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -339,6 +373,16 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             }
             print(node.getBody());
             print("}");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitMarkdown(MarkdownTree node, Void p) {
+        try {
+            print(node.getCode());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -616,8 +660,12 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             print("{");
             print("@");
             print(node.getTagName());
-            print(" ");
-            print(node.getContent());
+            var content = node.getContent();
+            boolean isEmpty = content.stream().allMatch(n -> (n instanceof TextTree t) && t.getBody().isEmpty());
+            if (!isEmpty) {
+                print(" ");
+                print(content);
+            }
             print("}");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
