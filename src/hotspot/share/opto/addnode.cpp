@@ -1124,20 +1124,9 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     y_off = t->is_int()->get_con();
     y = y->in(1);
   }
-  if (r->Opcode() != Op_MaxI) {
-    if (!l->is_Con()) {
-      if (r->is_Con()) {
-        // Convert "max(x, con)" into "max(con, x)".
-        swap_edges(1, 2);
-        return this;
-      } else {
-        // Otherwise, sort inputs.
-        if (x->_idx > y->_idx) {
-          swap_edges(1, 2);
-          return this;
-        }
-      }
-    }
+  if (x->_idx > y->_idx && r->Opcode() != Op_MaxI) {
+    swap_edges(1, 2);
+    return this;
   }
 
   const TypeInt* tx = phase->type(x)->isa_int();
@@ -1218,20 +1207,9 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     y_off = t->is_int()->get_con();
     y = y->in(1);
   }
-  if (r->Opcode() != Op_MinI) {
-    if (!l->is_Con()) {
-      if (r->is_Con()) {
-        // Convert "min(x, con)" into "min(con, x)".
-        swap_edges(1, 2);
-        return this;
-      } else {
-        // Otherwise, sort inputs.
-        if (x->_idx > y->_idx) {
-          swap_edges(1, 2);
-          return this;
-        }
-      }
-    }
+  if( x->_idx > y->_idx && r->Opcode() != Op_MinI ) {
+    swap_edges(1, 2);
+    return this;
   }
 
   const TypeInt* tx = phase->type(x)->isa_int();

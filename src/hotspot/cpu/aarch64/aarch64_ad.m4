@@ -28,6 +28,9 @@ dnl
 // BEGIN This section of the file is automatically generated. Do not edit --------------
 // This section is generated from aarch64_ad.m4
 dnl
+define(`upcase', `translit(`$*', `a-z', `A-Z')')dnl
+define(`downcase', `translit(`$*', `A-Z', `a-z')')dnl
+dnl
 define(`ORL2I', `ifelse($1,I,orL2I)')
 dnl
 define(`BASE_SHIFT_INSN',
@@ -539,4 +542,82 @@ dnl
 ADD_SUB_ZERO_EXTEND_SHIFT(I,255,Sub,subw,uxtb)
 ADD_SUB_ZERO_EXTEND_SHIFT(I,65535,Sub,subw,uxth)
 dnl
+define(`CMOV_INSN', `// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmov$1_reg_reg_$3(iReg$1NoSp dst, iReg$1 src1, iReg$1 src2, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE src2, USE cr);
+
+  ins_cost(INSN_COST * 2);
+  format %{ "$2 $dst, $src1, $src2 $3\t"  %}
+
+  ins_encode %{
+    __ $2(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg),
+             Assembler::upcase($3));
+  %}
+
+  ins_pipe(icond_reg_reg);
+%}
+')dnl
+CMOV_INSN(I, cselw, lt)
+CMOV_INSN(I, cselw, gt)
+dnl
+define(`CMOV_DRAW_INSN', `// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmov$1_reg_imm$2_$4(iReg$1NoSp dst, iReg$1 src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+
+  ins_cost(INSN_COST * 2);
+  format %{ "$3 $dst, $src1, zr $4\t"  %}
+
+  ins_encode %{
+    __ $3(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             zr,
+             Assembler::upcase($4));
+  %}
+
+  ins_pipe(icond_reg);
+%}
+')dnl
+CMOV_DRAW_INSN(I, 0, cselw, lt)
+CMOV_DRAW_INSN(I, 0, cselw, gt)
+CMOV_DRAW_INSN(I, 1, csincw, le)
+CMOV_DRAW_INSN(I, 1, csincw, gt)
+CMOV_DRAW_INSN(I, M1, csinvw, lt)
+CMOV_DRAW_INSN(I, M1, csinvw, ge)
+dnl
+define(`MINMAX_DRAW_INSN', `// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+ifelse($6,,
+instruct downcase($1)$2_reg_imm$4(iReg$2NoSp dst, iReg$2 src, imm$2$3$4 imm),
+instruct downcase($1)$2_imm$4_reg(iReg$2NoSp dst, imm$2$3$4 imm, iReg$2 src))
+%{
+  ifelse($6,,
+  match(Set dst ($1$2 src imm));,
+  match(Set dst ($1$2 imm src));)
+  ins_cost(INSN_COST * 2);
+  expand %{
+    rFlagsReg cr;
+    comp$2_reg_imm0(cr, src);
+    cmov$2_reg_imm$4_$5(dst, src, cr);
+  %}
+%}
+')dnl
+MINMAX_DRAW_INSN(Min, I,  , 0, lt)
+MINMAX_DRAW_INSN(Min, I,  , 0, lt, rev)
+MINMAX_DRAW_INSN(Min, I, _, 1, le)
+MINMAX_DRAW_INSN(Min, I, _, 1, le, rev)
+MINMAX_DRAW_INSN(Min, I, _, M1, lt)
+MINMAX_DRAW_INSN(Min, I, _, M1, lt, rev)
+dnl
+MINMAX_DRAW_INSN(Max, I,  , 0, gt)
+MINMAX_DRAW_INSN(Max, I,  , 0, gt, rev)
+MINMAX_DRAW_INSN(Max, I, _, 1, gt)
+MINMAX_DRAW_INSN(Max, I, _, 1, gt, rev)
+MINMAX_DRAW_INSN(Max, I, _, M1, ge)
+MINMAX_DRAW_INSN(Max, I, _, M1, ge, rev)
 
