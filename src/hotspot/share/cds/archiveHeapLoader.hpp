@@ -107,8 +107,15 @@ public:
   // More efficient version, but works only when ArchiveHeap is mapped.
   inline static oop decode_from_mapped_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
 
-  static void patch_embedded_pointers(MemRegion region, address oopmap,
-                                      size_t oopmap_in_bits, FileMapRegion* map_region, FileMapInfo* info) NOT_CDS_JAVA_HEAP_RETURN;
+  static void patch_compressed_pointers(BitMapView bm,
+                                        FileMapInfo* info,
+                                        FileMapRegion* map_region,
+                                        MemRegion region) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void patch_embedded_pointers(FileMapInfo* info,
+                                      FileMapRegion* map_region,
+                                      MemRegion region, address oopmap,
+                                      size_t oopmap_size_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void fixup_regions() NOT_CDS_JAVA_HEAP_RETURN;
 

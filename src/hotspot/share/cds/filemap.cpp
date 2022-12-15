@@ -2463,9 +2463,9 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
     FileMapRegion* r = region_at(region_idx);
 
     ArchiveHeapLoader::patch_embedded_pointers(
-      regions[i],
+      this, r, regions[i],
       (address)(region_at(MetaspaceShared::bm)->mapped_base()) + r->oopmap_offset(),
-      r->oopmap_size_in_bits(), r, this);
+      r->oopmap_size_in_bits());
   }
 }
 
