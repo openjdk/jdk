@@ -316,7 +316,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
   thread->set_is_VTMS_transition_disabler(true);
 #endif
 }
-  
+
 // disable VTMS transitions for all virtual threads
 void
 JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_all() {

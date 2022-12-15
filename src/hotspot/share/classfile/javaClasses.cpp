@@ -1733,12 +1733,12 @@ void java_lang_Thread::set_jvmti_thread_state(oop java_thread, JvmtiThreadState*
 int java_lang_Thread::VTMS_transition_disable_count(oop java_thread) {
   return java_thread->int_field(_jvmti_VTMS_transition_disable_count_offset);
 }
- 
+
 void java_lang_Thread::inc_VTMS_transition_disable_count(oop java_thread) {
   int val = VTMS_transition_disable_count(java_thread);
   java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val + 1);
 }
- 
+
 void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
   int val = VTMS_transition_disable_count(java_thread);
   java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val - 1);
