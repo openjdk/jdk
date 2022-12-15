@@ -83,6 +83,3 @@ vmTestbase/nsk/monitoring/stress/lowmem/lowmem033/TestDescription.java 8297979 g
 vmTestbase/nsk/monitoring/stress/lowmem/lowmem034/TestDescription.java 8297979 generic-all
 vmTestbase/nsk/monitoring/stress/lowmem/lowmem035/TestDescription.java 8297979 generic-all
 vmTestbase/nsk/monitoring/stress/lowmem/lowmem036/TestDescription.java 8297979 generic-all
-
-vmTestbase/nsk/jdi/ExceptionRequest/addInstanceFilter/instancefilter001/TestDescription.java 8298059 generic-x64
-vmTestbase/nsk/jdi/ExceptionRequest/addInstanceFilter/instancefilter004/TestDescription.java 8298059 generic-x64

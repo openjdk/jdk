@@ -45,7 +45,8 @@ class InstanceKlassMiscStatus {
     flag(is_shared_boot_class               , 1 << 10) /* defining class loader is boot class loader */ \
     flag(is_shared_platform_class           , 1 << 11) /* defining class loader is platform class loader */ \
     flag(is_shared_app_class                , 1 << 12) /* defining class loader is app class loader */ \
-    flag(has_contended_annotations          , 1 << 13) /* has @Contended annotation */
+    flag(has_contended_annotations          , 1 << 13) /* has @Contended annotation */ \
+    flag(has_localvariable_table            , 1 << 14) /* has localvariable information */
 
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,
   enum {
@@ -72,7 +73,7 @@ class InstanceKlassMiscStatus {
 
 #define IK_FLAGS_SET(name, ignore)   \
   void set_##name(bool b) {         \
-    assert(!name(), "set once");    \
+    assert_is_safe(name());         \
     if (b) _flags |= _misc_##name; \
   }
   IK_FLAGS_DO(IK_FLAGS_SET)
@@ -85,6 +86,7 @@ class InstanceKlassMiscStatus {
   void set_shared_class_loader_type(s2 loader_type);
 
   void assign_class_loader_type(const ClassLoaderData* cld);
+  void assert_is_safe(bool set) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_OOPS_INSTANCEKLASSMISCSTATUS_HPP
