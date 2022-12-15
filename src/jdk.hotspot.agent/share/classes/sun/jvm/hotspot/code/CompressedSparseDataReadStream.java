@@ -31,18 +31,18 @@ public class CompressedSparseDataReadStream extends CompressedReadStream {
     super(buffer, position);
   }
 
-  int bit_pos = 0;
+  int bitPos = 0;
 
-  protected short buffer(int position) {
+  private short buffer(int position) {
     return (short)buffer.getCIntegerAt(position, 1, true);
   }
 
-  public byte readByteImpl() {
-    if (bit_pos == 0) {
+  private byte readByteImpl() {
+    if (bitPos == 0) {
       return (byte)buffer(position++);
     }
-    byte b1 = (byte)(buffer(position) << bit_pos);
-    byte b2 = (byte)(buffer(++position) >> (8 - bit_pos));
+    byte b1 = (byte)(buffer(position) << bitPos);
+    byte b2 = (byte)(buffer(++position) >> (8 - bitPos));
     return (byte)(b1 | b2);
   }
 
@@ -59,13 +59,13 @@ public class CompressedSparseDataReadStream extends CompressedReadStream {
     return result;
   }
 
-  boolean readZero() {
-    if (0 != (buffer(position) & (1 << (7 - bit_pos)))) {
+  private boolean readZero() {
+    if (0 != (buffer(position) & (1 << (7 - bitPos)))) {
       return false; // not a zero data
     }
-    if (++bit_pos == 8) {
+    if (++bitPos == 8) {
       position++;
-      bit_pos = 0;
+      bitPos = 0;
     }
     return true;
   }

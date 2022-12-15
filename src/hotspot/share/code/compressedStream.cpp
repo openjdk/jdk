@@ -116,13 +116,13 @@ void CompressedWriteStream::write_long(jlong value) {
 
 bool CompressedSparseDataReadStream::read_zero() {
   if (_buffer[_position] & (1 << (7 - _bit_position))) {
-    return 0; // not a zero data
+    return false; // not a zero data
   }
   if (++_bit_position == 8) {
     _position++;
     _bit_position = 0;
   }
-  return 1;
+  return true;
 }
 
 uint8_t CompressedSparseDataReadStream::read_byte_impl() {

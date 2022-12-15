@@ -34,7 +34,7 @@ import sun.jvm.hotspot.debugger.*;
  */
 public class TestCompressedSparseDataReadStream {
 
-    public static void main(String[] args) throws Exception {
+    public static void testReadInt() {
         byte data[] = { (byte)0x08, (byte)0x1f, (byte)0xf0, (byte)0x00 };
         CompressedSparseDataReadStream in = new CompressedSparseDataReadStream(new Addr(data), 0);
         assertEquals(in.readInt(), 0);  // zero bit -> 0
@@ -50,7 +50,24 @@ public class TestCompressedSparseDataReadStream {
         in.setPosition(2);
         assertEquals(in.readInt(), 48); // 0xf000   -> 48
     }
+    public static void testReadB() {
+        byte data[] = { (byte)0x08, (byte)0x18, (byte)0x18, (byte)0x10 };
+        CompressedSparseDataReadStream in = new CompressedSparseDataReadStream(new Addr(data), 0);
+        assertEquals(in.readByte(), 0);         // zero bit -> 0
+        assertEquals(in.readByte(), 0);         // zero bit -> 0
+        assertEquals(in.readBoolean(), false);  // zero bit -> false
+        assertEquals(in.readBoolean(), false);  // zero bit -> false
+        assertEquals(in.readByte(), 1);         // 0x81     -> 1
+        assertEquals(in.readBoolean(), true);   // 0x81     -> true
+    }
+    public static void main(String[] args) {
+        testReadInt();
+        testReadB();
+    }
     private static void assertEquals(int a, int b) {
+        if (a != b) throw new RuntimeException("assert failed: " + a + " != " + b);
+    }
+    private static void assertEquals(boolean a, boolean b) {
         if (a != b) throw new RuntimeException("assert failed: " + a + " != " + b);
     }
 }
