@@ -38,17 +38,10 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateExtensions implements CertAttrSet<Extension> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions";
-    /**
-     * name
-     */
+public class CertificateExtensions implements DerEncoder {
+
     public static final String NAME = "extensions";
 
     private static final Debug debug = Debug.getInstance("x509");
@@ -148,8 +141,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out)
-            throws CertificateException, IOException {
+    public void encode(DerOutputStream out) throws IOException {
         encode(out, false);
     }
 
@@ -162,7 +154,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * @exception IOException on errors.
      */
     public void encode(DerOutputStream out, boolean isCertReq)
-    throws CertificateException, IOException {
+            throws IOException {
         DerOutputStream extOut = new DerOutputStream();
         for (Extension ext : map.values()) {
             ext.encode(extOut);
@@ -179,40 +171,34 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     }
 
     /**
-     * Set the attribute value.
+     * Set the extension value.
      * @param name the extension name used in the cache.
-     * @param obj the object to set.
-     * @exception IOException if the object could not be cached.
+     * @param ext the extension to set.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (obj instanceof Extension) {
-            map.put(name, (Extension)obj);
-        } else {
-            throw new IOException("Unknown extension type.");
-        }
+    public void setExtension(String name, Extension ext) {
+        map.put(name, ext);
     }
 
     /**
-     * Get the attribute value.
-     * @param name the extension name used in the lookup.
-     * @exception IOException if named extension is not found.
+     * Get the extension with this alias.
+     *
+     * @param alias the identifier string for the extension to retrieve.
+     *              Could be one of "x509.info.extensions.ExtensionName",
+     *              "ExtensionName", "2.3.4.5".
      */
-    public Extension get(String name) throws IOException {
-        Extension obj = map.get(name);
-        if (obj == null) {
-            throw new IOException("No extension found with name " + name);
+    public Extension getExtension(String alias) {
+        String name;
+        if (alias.startsWith(X509CertImpl.NAME)) {
+            int index = alias.lastIndexOf('.');
+            name = alias.substring(index + 1);
+        } else {
+            name = alias;
         }
-        return (obj);
-    }
-
-    // Similar to get(String), but throw no exception, might return null.
-    // Used in X509CertImpl::getExtension(OID).
-    Extension getExtension(String name) {
         return map.get(name);
     }
 
     /**
-     * Delete the attribute value.
+     * Delete the extension value.
      * @param name the extension name used in the lookup.
      * @exception IOException if named extension is not found.
      */
@@ -310,5 +296,4 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
     public String toString() {
         return map.toString();
     }
-
 }

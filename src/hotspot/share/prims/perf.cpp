@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"

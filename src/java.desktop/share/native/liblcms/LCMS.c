@@ -141,7 +141,7 @@ static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
  * Signature: ([JIIZIZLjava/lang/Object;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
-  (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderType,
+  (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderingIntent,
    jint inFormatter, jboolean isInIntPacked,
    jint outFormatter, jboolean isOutIntPacked, jobject disposerRef)
 {
@@ -200,7 +200,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
     }
 
     sTrans = cmsCreateMultiprofileTransform(iccArray, j,
-        inFormatter, outFormatter, renderType, cmsFLAGS_COPY_ALPHA);
+        inFormatter, outFormatter, renderingIntent, cmsFLAGS_COPY_ALPHA);
 
     (*env)->ReleaseLongArrayElements(env, profileIDs, ids, 0);
 
@@ -522,7 +522,6 @@ static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data,
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass cls, jlong ID, jint width, jint height, jint srcOffset,
    jint srcNextRowOffset, jint dstOffset, jint dstNextRowOffset,
-   jboolean srcAtOnce, jboolean dstAtOnce,
    jobject srcData, jobject dstData, jint srcDType, jint dstDType)
 {
     cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
@@ -548,18 +547,11 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
         return;
     }
 
-    char *inputRow = (char *) inputBuffer + srcOffset;
-    char *outputRow = (char *) outputBuffer + dstOffset;
+    char *input = (char *) inputBuffer + srcOffset;
+    char *output = (char *) outputBuffer + dstOffset;
 
-    if (srcAtOnce && dstAtOnce) {
-        cmsDoTransform(sTrans, inputRow, outputRow, width * height);
-    } else {
-        for (int i = 0; i < height; i++) {
-            cmsDoTransform(sTrans, inputRow, outputRow, width);
-            inputRow += srcNextRowOffset;
-            outputRow += dstNextRowOffset;
-        }
-    }
+    cmsDoTransformLineStride(sTrans, input, output, width, height,
+                             srcNextRowOffset, dstNextRowOffset, 0, 0);
 
     releaseILData(env, inputBuffer, srcDType, srcData, JNI_ABORT);
     releaseILData(env, outputBuffer, dstDType, dstData, 0);

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"

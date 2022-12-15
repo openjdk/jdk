@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciReplay.hpp"
@@ -36,6 +35,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm_io.h"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
@@ -694,8 +694,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     method()->ensure_method_data();
   }
 
-  Init(::AliasLevel);
-
+  Init(/*do_aliasing=*/ true);
 
   print_compile_messages();
 
@@ -938,7 +937,7 @@ Compile::Compile( ciEnv* ci_env,
   set_has_irreducible_loop(false); // no loops
 
   CompileWrapper cw(this);
-  Init(/*AliasLevel=*/ 0);
+  Init(/*do_aliasing=*/ false);
   init_tf((*generator)());
 
   {
@@ -960,7 +959,8 @@ Compile::Compile( ciEnv* ci_env,
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
-void Compile::Init(int aliaslevel) {
+void Compile::Init(bool aliasing) {
+  _do_aliasing = aliasing;
   _unique  = 0;
   _regalloc = NULL;
 
@@ -1053,16 +1053,6 @@ void Compile::Init(int aliaslevel) {
     set_default_node_notes(Node_Notes::make(this));
   }
 
-  // // -- Initialize types before each compile --
-  // // Update cached type information
-  // if( _method && _method->constants() )
-  //   Type::update_loaded_types(_method, _method->constants());
-
-  // Init alias_type map.
-  if (!do_escape_analysis() && aliaslevel == 3) {
-    aliaslevel = 2;  // No unique types without escape analysis
-  }
-  _AliasLevel = aliaslevel;
   const int grow_ats = 16;
   _max_alias_types = grow_ats;
   _alias_types   = NEW_ARENA_ARRAY(comp_arena(), AliasType*, grow_ats);
@@ -1299,6 +1289,7 @@ bool Compile::allow_range_check_smearing() const {
 
 //------------------------------flatten_alias_type-----------------------------
 const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
+  assert(do_aliasing(), "Aliasing should be enabled");
   int offset = tj->offset();
   TypePtr::PTR ptr = tj->ptr();
 
@@ -1330,7 +1321,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
               cast_to_ptr_type(ptr)->
               with_offset(offset);
     }
-  } else if( ta && _AliasLevel >= 2 ) {
+  } else if (ta) {
     // For arrays indexed by constant indices, we flatten the alias
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
@@ -1401,7 +1392,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Oop pointers need some flattening
   const TypeInstPtr *to = tj->isa_instptr();
-  if( to && _AliasLevel >= 2 && to != TypeOopPtr::BOTTOM ) {
+  if (to && to != TypeOopPtr::BOTTOM) {
     ciInstanceKlass* ik = to->instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (ik != ciEnv::current()->Class_klass() ||
@@ -1503,31 +1494,6 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   if (tj->base() == Type::AnyPtr)
     tj = TypePtr::BOTTOM;      // An error, which the caller must check for.
-
-  // Flatten all to bottom for now
-  switch( _AliasLevel ) {
-  case 0:
-    tj = TypePtr::BOTTOM;
-    break;
-  case 1:                       // Flatten to: oop, static, field or array
-    switch (tj->base()) {
-    //case Type::AryPtr: tj = TypeAryPtr::RANGE;    break;
-    case Type::RawPtr:   tj = TypeRawPtr::BOTTOM;   break;
-    case Type::AryPtr:   // do not distinguish arrays at all
-    case Type::InstPtr:  tj = TypeInstPtr::BOTTOM;  break;
-    case Type::KlassPtr:
-    case Type::AryKlassPtr:
-    case Type::InstKlassPtr: tj = TypeInstKlassPtr::OBJECT; break;
-    case Type::AnyPtr:   tj = TypePtr::BOTTOM;      break;  // caller checks it
-    default: ShouldNotReachHere();
-    }
-    break;
-  case 2:                       // No collapsing at level 2; keep all splits
-  case 3:                       // No collapsing at level 3; keep all splits
-    break;
-  default:
-    Unimplemented();
-  }
 
   offset = tj->offset();
   assert( offset != Type::OffsetTop, "Offset has fallen from constant" );
@@ -1635,8 +1601,9 @@ void Compile::grow_alias_types() {
 
 //--------------------------------find_alias_type------------------------------
 Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create, ciField* original_field) {
-  if (_AliasLevel == 0)
+  if (!do_aliasing()) {
     return alias_type(AliasIdxBot);
+  }
 
   AliasCacheEntry* ace = probe_alias_cache(adr_type);
   if (ace->_adr_type == adr_type) {
@@ -4232,14 +4199,69 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 }
 
 #ifndef PRODUCT
+//------------------------------verify_bidirectional_edges---------------------
+// For each input edge to a node (ie - for each Use-Def edge), verify that
+// there is a corresponding Def-Use edge.
+void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
+  // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
+  uint stack_size = live_nodes() >> 4;
+  Node_List nstack(MAX2(stack_size, (uint)OptoNodeListSize));
+  nstack.push(_root);
+
+  while (nstack.size() > 0) {
+    Node* n = nstack.pop();
+    if (visited.member(n)) {
+      continue;
+    }
+    visited.push(n);
+
+    // Walk over all input edges, checking for correspondence
+    uint length = n->len();
+    for (uint i = 0; i < length; i++) {
+      Node* in = n->in(i);
+      if (in != NULL && !visited.member(in)) {
+        nstack.push(in); // Put it on stack
+      }
+      if (in != NULL && !in->is_top()) {
+        // Count instances of `next`
+        int cnt = 0;
+        for (uint idx = 0; idx < in->_outcnt; idx++) {
+          if (in->_out[idx] == n) {
+            cnt++;
+          }
+        }
+        assert(cnt > 0, "Failed to find Def-Use edge.");
+        // Check for duplicate edges
+        // walk the input array downcounting the input edges to n
+        for (uint j = 0; j < length; j++) {
+          if (n->in(j) == in) {
+            cnt--;
+          }
+        }
+        assert(cnt == 0, "Mismatched edge count.");
+      } else if (in == NULL) {
+        assert(i == 0 || i >= n->req() ||
+               n->is_Region() || n->is_Phi() || n->is_ArrayCopy() ||
+               (n->is_Unlock() && i == (n->req() - 1)) ||
+               (n->is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
+              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
+      } else {
+        assert(in->is_top(), "sanity");
+        // Nothing to check.
+      }
+    }
+  }
+}
+
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
 void Compile::verify_graph_edges(bool no_dead_code) {
   if (VerifyGraphEdges) {
     Unique_Node_List visited;
-    // Call recursive graph walk to check edges
-    _root->verify_edges(visited);
+
+    // Call graph walk to check edges
+    verify_bidirectional_edges(visited);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;

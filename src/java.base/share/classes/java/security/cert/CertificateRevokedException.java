@@ -155,7 +155,7 @@ public class CertificateRevokedException extends CertificateException {
             return null;
         } else {
             try {
-                Date invalidity = InvalidityDateExtension.toImpl(ext).get("DATE");
+                Date invalidity = InvalidityDateExtension.toImpl(ext).getDate();
                 return new Date(invalidity.getTime());
             } catch (IOException ioe) {
                 return null;

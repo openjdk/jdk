@@ -23,7 +23,7 @@
  *
  */
 #include "precompiled.hpp"
-
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -35,8 +35,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-
-#include "jvm_io.h"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 size_t MallocMemorySummary::_limits_per_category[mt_number_of_types] = { 0 };

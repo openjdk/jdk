@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -40,6 +39,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -599,10 +599,11 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread
 
 JavaThread::~JavaThread() {
 
-  // Ask ServiceThread to release the threadObj OopHandle
+  // Ask ServiceThread to release the OopHandles
   ServiceThread::add_oop_handle_release(_threadObj);
   ServiceThread::add_oop_handle_release(_vthread);
   ServiceThread::add_oop_handle_release(_jvmti_vthread);
+  ServiceThread::add_oop_handle_release(_extentLocalCache);
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);

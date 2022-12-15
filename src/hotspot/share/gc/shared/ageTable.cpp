@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/ageTableTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/perfData.hpp"
 #include "logging/log.hpp"

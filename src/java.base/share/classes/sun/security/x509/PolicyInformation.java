@@ -167,54 +167,6 @@ public class PolicyInformation {
     }
 
     /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ID)) {
-            return policyIdentifier;
-        } else if (name.equalsIgnoreCase(QUALIFIERS)) {
-            return policyQualifiers;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation.");
-        }
-    }
-
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(ID)) {
-            if (obj instanceof CertificatePolicyId)
-                policyIdentifier = (CertificatePolicyId)obj;
-            else
-                throw new IOException("Attribute value must be instance " +
-                    "of CertificatePolicyId.");
-        } else if (name.equalsIgnoreCase(QUALIFIERS)) {
-            if (policyIdentifier == null) {
-                throw new IOException("Attribute must have a " +
-                    "CertificatePolicyIdentifier value before " +
-                    "PolicyQualifierInfo can be set.");
-            }
-            if (obj instanceof Set) {
-                for (Object obj1 : (Set<?>) obj) {
-                    if (!(obj1 instanceof PolicyQualifierInfo)) {
-                        throw new IOException("Attribute value must be a " +
-                                    "Set of PolicyQualifierInfo objects.");
-                    }
-                }
-                policyQualifiers = (Set<PolicyQualifierInfo>) obj;
-            } else {
-                throw new IOException("Attribute value must be of type Set.");
-            }
-        } else {
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation");
-        }
-    }
-
-    /**
      * Return a printable representation of the PolicyInformation.
      */
     public String toString() {

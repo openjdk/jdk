@@ -112,6 +112,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     final Logger debugtimeout = Utils.getDebugLogger(this::dbgString, DEBUGTIMEOUT);
     static final AtomicLong CLIENT_IDS = new AtomicLong();
     private final AtomicLong CONNECTION_IDS = new AtomicLong();
+    static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 1200;
+    static final long KEEP_ALIVE_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout", DEFAULT_KEEP_ALIVE_TIMEOUT);
+    // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
+    static final long IDLE_CONNECTION_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout.h2", KEEP_ALIVE_TIMEOUT);
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -1544,6 +1548,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Optional.ofNullable(connectTimeout);
     }
 
+    Optional<Duration> idleConnectionTimeout() {
+        return Optional.ofNullable(getIdleConnectionTimeout());
+    }
+
     @Override
     public Optional<ProxySelector> proxy() {
         return Optional.ofNullable(userProxySelector);
@@ -1706,6 +1714,25 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // the SSL connections managed by this client.
     BufferSupplier getSSLBufferSupplier() {
         return sslBufferSupplier;
+    }
+
+    private Duration getIdleConnectionTimeout() {
+        if (IDLE_CONNECTION_TIMEOUT >= 0)
+            return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT);
+        return null;
+    }
+
+    private static long getTimeoutProp(String prop, long def) {
+        String s = Utils.getNetProperty(prop);
+        try {
+            if (s != null) {
+                long timeoutVal = Long.parseLong(s);
+                if (timeoutVal >= 0) return timeoutVal;
+            }
+        } catch (NumberFormatException ignored) {
+            Log.logTrace("Invalid value set for " + prop + " property: " + ignored.toString());
+        }
+        return def;
     }
 
     // An implementation of BufferSupplier that manages a pool of

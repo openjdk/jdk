@@ -53,6 +53,7 @@
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1InitLogger.hpp"
 #include "gc/g1/g1MemoryPool.hpp"
+#include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParallelCleaning.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -64,7 +65,6 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
-#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -1063,7 +1063,7 @@ void G1CollectedHeap::abort_refinement() {
   }
 
   // Discard all remembered set updates and reset refinement statistics.
-  G1BarrierSet::dirty_card_queue_set().abandon_logs_and_stats();
+  G1BarrierSet::dirty_card_queue_set().abandon_logs();
   assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
          "DCQS should be empty");
   concurrent_refine()->get_and_reset_refinement_stats();
@@ -1429,7 +1429,7 @@ G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
   _service_thread(NULL),
   _periodic_gc_task(NULL),
-  _free_segmented_array_memory_task(NULL),
+  _free_arena_memory_task(NULL),
   _workers(NULL),
   _card_table(NULL),
   _collection_pause_end(Ticks::now()),
@@ -1458,8 +1458,8 @@ G1CollectedHeap::G1CollectedHeap() :
   _old_marking_cycles_completed(0),
   _eden(),
   _survivor(),
-  _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
-  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
+  _gc_timer_stw(new STWGCTimer()),
+  _gc_tracer_stw(new G1NewTracer()),
   _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(NULL),
   _collection_set(this, _policy),
@@ -1717,8 +1717,8 @@ jint G1CollectedHeap::initialize() {
   _periodic_gc_task = new G1PeriodicGCTask("Periodic GC Task");
   _service_thread->register_task(_periodic_gc_task);
 
-  _free_segmented_array_memory_task = new G1SegmentedArrayFreeMemoryTask("Card Set Free Memory Task");
-  _service_thread->register_task(_free_segmented_array_memory_task);
+  _free_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
+  _service_thread->register_task(_free_arena_memory_task);
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
@@ -2612,8 +2612,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   _collection_pause_end = Ticks::now();
 
-  _free_segmented_array_memory_task->notify_new_stats(&_young_gen_card_set_stats,
-                                                      &_collection_set_candidates_card_set_stats);
+  _free_arena_memory_task->notify_new_stats(&_young_gen_card_set_stats,
+                                            &_collection_set_candidates_card_set_stats);
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {
@@ -2922,11 +2922,11 @@ bool G1CollectedHeap::should_sample_collection_set_candidates() const {
   return candidates != NULL && candidates->num_remaining() > 0;
 }
 
-void G1CollectedHeap::set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats) {
+void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats) {
   _collection_set_candidates_card_set_stats = stats;
 }
 
-void G1CollectedHeap::set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats) {
+void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats) {
   _young_gen_card_set_stats = stats;
 }
 

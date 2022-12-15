@@ -3934,7 +3934,8 @@ public final class Class<T> implements java.io.Serializable,
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
             catch (InvocationTargetException | NoSuchMethodException |
-                   IllegalAccessException ex) { return null; }
+                   IllegalAccessException | NullPointerException |
+                   ClassCastException ex) { return null; }
         }
         return constants;
     }

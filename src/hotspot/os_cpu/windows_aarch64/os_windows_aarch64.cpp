@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -32,6 +31,7 @@
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -273,10 +273,6 @@ void os::print_register_info(outputStream *st, const void *context) {
 }
 
 void os::setup_fpu() {
-}
-
-bool os::supports_sse() {
-  return true;
 }
 
 #ifndef PRODUCT

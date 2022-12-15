@@ -121,7 +121,6 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
     _prologue_succeeded = false;
     _gc_count_before    = gc_count_before;
 
-    // A subclass constructor will likely overwrite the following
     _gc_cause           = _cause;
 
     _gc_locked = false;

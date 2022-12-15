@@ -1139,6 +1139,15 @@ Specifies the number of spaces each tab uses in the source.
 .RS
 .RE
 .TP
+.B \f[CB]\-\-spec\-base\-url\f[R] \f[I]url\f[R]
+Specifies the base URL for relative URLs in \f[CB]\@spec\f[R] tags, to be
+used when generating links to any external specifications.
+It can either be an absolute URL, or a relative URL, in which case it is
+evaluated relative to the base directory of the generated output files.
+The default value is equivalent to \f[CB]{\@docRoot}/../specs\f[R].
+.RS
+.RE
+.TP
 .B \f[CB]\-splitindex\f[R]
 Splits the index file into multiple files, alphabetically, one file per
 letter, plus a file for any index entries that start with

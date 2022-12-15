@@ -63,26 +63,9 @@ import sun.security.util.DerValue;
  * @see DistributionPoint
  * @since 1.6
  */
-public class IssuingDistributionPointExtension extends Extension
-        implements CertAttrSet<String> {
+public class IssuingDistributionPointExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.IssuingDistributionPoint";
-
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "IssuingDistributionPoint";
-    public static final String POINT = "point";
-    public static final String REASONS = "reasons";
-    public static final String ONLY_USER_CERTS = "only_user_certs";
-    public static final String ONLY_CA_CERTS = "only_ca_certs";
-    public static final String ONLY_ATTRIBUTE_CERTS = "only_attribute_certs";
-    public static final String INDIRECT_CRL = "indirect_crl";
 
     /*
      * The distribution point name for the CRL.
@@ -218,7 +201,7 @@ public class IssuingDistributionPointExtension extends Extension
     }
 
     /**
-     * Returns the name of this attribute.
+     * Returns the name of this extension.
      */
     @Override
     public String getName() {
@@ -242,90 +225,34 @@ public class IssuingDistributionPointExtension extends Extension
         super.encode(out);
     }
 
-    /**
-     * Sets the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(POINT)) {
-            if (!(obj instanceof DistributionPointName)) {
-                throw new IOException(
-                    "Attribute value should be of type DistributionPointName.");
-            }
-            distributionPoint = (DistributionPointName)obj;
-
-        } else if (name.equalsIgnoreCase(REASONS)) {
-            if (!(obj instanceof ReasonFlags)) {
-                throw new IOException(
-                    "Attribute value should be of type ReasonFlags.");
-            }
-            revocationReasons = (ReasonFlags)obj;
-
-        } else if (name.equalsIgnoreCase(INDIRECT_CRL)) {
-            if (!(obj instanceof Boolean)) {
-                throw new IOException(
-                    "Attribute value should be of type Boolean.");
-            }
-            isIndirectCRL = ((Boolean)obj).booleanValue();
-
-        } else if (name.equalsIgnoreCase(ONLY_USER_CERTS)) {
-            if (!(obj instanceof Boolean)) {
-                throw new IOException(
-                    "Attribute value should be of type Boolean.");
-            }
-            hasOnlyUserCerts = ((Boolean)obj).booleanValue();
-
-        } else if (name.equalsIgnoreCase(ONLY_CA_CERTS)) {
-            if (!(obj instanceof Boolean)) {
-                throw new IOException(
-                    "Attribute value should be of type Boolean.");
-            }
-            hasOnlyCACerts = ((Boolean)obj).booleanValue();
-
-        } else if (name.equalsIgnoreCase(ONLY_ATTRIBUTE_CERTS)) {
-            if (!(obj instanceof Boolean)) {
-                throw new IOException(
-                    "Attribute value should be of type Boolean.");
-            }
-            hasOnlyAttributeCerts = ((Boolean)obj).booleanValue();
-
-        } else {
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by " +
-                "CertAttrSet:IssuingDistributionPointExtension.");
-        }
+    public void setRevocationReasons(ReasonFlags val) throws IOException {
+        revocationReasons = val;
         encodeThis();
     }
 
-    /**
-     * Gets the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(POINT)) {
-            return distributionPoint;
-
-        } else if (name.equalsIgnoreCase(INDIRECT_CRL)) {
-            return Boolean.valueOf(isIndirectCRL);
-
-        } else if (name.equalsIgnoreCase(REASONS)) {
-            return revocationReasons;
-
-        } else if (name.equalsIgnoreCase(ONLY_USER_CERTS)) {
-            return Boolean.valueOf(hasOnlyUserCerts);
-
-        } else if (name.equalsIgnoreCase(ONLY_CA_CERTS)) {
-            return Boolean.valueOf(hasOnlyCACerts);
-
-        } else if (name.equalsIgnoreCase(ONLY_ATTRIBUTE_CERTS)) {
-            return Boolean.valueOf(hasOnlyAttributeCerts);
-
-        } else {
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by " +
-                "CertAttrSet:IssuingDistributionPointExtension.");
-        }
+    public DistributionPointName getDistributionPoint() {
+        return distributionPoint;
     }
 
+    public ReasonFlags getRevocationReasons() {
+        return revocationReasons;
+    }
 
+    public boolean hasOnlyUserCerts() {
+        return hasOnlyUserCerts;
+    }
+
+    public boolean hasOnlyCACerts() {
+        return hasOnlyCACerts;
+    }
+
+    public boolean hasOnlyAttributeCerts() {
+        return hasOnlyAttributeCerts;
+    }
+
+    public boolean isIndirectCRL() {
+        return isIndirectCRL;
+    }
 
      // Encodes this extension value
     private void encodeThis() throws IOException {

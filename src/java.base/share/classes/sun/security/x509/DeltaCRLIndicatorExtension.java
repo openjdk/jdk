@@ -59,9 +59,6 @@ import java.math.BigInteger;
  */
 public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
 
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "DeltaCRLIndicator";
 
     private static final String LABEL = "Base CRL Number";

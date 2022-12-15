@@ -35,6 +35,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -60,6 +62,8 @@ import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
@@ -769,7 +773,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Get the {@link Class} corresponding to {@code type}.
+     * Gets the {@link Class} corresponding to {@code type}.
      *
      * @param type the type for which a {@link Class} is requested
      * @return the original Java class corresponding to {@code type} or {@code null} if this runtime
@@ -779,6 +783,36 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     public Class<?> getMirror(ResolvedJavaType type) {
         if (type instanceof HotSpotResolvedJavaType && reflection instanceof HotSpotJDKReflection) {
             return ((HotSpotJDKReflection) reflection).getMirror((HotSpotResolvedJavaType) type);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@link Executable} corresponding to {@code method}.
+     *
+     * @param method the method for which an {@link Executable} is requested
+     * @return the original Java method or constructor corresponding to {@code method} or
+     *         {@code null} if this runtime does not support mapping {@link ResolvedJavaMethod}
+     *         instances to {@link Executable} instances
+     */
+    public Executable getMirror(ResolvedJavaMethod method) {
+        if (method instanceof HotSpotResolvedJavaMethodImpl && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getMethod((HotSpotResolvedJavaMethodImpl) method);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@link Field} corresponding to {@code field}.
+     *
+     * @param field the field for which a {@link Field} is requested
+     * @return the original Java field corresponding to {@code field} or {@code null} if this
+     *         runtime does not support mapping {@link ResolvedJavaField} instances to {@link Field}
+     *         instances
+     */
+    public Field getMirror(ResolvedJavaField field) {
+        if (field instanceof HotSpotResolvedJavaFieldImpl && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getField((HotSpotResolvedJavaFieldImpl) field);
         }
         return null;
     }

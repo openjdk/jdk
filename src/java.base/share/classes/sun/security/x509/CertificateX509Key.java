@@ -36,19 +36,11 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateX509Key implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.key";
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
+public class CertificateX509Key implements DerEncoder {
+
     public static final String NAME = "key";
-    public static final String KEY = "value";
 
     // Private data member
     private PublicKey key;
@@ -89,7 +81,7 @@ public class CertificateX509Key implements CertAttrSet<String> {
      */
     public String toString() {
         if (key == null) return "";
-        return(key.toString());
+        return key.toString();
     }
 
     /**
@@ -103,28 +95,11 @@ public class CertificateX509Key implements CertAttrSet<String> {
         out.write(key.getEncoded());
     }
 
-    /**
-     * Set the attribute value.
+   /**
+     * Get the PublicKey value.
      */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(KEY)) {
-            this.key = (PublicKey)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet: CertificateX509Key.");
-        }
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public PublicKey get(String name) throws IOException {
-        if (name.equalsIgnoreCase(KEY)) {
-            return(key);
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet: CertificateX509Key.");
-        }
+    public PublicKey getKey() {
+        return key;
     }
 
 }

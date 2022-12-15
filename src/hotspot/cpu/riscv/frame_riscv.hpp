@@ -138,7 +138,7 @@
     arg_reg_save_area_bytes                          =  0,
 
     // size, in words, of frame metadata (e.g. pc and link)
-    metadata_words                                   = sender_sp_offset,
+    metadata_words                                   =  2,
     // in bytes
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
@@ -155,7 +155,10 @@
 
  private:
   // an additional field beyond _sp and _pc:
-  intptr_t*   _fp; // frame pointer
+  union {
+    intptr_t*  _fp; // frame pointer
+    int _offset_fp; // relative frame pointer for use in stack-chunk frames
+  };
   // The interpreter and adapters will extend the frame of the caller.
   // Since oopMaps are based on the sp of the caller before extension
   // we need to know that value. However in order to compute the address
@@ -163,7 +166,11 @@
   // uses sp() to mean "raw" sp and unextended_sp() to mean the caller's
   // original sp we use that convention.
 
-  intptr_t*     _unextended_sp;
+  union {
+    intptr_t* _unextended_sp;
+    int _offset_unextended_sp; // for use in stack-chunk frames
+  };
+
   void adjust_unextended_sp() NOT_DEBUG_RETURN;
 
   intptr_t* ptr_at_addr(int offset) const {
@@ -172,7 +179,7 @@
 
 #ifdef ASSERT
   // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(   CompiledMethod* nm, intptr_t* unextended_sp);
+  static void verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
 
   const ImmutableOopMap* get_oop_map() const;
@@ -184,6 +191,10 @@
 
   frame(intptr_t* ptr_sp, intptr_t* unextended_sp, intptr_t* ptr_fp, address pc);
 
+  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb);
+  // used for fast frame construction by continuations
+  frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
+
   frame(intptr_t* ptr_sp, intptr_t* ptr_fp);
 
   void init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc);
@@ -191,7 +202,11 @@
 
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)
-  intptr_t* fp() const { return _fp; }
+
+  intptr_t* fp() const          { assert_absolute(); return _fp; }
+  void set_fp(intptr_t* newfp)  { _fp = newfp; }
+  int offset_fp() const         { assert_offset(); return _offset_fp; }
+  void set_offset_fp(int value) { assert_on_heap(); _offset_fp = value; }
 
   inline address* sender_pc_addr() const;
 

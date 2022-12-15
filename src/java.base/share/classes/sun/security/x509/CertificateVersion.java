@@ -35,9 +35,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateVersion implements CertAttrSet<String> {
+public class CertificateVersion implements DerEncoder {
     /**
      * X509Certificate Version 1
      */
@@ -50,23 +50,15 @@ public class CertificateVersion implements CertAttrSet<String> {
      * X509Certificate Version 3
      */
     public static final int     V3 = 2;
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.version";
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
+
     public static final String NAME = "version";
-    public static final String VERSION = "number";
 
     // Private data members
     int version = V1;
 
     // Returns the version number.
-    private int getVersion() {
-        return(version);
+    public int getVersion() {
+        return version;
     }
 
     // Construct the class from the passed DerValue
@@ -147,7 +139,7 @@ public class CertificateVersion implements CertAttrSet<String> {
      * Return the version number of the certificate.
      */
     public String toString() {
-        return("Version: V" + (version+1));
+        return "Version: V" + (version+1);
     }
 
     /**
@@ -169,37 +161,10 @@ public class CertificateVersion implements CertAttrSet<String> {
                   tmp);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Integer)) {
-            throw new IOException("Attribute must be of type Integer.");
-        }
-        if (name.equalsIgnoreCase(VERSION)) {
-            version = ((Integer)obj).intValue();
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet: CertificateVersion.");
-        }
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Integer get(String name) throws IOException {
-        if (name.equalsIgnoreCase(VERSION)) {
-            return(getVersion());
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                  "CertAttrSet: CertificateVersion.");
-        }
-    }
-
-    /**
+   /**
      * Compare versions.
      */
     public int compare(int vers) {
-        return(version - vers);
+        return version - vers;
     }
 }

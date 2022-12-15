@@ -24,13 +24,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -2917,10 +2917,10 @@ bool os::Linux::libnuma_init() {
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
         // Create an index -> node mapping, since nodes are not always consecutive
-        _nindex_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
         // Create a cpu -> node mapping
-        _cpu_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _cpu_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_cpu_to_node_map();
         return true;
       }

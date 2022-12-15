@@ -43,21 +43,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class IssuerAlternativeNameExtension
-extends Extension implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.IssuerAlternativeName";
-    /**
-     * Attribute names.
-     */
+public class IssuerAlternativeNameExtension extends Extension {
+
     public static final String NAME = "IssuerAlternativeName";
-    public static final String ISSUER_NAME = "issuer_name";
 
     // private data members
     GeneralNames names;
@@ -170,42 +159,15 @@ extends Extension implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER_NAME)) {
-            if (!(obj instanceof GeneralNames)) {
-              throw new IOException("Attribute value should be of" +
-                                    " type GeneralNames.");
-            }
-            names = (GeneralNames)obj;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:IssuerAlternativeName.");
-        }
-        encodeThis();
+    public GeneralNames getNames() {
+        return names;
     }
 
     /**
-     * Get the attribute value.
-     */
-    public GeneralNames get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER_NAME)) {
-            return (names);
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                        "CertAttrSet:IssuerAlternativeName.");
-        }
-    }
-
-
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

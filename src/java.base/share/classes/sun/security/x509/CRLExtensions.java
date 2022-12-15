@@ -32,7 +32,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CRLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -169,15 +168,14 @@ public class CRLExtensions {
      *
      * @param alias the identifier string for the extension to retrieve.
      */
-    public Extension get(String alias) {
-        X509AttributeName attr = new X509AttributeName(alias);
+    public Extension getExtension(String alias) {
         String name;
-        String id = attr.getPrefix();
-        if (id.equalsIgnoreCase(X509CertImpl.NAME)) { // fully qualified
+        if (alias.startsWith(X509CertImpl.NAME)) {
             int index = alias.lastIndexOf('.');
             name = alias.substring(index + 1);
-        } else
+        } else {
             name = alias;
+        }
         return map.get(name);
     }
 
@@ -185,11 +183,10 @@ public class CRLExtensions {
      * Set the extension value with this alias.
      *
      * @param alias the identifier string for the extension to set.
-     * @param obj the Object to set the extension identified by the
-     *        alias.
+     * @param ext the extension identified by the alias.
      */
-    public void set(String alias, Object obj) {
-        map.put(alias, (Extension)obj);
+    public void setExtension(String alias, Extension ext) {
+        map.put(alias, ext);
     }
 
     /**
@@ -199,14 +196,6 @@ public class CRLExtensions {
      */
     public void delete(String alias) {
         map.remove(alias);
-    }
-
-    /**
-     * Return an enumeration of the extensions.
-     * @return an enumeration of the extensions in this CRL.
-     */
-    public Enumeration<Extension> getElements() {
-        return Collections.enumeration(map.values());
     }
 
     /**

@@ -36,20 +36,11 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateSerialNumber implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.serialNumber";
+public class CertificateSerialNumber implements DerEncoder {
 
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
     public static final String NAME = "serialNumber";
-    public static final String NUMBER = "number";
 
     private SerialNumber        serial;
 
@@ -106,7 +97,7 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
      */
     public String toString() {
         if (serial == null) return "";
-        return (serial.toString());
+        return serial.toString();
     }
 
     /**
@@ -120,31 +111,8 @@ public class CertificateSerialNumber implements CertAttrSet<String> {
         serial.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof SerialNumber)) {
-            throw new IOException("Attribute must be of type SerialNumber.");
-        }
-        if (name.equalsIgnoreCase(NUMBER)) {
-            serial = (SerialNumber)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:CertificateSerialNumber.");
-        }
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public SerialNumber get(String name) throws IOException {
-        if (name.equalsIgnoreCase(NUMBER)) {
-            return (serial);
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:CertificateSerialNumber.");
-        }
+    public SerialNumber getSerial() {
+        return serial;
     }
 
     /**

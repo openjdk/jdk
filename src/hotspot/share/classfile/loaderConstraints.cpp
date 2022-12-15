@@ -49,7 +49,7 @@ class LoaderConstraint : public CHeapObj<mtClass> {
  public:
   LoaderConstraint(InstanceKlass* klass, oop class_loader1, oop class_loader2) :
      _klass(klass) {
-    _loaders = new (ResourceObj::C_HEAP, mtClass) GrowableArray<ClassLoaderData*>(10, mtClass);
+    _loaders = new (mtClass) GrowableArray<ClassLoaderData*>(10, mtClass);
     add_loader(class_loader1);
     add_loader(class_loader2);
   }
@@ -89,7 +89,7 @@ class ConstraintSet {                               // copied into hashtable as 
   ConstraintSet& operator=(const ConstraintSet&) = delete;
 
   void initialize(LoaderConstraint* constraint) {
-    _constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<LoaderConstraint*>(5, mtClass);
+    _constraints = new (mtClass) GrowableArray<LoaderConstraint*>(5, mtClass);
     _constraints->push(constraint);
   }
 
@@ -111,7 +111,7 @@ class ConstraintSet {                               // copied into hashtable as 
 };
 
 
-ResourceHashtable<SymbolHandle, ConstraintSet, 107, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _loader_constraint_table;
+ResourceHashtable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _loader_constraint_table;
 
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
                                                 Handle loader,

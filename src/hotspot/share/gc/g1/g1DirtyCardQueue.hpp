@@ -95,10 +95,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   //
   // The paused buffers are conceptually an extension of the completed buffers
   // queue, and operations which need to deal with all of the queued buffers
-  // (such as concatenating or abandoning logs) also need to deal with any
-  // paused buffers.  In general, if a safepoint performs a GC then the paused
-  // buffers will be processed as part of it, and there won't be any paused
-  // buffers after a GC safepoint.
+  // (such as concatenate_logs) also need to deal with any paused buffers.  In
+  // general, if a safepoint performs a GC then the paused buffers will be
+  // processed as part of it, and there won't be any paused buffers after a
+  // GC safepoint.
   class PausedBuffers {
     class PausedList : public CHeapObj<mtGC> {
       BufferNode* volatile _head;
@@ -175,7 +175,6 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   G1FreeIdSet _free_ids;
 
-  G1ConcurrentRefineStats _concatenated_refinement_stats;
   G1ConcurrentRefineStats _detached_refinement_stats;
 
   // Verify _num_cards == sum of cards in the completed queue.
@@ -268,21 +267,17 @@ public:
                                             size_t stop_at,
                                             G1ConcurrentRefineStats* stats);
 
-  // If a full collection is happening, reset per-thread refinement stats and
-  // partial logs, and release completed logs. The full collection will make
-  // them all irrelevant.
-  // precondition: at safepoint.
-  void abandon_logs_and_stats();
+  // If a full collection is happening, reset partial logs, and release
+  // completed ones: the full collection will make them all irrelevant.
+  void abandon_logs();
 
-  // Collect and reset all the per-thread refinement stats.  If any threads
-  // have partial logs then add them to the global list.
-  // precondition: at safepoint.
-  void concatenate_logs_and_stats();
+  // If any threads have partial logs, add them to the global list of logs.
+  void concatenate_logs();
 
   // Return the total of mutator refinement stats for all threads.
+  // Also resets the stats for the threads.
   // precondition: at safepoint.
-  // precondition: only call after concatenate_logs_and_stats.
-  G1ConcurrentRefineStats concatenated_refinement_stats() const;
+  G1ConcurrentRefineStats get_and_reset_refinement_stats();
 
   // Accumulate refinement stats from threads that are detaching.
   void record_detached_refinement_stats(G1ConcurrentRefineStats* stats);
