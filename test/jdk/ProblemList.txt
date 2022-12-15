@@ -586,8 +586,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
-javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
-
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
