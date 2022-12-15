@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class LoopReductionOpTest extends VectorizationTestRunner {
@@ -74,6 +76,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.LOAD_VECTOR, ">0"})
     public int reductionAddSumOfArray() {
         int res = 0;
         for (int i = 0; i < SIZE; i++) {
@@ -92,8 +95,8 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that adding constant in loop would be directly optimized to
-    // scalar operations, hence this case is not vectorized.
+    // Note that this loop should be optimized to straight-line code.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int reductionAddConstant() {
         int res = 0;
         for (int i = 0; i < SIZE; i++) {
@@ -103,6 +106,8 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that this loop should be optimized to straight-line code.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int reductionAddLoopInv() {
         int res = 0;
         for (int i = 0; i < SIZE; i++) {
@@ -112,6 +117,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.LOAD_VECTOR, ">0"})
     public int reductionAddSumOfMultiple() {
         int res = 0;
         for (int i = 0; i < SIZE; i++) {
@@ -165,6 +171,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public long reductionWithNonReductionDifferentSizes() {
         long res = 0L;
         int[] arr = new int[SIZE];
@@ -186,4 +193,3 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
         return intSum + 2 * longSum;
     }
 }
-

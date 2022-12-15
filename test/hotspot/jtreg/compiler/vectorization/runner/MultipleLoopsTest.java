@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class MultipleLoopsTest extends VectorizationTestRunner {
 
     private static final int SIZE = 543;
@@ -60,6 +62,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] consecutiveLoops() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -77,6 +80,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] consecutiveLoopsNested() {
         int[] res = new int[SIZE];
         for (int outer = 0; outer < 30; outer++) {
@@ -91,6 +95,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nestedLoopOuterNonCounted() {
         int i = 1;
         int[] res = new int[SIZE];
@@ -105,6 +110,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nestedLoopIndexCompute() {
         int[] res = new int[SIZE];
         for (int i = 50; i < 100; i++) {
@@ -114,5 +120,24 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
         }
         return res;
     }
-}
 
+    @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    public float reductionLoopWithAnotherReductionInput() {
+        float res = 0.0F;
+        int N = 400;
+        int[] arr = new int[N];
+        int i1 = 0, i2 = 0, i3, i4;
+        for (int j = 0; j < N; ++j) {
+            for (i3 = 1; i3 < 63; ++i3) {
+                arr[i3] -= 1;
+                i1 +=i3;
+            }
+            for (i4 = 2; i4 < 63; ++i4) {
+                res += i4 - i2;
+                i2 = i1;
+            }
+        }
+        return res;
+    }
+}

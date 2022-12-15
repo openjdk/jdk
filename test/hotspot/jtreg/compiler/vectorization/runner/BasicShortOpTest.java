@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicShortOpTest extends VectorizationTestRunner {
 
     private static final int SIZE = 2345;
@@ -64,6 +66,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorNeg() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -73,6 +76,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorAbs() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -82,6 +86,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -91,6 +96,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -100,6 +106,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorMul() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -109,6 +116,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorMulAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -118,6 +126,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorMulSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -128,6 +137,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorNot() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -137,6 +147,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorAnd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -146,6 +157,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorOr() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -155,6 +167,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorXor() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -165,6 +178,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorShiftLeft() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -174,6 +188,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorSignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -183,6 +198,32 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that min operations on subword types cannot be vectorized
+    // because higher bits will be lost.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public short[] vectorMin() {
+        short[] res = new short[SIZE];
+        int val = 65536;
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.min(a[i], val);
+        }
+        return res;
+    }
+
+    @Test
+    // Note that max operations on subword types cannot be vectorized
+    // because higher bits will be lost.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public short[] vectorMax() {
+        short[] res = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) Math.max(a[i], b[i]);
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -193,6 +234,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ------------- ReverseBytes -------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] reverseBytesWithShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -202,6 +244,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that reverseBytes cannot be vectorized if the vector element
+    // type doesn't match the caller's class type.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] reverseBytesWithInt() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -210,4 +255,3 @@ public class BasicShortOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

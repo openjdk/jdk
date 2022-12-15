@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicFloatOpTest extends VectorizationTestRunner {
 
     private static final int SIZE = 2345;
@@ -61,6 +63,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorNeg() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -70,6 +73,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorAbs() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +83,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorSqrt() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +93,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorAdd() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -97,6 +103,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorSub() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,6 +113,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorMul() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -115,6 +123,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorDiv() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -124,6 +133,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorMax() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,6 +143,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorMin() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -142,6 +153,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorMulAdd() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -151,6 +163,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorMulSub1() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -160,6 +173,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorMulSub2() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -169,6 +183,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorNegateMulAdd1() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -178,6 +193,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorNegateMulAdd2() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -187,6 +203,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] vectorNegateMulSub() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -223,4 +240,3 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

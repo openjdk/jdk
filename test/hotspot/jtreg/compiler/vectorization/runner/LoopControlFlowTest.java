@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class LoopControlFlowTest extends VectorizationTestRunner {
@@ -62,6 +64,7 @@ public class LoopControlFlowTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] loopInvariantCondition() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -86,5 +89,16 @@ public class LoopControlFlowTest extends VectorizationTestRunner {
         }
         return res;
     }
-}
 
+    @Test
+    // Note that this loop cannot be vectorized due to early break.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public int conditionalBreakReduction() {
+        int sum = 0, i = 0;
+        for (i = 0; i < SIZE; i++) {
+            sum += i;
+            if (invCond) break;
+        }
+        return i;
+    }
+}

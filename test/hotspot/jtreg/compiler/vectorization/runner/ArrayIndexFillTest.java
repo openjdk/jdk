@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class ArrayIndexFillTest extends VectorizationTestRunner {
 
     private static final int SIZE = 2345;
@@ -54,6 +56,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public byte[] fillByteArray() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -63,6 +66,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] fillShortArray() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -72,6 +76,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public char[] fillCharArray() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -81,6 +86,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] fillIntArray() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,6 +105,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] fillShortArrayWithShortIndex() {
         short[] res = new short[SIZE];
         for (short i = 0; i < SIZE; i++) {
@@ -108,6 +115,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] fillMultipleArraysDifferentTypes1() {
         int[] res1 = new int[SIZE];
         short[] res2 = new short[SIZE];
@@ -119,6 +127,7 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public char[] fillMultipleArraysDifferentTypes2() {
         int[] res1 = new int[SIZE];
         char[] res2 = new char[SIZE];
@@ -139,4 +148,3 @@ public class ArrayIndexFillTest extends VectorizationTestRunner {
         return res;
     }
 }
-

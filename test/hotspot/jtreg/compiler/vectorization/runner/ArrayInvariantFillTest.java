@@ -41,6 +41,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class ArrayInvariantFillTest extends VectorizationTestRunner {
@@ -62,6 +64,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     // ---------------- Simple Fill ----------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public byte[] fillByteArray() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -71,6 +74,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] fillShortArray() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -80,6 +84,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public char[] fillCharArray() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -89,6 +94,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] fillIntArray() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -98,6 +104,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] fillLongArray() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -107,6 +114,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] fillFloatArray() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -116,6 +124,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public double[] fillDoubleArray() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -126,6 +135,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     // ---------------- Fill With Type Change ----------------
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] fillLongArrayWithInt() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -135,6 +145,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] fillLongArrayWithUnsigned() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -144,6 +155,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] fillLongArrayWithFloat() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -153,6 +165,7 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] fillIntArrayWithDouble() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -161,4 +174,3 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
         return res;
     }
 }
-

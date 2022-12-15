@@ -41,6 +41,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class StripMinedLoopTest extends VectorizationTestRunner {
@@ -58,6 +60,7 @@ public class StripMinedLoopTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] stripMinedVectorLoop() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -74,5 +77,19 @@ public class StripMinedLoopTest extends VectorizationTestRunner {
         }
         return res;
     }
-}
 
+    @Test
+    public int stripMinedOneIterationLoop() {
+        int[] res = new int[SIZE];
+        int i1, i2, i3, i4 = 11937;
+        for (i1 = 1; i1 < SIZE; i1++) {
+            for (i2 = 1; i2 < 2; i2++) {
+                for (i3 = 1; i3 < 2; i3++) {
+                    i4 &= i3;
+                }
+            }
+            res[i1] = 0;
+        }
+        return res[0] + i4;
+    }
+}

@@ -40,6 +40,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class LoopLiveOutNodesTest extends VectorizationTestRunner {
@@ -50,17 +52,22 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     private int start;
     private int limit;
 
+    // tmp[] may be modified and thus should not be returned in cases.
+    private int[] tmp;
+
     public LoopLiveOutNodesTest() {
         a = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
             a[i] = -697989 * i;
         }
+        tmp = new int[SIZE];
         Random ran = new Random(31415926);
         start = 999 + ran.nextInt() % 100;
         limit = start + 1357;
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int SimpleIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -71,6 +78,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int indexedByIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -81,6 +89,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedMultiple() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -91,6 +100,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedComplexExpr() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -101,6 +111,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] ivUsedAnotherLoop() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -133,5 +144,15 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
         }
         return val;
     }
-}
 
+    @Test
+    public int nestedLoopIndexLiveOut() {
+        int k = 0;
+        for (int i = 0; i < 50; i += 2) {
+            for (int j = 0; j < 10; j++) {
+                tmp[k++] = 5;
+            }
+        }
+        return k;
+    }
+}
