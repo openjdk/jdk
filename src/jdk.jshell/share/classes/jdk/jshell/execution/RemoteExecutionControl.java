@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import jdk.jshell.spi.ExecutionControl;
+import jdk.jshell.execution.impl.ConsoleImpl.ConsoleProviderImpl;
 import static jdk.jshell.execution.Util.forwardExecutionControlAndIO;
 
 /**
@@ -65,8 +66,10 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         Map<String, Consumer<OutputStream>> outputs = new HashMap<>();
         outputs.put("out", st -> System.setOut(new PrintStream(st, true, System.out.charset())));
         outputs.put("err", st -> System.setErr(new PrintStream(st, true, System.err.charset())));
+        outputs.put("consoleInput", st -> ConsoleProviderImpl.setRemoteInput(st));
         Map<String, Consumer<InputStream>> input = new HashMap<>();
         input.put("in", System::setIn);
+        input.put("consoleOutput", in -> ConsoleProviderImpl.setRemoteOutput(in));
         forwardExecutionControlAndIO(new RemoteExecutionControl(), inStream, outStream, outputs, input);
     }
 

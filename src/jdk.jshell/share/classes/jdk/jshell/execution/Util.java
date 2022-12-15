@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution;
 
+import jdk.jshell.execution.impl.PipeInputStream;
 import jdk.jshell.spi.ExecutionEnv;
 
 import java.io.IOException;

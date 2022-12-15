@@ -28,6 +28,7 @@ package jdk.jshell.spi;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
+import jdk.jshell.JShellConsole;
 
 /**
  * Functionality made available to a pluggable JShell execution engine.  It is
@@ -77,4 +78,16 @@ public interface ExecutionEnv {
      */
     void closeDown();
 
+    /**
+     * Returns the {@code JShellConsole} that should be used
+     * by the execution engine, or {@code null} if none.
+     * <p>
+     * Note: an execution engine may not support {@code JShellConsole}.
+     *
+     * @return returns console, or {@code null} if none
+     * @since 21
+     */
+    default JShellConsole console() {
+        return null;
+    }
 }
