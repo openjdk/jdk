@@ -811,7 +811,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
   if (!UseHeavyMonitors) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
-    jccb   (Assembler::zero, Stacked);
+#if INCLUDE_RTM_OPT
+    if (UseFastLocking && use_rtm) {
+      jcc(Assembler::zero, Stacked);
+    } else
+#endif
+    jccb(Assembler::zero, Stacked);
     if (UseFastLocking) {
       // If the owner is ANONYMOUS, we need to fix it - in the slow-path.
       Label L;
@@ -832,7 +837,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     testptr(boxReg, boxReg);
     jccb(Assembler::notZero, L_regular_inflated_unlock);
     xend();
-    jmpb(DONE_LABEL);
+    jmp(DONE_LABEL);
     bind(L_regular_inflated_unlock);
   }
 #endif

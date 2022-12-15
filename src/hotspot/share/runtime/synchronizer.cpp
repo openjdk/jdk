@@ -1320,7 +1320,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       assert(UseFastLocking, "can only happen with fast-locking");
       ObjectMonitor* monitor = new ObjectMonitor(object);
       monitor->set_header(mark.set_unlocked());
-      assert(current->is_Java_thread(), "must be Java thread");
       bool own = is_lock_owned(current, object);
       if (own) {
         // Owned by us.
