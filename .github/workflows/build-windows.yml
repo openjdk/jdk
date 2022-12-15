@@ -107,6 +107,7 @@ jobs:
 
       - name: 'Configure'
         run: >
+          echo $USER
           bash configure
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.flags }}
