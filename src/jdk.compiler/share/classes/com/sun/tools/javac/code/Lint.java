@@ -307,6 +307,11 @@ public class Lint
         TEXT_BLOCKS("text-blocks"),
 
         /**
+         * Warn about possible 'this' escapes before subclass instance is fully initialized.
+         */
+        THIS_ESCAPE("this-escape"),
+
+        /**
          * Warn about issues relating to use of try blocks (i.e. try-with-resources)
          */
         TRY("try"),

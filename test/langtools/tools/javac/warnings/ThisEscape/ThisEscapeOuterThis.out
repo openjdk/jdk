@@ -1,0 +1,3 @@
+ThisEscapeOuterThis.java:20:47: compiler.warn.possible.this.escape
+ThisEscapeOuterThis.java:11:9: compiler.warn.possible.this.escape.location
+2 warnings

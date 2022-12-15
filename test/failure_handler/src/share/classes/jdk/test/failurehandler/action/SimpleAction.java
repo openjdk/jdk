@@ -53,6 +53,7 @@ public class SimpleAction implements Action {
             throws InvalidValueException {
         this(id, id, properties);
     }
+    @SuppressWarnings("this-escape")
     public SimpleAction(String name, String id, Properties properties)
             throws InvalidValueException {
         sections = name.split("\\.");

@@ -25,6 +25,8 @@
 
 include LauncherCommon.gmk
 
+DISABLED_WARNINGS_java += this-escape
+
 $(eval $(call SetupBuildLauncher, javap, \
     MAIN_CLASS := com.sun.tools.javap.Main, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \

@@ -42,6 +42,7 @@ public class PatternAction implements Action {
         this(id, id, properties);
     }
 
+    @SuppressWarnings("this-escape")
     public PatternAction(String name, String id, Properties properties)
             throws InvalidValueException {
         action = new SimpleAction(name != null ? ("pattern." + name) : "pattern", id, properties);
