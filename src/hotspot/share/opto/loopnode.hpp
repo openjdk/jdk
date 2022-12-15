@@ -1728,6 +1728,14 @@ public:
                      Node_List*& split_bool_set, Node_List*& split_cex_set);
 
   void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
+
+  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
+
+  void process_load_klass_helper(const Node* n, Node* cmp, int i);
+
+  bool process_cmp_loadklass(Node* n, const Node* blk1, const Node* blk2);
+
+  bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 };
 
 
