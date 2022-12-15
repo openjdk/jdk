@@ -26,7 +26,7 @@
  * @bug 8133632
  * @summary javax.net.ssl.SSLEngine does not properly handle received
  *      SSL fatal alerts
- * @ignore 8298868
+ *
  * @run main/othervm EngineCloseOnAlert
  */
 

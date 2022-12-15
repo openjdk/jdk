@@ -28,7 +28,7 @@
  * @test
  * @bug 8042449
  * @summary Issue for negative byte major record version
- * @ignore 8298873
+ *
  * @run main/othervm IllegalRecordVersion
  */
 

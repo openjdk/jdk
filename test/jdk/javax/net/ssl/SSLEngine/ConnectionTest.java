@@ -28,8 +28,6 @@
  *      I/O abstraction
  * @author Brad Wetmore
  *
- * @ignore 8298869
- *
  * @run main/othervm ConnectionTest
  */
 

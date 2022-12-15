@@ -26,7 +26,6 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
- * @ignore 8298867
  *
  * This is intended to test many of the basic API calls to the SSLEngine
  * interface.  This doesn't really exercise much of the SSL code.
