@@ -27,6 +27,7 @@
  * @requires (os.family == "windows")
  * @summary JFileChooser hangs if displayed in Windows L&F
  * @author Alexey Ivanov
+ * @key headful
  * @library /test/lib
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @build jdk.test.lib.Platform
