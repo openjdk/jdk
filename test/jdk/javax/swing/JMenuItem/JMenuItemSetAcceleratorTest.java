@@ -57,8 +57,8 @@ public class JMenuItemSetAcceleratorTest {
         frame.setLayout(new FlowLayout());
 
         JMenuBar bar = new JMenuBar();
-        JMenu menu = new JMenu("File Menu");
-        JMenuItem menuItem = new JMenuItem("File");
+        JMenu menu = new JMenu("File");
+        JMenuItem menuItem = new JMenuItem("Menu Item");
 
         menuItem.setAccelerator(
             KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.META_DOWN_MASK));
