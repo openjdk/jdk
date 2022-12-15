@@ -91,8 +91,8 @@ public class PKCS8Test {
 
         // Test additional fields
         enlarge(0, "8000");    // attributes
-        enlarge(1, "810100");  // public key for v2
-        enlarge(1, "8000", "810100");  // both
+        //enlarge(1, "810100");  // public key for v2
+        //enlarge(1, "8000", "810100");  // both
 
         Assert.assertThrows(() -> enlarge(2));  // bad ver
         Assert.assertThrows(() -> enlarge(0, "8000", "8000")); // no dup

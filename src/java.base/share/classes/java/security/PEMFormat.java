@@ -416,6 +416,10 @@ public class PEMFormat {
         return encodeString().getBytes();
     }
 
+    /**
+     * Return PEM encoding as a String
+     * @return a PEM encoded key or an empty string on error
+     */
     @Override
     public String toString() {
         try {
@@ -480,12 +484,12 @@ public class PEMFormat {
      * Gets key.
      *
      * @param <T> the type parameter
-     * @param key the key
+     * @param kClass the key
      * @return the key
      * @throws IOException the io exception
      */
-    public <T> T get(Class<T> key) throws IOException {
-        return get(null, key);
+    public <T> T get(Class<T> kClass) throws IOException {
+        return get(null, kClass);
     }
 
     /**

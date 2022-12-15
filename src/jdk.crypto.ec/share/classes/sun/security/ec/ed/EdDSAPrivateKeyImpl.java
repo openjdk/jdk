@@ -53,7 +53,7 @@ public final class EdDSAPrivateKeyImpl
 
         DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
-            this.privKeyMaterial = val.toByteArray();
+            privKeyMaterial = val.toByteArray();
         } finally {
             val.clear();
         }
@@ -78,8 +78,8 @@ public final class EdDSAPrivateKeyImpl
 
     void checkLength(EdDSAParameters params) throws InvalidKeyException {
 
-        if (params.getKeyLength() != this.h.length) {
-            throw new InvalidKeyException("key length is " + this.h.length +
+        if (params.getKeyLength() != h.length) {
+            throw new InvalidKeyException("key length is " + h.length +
                 ", key length must be " + params.getKeyLength());
         }
     }
@@ -100,6 +100,6 @@ public final class EdDSAPrivateKeyImpl
 
     @Override
     public Optional<byte[]> getBytes() {
-        return Optional.of(privKeyMaterial);
+        return Optional.of(getKey());
     }
 }

@@ -223,14 +223,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
         throws GeneralSecurityException {
         if (keySpec instanceof X509EncodedKeySpec) {
             return new ECPublicKeyImpl(((X509EncodedKeySpec)keySpec).getEncoded());
-        } else if (keySpec instanceof ECPublicKeySpec) {
-            ECPublicKeySpec ecSpec = (ECPublicKeySpec) keySpec;
-            return new ECPublicKeyImpl(
-                ecSpec.getW(),
-                ecSpec.getParams()
-            );
+
+        } else if (keySpec instanceof ECPublicKeySpec ecSpec) {
+            return new ECPublicKeyImpl(ecSpec.getW(), ecSpec.getParams());
+
         } else if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8Key p8key = null;
+            PKCS8Key p8key;
             try {
                 p8key = new ECPrivateKeyImpl(
                     ((PKCS8EncodedKeySpec)keySpec).getEncoded());
@@ -238,6 +236,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
                 throw new GeneralSecurityException(e);
             }
             return new ECPublicKeyImpl(p8key.getPubKeyEncoded());
+
         } else {
             throw new InvalidKeySpecException("Only ECPublicKeySpec "
                 + "and X509EncodedKeySpec supported for EC public keys");
@@ -248,15 +247,16 @@ public final class ECKeyFactory extends KeyFactorySpi {
     private PrivateKey implGeneratePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
-            byte[] encoded = ((EncodedKeySpec) keySpec).getEncoded();
+            byte[] encoded = ((PKCS8EncodedKeySpec) keySpec).getEncoded();
             try {
                 return new ECPrivateKeyImpl(encoded);
             } finally {
                 Arrays.fill(encoded, (byte) 0);
             }
-        } else if (keySpec instanceof ECPrivateKeySpec) {
-            ECPrivateKeySpec ecSpec = (ECPrivateKeySpec)keySpec;
+
+        } else if (keySpec instanceof ECPrivateKeySpec ecSpec) {
             return new ECPrivateKeyImpl(ecSpec.getS(), ecSpec.getParams());
+
         } else {
             throw new InvalidKeySpecException("Only ECPrivateKeySpec " +
                 "and PKCS8EncodedKeySpec supported for EC private keys. " +

@@ -149,10 +149,10 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     }
 
     public byte[] getArrayS() {
-        if (privKeyMaterial == null) {
-            privKeyMaterial = ECUtil.sArray(getS(), params);
+        if (arrayS == null) {
+            arrayS = ECUtil.sArray(getS(), params);
         }
-        return privKeyMaterial.clone();
+        return arrayS.clone();
     }
 
     // see JCA doc
