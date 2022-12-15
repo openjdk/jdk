@@ -329,6 +329,7 @@
     <Field type="ulong" contentType="bytes" name="edenUsedSize" label="Eden Used Size" />
     <Field type="ulong" contentType="bytes" name="edenTotalSize" label="Eden Total Size" />
     <Field type="ulong" contentType="bytes" name="survivorUsedSize" label="Survivor Used Size" />
+    <Field type="ulong" contentType="bytes" name="oldGenUsedSize" label="Old Generation Used Size" />
     <Field type="uint" name="numberOfRegions" label="Number of Regions" />
   </Event>
 

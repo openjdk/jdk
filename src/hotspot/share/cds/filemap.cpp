@@ -169,7 +169,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
     strncpy(header_version, vm_version, JVM_IDENT_MAX-9);
 
     // Append the hash code as eight hex digits.
-    sprintf(&header_version[JVM_IDENT_MAX-9], "%08x", hash);
+    os::snprintf_checked(&header_version[JVM_IDENT_MAX-9], 9, "%08x", hash);
     header_version[JVM_IDENT_MAX-1] = 0;  // Null terminate.
   }
 
@@ -2058,6 +2058,20 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   }
   _file_offset += count;
   return count;
+}
+
+// Get the total size in bytes of a read only region
+size_t FileMapInfo::readonly_total() {
+  size_t total = 0;
+  if (current_info() != nullptr) {
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
+    if (r->read_only()) total += r->used();
+  }
+  if (dynamic_info() != nullptr) {
+    FileMapRegion* r = FileMapInfo::dynamic_info()->region_at(MetaspaceShared::ro);
+    if (r->read_only()) total += r->used();
+  }
+  return total;
 }
 
 static MemRegion *closed_heap_regions = NULL;

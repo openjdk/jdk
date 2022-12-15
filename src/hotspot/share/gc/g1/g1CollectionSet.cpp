@@ -100,10 +100,6 @@ void G1CollectionSet::clear_candidates() {
   _candidates = NULL;
 }
 
-bool G1CollectionSet::has_candidates() {
-  return _candidates != NULL && !_candidates->is_empty();
-}
-
 // Add the heap region at the head of the non-incremental collection set
 void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert_at_safepoint_on_vm_thread();
