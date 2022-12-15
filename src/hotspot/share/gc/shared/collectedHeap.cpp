@@ -427,7 +427,7 @@ size_t CollectedHeap::max_tlab_size() const {
 }
 
 size_t CollectedHeap::filler_array_min_size() {
-  int aligned_header_size_words = heap_word_size(arrayOopDesc::base_offset_in_bytes(T_INT));
+  size_t aligned_header_size_words = heap_word_size(arrayOopDesc::base_offset_in_bytes(T_INT));
   return align_object_size(aligned_header_size_words); // align to MinObjAlignment
 }
 
