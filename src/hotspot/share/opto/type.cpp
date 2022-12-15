@@ -787,83 +787,148 @@ bool Type::is_nan()    const {
 }
 
 #ifdef ASSERT
-// With verification code, the meet of A and B causes the computation of:
-// 1- meet(A, B)
-// 2- meet(B, A)
-// 3- meet(dual(meet(A, B)), dual(A))
-// 4- meet(dual(meet(A, B)), dual(B))
-// 5- meet(dual(A), dual(B))
-// 6- meet(dual(B), dual(A))
-// 7- meet(dual(meet(dual(A), dual(B))), A)
-// 8- meet(dual(meet(dual(A), dual(B))), B)
-//
-// In addition the meet of A[] and B[] requires the computation of the meet of A and B.
-//
-// The meet of A[] and B[] triggers the computation of:
-// 1- meet(A[], B[][)
-//   1.1- meet(A, B)
-//   1.2- meet(B, A)
-//   1.3- meet(dual(meet(A, B)), dual(A))
-//   1.4- meet(dual(meet(A, B)), dual(B))
-//   1.5- meet(dual(A), dual(B))
-//   1.6- meet(dual(B), dual(A))
-//   1.7- meet(dual(meet(dual(A), dual(B))), A)
-//   1.8- meet(dual(meet(dual(A), dual(B))), B)
-// 2- meet(B[], A[])
-//   2.1- meet(B, A) = 1.2
-//   2.2- meet(A, B) = 1.1
-//   2.3- meet(dual(meet(B, A)), dual(B)) = 1.4
-//   2.4- meet(dual(meet(B, A)), dual(A)) = 1.3
-//   2.5- meet(dual(B), dual(A)) = 1.6
-//   2.6- meet(dual(A), dual(B)) = 1.5
-//   2.7- meet(dual(meet(dual(B), dual(A))), B) = 1.8
-//   2.8- meet(dual(meet(dual(B), dual(A))), B) = 1.7
-// etc.
-// The number of meet operations performed grows exponentially with the number of dimensions of the arrays but the number
-// of different meet operations is linear in the number of dimensions. The function below caches meet results for the
-// duration of the meet at the root of the recursive calls.
-//
-static const Type* debug_meet(const Type* t1, const Type* t2) {
-  Compile* C = Compile::current();
-
-  bool found = false;
-  const Compile::VerifyMeetResult meet(t1, t2, NULL);
-  int pos = C->_type_verif_cache.find_sorted<Compile::VerifyMeetResult, Compile::VerifyMeetResult::compare>(meet, found);
-  const Type* res = NULL;
-  if (found) {
-    res = C->_type_verif_cache.at(pos).res();
-  } else {
-    res = t1->xmeet(t2);
-    C->_type_verif_cache.insert_sorted<Compile::VerifyMeetResult::compare>(Compile::VerifyMeetResult(t1, t2, res));
-    found = false;
-    C->_type_verif_cache.find_sorted<Compile::VerifyMeetResult, Compile::VerifyMeetResult::compare>(meet, found);
-    assert(found, "should be in table after it's added");
-  }
-  return res;
-}
-
-class TypeVerif {
+class VerifyMeetMark;
+class VerifyMeetResult : public ArenaObj {
+  friend class VerifyMeetMark;
 private:
-  Compile* _C;
+  class VerifyMeetResultEntry {
+  private:
+    const Type* _in1;
+    const Type* _in2;
+    const Type* _res;
+  public:
+    VerifyMeetResultEntry(const Type* in1, const Type* in2, const Type* res):
+            _in1(in1), _in2(in2), _res(res) {
+    }
+    VerifyMeetResultEntry():
+            _in1(NULL), _in2(NULL), _res(NULL) {
+    }
+
+    bool operator==(const VerifyMeetResultEntry& rhs) const {
+      return _in1 == rhs._in1 &&
+             _in2 == rhs._in2 &&
+             _res == rhs._res;
+    }
+
+    bool operator!=(const VerifyMeetResultEntry& rhs) const {
+      return !(rhs == *this);
+    }
+
+    static int compare(const VerifyMeetResultEntry& v1, const VerifyMeetResultEntry& v2) {
+      if ((intptr_t) v1._in1 < (intptr_t) v2._in1) {
+        return -1;
+      } else if (v1._in1 == v2._in1) {
+        if ((intptr_t) v1._in2 < (intptr_t) v2._in2) {
+          return -1;
+        } else if (v1._in2 == v2._in2) {
+          assert(v1._res == v2._res || v1._res == NULL || v2._res == NULL, "same inputs should lead to same result");
+          return 0;
+        }
+        return 1;
+      }
+      return 1;
+    }
+    const Type* res() const { return _res; }
+  };
+  uint _depth;
+  GrowableArray<VerifyMeetResultEntry> _cache;
 public:
-  TypeVerif(Compile* C) : _C(C) {
-    _C->_type_depth++;
+  VerifyMeetResult(Compile* C) :
+          _depth(0), _cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
   }
 
-  ~TypeVerif() {
-    assert(_C->_type_depth != 0, "");
-    _C->_type_depth--;
-    if (_C->_type_depth == 0) {
-      _C->_type_verif_cache.trunc_to(0);
+  // With verification code, the meet of A and B causes the computation of:
+  // 1- meet(A, B)
+  // 2- meet(B, A)
+  // 3- meet(dual(meet(A, B)), dual(A))
+  // 4- meet(dual(meet(A, B)), dual(B))
+  // 5- meet(dual(A), dual(B))
+  // 6- meet(dual(B), dual(A))
+  // 7- meet(dual(meet(dual(A), dual(B))), A)
+  // 8- meet(dual(meet(dual(A), dual(B))), B)
+  //
+  // In addition the meet of A[] and B[] requires the computation of the meet of A and B.
+  //
+  // The meet of A[] and B[] triggers the computation of:
+  // 1- meet(A[], B[][)
+  //   1.1- meet(A, B)
+  //   1.2- meet(B, A)
+  //   1.3- meet(dual(meet(A, B)), dual(A))
+  //   1.4- meet(dual(meet(A, B)), dual(B))
+  //   1.5- meet(dual(A), dual(B))
+  //   1.6- meet(dual(B), dual(A))
+  //   1.7- meet(dual(meet(dual(A), dual(B))), A)
+  //   1.8- meet(dual(meet(dual(A), dual(B))), B)
+  // 2- meet(B[], A[])
+  //   2.1- meet(B, A) = 1.2
+  //   2.2- meet(A, B) = 1.1
+  //   2.3- meet(dual(meet(B, A)), dual(B)) = 1.4
+  //   2.4- meet(dual(meet(B, A)), dual(A)) = 1.3
+  //   2.5- meet(dual(B), dual(A)) = 1.6
+  //   2.6- meet(dual(A), dual(B)) = 1.5
+  //   2.7- meet(dual(meet(dual(B), dual(A))), B) = 1.8
+  //   2.8- meet(dual(meet(dual(B), dual(A))), B) = 1.7
+  // etc.
+  // The number of meet operations performed grows exponentially with the number of dimensions of the arrays but the number
+  // of different meet operations is linear in the number of dimensions. The function below caches meet results for the
+  // duration of the meet at the root of the recursive calls.
+  //
+  const Type* meet(const Type* t1, const Type* t2) {
+    bool found = false;
+    const VerifyMeetResultEntry meet(t1, t2, NULL);
+    int pos = _cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(meet, found);
+    const Type* res = NULL;
+    if (found) {
+      res = _cache.at(pos).res();
+    } else {
+      res = t1->xmeet(t2);
+      _cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+      found = false;
+      _cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(meet, found);
+      assert(found, "should be in table after it's added");
     }
+    return res;
+  }
+
+  void add(const Type* t1, const Type* t2, const Type* res) {
+    _cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+  }
+
+  bool empty_cache() const {
+    return _cache.length() == 0;
   }
 };
 
+void Type::assert_type_verify_empty() const {
+  assert(Compile::current()->_type_verify == NULL || Compile::current()->_type_verify->empty_cache(), "cache should have been discarded");
+}
+
+class VerifyMeetMark {
+private:
+  Compile* _C;
+public:
+  VerifyMeetMark(Compile* C) : _C(C) {
+    if (C->_type_verify == NULL) {
+      C->_type_verify = new (C->comp_arena())VerifyMeetResult(C);
+    }
+    _C->_type_verify->_depth++;
+  }
+
+  ~VerifyMeetMark() {
+    assert(_C->_type_verify->_depth != 0, "");
+    _C->_type_verify->_depth--;
+    if (_C->_type_verify->_depth == 0) {
+      _C->_type_verify->_cache.trunc_to(0);
+    }
+  }
+};
 #endif
 
 void Type::check_symmetrical(const Type* t, const Type* mt) const {
 #ifdef ASSERT
-  const Type* mt2 = debug_meet(t, this);
+  Compile* C = Compile::current();
+  VerifyMeetResult* type_verify = C->_type_verify;
+  const Type* mt2 = type_verify->meet(t, this);
   if (mt != mt2) {
     tty->print_cr("=== Meet Not Commutative ===");
     tty->print("t           = ");   t->dump(); tty->cr();
@@ -873,8 +938,8 @@ void Type::check_symmetrical(const Type* t, const Type* mt) const {
     fatal("meet not commutative");
   }
   const Type* dual_join = mt->_dual;
-  const Type* t2t    = debug_meet(dual_join,t->_dual);
-  const Type* t2this = debug_meet(dual_join,this->_dual);
+  const Type* t2t    = type_verify->meet(dual_join,t->_dual);
+  const Type* t2this = type_verify->meet(dual_join,this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
@@ -913,7 +978,7 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
 
 #ifdef ASSERT
   Compile* C = Compile::current();
-  TypeVerif verif(C);
+  VerifyMeetMark verif(C);
 #endif
 
   const Type *this_t = maybe_remove_speculative(include_speculative);
@@ -921,7 +986,8 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
 
   const Type *mt = this_t->xmeet(t);
 #ifdef ASSERT
-  C->_type_verif_cache.insert_sorted<Compile::VerifyMeetResult::compare>(Compile::VerifyMeetResult(this_t, t, mt));
+  VerifyMeetResult* type_verify = C->_type_verify;
+  type_verify->add(this_t, t, mt);
   if (isa_narrowoop() || t->isa_narrowoop()) {
     return mt;
   }
@@ -929,7 +995,7 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
     return mt;
   }
   this_t->check_symmetrical(t, mt);
-  const Type *mt_dual = debug_meet(this_t->_dual,t->_dual);
+  const Type *mt_dual = type_verify->meet(this_t->_dual, t->_dual);
   this_t->_dual->check_symmetrical(t->_dual, mt_dual);
 #endif
   return mt;

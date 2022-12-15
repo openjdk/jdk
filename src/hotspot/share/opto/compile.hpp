@@ -95,6 +95,7 @@ class UnstableIfTrap;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
+class VerifyMeetResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -1215,47 +1216,7 @@ class Compile : public Phase {
   bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
 #endif // IA32
 #ifdef ASSERT
-  class VerifyMeetResult {
-  private:
-    const Type* _in1;
-    const Type* _in2;
-    const Type* _res;
-  public:
-    VerifyMeetResult(const Type* in1, const Type* in2, const Type* res):
-    _in1(in1), _in2(in2), _res(res) {
-    }
-    VerifyMeetResult():
-    _in1(NULL), _in2(NULL), _res(NULL) {
-    }
-
-    bool operator==(const VerifyMeetResult& rhs) const {
-      return _in1 == rhs._in1 &&
-             _in2 == rhs._in2 &&
-             _res == rhs._res;
-    }
-
-    bool operator!=(const VerifyMeetResult& rhs) const {
-      return !(rhs == *this);
-    }
-
-    static int compare(const VerifyMeetResult& v1, const VerifyMeetResult& v2) {
-      if ((intptr_t) v1._in1 < (intptr_t) v2._in1) {
-        return -1;
-      } else if (v1._in1 == v2._in1) {
-        if ((intptr_t) v1._in2 < (intptr_t) v2._in2) {
-          return -1;
-        } else if (v1._in2 == v2._in2) {
-          assert(v1._res == v2._res || v1._res == NULL || v2._res == NULL, "same inputs should lead to same result");
-          return 0;
-        }
-        return 1;
-      }
-      return 1;
-    }
-    const Type* res() const { return _res; }
-  };
-  uint _type_depth;
-  GrowableArray<VerifyMeetResult> _type_verif_cache;
+  VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
