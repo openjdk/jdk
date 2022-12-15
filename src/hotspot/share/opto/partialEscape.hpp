@@ -64,7 +64,7 @@ class EscapedState: public ObjectState {
 
 template<typename K, typename V>
 using PEAMap = ResourceHashtable<K, V, 17, /*table_size*/
-                          ResourceObj::RESOURCE_AREA, mtCompiler>;
+                                 AnyObj::RESOURCE_AREA, mtCompiler>;
 // forward declaration
 class GraphKit;
 
