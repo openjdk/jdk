@@ -254,8 +254,8 @@ CollectedHeap::CollectedHeap() :
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   int header_size_in_bytes = arrayOopDesc::base_offset_in_bytes(T_INT);
-  assert(header_size_in_bytes % sizeof(jint) == 0, "must be aligned to int");
-  int header_size_in_ints = header_size_in_bytes / sizeof(jint);
+  assert(is_aligned(header_size_in_bytes, BytesPerInt), "must be aligned to int");
+  int header_size_in_ints = header_size_in_bytes / BytesPerInt;
   _filler_array_max_size = align_object_size((header_size_in_ints + max_len) / elements_per_word);
 
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
@@ -419,7 +419,7 @@ size_t CollectedHeap::max_tlab_size() const {
   // but that just makes the TLAB  somewhat smaller than the biggest array,
   // which is fine, since we'll be able to fill that.
   int header_size_in_bytes = typeArrayOopDesc::base_offset_in_bytes(T_INT);
-  assert(header_size_in_bytes % sizeof(jint) == 0, "header size must align to int");
+  assert(is_aligned(header_size_in_bytes, BytesPerInt), "header size must align to int");
   size_t max_int_size = header_size_in_bytes / HeapWordSize +
               sizeof(jint) *
               ((juint) max_jint / (size_t) HeapWordSize);
@@ -427,12 +427,19 @@ size_t CollectedHeap::max_tlab_size() const {
 }
 
 size_t CollectedHeap::filler_array_min_size() {
-  int aligned_header_size_words = align_up(arrayOopDesc::base_offset_in_bytes(T_INT), HeapWordSize) / HeapWordSize;
+  int aligned_header_size_words = heap_word_size(arrayOopDesc::base_offset_in_bytes(T_INT));
   return align_object_size(aligned_header_size_words); // align to MinObjAlignment
 }
 
 void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
-  int payload_start = align_up(arrayOopDesc::base_offset_in_bytes(T_INT), HeapWordSize) / HeapWordSize;
+  int payload_start = arrayOopDesc::base_offset_in_bytes(T_INT);
+  if (!is_aligned(payload_start, BytesPerWord)) {
+    assert(is_aligned(payload_start, BytesPerInt), "base offset must be 32-bit-aligned");
+    *(reinterpret_cast<juint*>(start) + (payload_start / BytesPerInt)) = value;
+    payload_start += BytesPerInt;
+  }
+  assert(is_aligned(payload_start, HeapWordSize), "payload start must be heap word aligned");
+  payload_start = payload_start / HeapWordSize;
   Copy::fill_to_words(start + payload_start,
                       words - payload_start, value);
 }
@@ -459,8 +466,8 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   assert(words <= filler_array_max_size(), "too big for a single object");
 
   const size_t payload_size_bytes = words * HeapWordSize - arrayOopDesc::base_offset_in_bytes(T_INT);
-  assert(payload_size_bytes % sizeof(jint) == 0, "must be int aligned");
-  const size_t len = payload_size_bytes / sizeof(jint);
+  assert(is_aligned(payload_size_bytes, BytesPerInt), "must be int aligned");
+  const size_t len = payload_size_bytes / BytesPerInt;
   assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
   ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);

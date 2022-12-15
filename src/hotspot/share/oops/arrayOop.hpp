@@ -27,6 +27,7 @@
 
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // arrayOopDesc is the abstract baseclass for all arrays.  It doesn't
 // declare pure virtual to enforce this because that would allocate a vtbl
@@ -50,7 +51,7 @@ class arrayOopDesc : public oopDesc {
   // Returns the aligned header_size_in_bytes.  This is not equivalent to
   // sizeof(arrayOopDesc) which should not appear in the code.
   static int header_size_in_bytes() {
-  size_t hs = length_offset_in_bytes() + sizeof(int);
+    size_t hs = length_offset_in_bytes() + sizeof(int);
 #ifdef ASSERT
     // make sure it isn't called before UseCompressedOops is initialized.
     static size_t arrayoopdesc_hs = 0;
@@ -89,7 +90,7 @@ class arrayOopDesc : public oopDesc {
 
   // Returns the offset of the first element.
   static int base_offset_in_bytes(BasicType type) {
-  size_t typesize_in_bytes = header_size_in_bytes();
+    size_t typesize_in_bytes = header_size_in_bytes();
     return (int)(element_type_should_be_aligned(type)
                  ? align_up(typesize_in_bytes, BytesPerLong)
                  : typesize_in_bytes);
@@ -129,7 +130,7 @@ class arrayOopDesc : public oopDesc {
     *length_addr_impl(mem) = length;
   }
 
-  // Return the maximum length of an array of BasicType.  The length can passed
+  // Return the maximum length (num elements) of an array of BasicType.  The length can passed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
@@ -137,15 +138,26 @@ class arrayOopDesc : public oopDesc {
     assert(type >= 0 && type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
+    int elem_size = type2aelembytes(type);
     const size_t max_size_bytes = align_down(SIZE_MAX - base_offset_in_bytes(type), MinObjAlignmentInBytes);
-    const size_t max_elements_per_size_t = max_size_bytes / type2aelembytes(type);
+    assert(max_size_bytes % elem_size == 0, "max_size_bytes should be aligned to element size");
+    const size_t max_elements_per_size_t = max_size_bytes / elem_size;
     if ((size_t)max_jint < max_elements_per_size_t) {
       // It should be ok to return max_jint here, but parts of the code
       // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for
       // passing around the size (in words) of an object. So, we need to avoid
       // overflowing an int when we add the header. See CRs 4718400 and 7110613.
-      int header_size_words = align_up(base_offset_in_bytes(type), HeapWordSize) / HeapWordSize;
-      return align_down(max_jint - header_size_words, MinObjAlignment);
+
+      // How many words does each element take? For elements smaller than a full
+      // word this will be 0 - which is correct because for such smaller elements
+      // we would not trigger int overflow in word-sized calculations.
+      int words_per_elem    = elem_size / HeapWordSize;
+      // How many words does the header need? It's ok to ignore the alignment,
+      // because elements are always aligned to their respective sizes, and
+      // we really only care about (at least) word-sized elements here.
+      int header_size_words = heap_word_size(base_offset_in_bytes(type));
+      int header_size_elems = header_size_words * words_per_elem;
+      return max_jint - header_size_elems;
     }
     return (int32_t)max_elements_per_size_t;
   }

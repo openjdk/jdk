@@ -40,7 +40,7 @@ public class TestExitOnOutOfMemoryError {
             // This should guarantee to throw:
             // java.lang.OutOfMemoryError: Requested array size exceeds VM limit
             try {
-                Object[] oa = new Object[Integer.MAX_VALUE];
+                long[] oa = new long[Integer.MAX_VALUE];
                 throw new Error("OOME not triggered");
             } catch (OutOfMemoryError err) {
                 throw new Error("OOME didn't terminate JVM!");
