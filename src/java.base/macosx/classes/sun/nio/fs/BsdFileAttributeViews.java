@@ -69,7 +69,7 @@ class BsdFileAttributeViews {
 
         try {
             // not all volumes support setattrlist(2), so set the last
-            // modified and last access times using futimens(2)
+            // modified and last access times using futimens(2)/lutimes(3)
             if (lastModifiedTime != null || lastAccessTime != null) {
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
