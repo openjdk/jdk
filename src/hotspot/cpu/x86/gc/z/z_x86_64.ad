@@ -166,7 +166,7 @@ instruct zStorePNull(memory mem, immP0 zero, rRegP tmp, rFlagsReg cr)
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct zCompareAndExchangeP(memory mem, rRegP newval, rRegP tmp, rax_RegP oldval, rFlagsReg cr) %{
+instruct zCompareAndExchangeP(indirect mem, no_rax_RegP newval, rRegP tmp, rax_RegP oldval, rFlagsReg cr) %{
   match(Set oldval (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
@@ -175,17 +175,20 @@ instruct zCompareAndExchangeP(memory mem, rRegP newval, rRegP tmp, rax_RegP oldv
             "cmpxchgq $newval, $mem" %}
 
   ins_encode %{
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    assert_different_registers($oldval$$Register, $newval$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+    z_store_barrier(_masm, this, mem_addr, $newval$$Register, $tmp$$Register, true /* is_atomic */);
     z_color(_masm, this, $oldval$$Register);
-    z_store_barrier(_masm, this, $mem$$Address, $newval$$Register, $tmp$$Register, true /* is_atomic */);
     __ lock();
-    __ cmpxchgptr($tmp$$Register, $mem$$Address);
+    __ cmpxchgptr($tmp$$Register, mem_addr);
     z_uncolor(_masm, this, $oldval$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rax_RegP oldval, rFlagsReg cr) %{
+instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_RegP oldval, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
@@ -197,10 +200,12 @@ instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rax_Re
             "movzbl   $res, $res" %}
 
   ins_encode %{
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+    z_store_barrier(_masm, this, mem_addr, $newval$$Register, $tmp$$Register, true /* is_atomic */);
     z_color(_masm, this, $oldval$$Register);
-    z_store_barrier(_masm, this, $mem$$Address, $newval$$Register, $tmp$$Register, true /* is_atomic */);
     __ lock();
-    __ cmpxchgptr($tmp$$Register, $mem$$Address);
+    __ cmpxchgptr($tmp$$Register, mem_addr);
     __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
@@ -208,7 +213,7 @@ instruct zCompareAndSwapP(rRegI res, memory mem, rRegP newval, rRegP tmp, rax_Re
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct zXChgP(memory mem, rRegP newval, rRegP tmp, rFlagsReg cr) %{
+instruct zXChgP(indirect mem, rRegP newval, rRegP tmp, rFlagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
@@ -216,9 +221,11 @@ instruct zXChgP(memory mem, rRegP newval, rRegP tmp, rFlagsReg cr) %{
   format %{ "xchgq    $newval, $mem" %}
 
   ins_encode %{
-    z_store_barrier(_masm, this, $mem$$Address, $newval$$Register, $tmp$$Register, true /* is_atomic */);
+    assert_different_registers($mem$$Register, $newval$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+    z_store_barrier(_masm, this, mem_addr, $newval$$Register, $tmp$$Register, true /* is_atomic */);
     __ movptr($newval$$Register, $tmp$$Register);
-    __ xchgptr($newval$$Register, $mem$$Address);
+    __ xchgptr($newval$$Register, mem_addr);
     z_uncolor(_masm, this, $newval$$Register);
   %}
 
