@@ -4117,8 +4117,8 @@ void MacroAssembler::pop_set(RegSet set, int offset) {
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
 void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp) {
-  assert(address != length_in_bytes && address != temp && temp != length_in_bytes, "registers must be different");
-  assert((offset_in_bytes & (BytesPerInt - 1)) == 0, "offset must be a multiple of BytesPerInt");
+  assert_different_registers(address, length_in_bytes, temp);
+  assert(is_aligned(offset_in_bytes, BytesPerInt), "offset must be a multiple of BytesPerInt");
 
   // note: for the remaining code to work, index must be a multiple of BytesPerInt
 #ifdef ASSERT
