@@ -375,6 +375,53 @@ PEAState& PEAState::operator=(const PEAState& init) {
   return *this;
 }
 
+// Inspired by GraphKit::replace_in_map. Besides the replacement of old object
+// we also need to scout map() and find loaded fields of old object. they may
+// lay in stack, locals or even argument section.
+static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
+  SafePointNode* map = kit->map();
+  PhaseGVN& gvn = kit->gvn();
+
+  for (uint i = 0; i < map->req(); ++i) {
+    Node* x = map->in(i);
+
+    if (x == old) {
+      map->set_req(i, neww); // safepointNode is not hashashable.
+    } else {
+      if (x->is_DecodeN()) {
+        x = x->in(1);
+        assert(x->Opcode() == Op_LoadN, "sanity check");
+      }
+
+      if (x->is_Load()) {
+        Node* addr = x->in(MemNode::Address);
+        Node_List stack(4);
+
+        while (addr->is_AddP() && addr->in(AddPNode::Base) == old) {
+          stack.push(addr);
+          addr = addr->in(AddPNode::Address);
+        }
+
+        if (stack.size() > 0) {
+          Node* prev = neww;
+          do {
+            addr = stack.pop();
+            prev = gvn.transform(new AddPNode(neww, prev, addr->in(AddPNode::Offset)));
+          } while (stack.size() > 0);
+
+          bool is_in_table = gvn.hash_delete(x);
+          x->set_req(MemNode::Address, prev);
+
+          // TODO: also need to update memory if it's from old object's memory!
+          if (is_in_table) {
+            gvn.hash_find_insert(x);
+          }
+        }
+      }
+    }
+  }
+}
+
 EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* map) {
 #ifndef PRODUCT
   if (Verbose) {
@@ -392,8 +439,9 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
     jvms->set_should_reexecute(false);
   }
 
+  Compile* C = kit->C;
   // clean up map/jvms before we clone a new AllocateNode.
-  AllocateNode* allocx  = new AllocateNode(kit->C, alloc->tf(), map->control(), alloc->memory(), alloc->i_o(),
+  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), map->control(), alloc->memory(), alloc->i_o(),
                                            alloc->in(AllocateNode::AllocSize),
                                            alloc->in(AllocateNode::KlassNode),
                                            alloc->in(AllocateNode::InitialTest));
@@ -427,7 +475,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 
       int offset = field->offset_in_bytes();
       Node* adr = kit->basic_plus_adr(objx, objx, offset);
-      const TypePtr* adr_type = kit->C->alias_type(field)->adr_type();
+      const TypePtr* adr_type = C->alias_type(field)->adr_type();
 
       DecoratorSet decorators = IN_HEAP;
 
@@ -454,14 +502,10 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
   EscapedState* escaped = new EscapedState(objx);
   _state.put(alloc, escaped);
 
-  // update all locals which alias with alloc
-  for (int i=0; i< kit->jvms()->loc_size(); ++i) {
-    Node* lv = kit->local(i);
-
-    if (is_alias(lv) == alloc) { // update local variable.
-      kit->set_local(i, objx);
-    }
-  }
+  // replace obj with objx
+  replace_in_map(kit, obj, objx);
+  _alias.remove(obj);
+  _alias.put(objx, alloc);
   return escaped;
 }
 

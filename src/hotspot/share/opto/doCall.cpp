@@ -668,15 +668,15 @@ void Parse::do_call() {
         AllocateNode* alloc = state.is_alias(arg);
 
        if (alloc != nullptr && state.get_object_state(alloc)->is_virtual()) {
-          EscapedState* es = state.materialize(this, alloc);
-          Node* objx = es->get_materialized_value();
-          set_argument(i, objx);
-          AllocateNode* allocx = objx->in(1)->in(0)->as_Allocate();
-          CallProjections projs;
+         EscapedState* es = state.materialize(this, alloc, map());
+         Node* objx = es->get_materialized_value();
+         set_argument(i, objx);
+         AllocateNode* allocx = objx->in(1)->in(0)->as_Allocate();
+         CallProjections projs;
 
-          allocx->extract_projections(&projs, false, false);
-          ctrl = projs.fallthrough_catchproj;
-          // serialize objects using ctrl
+         allocx->extract_projections(&projs, false, false);
+         ctrl = projs.fallthrough_catchproj;
+         // serialize objects using ctrl
         }
       }
     }
