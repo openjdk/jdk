@@ -22,6 +22,7 @@
  *
  */
 #include "precompiled.hpp"
+#include "cds/filemap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -205,6 +206,13 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     const char*   scale = current_scale();
     out->print("-%26s (", NMTUtil::flag_to_name(flag));
     print_total(reserved_amount, committed_amount);
+#if INCLUDE_CDS
+    if (flag == mtClassShared) {
+        size_t read_only_bytes = FileMapInfo::readonly_total();
+      output()->print(", readonly=" SIZE_FORMAT "%s",
+                      amount_in_current_scale(read_only_bytes), scale);
+    }
+#endif
     out->print_cr(")");
 
     if (flag == mtClass) {
