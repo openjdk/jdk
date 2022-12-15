@@ -567,6 +567,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         fc.setLayout(new BorderLayout());
         fc.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+
+        /*
+         * MultiSelection is enabled by default to mimic native filechooser
+         * behavior where multiple files or folders can be selected.
+         */
         fc.setMultiSelectionEnabled(true);
 
         // Top row of buttons
