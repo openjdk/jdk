@@ -154,6 +154,14 @@ public interface DocTree {
         LITERAL("literal"),
 
         /**
+         * Used for instances of {@link MarkdownTree}
+         * representing a fragment of Markdown code.
+         *
+         * @since 21
+         */
+        MARKDOWN,
+
+        /**
          * Used for instances of {@link ParamTree}
          * representing an {@code @param} tag.
          */

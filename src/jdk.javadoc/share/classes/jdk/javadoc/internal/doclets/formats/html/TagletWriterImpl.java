@@ -422,7 +422,7 @@ public class TagletWriterImpl extends TagletWriter {
         assert !ref.isEmpty();
         DocTree ref0 = ref.get(0);
         switch (ref0.getKind()) {
-            case TEXT, START_ELEMENT -> {
+            case TEXT, START_ELEMENT, MARKDOWN -> {
                 // @see "Reference"
                 // @see <a href="...">...</a>
                 return htmlWriter.commentTagsToContent(element, ref, false, false);

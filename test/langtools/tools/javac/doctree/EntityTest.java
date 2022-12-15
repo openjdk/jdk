@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244 8284908
+ * @bug 7021614 8273244 8284908 8298405
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -161,6 +161,20 @@ DocComment[DOC_COMMENT, pos:2
       body: &#x012a
     ]
     Text[TEXT, pos:13, zc;_def]
+  body: empty
+  block tags: empty
+]
+*/
+
+// In Markdown mode, & does not introduce an entity
+    /**md
+     *  abc & def
+     */
+    public void markdown() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    Markdown[MARKDOWN, pos:5, abc_&_def]
   body: empty
   block tags: empty
 ]

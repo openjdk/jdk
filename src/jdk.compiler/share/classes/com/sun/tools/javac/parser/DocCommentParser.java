@@ -83,6 +83,7 @@ public class DocCommentParser {
     private final DocTreeMaker m;
     private final Names names;
     private final boolean isFileContent;
+    private final boolean isMarkdown;
 
     /** The input buffer, index of most recent character read,
      *  index of one past last character in buffer.
@@ -101,6 +102,8 @@ public class DocCommentParser {
 
     private final Map<Name, TagParser> tagParsers;
 
+    private static final String MARKDOWN_PREFIX = "md";
+
     public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource,
                             Comment comment, boolean isFileContent) {
         this.fac = fac;
@@ -109,6 +112,8 @@ public class DocCommentParser {
         this.comment = comment;
         names = fac.names;
         this.isFileContent = isFileContent;
+        String t = comment.getText();
+        this.isMarkdown = t.startsWith(MARKDOWN_PREFIX) && Character.isWhitespace(t.charAt(MARKDOWN_PREFIX.length()));
         m = fac.docTreeMaker;
         tagParsers = createTagParsers();
     }
@@ -127,7 +132,7 @@ public class DocCommentParser {
         c.getChars(0, c.length(), buf, 0);
         buf[buf.length - 1] = EOI;
         buflen = buf.length - 1;
-        bp = -1;
+        bp = -1 + (isMarkdown ? MARKDOWN_PREFIX.length() : 0);
         nextChar();
 
         List<DCTree> preamble = isFileContent ? blockContent(Phase.PREAMBLE) : List.nil();
@@ -135,7 +140,8 @@ public class DocCommentParser {
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isFileContent ? blockContent(Phase.POSTAMBLE) : List.nil();
 
-        int pos = !preamble.isEmpty() ? preamble.head.pos
+        int pos = isMarkdown ? 0
+                : !preamble.isEmpty() ? preamble.head.pos
                 : !body.isEmpty() ? body.head.pos
                 : !tags.isEmpty() ? tags.head.pos
                 : !postamble.isEmpty() ? postamble.head.pos
@@ -157,9 +163,13 @@ public class DocCommentParser {
     }
 
     /**
-     * Read block content, consisting of text, html and inline tags.
+     * Read block content, consisting of text, and Markdown code or html and inline tags.
      * Terminated by the end of input, or the beginning of the next block tag:
      * that is, @ as the first non-whitespace character on a line.
+     *
+     * In Markdown mode, {@code &} (introducing an entity) and {@code <} (introducing
+     * an HTML element) are treated as "plain" characters, to be analyzed eventually
+     * by the Markdown processor.
      */
     @SuppressWarnings("fallthrough")
     protected List<DCTree> blockContent(Phase phase) {
@@ -178,44 +188,52 @@ public class DocCommentParser {
                     break;
 
                 case '&':
-                    entity(trees);
+                    if (isMarkdown) {
+                        defaultBlockCharacter();
+                    } else {
+                        entity(trees);
+                    }
                     break;
 
                 case '<':
-                    newline = false;
-                    if (isFileContent) {
-                        switch (phase) {
-                            case PREAMBLE:
-                                if (isEndPreamble()) {
-                                    trees.add(html());
-                                    if (textStart == -1) {
-                                        textStart = bp;
-                                        lastNonWhite = -1;
+                    if (isMarkdown) {
+                        defaultBlockCharacter();
+                    } else {
+                        newline = false;
+                        if (isFileContent) {
+                            switch (phase) {
+                                case PREAMBLE:
+                                    if (isEndPreamble()) {
+                                        trees.add(html());
+                                        if (textStart == -1) {
+                                            textStart = bp;
+                                            lastNonWhite = -1;
+                                        }
+                                        // mark this as the start, for processing purposes
+                                        newline = true;
+                                        break loop;
                                     }
-                                    // mark this as the start, for processing purposes
-                                    newline = true;
-                                    break loop;
-                                }
-                                break;
-                            case BODY:
-                                if (isEndBody()) {
-                                    addPendingText(trees, lastNonWhite);
-                                    break loop;
-                                }
-                                break;
-                            default:
-                                // fallthrough
+                                    break;
+                                case BODY:
+                                    if (isEndBody()) {
+                                        addPendingText(trees, lastNonWhite);
+                                        break loop;
+                                    }
+                                    break;
+                                default:
+                                    // fallthrough
+                            }
                         }
-                    }
-                    addPendingText(trees, bp - 1);
-                    trees.add(html());
+                        addPendingText(trees, bp - 1);
+                        trees.add(html());
 
-                    if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
-                        break; // Ignore newlines after html tags, in the meta content
-                    }
-                    if (textStart == -1) {
-                        textStart = bp;
-                        lastNonWhite = -1;
+                        if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
+                            break; // Ignore newlines after html tags, in the meta content
+                        }
+                        if (textStart == -1) {
+                            textStart = bp;
+                            lastNonWhite = -1;
+                        }
                     }
                     break;
 
@@ -231,11 +249,7 @@ public class DocCommentParser {
                     // fallthrough
 
                 default:
-                    newline = false;
-                    if (textStart == -1)
-                        textStart = bp;
-                    lastNonWhite = bp;
-                    nextChar();
+                    defaultBlockCharacter();
             }
         }
 
@@ -243,6 +257,14 @@ public class DocCommentParser {
             addPendingText(trees, lastNonWhite);
 
         return trees.toList();
+    }
+
+    private void defaultBlockCharacter() {
+        newline = false;
+        if (textStart == -1)
+            textStart = bp;
+        lastNonWhite = bp;
+        nextChar();
     }
 
     /**
@@ -561,9 +583,13 @@ public class DocCommentParser {
     }
 
     /**
-     * Reads general text content of an inline tag, including HTML entities and elements.
+     * Reads general text content of an inline tag, including Markdown or HTML entities and elements.
      * Matching pairs of { } are skipped; the text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
+     *
+     * In Markdown mode, {@code &} (introducing an entity) and {@code <} (introducing
+     * an HTML element) are treated as "plain" characters, to be analyzed eventually
+     * by the Markdown processor.
      */
     @SuppressWarnings("fallthrough")
     private List<DCTree> inlineContent() {
@@ -587,15 +613,23 @@ public class DocCommentParser {
                     break;
 
                 case '&':
-                    entity(trees);
+                    if (isMarkdown) {
+                        defaultInlineCharacter();
+                    } else {
+                        entity(trees);
+                    }
                     break;
 
                 case '<':
-                    newline = false;
-                    addPendingText(trees, bp - 1);
-                    trees.add(html());
-                    textStart = bp;
-                    lastNonWhite = -1;
+                    if (isMarkdown) {
+                        defaultInlineCharacter();
+                    } else {
+                        newline = false;
+                        addPendingText(trees, bp - 1);
+                        trees.add(html());
+                        textStart = bp;
+                        lastNonWhite = -1;
+                    }
                     break;
 
                 case '{':
@@ -629,14 +663,18 @@ public class DocCommentParser {
                     // fallthrough
 
                 default:
-                    if (textStart == -1)
-                        textStart = bp;
-                    nextChar();
+                    defaultInlineCharacter();
                     break;
             }
         }
 
         return List.of(erroneous("dc.unterminated.inline.tag", pos));
+    }
+
+    private void defaultInlineCharacter() {
+        if (textStart == -1)
+            textStart = bp;
+        nextChar();
     }
 
     protected void entity(ListBuffer<DCTree> list) {
@@ -980,7 +1018,11 @@ public class DocCommentParser {
     protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
         if (textStart != -1) {
             if (textStart <= textEnd) {
-                list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                if (isMarkdown) {
+                    list.add(m.at(textStart).newMarkdownTree(newString(textStart, textEnd + 1)));
+                } else {
+                    list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                }
             }
             textStart = -1;
         }

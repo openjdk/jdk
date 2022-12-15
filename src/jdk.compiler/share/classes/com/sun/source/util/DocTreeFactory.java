@@ -49,6 +49,7 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.MarkdownTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.ReferenceTree;
@@ -234,6 +235,15 @@ public interface DocTreeFactory {
      * @return a {@code LiteralTree} object
      */
     LiteralTree newLiteralTree(TextTree text);
+
+    /**
+     * Creates a new {@code MarkdownTree} object, to represent a fragment of Markdown code.
+     * @param code the code
+     * @return a {@code MarkdownTree} object
+     *
+     * @since 21
+     */
+    MarkdownTree newMarkdownTree(String code);
 
     /**
      * Creates a new {@code ParamTree} object, to represent a {@code @param} tag.

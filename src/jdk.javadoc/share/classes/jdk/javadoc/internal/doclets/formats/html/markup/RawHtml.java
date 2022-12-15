@@ -56,6 +56,16 @@ public class RawHtml extends Content {
     }
 
     /**
+     * Creates HTML for a fragment of Markdown output.
+     *
+     * @param markdownOutput the fragment
+     * @return the HTML
+     */
+    public static RawHtml markdown(CharSequence markdownOutput) {
+        return of(markdownOutput);
+    }
+
+    /**
      * Creates HTML for the start of an element.
      *
      * @param name the name of the element
