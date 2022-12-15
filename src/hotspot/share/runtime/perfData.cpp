@@ -84,7 +84,8 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
 
   const char* prefix = PerfDataManager::ns_to_string(ns);
 
-  _name = NEW_C_HEAP_ARRAY(char, strlen(name) + strlen(prefix) + 2, mtInternal);
+  const size_t _name_size = strlen(name) + strlen(prefix) + 2;
+  _name = NEW_C_HEAP_ARRAY(char, _name_size, mtInternal);
   assert(strlen(name) != 0, "invalid name");
 
   if (ns == NULL_NS) {
@@ -100,7 +101,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
      }
   }
   else {
-    sprintf(_name, "%s.%s", prefix, name);
+    os::snprintf_checked(_name, _name_size, "%s.%s", prefix, name);
     // set the F_Supported flag based on the given namespace.
     if (PerfDataManager::is_stable_supported(ns) ||
         PerfDataManager::is_unstable_supported(ns)) {
@@ -334,7 +335,7 @@ char* PerfDataManager::counter_name(const char* ns, const char* name) {
 
    size_t len = strlen(ns) + strlen(name) + 2;
    char* result = NEW_RESOURCE_ARRAY(char, len);
-   sprintf(result, "%s.%s", ns, name);
+   os::snprintf_checked(result, len, "%s.%s", ns, name);
    return result;
 }
 

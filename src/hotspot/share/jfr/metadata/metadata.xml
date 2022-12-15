@@ -329,6 +329,7 @@
     <Field type="ulong" contentType="bytes" name="edenUsedSize" label="Eden Used Size" />
     <Field type="ulong" contentType="bytes" name="edenTotalSize" label="Eden Total Size" />
     <Field type="ulong" contentType="bytes" name="survivorUsedSize" label="Survivor Used Size" />
+    <Field type="ulong" contentType="bytes" name="oldGenUsedSize" label="Old Generation Used Size" />
     <Field type="uint" name="numberOfRegions" label="Number of Regions" />
   </Event>
 
@@ -937,6 +938,7 @@
   <Event name="CompilerConfiguration" category="Java Virtual Machine, Compiler" label="Compiler Configuration" thread="false" period="endChunk" startTime="false">
     <Field type="int" name="threadCount" label="Thread Count" />
     <Field type="boolean" name="tieredCompilation" label="Tiered Compilation" />
+    <Field type="boolean" name="dynamicCompilerThreadCount" label="Uses Dynamic Number of Compiler Threads" />
   </Event>
 
   <Event name="CodeCacheStatistics" category="Java Virtual Machine, Code Cache" label="Code Cache Statistics" thread="false" period="everyChunk" startTime="false">

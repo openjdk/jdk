@@ -792,8 +792,8 @@ static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
   for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
     Node* u = m->fast_out(i);
     if (u->is_CFG()) {
-      if (u->Opcode() == Op_NeverBranch) {
-        u = ((NeverBranchNode*)u)->proj_out(0);
+      if (u->is_NeverBranch()) {
+        u = u->as_NeverBranch()->proj_out(0);
         enqueue_cfg_uses(u, wq);
       } else {
         wq.push(u);
@@ -976,7 +976,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 #endif
             lca = place_outside_loop(lca, n_loop);
             assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
-            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->Opcode() == Op_NeverBranch, "must not be moved into inner loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->is_NeverBranch(), "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1181,7 +1181,7 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
     Node* dom = idom(useblock);
     if (loop->is_member(get_loop(dom)) ||
         // NeverBranch nodes are not assigned to the loop when constructed
-        (dom->Opcode() == Op_NeverBranch && loop->is_member(get_loop(dom->in(0))))) {
+        (dom->is_NeverBranch() && loop->is_member(get_loop(dom->in(0))))) {
       break;
     }
     useblock = dom;
@@ -1733,7 +1733,7 @@ Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
 bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* u = n->fast_out(i);
-    if (u->Opcode() == Op_Opaque1) {
+    if (u->is_Opaque1()) {
       return false;  // Found loop limit, bugfix for 4677003
     }
     // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
