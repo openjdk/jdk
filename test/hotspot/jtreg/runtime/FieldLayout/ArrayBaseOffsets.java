@@ -22,18 +22,32 @@
  */
 
 /*
- * @test id=no-ccp
+ * @test id=with-coop-no-ccp
  * @library /test/lib
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -XX:-UseCompressedClassPointers ArrayBaseOffsets
+ * @run main/othervm -XX:+UseCompressedOops -XX:-UseCompressedClassPointers ArrayBaseOffsets
  */
 /*
- * @test id=with-ccp
+ * @test id=with-coops-with-ccp
  * @library /test/lib
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -XX:+UseCompressedClassPointers ArrayBaseOffsets
+ * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers ArrayBaseOffsets
+ */
+/*
+ * @test id=no-coop-no-ccp
+ * @library /test/lib
+ * @requires vm.bits == "64"
+ * @modules java.base/jdk.internal.misc
+ * @run main/othervm -XX:-UseCompressedOops -XX:-UseCompressedClassPointers ArrayBaseOffsets
+ */
+/*
+ * @test id=no-coops-with-ccp
+ * @library /test/lib
+ * @requires vm.bits == "64"
+ * @modules java.base/jdk.internal.misc
+ * @run main/othervm -XX:-UseCompressedOops -XX:+UseCompressedClassPointers ArrayBaseOffsets
  */
 /*
  * @test id=32bit
