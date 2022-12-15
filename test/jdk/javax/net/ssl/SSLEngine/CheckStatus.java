@@ -25,7 +25,7 @@
  * @test
  * @bug 4948079
  * @summary SSLEngineResult needs updating [none yet]
- * @ignore the dependent implementation details are changed
+ * @ignore 8298872
  * @run main/othervm -Djsse.enableCBCProtection=false CheckStatus
  *
  * @author Brad Wetmore
