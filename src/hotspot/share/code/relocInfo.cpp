@@ -243,7 +243,7 @@ Relocation* RelocIterator::reloc() {
 }
 
 // Verify all the destructors are trivial, so we don't need to worry about
-// destroying old contents of a RelocationHolder being assigned.
+// destroying old contents of a RelocationHolder being assigned or destroyed.
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Reloc) \
   static_assert(std::is_trivially_destructible<Reloc>::value, "must be");
 
