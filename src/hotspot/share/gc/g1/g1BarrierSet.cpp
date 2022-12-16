@@ -110,7 +110,11 @@ void G1BarrierSet::invalidate(MemRegion mr) {
 
   // skip young gen cards
   if (*byte == G1CardTable::g1_young_card_val()) {
-    assert(mr.word_size() <= HeapRegion::GrainWords, "Invalidated MemRegion is larger than HeapRegion in young gen");
+    // MemRegion should not span multiple regions for the young gen.
+    DEBUG_ONLY(HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
+    assert(containing_hr->is_young(), "it should be young");
+    assert(containing_hr->is_in(mr.start()), "it should contain start");
+    assert(containing_hr->is_in(mr.last()), "it should also contain last");
     return;
   }
 
