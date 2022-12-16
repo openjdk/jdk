@@ -717,6 +717,7 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
+java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
 
 ############################################################################
 
