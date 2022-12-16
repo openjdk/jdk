@@ -46,7 +46,7 @@ import java.util.Random;
 
 public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 3333;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int start;
@@ -62,12 +62,13 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
         }
         tmp = new int[SIZE];
         Random ran = new Random(31415926);
-        start = 999 + ran.nextInt() % 100;
-        limit = start + 1357;
+        start = ran.nextInt() % 100;
+        limit = start + 235;
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int SimpleIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -78,7 +79,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int indexedByIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -89,7 +91,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedMultiple() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -100,7 +103,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedComplexExpr() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -111,7 +115,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] ivUsedAnotherLoop() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -119,7 +124,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
             res[i] = a[i] * 100;
         }
         for (int j = i; j < i + 55; j++) {
-            res[j] = a[j - 500] + 2323;
+            res[j] = a[j] + 2323;
         }
         return res;
     }

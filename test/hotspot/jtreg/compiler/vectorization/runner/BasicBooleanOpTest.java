@@ -44,7 +44,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicBooleanOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private boolean[] a;
     private boolean[] b;
@@ -71,7 +71,8 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public boolean[] vectorAnd() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -81,7 +82,8 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public boolean[] vectorOr() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -91,7 +93,8 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public boolean[] vectorXor() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {

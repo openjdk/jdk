@@ -46,7 +46,7 @@ import java.util.Random;
 
 public class LoopCombinedOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int[] b;
@@ -82,7 +82,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] opWithConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -92,7 +93,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] opWithLoopInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -102,7 +104,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] opWithConstantAndLoopInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -112,7 +115,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOps() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -122,7 +126,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWithMultipleConstants() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -132,7 +137,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleStores() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -146,7 +152,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleStoresWithCommonSubExpression() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -160,7 +167,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypes() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -172,7 +180,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] multipleOpsWith3DifferentTypes() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -186,7 +195,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] multipleOpsWith2NonAdjacentTypes() {
         short[] res1 = new short[SIZE];
         long[] res2 = new long[SIZE];
@@ -198,7 +208,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypesAndConstant() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -210,7 +221,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypesAndInvariant() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -222,7 +234,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypesAndComplexExpression() {
         short[] res1 = new short[SIZE];
         int[] res2 = new int[SIZE];
@@ -234,7 +247,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleOpsWith2DifferentTypesAndSharedOp() {
         int i = 0, sum = 0;
         int[] res1 = new int[SIZE];
@@ -283,7 +297,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] manuallyUnrolledStride2() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE - 1; i += 2) {
@@ -294,7 +309,8 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int partialVectorizableLoop() {
         int[] res = new int[SIZE];
         int k = 9;

@@ -46,7 +46,7 @@ import java.util.Random;
 
 public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] ints;
     private short[] shorts;
@@ -77,7 +77,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     // ---------------- Linear Indexes ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexPlusConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE / 2; i++) {
@@ -87,7 +88,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexMinusConstant() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 2; i < SIZE; i++) {
@@ -97,7 +99,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexPlusInvariant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -108,7 +111,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexMinusInvariant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -119,7 +123,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexWithInvariantAndConstant() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -130,7 +135,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexWithTwoInvariants() {
         int[] res = new int[SIZE];
         System.arraycopy(ints, 0, res, 0, SIZE);
@@ -276,7 +282,8 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
     // ---------------- Multiple Operations ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] differentIndexWithDifferentTypes() {
         int[] res1 = new int[SIZE];
         short[] res2 = new short[SIZE];

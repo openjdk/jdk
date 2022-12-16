@@ -44,7 +44,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicLongOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private long[] a;
     private long[] b;
@@ -63,7 +63,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorNeg() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -73,7 +74,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorAbs() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -83,7 +85,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -93,7 +96,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -103,7 +107,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorMul() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -113,7 +118,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -123,7 +129,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sve", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,7 +141,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorNot() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -144,7 +152,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorAnd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -154,7 +163,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorOr() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -164,7 +174,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorXor() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -175,7 +186,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorShiftLeft() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -185,7 +197,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorSignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -195,7 +208,8 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] vectorUnsignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

@@ -48,7 +48,7 @@ import sun.misc.Unsafe;
 
 public class ArrayUnsafeOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private static Unsafe unsafe;
 

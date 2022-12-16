@@ -46,7 +46,7 @@ import java.util.Random;
 
 public class LoopControlFlowTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int[] b;
@@ -64,7 +64,8 @@ public class LoopControlFlowTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] loopInvariantCondition() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

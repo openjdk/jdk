@@ -44,7 +44,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicShortOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private short[] a;
     private short[] b;
@@ -66,7 +66,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorNeg() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -76,7 +77,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorAbs() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -86,7 +88,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -96,7 +99,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,7 +110,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorMul() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -116,7 +121,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorMulAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -126,7 +132,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorMulSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -137,7 +144,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorNot() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -147,7 +155,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorAnd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -157,7 +166,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorOr() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -167,7 +177,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorXor() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -178,7 +189,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorShiftLeft() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -188,7 +200,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorSignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -223,7 +236,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -234,7 +248,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ------------- ReverseBytes -------------
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] reverseBytesWithShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

@@ -46,7 +46,7 @@ import java.util.Random;
 
 public class ArrayShiftOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] ints;
     private long[] longs;
@@ -70,7 +70,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] intCombinedRotateShift() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -80,7 +81,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] longCombinedRotateShift() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -90,7 +92,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] intShiftLargeDistConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -100,7 +103,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] intShiftLargeDistInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -110,7 +114,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] shortShiftLargeDistConstant() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -120,7 +125,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] shortShiftLargeDistInvariant() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -130,7 +136,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] longShiftLargeDistConstant() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -140,7 +147,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] longShiftLargeDistInvariant() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -172,7 +180,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"}, counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
