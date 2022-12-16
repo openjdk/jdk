@@ -93,7 +93,6 @@
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
