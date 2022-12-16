@@ -256,7 +256,11 @@ VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Relocation)
 #undef VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX
 #undef VERIFY_TRIVIALLY_DESTRUCTIBLE
 
-// Define all the copy_into functions.
+// Define all the copy_into functions.  These rely on all Relocation types
+// being trivially destructible (verified above).  So it doesn't matter
+// whether the target holder has been previously initialized or not.  There's
+// no need to consider that distinction and destruct the relocation in an
+// already initialized holder.
 #define DEFINE_COPY_INTO_AUX(Reloc)                             \
   void Reloc::copy_into(RelocationHolder& holder) const {       \
     copy_into_helper(*this, holder);                            \

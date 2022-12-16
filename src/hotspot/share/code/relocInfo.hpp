@@ -843,7 +843,7 @@ class Relocation {
   // Intentionally public non-virtual destructor, even though polymorphic.
   // We never heap allocate a Relocation, so never delete through a base pointer.
   // RelocationHolder depends on (and verifies) the destructor for all relocation
-  // types is trivial, so can't be virtual.
+  // types is trivial, so this must not be virtual (and hence non-trivial).
   ~Relocation() = default;
 
   relocInfo::relocType type()              const { return _rtype; }
@@ -885,6 +885,7 @@ inline RelocationHolder::RelocationHolder(const RelocationHolder& from) {
 inline RelocationHolder& RelocationHolder::operator=(const RelocationHolder& from) {
   // All Relocation types are trivially destructible (verified in .cpp file),
   // so we don't need to destruct our old value before copying over it.
+  // If not for that we would need to decide what to do about self-assignment.
   from.reloc()->copy_into(*this);
   return *this;
 }
