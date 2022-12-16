@@ -487,10 +487,7 @@ class RelocationHolder {
   // capture the result of the placement new, and use that to access the base
   // subobject.
   static const size_t _relocbuf_size = 5 * sizeof(void*);
-  union {
-    char _relocbuf[_relocbuf_size];
-    void* alignment_dummy;
-  };
+  alignas(void*) char _relocbuf[_relocbuf_size];
 
   template<typename Reloc, typename... Args>
   void emplace_relocation(const Args&... args) {
