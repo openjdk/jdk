@@ -938,10 +938,13 @@ private:
   Klass* security_get_caller_class(int depth);
 
   // Print stack trace in external format
+  // These variants print carrier/platform thread information only.
   void print_stack_on(outputStream* st);
   void print_stack() { print_stack_on(tty); }
+  // This prints the currently mounted virtual thread.
   void print_vthread_stack_on(outputStream* st);
-
+  // This prints the active stack: either carrier/platform or virtual.
+  void print_active_stack_on(outputStream* st);
   // Print stack trace for checked JNI warnings and JNI fatal errors.
   // This is the external format from above, but selecting the platform
   // or vthread as applicable.
