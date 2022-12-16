@@ -26,7 +26,6 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
-import java.util.Objects;
 
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
