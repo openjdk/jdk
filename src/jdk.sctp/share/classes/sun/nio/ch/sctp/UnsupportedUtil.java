@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,17 +21,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.shared;
+package sun.nio.ch.sctp;
 
-import sun.jvm.hotspot.debugger.*;
+/**
+ * Utility class used by implementations on platforms <em>not</em> supporting SCTP.
+ * <p>
+ * This class is not present on the "unix" platform because unix can support SCTP.
+ */
+public final class UnsupportedUtil {
 
-/** No additional functionality for now */
+    private static final String MESSAGE = "SCTP not supported on this platform";
 
-public class OffsetTableContigSpace extends ContiguousSpace {
-  public OffsetTableContigSpace(Address addr) {
-    super(addr);
-  }
+    // Suppresses default constructor, ensuring non-instantiability.
+    private UnsupportedUtil() {}
+
+    static UnsupportedOperationException sctpUnsupported() {
+        return new UnsupportedOperationException(MESSAGE);
+    }
+
 }

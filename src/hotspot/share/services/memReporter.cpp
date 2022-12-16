@@ -31,6 +31,16 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+// Diff two counters, express them as signed, with range checks
+static ssize_t counter_diff(size_t c1, size_t c2) {
+  assert(c1 <= SSIZE_MAX, "counter out of range: " SIZE_FORMAT ".", c1);
+  assert(c2 <= SSIZE_MAX, "counter out of range: " SIZE_FORMAT ".", c2);
+  if (c1 > SSIZE_MAX || c2 > SSIZE_MAX) {
+    return 0;
+  }
+  return c1 - c2;
+}
+
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
 }
@@ -462,8 +472,9 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
   }
   if (current_count > 0) {
     out->print(" #" SIZE_FORMAT "", current_count);
-    if (current_count != early_count) {
-      out->print(" %+d", (int)(current_count - early_count));
+    const ssize_t delta_count = counter_diff(current_count, early_count);
+    if (delta_count != 0) {
+      out->print(" " SSIZE_PLUS_FORMAT, delta_count);
     }
   }
 }
@@ -478,8 +489,9 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   }
 
   out->print(" #" SIZE_FORMAT "", current_count);
-  if (current_count != early_count) {
-    out->print(" %+d", (int)(current_count - early_count));
+  const ssize_t delta_count = counter_diff(current_count, early_count);
+  if (delta_count != 0) {
+    out->print(" " SSIZE_PLUS_FORMAT, delta_count);
   }
 }
 
@@ -551,30 +563,33 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
     if (flag == mtClass) {
       // report class count
       out->print("%27s (classes #" SIZE_FORMAT "", " ", _current_baseline.class_count());
-      int class_count_diff = (int)(_current_baseline.class_count() -
-        _early_baseline.class_count());
-      if (_current_baseline.class_count() != _early_baseline.class_count()) {
-        out->print(" %+d", (int)(_current_baseline.class_count() - _early_baseline.class_count()));
+      const ssize_t class_count_diff =
+          counter_diff(_current_baseline.class_count(), _early_baseline.class_count());
+      if (class_count_diff != 0) {
+        out->print(" " SSIZE_PLUS_FORMAT, class_count_diff);
       }
       out->print_cr(")");
 
       out->print("%27s (  instance classes #" SIZE_FORMAT, " ", _current_baseline.instance_class_count());
-      if (_current_baseline.instance_class_count() != _early_baseline.instance_class_count()) {
-        out->print(" %+d", (int)(_current_baseline.instance_class_count() - _early_baseline.instance_class_count()));
+      const ssize_t instance_class_count_diff =
+          counter_diff(_current_baseline.instance_class_count(), _early_baseline.instance_class_count());
+      if (instance_class_count_diff != 0) {
+        out->print(" " SSIZE_PLUS_FORMAT, instance_class_count_diff);
       }
       out->print(", array classes #" SIZE_FORMAT, _current_baseline.array_class_count());
-      if (_current_baseline.array_class_count() != _early_baseline.array_class_count()) {
-        out->print(" %+d", (int)(_current_baseline.array_class_count() - _early_baseline.array_class_count()));
+      const ssize_t array_class_count_diff =
+          counter_diff(_current_baseline.array_class_count(), _early_baseline.array_class_count());
+      if (array_class_count_diff != 0) {
+        out->print(" " SSIZE_PLUS_FORMAT, array_class_count_diff);
       }
       out->print_cr(")");
 
     } else if (flag == mtThread) {
       // report thread count
       out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
-      int thread_count_diff = (int)(_current_baseline.thread_count() -
-          _early_baseline.thread_count());
+      const ssize_t thread_count_diff = counter_diff(_current_baseline.thread_count(), _early_baseline.thread_count());
       if (thread_count_diff != 0) {
-        out->print(" %+d", thread_count_diff);
+        out->print(" " SSIZE_PLUS_FORMAT, thread_count_diff);
       }
       out->print_cr(")");
 

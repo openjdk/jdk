@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +24,52 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
+#include "opto/c2_CodeStubs.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 #define __ masm.
-void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
+
+int C2SafepointPollStub::max_size() const {
+  return 13 * 4;
+}
+
+void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
-
   RuntimeAddress callback_addr(stub);
 
-  __ bind(entry->_stub_label);
-  InternalAddress safepoint_pc(masm.pc() - masm.offset() + entry->_safepoint_offset);
-#ifdef _LP64
-  __ lea(rscratch1, safepoint_pc);
-  __ movptr(Address(r15_thread, JavaThread::saved_exception_pc_offset()), rscratch1);
-#else
-  const Register tmp1 = rcx;
-  const Register tmp2 = rdx;
-  __ push(tmp1);
-  __ push(tmp2);
-
-  __ lea(tmp1, safepoint_pc);
-  __ get_thread(tmp2);
-  __ movptr(Address(tmp2, JavaThread::saved_exception_pc_offset()), tmp1);
-
-  __ pop(tmp2);
-  __ pop(tmp1);
-#endif
-  __ jump(callback_addr);
+  __ bind(entry());
+  InternalAddress safepoint_pc(__ pc() - __ offset() + _safepoint_offset);
+  __ relocate(safepoint_pc.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, safepoint_pc.target(), offset);
+    __ addi(t0, t0, offset);
+  });
+  __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
+  __ far_jump(callback_addr);
 }
+
+int C2EntryBarrierStub::max_size() const {
+  // 4 bytes for alignment
+  return 8 * 4 + 4;
+}
+
+void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+
+  int32_t offset = 0;
+  __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+  __ jalr(ra, t0, offset);
+  __ j(continuation());
+
+  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on RISC-V
+  __ align(4);
+  __ bind(guard());
+  __ relocate(entry_guard_Relocation::spec());
+  __ emit_int32(0);  // nmethod guard value
+}
+
 #undef __
