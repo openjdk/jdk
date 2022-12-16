@@ -989,7 +989,9 @@ class oop_Relocation : public DataRelocation {
     // Assert that they don't get generated accidentally!
     assert(relocInfo::mustIterateImmediateOopsInCode(),
            "Must return true so we will search for oops as roots etc. in the code.");
-    return RelocationHolder::construct<oop_Relocation>(0, 0);
+    const int oop_index = 0;
+    const int offset    = 0;    // if you want an offset, use the oop pool
+    return RelocationHolder::construct<oop_Relocation>(oop_index, offset);
   }
 
   void copy_into(RelocationHolder& holder) const;
@@ -1038,7 +1040,9 @@ class metadata_Relocation : public DataRelocation {
   }
   // an metadata in the instruction stream
   static RelocationHolder spec_for_immediate() {
-    return RelocationHolder::construct<metadata_Relocation>(0, 0);
+    const int metadata_index = 0;
+    const int offset    = 0;    // if you want an offset, use the metadata pool
+    return RelocationHolder::construct<metadata_Relocation>(metadata_index, offset);
   }
 
   void copy_into(RelocationHolder& holder) const;
