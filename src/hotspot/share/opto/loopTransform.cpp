@@ -3595,7 +3595,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   }
   CountedLoopNode *cl = _head->as_CountedLoop();
 #ifdef ASSERT
-  // Call collect_loop_core_nodes to exercise the assert that check that it finds the right number of nodes
+  // Call collect_loop_core_nodes to exercise the assert that checks that it finds the right number of nodes
   if (empty_loop_with_extra_nodes_candidate(phase)) {
     Unique_Node_List wq;
     collect_loop_core_nodes(phase, wq);
