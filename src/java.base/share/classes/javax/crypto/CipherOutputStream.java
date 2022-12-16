@@ -92,7 +92,8 @@ public class CipherOutputStream extends FilterOutputStream {
      * operation, given the input length {@code inLen} (in bytes)
      *
      * If obuffer is null/zero-sized, do not allocate a new buffer.
-     * This reduces allocation for AEAD ciphers that never return data from update
+     * This reduces allocation for authenticated decryption
+     * that never returns data from update
      *
      * @param inLen the input length (in bytes)
      */
@@ -151,7 +152,7 @@ public class CipherOutputStream extends FilterOutputStream {
         ensureCapacity(1);
         try {
             // initial obuffer is assigned by update/doFinal;
-            // for AEAD ciphers, obuffer is always null or zero-length here
+            // for AEAD decryption, obuffer is always null or zero-length here
             int ostored;
             if (obuffer != null && obuffer.length > 0) {
                 ostored = cipher.update(ibuffer, 0, 1, obuffer);
@@ -201,7 +202,7 @@ public class CipherOutputStream extends FilterOutputStream {
         ensureCapacity(len);
         try {
             // initial obuffer is assigned by update/doFinal;
-            // for AEAD ciphers, obuffer is always null or zero-length here
+            // for AEAD decryption, obuffer is always null or zero-length here
             int ostored;
             if (obuffer != null && obuffer.length > 0) {
                 ostored = cipher.update(b, off, len, obuffer);
