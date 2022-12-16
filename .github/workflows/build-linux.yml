@@ -97,6 +97,10 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Get Runner Name'
+        run: >
+          echo $RUNNER_NAME
+
       - name: 'Set architecture'
         id: arch
         run: |

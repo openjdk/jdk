@@ -98,6 +98,10 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Get Runner Name'
+        run: >
+          echo $RUNNER_NAME
+
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Visual Studio Installer
