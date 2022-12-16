@@ -530,6 +530,9 @@ class RelocationHolder {
   }
 
   RelocationHolder();           // Initializes type to none.
+
+  // Depends on the destructor for all relocation types being trivial
+  // (verified in .cpp file).
   ~RelocationHolder() = default;
 
   RelocationHolder(const RelocationHolder& from);
@@ -839,10 +842,10 @@ class Relocation {
   // Make a filler relocation.
   Relocation() : Relocation(relocInfo::none) {}
 
-  // Intentionally public non-virtual destructor, even though polymorphic.
-  // We never heap allocate a Relocation, so never delete through a base pointer.
-  // RelocationHolder depends on (and verifies) the destructor for all relocation
-  // types is trivial, so this must not be virtual (and hence non-trivial).
+  // Intentionally public non-virtual destructor, even though polymorphic.  We
+  // never heap allocate a Relocation, so never delete through a base pointer.
+  // RelocationHolder depends on the destructor for all relocation types being
+  // trivial, so this must not be virtual (and hence non-trivial).
   ~Relocation() = default;
 
   relocInfo::relocType type()              const { return _rtype; }
