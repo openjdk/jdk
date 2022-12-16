@@ -108,7 +108,7 @@ public class SecondaryErrorTest {
     if (with_callstacks) {
         patternlist.add(Pattern.compile("\\[siginfo:.*\\(SIGSEGV\\).*\\]"));
         patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
-        patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
+        patternlist.add(Pattern.compile(".*crash_with_segfault.*"));
     }
     // and again, to see that repeated error reporting steps work
     patternlist.add(Pattern.compile("Will crash now \\(TestCrashInErrorHandler=14\\)..."));
@@ -116,7 +116,7 @@ public class SecondaryErrorTest {
     if (with_callstacks) {
         patternlist.add(Pattern.compile("\\[siginfo:.*\\(SIGSEGV\\).*\\]"));
         patternlist.add(Pattern.compile("\\[stack: Native frames:.*"));
-        patternlist.add(Pattern.compile(".*VMError::controlled_crash.*"));
+        patternlist.add(Pattern.compile(".*crash_with_segfault.*"));
     }
     Pattern[] pattern = patternlist.toArray(new Pattern[] {});
 
