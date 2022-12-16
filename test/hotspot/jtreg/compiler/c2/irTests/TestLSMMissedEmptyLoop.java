@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
+ * @bug 8297724
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestLSMMissedEmptyLoop
