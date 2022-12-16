@@ -28,6 +28,7 @@
 
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "sanitizers/address.h"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -79,10 +80,12 @@ class BinListImpl {
   struct Block {
     Block* const _next;
     const size_t _word_size;
-    Block(Block* next, size_t word_size) :
-      _next(next),
-      _word_size(word_size)
-    {}
+
+    Block(Block* next, size_t word_size) : _next(next), _word_size(word_size) {
+      // Poison the remaining memory region.
+      ASAN_POISON_MEMORY_REGION(reinterpret_cast<char*>(this) + sizeof(Block),
+                                (_word_size * BytesPerWord) - sizeof(Block));
+    }
   };
 
 #define BLOCK_FORMAT          "Block @" PTR_FORMAT ": size: " SIZE_FORMAT ", next: " PTR_FORMAT
@@ -140,6 +143,8 @@ public:
            word_size <= MaxWordSize, "bad block size");
     const int index = index_for_word_size(word_size);
     Block* old_head = _blocks[index];
+    // Ensure the memory region for the block is unpoisoned.
+    ASAN_UNPOISON_MEMORY_REGION(p, sizeof(Block));
     Block* new_head = new(p)Block(old_head, word_size);
     _blocks[index] = new_head;
     _counter.add(word_size);

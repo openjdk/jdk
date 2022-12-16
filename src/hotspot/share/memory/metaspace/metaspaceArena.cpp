@@ -40,6 +40,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "sanitizers/address.h"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -233,6 +234,8 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "taken from fbl (now: %d, " SIZE_FORMAT ").",
           _fbl->count(), _fbl->total_size());
+      // Unpoison memory region for requested size. The extra size should remain poisoned.
+      ASAN_UNPOISON_MEMORY_REGION(p, requested_word_size * BytesPerWord);
       // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
       // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner())
       // and can just return here.
@@ -243,22 +246,28 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   // Primary allocation
   p = allocate_inner(requested_word_size);
 
+  if (p != nullptr) {
+    // Unpoison memory region for requested size. The extra size should remain poisoned.
+    ASAN_UNPOISON_MEMORY_REGION(p, requested_word_size * BytesPerWord);
 #ifdef ASSERT
-  // Fence allocation
-  if (p != NULL && Settings::use_allocation_guard()) {
-    STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
-    MetaWord* guard = allocate_inner(sizeof(Fence) / BytesPerWord);
-    if (guard != NULL) {
-      // Ignore allocation errors for the fence to keep coding simple. If this
-      // happens (e.g. because right at this time we hit the Metaspace GC threshold)
-      // we miss adding this one fence. Not a big deal. Note that his would
-      // be pretty rare. Chances are much higher the primary allocation above
-      // would have already failed).
-      Fence* f = new(guard) Fence(_first_fence);
-      _first_fence = f;
+    // Fence allocation
+    if (Settings::use_allocation_guard()) {
+      STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
+      MetaWord* guard = allocate_inner(sizeof(Fence) / BytesPerWord);
+      if (guard != NULL) {
+        // Unpoison the memory region for the fence.
+        ASAN_UNPOISON_MEMORY_REGION(guard, sizeof(Fence));
+        // Ignore allocation errors for the fence to keep coding simple. If this
+        // happens (e.g. because right at this time we hit the Metaspace GC threshold)
+        // we miss adding this one fence. Not a big deal. Note that his would
+        // be pretty rare. Chances are much higher the primary allocation above
+        // would have already failed).
+        Fence* f = new(guard) Fence(_first_fence);
+        _first_fence = f;
+      }
     }
-  }
 #endif // ASSERT
+  }
 
   return p;
 }

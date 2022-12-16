@@ -42,6 +42,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/address.h"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -234,6 +235,9 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
 
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
   assert_is_aligned(_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
+
+  // Poison the memory region. It will be unpoisoned later by MetaspaceArena.
+  ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
 }
 
 // Create a node of a given size (it will create its own space).
@@ -268,6 +272,10 @@ VirtualSpaceNode::~VirtualSpaceNode() {
   UL(debug, ": dies.");
   if (_owns_rs) {
     _rs.release();
+  } else {
+    // We do not own the memory region, so we need to unpoison it to undo the previous poisoning in
+    // the constructor.
+    ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
   }
 
   // Update counters in vslist
