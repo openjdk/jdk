@@ -86,11 +86,6 @@ import static javax.tools.DocumentationTool.Location.TAGLET_PATH;
 public class TagletManager {
 
     /**
-     * The default separator for the simple tag option.
-     */
-    public static final char SIMPLE_TAGLET_OPT_SEPARATOR = ':';
-
-    /**
      * All taglets, keyed either by their {@link Taglet#getName() name},
      * or by an alias.
      *
@@ -598,7 +593,7 @@ public class TagletManager {
 
         addStandardTaglet(new ParamTaglet());
         addStandardTaglet(new ReturnTaglet());
-        addStandardTaglet(new ThrowsTaglet(), EXCEPTION);
+        addStandardTaglet(new ThrowsTaglet(configuration), EXCEPTION);
         addStandardTaglet(
                 new SimpleTaglet(SINCE, resources.getText("doclet.Since"),
                     EnumSet.allOf(Location.class), !nosince));

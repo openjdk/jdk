@@ -115,7 +115,7 @@ sealed public interface ConstantInstruction extends Instruction {
      * {@return an intrinsic constant instruction}
      *
      * @param op the opcode for the specific type of intrinsic constant instruction,
-     *           which must be of kind {@link Kind#CONSTANT}
+     *           which must be of kind {@link Opcode.Kind#CONSTANT}
      */
     static IntrinsicConstantInstruction ofIntrinsic(Opcode op) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
@@ -128,7 +128,7 @@ sealed public interface ConstantInstruction extends Instruction {
      * {@return an argument constant instruction}
      *
      * @param op the opcode for the specific type of intrinsic constant instruction,
-     *           which must be of kind {@link Kind#CONSTANT}
+     *           which must be of kind {@link Opcode.Kind#CONSTANT}
      * @param value the constant value
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
@@ -142,7 +142,7 @@ sealed public interface ConstantInstruction extends Instruction {
      * {@return a load constant instruction}
      *
      * @param op the opcode for the specific type of load constant instruction,
-     *           which must be of kind {@link Kind#CONSTANT}
+     *           which must be of kind {@link Opcode.Kind#CONSTANT}
      * @param constant the constant value
      */
     static LoadConstantInstruction ofLoad(Opcode op, LoadableConstantEntry constant) {

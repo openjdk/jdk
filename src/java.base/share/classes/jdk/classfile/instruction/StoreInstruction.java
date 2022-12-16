@@ -58,7 +58,7 @@ sealed public interface StoreInstruction extends Instruction
      * {@return a local variable store instruction}
      *
      * @param op the opcode for the specific type of store instruction,
-     *           which must be of kind {@link Kind#STORE}
+     *           which must be of kind {@link Opcode.Kind#STORE}
      * @param slot the local varaible slot to store to
      */
     static StoreInstruction of(Opcode op, int slot) {

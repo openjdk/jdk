@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,68 +96,29 @@ public class TimeoutInErrorHandlingTest {
         output_detail.shouldMatch(".*timer expired, abort.*");
 
         // extract hs-err file
-        String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-        if (hs_err_file == null) {
+        File hs_err_file;
+        try {
+            hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
+        } catch (Exception e) {
             if (!verbose) {
                 System.err.println("<begin cmd output>");
                 System.err.println(output_detail.getOutput());
                 System.err.println("<end cmd output>");
             }
-            throw new RuntimeException("Did not find hs-err file in output.\n");
-        }
-
-        File f = new File(hs_err_file);
-        if (!f.exists()) {
-            if (!verbose) {
-                System.err.println("<begin cmd output>");
-                System.err.println(output_detail.getOutput());
-                System.err.println("<end cmd output>");
-            }
-            throw new RuntimeException("hs-err file missing at "
-                + f.getAbsolutePath() + ".\n");
+            throw e;
         }
 
         System.out.println("Found hs_err file. Scanning...");
-
-        FileInputStream fis = new FileInputStream(f);
-        BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-        String line = null;
-
 
         Pattern [] pattern = new Pattern[] {
             Pattern.compile(".*timeout occurred during error reporting in step.*"),
             Pattern.compile(".*timeout occurred during error reporting in step.*")
         };
-        int currentPattern = 0;
 
-        String lastLine = null;
-        StringBuilder saved_hs_err = new StringBuilder();
-        while ((line = br.readLine()) != null) {
-            saved_hs_err.append(line + System.lineSeparator());
-            if (currentPattern < pattern.length) {
-                if (pattern[currentPattern].matcher(line).matches()) {
-                    System.out.println("Found: " + line + ".");
-                    currentPattern ++;
-                }
-            }
-            lastLine = line;
-        }
-        br.close();
-
-        if (verbose) {
-            System.err.println("<begin hs_err contents>");
-            System.err.print(saved_hs_err);
-            System.err.println("<end hs_err contents>");
-        }
-
-        if (currentPattern < pattern.length) {
-            if (!verbose) {
-                System.err.println("<begin hs_err contents>");
-                System.err.print(saved_hs_err);
-                System.err.println("<end hs_err contents>");
-            }
-            throw new RuntimeException("hs-err file incomplete (first missing pattern: " +  currentPattern + ")");
-        }
+        // Note: we *dont* check for the end marker, since the hs-err file will likely not have
+        // one but a global timeout marker. As explained above, we don't check for that one either
+        // since it is too instable.
+        HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, null, false /* check end marker */,true /* verbose */);
 
         System.out.println("OK.");
 

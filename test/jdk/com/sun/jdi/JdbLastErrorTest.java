@@ -25,10 +25,10 @@
  * @test
  * @bug 8292302
  * @summary Test persistence of native last error value under jdb (Windows)
- * @requires (os.family == "windows")
+ * @requires (os.family == "windows") & (vm.compMode != "Xcomp") & (vm.compMode != "Xint")
  * @library /test/lib
- * @run compile --release 20 --enable-preview JdbLastErrorTest.java
- * @run main/othervm --enable-preview JdbLastErrorTest
+ * @enablePreview
+ * @run main/othervm JdbLastErrorTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -54,10 +54,10 @@ class TestNativeLastError {
         System.loadLibrary("Kernel32");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle getLastError = linker.downcallHandle(
-            lookup.lookup("GetLastError").orElseThrow(),
+            lookup.find("GetLastError").orElseThrow(),
             FunctionDescriptor.of(ValueLayout.JAVA_INT));
         MethodHandle setLastError = linker.downcallHandle(
-            lookup.lookup("SetLastError").orElseThrow(),
+            lookup.find("SetLastError").orElseThrow(),
             FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
 
         for (int i = 0; i < 10; i++) {

@@ -44,7 +44,7 @@ sealed public interface StackInstruction extends Instruction
      * {@return a stack manipulation instruction}
      *
      * @param op the opcode for the specific type of stack instruction,
-     *           which must be of kind {@link Kind#STACK}
+     *           which must be of kind {@link Opcode.Kind#STACK}
      */
     static StackInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.STACK);

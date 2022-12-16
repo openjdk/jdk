@@ -23,7 +23,7 @@
 // (http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf).
 
 #include "asm/macroAssembler.inline.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 
 /**********************************************************************

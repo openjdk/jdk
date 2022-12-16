@@ -27,6 +27,7 @@ package jdk.classfile.instruction;
 import jdk.classfile.CodeElement;
 import jdk.classfile.CodeModel;
 import jdk.classfile.Instruction;
+import jdk.classfile.Opcode;
 import jdk.classfile.impl.AbstractInstruction;
 
 /**

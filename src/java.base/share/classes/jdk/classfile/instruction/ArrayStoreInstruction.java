@@ -49,7 +49,7 @@ sealed public interface ArrayStoreInstruction extends Instruction
      * {@return an array store instruction}
      *
      * @param op the opcode for the specific type of array store instruction,
-     *           which must be of kind {@link Kind#ARRAY_STORE}
+     *           which must be of kind {@link Opcode.Kind#ARRAY_STORE}
      */
     static ArrayStoreInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.ARRAY_STORE);

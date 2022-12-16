@@ -56,7 +56,7 @@ sealed public interface ReturnInstruction extends Instruction
      * {@return a return instruction}
      *
      * @param op the opcode for the specific type of return instruction,
-     *           which must be of kind {@link Kind#RETURN}
+     *           which must be of kind {@link Opcode.Kind#RETURN}
      */
     static ReturnInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.RETURN);

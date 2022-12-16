@@ -71,6 +71,7 @@ public final class ClassPrinter {
          * <li>NestHost
          * <li>NestMembers
          * <li>PermittedSubclasses
+         * </ul>
          * @jvms 4.7 Attributes
          */
         CRITICAL_ATTRIBUTES,

@@ -49,7 +49,7 @@ sealed public interface TypeCheckInstruction extends Instruction
      * {@return a type check instruction}
      *
      * @param op the opcode for the specific type of type check instruction,
-     *           which must be of kind {@link Kind#TYPE_CHECK}
+     *           which must be of kind {@link Opcode.Kind#TYPE_CHECK}
      * @param type the type against which to check or cast
      */
     static TypeCheckInstruction of(Opcode op, ClassEntry type) {
@@ -61,7 +61,7 @@ sealed public interface TypeCheckInstruction extends Instruction
      * {@return a type check instruction}
      *
      * @param op the opcode for the specific type of type check instruction,
-     *           which must be of kind {@link Kind#TYPE_CHECK}
+     *           which must be of kind {@link Opcode.Kind#TYPE_CHECK}
      * @param type the type against which to check or cast
      */
     static TypeCheckInstruction of(Opcode op, ClassDesc type) {

@@ -60,7 +60,7 @@ sealed public interface LoadInstruction extends Instruction
      * {@return a local variable load instruction}
      *
      * @param op the opcode for the specific type of load instruction,
-     *           which must be of kind {@link Kind#LOAD}
+     *           which must be of kind {@link Opcode.Kind#LOAD}
      * @param slot the local varaible slot to load from
      */
     static LoadInstruction of(Opcode op, int slot) {

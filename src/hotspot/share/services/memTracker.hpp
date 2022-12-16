@@ -35,9 +35,9 @@
 #include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
-                    NativeCallStack(0) : NativeCallStack::empty_stack())
+                    NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
-                    NativeCallStack(1) : NativeCallStack::empty_stack())
+                    NativeCallStack(1) : FAKE_CALLSTACK)
 
 class MemBaseline;
 
@@ -109,7 +109,11 @@ class MemTracker : AllStatic {
     if (!enabled()) {
       return memblock;
     }
-    return MallocTracker::record_free(memblock);
+    return MallocTracker::record_free_block(memblock);
+  }
+  static inline void deaccount(MallocHeader::FreeInfo free_info) {
+    assert(enabled(), "NMT must be enabled");
+    MallocTracker::deaccount(free_info);
   }
 
   // Record creation of an arena
@@ -224,10 +228,6 @@ class MemTracker : AllStatic {
     return _baseline;
   }
 
-  static NMT_TrackingLevel cmdline_tracking_level() {
-    return _cmdline_tracking_level;
-  }
-
   static void tuning_statistics(outputStream* out);
 
  private:
@@ -235,12 +235,7 @@ class MemTracker : AllStatic {
 
  private:
   // Tracking level
-  static volatile NMT_TrackingLevel   _tracking_level;
-  // If NMT option value passed by launcher through environment
-  // variable is valid
-  static bool                         _is_nmt_env_valid;
-  // command line tracking level
-  static NMT_TrackingLevel            _cmdline_tracking_level;
+  static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
   static MemBaseline      _baseline;
   // Query lock
