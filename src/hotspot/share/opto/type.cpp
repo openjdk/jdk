@@ -787,9 +787,10 @@ bool Type::is_nan()    const {
 }
 
 #ifdef ASSERT
-class VerifyMeetMark;
+class VerifyMeet;
 class VerifyMeetResult : public ArenaObj {
-  friend class VerifyMeetMark;
+  friend class VerifyMeet;
+  friend class Type;
 private:
   class VerifyMeetResultEntry {
   private:
@@ -832,10 +833,6 @@ private:
   };
   uint _depth;
   GrowableArray<VerifyMeetResultEntry> _cache;
-public:
-  VerifyMeetResult(Compile* C) :
-          _depth(0), _cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
-  }
 
   // With verification code, the meet of A and B causes the computation of:
   // 1- meet(A, B)
@@ -897,38 +894,47 @@ public:
   bool empty_cache() const {
     return _cache.length() == 0;
   }
+public:
+  VerifyMeetResult(Compile* C) :
+          _depth(0), _cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
+  }
 };
 
 void Type::assert_type_verify_empty() const {
   assert(Compile::current()->_type_verify == NULL || Compile::current()->_type_verify->empty_cache(), "cache should have been discarded");
 }
 
-class VerifyMeetMark {
+class VerifyMeet {
 private:
   Compile* _C;
 public:
-  VerifyMeetMark(Compile* C) : _C(C) {
+  VerifyMeet(Compile* C) : _C(C) {
     if (C->_type_verify == NULL) {
       C->_type_verify = new (C->comp_arena())VerifyMeetResult(C);
     }
     _C->_type_verify->_depth++;
   }
 
-  ~VerifyMeetMark() {
+  ~VerifyMeet() {
     assert(_C->_type_verify->_depth != 0, "");
     _C->_type_verify->_depth--;
     if (_C->_type_verify->_depth == 0) {
       _C->_type_verify->_cache.trunc_to(0);
     }
   }
-};
-#endif
 
-void Type::check_symmetrical(const Type* t, const Type* mt) const {
-#ifdef ASSERT
+  const Type* meet(const Type* t1, const Type* t2) const {
+    return _C->_type_verify->meet(t1, t2);
+  }
+
+  void add(const Type* t1, const Type* t2, const Type* res) const {
+    _C->_type_verify->add(t1, t2, res);
+  }
+};
+
+void Type::check_symmetrical(const Type* t, const Type* mt, const VerifyMeet& verify) const {
   Compile* C = Compile::current();
-  VerifyMeetResult* type_verify = C->_type_verify;
-  const Type* mt2 = type_verify->meet(t, this);
+  const Type* mt2 = verify.meet(t, this);
   if (mt != mt2) {
     tty->print_cr("=== Meet Not Commutative ===");
     tty->print("t           = ");   t->dump(); tty->cr();
@@ -938,8 +944,8 @@ void Type::check_symmetrical(const Type* t, const Type* mt) const {
     fatal("meet not commutative");
   }
   const Type* dual_join = mt->_dual;
-  const Type* t2t    = type_verify->meet(dual_join,t->_dual);
-  const Type* t2this = type_verify->meet(dual_join,this->_dual);
+  const Type* t2t    = verify.meet(dual_join,t->_dual);
+  const Type* t2this = verify.meet(dual_join,this->_dual);
 
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
@@ -960,8 +966,8 @@ void Type::check_symmetrical(const Type* t, const Type* mt) const {
 
     fatal("meet not symmetric");
   }
-#endif
 }
+#endif
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
@@ -978,7 +984,7 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
 
 #ifdef ASSERT
   Compile* C = Compile::current();
-  VerifyMeetMark verif(C);
+  VerifyMeet verify(C);
 #endif
 
   const Type *this_t = maybe_remove_speculative(include_speculative);
@@ -986,17 +992,16 @@ const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
 
   const Type *mt = this_t->xmeet(t);
 #ifdef ASSERT
-  VerifyMeetResult* type_verify = C->_type_verify;
-  type_verify->add(this_t, t, mt);
+  verify.add(this_t, t, mt);
   if (isa_narrowoop() || t->isa_narrowoop()) {
     return mt;
   }
   if (isa_narrowklass() || t->isa_narrowklass()) {
     return mt;
   }
-  this_t->check_symmetrical(t, mt);
-  const Type *mt_dual = type_verify->meet(this_t->_dual, t->_dual);
-  this_t->_dual->check_symmetrical(t->_dual, mt_dual);
+  this_t->check_symmetrical(t, mt, verify);
+  const Type *mt_dual = verify.meet(this_t->_dual, t->_dual);
+  this_t->_dual->check_symmetrical(t->_dual, mt_dual, verify);
 #endif
   return mt;
 }
