@@ -710,7 +710,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _extentLocalCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
@@ -1875,7 +1875,7 @@
   declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, Node)                                   \
+  declare_c2_type(VectorTestNode, CmpNode)                                \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
@@ -2098,7 +2098,6 @@
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
   declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
   declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \

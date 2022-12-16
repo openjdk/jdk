@@ -113,15 +113,11 @@ public class BytecodeDescriptor {
         return type.descriptorString();
     }
 
-    public static String unparse(MethodType type) {
-        return unparseMethod(type.returnType(), type.parameterArray());
-    }
-
     public static String unparse(Object type) {
         if (type instanceof Class<?>)
             return unparse((Class<?>) type);
         if (type instanceof MethodType)
-            return unparse((MethodType) type);
+            return ((MethodType) type).toMethodDescriptorString();
         return (String) type;
     }
 

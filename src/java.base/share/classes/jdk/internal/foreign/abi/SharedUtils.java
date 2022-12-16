@@ -288,21 +288,21 @@ public final class SharedUtils {
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope session) {
+    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
         return switch (CABI.current()) {
-            case WIN_64 -> Windowsx64Linker.newVaList(actions, session);
-            case SYS_V -> SysVx64Linker.newVaList(actions, session);
-            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, session);
-            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, session);
+            case WIN_64 -> Windowsx64Linker.newVaList(actions, scope);
+            case SYS_V -> SysVx64Linker.newVaList(actions, scope);
+            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, scope);
+            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, scope);
         };
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope session) {
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
         return switch (CABI.current()) {
-            case WIN_64 -> Windowsx64Linker.newVaListOfAddress(address, session);
-            case SYS_V -> SysVx64Linker.newVaListOfAddress(address, session);
-            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, session);
-            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, session);
+            case WIN_64 -> Windowsx64Linker.newVaListOfAddress(address, scope);
+            case SYS_V -> SysVx64Linker.newVaListOfAddress(address, scope);
+            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, scope);
+            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, scope);
         };
     }
 

@@ -127,7 +127,12 @@ public enum Source {
     /**
       * 20, no major changes
       */
-    JDK20("20");
+    JDK20("20"),
+
+    /**
+      * 21, tbd
+      */
+    JDK21("21");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -179,6 +184,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK21  -> Target.JDK1_21;
         case JDK20  -> Target.JDK1_20;
         case JDK19  -> Target.JDK1_19;
         case JDK18  -> Target.JDK1_18;
@@ -312,6 +318,7 @@ public enum Source {
         case JDK18  -> RELEASE_18;
         case JDK19  -> RELEASE_19;
         case JDK20  -> RELEASE_20;
+        case JDK21  -> RELEASE_21;
         default     -> null;
         };
     }

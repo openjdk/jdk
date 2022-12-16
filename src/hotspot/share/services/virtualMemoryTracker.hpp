@@ -97,6 +97,11 @@ class VirtualMemorySnapshot : public ResourceObj {
     return &_virtual_memory[index];
   }
 
+  inline const VirtualMemory* by_type(MEMFLAGS flag) const {
+    int index = NMTUtil::flag_to_index(flag);
+    return &_virtual_memory[index];
+  }
+
   inline size_t total_reserved() const {
     size_t amount = 0;
     for (int index = 0; index < mt_number_of_types; index ++) {
