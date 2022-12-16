@@ -32,6 +32,7 @@
  * @test id=with-coops-with-ccp
  * @library /test/lib
  * @requires vm.bits == "64"
+ * @requires vm.opt.UseCompressedClassPointers != false
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers ArrayBaseOffsets
  */
@@ -46,6 +47,7 @@
  * @test id=no-coops-with-ccp
  * @library /test/lib
  * @requires vm.bits == "64"
+ * @requires vm.opt.UseCompressedClassPointers != false
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:-UseCompressedOops -XX:+UseCompressedClassPointers ArrayBaseOffsets
  */
