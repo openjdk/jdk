@@ -207,7 +207,9 @@ public:
 
 WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) return false;
+  if (h_name == NULL) {
+    return 0;
+  }
   Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
@@ -220,7 +222,9 @@ WB_END
 
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) return false;
+  if (h_name == NULL) {
+    return 0;
+  }
   Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
   return (jint)sym->refcount();

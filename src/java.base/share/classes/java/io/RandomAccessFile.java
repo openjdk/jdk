@@ -26,6 +26,7 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
@@ -61,9 +62,15 @@ import sun.nio.ch.FileChannelImpl;
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
-    private FileDescriptor fd;
-    private volatile FileChannel channel;
-    private boolean rw;
+    private static final int O_RDONLY = 1;
+    private static final int O_RDWR =   2;
+    private static final int O_SYNC =   4;
+    private static final int O_DSYNC =  8;
+    private static final int O_TEMPORARY =  16;
+
+    private final FileDescriptor fd;
+
+    private final boolean rw;
 
     /**
      * The path of the referenced file
@@ -73,13 +80,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private final Object closeLock = new Object();
 
+    private volatile FileChannel channel;
     private volatile boolean closed;
-
-    private static final int O_RDONLY = 1;
-    private static final int O_RDWR =   2;
-    private static final int O_SYNC =   4;
-    private static final int O_DSYNC =  8;
-    private static final int O_TEMPORARY =  16;
 
     /**
      * Creates a random access file stream to read from, and optionally
@@ -113,7 +115,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             existing, writable regular file and a new regular file of
      *             that name cannot be created, or if some other error occurs
      *             while opening or creating the file
-     * @throws      SecurityException   if a security manager exists and its
+     * @throws     SecurityException   if a security manager exists and its
      *             {@code checkRead} method denies read access to the file
      *             or the mode is {@code "rw"} and the security manager's
      *             {@code checkWrite} method denies write access to the file
@@ -219,6 +221,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     {
         String name = (file != null ? file.getPath() : null);
         int imode = -1;
+
+        boolean rw = false;
         if (mode.equals("r"))
             imode = O_RDONLY;
         else if (mode.startsWith("rw")) {
@@ -233,6 +237,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                     imode = -1;
             }
         }
+        this.rw = rw;
+
         if (openAndDelete)
             imode |= O_TEMPORARY;
         if (imode < 0)
@@ -270,10 +276,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.io.FileDescriptor
      */
     public final FileDescriptor getFD() throws IOException {
-        if (fd != null) {
-            return fd;
-        }
-        throw new IOException();
+        return fd;
     }
 
     /**
@@ -1008,20 +1011,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
         while (!eol) {
             switch (c = read()) {
-            case -1:
-            case '\n':
-                eol = true;
-                break;
-            case '\r':
-                eol = true;
-                long cur = getFilePointer();
-                if ((read()) != '\n') {
-                    seek(cur);
+                case -1, '\n' -> eol = true;
+                case '\r'     -> {
+                    eol = true;
+                    long cur = getFilePointer();
+                    if ((read()) != '\n') {
+                        seek(cur);
+                    }
                 }
-                break;
-            default:
-                input.append((char)c);
-                break;
+                default -> input.append((char) c);
             }
         }
 
@@ -1245,7 +1243,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         SharedSecrets.setJavaIORandomAccessFileAccess(new JavaIORandomAccessFileAccess()
         {
             // This is for j.u.z.ZipFile.OPEN_DELETE. The O_TEMPORARY flag
-            // is only implemented/supported on windows.
+            // is only implemented/supported on Windows.
             public RandomAccessFile openAndDelete(File file, String mode)
                 throws IOException
             {
