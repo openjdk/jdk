@@ -143,11 +143,11 @@ public class TestMarkdown extends JavadocTester {
                     package p;
                     /**md
                      Before list.
-                     
+
                      - item 1
                      - item 2
                      - item 3
-                     
+
                      After list.
                      */
                     public class C { }
