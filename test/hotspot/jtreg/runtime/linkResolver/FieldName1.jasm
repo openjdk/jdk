@@ -1,0 +1,22 @@
+
+super public class FieldName
+	version 65:0
+{
+  public static Field x:J;
+
+  public Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+  static Method "<clinit>":"()V"
+	stack 2 locals 0
+  {
+		ldc2_w	long 123l;
+		putstatic	Field x:"J";
+		return;
+  }
+
+} // end Class FieldName
