@@ -479,13 +479,12 @@ class RelocationHolder {
   // _relocbuf. Hence, _relocbuf must accomodate all subclasses of
   // Relocation. We also need the Relocation base class to be at the same
   // address as the start of the object, e.g. at the address of _relocbuf.
-  // Both of these requirements are checked in the constructors (see
-  // check_reloc_type and check_reloc_placement).  The placement of the base
-  // class subobject isn't guaranteed by C++, since these aren't standard
-  // layout classes, but all supported implementations provide that behavior.
-  // If that changes, we can instead add a Relocation* _reloc member to
-  // capture the result of the placement new, and use that to access the base
-  // subobject.
+  // Both of these requirements are checked (see emplace_relocation).
+  // The placement of the base class subobject isn't guaranteed by C++, since
+  // these aren't standard layout classes, but all supported implementations
+  // provide that behavior.  If that changes, we can instead add a Relocation*
+  // _reloc member to capture the result of the placement new, and use that to
+  // access the base subobject.
   static const size_t _relocbuf_size = 5 * sizeof(void*);
   alignas(void*) char _relocbuf[_relocbuf_size];
 
