@@ -93,12 +93,14 @@
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -1675,9 +1677,40 @@ oop JavaThread::current_park_blocker() {
 
 // Print stack trace for checked JNI warnings and JNI fatal errors.
 // This is the external format from above, but selecting the platform
-// or vthread as applicable.
+// or vthread as applicable, and allowing for a native-only stack.
 void JavaThread::print_jni_stack() {
-  if (is_vthread_mounted()) {
+  if (!has_last_Java_frame()) {
+    assert(this == JavaThread::current(), "Can't print native stack of other threads");
+    ResourceMark rm(this);
+    char* buf = NEW_RESOURCE_ARRAY_RETURN_NULL(char, O_BUFLEN);
+    if (buf == nullptr) {
+      tty->print_cr("Unable to print native stack");
+      return;
+    }
+    if (!UseNewCode){
+    int count = 0;
+    for (frame f = os::current_frame();
+         count++ < StackPrintLimit;
+        f = os::get_sender_for_C_frame(&f)) {
+      f.print_C_frame(tty, buf, O_BUFLEN, f.pc());
+      if (f.pc()) { // print source file and line, if available
+        char filename[128];
+        int line_no;
+        if (Decoder::get_source_info(f.pc(), filename, sizeof(filename),
+                                     &line_no, true /* is_pc_after_call */)) {
+          tty->print("  (%s:%d)", filename, line_no);
+        }
+      }
+      tty->cr();
+      if (os::is_first_C_frame(&f)) {
+        break;
+      }
+    }
+    } else {
+      frame f = os::current_frame();
+      VMError::print_native_stack(tty, f, this, true /*print_source_info */, -1, buf, O_BUFLEN);
+    }
+  } else if (is_vthread_mounted()) {
     print_vthread_stack_on(tty);
   } else {
     print_stack_on(tty);
