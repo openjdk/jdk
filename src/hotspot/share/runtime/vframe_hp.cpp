@@ -145,12 +145,12 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
 // original update is kept.
 void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
   // locals
-  GrowableArray<ScopeValue*>* extentLocals = scope()->locals();
+  GrowableArray<ScopeValue*>* scopedValues = scope()->locals();
   StackValueCollection* lcls = locals();
   if (lcls != NULL) {
     for (int i2 = 0; i2 < lcls->size(); i2++) {
       StackValue* var = lcls->at(i2);
-      if (var->type() == T_OBJECT && extentLocals->at(i2)->is_object()) {
+      if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
         jvalue val;
         val.l = cast_from_oop<jobject>(lcls->at(i2)->get_obj()());
         update_local(T_OBJECT, i2, val);
@@ -535,10 +535,3 @@ jvmtiDeferredLocalVariable::jvmtiDeferredLocalVariable(int index, BasicType type
   _type = type;
   _value = value;
 }
-
-
-#ifndef PRODUCT
-void compiledVFrame::verify() const {
-  Unimplemented();
-}
-#endif // PRODUCT

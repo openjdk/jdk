@@ -749,7 +749,7 @@ public abstract class JavadocTester {
 
     /**
      * Shows the heading structure for each of the specified files.
-     * The structure is is printed in plain text to the main output stream.
+     * The structure is printed in plain text to the main output stream.
      * No errors are reported (unless there is a problem reading a file)
      * but missing headings are noted within the output.
      *

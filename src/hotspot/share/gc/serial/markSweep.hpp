@@ -38,8 +38,6 @@
 
 class ReferenceProcessor;
 class DataLayout;
-class Method;
-class nmethod;
 class SerialOldTracer;
 class STWGCTimer;
 
@@ -152,8 +150,6 @@ class MarkSweep : AllStatic {
 
   static void follow_klass(Klass* klass);
 
-  static void follow_cld(ClassLoaderData* cld);
-
   template <class T> static inline void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack
@@ -174,17 +170,13 @@ class MarkSweep : AllStatic {
   static void follow_array_chunk(objArrayOop array, int index);
 };
 
-class MarkAndPushClosure: public OopIterateClosure {
+class MarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
 public:
-  template <typename T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
+  MarkAndPushClosure(int claim) : ClaimMetadataVisitingOopIterateClosure(claim) {}
 
-  virtual bool do_metadata() { return true; }
-  virtual void do_klass(Klass* k);
-  virtual void do_cld(ClassLoaderData* cld);
-  virtual void do_method(Method* m);
-  virtual void do_nmethod(nmethod* nm);
+  template <typename T> void do_oop_work(T* p);
+  virtual void do_oop(      oop* p);
+  virtual void do_oop(narrowOop* p);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);

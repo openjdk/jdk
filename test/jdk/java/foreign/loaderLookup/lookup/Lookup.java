@@ -23,7 +23,7 @@
 
 package lookup;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 
 public class Lookup {
@@ -31,7 +31,7 @@ public class Lookup {
         System.loadLibrary("Foo");
     }
 
-    public static Addressable fooSymbol() {
-        return SymbolLookup.loaderLookup().lookup("foo").get();
+    public static MemorySegment fooSymbol() {
+        return SymbolLookup.loaderLookup().find("foo").get();
     }
 }

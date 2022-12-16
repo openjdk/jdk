@@ -775,7 +775,7 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
     return false;
   }
 
-  int cast_vopc = VectorCastNode::opcode(T_BYTE); // from shuffle of type T_BYTE
+  int cast_vopc = VectorCastNode::opcode(-1, T_BYTE); // from shuffle of type T_BYTE
   // Make sure that cast is implemented to particular type/size combination.
   if (!arch_supports_vector(cast_vopc, num_elem, elem_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
@@ -1799,14 +1799,24 @@ bool LibraryCallKit::inline_vector_test() {
   }
 
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* opd2;
+  if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
+                                                opd1->bottom_type()->isa_vectmask())) {
+    opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  } else {
+    opd2 = opd1;
+  }
   if (opd1 == NULL || opd2 == NULL) {
     return false; // operand unboxing failed
   }
-  Node* test = new VectorTestNode(opd1, opd2, booltest);
-  test = gvn().transform(test);
 
-  set_result(test);
+  Node* cmp = gvn().transform(new VectorTestNode(opd1, opd2, booltest));
+  BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
+                                                 opd1->bottom_type()->isa_vectmask(), num_elem);
+  Node* bol = gvn().transform(new BoolNode(cmp, test));
+  Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
+
+  set_result(res);
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
@@ -2489,7 +2499,7 @@ bool LibraryCallKit::inline_vector_convert() {
   Node* op = opd1;
   if (is_cast) {
     assert(!is_mask || num_elem_from == num_elem_to, "vector mask cast needs the same elem num");
-    int cast_vopc = VectorCastNode::opcode(elem_bt_from, !is_ucast);
+    int cast_vopc = VectorCastNode::opcode(-1, elem_bt_from, !is_ucast);
 
     // Make sure that vector cast is implemented to particular type/size combination if it is
     // not a mask casting.

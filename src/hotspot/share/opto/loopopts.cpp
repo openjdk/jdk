@@ -792,8 +792,8 @@ static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
   for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
     Node* u = m->fast_out(i);
     if (u->is_CFG()) {
-      if (u->Opcode() == Op_NeverBranch) {
-        u = ((NeverBranchNode*)u)->proj_out(0);
+      if (u->is_NeverBranch()) {
+        u = u->as_NeverBranch()->proj_out(0);
         enqueue_cfg_uses(u, wq);
       } else {
         wq.push(u);
@@ -976,7 +976,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 #endif
             lca = place_outside_loop(lca, n_loop);
             assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
-            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->Opcode() == Op_NeverBranch, "must not be moved into inner loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->is_NeverBranch(), "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1023,8 +1023,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   if (n->is_CFG() || n->is_LoadStore()) {
     return n;
   }
-  if (n->is_Opaque1() ||     // Opaque nodes cannot be mod'd
-      n_op == Op_Opaque2) {
+  if (n->is_Opaque1()) { // Opaque nodes cannot be mod'd
     if (!C->major_progress()) {   // If chance of no more loop opts...
       _igvn._worklist.push(n);  // maybe we'll remove them
     }
@@ -1182,7 +1181,7 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
     Node* dom = idom(useblock);
     if (loop->is_member(get_loop(dom)) ||
         // NeverBranch nodes are not assigned to the loop when constructed
-        (dom->Opcode() == Op_NeverBranch && loop->is_member(get_loop(dom->in(0))))) {
+        (dom->is_NeverBranch() && loop->is_member(get_loop(dom->in(0))))) {
       break;
     }
     useblock = dom;
@@ -1426,14 +1425,6 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   try_sink_out_of_loop(n);
 
   try_move_store_after_loop(n);
-
-  // Check for Opaque2's who's loop has disappeared - who's input is in the
-  // same loop nest as their output.  Remove 'em, they are no longer useful.
-  if( n_op == Op_Opaque2 &&
-      n->in(1) != NULL &&
-      get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
-    _igvn.replace_node( n, n->in(1) );
-  }
 }
 
 // Transform:
@@ -1742,7 +1733,7 @@ Node* PhaseIdealLoop::compute_early_ctrl(Node* n, Node* n_ctrl) {
 bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* u = n->fast_out(i);
-    if (u->Opcode() == Op_Opaque1) {
+    if (u->is_Opaque1()) {
       return false;  // Found loop limit, bugfix for 4677003
     }
     // We can't reuse tags in PhaseIdealLoop::dom_lca_for_get_late_ctrl_internal() so make sure calls to
@@ -4105,90 +4096,4 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   C->set_major_progress();
 
   return true;
-}
-
-//------------------------------reorg_offsets----------------------------------
-// Reorganize offset computations to lower register pressure.  Mostly
-// prevent loop-fallout uses of the pre-incremented trip counter (which are
-// then alive with the post-incremented trip counter forcing an extra
-// register move):
-//
-//     iv Phi            iv Phi
-//       |                 |
-//       |                AddI (+stride)
-//       |                 |
-//       |              Opaque2  # Blocks IGVN from folding these nodes until loop opts are over.
-//       |     ====>       |
-//       |                AddI (-stride)
-//       |                 |
-//       |               CastII  # Preserve type of iv Phi
-//       |                 |
-//   Outside Use       Outside Use
-//
-void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
-  // Perform it only for canonical counted loops.
-  // Loop's shape could be messed up by iteration_split_impl.
-  if (!loop->_head->is_CountedLoop())
-    return;
-  if (!loop->_head->as_Loop()->is_valid_counted_loop(T_INT))
-    return;
-
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  CountedLoopEndNode *cle = cl->loopexit();
-  Node *exit = cle->proj_out(false);
-  Node *phi = cl->phi();
-
-  // Check for the special case when using the pre-incremented trip-counter on
-  // the fall-out  path (forces the pre-incremented  and post-incremented trip
-  // counter to be live  at the same time).  Fix this by  adjusting to use the
-  // post-increment trip counter.
-
-  bool progress = true;
-  while (progress) {
-    progress = false;
-    for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-      Node* use = phi->fast_out(i);   // User of trip-counter
-      if (!has_ctrl(use))  continue;
-      Node *u_ctrl = get_ctrl(use);
-      if (use->is_Phi()) {
-        u_ctrl = NULL;
-        for (uint j = 1; j < use->req(); j++)
-          if (use->in(j) == phi)
-            u_ctrl = dom_lca(u_ctrl, use->in(0)->in(j));
-      }
-      IdealLoopTree *u_loop = get_loop(u_ctrl);
-      // Look for loop-invariant use
-      if (u_loop == loop) continue;
-      if (loop->is_member(u_loop)) continue;
-      // Check that use is live out the bottom.  Assuming the trip-counter
-      // update is right at the bottom, uses of of the loop middle are ok.
-      if (dom_lca(exit, u_ctrl) != exit) continue;
-      // Hit!  Refactor use to use the post-incremented tripcounter.
-      // Compute a post-increment tripcounter.
-      Node* c = exit;
-      if (cl->is_strip_mined()) {
-        IdealLoopTree* outer_loop = get_loop(cl->outer_loop());
-        if (!outer_loop->is_member(u_loop)) {
-          c = cl->outer_loop_exit();
-        }
-      }
-      Node *opaq = new Opaque2Node(C, cle->incr());
-      register_new_node(opaq, c);
-      Node *neg_stride = _igvn.intcon(-cle->stride_con());
-      set_ctrl(neg_stride, C->root());
-      Node *post = new AddINode(opaq, neg_stride);
-      register_new_node(post, c);
-      post = new CastIINode(post, phi->bottom_type()); // preserve the iv phi's type
-      register_new_node(post, c);
-      _igvn.rehash_node_delayed(use);
-      for (uint j = 1; j < use->req(); j++) {
-        if (use->in(j) == phi)
-          use->set_req(j, post);
-      }
-      // Since DU info changed, rerun loop
-      progress = true;
-      break;
-    }
-  }
-
 }

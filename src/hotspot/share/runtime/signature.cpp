@@ -569,28 +569,11 @@ ResolvingSignatureStream::ResolvingSignatureStream(const Method* method)
   initialize_load_origin(method->method_holder());
 }
 
-ResolvingSignatureStream::ResolvingSignatureStream(fieldDescriptor& field)
-  : SignatureStream(field.signature(), false)
-{
-  initialize_load_origin(field.field_holder());
-}
-
 void ResolvingSignatureStream::cache_handles() {
   assert(_load_origin != NULL, "");
   JavaThread* current = JavaThread::current();
   _class_loader = Handle(current, _load_origin->class_loader());
   _protection_domain = Handle(current, _load_origin->protection_domain());
-}
-
-Klass* ResolvingSignatureStream::as_klass_if_loaded(TRAPS) {
-  Klass* klass = as_klass(CachedOrNull, THREAD);
-  // SD::find does not trigger loading, so there should be no throws
-  // Still, bad things can happen, so we CHECK_NULL and ask callers
-  // to do likewise.
-  if (HAS_PENDING_EXCEPTION) {
-    CLEAR_PENDING_EXCEPTION;
-  }
-  return klass;
 }
 
 #ifdef ASSERT
