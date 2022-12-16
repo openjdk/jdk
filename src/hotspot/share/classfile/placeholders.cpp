@@ -291,11 +291,13 @@ void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_dat
   PlaceholderEntry* probe = get_entry(name, loader_data);
   if (probe != NULL) {
     log(name, probe, "find_and_remove", action);
-    probe->remove_seen_thread(thread, action);
+    bool empty = probe->remove_seen_thread(thread, action);
+    if (empty && action == LOAD_SUPER) {
+      probe->set_supername(nullptr);
+    }
     // If no other threads using this entry, and this thread is not using this entry for other states
     if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
         && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
-      probe->clear_supername();
       remove_entry(name, loader_data);
     }
   }
