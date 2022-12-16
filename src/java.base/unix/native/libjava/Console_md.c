@@ -27,7 +27,7 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "java_io_Console.h"
-#include "java_io_ConsoleImpl.h"
+#include "jdk_internal_io_JdkConsoleImpl.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -46,7 +46,7 @@ Java_java_io_Console_encoding(JNIEnv *env, jclass cls)
 }
 
 JNIEXPORT jboolean JNICALL
-Java_java_io_ConsoleImpl_echo(JNIEnv *env,
+Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env,
                           jclass cls,
                           jboolean on)
 {

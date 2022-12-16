@@ -23,55 +23,48 @@
  * questions.
  */
 
-package java.io;
+package jdk.internal.io;
 
-import java.util.*;
+import java.io.IOError;
+import java.io.IOException;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Formatter;
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 
 /**
- * Console implementation based on the platform's TTY.
+ * JdkConsole implementation based on the platform's TTY.
  */
-
-final class ConsoleImpl extends Console {
-    /**
-     * {@inheritDoc}
-     */
+public final class JdkConsoleImpl implements JdkConsole, JdkConsoleProvider {
     @Override
     public PrintWriter writer() {
         return pw;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Reader reader() {
         return reader;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Console format(String fmt, Object ...args) {
+    public JdkConsole format(String fmt, Object ...args) {
         formatter.format(fmt, args).flush();
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Console printf(String format, Object ... args) {
+    public JdkConsole printf(String format, Object ... args) {
         return format(format, args);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String readLine(String fmt, Object ... args) {
         String line = null;
@@ -91,17 +84,11 @@ final class ConsoleImpl extends Console {
         return line;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String readLine() {
         return readLine("");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public char[] readPassword(String fmt, Object ... args) {
         char[] passwd = null;
@@ -164,37 +151,32 @@ final class ConsoleImpl extends Console {
         shutdownHookInstalled = true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public char[] readPassword() {
         return readPassword("");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void flush() {
         pw.flush();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Charset charset() {
-        assert CHARSET != null : "charset() should not return null";
-        return CHARSET;
+        assert charset != null : "charset() should not return null";
+        return charset;
     }
 
-    private final Object readLock;
-    private final Object writeLock;
-    private final Reader reader;
-    private final Writer out;
-    private final PrintWriter pw;
-    private final Formatter formatter;
+    // The singleton
+    private volatile static JdkConsole INSTANCE;
+
+    private Charset charset;
+    private Object readLock;
+    private Object writeLock;
+    private Reader reader;
+    private Writer out;
+    private PrintWriter pw;
+    private Formatter formatter;
     private char[] rcb;
     private boolean restoreEcho;
     private boolean shutdownHookInstalled;
@@ -348,19 +330,38 @@ final class ConsoleImpl extends Console {
         }
     }
 
-    ConsoleImpl() {
-        readLock = new Object();
-        writeLock = new Object();
-        out = StreamEncoder.forOutputStreamWriter(
-                new FileOutputStream(FileDescriptor.out),
-                writeLock,
-                CHARSET);
-        pw = new PrintWriter(out, true) { public void close() {} };
-        formatter = new Formatter(out);
-        reader = new LineReader(StreamDecoder.forInputStreamReader(
-                new FileInputStream(FileDescriptor.in),
-                readLock,
-                CHARSET));
-        rcb = new char[1024];
+    @Override
+    public JdkConsole console(boolean isTTY, Charset charset) {
+        if (isTTY) {
+            if (INSTANCE == null) {
+                this.charset = charset;
+                readLock = new Object();
+                writeLock = new Object();
+                out = StreamEncoder.forOutputStreamWriter(
+                        new FileOutputStream(FileDescriptor.out),
+                        writeLock,
+                        charset);
+                pw = new PrintWriter(out, true) {
+                    public void close() {
+                    }
+                };
+                formatter = new Formatter(out);
+                reader = new LineReader(StreamDecoder.forInputStreamReader(
+                        new FileInputStream(FileDescriptor.in),
+                        readLock,
+                        charset));
+                rcb = new char[1024];
+                INSTANCE = this;
+            }
+            return INSTANCE;
+        } else {
+            // not instantiable
+            return null;
+        }
+    }
+
+    // For convenience
+    public static JdkConsole getJdkConsole(Charset cs) {
+        return INSTANCE != null ? INSTANCE : new JdkConsoleImpl().console(true, cs);
     }
 }
