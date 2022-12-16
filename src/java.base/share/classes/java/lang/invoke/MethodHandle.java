@@ -479,7 +479,7 @@ public abstract sealed class MethodHandle implements Constable
         this.type = Objects.requireNonNull(type);
         this.form = Objects.requireNonNull(form).uncustomize();
 
-        this.form.prepare();  // TO DO:  Try to delay this step until just before invocation.
+        this.form.prepare();
     }
 
     /**

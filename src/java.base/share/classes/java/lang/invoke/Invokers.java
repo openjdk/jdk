@@ -173,7 +173,7 @@ class Invokers {
         final int EAGER_COMPILE_ARITY_LIMIT = 10;
         if (targetType == targetType.erase() &&
             targetType.parameterCount() < EAGER_COMPILE_ARITY_LIMIT) {
-            invoker.form.compileToBytecode();
+            invoker.form.skipInterpreter();
         }
     }
 
@@ -355,8 +355,9 @@ class Invokers {
         } else {
             lform = LambdaForm.create(INARG_LIMIT, names, kind);
         }
-        if (isLinker)
-            lform.compileToBytecode();  // JVM needs a real methodOop
+        if (isLinker) {
+            lform.forceCompileToBytecode();  // JVM needs a real methodOop
+        }
         if (isCached)
             lform = mtype.form().setCachedLambdaForm(which, lform);
         return lform;
@@ -420,7 +421,7 @@ class Invokers {
             String name = "VarHandle_invoke_MT_" + shortenSignature(basicTypeSignature(mtype));
             LambdaForm.associateWithDebugName(lform, name);
         }
-        lform.compileToBytecode();
+        lform.forceCompileToBytecode();  // JVM needs a real methodOop
 
         lform = mtype.form().setCachedLambdaForm(which, lform);
 
@@ -606,7 +607,7 @@ class Invokers {
         names[LINKER_CALL] = new Name(mtype, outArgs);
         lform = LambdaForm.create(INARG_LIMIT, names,
                 (skipCallSite ? LINK_TO_TARGET_METHOD : LINK_TO_CALL_SITE));
-        lform.compileToBytecode();  // JVM needs a real methodOop
+        lform.forceCompileToBytecode();  // JVM needs a real methodOop
         lform = mtype.form().setCachedLambdaForm(which, lform);
         return lform;
     }

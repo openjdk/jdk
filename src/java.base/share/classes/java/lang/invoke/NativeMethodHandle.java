@@ -119,7 +119,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
 
         LambdaForm lform = LambdaForm.create(ARG_LIMIT, names, LAST_RESULT);
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
-        lform.compileToBytecode();
+        lform.skipInterpreter();
         return lform;
     }
 

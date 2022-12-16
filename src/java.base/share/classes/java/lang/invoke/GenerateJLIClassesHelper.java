@@ -64,6 +64,7 @@ class GenerateJLIClassesHelper {
     static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
     static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
+    static final String RESOLVERS_HOLDER = "java/lang/invoke/LambdaFormResolvers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
 
@@ -73,6 +74,7 @@ class GenerateJLIClassesHelper {
         private final TreeSet<String> speciesTypes = new TreeSet<>();
         private final TreeSet<String> invokerTypes = new TreeSet<>();
         private final TreeSet<String> callSiteTypes = new TreeSet<>();
+        private final TreeSet<String> resolverTypes = new TreeSet<>();
         private final Map<String, Set<String>> dmhMethods = new TreeMap<>();
 
         HolderClassBuilder addSpeciesType(String type) {
@@ -86,9 +88,15 @@ class GenerateJLIClassesHelper {
             return this;
         }
 
-        HolderClassBuilder addCallSiteType(String csType) {
-            validateMethodType(csType);
-            callSiteTypes.add(csType);
+        HolderClassBuilder addCallSiteType(String methodType) {
+            validateMethodType(methodType);
+            callSiteTypes.add(methodType);
+            return this;
+        }
+
+        HolderClassBuilder addResolverType(String methodType) {
+            validateMethodType(methodType);
+            resolverTypes.add(methodType);
             return this;
         }
 
@@ -163,6 +171,22 @@ class GenerateJLIClassesHelper {
                 index++;
             }
 
+            // Resolvers
+            MethodType[] resolverMethodTypes = new MethodType[resolverTypes.size()];
+            index = 0;
+            for (String resolverType : resolverTypes) {
+                MethodType mt = asMethodType(resolverType);
+                if (mt.parameterCount() < 1 ||
+                        mt.parameterType(0) != Object.class) {
+                    throw new RuntimeException(
+                            "Resolver type parameter must start with L: " + resolverType);
+                }
+
+                // Adapt the method type of the LF to retrieve
+                resolverMethodTypes[index] = mt;
+                index++;
+            }
+
             Map<String, byte[]> result = new TreeMap<>();
             result.put(DIRECT_HOLDER,
                        generateDirectMethodHandleHolderClassBytes(
@@ -173,6 +197,8 @@ class GenerateJLIClassesHelper {
             result.put(INVOKERS_HOLDER,
                        generateInvokersHolderClassBytes(INVOKERS_HOLDER,
                             invokerMethodTypes, callSiteMethodTypes));
+            result.put(RESOLVERS_HOLDER,
+                       generateResolversHolderClassBytes(RESOLVERS_HOLDER, resolverMethodTypes));
             result.put(BASIC_FORMS_HOLDER,
                        generateBasicFormsClassBytes(BASIC_FORMS_HOLDER));
 
@@ -185,6 +211,7 @@ class GenerateJLIClassesHelper {
             speciesTypes.clear();
             invokerTypes.clear();
             callSiteTypes.clear();
+            resolverTypes.clear();
             dmhMethods.clear();
 
             return result;
@@ -323,6 +350,9 @@ class GenerateJLIClassesHelper {
                                 if (DMH_METHOD_TYPE_MAP.containsKey(dmh)) {
                                     builder.addDMHMethodType(dmh, methodType);
                                 }
+                            } else if (parts[1].contains("LambdaFormResolvers")) {
+                                String dmh = parts[2];
+                                builder.addResolverType(methodType);
                             }
                             break;
                         default:
@@ -468,11 +498,11 @@ class GenerateJLIClassesHelper {
             MethodTypeForm.LF_GEN_INVOKER
         };
 
-        for (int i = 0; i < invokerMethodTypes.length; i++) {
+        for (MethodType invokerMethodType : invokerMethodTypes) {
             // generate methods representing invokers of the specified type
-            if (dedupSet.add(invokerMethodTypes[i])) {
+            if (dedupSet.add(invokerMethodType)) {
                 for (int type : types) {
-                    LambdaForm invokerForm = Invokers.invokeHandleForm(invokerMethodTypes[i],
+                    LambdaForm invokerForm = Invokers.invokeHandleForm(invokerMethodType,
                             /*customized*/false, type);
                     forms.add(invokerForm);
                     names.add(invokerForm.kind.defaultLambdaName);
@@ -481,16 +511,41 @@ class GenerateJLIClassesHelper {
         }
 
         dedupSet = new HashSet<>();
-        for (int i = 0; i < callSiteMethodTypes.length; i++) {
+        for (MethodType callSiteMethodType : callSiteMethodTypes) {
             // generate methods representing invokers of the specified type
-            if (dedupSet.add(callSiteMethodTypes[i])) {
-                LambdaForm callSiteForm = Invokers.callSiteForm(callSiteMethodTypes[i], true);
+            if (dedupSet.add(callSiteMethodType)) {
+                LambdaForm callSiteForm = Invokers.callSiteForm(callSiteMethodType, true);
                 forms.add(callSiteForm);
                 names.add(callSiteForm.kind.defaultLambdaName);
 
-                LambdaForm methodHandleForm = Invokers.callSiteForm(callSiteMethodTypes[i], false);
+                LambdaForm methodHandleForm = Invokers.callSiteForm(callSiteMethodType, false);
                 forms.add(methodHandleForm);
                 names.add(methodHandleForm.kind.defaultLambdaName);
+            }
+        }
+
+        return generateCodeBytesForLFs(className,
+                names.toArray(new String[0]),
+                forms.toArray(new LambdaForm[0]));
+    }
+
+    /**
+     * Returns a {@code byte[]} representation of a class implementing
+     * the resolver forms for the set of supplied {@code resolverMethodTypes}.
+     */
+    static byte[] generateResolversHolderClassBytes(String className,
+                                                    MethodType[] resolverMethodTypes) {
+
+        HashSet<MethodType> dedupSet = new HashSet<>();
+        ArrayList<LambdaForm> forms = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
+
+        for (MethodType resolverMethodType : resolverMethodTypes) {
+            // generate methods representing invokers of the specified type
+            if (dedupSet.add(resolverMethodType)) {
+                LambdaForm invokerForm = LambdaFormResolvers.makeResolverForm(resolverMethodType);
+                forms.add(invokerForm);
+                names.add(invokerForm.kind.defaultLambdaName);
             }
         }
 

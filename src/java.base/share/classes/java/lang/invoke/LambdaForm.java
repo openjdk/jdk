@@ -130,6 +130,10 @@ class LambdaForm {
     final Kind kind;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
+    private boolean skipInterpreter;
+    private boolean isResolved;
+
+    private static final long VMENTRY_OFFSET = UNSAFE.objectFieldOffset(LambdaForm.class, "vmentry");
 
     // Either a LambdaForm cache (managed by LambdaFormEditor) or a link to uncustomized version (for customized LF)
     volatile Object transformCache;
@@ -315,7 +319,8 @@ class LambdaForm {
         GUARD_WITH_CATCH("guardWithCatch"),
         VARHANDLE_EXACT_INVOKER("VH.exactInvoker"),
         VARHANDLE_INVOKER("VH.invoker", "invoker"),
-        VARHANDLE_LINKER("VH.invoke_MT", "invoke_MT");
+        VARHANDLE_LINKER("VH.invoke_MT", "invoke_MT"),
+        RESOLVER("resolve");
 
         final String defaultLambdaName;
         final String methodName;
@@ -331,7 +336,7 @@ class LambdaForm {
     }
 
     // private version that doesn't do checks or defensive copies
-    private LambdaForm(int arity, int result, boolean forceInline, MethodHandle customized, Name[] names, Kind kind) {
+    private LambdaForm(int arity, int result, boolean forceInline, MethodHandle customized, Name[] names, Kind kind, boolean skipInterpreter) {
         this.arity = arity;
         this.result = result;
         this.forceInline = forceInline;
@@ -340,6 +345,7 @@ class LambdaForm {
         this.kind = kind;
         this.vmentry = null;
         this.isCompiled = false;
+        this.skipInterpreter = skipInterpreter;
     }
 
     // root factory pre/post processing and calls simple cosntructor
@@ -349,11 +355,8 @@ class LambdaForm {
         result = fixResult(result, names);
 
         boolean canInterpret = normalizeNames(arity, names);
-        LambdaForm form = new LambdaForm(arity, result, forceInline, customized, names, kind);
+        LambdaForm form = new LambdaForm(arity, result, forceInline, customized, names, kind, !canInterpret);
         assert(form.nameRefsAreLegal());
-        if (!canInterpret) {
-            form.compileToBytecode();
-        }
         return form;
     }
 
@@ -387,11 +390,20 @@ class LambdaForm {
         int result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? VOID_RESULT : arity;
         Name[] names = buildEmptyNames(arity, mt, result == VOID_RESULT);
         boolean canInterpret = normalizeNames(arity, names);
-        LambdaForm form = new LambdaForm(arity, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, names, Kind.ZERO);
+        LambdaForm form = new LambdaForm(arity, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, names, Kind.ZERO, !canInterpret);
         assert(form.nameRefsAreLegal() && form.isEmpty() && isValidSignature(form.basicTypeSignature()));
-        if (!canInterpret) {
-            form.compileToBytecode();
-        }
+        return form;
+    }
+
+    static final Name[] EMPTY_NAMES = new Name[0];
+    static LambdaForm createWrapperForResolver(MemberName mn) {
+        // Make a blank lambda form wrapping an existing vmentry.
+        // This is used for the LambdaFormResolver case where the resolved member name is all
+        // we care about but we need a LF wrapper for caching and pre-generation hooks.
+        boolean forceInline = false; // don't try to inline resolvers
+        boolean skipInterpreter = false; // empty form should be interpretable
+        LambdaForm form = new LambdaForm(0, -1, forceInline, null, EMPTY_NAMES, Kind.RESOLVER, skipInterpreter);
+        form.vmentry = mn;
         return form;
     }
 
@@ -475,7 +487,7 @@ class LambdaForm {
         LambdaForm customForm = LambdaForm.create(arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
-            customForm.compileToBytecode();
+            customForm.skipInterpreter();
         }
         customForm.transformCache = this; // LambdaFormEditor should always use uncustomized form.
         return customForm;
@@ -490,7 +502,7 @@ class LambdaForm {
         LambdaForm uncustomizedForm = (LambdaForm)transformCache;
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If customized LambdaForm has been compiled, compile uncustomized version as well.
-            uncustomizedForm.compileToBytecode();
+            uncustomizedForm.skipInterpreter();
         }
         return uncustomizedForm;
     }
@@ -813,23 +825,105 @@ class LambdaForm {
      * as a sort of pre-invocation linkage step.)
      */
     public void prepare() {
-        if (COMPILE_THRESHOLD == 0 && !forceInterpretation() && !isCompiled) {
-            compileToBytecode();
-        }
         if (this.vmentry != null) {
-            // already prepared (e.g., a primitive DMH invoker form)
-            return;
+            return; // already resolved or already prepared (e.g. lform from cache)
         }
-        MethodType mtype = methodType();
-        LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
-        if (prep == null) {
-            assert (isValidSignature(basicTypeSignature()));
-            prep = LambdaForm.createBlankForType(mtype);
-            prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
-            prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+        // Obtain the invoker MethodType up front.
+        // This ensures that an IllegalArgumentException is directly thrown if the
+        // type would have 256 or more parameters
+        MethodType mt = methodType();
+
+        // Lookup pregenerated shapes
+        MemberName mn = lookupPregenerated(this, mt);
+        if (mn != null) {
+            this.vmentry = mn;
+        } else if (RESOLVE_LAZY) {
+            MemberName resolver = LambdaFormResolvers.resolverFor(this, mt);
+            // use a CAS here to avoid overwriting a resolved vmentry
+            UNSAFE.compareAndSetReference(this, VMENTRY_OFFSET, null, resolver);
+        } else {
+            resolve(mt);
         }
-        this.vmentry = prep.vmentry;
-        // TO DO: Maybe add invokeGeneric, invokeWithArguments
+    }
+
+    static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
+        assert(!UNSAFE.shouldBeInitialized(holder)) : holder + "not initialized";
+        MemberName member = new MemberName(holder, name, type, REF_invokeStatic);
+        MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, holder, LM_TRUSTED);
+        traceLambdaForm(name, type, holder, resolvedMember);
+        return resolvedMember;
+    }
+
+    private static MemberName lookupPregenerated(LambdaForm form, MethodType invokerType) {
+        if (form.customized != null) {
+            // No pre-generated version for customized LF
+            return null;
+        }
+        String name = form.kind.methodName;
+        switch (form.kind) {
+            case BOUND_REINVOKER: {
+                name = name + "_" + BoundMethodHandle.speciesDataFor(form).key();
+                return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
+            }
+            case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
+            case ZERO:                      // fall-through
+            case IDENTITY: {
+                name = name + "_" + form.returnType().basicTypeChar();
+                return resolveFrom(name, invokerType, LambdaForm.Holder.class);
+            }
+            case EXACT_INVOKER:             // fall-through
+            case EXACT_LINKER:              // fall-through
+            case LINK_TO_CALL_SITE:         // fall-through
+            case LINK_TO_TARGET_METHOD:     // fall-through
+            case GENERIC_INVOKER:           // fall-through
+            case GENERIC_LINKER:            return resolveFrom(name, invokerType, Invokers.Holder.class);
+            case GET_REFERENCE:             // fall-through
+            case GET_BOOLEAN:               // fall-through
+            case GET_BYTE:                  // fall-through
+            case GET_CHAR:                  // fall-through
+            case GET_SHORT:                 // fall-through
+            case GET_INT:                   // fall-through
+            case GET_LONG:                  // fall-through
+            case GET_FLOAT:                 // fall-through
+            case GET_DOUBLE:                // fall-through
+            case PUT_REFERENCE:             // fall-through
+            case PUT_BOOLEAN:               // fall-through
+            case PUT_BYTE:                  // fall-through
+            case PUT_CHAR:                  // fall-through
+            case PUT_SHORT:                 // fall-through
+            case PUT_INT:                   // fall-through
+            case PUT_LONG:                  // fall-through
+            case PUT_FLOAT:                 // fall-through
+            case PUT_DOUBLE:                // fall-through
+            case DIRECT_NEW_INVOKE_SPECIAL: // fall-through
+            case DIRECT_INVOKE_INTERFACE:   // fall-through
+            case DIRECT_INVOKE_SPECIAL:     // fall-through
+            case DIRECT_INVOKE_SPECIAL_IFC: // fall-through
+            case DIRECT_INVOKE_STATIC:      // fall-through
+            case DIRECT_INVOKE_STATIC_INIT: // fall-through
+            case DIRECT_INVOKE_VIRTUAL:     return resolveFrom(name, invokerType, DirectMethodHandle.Holder.class);
+        }
+        return null;
+    }
+
+    synchronized void resolve(MethodType mtype) {
+        assert(methodType().equals(mtype));
+        if (isResolved) {
+            return; // already resolved
+        }
+        if ((skipInterpreter || COMPILE_THRESHOLD == 0) && !forceInterpretation()) {
+            compileToBytecode(mtype);
+        } else {
+            LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
+            if (prep == null) {
+                prep = createBlankForType(mtype);
+                prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
+                prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+            }
+            this.vmentry = prep.vmentry;
+            // TO DO: Maybe add invokeGeneric, invokeWithArguments
+        }
+        this.isResolved = true;
     }
 
     private static @Stable PerfCounter LF_FAILED;
@@ -841,8 +935,19 @@ class LambdaForm {
         return LF_FAILED;
     }
 
+    void forceCompileToBytecode() {
+        skipInterpreter();
+        resolve(methodType());
+        assert isCompiled;
+    }
+
+    void skipInterpreter() {
+        assert !isResolved || isCompiled : "already resolved to interpreted";
+        this.skipInterpreter = true;
+    }
+
     /** Generate optimizable bytecode for this form. */
-    void compileToBytecode() {
+    private void compileToBytecode(MethodType invokerType) {
         if (forceInterpretation()) {
             return; // this should not be compiled
         }
@@ -850,11 +955,7 @@ class LambdaForm {
             return;  // already compiled somehow
         }
 
-        // Obtain the invoker MethodType outside of the following try block.
-        // This ensures that an IllegalArgumentException is directly thrown if the
-        // type would have 256 or more parameters
-        MethodType invokerType = methodType();
-        assert(vmentry == null || vmentry.getMethodType().basicType().equals(invokerType));
+        assert(methodType().equals(invokerType) && (vmentry == null || vmentry.getMethodType().basicType().equals(invokerType)));
         try {
             vmentry = InvokerBytecodeGenerator.generateCustomizedCode(this, invokerType);
             if (TRACE_INTERPRETER)
@@ -975,7 +1076,7 @@ class LambdaForm {
             invocationCounter++;  // benign race
             if (invocationCounter >= COMPILE_THRESHOLD) {
                 // Replace vmentry with a bytecode version of this LF.
-                compileToBytecode();
+                compileToBytecode(methodType());
             }
         }
     }
@@ -985,7 +1086,7 @@ class LambdaForm {
             int ctr = invocationCounter++;  // benign race
             traceInterpreter("| invocationCounter", ctr);
             if (invocationCounter >= COMPILE_THRESHOLD) {
-                compileToBytecode();
+                compileToBytecode(methodType());
             }
         }
         Object rval;
@@ -1769,7 +1870,7 @@ class LambdaForm {
             if (isVoid) {
                 Name[] idNames = new Name[] { argument(0, L_TYPE) };
                 idForm = LambdaForm.create(1, idNames, VOID_RESULT, Kind.IDENTITY);
-                idForm.compileToBytecode();
+                idForm.skipInterpreter();
                 idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
                 zeForm = idForm;
@@ -1777,14 +1878,14 @@ class LambdaForm {
             } else {
                 Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
                 idForm = LambdaForm.create(2, idNames, 1, Kind.IDENTITY);
-                idForm.compileToBytecode();
+                idForm.skipInterpreter();
                 idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
                             MethodHandleImpl.Intrinsic.IDENTITY));
 
                 Object zeValue = Wrapper.forBasicType(btChar).zero();
                 Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
                 zeForm = LambdaForm.create(1, zeNames, 1, Kind.ZERO);
-                zeForm.compileToBytecode();
+                zeForm.skipInterpreter();
                 zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm),
                         MethodHandleImpl.Intrinsic.ZERO));
             }

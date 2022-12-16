@@ -60,9 +60,10 @@ class MethodHandleStatics {
     static final int PROFILE_LEVEL;
     static final boolean PROFILE_GWT;
     static final int CUSTOMIZE_THRESHOLD;
+    static final boolean RESOLVE_LAZY;
     static final boolean VAR_HANDLE_GUARDS;
-    static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
+    static final int MAX_ARITY;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -88,6 +89,8 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
         CUSTOMIZE_THRESHOLD = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", "127"));
+        RESOLVE_LAZY = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.RESOLVE_LAZY", "true"));
         VAR_HANDLE_GUARDS = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
         VAR_HANDLE_IDENTITY_ADAPT = Boolean.parseBoolean(

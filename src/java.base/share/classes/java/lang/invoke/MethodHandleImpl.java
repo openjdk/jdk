@@ -768,7 +768,7 @@ abstract class MethodHandleImpl {
                  wrapper.updateForm(new Function<>() {
                      public LambdaForm apply(LambdaForm oldForm) {
                          LambdaForm lform = wrapper.nonCountingFormProducer.apply(wrapper.target);
-                         lform.compileToBytecode(); // speed up warmup by avoiding LF interpretation again after transition
+                         lform.skipInterpreter(); // speed up warmup by avoiding LF interpretation again after transition
                          return lform;
                      }});
              }
@@ -1182,9 +1182,9 @@ abstract class MethodHandleImpl {
             MethodType mt = mh.type();
             int arity = mt.parameterCount();
             MethodHandle vamh = mh.asType(mt.generic());
-            vamh.internalForm().compileToBytecode();  // eliminate LFI stack frames
+            vamh.internalForm().skipInterpreter();  // eliminate LFI stack frames
             vamh = vamh.asSpreader(Object[].class, arity);
-            vamh.internalForm().compileToBytecode();  // eliminate LFI stack frames
+            vamh.internalForm().skipInterpreter();  // eliminate LFI stack frames
             return vamh;
         }
 

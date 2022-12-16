@@ -121,7 +121,7 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         initialize(in);
-        // Copy all but DMH_ENTRY to out
+        // Copy all but the Holder classes to out
         in.transformAndCopy(entry -> {
                 // No trace file given.  Copy all entries.
                 if (traceFileStream == null) return entry;
@@ -131,7 +131,8 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
                 if (path.equals(DIRECT_METHOD_HOLDER_ENTRY) ||
                     path.equals(DELEGATING_METHOD_HOLDER_ENTRY) ||
                     path.equals(INVOKERS_HOLDER_ENTRY) ||
-                    path.equals(BASIC_FORMS_HOLDER_ENTRY)) {
+                    path.equals(BASIC_FORMS_HOLDER_ENTRY) ||
+                    path.equals(RESOLVERS_HOLDER_ENTRY)) {
                     return null;
                 } else {
                     return entry;
@@ -162,4 +163,7 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
             "/java.base/java/lang/invoke/LambdaForm$Holder.class";
     private static final String INVOKERS_HOLDER_ENTRY =
             "/java.base/java/lang/invoke/Invokers$Holder.class";
+
+    private static final String RESOLVERS_HOLDER_ENTRY =
+            "/java.base/java/lang/invoke/LambdaFormResolvers$Holder.class";
 }

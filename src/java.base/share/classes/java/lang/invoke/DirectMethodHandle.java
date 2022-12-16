@@ -300,7 +300,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         LambdaForm lform = LambdaForm.create(ARG_LIMIT, names, result, kind);
 
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
-        lform.compileToBytecode();
+        lform.skipInterpreter();
         return lform;
     }
 
@@ -317,7 +317,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     private static void maybeCompile(LambdaForm lform, MemberName m) {
         if (lform.vmentry == null && VerifyAccess.isSamePackage(m.getDeclaringClass(), MethodHandle.class))
             // Help along bootstrapping...
-            lform.compileToBytecode();
+            lform.skipInterpreter();
     }
 
     /** Static wrapper for DirectMethodHandle.internalMemberName. */
