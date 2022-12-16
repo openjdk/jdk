@@ -57,8 +57,6 @@ import sun.nio.ch.FileChannelImpl;
  * than {@code EOFException} is thrown. In particular, an
  * {@code IOException} may be thrown if the stream has been closed.
  *
- * @implNote This class is not thread safe.
- *
  * @since   1.0
  */
 
@@ -1061,7 +1059,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final void writeBoolean(boolean v) throws IOException {
         write(v ? 1 : 0);
-        //written++;
     }
 
     /**
@@ -1073,7 +1070,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final void writeByte(int v) throws IOException {
         write(v);
-        //written++;
     }
 
     /**
@@ -1087,7 +1083,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         buffer[1] = (byte)(v       );
         buffer[0] = (byte)(v >>>  8);
         write(buffer, 0, Short.BYTES);
-        //written += 2;
     }
 
     /**
@@ -1125,7 +1120,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public final void writeLong(long v) throws IOException {
         Bits.putLong(buffer, 0, v);
         write(buffer, 0, Long.BYTES);
-        //written += 8;
     }
 
     /**
