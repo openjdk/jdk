@@ -30,7 +30,7 @@ package gc;
  * @comment Shenandoah has "ExplicitGCInvokesConcurrent" on by default
  * @requires !(vm.gc == "Shenandoah" & vm.opt.ExplicitGCInvokesConcurrent != false)
  * @comment G1 has separate counters for STW Full GC and concurrent GC.
- * @requires !(vm.gc == "G1" & vm.opt.ExplicitGCInvokesConcurrent)
+ * @requires !(vm.gc.G1 & vm.opt.ExplicitGCInvokesConcurrent == true)
  * @requires vm.gc != "Z"
  * @modules java.management
  * @run main/othervm -Xlog:gc gc.TestFullGCCount

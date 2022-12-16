@@ -2563,7 +2563,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
   FrameValues values;
   assert(f.get_cb() != nullptr, "");
   RegisterMap map(f.is_heap_frame() ?
-                    (JavaThread*)nullptr :
+                    nullptr :
                     JavaThread::current(),
                   RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
@@ -2574,7 +2574,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
     frame::update_map_with_saved_link(&map, ContinuationHelper::Frame::callee_link_address(f));
   }
   const_cast<frame&>(f).describe(values, 0, &map);
-  values.print_on((JavaThread*)nullptr, st);
+  values.print_on(static_cast<JavaThread*>(nullptr), st);
 }
 #endif
 

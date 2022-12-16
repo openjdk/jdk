@@ -460,6 +460,7 @@ public:
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
+  static size_t readonly_total();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
   void  map_or_load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
