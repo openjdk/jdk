@@ -68,29 +68,6 @@ java.compiler.interim_EXTRA_FILES := \
 TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
 
 ################################################################################
-# Generate interim versions of the Preview.java and TransPatters.java files for
-# the interim langtools modules, which will allow to compile Classfile API.
-
-$(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.compiler.interim/com/sun/tools/javac/code/Preview.java: \
-    $(TOPDIR)/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Preview.java
-	$(call LogInfo, Generating Preview.java for jdk.compiler.interim)
-	$(call MakeDir, $(@D))
-	$(GREP) -v 'case PATTERN_SWITCH ->' $< > $@
-
-$(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.compiler.interim/com/sun/tools/javac/comp/TransPatterns.java: \
-    $(TOPDIR)/src/jdk.compiler/share/classes/com/sun/tools/javac/comp/TransPatterns.java
-	$(call LogInfo, Generating TransPatterns.java for jdk.compiler.interim)
-	$(call MakeDir, $(@D))
-	$(GREP) -v 'Assert.check(preview.' $< > $@
-
-jdk.compiler.interim_EXTRA_FILES := \
-     $(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.compiler.interim/com/sun/tools/javac/code/Preview.java \
-     $(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.compiler.interim/com/sun/tools/javac/comp/TransPatterns.java
-
-TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.compiler.interim/com/sun/tools/javac/code/Preview.java
-TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/jdk.compiler.interim/com/sun/tools/javac/comp/TransPatterns.java
-
-################################################################################
 # Use the up-to-date PreviewFeature.java and NoPreview.java from the current
 # sources, instead of the versions from the boot JDK, as javac may be referring
 # to constants from the up-to-date versions.
