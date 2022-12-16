@@ -472,8 +472,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_setCurrentThread:         return inline_native_setCurrentThread();
 
-  case vmIntrinsics::_extentLocalCache:          return inline_native_extentLocalCache();
-  case vmIntrinsics::_setExtentLocalCache:       return inline_native_setExtentLocalCache();
+  case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
+  case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
@@ -3357,38 +3357,42 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   return true;
 }
 
-Node* LibraryCallKit::extentLocalCache_helper() {
+Node* LibraryCallKit::scopedValueCache_helper() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
 
   bool xk = etype->klass_is_exact();
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::extentLocalCache_offset()));
-  return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
-        TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
+  // We cannot use immutable_memory() because we might flip onto a
+  // different carrier thread, at which point we'll need to use that
+  // carrier thread's cache.
+  // return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
+  //       TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  return make_load(NULL, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
 }
 
-//------------------------inline_native_extentLocalCache------------------
-bool LibraryCallKit::inline_native_extentLocalCache() {
+//------------------------inline_native_scopedValueCache------------------
+bool LibraryCallKit::inline_native_scopedValueCache() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
-  // Because we create the extentLocal cache lazily we have to make the
+  // Because we create the scopedValue cache lazily we have to make the
   // type of the result BotPTR.
   bool xk = etype->klass_is_exact();
   const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
-  Node* cache_obj_handle = extentLocalCache_helper();
+  Node* cache_obj_handle = scopedValueCache_helper();
   set_result(access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE));
 
   return true;
 }
 
-//------------------------inline_native_setExtentLocalCache------------------
-bool LibraryCallKit::inline_native_setExtentLocalCache() {
+//------------------------inline_native_setScopedValueCache------------------
+bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
-  Node* cache_obj_handle = extentLocalCache_helper();
+  Node* cache_obj_handle = scopedValueCache_helper();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   store_to_memory(control(), cache_obj_handle, arr, T_OBJECT, adr_type,
@@ -7841,8 +7845,15 @@ bool LibraryCallKit::inline_blackhole() {
   assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
   assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
 
+  // Blackhole node pinches only the control, not memory. This allows
+  // the blackhole to be pinned in the loop that computes blackholed
+  // values, but have no other side effects, like breaking the optimizations
+  // across the blackhole.
+
+  Node* bh = _gvn.transform(new BlackholeNode(control()));
+  set_control(_gvn.transform(new ProjNode(bh, TypeFunc::Control)));
+
   // Bind call arguments as blackhole arguments to keep them alive
-  Node* bh = insert_mem_bar(Op_Blackhole);
   uint nargs = callee()->arg_size();
   for (uint i = 0; i < nargs; i++) {
     bh->add_req(argument(i));

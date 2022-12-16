@@ -62,25 +62,6 @@ vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
   _fr = *fr;
 }
 
-vframe::vframe(const frame* fr, JavaThread* thread)
-: _reg_map(thread,
-           RegisterMap::UpdateMap::include,
-           RegisterMap::ProcessFrames::include,
-           RegisterMap::WalkContinuation::skip),
-  _thread(thread), _chunk() {
-  assert(fr != NULL, "must have frame");
-  _fr = *fr;
-  assert(!_reg_map.in_cont(), "");
-}
-
-vframe* vframe::new_vframe(StackFrameStream& fst, JavaThread* thread) {
-  if (fst.current()->is_runtime_frame()) {
-    fst.next();
-  }
-  guarantee(!fst.is_done(), "missing caller");
-  return new_vframe(fst.current(), fst.register_map(), thread);
-}
-
 vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThread* thread) {
   // Interpreter frame
   if (f->is_interpreted_frame()) {
@@ -125,13 +106,6 @@ vframe* vframe::sender() const {
 bool vframe::is_vthread_entry() const {
   return _fr.is_first_vthread_frame(register_map()->thread());
 }
-
-vframe* vframe::top() const {
-  vframe* vf = (vframe*) this;
-  while (!vf->is_top()) vf = vf->sender();
-  return vf;
-}
-
 
 javaVFrame* vframe::java_sender() const {
   vframe* f = sender();
@@ -295,17 +269,11 @@ u_char* interpretedVFrame::bcp() const {
   return stack_chunk() == NULL ? fr().interpreter_frame_bcp() : stack_chunk()->interpreter_frame_bcp(fr());
 }
 
-void interpretedVFrame::set_bcp(u_char* bcp) {
-  assert(stack_chunk() == NULL, "Not supported for heap frames"); // unsupported for now because seems to be unused
-  fr().interpreter_frame_set_bcp(bcp);
-}
-
 intptr_t* interpretedVFrame::locals_addr_at(int offset) const {
   assert(stack_chunk() == NULL, "Not supported for heap frames"); // unsupported for now because seems to be unused
   assert(fr().is_interpreted_frame(), "frame should be an interpreted frame");
   return fr().interpreter_frame_local_at(offset);
 }
-
 
 GrowableArray<MonitorInfo*>* interpretedVFrame::monitors() const {
   GrowableArray<MonitorInfo*>* result = new GrowableArray<MonitorInfo*>(5);
@@ -519,22 +487,6 @@ void vframeStreamCommon::found_bad_method_frame() const {
   fatal("invalid bci or invalid scope desc");
 }
 #endif
-
-// top-frame will be skipped
-vframeStream::vframeStream(JavaThread* thread, frame top_frame,
-                          bool stop_at_java_call_stub) :
-    vframeStreamCommon(RegisterMap(thread,
-                                   RegisterMap::UpdateMap::include,
-                                   RegisterMap::ProcessFrames::include,
-                                   RegisterMap::WalkContinuation::include)) {
-  _stop_at_java_call_stub = stop_at_java_call_stub;
-
-  // skip top frame, as it may not be at safepoint
-  _frame  = top_frame.sender(&_reg_map);
-  while (!fill_from_frame()) {
-    _frame = _frame.sender(&_reg_map);
-  }
-}
 
 vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
  : vframeStreamCommon(RegisterMap(thread,
@@ -767,40 +719,6 @@ void javaVFrame::print_value() const {
   }
 }
 
-
-bool javaVFrame::structural_compare(javaVFrame* other) {
-  // Check static part
-  if (method() != other->method()) return false;
-  if (bci()    != other->bci())    return false;
-
-  // Check locals
-  StackValueCollection *locs = locals();
-  StackValueCollection *other_locs = other->locals();
-  assert(locs->size() == other_locs->size(), "sanity check");
-  int i;
-  for(i = 0; i < locs->size(); i++) {
-    // it might happen the compiler reports a conflict and
-    // the interpreter reports a bogus int.
-    if (       is_compiled_frame() &&       locs->at(i)->type() == T_CONFLICT) continue;
-    if (other->is_compiled_frame() && other_locs->at(i)->type() == T_CONFLICT) continue;
-
-    if (!locs->at(i)->equal(other_locs->at(i)))
-      return false;
-  }
-
-  // Check expressions
-  StackValueCollection* exprs = expressions();
-  StackValueCollection* other_exprs = other->expressions();
-  assert(exprs->size() == other_exprs->size(), "sanity check");
-  for(i = 0; i < exprs->size(); i++) {
-    if (!exprs->at(i)->equal(other_exprs->at(i)))
-      return false;
-  }
-
-  return true;
-}
-
-
 void javaVFrame::print_activation(int index) const {
   // frame number and method
   tty->print("%2d - ", index);
@@ -813,21 +731,11 @@ void javaVFrame::print_activation(int index) const {
   }
 }
 
-
-void javaVFrame::verify() const {
-}
-
-
-void interpretedVFrame::verify() const {
-}
-
-
 // ------------- externalVFrame --------------
 
 void externalVFrame::print() {
   _fr.print_value_on(tty,NULL);
 }
-
 
 void externalVFrame::print_value() const {
   ((vframe*)this)->print();

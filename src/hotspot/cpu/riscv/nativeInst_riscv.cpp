@@ -444,8 +444,16 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
+int NativePostCallNop::displacement() const {
+  // Discard the high 32 bits
+  return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+}
+
 void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
+  assert(diff != 0, "must be");
+  assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
+
+  MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
 }
 
 void NativeDeoptInstruction::verify() {

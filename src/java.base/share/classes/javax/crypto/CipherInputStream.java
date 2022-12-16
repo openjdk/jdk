@@ -105,11 +105,17 @@ public class CipherInputStream extends FilterInputStream {
      * operation, given the input length {@code inLen} (in bytes)
      * The ostart and ofinish indices are reset to 0.
      *
+     * If obuffer is null/zero-sized, do not allocate a new buffer.
+     * This reduces allocation for AEAD ciphers that never return data from update
+     *
      * @param inLen the input length (in bytes)
      */
     private void ensureCapacity(int inLen) {
+        if (obuffer == null || obuffer.length == 0) {
+            return;
+        }
         int minLen = cipher.getOutputSize(inLen);
-        if (obuffer == null || obuffer.length < minLen) {
+        if (obuffer.length < minLen) {
             obuffer = new byte[minLen];
         }
         ostart = 0;
@@ -142,7 +148,12 @@ public class CipherInputStream extends FilterInputStream {
             done = true;
             ensureCapacity(0);
             try {
-                ofinish = cipher.doFinal(obuffer, 0);
+                if (obuffer != null && obuffer.length > 0) {
+                    ofinish = cipher.doFinal(obuffer, 0);
+                } else {
+                    obuffer = cipher.doFinal();
+                    ofinish = obuffer.length;
+                }
             } catch (IllegalBlockSizeException | BadPaddingException
                     | ShortBufferException e) {
                 throw new IOException(e);
@@ -155,7 +166,14 @@ public class CipherInputStream extends FilterInputStream {
         }
         ensureCapacity(readin);
         try {
-            ofinish = cipher.update(ibuffer, 0, readin, obuffer, ostart);
+            // initial obuffer is assigned by update/doFinal;
+            // for AEAD ciphers, obuffer is always null or zero-length here
+            if (obuffer != null && obuffer.length > 0) {
+                ofinish = cipher.update(ibuffer, 0, readin, obuffer, ostart);
+            } else {
+                obuffer = cipher.update(ibuffer, 0, readin);
+                ofinish = (obuffer != null) ? obuffer.length : 0;
+            }
         } catch (IllegalStateException e) {
             throw e;
         } catch (ShortBufferException e) {
@@ -343,7 +361,11 @@ public class CipherInputStream extends FilterInputStream {
         if (!done) {
             ensureCapacity(0);
             try {
-                cipher.doFinal(obuffer, 0);
+                if (obuffer != null && obuffer.length > 0) {
+                    cipher.doFinal(obuffer, 0);
+                } else {
+                    cipher.doFinal();
+                }
             } catch (BadPaddingException | IllegalBlockSizeException
                     | ShortBufferException ex) {
                 // Catch exceptions as the rest of the stream is unused.

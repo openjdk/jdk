@@ -176,19 +176,15 @@ extern Mutex* tty_lock;                          // lock to synchronize output.
 void print_owned_locks_on_error(outputStream* st);
 void print_lock_ranks(outputStream* st);
 
-char *lock_name(Mutex *mutex);
-
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock);
 void assert_locked_or_safepoint_weak(const Mutex* lock);
 void assert_lock_strong(const Mutex* lock);
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread);
 #else
 #define assert_locked_or_safepoint(lock)
 #define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
-#define assert_locked_or_safepoint_or_handshake(lock, thread)
 #endif
 
 class MutexLocker: public StackObj {

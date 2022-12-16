@@ -388,7 +388,6 @@ public:
 
 protected:
   inline void init_rest();
-  void freeze_fast_init_cont_data(intptr_t* frame_sp);
   void throw_stack_overflow_on_humongous_chunk();
 
   // fast path
@@ -1462,7 +1461,7 @@ static bool monitors_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
   RegisterMap map(thread,
                   RegisterMap::UpdateMap::include,
-                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
@@ -1721,7 +1720,6 @@ protected:
   // fast path
   inline void prefetch_chunk_pd(void* start, int size_words);
   void patch_return(intptr_t* sp, bool is_last);
-  void patch_chunk_pd(intptr_t* sp); // TODO remove
 
   // slow path
   NOINLINE intptr_t* thaw_slow(stackChunkOop chunk, bool return_barrier);
@@ -1803,8 +1801,6 @@ public:
     assert(_base - 1 <= top() + total_size() + frame::metadata_words_at_bottom, "missed entry frame");
   }
 
-  int thaw_size() const { return _thaw_size; }
-  int argsize() const { return _argsize; }
   int entry_frame_extension() const { return _argsize + (_argsize > 0 ? frame::metadata_words_at_top : 0); }
 
   // top and bottom stack pointers
@@ -1865,7 +1861,6 @@ void ThawBase::patch_return(intptr_t* sp, bool is_last) {
 
   address pc = !is_last ? StubRoutines::cont_returnBarrier() : _cont.entryPC();
   *(address*)(sp - frame::sender_sp_ret_address_offset()) = pc;
-  // patch_chunk_pd(sp); -- TODO: If not needed - remove method; it's not used elsewhere
 }
 
 template <typename ConfigT>
@@ -2568,7 +2563,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
   FrameValues values;
   assert(f.get_cb() != nullptr, "");
   RegisterMap map(f.is_heap_frame() ?
-                    (JavaThread*)nullptr :
+                    nullptr :
                     JavaThread::current(),
                   RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
@@ -2579,7 +2574,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
     frame::update_map_with_saved_link(&map, ContinuationHelper::Frame::callee_link_address(f));
   }
   const_cast<frame&>(f).describe(values, 0, &map);
-  values.print_on((JavaThread*)nullptr, st);
+  values.print_on(static_cast<JavaThread*>(nullptr), st);
 }
 #endif
 

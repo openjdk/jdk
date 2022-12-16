@@ -714,6 +714,16 @@ public class IRNode {
         superWordNodes(POPCOUNT_VL, "PopCountVL");
     }
 
+    public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
+    }
+
+    public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
+    }
+
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
     static {
         String regex = START + "PopulateIndex" + MID + END;
@@ -1069,6 +1079,16 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
     }
 
+    public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
+    }
+
+    public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
+    }
+
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
@@ -1092,6 +1112,11 @@ public class IRNode {
     public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
+    }
+
+    public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_TEST, "VectorTest");
     }
 
     public static final String VFABD = PREFIX + "VFABD" + POSTFIX;
