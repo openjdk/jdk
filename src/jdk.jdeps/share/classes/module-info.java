@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines tools for analysing dependencies in Java libraries and programs,
  * including the <em>{@index jdeps jdeps tool}</em>,
@@ -57,6 +59,7 @@
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jdeps {
     requires java.compiler;
     requires jdk.compiler;

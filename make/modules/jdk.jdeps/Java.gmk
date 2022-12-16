@@ -28,3 +28,5 @@ COPY += .txt
 CLEAN_FILES += $(wildcard \
     $(TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/jdeps/resources/*.properties \
     $(TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/javap/resources/*.properties)
+JAVAC_FLAGS += --enable-preview
+DISABLED_WARNINGS_java += preview

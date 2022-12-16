@@ -152,6 +152,7 @@ module java.base {
         jdk.compiler,
         jdk.incubator.concurrent, // participates in preview features
         jdk.incubator.vector, // participates in preview features
+        jdk.jdeps, // participates in preview features
         jdk.jdi,
         jdk.jfr,
         jdk.jshell,
