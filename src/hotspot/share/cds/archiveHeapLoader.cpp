@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
-#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
