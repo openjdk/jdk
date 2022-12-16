@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +23,32 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
+#include "asm/codeBuffer.hpp"
+#include "code/codeBlob.hpp"
+#include "opto/c2_CodeStubs.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/compile.hpp"
-#include "opto/node.hpp"
 #include "opto/output.hpp"
-#include "runtime/sharedRuntime.hpp"
 
-#define __ masm.
-void C2SafepointPollStubTable::emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
-         "polling page return stub not created yet");
-  address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
-  RuntimeAddress callback_addr(stub);
+C2CodeStubList::C2CodeStubList() :
+  _stubs(Compile::current()->comp_arena(), 2, 0, NULL) {}
 
-  __ bind(entry->_stub_label);
-  InternalAddress safepoint_pc(__ pc() - __ offset() + entry->_safepoint_offset);
-  __ relocate(safepoint_pc.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, safepoint_pc.target(), offset);
-    __ addi(t0, t0, offset);
-  });
-  __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
-  __ far_jump(callback_addr);
+void C2CodeStubList::emit(CodeBuffer& cb) {
+  C2_MacroAssembler masm(&cb);
+  for (int i = _stubs.length() - 1; i >= 0; i--) {
+    C2CodeStub* stub = _stubs.at(i);
+    int max_size = stub->max_size();
+    // Make sure there is enough space in the code buffer
+    if (cb.insts()->maybe_expand_to_ensure_remaining(max_size) && cb.blob() == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+
+    DEBUG_ONLY(int size_before = cb.insts_size();)
+
+    stub->emit(masm);
+
+    DEBUG_ONLY(int actual_size = cb.insts_size() - size_before;)
+    assert(max_size >= actual_size, "Expected stub size (%d) must be larger than or equal to actual stub size (%d)", max_size, actual_size);
+  }
 }
-#undef __

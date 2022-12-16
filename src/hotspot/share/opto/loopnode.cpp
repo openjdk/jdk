@@ -2547,7 +2547,8 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 
 Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
     while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0) != NULL && ctrl->in(0)->is_If() &&
-            (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
+           !is_zero_trip_guard_if(ctrl->in(0)->as_If()) &&
+           (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
              (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
               ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
       ctrl = ctrl->in(0)->in(0);
@@ -2555,6 +2556,22 @@ Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
 
     return ctrl;
   }
+
+bool CountedLoopNode::is_zero_trip_guard_if(const IfNode* iff) {
+  if (iff->in(1) == NULL || !iff->in(1)->is_Bool()) {
+    return false;
+  }
+  if (iff->in(1)->in(1) == NULL || iff->in(1)->in(1)->Opcode() != Op_CmpI) {
+    return false;
+  }
+  if (iff->in(1)->in(1)->in(1) != NULL && iff->in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  if (iff->in(1)->in(1)->in(2) != NULL && iff->in(1)->in(1)->in(2)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  return false;
+}
 
 Node* CountedLoopNode::skip_predicates() {
   Node* ctrl = in(LoopNode::EntryControl);
@@ -4201,30 +4218,7 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     assert(head->is_Region(), "");
     worklist.push(head);
   }
-  // BFS traversal down the CFG, except through NeverBranch exits
-  for (uint i = 0; i < worklist.size(); ++i) {
-    Node* n = worklist.at(i);
-    assert(n->is_CFG(), "only traverse CFG");
-    if (n->is_Root()) {
-      // Found root -> there was an exit!
-      return false;
-    } else if (n->Opcode() == Op_NeverBranch) {
-      // Only follow the loop-internal projection, not the NeverBranch exit
-      ProjNode* proj = n->as_Multi()->proj_out_or_null(0);
-      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
-      worklist.push(proj);
-    } else {
-      // Traverse all CFG outputs
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* use = n->fast_out(i);
-        if (use->is_CFG()) {
-          worklist.push(use);
-        }
-      }
-    }
-  }
-  // No exit found for any loop -> all are infinite
-  return true;
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 #endif
 
@@ -5459,7 +5453,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
     return NULL;
   }
   Node* iffm = ctrl->in(0);
-  if (iffm == NULL || !iffm->is_If()) {
+  if (iffm == NULL || iffm->Opcode() != Op_If) {
     return NULL;
   }
   Node* bolzm = iffm->in(1);
