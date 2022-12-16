@@ -147,18 +147,8 @@ class arrayOopDesc : public oopDesc {
       // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for
       // passing around the size (in words) of an object. So, we need to avoid
       // overflowing an int when we add the header. See CRs 4718400 and 7110613.
-
-      // How many words does each element take? For elements smaller than a full
-      // word this will be 0 - which is correct because for such smaller elements
-      // we would not trigger int overflow in word-sized calculations.
-      int words_per_elem    = elem_size / HeapWordSize;
-      // How many words does the header need? It's ok to ignore the alignment,
-      // because elements are always aligned to their respective sizes, and
-      // we really only care about (at least) word-sized elements here.
-      size_t header_size_words = heap_word_size(base_offset_in_bytes(type));
-      assert(header_size_words < max_jint, "safe narrowing cast");
-      int header_size_elems = words_per_elem * (int)header_size_words;
-      return max_jint - header_size_elems;
+      int header_size_words = heap_word_size(base_offset_in_bytes(type));
+      return align_down(max_jint - header_size_words, MinObjAlignment);
     }
     return (int32_t)max_elements_per_size_t;
   }

@@ -39,7 +39,7 @@ public class TestOnOutOfMemoryError {
         if (args.length == 1) {
             // This should guarantee to throw:
             //  java.lang.OutOfMemoryError: Requested array size exceeds VM limit
-            long[] oa = new long[Integer.MAX_VALUE];
+            Object[] oa = new Object[Integer.MAX_VALUE];
             return;
         }
 
