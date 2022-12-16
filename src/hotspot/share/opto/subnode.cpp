@@ -1427,7 +1427,10 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return NULL;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock || cmp->is_SubTypeCheck()) return NULL;
+  if( cop == Op_FastLock || cop == Op_FastUnlock ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+    return NULL;
+  }
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
   if( !cmp1 ) return NULL;
@@ -1457,6 +1460,20 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     cmp->swap_edges(1, 2);
     cmp = phase->transform( cmp );
     return new BoolNode( cmp, _test.commute() );
+  }
+
+  // Change "bool eq/ne (cmp (cmove (bool tst (cmp2)) 1 0) 0)" into "bool tst/~tst (cmp2)"
+  if (cop == Op_CmpI &&
+      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      cmp1_op == Op_CMoveI && cmp2->find_int_con(1) == 0) {
+    // 0 should be on the true branch
+    if (cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
+        cmp1->in(CMoveNode::IfFalse)->find_int_con(0) != 0) {
+      BoolNode* target = cmp1->in(CMoveNode::Condition)->as_Bool();
+      return new BoolNode(target->in(1),
+                          (_test._test == BoolTest::eq) ? target->_test._test :
+                                                          target->_test.negate());
+    }
   }
 
   // Change "bool eq/ne (cmp (and X 16) 16)" into "bool ne/eq (cmp (and X 16) 0)".

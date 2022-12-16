@@ -3522,7 +3522,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
 
   // does the klass have any local variable information?
   InstanceKlass* ik = method->method_holder();
-  if (!ik->access_flags().has_localvariable_table()) {
+  if (!ik->has_localvariable_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 

@@ -1114,6 +1114,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
     }
 
+    public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_TEST, "VectorTest");
+    }
+
     public static final String VFABD = PREFIX + "VFABD" + POSTFIX;
     static {
         machOnlyNameRegex(VFABD, "vfabd");
