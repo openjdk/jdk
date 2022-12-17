@@ -135,8 +135,8 @@ public class HsErrFileUtils {
                 if (currentPositivePattern != null) {
                     throw new RuntimeException("hs-err file incomplete (first missing pattern: " + currentPositivePattern.pattern() + ")");
                 } else {
-                    // Impossible to reach here, where stack is not empty and currentPositivePattern which peeked from stack is null.
-                    // Beacuse, peek from stack returns null only when it is empty or has a null item.
+                    // Impossible to reach here, where stack is not empty and currentPositivePattern which was peeked from stack is null.
+                    // Because, peek from stack returns null only when it is empty or has a null item.
                     // A null item cannot be inserted into positivePatternStack because of using Collections.addAll() method.
                     throw new RuntimeException("A null pattern is given to match with error lines.");
                 }
