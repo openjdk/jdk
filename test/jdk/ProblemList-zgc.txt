@@ -26,3 +26,7 @@
 # List of quarantined tests for testing with ZGC.
 #
 #############################################################################
+
+jdk/internal/vm/Continuation/Fuzz.java#default 8298058 generic-x64
+java/lang/Thread/virtual/stress/Skynet.java#id0 8298894 macosx-x64
+java/lang/Thread/virtual/stress/Skynet.java#id1 8298894 macosx-x64
