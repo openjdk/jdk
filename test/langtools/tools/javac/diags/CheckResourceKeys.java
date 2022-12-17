@@ -49,7 +49,7 @@ public class CheckResourceKeys {
      * -findmissingkeys
      *      look for keys in resource bundles that are missing
      * -checkformats
-     *      validate MessageFormat patterns in resource bundle
+     *      validate MessageFormat patterns in resource bundles
      *
      * @throws Exception if invoked by jtreg and errors occur
      */
@@ -86,7 +86,7 @@ public class CheckResourceKeys {
                 System.err.println("where options include");
                 System.err.println("  -finddeadkeys      find keys in resource bundles which are no longer required");
                 System.err.println("  -findmissingkeys   find keys in resource bundles that are required but missing");
-                System.err.println("  -checkformats      validate MessageFormat patterns in resource bundle");
+                System.err.println("  -checkformats      validate MessageFormat patterns in resource bundles");
                 return true;
             }
         } else {
@@ -422,7 +422,7 @@ public class CheckResourceKeys {
      * and so they were unnecessary in the first place.
      */
     static void validateMessageFormatQuoted(String quoted) {
-        if (quoted.matches("[^'{}]+"))
+        if (quoted.matches("[^'{},]+"))
             throw new IllegalArgumentException("unescaped single quotes around \"" + quoted + "\"");
     }
 
