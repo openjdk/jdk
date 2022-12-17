@@ -25,6 +25,6 @@
 
 extern "C" {
 
-#include "./__ubsan_default_options.c"
+#include "./__asan_default_options.c"
 
 }

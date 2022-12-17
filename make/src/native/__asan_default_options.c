@@ -23,12 +23,33 @@
  * questions.
  */
 
-// Override weak symbol exposed by UBSan to override default options. This is called by UBSan
-// extremely early during library loading, before main is called. We need to override the default
-// options because by default UBSan only prints a warning for each occurrence. We want jtreg tests
-// to fail when undefined behavior is encountered. We also want a full stack trace for the offending
-// thread so it is easier to track down. You can override these options by setting the environment
-// variable UBSAN_OPTIONS.
-__attribute__((visibility("default"))) const char* __ubsan_default_options() {
-  return "halt_on_error=1,print_stacktrace=1";
+#ifndef ADDRESS_SANITIZER
+#error "Build misconfigured, preprocessor macro ADDRESS_SANITIZER should be defined"
+#endif
+
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
+#if (defined(__GNUC__) && !defined(__clang__)) || __has_attribute(visibility)
+#define ATTRIBUTE_DEFAULT_VISIBILITY __attribute__((visibility("default")))
+#else
+#define ATTRIBUTE_DEFAULT_VISIBILITY
+#endif
+
+#if (defined(__GNUC__) && !defined(__clang__)) || __has_attribute(used)
+#define ATTRIBUTE_USED __attribute__((used))
+#else
+#define ATTRIBUTE_USED
+#endif
+
+// Override weak symbol exposed by ASan to override default options. This is
+// called by ASan extremely early during library loading, before main is
+// called. You can override these options by setting the environment variable ASAN_OPTIONS.
+ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
+  return
+#ifndef LEAK_SANITIZER
+    "detect_leaks=0,"
+#endif
+    "handle_segv=0";
 }

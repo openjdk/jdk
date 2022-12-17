@@ -707,9 +707,9 @@ define SetupNativeCompilationBody
       # Rather than copy and paste code to everything with a main function, we add an additional
       # source file to every executable that exports __ubsan_default_options.
       ifneq ($$(filter %.cpp %.cc, $$($1_SRCS)), )
-        $1_SRCS += $(TOPDIR)/make/src/native/__ubsan_default_options.cpp
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.cpp
       else
-        $1_SRCS += $(TOPDIR)/make/src/native/__ubsan_default_options.c
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.c
       endif
     endif
   endif
