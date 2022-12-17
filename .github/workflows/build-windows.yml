@@ -78,11 +78,11 @@ jobs:
             suffix: -debug
 
     steps:
-      - name: 'Get MSYS2'
-        uses: ./.github/actions/get-msys2
-
       - name: 'Checkout the JDK source'
         uses: actions/checkout@v3
+
+      - name: 'Get MSYS2'
+        uses: ./.github/actions/get-msys2
 
       - name: 'Get the BootJDK'
         id: bootjdk
