@@ -87,19 +87,18 @@ abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
             initialize(new RSAKeyGenParameterSpec(keySize,
                     RSAKeyGenParameterSpec.F4), random);
         } catch (InvalidAlgorithmParameterException iape) {
-            throw new InvalidParameterException(iape.getMessage());
+            throw new InvalidParameterException(iape);
         }
     }
 
     // second initialize method. See JCA doc.
     public void initialize(AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidAlgorithmParameterException {
-        if (params instanceof RSAKeyGenParameterSpec == false) {
+        if (!(params instanceof RSAKeyGenParameterSpec rsaSpec)) {
             throw new InvalidAlgorithmParameterException
                 ("Params must be instance of RSAKeyGenParameterSpec");
         }
 
-        RSAKeyGenParameterSpec rsaSpec = (RSAKeyGenParameterSpec)params;
         int tmpKeySize = rsaSpec.getKeysize();
         BigInteger tmpPubExp = rsaSpec.getPublicExponent();
         AlgorithmParameterSpec tmpParams = rsaSpec.getKeyParams();
@@ -119,15 +118,14 @@ abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
             // vs FIPS 186-4 checks that F4 <= e < 2^256
             // for backward compatibility, we keep the same checks
             BigInteger minValue = RSAKeyGenParameterSpec.F0;
-            int maxBitLength = tmpKeySize;
             if (tmpPubExp.compareTo(RSAKeyGenParameterSpec.F0) < 0) {
                 throw new InvalidAlgorithmParameterException
                         ("Public exponent must be " + minValue + " or larger");
             }
-            if (tmpPubExp.bitLength() > maxBitLength) {
+            if (tmpPubExp.bitLength() > tmpKeySize) {
                 throw new InvalidAlgorithmParameterException
                         ("Public exponent must be no longer than " +
-                        maxBitLength + " bits");
+                                tmpKeySize + " bits");
             }
             useNew &= ((tmpPubExp.compareTo(RSAKeyGenParameterSpec.F4) >= 0) &&
                     (tmpPubExp.bitLength() < 256));
@@ -160,7 +158,7 @@ abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     public KeyPair generateKeyPair() {
         BigInteger e = publicExponent;
         BigInteger minValue = (useNew? getSqrt(keySize) : ZERO);
-        int lp = (keySize + 1) >> 1;;
+        int lp = (keySize + 1) >> 1;
         int lq = keySize - lp;
         int pqDiffSize = lp - 100;
 
@@ -212,7 +210,7 @@ abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     private static BigInteger getSqrt(int keySize) {
-        BigInteger sqrt = null;
+        BigInteger sqrt;
         switch (keySize) {
             case 2048:
                 sqrt = SQRT_2048;

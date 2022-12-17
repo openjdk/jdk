@@ -29,7 +29,7 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompositeOperationOr {
  public:
@@ -154,9 +154,11 @@ class PredicatedConcurrentWriteOp : public ConcurrentWriteOp<Operation> {
 
 template <typename Operation>
 class ExclusiveOp : private MutexedWriteOp<Operation> {
+ private:
+  Thread* const _thread;
  public:
   typedef typename Operation::Type Type;
-  ExclusiveOp(Operation& operation) : MutexedWriteOp<Operation>(operation) {}
+  ExclusiveOp(Operation& operation);
   bool process(Type* t);
   size_t processed() const { return MutexedWriteOp<Operation>::processed(); }
 };
@@ -181,9 +183,11 @@ class DiscardOp {
 
 template <typename Operation>
 class ExclusiveDiscardOp : private DiscardOp<Operation> {
+ private:
+  Thread* const _thread;
  public:
   typedef typename Operation::Type Type;
-  ExclusiveDiscardOp(jfr_operation_mode mode = concurrent) : DiscardOp<Operation>(mode) {}
+  ExclusiveDiscardOp(jfr_operation_mode mode = concurrent);
   bool process(Type* t);
   size_t processed() const { return DiscardOp<Operation>::processed(); }
   size_t elements() const { return DiscardOp<Operation>::elements(); }

@@ -184,6 +184,7 @@ import java.util.Set;
         throws IOException
     {
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(server, port));
+        @SuppressWarnings("deprecation")
         URL destURL = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) destURL.openConnection(proxy);
         conn.setConnectTimeout(connectTimeout);

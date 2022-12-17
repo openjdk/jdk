@@ -956,12 +956,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                     popup.putClientProperty("JPopupMenu.firePopupMenuCanceled", Boolean.TRUE);
                 }
                 MenuSelectionManager.defaultManager().clearSelectedPath();
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | Error e) {
                 realUngrabWindow();
-                throw ex;
-            } catch (Error err) {
-                realUngrabWindow();
-                throw err;
+                throw e;
             }
         }
 

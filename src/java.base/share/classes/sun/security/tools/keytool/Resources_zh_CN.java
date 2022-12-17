@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,6 +475,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "PKCS #10 \u8BC1\u4E66\u8BF7\u6C42 (\u7248\u672C 1.0)\n\u4E3B\u4F53: %1$s\n\u683C\u5F0F: %2$s\n\u516C\u5171\u5BC6\u94A5: %3$s\n\u7B7E\u540D\u7B97\u6CD5: %4$s\n"},
         {"verified.by.s.in.s.weak", "\u7531 %2$s \u4E2D\u7684 %1$s \u4EE5 %3$s \u9A8C\u8BC1"},
         {"whose.sigalg.disabled", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u800C\u4E14\u88AB\u7981\u7528\u3002"},
+        {"whose.sigalg.usagesignedjar", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\uFF0C\u65E0\u6CD5\u7528\u4E8E\u5728 %3$s \u540E\u5BF9 JAR \u8FDB\u884C\u7B7E\u540D\u3002"},
+        {"Unable.to.parse.denyAfter.string.in.exception.message", "\u65E0\u6CD5\u89E3\u6790\u5F02\u5E38\u9519\u8BEF\u6D88\u606F\u4E2D\u7684 denyAfter \u65E5\u671F\u5B57\u7B26\u4E32"},
         {"whose.sigalg.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002\u6B64\u7B97\u6CD5\u5C06\u5728\u672A\u6765\u7684\u66F4\u65B0\u4E2D\u88AB\u7981\u7528\u3002"},
         {"whose.key.disabled", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u800C\u4E14\u88AB\u7981\u7528\u3002"},
         {"whose.key.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002\u6B64\u5BC6\u94A5\u5927\u5C0F\u5C06\u5728\u672A\u6765\u7684\u66F4\u65B0\u4E2D\u88AB\u7981\u7528\u3002"},

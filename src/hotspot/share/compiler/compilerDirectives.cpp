@@ -26,6 +26,7 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
@@ -582,6 +583,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
     compilerdirectives_c1_flags(copy_members_definition)
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
+  set->_ideal_phase_name_mask = src->_ideal_phase_name_mask;
   return set;
 }
 

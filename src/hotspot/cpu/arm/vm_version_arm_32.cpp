@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"

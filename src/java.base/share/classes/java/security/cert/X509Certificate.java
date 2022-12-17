@@ -25,16 +25,15 @@
 
 package java.security.cert;
 
+import sun.security.util.SignatureUtil;
+import sun.security.x509.X509CertImpl;
+
+import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.spec.*;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import javax.security.auth.x500.X500Principal;
-
-import sun.security.x509.X509CertImpl;
-import sun.security.util.SignatureUtil;
 
 /**
  * <p>
@@ -708,7 +707,7 @@ implements X509Extension {
         byte[] tbsCert = getTBSCertificate();
         sig.update(tbsCert, 0, tbsCert.length);
 
-        if (sig.verify(getSignature()) == false) {
+        if (!sig.verify(getSignature())) {
             throw new SignatureException("Signature does not match.");
         }
     }

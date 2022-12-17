@@ -34,7 +34,7 @@ address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
     // the upper slots by offsetting from the base address.
     assert(base_reg->is_concrete(), "must pass base reg");
     int base_reg_enc = (base_reg->value() - ConcreteRegisterImpl::max_gpr) /
-                       FloatRegisterImpl::max_slots_per_register;
+                       FloatRegister::max_slots_per_register;
     intptr_t offset_in_bytes = slot_idx * VMRegImpl::stack_slot_size;
     address base_location = location(base_reg, nullptr);
     if (base_location != NULL) {

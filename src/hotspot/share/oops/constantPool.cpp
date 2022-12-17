@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -35,6 +37,7 @@
 #include "code/codeCache.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -57,8 +60,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 
@@ -298,23 +301,6 @@ void ConstantPool::archive_resolved_references() {
   }
 }
 
-void ConstantPool::resolve_class_constants(TRAPS) {
-  assert(DumpSharedSpaces, "used during dump time only");
-  // The _cache may be NULL if the _pool_holder klass fails verification
-  // at dump time due to missing dependencies.
-  if (cache() == NULL || reference_map() == NULL) {
-    return; // nothing to do
-  }
-
-  constantPoolHandle cp(THREAD, this);
-  for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_string()) {
-      int cache_index = cp->cp_to_object_index(index);
-      string_at_impl(cp, index, cache_index, CHECK);
-    }
-  }
-}
-
 void ConstantPool::add_dumped_interned_strings() {
   objArrayOop rr = resolved_references();
   if (rr != NULL) {
@@ -329,6 +315,7 @@ void ConstantPool::add_dumped_interned_strings() {
 }
 #endif
 
+#if INCLUDE_CDS
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
   if (!_pool_holder->is_linked() && !_pool_holder->is_rewritten()) {
@@ -342,13 +329,10 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;
 
-  // restore the C++ vtable from the shared archive
-  restore_vtable();
-
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::is_fully_available() &&
+    if (ArchiveHeapLoader::is_fully_available() &&
         _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -389,43 +373,70 @@ void ConstantPool::remove_unshareable_info() {
     resolved_references() != NULL ? resolved_references()->length() : 0);
   set_resolved_references(OopHandle());
 
-  int num_klasses = 0;
+  bool archived = false;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_unresolved_klass_in_error()) {
+    switch (tag_at(index).value()) {
+    case JVM_CONSTANT_UnresolvedClassInError:
       tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-    } else if (tag_at(index).is_method_handle_in_error()) {
+      break;
+    case JVM_CONSTANT_MethodHandleInError:
       tag_at_put(index, JVM_CONSTANT_MethodHandle);
-    } else if (tag_at(index).is_method_type_in_error()) {
+      break;
+    case JVM_CONSTANT_MethodTypeInError:
       tag_at_put(index, JVM_CONSTANT_MethodType);
-    } else if (tag_at(index).is_dynamic_constant_in_error()) {
+      break;
+    case JVM_CONSTANT_DynamicInError:
       tag_at_put(index, JVM_CONSTANT_Dynamic);
-    }
-    if (tag_at(index).is_klass()) {
-      // This class was resolved as a side effect of executing Java code
-      // during dump time. We need to restore it back to an UnresolvedClass,
-      // so that the proper class loading and initialization can happen
-      // at runtime.
-      bool clear_it = true;
-      if (pool_holder()->is_hidden() && index == pool_holder()->this_class_index()) {
-        // All references to a hidden class's own field/methods are through this
-        // index. We cannot clear it. See comments in ClassFileParser::fill_instance_klass.
-        clear_it = false;
-      }
-      if (clear_it) {
-        CPKlassSlot kslot = klass_slot_at(index);
-        int resolved_klass_index = kslot.resolved_klass_index();
-        int name_index = kslot.name_index();
-        assert(tag_at(name_index).is_symbol(), "sanity");
-        resolved_klasses()->at_put(resolved_klass_index, NULL);
-        tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
-        assert(klass_name_at(index) == symbol_at(name_index), "sanity");
-      }
+      break;
+    case JVM_CONSTANT_Class:
+      archived = maybe_archive_resolved_klass_at(index);
+      ArchiveBuilder::alloc_stats()->record_klass_cp_entry(archived);
+      break;
     }
   }
+
   if (cache() != NULL) {
+    // cache() is NULL if this class is not yet linked.
     cache()->remove_unshareable_info();
   }
 }
+
+bool ConstantPool::maybe_archive_resolved_klass_at(int cp_index) {
+  assert(ArchiveBuilder::current()->is_in_buffer_space(this), "must be");
+  assert(tag_at(cp_index).is_klass(), "must be resolved");
+
+  if (pool_holder()->is_hidden() && cp_index == pool_holder()->this_class_index()) {
+    // All references to a hidden class's own field/methods are through this
+    // index, which was resolved in ClassFileParser::fill_instance_klass. We
+    // must preserve it.
+    return true;
+  }
+
+  CPKlassSlot kslot = klass_slot_at(cp_index);
+  int resolved_klass_index = kslot.resolved_klass_index();
+  Klass* k = resolved_klasses()->at(resolved_klass_index);
+  // k could be NULL if the referenced class has been excluded via
+  // SystemDictionaryShared::is_excluded_class().
+
+  if (k != NULL) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    if (ClassPrelinker::can_archive_resolved_klass(src_cp, cp_index)) {
+      if (log_is_enabled(Debug, cds, resolve)) {
+        ResourceMark rm;
+        log_debug(cds, resolve)("Resolved klass CP entry [%d]: %s => %s", cp_index,
+                                pool_holder()->external_name(), k->external_name());
+      }
+      return true;
+    }
+  }
+
+  // This referenced class cannot be archived. Revert the tag to UnresolvedClass,
+  // so that the proper class loading and initialization can happen at runtime.
+  resolved_klasses()->at_put(resolved_klass_index, NULL);
+  tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
+  return false;
+}
+#endif // INCLUDE_CDS
 
 int ConstantPool::cp_to_object_index(int cp_index) {
   // this is harder don't do this so much.
@@ -583,7 +594,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     oop protection_domain = this_cp->pool_holder()->protection_domain();
     Handle h_prot (current, protection_domain);
     Handle h_loader (current, loader);
-    Klass* k = SystemDictionary::find_instance_klass(name, h_loader, h_prot);
+    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader, h_prot);
 
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
     if (k != NULL && current->is_Java_thread()) {
@@ -2006,11 +2017,11 @@ jint ConstantPool::cpool_entry_size(jint idx) {
 } /* end cpool_entry_size */
 
 
-// SymbolHashMap is used to find a constant pool index from a string.
-// This function fills in SymbolHashMaps, one for utf8s and one for
+// SymbolHash is used to find a constant pool index from a string.
+// This function fills in SymbolHashs, one for utf8s and one for
 // class names, returns size of the cpool raw bytes.
-jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
-                                          SymbolHashMap *classmap) {
+jint ConstantPool::hash_entries_to(SymbolHash *symmap,
+                                   SymbolHash *classmap) {
   jint size = 0;
 
   for (u2 idx = 1; idx < length(); idx++) {
@@ -2020,7 +2031,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
     switch(tag) {
       case JVM_CONSTANT_Utf8: {
         Symbol* sym = symbol_at(idx);
-        symmap->add_entry(sym, idx);
+        symmap->add_if_absent(sym, idx);
         DBG(printf("adding symbol entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
@@ -2028,7 +2039,7 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
       case JVM_CONSTANT_UnresolvedClass:
       case JVM_CONSTANT_UnresolvedClassInError: {
         Symbol* sym = klass_name_at(idx);
-        classmap->add_entry(sym, idx);
+        classmap->add_if_absent(sym, idx);
         DBG(printf("adding class entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
@@ -2049,8 +2060,8 @@ jint ConstantPool::hash_entries_to(SymbolHashMap *symmap,
 //   -1, in case of internal error
 //  > 0, count of the raw cpool bytes that have been copied
 int ConstantPool::copy_cpool_bytes(int cpool_size,
-                                          SymbolHashMap* tbl,
-                                          unsigned char *bytes) {
+                                   SymbolHash* tbl,
+                                   unsigned char *bytes) {
   u2   idx1, idx2;
   jint size  = 0;
   jint cnt   = length();
@@ -2213,15 +2224,15 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
 
 #undef DBG
 
-bool ConstantPool::is_maybe_on_continuation_stack() const {
-  // This method uses the similar logic as nmethod::is_maybe_on_continuation_stack()
+bool ConstantPool::is_maybe_on_stack() const {
+  // This method uses the similar logic as nmethod::is_maybe_on_stack()
   if (!Continuations::enabled()) {
     return false;
   }
 
   // If the condition below is true, it means that the nmethod was found to
   // be alive the previous completed marking cycle.
-  return cache()->gc_epoch() >= Continuations::previous_completed_gc_marking_cycle();
+  return cache()->gc_epoch() >= CodeCache::previous_completed_gc_marking_cycle();
 }
 
 // For redefinition, if any methods found in loom stack chunks, the gc_epoch is
@@ -2236,7 +2247,7 @@ bool ConstantPool::on_stack() const {
     return false;
   }
 
-  return is_maybe_on_continuation_stack();
+  return is_maybe_on_stack();
 }
 
 void ConstantPool::set_on_stack(const bool value) {
@@ -2267,12 +2278,13 @@ void ConstantPool::print_on(outputStream* st) const {
     st->cr();
   }
   if (pool_holder() != NULL) {
-    st->print_cr(" - holder: " INTPTR_FORMAT, p2i(pool_holder()));
+    st->print_cr(" - holder: " PTR_FORMAT, p2i(pool_holder()));
   }
-  st->print_cr(" - cache: " INTPTR_FORMAT, p2i(cache()));
-  st->print_cr(" - resolved_references: " INTPTR_FORMAT, p2i(resolved_references()));
-  st->print_cr(" - reference_map: " INTPTR_FORMAT, p2i(reference_map()));
-  st->print_cr(" - resolved_klasses: " INTPTR_FORMAT, p2i(resolved_klasses()));
+  st->print_cr(" - cache: " PTR_FORMAT, p2i(cache()));
+  st->print_cr(" - resolved_references: " PTR_FORMAT, p2i(resolved_references_or_null()));
+  st->print_cr(" - reference_map: " PTR_FORMAT, p2i(reference_map()));
+  st->print_cr(" - resolved_klasses: " PTR_FORMAT, p2i(resolved_klasses()));
+  st->print_cr(" - cp length: %d", length());
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused
     ((ConstantPool*)this)->print_entry_on(index, st);
@@ -2425,61 +2437,5 @@ void ConstantPool::verify_on(outputStream* st) {
     // Note: pool_holder() can be NULL in temporary constant pools
     // used during constant pool merging
     guarantee(pool_holder()->is_klass(),    "should be klass");
-  }
-}
-
-
-SymbolHashMap::~SymbolHashMap() {
-  SymbolHashMapEntry* next;
-  for (int i = 0; i < _table_size; i++) {
-    for (SymbolHashMapEntry* cur = bucket(i); cur != NULL; cur = next) {
-      next = cur->next();
-      delete(cur);
-    }
-  }
-  FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
-}
-
-void SymbolHashMap::add_entry(Symbol* sym, u2 value) {
-  char *str = sym->as_utf8();
-  unsigned int hash = compute_hash(str, sym->utf8_length());
-  unsigned int index = hash % table_size();
-
-  // check if already in map
-  // we prefer the first entry since it is more likely to be what was used in
-  // the class file
-  for (SymbolHashMapEntry *en = bucket(index); en != NULL; en = en->next()) {
-    assert(en->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
-    if (en->hash() == hash && en->symbol() == sym) {
-        return;  // already there
-    }
-  }
-
-  SymbolHashMapEntry* entry = new SymbolHashMapEntry(hash, sym, value);
-  entry->set_next(bucket(index));
-  _buckets[index].set_entry(entry);
-  assert(entry->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
-}
-
-SymbolHashMapEntry* SymbolHashMap::find_entry(Symbol* sym) {
-  assert(sym != NULL, "SymbolHashMap::find_entry - symbol is NULL");
-  char *str = sym->as_utf8();
-  int   len = sym->utf8_length();
-  unsigned int hash = SymbolHashMap::compute_hash(str, len);
-  unsigned int index = hash % table_size();
-  for (SymbolHashMapEntry *en = bucket(index); en != NULL; en = en->next()) {
-    assert(en->symbol() != NULL, "SymbolHashMapEntry symbol is NULL");
-    if (en->hash() == hash && en->symbol() == sym) {
-      return en;
-    }
-  }
-  return NULL;
-}
-
-void SymbolHashMap::initialize_table(int table_size) {
-  _table_size = table_size;
-  _buckets = NEW_C_HEAP_ARRAY(SymbolHashMapBucket, table_size, mtSymbol);
-  for (int index = 0; index < table_size; index++) {
-    _buckets[index].clear();
   }
 }

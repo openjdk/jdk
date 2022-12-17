@@ -23,8 +23,6 @@
 
 import jdk.test.lib.jvmti.DebugeeClass;
 
-import java.io.PrintStream;
-
 /*
  * @test
  *

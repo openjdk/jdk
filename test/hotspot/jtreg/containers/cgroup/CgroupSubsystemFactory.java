@@ -27,8 +27,8 @@
  * @key cgroups
  * @requires os.family == "linux"
  * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CgroupSubsystemFactory
  */
 
@@ -41,7 +41,7 @@ import java.nio.file.Paths;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.util.FileUtils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * Verify hotspot's detection heuristics of CgroupSubsystemFactory::create()
@@ -62,11 +62,19 @@ public class CgroupSubsystemFactory {
     private Path cgroupv1MntInfoZeroHierarchy;
     private Path cgroupv2CgInfoZeroHierarchy;
     private Path cgroupv2MntInfoZeroHierarchy;
+    private Path cgroupv2MntInfoDouble;
+    private Path cgroupv2MntInfoDouble2;
     private Path cgroupv1CgInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoNonZeroHierarchyOtherOrder;
     private Path cgroupv1MntInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoDoubleCpuset;
     private Path cgroupv1MntInfoDoubleCpuset2;
+    private Path cgroupv1MntInfoDoubleMemory;
+    private Path cgroupv1MntInfoDoubleMemory2;
+    private Path cgroupv1MntInfoDoubleCpu;
+    private Path cgroupv1MntInfoDoubleCpu2;
+    private Path cgroupv1MntInfoDoublePids;
+    private Path cgroupv1MntInfoDoublePids2;
     private Path cgroupv1MntInfoSystemdOnly;
     private String mntInfoEmpty = "";
     private Path cgroupV1SelfCgroup;
@@ -160,6 +168,15 @@ public class CgroupSubsystemFactory {
     private String mntInfoCgroupv1MoreCpusetLine = "121 32 0:37 / /cpusets rw,relatime shared:69 - cgroup none rw,cpuset\n";
     private String mntInfoCgroupv1DoubleCpuset = mntInfoCgroupv1MoreCpusetLine + mntInfoHybrid;
     private String mntInfoCgroupv1DoubleCpuset2 =  mntInfoHybrid + mntInfoCgroupv1MoreCpusetLine;
+    private String mntInfoCgroupv1MoreMemoryLine = "1100 1098 0:28 / /memory rw,nosuid,nodev,noexec,relatime master:6 - cgroup cgroup rw,memory\n";
+    private String mntInfoCgroupv1DoubleMemory = mntInfoCgroupv1MoreMemoryLine + mntInfoHybrid;
+    private String mntInfoCgroupv1DoubleMemory2 = mntInfoHybrid + mntInfoCgroupv1MoreMemoryLine;
+    private String mntInfoCgroupv1DoubleCpuLine = "1101 1098 0:29 / /cpu,cpuacct rw,nosuid,nodev,noexec,relatime master:7 - cgroup cgroup rw,cpu,cpuacct\n";
+    private String mntInfoCgroupv1DoubleCpu = mntInfoCgroupv1DoubleCpuLine + mntInfoHybrid;
+    private String mntInfoCgroupv1DoubleCpu2 = mntInfoHybrid + mntInfoCgroupv1DoubleCpuLine;
+    private String mntInfoCgroupv1DoublePidsLine = "1107 1098 0:35 / /pids rw,nosuid,nodev,noexec,relatime master:13 - cgroup cgroup rw,pids\n";
+    private String mntInfoCgroupv1DoublePids = mntInfoCgroupv1DoublePidsLine + mntInfoHybrid;
+    private String mntInfoCgroupv1DoublePids2 = mntInfoHybrid + mntInfoCgroupv1DoublePidsLine;
     private String cgroupsNonZeroHierarchy =
             "#subsys_name hierarchy   num_cgroups enabled\n" +
             "cpuset  3   1   1\n" +
@@ -175,7 +192,11 @@ public class CgroupSubsystemFactory {
             "hugetlb 6   1   1\n" +
             "pids    9   80  1";  // hierarchy has to match procSelfCgroupHybridContent
     private String mntInfoCgroupsV2Only =
-            "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate";
+            "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 none rw,seclabel,nsdelegate\n";
+    private String mntInfoCgroupsV2MoreLine =
+            "240 232 0:24 /../.. /cgroup-in ro,relatime - cgroup2 cgroup2 rw,nsdelegate\n";
+    private String mntInfoCgroupsV2Double = mntInfoCgroupsV2MoreLine + mntInfoCgroupsV2Only;
+    private String mntInfoCgroupsV2Double2 = mntInfoCgroupsV2Only + mntInfoCgroupsV2MoreLine;
     private String mntInfoCgroupsV1SystemdOnly =
             "35 26 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime - cgroup systemd rw,name=systemd\n" +
             "26 18 0:19 / /sys/fs/cgroup rw,relatime - tmpfs none rw,size=4k,mode=755\n";
@@ -217,6 +238,12 @@ public class CgroupSubsystemFactory {
             cgroupv2MntInfoZeroHierarchy = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2");
             Files.writeString(cgroupv2MntInfoZeroHierarchy, mntInfoCgroupsV2Only);
 
+            cgroupv2MntInfoDouble = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2_double");
+            Files.writeString(cgroupv2MntInfoDouble, mntInfoCgroupsV2Double);
+
+            cgroupv2MntInfoDouble2 = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2_double2");
+            Files.writeString(cgroupv2MntInfoDouble2, mntInfoCgroupsV2Double2);
+
             cgroupv1CgInfoNonZeroHierarchy = Paths.get(existingDirectory.toString(), "cgroups_non_zero");
             Files.writeString(cgroupv1CgInfoNonZeroHierarchy, cgroupsNonZeroHierarchy);
 
@@ -243,6 +270,24 @@ public class CgroupSubsystemFactory {
 
             cgroupv1MntInfoDoubleCpuset2 = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_cpuset2");
             Files.writeString(cgroupv1MntInfoDoubleCpuset2, mntInfoCgroupv1DoubleCpuset2);
+
+            cgroupv1MntInfoDoubleMemory = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_memory");
+            Files.writeString(cgroupv1MntInfoDoubleMemory, mntInfoCgroupv1DoubleMemory);
+
+            cgroupv1MntInfoDoubleMemory2 = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_memory2");
+            Files.writeString(cgroupv1MntInfoDoubleMemory2, mntInfoCgroupv1DoubleMemory2);
+
+            cgroupv1MntInfoDoubleCpu = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_cpu");
+            Files.writeString(cgroupv1MntInfoDoubleCpu, mntInfoCgroupv1DoubleCpu);
+
+            cgroupv1MntInfoDoubleCpu2 = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_cpu2");
+            Files.writeString(cgroupv1MntInfoDoubleCpu2, mntInfoCgroupv1DoubleCpu2);
+
+            cgroupv1MntInfoDoublePids = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_pids");
+            Files.writeString(cgroupv1MntInfoDoublePids, mntInfoCgroupv1DoublePids);
+
+            cgroupv1MntInfoDoublePids2 = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_double_pids2");
+            Files.writeString(cgroupv1MntInfoDoublePids2, mntInfoCgroupv1DoublePids2);
 
             cgroupv1MntInfoSystemdOnly = Paths.get(existingDirectory.toString(), "mnt_info_cgroupv1_systemd_only");
             Files.writeString(cgroupv1MntInfoSystemdOnly, mntInfoCgroupsV1SystemdOnly);
@@ -291,14 +336,14 @@ public class CgroupSubsystemFactory {
         System.out.println("testCgroupv1JoinControllerMounts PASSED!");
     }
 
-    public void testCgroupv1MultipleCpusetMounts(WhiteBox wb, Path mountInfo) {
+    public void testCgroupv1MultipleControllerMounts(WhiteBox wb, Path mountInfo) {
         String procCgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = mountInfo.toString();
         int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
-        Asserts.assertEQ(CGROUPS_V1, retval, "Multiple cpuset controllers, but only one in /sys/fs/cgroup");
+        Asserts.assertEQ(CGROUPS_V1, retval, "Multiple controllers, but only one in /sys/fs/cgroup");
         Asserts.assertTrue(isValidCgroup(retval));
-        System.out.println("testCgroupv1MultipleCpusetMounts PASSED!");
+        System.out.println("testCgroupv1MultipleControllerMounts PASSED!");
     }
 
     public void testCgroupv1SystemdOnly(WhiteBox wb) {
@@ -341,10 +386,10 @@ public class CgroupSubsystemFactory {
         System.out.println("testCgroupv1MissingMemoryController PASSED!");
     }
 
-    public void testCgroupv2(WhiteBox wb) {
+    public void testCgroupv2(WhiteBox wb, Path mountInfo) {
         String procCgroups = cgroupv2CgInfoZeroHierarchy.toString();
         String procSelfCgroup = cgroupV2SelfCgroup.toString();
-        String procSelfMountinfo = cgroupv2MntInfoZeroHierarchy.toString();
+        String procSelfMountinfo = mountInfo.toString();
         int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V2, retval, "Expected");
         Asserts.assertTrue(isValidCgroup(retval));
@@ -388,13 +433,21 @@ public class CgroupSubsystemFactory {
         try {
             test.testCgroupv1SystemdOnly(wb);
             test.testCgroupv1NoMounts(wb);
-            test.testCgroupv2(wb);
+            test.testCgroupv2(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2(wb, test.cgroupv2MntInfoDouble);
+            test.testCgroupv2(wb, test.cgroupv2MntInfoDouble2);
             test.testCgroupV1Hybrid(wb);
             test.testCgroupV1HybridMntInfoOrder(wb);
             test.testCgroupv1MissingMemoryController(wb);
             test.testCgroupv2NoCgroup2Fs(wb);
-            test.testCgroupv1MultipleCpusetMounts(wb, test.cgroupv1MntInfoDoubleCpuset);
-            test.testCgroupv1MultipleCpusetMounts(wb, test.cgroupv1MntInfoDoubleCpuset2);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoubleCpuset);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoubleCpuset2);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoubleMemory);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoubleMemory2);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoubleCpu);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoubleCpu2);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoublePids);
+            test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoublePids2);
             test.testCgroupv1JoinControllerCombo(wb);
             test.testNonZeroHierarchyOnlyFreezer(wb);
         } finally {

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"
 
 void* GrowableArrayResourceAllocator::allocate(int max, int elementSize) {
@@ -57,11 +57,11 @@ void GrowableArrayCHeapAllocator::deallocate(void* elements) {
 
 #ifdef ASSERT
 
-GrowableArrayNestingCheck::GrowableArrayNestingCheck(bool on_stack) :
-    _nesting(on_stack ? Thread::current()->resource_area()->nesting() : 0) {
+GrowableArrayNestingCheck::GrowableArrayNestingCheck(bool on_resource_area) :
+    _nesting(on_resource_area ? Thread::current()->resource_area()->nesting() : 0) {
 }
 
-void GrowableArrayNestingCheck::on_stack_alloc() const {
+void GrowableArrayNestingCheck::on_resource_area_alloc() const {
   // Check for insidious allocation bug: if a GrowableArray overflows, the
   // grown array must be allocated under the same ResourceMark as the original.
   // Otherwise, the _data array will be deallocated too early.
@@ -79,14 +79,14 @@ void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
   // Otherwise there's a strict one-to-one mapping
   assert(on_C_heap() == array->allocated_on_C_heap(),
          "growable array must be C heap allocated if elements are");
-  assert(on_stack() == array->allocated_on_res_area(),
+  assert(on_resource_area() == array->allocated_on_res_area(),
          "growable array must be resource allocated if elements are");
   assert(on_arena() == array->allocated_on_arena(),
          "growable array must be arena allocated if elements are");
 }
 
-void GrowableArrayMetadata::on_stack_alloc_check() const {
-  _nesting_check.on_stack_alloc();
+void GrowableArrayMetadata::on_resource_area_alloc_check() const {
+  _nesting_check.on_resource_area_alloc();
 }
 
 #endif // ASSERT

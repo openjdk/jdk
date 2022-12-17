@@ -24,7 +24,6 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,9 +31,11 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
-#include "os_share_linux.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -42,12 +43,13 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
@@ -246,9 +248,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       CodeBlob *cb = NULL;
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         stub = SharedRuntime::get_handle_wrong_method_stub();
       }
@@ -354,7 +356,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       else if (sig == SIGBUS) {
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
@@ -467,9 +469,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
-  intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
-  print_hex_dump(st, (address)sp, (address)(sp + 128), sizeof(intptr_t));
+  address sp = (address)os::Linux::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
@@ -516,7 +517,9 @@ int os::extra_bang_size_in_bytes() {
 }
 
 #ifdef HAVE_FUNCTION_DESCRIPTORS
-void* os::resolve_function_descriptor(void* p) {
+void* os::Linux::resolve_function_descriptor(void* p) {
   return ((const FunctionDescriptor*)p)->entry();
 }
 #endif
+
+void os::setup_fpu() {}

@@ -606,9 +606,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       ShenandoahCodeRoots::arm_nmethods();
       ShenandoahStackWatermark::change_epoch_id();
 
-      // Notify JVMTI that oops are changed.
-      JvmtiTagMap::set_needs_rehashing();
-
       if (ShenandoahPacing) {
         heap->pacer()->setup_for_evac();
       }
@@ -834,7 +831,7 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
 private:
   BarrierSetNMethod* const                  _bs;
-  ShenandoahEvacuateUpdateMetadataClosure<> _cl;
+  ShenandoahEvacuateUpdateMetadataClosure   _cl;
 
 public:
   ShenandoahEvacUpdateCodeCacheClosure() :
@@ -893,7 +890,7 @@ public:
       }
 
       {
-        ShenandoahEvacuateUpdateMetadataClosure<> cl;
+        ShenandoahEvacuateUpdateMetadataClosure cl;
         CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
         _cld_roots.cld_do(&clds, worker_id);
       }

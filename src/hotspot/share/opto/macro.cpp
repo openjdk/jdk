@@ -58,9 +58,6 @@
 #if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif // INCLUDE_G1GC
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 
 //
@@ -582,6 +579,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
   }
 
   if (can_eliminate && res != NULL) {
+    BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax);
                                j < jmax && can_eliminate; j++) {
       Node* use = res->fast_out(j);
@@ -598,8 +596,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X
-              SHENANDOAHGC_ONLY(&& (!UseShenandoahGC || !ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(n))) ) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n)) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -1117,23 +1114,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   return true;
 }
 
-//---------------------------set_eden_pointers-------------------------
-void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr) {
-  if (UseTLAB) {                // Private allocation: load from TLS
-    Node* thread = transform_later(new ThreadLocalNode());
-    int tlab_top_offset = in_bytes(JavaThread::tlab_top_offset());
-    int tlab_end_offset = in_bytes(JavaThread::tlab_end_offset());
-    eden_top_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_top_offset);
-    eden_end_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_end_offset);
-  } else {                      // Shared allocation: load from globals
-    CollectedHeap* ch = Universe::heap();
-    address top_adr = (address)ch->top_addr();
-    address end_adr = (address)ch->end_addr();
-    eden_top_adr = makecon(TypeRawPtr::make(top_adr));
-    eden_end_adr = basic_plus_adr(eden_top_adr, end_adr - top_adr);
-  }
-}
-
 
 Node* PhaseMacroExpand::make_load(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = basic_plus_adr(base, offset);
@@ -1244,7 +1224,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc()) {
+  if (!UseTLAB) {
     // Force slow-path allocation
     expand_fast_path = false;
     initial_slow_test = NULL;
@@ -1643,7 +1623,7 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     int size = TypeFunc::Parms + 2;
     CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
                                           CAST_FROM_FN_PTR(address,
-                                          static_cast<int (*)(Thread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
+                                          static_cast<int (*)(JavaThread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
                                           "dtrace_object_alloc",
                                           TypeRawPtr::BOTTOM);
 
@@ -2214,29 +2194,11 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
 
-  Node* thread = transform_later(new ThreadLocalNode());
-  if (Continuations::enabled()) {
-    // held_monitor_count increased in slowpath (complete_monitor_locking_C_inc_held_monitor_count), need compensate a decreament here
-    // this minimizes control flow changes here and add redundant count updates only in slowpath
-    Node* dec_count = make_load(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_dec_count = transform_later(new SubINode(dec_count, intcon(1)));
-    Node *compensate_dec = make_store(slow_ctrl, memproj, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_dec_count, T_INT);
-    mem_phi->init_req(1, compensate_dec);
-  } else {
-    mem_phi->init_req(1, memproj);
-  }
+  mem_phi->init_req(1, memproj);
+
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    // held_monitor_count increases in all path's post-dominate
-    Node* inc_count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* new_inc_count = transform_later(new AddINode(inc_count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), new_inc_count, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 //------------------------------expand_unlock_node----------------------
@@ -2291,15 +2253,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
 
-  if (Continuations::enabled()) {
-    Node* count = make_load(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), TypeInt::INT, TypeInt::INT->basic_type());
-    Node* newcount = transform_later(new SubINode(count, intcon(1)));
-    Node *store = make_store(region, mem_phi, thread, in_bytes(JavaThread::held_monitor_count_offset()), newcount, T_INT);
-
-    _igvn.replace_node(_callprojs.fallthrough_memproj, store);
-  } else {
-    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
-  }
+  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
@@ -2417,7 +2371,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque2   ||
                n->Opcode() == Op_Opaque3   ||
                n->Opcode() == Op_Opaque4   ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2460,7 +2413,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         C->remove_macro_node(n);
         _igvn._worklist.push(n);
         success = true;
-      } else if (n->is_Opaque1() || n->Opcode() == Op_Opaque2) {
+      } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
 #if INCLUDE_RTM_OPT

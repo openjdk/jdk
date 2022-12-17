@@ -248,20 +248,25 @@ bool ciMethodData::load_data() {
 
   // Note:  Extra data are all BitData, and do not need translation.
   _invocation_counter = mdo->invocation_count();
-  _state = mdo->is_mature()? mature_state: immature_state;
+  if (_invocation_counter == 0 && mdo->backedge_count() > 0) {
+    // Avoid skewing counter data during OSR compilation.
+    // Sometimes, MDO is allocated during the very first invocation and OSR compilation is triggered
+    // solely by backedge counter while invocation counter stays zero. In such case, it's important
+    // to observe non-zero invocation count to properly scale profile counts (see ciMethod::scale_count()).
+    _invocation_counter = 1;
+  }
 
+  _state = mdo->is_mature() ? mature_state : immature_state;
   _eflags = mdo->eflags();
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
   _arg_returned  = mdo->arg_returned();
-#ifndef PRODUCT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
     if (is_empty()) {
       return false;
     }
   }
-#endif
   return true;
 }
 
@@ -606,6 +611,10 @@ uint ciMethodData::arg_modified(int arg) const {
   return aid->arg_modified(arg);
 }
 
+ciParametersTypeData* ciMethodData::parameters_type_data() const {
+  return _parameters != NULL ? new ciParametersTypeData(_parameters) : NULL;
+}
+
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {
   // Get offset within MethodData* of the data array
   ByteSize data_offset = MethodData::data_offset();
@@ -717,7 +726,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
     // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
     // harder. data()'s element type is intptr_t.
-    out->print(" " INTPTRNZ_FORMAT, data()[i]);
+    out->print(" " INTX_FORMAT_X, data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those

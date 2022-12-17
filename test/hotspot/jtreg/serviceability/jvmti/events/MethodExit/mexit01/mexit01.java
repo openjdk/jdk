@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
-
 /*
  * @test
  *
@@ -51,17 +48,8 @@ import java.io.PrintStream;
 
 public class mexit01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("mexit01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load mexit01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("mexit01");
     }
 
     static volatile int result;

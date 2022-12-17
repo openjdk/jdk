@@ -38,10 +38,10 @@ header extends java/lang/Object implements javax/management/openmbean/CompositeD
 class name com/sun/management/HotSpotDiagnosticMXBean
 header extends java/lang/Object implements java/lang/management/PlatformManagedObject nestMembers com/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat flags 601
 innerclass innerClass com/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat outerClass com/sun/management/HotSpotDiagnosticMXBean innerClassName ThreadDumpFormat flags 4019
-method name dumpThreads descriptor (Ljava/lang/String;Lcom/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat;)V thrownTypes java/io/IOException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
+method name dumpThreads descriptor (Ljava/lang/String;Lcom/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat;)V thrownTypes java/io/IOException flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;,reflective=Ztrue)
 
 class name com/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat
-header extends java/lang/Enum nestHost com/sun/management/HotSpotDiagnosticMXBean flags 4031 signature Ljava/lang/Enum<Lcom/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
+header extends java/lang/Enum nestHost com/sun/management/HotSpotDiagnosticMXBean flags 4031 signature Ljava/lang/Enum<Lcom/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;,reflective=Ztrue)
 innerclass innerClass com/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat outerClass com/sun/management/HotSpotDiagnosticMXBean innerClassName ThreadDumpFormat flags 4019
 field name TEXT_PLAIN descriptor Lcom/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat; flags 4019
 field name JSON descriptor Lcom/sun/management/HotSpotDiagnosticMXBean$ThreadDumpFormat; flags 4019

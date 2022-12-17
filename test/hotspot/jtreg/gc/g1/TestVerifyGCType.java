@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package gc.g1;
  * @summary Test the VerifyGCType flag to ensure basic functionality.
  * @requires vm.gc.G1
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestVerifyGCType
  */
 
@@ -40,7 +40,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestVerifyGCType {
     public static final String VERIFY_TAG    = "[gc,verify]";
@@ -125,8 +125,7 @@ public class TestVerifyGCType {
                                           new String[] {"-XX:+G1EvacuationFailureALot",
                                                         "-XX:G1EvacuationFailureALotCount=100",
                                                         "-XX:G1EvacuationFailureALotInterval=1",
-                                                        "-XX:+UnlockDiagnosticVMOptions",
-                                                        "-XX:-G1UsePreventiveGC"});
+                                                        "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 
         verifyCollection("Pause Young (Normal)", false, false, true, output.getStdout());

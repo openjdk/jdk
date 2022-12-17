@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import static org.testng.Assert.*;
  * @test
  * @run testng RandomTest
  * @summary test methods on Random
+ * @bug 8288596
  * @key randomness
  */
 @Test
@@ -443,6 +444,52 @@ public class RandomTest {
         final Random randomInstanceCopy = Random.from(randomInstance);
 
         assertSame(randomInstance, randomInstanceCopy);
+    }
+
+    private int delegationCount;
+
+    private class RandomGen implements RandomGenerator {
+
+        @Override
+        public boolean isDeprecated() {
+            delegationCount += 1;
+            return RandomGenerator.super.isDeprecated();
+        }
+
+        @Override
+        public float nextFloat(float bound) {
+            delegationCount += 1;
+            return RandomGenerator.super.nextFloat(bound);
+        }
+
+        @Override
+        public double nextDouble(double bound) {
+            delegationCount += 1;
+            return RandomGenerator.super.nextDouble(bound);
+        }
+
+        @Override
+        public long nextLong() {
+            return 0;
+        }
+
+    }
+
+    /*
+     * Test whether calls to methods inherited from RandomGenerator
+     * are delegated to the instance returned by from().
+     * This is not a complete coverage, but simulates the reproducer
+     * in issue JDK-8288596
+     */
+    public void testRandomFrom() {
+        delegationCount = 0;
+        var r = Random.from(new RandomGen());
+        r.isDeprecated();
+        r.nextFloat(1_000.0f);
+        r.nextFloat();  // not implemented in RandomGen, does not count
+        r.nextDouble(1_000.0);
+        r.nextDouble();  // not implemented in RandomGen, does not count
+        assertEquals(delegationCount, 3);
     }
 
 }

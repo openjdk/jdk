@@ -163,7 +163,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 
     // A ClassLoaderData created solely for a non-strong hidden class should never
     // have a ModuleEntryTable or PackageEntryTable created for it.
-    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
+    _packages = new PackageEntryTable();
     if (h_class_loader.is_null()) {
       // Create unnamed module for boot loader
       _unnamed_module = ModuleEntry::create_boot_unnamed_module(this);
@@ -283,6 +283,12 @@ void ClassLoaderData::clear_claim(int claim) {
   }
 }
 
+#ifdef ASSERT
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found claim: %d bits in _claim: %d", claim, _claim);
+}
+#endif
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);
@@ -400,26 +406,14 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
     f(_unnamed_module);
   }
   if (_modules != NULL) {
-    for (int i = 0; i < _modules->table_size(); i++) {
-      for (ModuleEntry* entry = _modules->bucket(i);
-           entry != NULL;
-           entry = entry->next()) {
-        f(entry);
-      }
-    }
+    _modules->modules_do(f);
   }
 }
 
 void ClassLoaderData::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   if (_packages != NULL) {
-    for (int i = 0; i < _packages->table_size(); i++) {
-      for (PackageEntry* entry = _packages->bucket(i);
-           entry != NULL;
-           entry = entry->next()) {
-        f(entry);
-      }
-    }
+    _packages->packages_do(f);
   }
 }
 
@@ -592,7 +586,7 @@ ModuleEntryTable* ClassLoaderData::modules() {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
     if ((modules = _modules) == NULL) {
-      modules = new ModuleEntryTable(ModuleEntryTable::_moduletable_entry_size);
+      modules = new ModuleEntryTable();
 
       {
         MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
@@ -610,23 +604,16 @@ const int _default_loader_dictionary_size = 107;
 Dictionary* ClassLoaderData::create_dictionary() {
   assert(!has_class_mirror_holder(), "class mirror holder cld does not have a dictionary");
   int size;
-  bool resizable = false;
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else {
     size = _default_loader_dictionary_size;
-    resizable = true;
   }
-  if (!DynamicallyResizeSystemDictionaries || DumpSharedSpaces) {
-    resizable = false;
-  }
-  return new Dictionary(this, size, resizable);
+  return new Dictionary(this, size);
 }
 
 // Tell the GC to keep this klass alive. Needed while iterating ClassLoaderDataGraph,
@@ -715,7 +702,7 @@ ClassLoaderData::~ClassLoaderData() {
   }
 
   if (_unnamed_module != NULL) {
-    _unnamed_module->delete_unnamed_module();
+    delete _unnamed_module;
     _unnamed_module = NULL;
   }
 
@@ -834,9 +821,10 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == NULL) {
-      _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, mtClass);
+      _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
+    ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
   }
@@ -985,6 +973,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
     case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_stw_fullgc_mark:            out->print_cr("stw full gc mark"); break;
+    case _claim_stw_fullgc_adjust:          out->print_cr("stw full gc adjust"); break;
     case _claim_other:                      out->print_cr("other"); break;
     case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
@@ -992,14 +982,23 @@ void ClassLoaderData::print_on(outputStream* out) const {
   }
   out->print_cr(" - handles             %d", _handles.count());
   out->print_cr(" - dependency count    %d", _dependency_count);
-  out->print   (" - klasses             {");
-  PrintKlassClosure closure(out);
-  ((ClassLoaderData*)this)->classes_do(&closure);
+  out->print   (" - klasses             { ");
+  if (Verbose) {
+    PrintKlassClosure closure(out);
+    ((ClassLoaderData*)this)->classes_do(&closure);
+  } else {
+     out->print("...");
+  }
   out->print_cr(" }");
   out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
   out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
   out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
-  out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  if (_dictionary != nullptr) {
+    out->print   (" - dictionary          " INTPTR_FORMAT " ", p2i(_dictionary));
+    _dictionary->print_size(out);
+  } else {
+    out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  }
   if (_jmethod_ids != NULL) {
     out->print   (" - jmethod count       ");
     Method::print_jmethod_ids_count(this, out);
@@ -1030,6 +1029,10 @@ void ClassLoaderData::verify() {
     guarantee(k->class_loader_data() == this, "Must be the same");
     k->verify();
     assert(k != k->next_link(), "no loops!");
+  }
+
+  if (_modules != NULL) {
+    _modules->verify();
   }
 }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ endif
 #   FOLLOW_SYMLINKS - Set to explicitly follow symlinks. Affects performance of
 #                     finding files.
 #   ZIP_OPTIONS extra options to pass to zip
-#   REPRODUCIBLE override ENABLE_REPRODUCIBLE_BUILD (to make zip reproducible or not)
+#   REPRODUCIBLE set to false to disable the step that makes zip reproducible
 
 SetupZipArchive = $(NamedParamsMacroTemplate)
 define SetupZipArchiveBody
@@ -130,7 +130,7 @@ define SetupZipArchiveBody
   )
 
   ifeq ($$($1_REPRODUCIBLE), )
-    $1_REPRODUCIBLE := $$(ENABLE_REPRODUCIBLE_BUILD)
+    $1_REPRODUCIBLE := true
   endif
 
   # Use a slightly shorter name for logging, but with enough path to identify this zip.

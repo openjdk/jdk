@@ -35,7 +35,7 @@ import jdk.jfr.consumer.RecordingStream;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestOnEvent
+ * @run main/othervm -Xlog:jfr+system+streaming=debug jdk.jfr.api.consumer.recordingstream.TestOnEvent
  */
 public class TestOnEvent {
 
@@ -154,12 +154,14 @@ public class TestOnEvent {
             EventProducer p = new EventProducer();
             p.start();
             Thread addHandler = new Thread(() ->  {
+                log("About to add handler");
                 r.onEvent(e -> {
                     // Got event, close stream
                     log("Executing onEvent");
                     r.close();
                     log("RecordingStream closed");
                 });
+                log("Handler added");
             });
             r.onFlush(() ->  {
                 // Only add handler once

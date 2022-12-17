@@ -310,7 +310,6 @@ method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractL
 method name name descriptor ()Ljava/util/Optional; flags 11 signature ()Ljava/util/Optional<Ljava/lang/String;>;
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1
 method name bitAlignment descriptor ()J flags 11
-method name byteSize descriptor ()J flags 1
 method name bitSize descriptor ()J flags 1
 method name isPadding descriptor ()Z flags 1
 method name hashCode descriptor ()I flags 1
@@ -318,6 +317,7 @@ method name equals descriptor (Ljava/lang/Object;)Z flags 1
 method name toString descriptor ()Ljava/lang/String; flags 401
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
+method name byteSize descriptor ()J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/Addressable
 header extends java/lang/Object sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -353,11 +353,11 @@ method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/GroupLayo
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/GroupLayout; flags 1
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/Linker
 header extends java/lang/Object sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -630,11 +630,11 @@ method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/SequenceL
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/SequenceLayout; flags 1
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/SymbolLookup
 header extends java/lang/Object flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;) runtimeAnnotations @Ljava/lang/FunctionalInterface;
@@ -709,11 +709,11 @@ method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/ValueLayo
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfAddress
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -728,9 +728,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfBoolean
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -745,9 +745,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfByte
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -762,9 +762,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfChar
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -779,9 +779,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfDouble
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -796,9 +796,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfFloat
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -813,9 +813,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfInt
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -830,9 +830,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfLong
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -847,9 +847,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/foreign/ValueLayout$OfShort
 header extends java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -864,9 +864,9 @@ method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flag
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041
 method name isPadding descriptor ()Z flags 1041
 method name bitSize descriptor ()J flags 1041
-method name byteSize descriptor ()J flags 1041
 method name withBitAlignment descriptor (J)Ljava/lang/foreign/AbstractLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AbstractLayout; flags 1041
+method name byteSize descriptor ()J flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 
 class name java/lang/invoke/CallSite
 header extends java/lang/Object sealed true flags 421

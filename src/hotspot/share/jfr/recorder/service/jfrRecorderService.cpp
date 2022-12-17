@@ -47,10 +47,10 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 

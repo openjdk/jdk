@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_SAFEPOINTMECHANISM_HPP
 
 #include "runtime/globals.hpp"
-#include "runtime/os.hpp"
+#include "runtime/osInfo.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
@@ -63,7 +63,7 @@ class SafepointMechanism : public AllStatic {
   static intptr_t poll_bit() { return _poll_bit; }
 
   static address get_polling_page()             { return _polling_page; }
-  static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + os::vm_page_size()); }
+  static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + OSInfo::vm_page_size()); }
 
   struct ThreadData {
     volatile uintptr_t _polling_word;
@@ -73,7 +73,6 @@ class SafepointMechanism : public AllStatic {
     inline uintptr_t get_polling_word();
 
     inline void set_polling_page(uintptr_t poll_value);
-    inline uintptr_t get_polling_page();
   };
 
   // Call this method to see if this thread should block for a safepoint or process handshake.

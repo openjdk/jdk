@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,7 @@
 #include "oops/method.hpp"
 #include "zeroInterpreterGenerator.hpp"
 
-ZeroInterpreterGenerator::ZeroInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
+ZeroInterpreterGenerator::ZeroInterpreterGenerator(): AbstractInterpreterGenerator() {
   generate_all();
 }
 

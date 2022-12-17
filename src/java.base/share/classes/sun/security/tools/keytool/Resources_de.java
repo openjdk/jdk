@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,6 +475,8 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "PKCS #10-Zertifikatsanforderung (Version 1.0)\nSubject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignaturalgorithmus: %4$s\n"},
         {"verified.by.s.in.s.weak", "Von %1$s in %2$s mit %3$s verifiziert"},
         {"whose.sigalg.disabled", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
+        {"whose.sigalg.usagesignedjar", "%1$s verwendet den Signaturalgorithmus %2$s. Das gilt als Sicherheitsrisiko und kann nach %3$s nicht zum Signieren von JAR-Archiven verwendet werden."},
+        {"Unable.to.parse.denyAfter.string.in.exception.message", "denyAfter-Datumszeichenfolge in Ausnahmemeldung kann nicht geparst werden"},
         {"whose.sigalg.weak", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko. Dieser Algorithmus wird in einem zuk\u00FCnftigen Update deaktiviert."},
         {"whose.key.disabled", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
         {"whose.key.weak", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko. Diese Schl\u00FCsselgr\u00F6\u00DFe wird in einem zuk\u00FCnftigen Update deaktiviert."},

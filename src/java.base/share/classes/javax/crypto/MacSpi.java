@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>Mac</code> class.
+ * for the {@code Mac} class.
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
  * of a particular MAC algorithm.
@@ -65,9 +65,9 @@ public abstract class MacSpi {
      * @param key the (secret) key.
      * @param params the algorithm parameters.
      *
-     * @exception InvalidKeyException if the given key is inappropriate for
+     * @throws InvalidKeyException if the given key is inappropriate for
      * initializing this MAC.
-     * @exception InvalidAlgorithmParameterException if the given algorithm
+     * @throws InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this MAC.
      */
     protected abstract void engineInit(Key key,
@@ -82,18 +82,18 @@ public abstract class MacSpi {
     protected abstract void engineUpdate(byte input);
 
     /**
-     * Processes the first <code>len</code> bytes in <code>input</code>,
-     * starting at <code>offset</code> inclusive.
+     * Processes the first {@code len} bytes in {@code input},
+     * starting at {@code offset} inclusive.
      *
      * @param input the input buffer.
-     * @param offset the offset in <code>input</code> where the input starts.
+     * @param offset the offset in {@code input} where the input starts.
      * @param len the number of bytes to process.
      */
     protected abstract void engineUpdate(byte[] input, int offset, int len);
 
     /**
-     * Processes <code>input.remaining()</code> bytes in the ByteBuffer
-     * <code>input</code>, starting at <code>input.position()</code>.
+     * Processes {@code input.remaining()} bytes in the ByteBuffer
+     * {@code input}, starting at {@code input.position()}.
      * Upon return, the buffer's position will be equal to its limit;
      * its limit will not have changed.
      *
@@ -101,6 +101,9 @@ public abstract class MacSpi {
      * process ByteBuffers more efficiently than byte arrays.
      *
      * @param input the ByteBuffer
+     *
+     * @throws NullPointerException if {@code input} is null
+     *
      * @since 1.5
      */
     protected void engineUpdate(ByteBuffer input) {
@@ -145,8 +148,8 @@ public abstract class MacSpi {
      *
      * @return a clone if the implementation is cloneable.
      *
-     * @exception CloneNotSupportedException if this is called
-     * on an implementation that does not support <code>Cloneable</code>.
+     * @throws CloneNotSupportedException if this is called
+     * on an implementation that does not support {@code Cloneable}.
      */
     public Object clone() throws CloneNotSupportedException {
         if (this instanceof Cloneable) {

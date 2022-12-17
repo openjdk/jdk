@@ -23,19 +23,19 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
+#include "jvm_io.h"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
-
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif

@@ -34,6 +34,7 @@
 // MacroAssembler extends Assembler by a few frequently used macros.
 
 class ciTypeArray;
+class OopMap;
 
 class MacroAssembler: public Assembler {
  public:
@@ -416,6 +417,8 @@ class MacroAssembler: public Assembler {
   inline address call_stub(Register function_entry);
   inline void call_stub_and_return_to(Register function_entry, Register return_pc);
 
+  void post_call_nop();
+
   //
   // Java utilities
   //
@@ -599,15 +602,12 @@ class MacroAssembler: public Assembler {
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
+
   // allocation (for C1)
-  void eden_allocate(
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Register t2,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise

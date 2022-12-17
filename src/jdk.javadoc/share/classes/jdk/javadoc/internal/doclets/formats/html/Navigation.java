@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
@@ -85,6 +86,7 @@ public class Navigation {
         CONSTANT_VALUES,
         DEPRECATED,
         DOC_FILE,
+        EXTERNAL_SPECS,
         HELP,
         INDEX,
         MODULE,
@@ -316,6 +318,7 @@ public class Navigation {
             case ALL_CLASSES:
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
+            case EXTERNAL_SPECS:
             case SERIALIZED_FORM:
             case SEARCH:
             case SYSTEM_PROPERTIES:
@@ -614,7 +617,8 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
-        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).addUnchecked(Text.EMPTY);
+        // The mobile menu button uses three empty spans to produce its animated icon
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
                 .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)

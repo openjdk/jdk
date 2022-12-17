@@ -30,9 +30,11 @@
 package java.math;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.ObjectStreamException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
@@ -868,6 +870,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     * @return the first integer greater than this {@code BigInteger} that
     *         is probably prime.
     * @throws ArithmeticException {@code this < 0} or {@code this} is too large.
+    * @implNote Due to the nature of the underlying algorithm,
+    *          and depending on the size of {@code this},
+    *          this method could consume a large amount of memory, up to
+    *          exhaustion of available heap space, or could run for a long time.
     * @since 1.5
     */
     public BigInteger nextProbablePrime() {
@@ -1273,13 +1279,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * with just the very first value.  Additional values will be created
          * on demand.
          */
-        powerCache = new BigInteger[Character.MAX_RADIX+1][];
+        BigInteger[][] cache = new BigInteger[Character.MAX_RADIX+1][];
         logCache = new double[Character.MAX_RADIX+1];
 
         for (int i=Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
-            powerCache[i] = new BigInteger[] { BigInteger.valueOf(i) };
+            cache[i] = new BigInteger[] { BigInteger.valueOf(i) };
             logCache[i] = Math.log(i);
         }
+        BigInteger.powerCache = cache;
     }
 
     /**
@@ -3879,6 +3886,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         this method is proportional to the value of this parameter.
      * @return {@code true} if this BigInteger is probably prime,
      *         {@code false} if it's definitely composite.
+     * @throws ArithmeticException {@code this} is too large.
+     * @implNote Due to the nature of the underlying primality test algorithm,
+     *          and depending on the size of {@code this} and {@code certainty},
+     *          this method could consume a large amount of memory, up to
+     *          exhaustion of available heap space, or could run for a long time.
      */
     public boolean isProbablePrime(int certainty) {
         if (certainty <= 0)
@@ -3888,7 +3900,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return true;
         if (!w.testBit(0) || w.equals(ONE))
             return false;
-
+        if (w.bitLength() > PRIME_SEARCH_BIT_LENGTH_LIMIT + 1) {
+            throw new ArithmeticException("Primality test implementation restriction on bitLength");
+        }
         return w.primeToCertainty(certainty, null);
     }
 
@@ -4824,17 +4838,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // prepare to read the alternate persistent fields
         ObjectInputStream.GetField fields = s.readFields();
 
-        // Read the alternate persistent fields that we care about
-        int sign = fields.get("signum", -2);
-        byte[] magnitude = (byte[])fields.get("magnitude", null);
+        // Read and validate the alternate persistent fields that we
+        // care about, signum and magnitude
 
-        // Validate signum
+        // Read and validate signum
+        int sign = fields.get("signum", -2);
         if (sign < -1 || sign > 1) {
             String message = "BigInteger: Invalid signum value";
             if (fields.defaulted("signum"))
                 message = "BigInteger: Signum not present in stream";
             throw new java.io.StreamCorruptedException(message);
         }
+
+        // Read and validate magnitude
+        byte[] magnitude = (byte[])fields.get("magnitude", null);
+        magnitude = magnitude.clone(); // defensive copy
         int[] mag = stripLeadingZeroBytes(magnitude, 0, magnitude.length);
         if ((mag.length == 0) != (sign == 0)) {
             String message = "BigInteger: signum-magnitude mismatch";
@@ -4843,18 +4861,24 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             throw new java.io.StreamCorruptedException(message);
         }
 
-        // Commit final fields via Unsafe
-        UnsafeHolder.putSign(this, sign);
-
-        // Calculate mag field from magnitude and discard magnitude
-        UnsafeHolder.putMag(this, mag);
-        if (mag.length >= MAX_MAG_LENGTH) {
-            try {
-                checkRange();
-            } catch (ArithmeticException e) {
-                throw new java.io.StreamCorruptedException("BigInteger: Out of the supported range");
-            }
+        // Equivalent to checkRange() on mag local without assigning
+        // this.mag field
+        if (mag.length > MAX_MAG_LENGTH ||
+            (mag.length == MAX_MAG_LENGTH && mag[0] < 0)) {
+            throw new java.io.StreamCorruptedException("BigInteger: Out of the supported range");
         }
+
+        // Commit final fields via Unsafe
+        UnsafeHolder.putSignAndMag(this, sign, mag);
+    }
+
+    /**
+     * Serialization without data not supported for this class.
+     */
+    @java.io.Serial
+    private void readObjectNoData()
+        throws ObjectStreamException {
+        throw new InvalidObjectException("Deserialized BigInteger objects need data");
     }
 
     // Support for resetting final fields while deserializing
@@ -4866,11 +4890,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         private static final long magOffset
                 = unsafe.objectFieldOffset(BigInteger.class, "mag");
 
-        static void putSign(BigInteger bi, int sign) {
+        static void putSignAndMag(BigInteger bi, int sign, int[] magnitude) {
             unsafe.putInt(bi, signumOffset, sign);
-        }
-
-        static void putMag(BigInteger bi, int[] magnitude) {
             unsafe.putReference(bi, magOffset, magnitude);
         }
     }

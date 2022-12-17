@@ -117,10 +117,6 @@ public:
                                       size_t desired_word_size,
                                       size_t* actual_word_size);
 
-  // Attempt allocation, retiring the current region and allocating a new one. It is
-  // assumed that attempt_allocation() has been tried and failed already first.
-  inline HeapWord* attempt_allocation_using_new_region(size_t word_size);
-
   // This is to be called when holding an appropriate lock. It first tries in the
   // current allocation region, and then attempts an allocation using a new region.
   inline HeapWord* attempt_allocation_locked(size_t word_size);
@@ -156,12 +152,40 @@ private:
   G1CollectedHeap* _g1h;
   G1Allocator* _allocator;
 
-  PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
+  // Collects per-destination information (e.g. young, old gen) about current PLAB
+  // and statistics about it.
+  struct PLABData {
+    PLAB** _alloc_buffer;
 
-  // Number of words allocated directly (not counting PLAB allocation).
-  size_t _direct_allocated[G1HeapRegionAttr::Num];
+    size_t _direct_allocated;             // Number of words allocated directly (not counting PLAB allocation).
+    size_t _num_plab_fills;               // Number of PLAB refills experienced so far.
+    size_t _num_direct_allocations;       // Number of direct allocations experienced so far.
 
-  void flush_and_retire_stats();
+    size_t _plab_fill_counter;            // How many PLAB refills left until boosting.
+    size_t _cur_desired_plab_size;        // Current desired PLAB size incorporating eventual boosting.
+
+    uint _num_alloc_buffers;              // The number of PLABs for this destination.
+
+    PLABData();
+    ~PLABData();
+
+    void initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills);
+
+    // Should we actually boost the PLAB size?
+    // The _plab_refill_counter reset value encodes the ResizePLAB flag value already, so no
+    // need to check here.
+    bool should_boost() const { return _plab_fill_counter == 0; }
+
+    void notify_plab_refill(size_t tolerated_refills, size_t next_plab_size);
+
+  } _dest_data[G1HeapRegionAttr::Num];
+
+  // The amount of PLAB refills tolerated until boosting PLAB size.
+  // This value is the same for all generations because they all use the same
+  // resizing logic.
+  size_t _tolerated_refills;
+
+  void flush_and_retire_stats(uint num_workers);
   inline PLAB* alloc_buffer(G1HeapRegionAttr dest, uint node_index) const;
   inline PLAB* alloc_buffer(region_type_t dest, uint node_index) const;
 
@@ -173,10 +197,10 @@ private:
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
-  ~G1PLABAllocator();
 
   size_t waste() const;
   size_t undo_waste() const;
+  size_t plab_size(G1HeapRegionAttr which) const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
   // allocating a new PLAB. Returns the address of the allocated memory, NULL if
@@ -221,7 +245,7 @@ protected:
   HeapRegion* _allocation_region;
 
   // Regions allocated for the current archive range.
-  GrowableArray<HeapRegion*> _allocated_regions;
+  GrowableArrayCHeap<HeapRegion*, mtGC> _allocated_regions;
 
   // Current allocation window within the current region.
   HeapWord* _bottom;
@@ -237,9 +261,7 @@ public:
     _open(open),
     _g1h(g1h),
     _allocation_region(NULL),
-    _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
-                                                         ResourceObj::C_HEAP),
-                        2), mtGC),
+    _allocated_regions(2),
     _bottom(NULL),
     _top(NULL),
     _max(NULL) { }

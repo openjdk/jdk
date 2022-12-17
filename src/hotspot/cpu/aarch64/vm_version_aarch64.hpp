@@ -104,7 +104,7 @@ public:
 
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
-    decl(ASIMD,         simd,          1)     \
+    decl(ASIMD,         asimd,         1)     \
     decl(EVTSTRM,       evtstrm,       2)     \
     decl(AES,           aes,           3)     \
     decl(PMULL,         pmull,         4)     \
@@ -120,7 +120,6 @@ public:
     /* flags above must follow Linux HWCAP */ \
     decl(SVEBITPERM,    svebitperm,    27)    \
     decl(SVE2,          sve2,          28)    \
-    decl(STXR_PREFETCH, stxr_prefetch, 29)    \
     decl(A53MAC,        a53mac,        31)
 
   enum Feature_Flag {
@@ -168,6 +167,12 @@ public:
   static void initialize_cpu_information(void);
 
   static bool use_rop_protection() { return _rop_protection; }
+
+  // For common 64/128-bit unpredicated vector operations, we may prefer
+  // emitting NEON instructions rather than the corresponding SVE instructions.
+  static bool use_neon_for_vector(int vector_length_in_bytes) {
+    return vector_length_in_bytes <= 16;
+  }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

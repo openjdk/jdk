@@ -45,6 +45,7 @@ class G1FullGCMarker;
 class G1FullGCScope;
 class G1FullGCCompactionPoint;
 class GCMemoryManager;
+class HeapRegion;
 class ReferenceProcessor;
 
 // Subject-to-discovery closure for reference processing during Full GC. During
@@ -62,9 +63,11 @@ public:
 // to have the same structure as the Young GC logging.
 class G1FullGCMark : StackObj {
   GCIdMark       _gc_id;
+  G1FullGCTracer _tracer;
   GCTraceCPUTime _cpu_time;
 public:
-  G1FullGCMark() : _gc_id(), _cpu_time() { }
+  G1FullGCMark() : _gc_id(), _tracer(), _cpu_time(&_tracer) { }
+  G1FullGCTracer* tracer() { return &_tracer; }
 };
 
 // The G1FullCollector holds data associated with the current Full GC.
@@ -89,11 +92,14 @@ class G1FullCollector : StackObj {
 
   G1FullGCHeapRegionAttr _region_attr_table;
 
+  HeapWord* volatile* _compaction_tops;
+
 public:
   G1FullCollector(G1CollectedHeap* heap,
                   bool explicit_gc,
                   bool clear_soft_refs,
-                  bool do_maximal_compaction);
+                  bool do_maximal_compaction,
+                  G1FullGCTracer* tracer);
   ~G1FullCollector();
 
   void prepare_collection();
@@ -127,6 +133,9 @@ public:
   inline void set_free(uint region_idx);
   inline bool is_free(uint region_idx) const;
   inline void update_from_compacting_to_skip_compacting(uint region_idx);
+
+  inline void set_compaction_top(HeapRegion* r, HeapWord* value);
+  inline HeapWord* compaction_top(HeapRegion* r) const;
 
 private:
   void phase1_mark_live_objects();

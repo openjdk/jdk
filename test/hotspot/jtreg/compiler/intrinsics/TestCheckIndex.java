@@ -28,15 +28,15 @@
  * @requires vm.compiler2.enabled
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation TestCheckIndex
  *
  */
 
 import java.util.Objects;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 import compiler.whitebox.CompilerWhiteBoxTest;
 

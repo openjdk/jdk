@@ -32,10 +32,13 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 public class InterfacePrivateCalls {
     interface I {
         private int bar() { return 0; }
@@ -61,7 +64,7 @@ public class InterfacePrivateCalls {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    @Fork(value=1, jvmArgsAppend={"-XX:TieredStopAtLevel=1"})
+    @Fork(value=3, jvmArgsAppend={"-XX:TieredStopAtLevel=1"})
     public void invokePrivateInterfaceMethodC1() {
         for (int i = 0; i < objs.length; ++i) {
             objs[i].foo();
@@ -71,7 +74,7 @@ public class InterfacePrivateCalls {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    @Fork(value=1)
+    @Fork(value=3)
     public void invokePrivateInterfaceMethodC2() {
         for (int i = 0; i < objs.length; ++i) {
             objs[i].foo();

@@ -118,7 +118,7 @@ class Access: public AllStatic {
   template <DecoratorSet expected_mo_decorators>
   static void verify_heap_oop_decorators() {
     const DecoratorSet heap_oop_decorators = AS_DECORATOR_MASK | ON_DECORATOR_MASK |
-                                             IN_HEAP | IS_ARRAY | IS_NOT_NULL;
+                                             IN_HEAP | IS_ARRAY | IS_NOT_NULL | IS_DEST_UNINITIALIZED;
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 
@@ -294,8 +294,8 @@ public:
   static inline void arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
                                arrayOop dst_obj, size_t dst_offset_in_bytes,
                                size_t length) {
-    AccessT::arraycopy(src_obj, src_offset_in_bytes, reinterpret_cast<const T*>(NULL),
-                       dst_obj, dst_offset_in_bytes, reinterpret_cast<T*>(NULL),
+    AccessT::arraycopy(src_obj, src_offset_in_bytes, static_cast<const T*>(nullptr),
+                       dst_obj, dst_offset_in_bytes, static_cast<T*>(nullptr),
                        length);
   }
 
@@ -303,7 +303,7 @@ public:
   static inline void arraycopy_to_native(arrayOop src_obj, size_t src_offset_in_bytes,
                                          T* dst,
                                          size_t length) {
-    AccessT::arraycopy(src_obj, src_offset_in_bytes, reinterpret_cast<const T*>(NULL),
+    AccessT::arraycopy(src_obj, src_offset_in_bytes, static_cast<const T*>(nullptr),
                        NULL, 0, dst,
                        length);
   }
@@ -313,15 +313,15 @@ public:
                                            arrayOop dst_obj, size_t dst_offset_in_bytes,
                                            size_t length) {
     AccessT::arraycopy(NULL, 0, src,
-                       dst_obj, dst_offset_in_bytes, reinterpret_cast<T*>(NULL),
+                       dst_obj, dst_offset_in_bytes, static_cast<T*>(nullptr),
                        length);
   }
 
   static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
                                    arrayOop dst_obj, size_t dst_offset_in_bytes,
                                    size_t length) {
-    return AccessT::oop_arraycopy(src_obj, src_offset_in_bytes, reinterpret_cast<const HeapWord*>(NULL),
-                                  dst_obj, dst_offset_in_bytes, reinterpret_cast<HeapWord*>(NULL),
+    return AccessT::oop_arraycopy(src_obj, src_offset_in_bytes, static_cast<const HeapWord*>(nullptr),
+                                  dst_obj, dst_offset_in_bytes, static_cast<HeapWord*>(nullptr),
                                   length);
   }
 

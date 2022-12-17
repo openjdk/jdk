@@ -37,13 +37,13 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -258,7 +258,6 @@ void VMThread::wait_for_vm_thread_exit() {
 
 static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation* op) {
   assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   assert(op != NULL, "invariant");
   const bool evaluate_at_safepoint = op->evaluate_at_safepoint();
   event->set_operation(op->type());
@@ -324,7 +323,7 @@ void VMThread::setup_periodic_safepoint_if_needed() {
   assert(_cur_vm_operation  == NULL, "Already have an op");
   assert(_next_vm_operation == NULL, "Already have an op");
   // Check for a cleanup before SafepointALot to keep stats correct.
-  long interval_ms = SafepointTracing::time_since_last_safepoint_ms();
+  jlong interval_ms = SafepointTracing::time_since_last_safepoint_ms();
   bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
                            (interval_ms >= GuaranteedSafepointInterval);
   if (!max_time_exceeded) {

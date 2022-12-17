@@ -37,6 +37,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -58,7 +59,7 @@ HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _m(Mutex::service - 1, FormatBuffer<128>("HeapRegionRemSet#%u_lock", hr->hrm_index())),
   _code_roots(),
-  _card_set_mm(config, G1SegmentedArrayFreePool::free_list_pool()),
+  _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
   _card_set(config, &_card_set_mm),
   _hr(hr),
   _state(Untracked) { }
@@ -82,7 +83,11 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   assert(occupied() == 0, "Should be clear.");
 }
 
-G1SegmentedArrayMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
+void HeapRegionRemSet::reset_table_scanner() {
+  _card_set.reset_table_scanner();
+}
+
+G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
   return _card_set_mm.memory_stats();
 }
 

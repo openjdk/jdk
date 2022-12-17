@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
 
 template <class T>
 inline void G1ScanClosureBase::handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj) {
-  if (region_attr.is_humongous()) {
+  if (region_attr.is_humongous_candidate()) {
     _g1h->set_humongous_is_live(obj);
   } else if (region_attr.is_optional()) {
     _par_scan_state->remember_reference_into_optional_region(p);
@@ -108,7 +108,7 @@ inline void G1RootRegionScanClosure::do_oop_work(T* p) {
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
-  _cm->mark_in_next_bitmap(_worker_id, obj);
+  _cm->mark_in_bitmap(_worker_id, obj);
 }
 
 template <class T>
@@ -117,18 +117,9 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // can't do because of races
   // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
-  assert(is_object_aligned(obj), "oop must be aligned");
-  assert(g1h->is_in_reserved(obj), "oop must be in reserved");
-
-  HeapRegion* from = g1h->heap_region_containing(p);
-
-  assert(from != NULL, "from region must be non-NULL");
-  assert(from->is_in_reserved(p) ||
-         (from->is_humongous() &&
-          g1h->heap_region_containing(p)->is_humongous() &&
-          from->humongous_start_region() == g1h->heap_region_containing(p)->humongous_start_region()),
-         "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
-         p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
+  assert(is_object_aligned(obj), "obj must be aligned");
+  assert(g1h->is_in(obj), "invariant");
+  assert(g1h->is_in(p), "invariant");
 #endif // ASSERT
 }
 
@@ -173,7 +164,7 @@ inline void G1ScanCardClosure::do_oop_work(T* p) {
 
   assert(!_g1h->is_in_cset((HeapWord*)p),
          "Oop originates from " PTR_FORMAT " (region: %u) which is in the collection set.",
-         p2i(p), _g1h->addr_to_region((HeapWord*)p));
+         p2i(p), _g1h->addr_to_region(p));
 
   const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   if (region_attr.is_in_cset()) {
@@ -210,7 +201,7 @@ void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1h->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
-  _cm->mark_in_next_bitmap(_worker_id, obj);
+  _cm->mark_in_bitmap(_worker_id, obj);
 }
 
 void G1ParCopyHelper::trim_queue_partially() {
@@ -246,7 +237,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
       do_cld_barrier(forwardee);
     }
   } else {
-    if (state.is_humongous()) {
+    if (state.is_humongous_candidate()) {
       _g1h->set_humongous_is_live(obj);
     } else if ((barrier != G1BarrierNoOptRoots) && state.is_optional()) {
       _par_scan_state->remember_root_into_optional_region(p);

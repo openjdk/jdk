@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1019,7 +1019,7 @@ final class DirectAudioDevice extends AbstractMixer {
             synchronized (mixer) {
                 if (isOpen()) {
                     throw new IllegalStateException("Clip is already open with format " + getFormat() +
-                                                    " and frame lengh of " + getFrameLength());
+                                                    " and frame length of " + getFrameLength());
                 } else {
                     // if the line is not currently open, try to open it with this format and buffer size
                     this.audioData = data;
@@ -1036,15 +1036,12 @@ final class DirectAudioDevice extends AbstractMixer {
                     try {
                         // use DirectDL's open method to open it
                         open(format, (int) Toolkit.millis2bytes(format, CLIP_BUFFER_TIME)); // one second buffer
-                    } catch (LineUnavailableException lue) {
+                    } catch (LineUnavailableException | IllegalArgumentException e) {
                         audioData = null;
-                        throw lue;
-                    } catch (IllegalArgumentException iae) {
-                        audioData = null;
-                        throw iae;
+                        throw e;
                     }
 
-                    // if we got this far, we can instanciate the thread
+                    // if we got this far, we can instantiate the thread
                     int priority = Thread.NORM_PRIORITY
                         + (Thread.MAX_PRIORITY - Thread.NORM_PRIORITY) / 3;
                     thread = JSSecurityManager.createThread(this,
@@ -1074,7 +1071,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
                 if (isOpen()) {
                     throw new IllegalStateException("Clip is already open with format " + getFormat() +
-                                                    " and frame lengh of " + getFrameLength());
+                                                    " and frame length of " + getFrameLength());
                 }
                 int lengthInFrames = (int)stream.getFrameLength();
                 int bytesRead = 0;
@@ -1215,7 +1212,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
             // if the end position is less than the start position, throw IllegalArgumentException
             if (end < start) {
-                throw new IllegalArgumentException("End position " + end + "  preceeds start position " + start);
+                throw new IllegalArgumentException("End position " + end + "  precedes start position " + start);
             }
 
             // slight race condition with the run() method, but not a big problem

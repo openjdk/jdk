@@ -146,7 +146,7 @@ LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
 LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 LIR_Opr FrameMap::_caller_save_xmm_regs[] = {};
 
-XMMRegister FrameMap::_xmm_regs [] = { 0, };
+XMMRegister FrameMap::_xmm_regs[] = {};
 
 XMMRegister FrameMap::nr2xmmreg(int rnr) {
   assert(_init_done, "tables not initialized");

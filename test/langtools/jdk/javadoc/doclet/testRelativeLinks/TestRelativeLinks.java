@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,8 @@ public class TestRelativeLinks extends JavadocTester {
             """
                 <a href="C.html#class-fragment">fragment class link</a>""");
 
-        // subclass in same pacakge
+        // subclass in same package
         checkOutput("pkg/D.html", true,
-                """
-                    <a href="relative-class-link.html">relative class link</a>""",
-                """
-                    <a href="C.html#class-fragment">fragment class link</a>""",
                 """
                     <a href="relative-method-link.html">relative method link</a>""",
                 """
@@ -102,10 +98,6 @@ public class TestRelativeLinks extends JavadocTester {
 
         // subclass in subpackage
         checkOutput("pkg/sub/F.html", true,
-                """
-                    <a href="../../pkg/relative-class-link.html">relative class link</a>""",
-                """
-                    <a href="../../pkg/C.html#class-fragment">fragment class link</a>""",
                 """
                     <a href="../../pkg/relative-method-link.html">relative method link</a>""",
                 """
@@ -150,10 +142,6 @@ public class TestRelativeLinks extends JavadocTester {
         // CLASS_USE
         checkOutput("pkg/class-use/C.html", true,
             """
-                <a href="../../pkg/relative-class-link.html">relative class link</a>""",
-            """
-                <a href="../../pkg/C.html#class-fragment">fragment class link</a>""",
-            """
                 <a href="../../pkg/relative-field-link.html">relative field link</a>""",
             """
                 <a href="../../pkg/relative-method-link.html">relative method link</a>""",
@@ -175,19 +163,7 @@ public class TestRelativeLinks extends JavadocTester {
             """
                 <a href="../../pkg/relative-package-link.html">relative package link</a>""",
             """
-                <a href="../../pkg/package-summary.html#package-fragment">package fragment link</a>""",
-            // subclass inheriting relative link doc
-            """
-                <a href="../../pkg/relative-class-link.html">relative class link</a>""",
-            """
-                <a href="../../pkg/C.html#class-fragment">fragment class link</a>""");
-
-        // sibling package summary
-        checkOutput("pkg2/package-summary.html", true,
-            """
-                <a href="../pkg/relative-class-link.html">relative class link</a>""",
-            """
-                 <a href="../pkg/C.html#class-fragment">fragment class link</a>""");
+                <a href="../../pkg/package-summary.html#package-fragment">package fragment link</a>""");
     }
 
     @Override

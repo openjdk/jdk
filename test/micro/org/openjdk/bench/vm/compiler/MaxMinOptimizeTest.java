@@ -32,6 +32,9 @@ import org.openjdk.jmh.infra.Blackhole;
 @BenchmarkMode({Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class MaxMinOptimizeTest {
     private static final int COUNT = 100000;
 

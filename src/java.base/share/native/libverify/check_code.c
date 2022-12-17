@@ -1861,7 +1861,6 @@ run_dataflow(context_type *context) {
                 work_to_do = JNI_TRUE;
 #ifdef DEBUG
                 if (verify_verbose) {
-                    int opcode = this_idata->opcode;
                     jio_fprintf(stdout, "Instruction %d: ", inumber);
                     print_stack(context, &this_idata->stack_info);
                     print_registers(context, &this_idata->register_info);

@@ -49,14 +49,7 @@
 public class excatch01 {
 
     static {
-        try {
-            System.loadLibrary("excatch01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load excatch01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("excatch01");
     }
 
     static volatile int result;

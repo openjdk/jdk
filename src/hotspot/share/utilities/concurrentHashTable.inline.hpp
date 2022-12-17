@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
@@ -471,7 +472,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   GlobalCounter::write_synchronize();
   delete_f(rem_n->value());
   Node::destroy_node(_context, rem_n);
-  JFR_ONLY(_stats_rate.remove();)
+  JFR_ONLY(safe_stats_remove();)
   return true;
 }
 
@@ -520,7 +521,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     for (size_t node_it = 0; node_it < nd; node_it++) {
       del_f(ndel[node_it]->value());
       Node::destroy_node(_context, ndel[node_it]);
-      JFR_ONLY(_stats_rate.remove();)
+      JFR_ONLY(safe_stats_remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
     cs_context = GlobalCounter::critical_section_begin(thread);
@@ -559,7 +560,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     GlobalCounter::write_synchronize();
     for (size_t node_it = 0; node_it < dels; node_it++) {
       Node::destroy_node(_context, ndel[node_it]);
-      JFR_ONLY(_stats_rate.remove();)
+      JFR_ONLY(safe_stats_remove();)
       DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
     }
   }
@@ -901,7 +902,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         new_node->set_next(first_at_start);
         if (bucket->cas_first(new_node, first_at_start)) {
           foundf(new_node->value());
-          JFR_ONLY(_stats_rate.add();)
+          JFR_ONLY(safe_stats_add();)
           new_node = NULL;
           ret = true;
           break; /* leave critical section */
@@ -1006,13 +1007,17 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 // Constructor
 template <typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<CONFIG, F>::
-  ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, void* context)
+ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, void* context)
     : _context(context), _new_table(NULL), _log2_size_limit(log2size_limit),
       _log2_start_size(log2size), _grow_hint(grow_hint),
       _size_limit_reached(false), _resize_lock_owner(NULL),
       _invisible_epoch(0)
 {
-  _stats_rate = TableRateStatistics();
+  if (enable_statistics) {
+    _stats_rate = new TableRateStatistics();
+  } else {
+    _stats_rate = nullptr;
+  }
   _resize_lock =
     new Mutex(Mutex::nosafepoint-2, "ConcurrentHashTableResize_lock");
   _table = new InternalTable(log2size);
@@ -1027,6 +1032,7 @@ inline ConcurrentHashTable<CONFIG, F>::
   delete _resize_lock;
   free_nodes();
   delete _table;
+  delete _stats_rate;
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1101,7 +1107,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   if (!bucket->cas_first(new_node, bucket->first())) {
     assert(false, "bad");
   }
-  JFR_ONLY(_stats_rate.add();)
+  JFR_ONLY(safe_stats_add();)
   return true;
 }
 
@@ -1144,7 +1150,27 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // Here we skip protection,
   // thus no other thread may use this table at the same time.
   InternalTable* table = get_table();
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
+  do_scan_for_range(scan_f, 0, table->_size, table);
+
+  // If there is a paused resize we also need to visit the already resized items.
+  table = get_new_table();
+  if (table == NULL) {
+    return;
+  }
+  DEBUG_ONLY(if (table == POISON_PTR) { return; })
+
+  do_scan_for_range(scan_f, 0, table->_size, table);
+}
+
+template <typename CONFIG, MEMFLAGS F>
+template <typename FUNC>
+inline bool ConcurrentHashTable<CONFIG, F>::
+  do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
+{
+  assert(start_idx < stop_idx, "Must be");
+  assert(stop_idx <= table->_size, "Must be");
+
+  for (size_t bucket_it = start_idx; bucket_it < stop_idx; ++bucket_it) {
     Bucket* bucket = table->get_bucket(bucket_it);
     // If bucket have a redirect the items will be in the new table.
     // We must visit them there since the new table will contain any
@@ -1152,25 +1178,13 @@ inline void ConcurrentHashTable<CONFIG, F>::
     // If the bucket don't have redirect flag all items is in this table.
     if (!bucket->have_redirect()) {
       if(!visit_nodes(bucket, scan_f)) {
-        return;
+        return false;
       }
     } else {
       assert(bucket->is_locked(), "Bucket must be locked.");
     }
   }
-  // If there is a paused resize we also need to visit the already resized items.
-  table = get_new_table();
-  if (table == NULL) {
-    return;
-  }
-  DEBUG_ONLY(if (table == POISON_PTR) { return; })
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
-    Bucket* bucket = table->get_bucket(bucket_it);
-    assert(!bucket->is_locked(), "Bucket must be unlocked.");
-    if (!visit_nodes(bucket, scan_f)) {
-      return;
-    }
-  }
+  return true;
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1223,7 +1237,11 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
     summary.add((double)count);
   }
 
-  return TableStatistics(_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  if (_stats_rate == nullptr) {
+    return TableStatistics(summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  } else {
+    return TableStatistics(*_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  }
 }
 
 template <typename CONFIG, MEMFLAGS F>

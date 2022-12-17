@@ -31,8 +31,8 @@ package gc.arguments;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelGCThreads
  */
 
@@ -41,7 +41,7 @@ import java.util.List;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class TestParallelGCThreads {
 

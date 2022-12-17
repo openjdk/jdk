@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7119644
  * @summary Increase superword's vector size up to 256 bits
- *
+ * @library /test/lib
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *    -XX:-TieredCompilation -XX:-OptimizeFill
  *    compiler.codegen.TestByteLongVect
  */
 
 package compiler.codegen;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestByteLongVect {
   private static final int ARRLEN = 997;
@@ -40,6 +44,24 @@ public class TestByteLongVect {
   private static final int SCALE = 2;
   private static final int ALIGN_OFF = 8;
   private static final int UNALIGN_OFF = 5;
+
+  private static final byte[] bspecial = {
+    0, 0x8, 0xF, 0x3F, 0x7C, 0x7F, (byte)0x80, (byte)0x81, (byte)0x8F,
+    (byte)0xF3, (byte)0xF8, (byte)0xFF, (byte)0x38FF, (byte)0x3FFF,
+    (byte)0xFFFF, (byte)Integer.MAX_VALUE, (byte)Integer.MIN_VALUE
+  };
+
+  private static final long[] lspecial = {
+    0,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    Long.MAX_VALUE,
+    Long.MIN_VALUE,
+    -Long.MAX_VALUE,
+    -Long.MIN_VALUE
+  };
 
   public static void main(String args[]) {
     System.out.println("Testing Byte + Long vectors");
@@ -75,6 +97,8 @@ public class TestByteLongVect {
       test_vi_unaln(a1, b1, (byte)123, (long)103);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_b2l(a1, b1);
+      test_conv_l2b(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,6 +362,41 @@ public class TestByteLongVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (byte)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (long)v);
       }
+      for (int j = 0; j < bspecial.length; j++) {
+        byte bytevalue = bspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          a1[i] = bytevalue;
+        }
+        test_conv_b2l(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_b2l: b1", i, b1[i], (long)bytevalue);
+        }
+      }
+      for (int j = 0; j < lspecial.length; j++) {
+        long longValue = lspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          b1[i] = longValue;
+        }
+        test_conv_l2b(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_l2b: a1", i, a1[i], (byte)longValue);
+        }
+      }
+      Random r = Utils.getRandomInstance();
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = (byte)r.nextInt();
+      }
+      test_conv_b2l(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_b2l: b1", i, b1[i], (long)a1[i]);
+      }
+      for (int i = 0; i < ARRLEN; i++) {
+        b1[i] = r.nextLong();
+      }
+      test_conv_l2b(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_l2b: a1", i, a1[i], (byte)b1[i]);
+      }
 
     }
 
@@ -448,6 +507,18 @@ public class TestByteLongVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_b2l(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_b2l: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_l2b(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_l2b: " + (end - start));
     return errn;
   }
 
@@ -554,6 +625,18 @@ public class TestByteLongVect {
     for (int i = 0; i < a.length-UNALIGN_OFF; i+=1) {
       a[i] = b[i+UNALIGN_OFF];
       c[i] = d[i+UNALIGN_OFF];
+    }
+  }
+
+  static void test_conv_b2l(byte[] a, long[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      b[i] = (long) a[i];
+    }
+  }
+
+  static void test_conv_l2b(byte[] a, long[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      a[i] = (byte) b[i];
     }
   }
 

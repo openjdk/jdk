@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,36 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.Event;
-import java.awt.event.KeyEvent;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ZoomOutAction")
+@ActionRegistration(displayName = "#CTL_ZoomOutAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 500),
+        @ActionReference(path = "Shortcuts", name = "D-MINUS")
+})
+@Messages({
+        "CTL_ZoomOutAction=Zoom out",
+        "HINT_ZoomOutAction=Zoom out of the graph"
+})
 public final class ZoomOutAction extends CallableSystemAction {
+
+    public ZoomOutAction() {
+        putValue(Action.SHORT_DESCRIPTION, getDescription());
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+    }
 
     @Override
     public void performAction() {
@@ -45,20 +63,13 @@ public final class ZoomOutAction extends CallableSystemAction {
         }
     }
 
-    public ZoomOutAction() {
-
-        putValue(Action.SHORT_DESCRIPTION, "Zoom out");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, Event.CTRL_MASK, false));
-    }
-
     @Override
     public String getName() {
-        return "Zoom out";
+        return NbBundle.getMessage(ZoomOutAction.class, "CTL_ZoomOutAction");
     }
 
-    @Override
-    protected void initialize() {
-        super.initialize();
+    private String getDescription() {
+        return NbBundle.getMessage(ZoomOutAction.class, "HINT_ZoomOutAction");
     }
 
     @Override
@@ -73,6 +84,6 @@ public final class ZoomOutAction extends CallableSystemAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/zoom_out.png";
+        return "com/sun/hotspot/igv/view/images/zoomOut.svg"; // NOI18N
     }
 }

@@ -26,8 +26,6 @@
 #ifndef CPU_AARCH64_FRAME_AARCH64_HPP
 #define CPU_AARCH64_FRAME_AARCH64_HPP
 
-#include "runtime/synchronizer.hpp"
-
 // A frame represents a physical stack frame (an activation).  Frames can be
 // C or Java frames, and the Java frames can be interpreted or compiled.
 // In contrast, vframes represent source-level activations, so that one physical frame
@@ -47,13 +45,13 @@
 //    [constant pool cache   ]                   = cache()              cache_offset
 
 //    [klass of method       ]                   = mirror()             mirror_offset
-//    [padding               ]
+//    [extended SP           ]                                          extended_sp offset
 
 //    [methodData            ]                   = mdp()                mdx_offset
 //    [Method                ]                   = method()             method_offset
 
 //    [last esp              ]                   = last_sp()            last_sp_offset
-//    [old stack pointer     ]                     (sender_sp)          sender_sp_offset
+//    [sender's SP           ]                     (sender_sp)          sender_sp_offset
 
 //    [old frame pointer     ]   <- fp           = link()
 //    [return pc             ]
@@ -82,8 +80,8 @@
     interpreter_frame_last_sp_offset                 = interpreter_frame_sender_sp_offset - 1,
     interpreter_frame_method_offset                  = interpreter_frame_last_sp_offset - 1,
     interpreter_frame_mdp_offset                     = interpreter_frame_method_offset - 1,
-    interpreter_frame_padding_offset                 = interpreter_frame_mdp_offset - 1,
-    interpreter_frame_mirror_offset                  = interpreter_frame_padding_offset - 1,
+    interpreter_frame_extended_sp_offset             = interpreter_frame_mdp_offset - 1,
+    interpreter_frame_mirror_offset                  = interpreter_frame_extended_sp_offset - 1,
     interpreter_frame_cache_offset                   = interpreter_frame_mirror_offset - 1,
     interpreter_frame_locals_offset                  = interpreter_frame_cache_offset - 1,
     interpreter_frame_bcp_offset                     = interpreter_frame_locals_offset - 1,
@@ -103,6 +101,13 @@
 
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                                   = sender_sp_offset,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom                         = metadata_words,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                            = 0,
     // in bytes
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
@@ -181,6 +186,8 @@
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;
+
+  void interpreter_frame_set_extended_sp(intptr_t* sp);
 
   template <typename RegisterMapT>
   static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);

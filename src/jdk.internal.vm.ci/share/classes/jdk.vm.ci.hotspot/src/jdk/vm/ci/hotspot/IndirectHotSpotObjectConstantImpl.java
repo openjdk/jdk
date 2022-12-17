@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -144,11 +145,20 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
      */
     void clear(Object scopeDescription) {
         checkHandle();
-        CompilerToVM.compilerToVM().deleteGlobalHandle(objectHandle);
         if (rawAudit == null) {
             rawAudit = scopeDescription;
         }
+
+        clearHandle(objectHandle);
         objectHandle = 0L;
+    }
+
+    /**
+     * Sets the referent of {@code handle} to 0 so that it will be reclaimed when calling
+     * {@link CompilerToVM#releaseClearedOopHandles}.
+     */
+    static void clearHandle(long handle) {
+        UNSAFE.putLong(handle, 0);
     }
 
     @Override

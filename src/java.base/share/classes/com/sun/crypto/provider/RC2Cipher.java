@@ -86,9 +86,8 @@ public sealed class RC2Cipher extends CipherSpi
     protected void engineInit(int opmode, Key key,
             AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        if (params != null && params instanceof RC2ParameterSpec) {
-            embeddedCipher.initEffectiveKeyBits
-                (((RC2ParameterSpec)params).getEffectiveKeyBits());
+        if (params instanceof RC2ParameterSpec rc2Spec) {
+            embeddedCipher.initEffectiveKeyBits(rc2Spec.getEffectiveKeyBits());
         } else {
             embeddedCipher.initEffectiveKeyBits(0);
         }

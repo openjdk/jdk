@@ -75,6 +75,7 @@ class Bytes: AllStatic {
                ((u8)(((u4*)p)[0]));
 
       case 2:
+      case 6:
         return ((u8)(((u2*)p)[3]) << 48) |
                ((u8)(((u2*)p)[2]) << 32) |
                ((u8)(((u2*)p)[1]) << 16) |
@@ -133,6 +134,7 @@ class Bytes: AllStatic {
         break;
 
       case 2:
+      case 6:
         ((u2*)p)[3] = x >> 48;
         ((u2*)p)[2] = x >> 32;
         ((u2*)p)[1] = x >> 16;

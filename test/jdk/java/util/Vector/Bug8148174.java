@@ -25,8 +25,8 @@
  * @test
  * @bug 8148174
  * @summary repro for: NegativeArraySizeException in Vector.grow(int)
- * @run main/othervm -Xmx17g Bug8148174
- * @ignore This test has huge memory requirements
+ * @run main/manual/othervm -Xmx17g Bug8148174
+ * @requires os.maxMemory>17G
  */
 
 public class Bug8148174 {

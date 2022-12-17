@@ -33,8 +33,9 @@
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 
 ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers) :
   _threads(),

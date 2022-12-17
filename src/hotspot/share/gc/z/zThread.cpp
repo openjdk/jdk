@@ -23,8 +23,8 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zThread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 THREAD_LOCAL bool      ZThread::_initialized;

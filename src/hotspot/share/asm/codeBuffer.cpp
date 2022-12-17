@@ -96,13 +96,14 @@ CodeBuffer::CodeBuffer(CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(*this)
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
-  // Compute maximal alignment.
-  int align = _insts.alignment();
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
+  assert(SECT_LIMIT == 3, "total_size explicitly lists all section alignments");
+  int total_size = code_size + _consts.alignment() + _insts.alignment() + _stubs.alignment() + SECT_LIMIT * slop;
+
   assert(blob() == NULL, "only once");
-  set_blob(BufferBlob::create(_name, code_size + (align+slop) * (SECT_LIMIT+1)));
+  set_blob(BufferBlob::create(_name, total_size));
   if (blob() == NULL) {
     // The assembler constructor will throw a fatal on an empty CodeBuffer.
     return;  // caller must test this
@@ -138,8 +139,6 @@ CodeBuffer::~CodeBuffer() {
   }
 
   NOT_PRODUCT(clear_strings());
-
-  assert(_default_oop_recorder.allocated_on_stack_or_embedded(), "should be embedded object");
 }
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
@@ -421,6 +420,21 @@ void CodeSection::expand_locs(int new_capacity) {
   }
 }
 
+int CodeSection::alignment() const {
+  if (_index == CodeBuffer::SECT_CONSTS) {
+    // CodeBuffer controls the alignment of the constants section
+    return _outer->_const_section_alignment;
+  }
+  if (_index == CodeBuffer::SECT_INSTS) {
+    return (int) CodeEntryAlignment;
+  }
+  if (_index == CodeBuffer::SECT_STUBS) {
+    // CodeBuffer installer expects sections to be HeapWordSize aligned
+    return HeapWordSize;
+  }
+  ShouldNotReachHere();
+  return 0;
+}
 
 /// Support for emitting the code to its final location.
 /// The pattern is the same for all functions.
@@ -441,6 +455,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   address buf = dest->_total_start;
   csize_t buf_offset = 0;
   assert(dest->_total_size >= total_content_size(), "must be big enough");
+  assert(!_finalize_stubs, "non-finalized stubs");
 
   {
     // not sure why this is here, but why not...
@@ -977,6 +992,22 @@ void CodeBuffer::log_section_sizes(const char* name) {
     }
     xtty->print_cr("</blob>");
   }
+}
+
+void CodeBuffer::finalize_stubs() {
+  if (!pd_finalize_stubs()) {
+    return;
+  }
+  _finalize_stubs = false;
+}
+
+void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset) {
+  if (_shared_stub_to_interp_requests == NULL) {
+    _shared_stub_to_interp_requests = new SharedStubToInterpRequests(8);
+  }
+  SharedStubToInterpRequest request(callee, call_offset);
+  _shared_stub_to_interp_requests->push(request);
+  _finalize_stubs = true;
 }
 
 #ifndef PRODUCT

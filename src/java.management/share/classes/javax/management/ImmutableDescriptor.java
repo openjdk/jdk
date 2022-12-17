@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class ImmutableDescriptor implements Descriptor {
         if (fields == null)
             throw new IllegalArgumentException("Null Map");
         SortedMap<String, Object> map =
-                new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (Map.Entry<String, ?> entry : fields.entrySet()) {
             String name = entry.getKey();
             if (name == null || name.isEmpty())
@@ -164,7 +164,7 @@ public class ImmutableDescriptor implements Descriptor {
         if (fieldNames.length != fieldValues.length)
             throw new IllegalArgumentException("Different size arrays");
         SortedMap<String, Object> map =
-                new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (int i = 0; i < fieldNames.length; i++) {
             String name = fieldNames[i];
             if (name == null || name.isEmpty())
@@ -238,8 +238,7 @@ public class ImmutableDescriptor implements Descriptor {
                 && findNonEmpty(descriptors, index + 1) < 0)
             return (ImmutableDescriptor) descriptors[index];
 
-        Map<String, Object> map =
-            new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, Object> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         ImmutableDescriptor biggestImmutable = EMPTY_DESCRIPTOR;
         for (Descriptor d : descriptors) {
             if (d != null) {

@@ -535,11 +535,11 @@
 
       if ( r & 1 )
       {
-        *buffer = (FT_Byte)(*buffer + c);
+        *buffer = (FT_Byte)( *buffer + c );
         buffer++;
       }
       else
-        *buffer = (FT_Byte)(c << 4);
+        *buffer = (FT_Byte)( c << 4 );
 
       r++;
     }
@@ -572,8 +572,8 @@
     if ( p >= limit )
       return 0;
 
-    if ( n > (FT_UInt)(limit - p) )
-      n = (FT_UInt)(limit - p);
+    if ( n > (FT_UInt)( limit - p ) )
+      n = (FT_UInt)( limit - p );
 
     for ( r = 0; r < n; r++ )
     {

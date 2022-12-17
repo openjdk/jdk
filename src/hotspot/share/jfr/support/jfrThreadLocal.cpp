@@ -41,9 +41,9 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/sizes.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :
@@ -208,6 +208,9 @@ void JfrThreadLocal::on_exit(Thread* t) {
   assert(t != NULL, "invariant");
   JfrThreadLocal * const tl = t->jfr_thread_local();
   assert(!tl->is_dead(), "invariant");
+  if (JfrRecorder::is_recording()) {
+    JfrCheckpointManager::write_checkpoint(t);
+  }
   if (t->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(t);
     send_java_thread_end_event(jt, JfrThreadLocal::jvm_thread_id(jt));

@@ -45,12 +45,11 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/formatBuffer.hpp"
-#include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_current = NULL;
 
@@ -59,9 +58,9 @@ ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   ArchiveBuilder::alloc_stats()->record_other_type(int(newtop - _oldtop), true);
 }
 
-ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(16 * K) {
+ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(16 * K, mtClassShared) {
   _total_bytes = 0;
-  _objs = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<SourceObjInfo*>(128 * K, mtClassShared);
+  _objs = new (mtClassShared) GrowableArray<SourceObjInfo*>(128 * K, mtClassShared);
 }
 
 ArchiveBuilder::SourceObjList::~SourceObjList() {
@@ -110,18 +109,18 @@ void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src
 
 class RelocateEmbeddedPointers : public BitMapClosure {
   ArchiveBuilder* _builder;
-  address _dumped_obj;
+  address _buffered_obj;
   BitMap::idx_t _start_idx;
 public:
-  RelocateEmbeddedPointers(ArchiveBuilder* builder, address dumped_obj, BitMap::idx_t start_idx) :
-    _builder(builder), _dumped_obj(dumped_obj), _start_idx(start_idx) {}
+  RelocateEmbeddedPointers(ArchiveBuilder* builder, address buffered_obj, BitMap::idx_t start_idx) :
+    _builder(builder), _buffered_obj(buffered_obj), _start_idx(start_idx) {}
 
   bool do_bit(BitMap::idx_t bit_offset) {
     size_t field_offset = size_t(bit_offset - _start_idx) * sizeof(address);
-    address* ptr_loc = (address*)(_dumped_obj + field_offset);
+    address* ptr_loc = (address*)(_buffered_obj + field_offset);
 
     address old_p = *ptr_loc;
-    address new_p = _builder->get_dumped_addr(old_p);
+    address new_p = _builder->get_buffered_addr(old_p);
 
     log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
@@ -137,7 +136,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
   BitMap::idx_t start = BitMap::idx_t(src_info->ptrmap_start()); // inclusive
   BitMap::idx_t end = BitMap::idx_t(src_info->ptrmap_end());     // exclusive
 
-  RelocateEmbeddedPointers relocator(builder, src_info->dumped_addr(), start);
+  RelocateEmbeddedPointers relocator(builder, src_info->buffered_addr(), start);
   _ptrmap.iterate(&relocator, start, end);
 }
 
@@ -156,17 +155,19 @@ ArchiveBuilder::ArchiveBuilder() :
   _buffer_to_requested_delta(0),
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
+  _ptrmap(mtClassShared),
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
+  _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
   _estimated_hashtable_bytes(0)
 {
-  _klasses = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
-  _symbols = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
-  _special_refs = new (ResourceObj::C_HEAP, mtClassShared) GrowableArray<SpecialRefInfo>(24 * K, mtClassShared);
+  _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
+  _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
+  _special_refs = new (mtClassShared) GrowableArray<SpecialRefInfo>(24 * K, mtClassShared);
 
   assert(_current == NULL, "must be");
   _current = this;
@@ -329,7 +330,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    vm_direct_exit(0);
+    os::_exit(0);
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -379,7 +380,7 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    vm_direct_exit(0);
+    os::_exit(0);
   }
 
   if (DumpSharedSpaces) {
@@ -630,6 +631,14 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
+  {
+    bool created;
+    _buffered_to_src_table.put_if_absent((address)dest, src, &created);
+    assert(created, "must be");
+    if (_buffered_to_src_table.maybe_grow()) {
+      log_info(cds, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
+    }
+  }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
@@ -638,16 +647,23 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   }
 
   log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
-  src_info->set_dumped_addr((address)dest);
+  src_info->set_buffered_addr((address)dest);
 
   _alloc_stats.record(ref->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
-address ArchiveBuilder::get_dumped_addr(address src_obj) const {
-  SourceObjInfo* p = _src_obj_table.get(src_obj);
+address ArchiveBuilder::get_buffered_addr(address src_addr) const {
+  SourceObjInfo* p = _src_obj_table.get(src_addr);
   assert(p != NULL, "must be");
 
-  return p->dumped_addr();
+  return p->buffered_addr();
+}
+
+address ArchiveBuilder::get_source_addr(address buffered_addr) const {
+  assert(is_in_buffer_space(buffered_addr), "must be");
+  address* src_p = _buffered_to_src_table.get(buffered_addr);
+  assert(src_p != NULL && *src_p != NULL, "must be");
+  return *src_p;
 }
 
 void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* src_objs) {
@@ -661,7 +677,7 @@ void ArchiveBuilder::update_special_refs() {
     SpecialRefInfo s = _special_refs->at(i);
     size_t field_offset = s.field_offset();
     address src_obj = s.src_obj();
-    address dst_obj = get_dumped_addr(src_obj);
+    address dst_obj = get_buffered_addr(src_obj);
     intptr_t* src_p = (intptr_t*)(src_obj + field_offset);
     intptr_t* dst_p = (intptr_t*)(dst_obj + field_offset);
     assert(s.type() == MetaspaceClosure::_method_entry_ref, "only special type allowed for now");
@@ -679,7 +695,7 @@ public:
 
   virtual bool do_ref(Ref* ref, bool read_only) {
     if (ref->not_null()) {
-      ref->update(_builder->get_dumped_addr(ref->obj()));
+      ref->update(_builder->get_buffered_addr(ref->obj()));
       ArchivePtrMarker::mark_pointer(ref->addr());
     }
     return false; // Do not recurse.
@@ -727,6 +743,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* type;
     const char* unlinked = "";
     const char* hidden = "";
+    const char* generated = "";
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
@@ -771,13 +788,18 @@ void ArchiveBuilder::make_klasses_shareable() {
         hidden = " ** hidden";
       }
 
+      if (ik->is_generated_shared_class()) {
+        generated = " ** generated";
+      }
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
     if (log_is_enabled(Debug, cds, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s", i, p2i(to_requested(k)), type, k->external_name(), hidden, unlinked);
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s", i,
+                            p2i(to_requested(k)), type, k->external_name(),
+                            hidden, unlinked, generated);
     }
   }
 
@@ -808,11 +830,11 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
-// Update a Java object to point its Klass* to the new location after
-// shared archive has been compacted.
-void ArchiveBuilder::relocate_klass_ptr(oop o) {
+// Update a Java object to point its Klass* to the address whene
+// the class would be mapped at runtime.
+void ArchiveBuilder::relocate_klass_ptr_of_oop(oop o) {
   assert(DumpSharedSpaces, "sanity");
-  Klass* k = get_relocated_klass(o->klass());
+  Klass* k = get_buffered_klass(o->klass());
   Klass* requested_k = to_requested(k);
   narrowKlass nk = CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
   o->set_narrow_klass(nk);
@@ -960,8 +982,8 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     Thread* current = Thread::current();
     for (int i = 0; i < src_objs->objs()->length(); i++) {
       SourceObjInfo* src_info = src_objs->at(i);
-      address src = src_info->orig_obj();
-      address dest = src_info->dumped_addr();
+      address src = src_info->source_addr();
+      address dest = src_info->buffered_addr();
       log_data(last_obj_base, dest, last_obj_base + buffer_to_runtime_delta());
       address runtime_dest = dest + buffer_to_runtime_delta();
       int bytes = src_info->size_in_bytes();
@@ -1145,8 +1167,8 @@ void ArchiveBuilder::clean_up_src_obj_table() {
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                    GrowableArray<MemRegion>* closed_heap_regions,
                                    GrowableArray<MemRegion>* open_heap_regions,
-                                   GrowableArray<ArchiveHeapOopmapInfo>* closed_heap_oopmaps,
-                                   GrowableArray<ArchiveHeapOopmapInfo>* open_heap_oopmaps) {
+                                   GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_bitmaps,
+                                   GrowableArray<ArchiveHeapBitmapInfo>* open_heap_bitmaps) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // MetaspaceShared::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
@@ -1155,18 +1177,18 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   write_region(mapinfo, MetaspaceShared::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
 
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_heap_oopmaps, open_heap_oopmaps,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_heap_bitmaps, open_heap_bitmaps,
                                               bitmap_size_in_bytes);
 
   if (closed_heap_regions != NULL) {
     _total_closed_heap_region_size = mapinfo->write_heap_regions(
                                         closed_heap_regions,
-                                        closed_heap_oopmaps,
+                                        closed_heap_bitmaps,
                                         MetaspaceShared::first_closed_heap_region,
                                         MetaspaceShared::max_num_closed_heap_regions);
     _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
-                                        open_heap_oopmaps,
+                                        open_heap_bitmaps,
                                         MetaspaceShared::first_open_heap_region,
                                         MetaspaceShared::max_num_open_heap_regions);
   }
@@ -1200,8 +1222,8 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
                                         GrowableArray<MemRegion>* closed_heap_regions,
                                         GrowableArray<MemRegion>* open_heap_regions) {
   // Print statistics of all the regions
-  const size_t bitmap_used = mapinfo->space_at(MetaspaceShared::bm)->used();
-  const size_t bitmap_reserved = mapinfo->space_at(MetaspaceShared::bm)->used_aligned();
+  const size_t bitmap_used = mapinfo->region_at(MetaspaceShared::bm)->used();
+  const size_t bitmap_reserved = mapinfo->region_at(MetaspaceShared::bm)->used_aligned();
   const size_t total_reserved = _ro_region.reserved()  + _rw_region.reserved() +
                                 bitmap_reserved +
                                 _total_closed_heap_region_size +

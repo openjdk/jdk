@@ -71,23 +71,21 @@ public interface ThreadReference extends ObjectReference {
      * {@link #resume} or resumed with other threads through
      * {@link VirtualMachine#resume}.
      * <p>
-     * Unlike {@link java.lang.Thread#suspend},
-     * suspends of both the virtual machine and individual threads are
+     * Suspends of both the virtual machine and individual threads are
      * counted. Before a thread will run again, it must be resumed
-     * (through {@link #resume} or {@link ThreadReference#resume})
+     * (through {@link #resume} or {@link VirtualMachine#resume})
      * the same number of times it has been suspended.
      * <p>
-     * Suspending single threads with this method has the same dangers
-     * as {@link java.lang.Thread#suspend()}. If the suspended thread
-     * holds a monitor needed by another running thread, deadlock is
-     * possible in the target VM (at least until the suspended thread
+     * Suspending single threads with this method is inherently deadlock-prone.
+     * If the suspended thread holds a monitor needed by another running thread,
+     * deadlock is possible in the target VM (at least until the suspended thread
      * is resumed again).
      * <p>
      * The suspended thread is guaranteed to remain suspended until
-     * resumed through one of the JDI resume methods mentioned above;
-     * the application in the target VM cannot resume the suspended thread
-     * through {@link java.lang.Thread#resume}.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * resumed through one of the JDI resume methods mentioned above.
+     *
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see VirtualMachine#canBeModified()
      */
     @SuppressWarnings("javadoc")
     void suspend();
@@ -101,7 +99,9 @@ public interface ThreadReference extends ObjectReference {
      * the thread will continue to execute.
      * Note: the normal way to resume from an event related suspension is
      * via {@link EventSet#resume}.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     *
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see VirtualMachine#canBeModified()
      */
     void resume();
 
@@ -518,7 +518,7 @@ public interface ThreadReference extends ObjectReference {
      *
      * @since 19
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default boolean isVirtual() {
         throw new UnsupportedOperationException("Method not implemented");
     }

@@ -29,7 +29,7 @@
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
 
@@ -57,7 +57,6 @@ class JavaCallWrapper: StackObj {
   ~JavaCallWrapper();
 
   // Accessors
-  JavaThread*      thread() const           { return _thread; }
   JNIHandleBlock*  handles() const          { return _handles; }
 
   JavaFrameAnchor* anchor(void)             { return &_anchor; }
@@ -65,7 +64,6 @@ class JavaCallWrapper: StackObj {
   JavaValue*       result() const           { return _result; }
   // GC support
   Method*          callee_method()          { return _callee_method; }
-  oop              receiver()               { return _receiver; }
   void             oops_do(OopClosure* f);
 
   bool             is_first_frame() const   { return _anchor.last_Java_sp() == NULL; }

@@ -34,10 +34,10 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "stack_zero.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -191,12 +191,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // atomic calls
     StubRoutines::_atomic_xchg_entry         = ShouldNotCallThisStub();
-    StubRoutines::_atomic_xchg_long_entry    = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_entry      = ShouldNotCallThisStub();
-    StubRoutines::_atomic_cmpxchg_byte_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_long_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();
-    StubRoutines::_atomic_add_long_entry     = ShouldNotCallThisStub();
     StubRoutines::_fence_entry               = ShouldNotCallThisStub();
   }
 

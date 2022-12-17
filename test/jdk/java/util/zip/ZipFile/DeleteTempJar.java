@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,19 @@ public class DeleteTempJar
                     }
                 }
             });
-        server.start();
 
-        URL url = new URL("jar:http://localhost:"
+        server.start();
+        try {
+            URL url = new URL("jar:http://localhost:"
                           + new Integer(server.getAddress().getPort()).toString()
                           + "/deletetemp.jar!/");
-        JarURLConnection c = (JarURLConnection)url.openConnection();
-        JarFile f = c.getJarFile();
-        check(f.getEntry("entry") != null);
-        System.out.println(f.getName());
-        server.stop(0);
+            JarURLConnection c = (JarURLConnection)url.openConnection();
+            JarFile f = c.getJarFile();
+            check(f.getEntry("entry") != null);
+            System.out.println(f.getName());
+        } finally {
+            server.stop(0);
+        }
     }
 
     //--------------------- Infrastructure ---------------------------

@@ -73,11 +73,11 @@ public class ToolEnablePreviewTest extends ReplToolTesting {
     @Test
     public void testCompilerTestFlagEnv() {
         test(new String[] {"-C", "-XDforcePreview"},
-                (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = i -> i + i",
+                (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = (var i) -> i + i",
                         "Error", "preview feature"),
                 (a) -> assertCommand(a, "/env --enable-preview",
                         "|  Setting new options and restoring state."),
-                (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = i -> i + i",
+                (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = (var i) -> i + i",
                         "f ==> ")
         );
     }
@@ -85,7 +85,7 @@ public class ToolEnablePreviewTest extends ReplToolTesting {
     @Test
     public void testCompilerTestFlag() {
         test(new String[] {"-C", "-XDforcePreview", "--enable-preview"},
-                (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = i -> i + i",
+                (a) -> assertCommandOutputContains(a, "Function<Integer,Integer> f = (var i) -> i + i",
                         "f ==> "),
                 (a) -> assertCommandOutputContains(a, "f.apply(2)", "==> 4")
         );

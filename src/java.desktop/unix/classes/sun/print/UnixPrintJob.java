@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,12 +420,9 @@ public class UnixPrintJob implements CancelablePrintJob {
                     }
                     return;
                 }
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (flavor.equals(DocFlavor.URL.GIF) ||
                    flavor.equals(DocFlavor.URL.JPEG) ||
@@ -504,12 +501,9 @@ public class UnixPrintJob implements CancelablePrintJob {
                     ((UnixPrintService)service).wakeNotifier();
                 }
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (repClassName.equals("java.awt.print.Printable")) {
             try {
@@ -520,12 +514,9 @@ public class UnixPrintJob implements CancelablePrintJob {
                     ((UnixPrintService)service).wakeNotifier();
                 }
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else {
             notifyEvent(PrintJobEvent.JOB_FAILED);

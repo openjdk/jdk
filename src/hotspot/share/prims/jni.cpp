@@ -25,8 +25,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -48,6 +46,8 @@
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -80,12 +80,14 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/memTracker.hpp"
@@ -99,7 +101,7 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_10;
+static jint CurrentVersion = JNI_VERSION_20;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -573,35 +575,31 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
   if (thread->has_pending_exception()) {
     Handle ex(thread, thread->pending_exception());
     thread->clear_pending_exception();
-    if (ex->is_a(vmClasses::ThreadDeath_klass())) {
-      // Don't print anything if we are being killed.
+    jio_fprintf(defaultStream::error_stream(), "Exception ");
+    if (thread != NULL && thread->threadObj() != NULL) {
+      ResourceMark rm(THREAD);
+      jio_fprintf(defaultStream::error_stream(),
+                  "in thread \"%s\" ", thread->name());
+    }
+    if (ex->is_a(vmClasses::Throwable_klass())) {
+      JavaValue result(T_VOID);
+      JavaCalls::call_virtual(&result,
+                              ex,
+                              vmClasses::Throwable_klass(),
+                              vmSymbols::printStackTrace_name(),
+                              vmSymbols::void_method_signature(),
+                              THREAD);
+      // If an exception is thrown in the call it gets thrown away. Not much
+      // we can do with it. The native code that calls this, does not check
+      // for the exception - hence, it might still be in the thread when DestroyVM gets
+      // called, potentially causing a few asserts to trigger - since no pending exception
+      // is expected.
+      CLEAR_PENDING_EXCEPTION;
     } else {
-      jio_fprintf(defaultStream::error_stream(), "Exception ");
-      if (thread != NULL && thread->threadObj() != NULL) {
-        ResourceMark rm(THREAD);
-        jio_fprintf(defaultStream::error_stream(),
-        "in thread \"%s\" ", thread->name());
-      }
-      if (ex->is_a(vmClasses::Throwable_klass())) {
-        JavaValue result(T_VOID);
-        JavaCalls::call_virtual(&result,
-                                ex,
-                                vmClasses::Throwable_klass(),
-                                vmSymbols::printStackTrace_name(),
-                                vmSymbols::void_method_signature(),
-                                THREAD);
-        // If an exception is thrown in the call it gets thrown away. Not much
-        // we can do with it. The native code that calls this, does not check
-        // for the exception - hence, it might still be in the thread when DestroyVM gets
-        // called, potentially causing a few asserts to trigger - since no pending exception
-        // is expected.
-        CLEAR_PENDING_EXCEPTION;
-      } else {
-        ResourceMark rm(THREAD);
-        jio_fprintf(defaultStream::error_stream(),
-        ". Uncaught exception of type %s.",
-        ex->klass()->external_name());
-      }
+      ResourceMark rm(THREAD);
+      jio_fprintf(defaultStream::error_stream(),
+                  ". Uncaught exception of type %s.",
+                  ex->klass()->external_name());
     }
   }
 
@@ -628,7 +626,7 @@ JNI_ENTRY(void, jni_FatalError(JNIEnv *env, const char *msg))
   HOTSPOT_JNI_FATALERROR_ENTRY(env, (char *) msg);
 
   tty->print_cr("FATAL ERROR in native method: %s", msg);
-  thread->print_stack();
+  thread->print_jni_stack();
   os::abort(); // Dump core and abort
 JNI_END
 
@@ -2718,12 +2716,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_enter(obj, thread);
-  if (!Continuation::pin(thread)) {
-    ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-    THROW_(vmSymbols::java_lang_VirtualMachineError(), JNI_ERR);
-  }
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 DT_RETURN_MARK_DECL(MonitorExit, jint
@@ -2741,11 +2734,7 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-  if (!Continuation::unpin(thread)) {
-    ShouldNotReachHere();
-  }
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 //
@@ -3664,9 +3653,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     post_thread_start_event(thread);
 
-#ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
-#endif
 
 #ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
@@ -3767,8 +3754,15 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
     return res;
   }
 
-  // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
   JavaThread* thread = JavaThread::current();
+
+  // Make sure we are actually in a newly attached thread, with no
+  // existing Java frame.
+  if (thread->has_last_Java_frame()) {
+    return JNI_ERR;
+  }
+
+  // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
 
   // We are going to VM, change W^X state to the expected one.
   MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));

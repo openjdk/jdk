@@ -143,13 +143,9 @@ class StubRoutines: AllStatic {
   static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
-  static address _atomic_xchg_long_entry;
-  static address _atomic_store_entry;
   static address _atomic_cmpxchg_entry;
-  static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
-  static address _atomic_add_long_entry;
   static address _fence_entry;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
@@ -209,8 +205,10 @@ class StubRoutines: AllStatic {
   static address _counterMode_AESCrypt;
   static address _galoisCounterMode_AESCrypt;
   static address _ghash_processBlocks;
+  static address _chacha20Block;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
+  static address _poly1305_processBlocks;
 
   static address _md5_implCompress;
   static address _md5_implCompressMB;
@@ -251,8 +249,6 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
-  static RuntimeStub* _cont_doYield_stub;
-  static address _cont_doYield;
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -314,13 +310,9 @@ class StubRoutines: AllStatic {
   static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
-  static address atomic_xchg_long_entry()                  { return _atomic_xchg_long_entry; }
-  static address atomic_store_entry()                      { return _atomic_store_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
-  static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
-  static address atomic_add_long_entry()                   { return _atomic_add_long_entry; }
   static address fence_entry()                             { return _fence_entry; }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
@@ -386,8 +378,10 @@ class StubRoutines: AllStatic {
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
   static address electronicCodeBook_encryptAESCrypt()   { return _electronicCodeBook_encryptAESCrypt; }
   static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
+  static address poly1305_processBlocks()               { return _poly1305_processBlocks; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
+  static address chacha20Block()         { return _chacha20Block; }
   static address base64_encodeBlock()    { return _base64_encodeBlock; }
   static address base64_decodeBlock()    { return _base64_decodeBlock; }
   static address md5_implCompress()      { return _md5_implCompress; }
@@ -430,8 +424,6 @@ class StubRoutines: AllStatic {
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
 
-  static RuntimeStub* cont_doYield_stub() { return _cont_doYield_stub; }
-  static address cont_doYield()        { return _cont_doYield; }
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }

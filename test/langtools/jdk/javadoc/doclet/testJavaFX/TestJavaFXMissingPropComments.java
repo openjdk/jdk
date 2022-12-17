@@ -100,7 +100,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     <dd>the value of the <code>value</code> property</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#valueProperty()"><code>valueProperty()</code></a></li>
                     </ul>
                     </dd>
@@ -164,7 +164,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     <dd>the value of the <code>value</code> property</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#valueProperty()"><code>valueProperty()</code></a></li>
                     </ul>
                     </dd>

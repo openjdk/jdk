@@ -34,6 +34,7 @@
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
+extern Mutex*   InvokeMethodTable_lock;
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
@@ -57,8 +58,6 @@ extern Mutex*   SymbolArena_lock;                // a lock on the symbol table a
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
-extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
-extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute
@@ -89,7 +88,6 @@ extern Monitor* InitCompleted_lock;              // a lock used to signal thread
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
-extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
 #ifndef PRODUCT
 extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT safe
@@ -122,7 +120,7 @@ extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
-extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find_or_allocate_info_for
+extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::_dumptime_table
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
@@ -176,20 +174,17 @@ extern Mutex* tty_lock;                          // lock to synchronize output.
 // Print all mutexes/monitors that are currently owned by a thread; called
 // by fatal error handler.
 void print_owned_locks_on_error(outputStream* st);
-
-char *lock_name(Mutex *mutex);
+void print_lock_ranks(outputStream* st);
 
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock);
 void assert_locked_or_safepoint_weak(const Mutex* lock);
 void assert_lock_strong(const Mutex* lock);
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread);
 #else
 #define assert_locked_or_safepoint(lock)
 #define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
-#define assert_locked_or_safepoint_or_handshake(lock, thread)
 #endif
 
 class MutexLocker: public StackObj {
@@ -226,6 +221,8 @@ class MutexLocker: public StackObj {
       _mutex->unlock();
     }
   }
+
+  static void post_initialize();
 };
 
 // A MonitorLocker is like a MutexLocker above, except it allows

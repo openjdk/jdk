@@ -30,7 +30,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // Simplified shift operations for single register operands, constant shift amount.
 inline void MacroAssembler::lshift(Register r, int places, bool is_DW) {
@@ -75,7 +75,7 @@ inline void MacroAssembler::load_address(Register d, const Address &a) {
   } else if (Displacement::is_validDisp(a.disp())) {
     z_lay(d, a.disp(), a.indexOrR0(), a.baseOrR0());
   } else {
-    guarantee(false, "displacement = " SIZE_FORMAT_HEX ", out of range for LA/LAY", a.disp());
+    guarantee(false, "displacement = " SIZE_FORMAT_X ", out of range for LA/LAY", a.disp());
   }
 }
 

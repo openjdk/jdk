@@ -37,7 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
@@ -48,6 +48,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -55,22 +56,21 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
 
-RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frames, bool walk_cont) {
+RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont) {
   _thread         = thread;
-  _update_map     = update_map;
-  _process_frames = process_frames;
-  _walk_cont      = walk_cont;
+  _update_map     = update_map == UpdateMap::include;
+  _process_frames = process_frames == ProcessFrames::include;
+  _walk_cont      = walk_cont == WalkContinuation::include;
   clear();
   DEBUG_ONLY (_update_for_id = NULL;)
   NOT_PRODUCT(_skip_missing = false;)
   NOT_PRODUCT(_async = false;)
 
-  if (walk_cont && thread != NULL && thread->last_continuation() != NULL) {
+  if (walk_cont == WalkContinuation::include && thread != NULL && thread->last_continuation() != NULL) {
     _chunk = stackChunkHandle(Thread::current()->handle_area()->allocate_null_handle(), true /* dummy */);
   }
   _chunk_index = -1;
@@ -80,9 +80,9 @@ RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frame
 #endif /* PRODUCT */
 }
 
-RegisterMap::RegisterMap(oop continuation, bool update_map) {
+RegisterMap::RegisterMap(oop continuation, UpdateMap update_map) {
   _thread         = NULL;
-  _update_map     = update_map;
+  _update_map     = update_map == UpdateMap::include;
   _process_frames = false;
   _walk_cont      = true;
   clear();
@@ -217,7 +217,7 @@ address frame::raw_pc() const {
 // Change the pc in a frame object. This does not change the actual pc in
 // actual frame. To do that use patch_pc.
 //
-void frame::set_pc(address   newpc ) {
+void frame::set_pc(address newpc) {
 #ifdef ASSERT
   if (_cb != NULL && _cb->is_nmethod()) {
     assert(!((nmethod*)_cb)->is_deopt_pc(_pc), "invariant violation");
@@ -227,23 +227,8 @@ void frame::set_pc(address   newpc ) {
   // Unsafe to use the is_deoptimized tester after changing pc
   _deopt_state = unknown;
   _pc = newpc;
-  _cb = CodeCache::find_blob_unsafe(_pc);
+  _cb = CodeCache::find_blob(_pc);
 
-}
-
-void frame::set_pc_preserve_deopt(address newpc) {
-  set_pc_preserve_deopt(newpc, CodeCache::find_blob_unsafe(newpc));
-}
-
-void frame::set_pc_preserve_deopt(address newpc, CodeBlob* cb) {
-#ifdef ASSERT
-  if (_cb != NULL && _cb->is_nmethod()) {
-    assert(!((nmethod*)_cb)->is_deopt_pc(_pc), "invariant violation");
-  }
-#endif // ASSERT
-
-  _pc = newpc;
-  _cb = cb;
 }
 
 // type testers
@@ -274,7 +259,10 @@ bool frame::is_safepoint_blob_frame() const {
 // testers
 
 bool frame::is_first_java_frame() const {
-  RegisterMap map(JavaThread::current(), false); // No update
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip); // No update
   frame s;
   for (s = sender(&map); !(s.is_java_frame() || s.is_first_frame()); s = s.sender(&map));
   return s.is_first_frame();
@@ -366,7 +354,10 @@ void frame::deoptimize(JavaThread* thread) {
   if (thread != NULL) {
     frame check = thread->last_frame();
     if (is_older(check.id())) {
-      RegisterMap map(thread, false);
+      RegisterMap map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       while (id() != check.id()) {
         check = check.sender(&map);
       }
@@ -377,7 +368,10 @@ void frame::deoptimize(JavaThread* thread) {
 }
 
 frame frame::java_sender() const {
-  RegisterMap map(JavaThread::current(), false);
+  RegisterMap map(JavaThread::current(),
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame s;
   for (s = sender(&map); !(s.is_java_frame() || s.is_first_frame()); s = s.sender(&map)) ;
   guarantee(s.is_java_frame(), "tried to get caller of first java frame");
@@ -576,8 +570,8 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
   for (BasicObjectLock* current = interpreter_frame_monitor_end();
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
-    st->print(" - obj    [");
-    current->obj()->print_value_on(st);
+    st->print(" - obj    [%s", current->obj() == nullptr ? "null" : "");
+    if (current->obj() != nullptr) current->obj()->print_value_on(st);
     st->print_cr("]");
     st->print(" - lock   [");
     current->lock()->print_on(st, current->obj());
@@ -779,8 +773,6 @@ class InterpreterFrameClosure : public OffsetClosure {
       }
     }
   }
-
-  int max_locals()  { return _max_locals; }
 };
 
 
@@ -1259,10 +1251,10 @@ private:
 
 public:
   FrameValuesOopClosure() {
-    _oops = new (ResourceObj::C_HEAP, mtThread) GrowableArray<oop*>(100, mtThread);
-    _narrow_oops = new (ResourceObj::C_HEAP, mtThread) GrowableArray<narrowOop*>(100, mtThread);
-    _base = new (ResourceObj::C_HEAP, mtThread) GrowableArray<oop*>(100, mtThread);
-    _derived = new (ResourceObj::C_HEAP, mtThread) GrowableArray<derived_pointer*>(100, mtThread);
+    _oops = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(100, mtThread);
+    _base = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _derived = new (mtThread) GrowableArray<derived_pointer*>(100, mtThread);
   }
   ~FrameValuesOopClosure() {
     delete _oops;
@@ -1573,7 +1565,7 @@ void FrameValues::validate() {
       prev = fv;
     }
   }
-  // if (error) { tty->cr(); print_on((JavaThread*)nullptr, tty); }
+  // if (error) { tty->cr(); print_on(static_cast<JavaThread*>(nullptr), tty); }
   assert(!error, "invalid layout");
 }
 #endif // ASSERT
@@ -1635,7 +1627,14 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
     } else {
       if (on_heap
           && *fv.location != 0 && *fv.location > -100 && *fv.location < 100
-          && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))) {
+#if !defined(PPC64)
+          && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
+#else  // !defined(PPC64)
+          && (strcmp(fv.description, "sender_sp") == 0 || strcmp(fv.description, "top_frame_sp") == 0 ||
+              strcmp(fv.description, "esp") == 0 || strcmp(fv.description, "monitors") == 0 ||
+              strcmp(fv.description, "locals") == 0 || strstr(fv.description, " method "))
+#endif //!defined(PPC64)
+          ) {
         st->print_cr(" " INTPTR_FORMAT ": %18d %s", p2i(fv.location), (int)*fv.location, fv.description);
       } else {
         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);

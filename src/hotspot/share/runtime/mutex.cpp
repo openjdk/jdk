@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
@@ -56,7 +57,7 @@ void Mutex::check_block_state(Thread* thread) {
     fatal("VM thread could block on lock that may be held by a JavaThread during safepoint: %s", name());
   }
 
-  assert(!os::ThreadCrashProtection::is_crash_protected(thread),
+  assert(!ThreadCrashProtection::is_crash_protected(thread),
          "locking not allowed when crash protection is set");
 }
 
@@ -355,6 +356,10 @@ void Mutex::print_on(outputStream* st) const {
   DEBUG_ONLY(st->print(" %s", rank_name()));
   st->cr();
 }
+
+void Mutex::print() const {
+  print_on(::tty);
+}
 #endif // PRODUCT
 
 #ifdef ASSERT
@@ -445,15 +450,6 @@ void Mutex::check_rank(Thread* thread) {
              "possible deadlock", this->name(), this->rank_name(), least->name(), least->rank_name());
     }
   }
-}
-
-bool Mutex::contains(Mutex* locks, Mutex* lock) {
-  for (; locks != NULL; locks = locks->next()) {
-    if (locks == lock) {
-      return true;
-    }
-  }
-  return false;
 }
 
 // Called immediately after lock acquisition or release as a diagnostic

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666
+ * @bug 8266666 8281969
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -180,7 +180,28 @@ public class TestSnippetMarkup extends SnippetTester {
                                 link(First) link(line)
                                   Second line
                                 """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#Object", r.group(1)))
-                ));
+                ),
+                new TestCase(
+                        """
+                                First line
+                                  Second line // @link substring=" " target="java.lang.System#out"
+                                """,
+                        replace("""
+                                First line
+                                link(  )Secondlink( )line
+                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.System#out", r.group(1)))
+                ),
+                new TestCase(
+                        """
+                                First line
+                                  Second line // @link regex=" " target="java.lang.System#in"
+                                """,
+                        replace("""
+                                First line
+                                link(  )Secondlink( )line
+                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.System#in", r.group(1)))
+                )
+        );
         testPositive(base, testCases);
     }
 
@@ -575,7 +596,7 @@ First line // @highlight :
                         """,
                         replace("""
                                 First line
-                                 link(Third line)
+                                link( Third line)
                                 """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#equals(Object)", r.group(1)))
                 ),
                 new TestCase("""
@@ -717,19 +738,29 @@ First line // @highlight :
                                String content)
             throws UncheckedIOException {
 
-        // The HTML <a> tag generated from the @link snippet markup tag is the
-        // same as that of the {@link} Standard doclet tag. This is specified
-        // and can be used for comparison and testing.
+        // The HTML A element generated for the @link snippet markup tag is
+        // the same as that for the similar Standard doclet {@link} tag.
+        // This fact can be used for comparison and testing.
 
-        // generate documentation for {@link} to grab its HTML <a> tag;
-        // generate documentation at low cost and do not interfere with the
-        // calling test state; for that, do not create file trees, do not write
-        // to std out/err, and generally try to keep everything in memory
+        // Generate documentation for {@link} to grab its HTML A element.
+        // Generate documentation cheaply and do not interfere with the
+        // calling test state; for that: do not create file trees, do not write
+        // to std out/err, and generally try to keep everything in memory.
 
-        String source = """
+        // Caveat: a label used in snippet's @link tag can start, end, or both,
+        // with whitespace. In this regard, snippet's @link differs from
+        // {@link} and {@linkplain} Standard doclet tags, which trim whitespace
+        // from labels. In particular, {@link} and {@linkplain} treat
+        // whitespace after the reference as an absent label, whereas
+        // snippet's @link does not. To avoid whitespace problems,
+        // LABEL_PLACEHOLDER is used. It is later substituted with "content",
+        // which might be an empty or blank string.
+
+        var LABEL_PLACEHOLDER = "label";
+        var source = """
                 /** {@link %s %s} */
                 public interface A { }
-                """.formatted(targetReference, content);
+                """.formatted(targetReference, LABEL_PLACEHOLDER);
 
         JavaFileObject src = new JavaFileObject() {
             @Override
@@ -850,12 +881,12 @@ First line // @highlight :
             }
             String output = fileManager.getFileString(DOCUMENTATION_OUTPUT, "A.html");
             // use the [^<>] regex to select HTML elements that immediately enclose "content"
-            Matcher m = Pattern.compile("(?is)<a href=\"[^<>]*\" title=\"[^<>]*\" class=\"[^<>]*\"><code>"
-                    + content + "</code></a>").matcher(output);
+            Matcher m = Pattern.compile("(?is)(<a href=\"[^<>]*\" title=\"[^<>]*\" class=\"[^<>]*\"><code>)"
+                    +  LABEL_PLACEHOLDER + "(</code></a>)").matcher(output);
             if (!m.find()) {
                 throw new IOException(output);
             }
-            return m.group(0);
+            return m.group(1) + content + m.group(2);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

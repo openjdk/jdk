@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841 8202537 8244245 8265315
+ * @bug 8176841 8202537 8244245 8265315 8284840
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -116,47 +116,47 @@ public class TestUnicodeExtension {
             },
 
             {JCAL, null, null, JAPANESE, null,
-            "Thursday, August 10, 29 Heisei at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 29 Heisei, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {JCAL, HIJRAH, null, JAPANESE, null,
-            "Thursday, August 10, 29 Heisei at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 29 Heisei, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {HCAL, JAPANESE, null, HIJRAH, null,
-            "Thursday, Dhu\u02bbl-Qi\u02bbdah 18, 1438 AH at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, Dhu\u02bbl-Qi\u02bbdah 18, 1438 AH, 3:15:00\u202fPM Pacific Daylight Time"
             },
 
 
             {JPTYO, null, null, ISO, ASIATOKYO,
-            "Friday, August 11, 2017 at 7:15:00 AM Japan Standard Time"
+            "Friday, August 11, 2017, 7:15:00\u202fAM Japan Standard Time"
             },
             {JPTYO, null, AMLA, ISO, ASIATOKYO,
-            "Friday, August 11, 2017 at 7:15:00 AM Japan Standard Time"
+            "Friday, August 11, 2017, 7:15:00\u202fAM Japan Standard Time"
             },
             // invalid tz
             {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, null, ISO, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, AMLA, ISO, AMLA,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
 
             {RG_GB, null, null, ISO, null,
-            "Thursday, 10 August 2017 at 15:15:00 Pacific Daylight Time"
+            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
             {Locale.forLanguageTag("en-US-u-nu-thai"), null, null, ISO, null,
-            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57 at \u0e53:\u0e51\u0e55:" +
-            "\u0e50\u0e50 PM Pacific Daylight Time"
+            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57, \u0e53:\u0e51\u0e55:" +
+            "\u0e50\u0e50\u202fPM Pacific Daylight Time"
             },
             // DecimalStyle, "nu" vs "rg"
             {Locale.forLanguageTag("en-US-u-nu-thai-rg-uszzzz"), null, null, ISO, null,
-            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57 at \u0e53:\u0e51\u0e55:" +
-            "\u0e50\u0e50 PM Pacific Daylight Time"
+            "Thursday, August \u0e51\u0e50, \u0e52\u0e50\u0e51\u0e57, \u0e53:\u0e51\u0e55:" +
+            "\u0e50\u0e50\u202fPM Pacific Daylight Time"
             },
             // DecimalStyle, invalid
             {Locale.forLanguageTag("en-US-u-nu-foo"), null, null, ISO, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             // DecimalStyle, locale default
             // Farsi uses Extended Arabic-Indic numbering system
@@ -206,45 +206,45 @@ public class TestUnicodeExtension {
             },
 
             {JCAL, null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {JCAL, HIJRAH, null, HIJRAH, null,
-            "Thursday, Dhu\u02bbl-Qi\u02bbdah 18, 1438 AH at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, Dhu\u02bbl-Qi\u02bbdah 18, 1438 AH, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {HCAL, JAPANESE, null, JAPANESE, null,
-            "Thursday, August 10, 29 Heisei at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 29 Heisei, 3:15:00\u202fPM Pacific Daylight Time"
             },
 
 
             {JPTYO, null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {JPTYO, null, AMLA, null, AMLA,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             // invalid tz
             {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             {Locale.forLanguageTag("en-US-u-tz-jpzzz"), null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
 
             {RG_GB, null, null, null, null,
-            "Thursday, 10 August 2017 at 15:15:00 Pacific Daylight Time"
+            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
 
             // DecimalStyle
             {Locale.forLanguageTag("en-US-u-nu-thai"), null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             // DecimalStyle, "nu" vs "rg"
             {Locale.forLanguageTag("en-US-u-nu-thai-rg-uszzzz"), null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             // DecimalStyle, invalid
             {Locale.forLanguageTag("en-US-u-nu-foo"), null, null, null, null,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
             // DecimalStyle, locale default
             // Farsi uses Extended Arabic-Indic numbering system
@@ -812,12 +812,12 @@ public class TestUnicodeExtension {
     Object[][] getLocalizedDateTimePattern() {
         return new Object[][] {
             // Locale, Expected pattern,
-            {Locale.US, FormatStyle.FULL, "EEEE, MMMM d, y 'at' h:mm:ss a zzzz"},
-            {Locale.US, FormatStyle.LONG, "MMMM d, y 'at' h:mm:ss a z"},
-            {Locale.US, FormatStyle.MEDIUM, "MMM d, y, h:mm:ss a"},
-            {Locale.US, FormatStyle.SHORT, "M/d/yy, h:mm a"},
-            {RG_GB, FormatStyle.FULL, "EEEE, d MMMM y 'at' HH:mm:ss zzzz"},
-            {RG_GB, FormatStyle.LONG, "d MMMM y 'at' HH:mm:ss z"},
+            {Locale.US, FormatStyle.FULL, "EEEE, MMMM d, y, h:mm:ss\u202fa zzzz"},
+            {Locale.US, FormatStyle.LONG, "MMMM d, y, h:mm:ss\u202fa z"},
+            {Locale.US, FormatStyle.MEDIUM, "MMM d, y, h:mm:ss\u202fa"},
+            {Locale.US, FormatStyle.SHORT, "M/d/yy, h:mm\u202fa"},
+            {RG_GB, FormatStyle.FULL, "EEEE, d MMMM y, HH:mm:ss zzzz"},
+            {RG_GB, FormatStyle.LONG, "d MMMM y, HH:mm:ss z"},
             {RG_GB, FormatStyle.MEDIUM, "d MMM y, HH:mm:ss"},
             {RG_GB, FormatStyle.SHORT, "dd/MM/y, HH:mm"},
         };

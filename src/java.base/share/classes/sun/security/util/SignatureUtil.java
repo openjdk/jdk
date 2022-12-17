@@ -102,7 +102,7 @@ public class SignatureUtil {
         AlgorithmParameterSpec paramSpec = null;
         if (params != null) {
             sigName = checkName(sigName);
-            // AlgorithmParameters.getAlgorithm() may returns oid if it's
+            // AlgorithmParameters.getAlgorithm() may return oid if it's
             // created during DER decoding. Convert to use the standard name
             // before passing it to RSAUtil
             if (params.getAlgorithm().contains(".")) {

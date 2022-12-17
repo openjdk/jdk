@@ -49,7 +49,7 @@ import jdk.test.lib.thread.ProcessThread;
  * jps -J-XX:+UsePerfData hostname
  *
  * // run jstat and verify its output
- * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname 250 5
+ * jstat -J-XX:+UsePerfData -gcutil pid@hostname 250 5
  *
  * // stop jstatd process and verify that no unexpected exceptions have been thrown
  * }
@@ -128,7 +128,6 @@ public final class JstatdTest {
      */
     private OutputAnalyzer runJps() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jps");
-        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:+UsePerfData"));
         launcher.addVMArg("-XX:+UsePerfData");
         launcher.addToolArg(getDestination());
 
@@ -173,15 +172,14 @@ public final class JstatdTest {
     /**
      * Depending on test settings command line can look like:
      *
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname 250 5
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname:port 250 5
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname/serverName 250 5
-     * jstat -J-XX:+UsePerfData -J-Duser.language=en -gcutil pid@hostname:port/serverName 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname:port 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname/serverName 250 5
+     * jstat -J-XX:+UsePerfData -gcutil pid@hostname:port/serverName 250 5
      */
     private OutputAnalyzer runJstat() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstat");
         launcher.addVMArg("-XX:+UsePerfData");
-        launcher.addVMArg("-Duser.language=en");
         launcher.addToolArg("-gcutil");
         launcher.addToolArg(jstatdPid + "@" + getDestination());
         launcher.addToolArg(Integer.toString(JSTAT_GCUTIL_INTERVAL_MS));
@@ -252,6 +250,7 @@ public final class JstatdTest {
      */
     private String[] getJstatdCmd() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
+        launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addVMArg("-XX:+UsePerfData");
         String testSrc = System.getProperty("test.src");
         if (port != null) {

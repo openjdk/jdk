@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,6 @@ static char* normalizePath(const char* path, int len, int off) {
 char* normalize(char* path) {
     int n = (int)strlen(path);
     int i;
-    char c = 0;
     int prev = 0;
     for (i = 0; i < n; i++) {
         char c = path[i];

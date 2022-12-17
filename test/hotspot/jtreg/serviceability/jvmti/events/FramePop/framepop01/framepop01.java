@@ -47,14 +47,7 @@
 public class framepop01 {
 
     static {
-        try {
-            System.loadLibrary("framepop01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load framepop01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("framepop01");
     }
 
     static volatile int result;

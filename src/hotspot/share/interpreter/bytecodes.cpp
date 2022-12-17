@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,6 @@
 #include "oops/method.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
-
-
-#if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))
-// Windows AMD64 Compiler Hangs compiling this file
-// unless optimization is off
-#ifdef _M_AMD64
-#pragma optimize ("", off)
-#endif
-#endif
-
 
 bool            Bytecodes::_is_initialized = false;
 const char*     Bytecodes::_name          [Bytecodes::number_of_codes];

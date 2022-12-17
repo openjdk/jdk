@@ -26,8 +26,8 @@
 #define SHARE_UTILITIES_EVENTS_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -149,7 +149,7 @@ template <class T> class EventLogBase : public EventLog {
   void print(outputStream* out, EventRecord<T>& e) {
     out->print("Event: %.3f ", e.timestamp);
     if (e.thread != NULL) {
-      out->print("Thread " INTPTR_FORMAT " ", p2i(e.thread));
+      out->print("Thread " PTR_FORMAT " ", p2i(e.thread));
     }
     print(out, e.data);
   }

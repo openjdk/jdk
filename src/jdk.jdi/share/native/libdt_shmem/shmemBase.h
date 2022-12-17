@@ -28,7 +28,7 @@
 #define JAVASOFT_SHMEMBASE_H
 
 void exitTransportWithError(char *msg, char *fileName,
-                            char *date, int lineNumber);
+                            int lineNumber);
 
 typedef struct SharedMemoryConnection SharedMemoryConnection;
 typedef struct SharedMemoryTransport SharedMemoryTransport;
@@ -49,15 +49,11 @@ jint shmemBase_receivePacket(SharedMemoryConnection *, jdwpPacket *packet);
 jint shmemBase_name(SharedMemoryTransport *, char **name);
 jint shmemBase_getlasterror(char *msg, jint size);
 
-#ifndef SHMEM_BUILD_TIME
-#define SHMEM_BUILD_TIME __DATE__
-#endif
-
 #ifdef DEBUG
 #define SHMEM_ASSERT(expression)  \
 do {                            \
     if (!(expression)) {                \
-        exitTransportWithError("assertion failed", __FILE__, SHMEM_BUILD_TIME, __LINE__); \
+        exitTransportWithError("assertion failed", __FILE__, __LINE__); \
     } \
 } while (0)
 #else
@@ -67,7 +63,7 @@ do {                            \
 #define SHMEM_GUARANTEE(expression) \
 do {                            \
     if (!(expression)) {                \
-        exitTransportWithError("assertion failed", __FILE__, SHMEM_BUILD_TIME, __LINE__); \
+        exitTransportWithError("assertion failed", __FILE__, __LINE__); \
     } \
 } while (0)
 

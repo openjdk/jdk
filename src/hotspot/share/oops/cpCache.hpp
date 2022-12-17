@@ -292,8 +292,8 @@ class ConstantPoolCacheEntry {
 
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
-  Method*      method_if_resolved(const constantPoolHandle& cpool);
-  oop        appendix_if_resolved(const constantPoolHandle& cpool);
+  Method*      method_if_resolved(const constantPoolHandle& cpool) const;
+  oop        appendix_if_resolved(const constantPoolHandle& cpool) const;
 
   void set_parameter_size(int value);
 
@@ -379,16 +379,13 @@ class ConstantPoolCacheEntry {
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
-  void print (outputStream* st, int index) const;
+  void print (outputStream* st, int index, const ConstantPoolCache* cache) const;
   void verify(outputStream* st) const;
 
   static void verify_tos_state_shift() {
     // When shifting flags as a 32-bit int, make sure we don't need an extra mask for tos_state:
     assert((((u4)-1 >> tos_state_shift) & ~tos_state_mask) == 0, "no need for tos_state mask");
   }
-
-  void verify_just_initialized(bool f2_used);
-  void reinitialize(bool f2_used);
 };
 
 
@@ -404,6 +401,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
+
+  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
+  // time when caching java heap object is supported.
+  CDS_JAVA_HEAP_ONLY(int _archived_references_index;) // Gap on LP64
+
   ConstantPool*   _constant_pool;          // the corresponding constant pool
 
   // The following fields need to be modified at runtime, so they cannot be
@@ -416,9 +418,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // RedefineClasses support
   uint64_t             _gc_epoch;
 
-  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
-  // time when caching java heap object is supported.
-  CDS_JAVA_HEAP_ONLY(int _archived_references_index;)
+  CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -455,9 +455,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
 
-  // CDS support
+#if INCLUDE_CDS
   void remove_unshareable_info();
-  void verify_just_initialized();
+  void save_for_archive(TRAPS);
+#endif
+
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }

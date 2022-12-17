@@ -23,16 +23,16 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_x86.hpp"
-#include "os_share_windows.hpp"
+#include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -40,11 +40,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "symbolengine.hpp"
 #include "unwind_windows_x86.hpp"
@@ -166,7 +167,7 @@ typedef struct {
 // Arguments:  low and high are the address of the full reserved
 // codeCache area
 //
-bool os::register_code_area(char *low, char *high) {
+bool os::win32::register_code_area(char *low, char *high) {
 #ifdef AMD64
 
   ResourceMark rm;
@@ -180,7 +181,7 @@ bool os::register_code_area(char *low, char *high) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
-  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache));
+  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache), rscratch1);
   masm->flush();
 
   // Create an Unwind Structure specifying no unwind info
@@ -210,7 +211,7 @@ bool os::register_code_area(char *low, char *high) {
   return true;
 }
 
-#ifdef AMD64
+#ifdef HAVE_PLATFORM_PRINT_NATIVE_STACK
 /*
  * Windows/x64 does not use stack frames the way expected by Java:
  * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
@@ -222,8 +223,8 @@ bool os::register_code_area(char *low, char *high) {
  *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
  * loop in vmError.cpp. We need to roll our own loop.
  */
-bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                     char *buf, int buf_size)
+bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
+                                            char *buf, int buf_size)
 {
   CONTEXT ctx;
   if (context != NULL) {
@@ -294,7 +295,7 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
 
   return true;
 }
-#endif // AMD64
+#endif // HAVE_PLATFORM_PRINT_NATIVE_STACK
 
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
@@ -319,6 +320,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return frame(sp + 1, fp, (address)*sp);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -448,15 +455,14 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
-  intptr_t *sp = (intptr_t *)uc->REG_SP;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+  address sp = (address)uc->REG_SP;
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = (address)uc->REG_PC;
+  address pc = os::fetch_frame_from_context(uc).pc();
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }

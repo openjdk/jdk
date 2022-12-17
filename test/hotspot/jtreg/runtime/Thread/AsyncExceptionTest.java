@@ -26,14 +26,15 @@
  * @bug 8283044
  * @requires vm.compiler1.enabled | vm.compiler2.enabled
  * @summary Stress delivery of asynchronous exceptions.
- * @library /test/lib /test/hotspot/jtreg
- * @build AsyncExceptionTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xcomp
+ * @library /test/hotspot/jtreg/testlibrary
+ * @run main/othervm -Xcomp
                      -XX:CompileCommand=dontinline,AsyncExceptionTest::internalRun2
                      -XX:CompileCommand=compileonly,AsyncExceptionTest::internalRun1
                      -XX:CompileCommand=compileonly,AsyncExceptionTest::internalRun2
                      AsyncExceptionTest
  */
+
+import jvmti.JVMTIUtils;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -53,13 +54,17 @@ public class AsyncExceptionTest extends Thread {
         try {
             internalRun1();
         } catch (ThreadDeath td) {
-            throw new RuntimeException("Catched ThreadDeath in run() instead of internalRun2() or internalRun1(). receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1 + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
+            throw new RuntimeException("Caught ThreadDeath in run() instead of internalRun2() or internalRun1().\n"
+                    + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
+                    + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         } catch (NoClassDefFoundError ncdfe) {
-            // ignore because we're testing Thread.stop() which can cause it
+            // ignore because we're testing StopThread() which can cause it
         }
 
         if (receivedThreadDeathinInternal2 == false && receivedThreadDeathinInternal1 == false) {
-            throw new RuntimeException("Didn't catched ThreadDeath in internalRun2() nor in internalRun1(). receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1 + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
+            throw new RuntimeException("Didn't catch ThreadDeath in internalRun2() nor in internalRun1().\n"
+                    + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
+                    + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         }
         exitSyncObj.countDown();
     }
@@ -120,7 +125,7 @@ public class AsyncExceptionTest extends Thread {
                 thread.startSyncObj.await();
                 while (true) {
                     // Send async exception and wait until it is thrown
-                    thread.stop();
+                    JVMTIUtils.stopThread(thread);
                     thread.exitSyncObj.await();
                     Thread.sleep(100);
 
@@ -133,7 +138,7 @@ public class AsyncExceptionTest extends Thread {
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             } catch (NoClassDefFoundError ncdfe) {
-                // Ignore because we're testing Thread.stop() which can
+                // Ignore because we're testing StopThread which can
                 // cause it. Yes, a NoClassDefFoundError that happens
                 // in a worker thread can subsequently be seen in the
                 // main thread.
@@ -165,4 +170,3 @@ public class AsyncExceptionTest extends Thread {
         System.exit(1);
     }
 }
-

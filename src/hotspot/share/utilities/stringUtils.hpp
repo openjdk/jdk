@@ -40,6 +40,15 @@ public:
 
   // Compute string similarity based on Dice's coefficient
   static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);
+
+  // Find needle in haystack, case insensitive.
+  // Custom implementation of strcasestr, as it is not available on windows.
+  static const char* strstr_nocase(const char* haystack, const char* needle);
+
+  // Check if str matches the star_pattern.
+  // eg. str "_abc____def__" would match pattern "abc*def".
+  // The matching is case insensitive.
+  static bool is_star_match(const char* star_pattern, const char* str);
 };
 
 #endif // SHARE_UTILITIES_STRINGUTILS_HPP

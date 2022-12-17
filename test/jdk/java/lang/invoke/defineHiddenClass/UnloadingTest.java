@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,18 +214,15 @@ public class UnloadingTest {
         }
 
         void unload() {
-            // Force garbage collection to trigger unloading of class loader and native library
-            ForceGC gc = new ForceGC();
-            assertTrue(gc.await(() -> weakRef.get() == null));
-
-            if (weakRef.get() != null) {
+            // Force garbage collection to trigger unloading of class loader
+            // and native library.
+            if (!ForceGC.wait(() -> weakRef.refersTo(null))) {
                 throw new RuntimeException("loader " + " not unloaded!");
             }
         }
 
         boolean tryUnload() {
-            ForceGC gc = new ForceGC();
-            return gc.await(() -> weakRef.get() == null);
+            return ForceGC.wait(() -> weakRef.refersTo(null));
         }
     }
 

@@ -272,7 +272,7 @@ public final class Des {
         key = set_parity(key);
         if (bad_key(key)) {
             byte [] temp = long2octet(key);
-            temp[7] ^= 0xf0;
+            temp[7] ^= (byte) 0xf0;
             key = octet2long(temp);
         }
 
@@ -280,7 +280,7 @@ public final class Des {
         key = octet2long(set_parity(newkey));
         if (bad_key(key)) {
             byte [] temp = long2octet(key);
-            temp[7] ^= 0xf0;
+            temp[7] ^= (byte) 0xf0;
             key = octet2long(temp);
         }
 

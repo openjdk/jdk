@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,22 @@
 
 package com.sun.hotspot.igv.coordinator.actions;
 
+import com.sun.hotspot.igv.coordinator.FolderNode;
+import com.sun.hotspot.igv.data.Folder;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.serialization.Printer;
 import com.sun.hotspot.igv.settings.Settings;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Files;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
-import org.openide.util.actions.CookieAction;
 import org.openide.util.actions.NodeAction;
 
 /**
@@ -49,13 +54,17 @@ public final class SaveAsAction extends NodeAction {
 
     @Override
     protected void performAction(Node[] activatedNodes) {
-
         GraphDocument doc = new GraphDocument();
-        for (Node n : activatedNodes) {
-            Group group = n.getLookup().lookup(Group.class);
-            doc.addElement(group);
+        for (Node node : activatedNodes) {
+            if (node instanceof FolderNode) {
+                FolderNode folderNode = (FolderNode) node;
+                Folder folder = folderNode.getFolder();
+                if (folder instanceof Group) {
+                    Group group = (Group) folder;
+                    doc.addElement(group);
+                }
+            }
         }
-
         save(doc);
     }
 
@@ -76,21 +85,14 @@ public final class SaveAsAction extends NodeAction {
             }
             Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
             try {
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(file))) {
+                try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()))) {
                     Printer p = new Printer();
                     p.export(writer, doc);
                 }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-
             }
         }
-    }
-
-    protected int mode() {
-        return CookieAction.MODE_SOME;
     }
 
     @Override
@@ -115,12 +117,14 @@ public final class SaveAsAction extends NodeAction {
 
     @Override
     protected boolean enable(Node[] nodes) {
-
-        int cnt = 0;
-        for (Node n : nodes) {
-            cnt += n.getLookup().lookupAll(Group.class).size();
+        if (nodes.length > 0) {
+            for (Node n : nodes) {
+                if (!(n instanceof FolderNode) || ((FolderNode) n).isRootNode()) {
+                    return false;
+                }
+            }
+            return true;
         }
-
-        return cnt > 0;
+        return false;
     }
 }

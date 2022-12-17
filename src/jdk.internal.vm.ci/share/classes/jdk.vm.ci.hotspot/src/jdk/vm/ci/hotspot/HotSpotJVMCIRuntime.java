@@ -35,6 +35,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -60,6 +62,8 @@ import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
@@ -202,46 +206,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return result;
     }
 
-    /**
-     * Decodes the exception encoded in {@code buffer} and throws it.
-     *
-     * @param buffer a native byte buffer containing an exception encoded by
-     *            {@link #encodeThrowable}
-     */
-    @VMEntryPoint
-    static void decodeAndThrowThrowable(long buffer) throws Throwable {
-        Unsafe unsafe = UnsafeAccess.UNSAFE;
-        int encodingLength = unsafe.getInt(buffer);
-        byte[] encoding = new byte[encodingLength];
-        unsafe.copyMemory(null, buffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
-        throw TranslatedException.decodeThrowable(encoding);
-    }
-
-    /**
-     * If {@code bufferSize} is large enough, encodes {@code throwable} into a byte array and writes
-     * it to {@code buffer}. The encoding in {@code buffer} can be decoded by
-     * {@link #decodeAndThrowThrowable}.
-     *
-     * @param throwable the exception to encode
-     * @param buffer a native byte buffer
-     * @param bufferSize the size of {@code buffer} in bytes
-     * @return the number of bytes written into {@code buffer} if {@code bufferSize} is large
-     *         enough, otherwise {@code -N} where {@code N} is the value {@code bufferSize} needs to
-     *         be to fit the encoding
-     */
-    @VMEntryPoint
-    static int encodeThrowable(Throwable throwable, long buffer, int bufferSize) throws Throwable {
-        byte[] encoding = TranslatedException.encodeThrowable(throwable);
-        int requiredSize = 4 + encoding.length;
-        if (bufferSize < requiredSize) {
-            return -requiredSize;
-        }
-        Unsafe unsafe = UnsafeAccess.UNSAFE;
-        unsafe.putInt(buffer, encoding.length);
-        unsafe.copyMemory(encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, encoding.length);
-        return requiredSize;
-    }
-
     @VMEntryPoint
     static String callToString(Object o) {
         return o.toString();
@@ -264,6 +228,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Note: The following one is not used (see InitTimer.ENABLED). It is added here
         // so that -XX:+JVMCIPrintProperties shows the option.
         InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
+        CodeSerializationTypeInfo(Boolean.class, false, "Prepend the size and label of each element to the stream when " +
+                "serializing HotSpotCompiledCode to verify both ends of the protocol agree on the format. " +
+                "Defaults to true in non-product builds."),
+        DumpSerializedCode(String.class, null, "Dump serialized code during code installation for code whose simple " +
+                "name (a stub) or fully qualified name (an nmethod) contains this option's value as a substring."),
         ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
                 "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
                 "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
@@ -291,7 +260,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         private final Class<?> type;
         @NativeImageReinitialize private Object value;
         private final Object defaultValue;
-        private boolean isDefault = true;
+        boolean isDefault = true;
         private final String[] helpLines;
 
         Option(Class<?> type, Object defaultValue, String... helpLines) {
@@ -701,7 +670,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer, String signature) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
         }
@@ -712,7 +681,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
         }
         if (javaType == null) {
-            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, signature);
+            String name = compilerToVm.getSignatureName(klassPointer);
+            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
             resolvedJavaTypes.put(klassPointer, new WeakReference<>(javaType));
         }
         return javaType;
@@ -763,7 +733,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Get the {@link Class} corresponding to {@code type}.
+     * Gets the {@link Class} corresponding to {@code type}.
      *
      * @param type the type for which a {@link Class} is requested
      * @return the original Java class corresponding to {@code type} or {@code null} if this runtime
@@ -773,6 +743,36 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     public Class<?> getMirror(ResolvedJavaType type) {
         if (type instanceof HotSpotResolvedJavaType && reflection instanceof HotSpotJDKReflection) {
             return ((HotSpotJDKReflection) reflection).getMirror((HotSpotResolvedJavaType) type);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@link Executable} corresponding to {@code method}.
+     *
+     * @param method the method for which an {@link Executable} is requested
+     * @return the original Java method or constructor corresponding to {@code method} or
+     *         {@code null} if this runtime does not support mapping {@link ResolvedJavaMethod}
+     *         instances to {@link Executable} instances
+     */
+    public Executable getMirror(ResolvedJavaMethod method) {
+        if (method instanceof HotSpotResolvedJavaMethodImpl && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getMethod((HotSpotResolvedJavaMethodImpl) method);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@link Field} corresponding to {@code field}.
+     *
+     * @param field the field for which a {@link Field} is requested
+     * @return the original Java field corresponding to {@code field} or {@code null} if this
+     *         runtime does not support mapping {@link ResolvedJavaField} instances to {@link Field}
+     *         instances
+     */
+    public Field getMirror(ResolvedJavaField field) {
+        if (field instanceof HotSpotResolvedJavaFieldImpl && reflection instanceof HotSpotJDKReflection) {
+            return HotSpotJDKReflection.getField((HotSpotResolvedJavaFieldImpl) field);
         }
         return null;
     }
@@ -1272,7 +1272,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         for (String filter : filters) {
             Matcher m = FORCE_TRANSLATE_FAILURE_FILTER_RE.matcher(filter);
             if (!m.matches()) {
-                throw new JVMCIError(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
+                throw new IllegalArgumentException(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
             }
             String typeSelector = m.group(1);
             String substring = m.group(2);
@@ -1292,7 +1292,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 continue;
             }
             if (toMatch.contains(substring)) {
-                throw new JVMCIError("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
+                throw new RuntimeException("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
             }
         }
     }

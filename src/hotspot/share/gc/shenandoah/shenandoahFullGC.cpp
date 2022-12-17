@@ -55,8 +55,8 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
@@ -65,6 +65,10 @@
 ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
+
+ShenandoahFullGC::~ShenandoahFullGC() {
+  delete _preserved_marks;
+}
 
 bool ShenandoahFullGC::collect(GCCause::Cause cause) {
   vmop_entry_full(cause);

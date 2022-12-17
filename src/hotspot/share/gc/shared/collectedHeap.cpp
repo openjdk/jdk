@@ -49,8 +49,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
@@ -290,9 +290,10 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   GCCauseSetter gcs(this, cause);
   switch (cause) {
     case GCCause::_codecache_GC_threshold:
+    case GCCause::_codecache_GC_aggressive:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
-    case GCCause::_metadata_GC_threshold : {
+    case GCCause::_metadata_GC_threshold: {
       HandleMark hm(thread);
       do_full_collection(false);        // don't clear all soft refs
       break;
@@ -649,11 +650,6 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
 
 bool CollectedHeap::is_archived_object(oop object) const {
   return false;
-}
-
-uint32_t CollectedHeap::hash_oop(oop obj) const {
-  const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
-  return static_cast<uint32_t>(addr >> LogMinObjAlignment);
 }
 
 // It's the caller's responsibility to ensure glitch-freedom

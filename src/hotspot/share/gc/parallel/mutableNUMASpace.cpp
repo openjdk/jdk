@@ -33,13 +33,13 @@
 #include "oops/typeArrayOop.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"
 
 MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), _must_use_large_pages(false) {
-  _lgrp_spaces = new (ResourceObj::C_HEAP, mtGC) GrowableArray<LGRPSpace*>(0, mtGC);
+  _lgrp_spaces = new (mtGC) GrowableArray<LGRPSpace*>(0, mtGC);
   _page_size = os::vm_page_size();
   _adaptation_cycles = 0;
   _samples_count = 0;

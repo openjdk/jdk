@@ -24,15 +24,16 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "compiler/compilerDefinitions.hpp"
-#include "gc/shared/gcConfig.hpp"
 #include "utilities/defaultStream.hpp"
 
 const char* compilertype2name_tab[compiler_number_of_types] = {
@@ -222,10 +223,6 @@ bool CompilerConfig::is_compilation_mode_selected() {
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
 }
 
-bool CompilerConfig::is_interpreter_only() {
-  return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
-}
-
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
   if (JVMFlagAccess::check_constraint(compile_threshold_flag, JVMFlagLimit::get_constraint(compile_threshold_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
@@ -404,13 +401,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
 #ifdef COMPILER2
     // Some inlining tuning
-#ifdef X86
-    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-      FLAG_SET_DEFAULT(InlineSmallCode, 2500);
-    }
-#endif
-
-#if defined AARCH64
+#if defined(X86) || defined(AARCH64) || defined(RISCV64)
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
@@ -592,13 +583,6 @@ void CompilerConfig::ergo_initialize() {
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
 #endif
-
-  if (FLAG_IS_DEFAULT(SweeperThreshold)) {
-    if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
-      // Cap default SweeperThreshold value to an equivalent of 1.2 Mb
-      FLAG_SET_ERGO(SweeperThreshold, (1.2 * M * 100) / ReservedCodeCacheSize);
-    }
-  }
 
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");

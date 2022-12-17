@@ -30,27 +30,27 @@ import java.security.spec.*;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>KeyAgreement</code> class.
+ * for the {@code KeyAgreement} class.
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation
  * of a particular key agreement algorithm.
  *
  * <p> The keys involved in establishing a shared secret are created by one
  * of the
- * key generators (<code>KeyPairGenerator</code> or
- * <code>KeyGenerator</code>), a <code>KeyFactory</code>, or as a result from
+ * key generators ({@code KeyPairGenerator} or
+ * {@code KeyGenerator}), a {@code KeyFactory}, or as a result from
  * an intermediate phase of the key agreement protocol
  * ({@link #engineDoPhase(java.security.Key, boolean) engineDoPhase}).
  *
  * <p> For each of the correspondents in the key exchange,
- * <code>engineDoPhase</code>
+ * {@code engineDoPhase}
  * needs to be called. For example, if the key exchange is with one other
- * party, <code>engineDoPhase</code> needs to be called once, with the
- * <code>lastPhase</code> flag set to <code>true</code>.
+ * party, {@code engineDoPhase} needs to be called once, with the
+ * {@code lastPhase} flag set to {@code true}.
  * If the key exchange is
- * with two other parties, <code>engineDoPhase</code> needs to be called twice,
- * the first time setting the <code>lastPhase</code> flag to
- * <code>false</code>, and the second time setting it to <code>true</code>.
+ * with two other parties, {@code engineDoPhase} needs to be called twice,
+ * the first time setting the {@code lastPhase} flag to
+ * {@code false}, and the second time setting it to {@code true}.
  * There may be any number of parties involved in a key exchange.
  *
  * @author Jan Luehe
@@ -73,10 +73,10 @@ public abstract class KeyAgreementSpi {
      * parameters required for this key agreement.
      *
      * <p> If the key agreement algorithm requires random bytes, it gets them
-     * from the given source of randomness, <code>random</code>.
+     * from the given source of randomness, {@code random}.
      * However, if the underlying
      * algorithm implementation does not require any random bytes,
-     * <code>random</code> is ignored.
+     * {@code random} is ignored.
      *
      * @param key the party's private information. For example, in the case
      * of the Diffie-Hellman key agreement, this would be the party's own
@@ -121,8 +121,8 @@ public abstract class KeyAgreementSpi {
      * @param lastPhase flag which indicates whether this is the last
      * phase of this key agreement.
      *
-     * @return the (intermediate) key resulting from this phase, or null if
-     * this phase does not yield a key
+     * @return the (intermediate) key resulting from this phase,
+     * or {@code null} if this phase does not yield a key
      *
      * @exception InvalidKeyException if the given key is inappropriate for
      * this phase.
@@ -157,10 +157,10 @@ public abstract class KeyAgreementSpi {
 
     /**
      * Generates the shared secret, and places it into the buffer
-     * <code>sharedSecret</code>, beginning at <code>offset</code> inclusive.
+     * {@code sharedSecret}, beginning at {@code offset} inclusive.
      *
-     * <p>If the <code>sharedSecret</code> buffer is too small to hold the
-     * result, a <code>ShortBufferException</code> is thrown.
+     * <p>If the {@code sharedSecret} buffer is too small to hold the
+     * result, a {@code ShortBufferException} is thrown.
      * In this case, this call should be repeated with a larger output buffer.
      *
      * <p>This method resets this {@code KeyAgreementSpi} object to the state
@@ -175,10 +175,10 @@ public abstract class KeyAgreementSpi {
      * subsequent operations.
      *
      * @param sharedSecret the buffer for the shared secret
-     * @param offset the offset in <code>sharedSecret</code> where the
+     * @param offset the offset in {@code sharedSecret} where the
      * shared secret will be stored
      *
-     * @return the number of bytes placed into <code>sharedSecret</code>
+     * @return the number of bytes placed into {@code sharedSecret}
      *
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the

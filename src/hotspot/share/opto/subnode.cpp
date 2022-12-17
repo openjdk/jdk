@@ -38,6 +38,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/moveBits.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -67,15 +68,6 @@ Node* SubNode::Identity(PhaseGVN* phase) {
     }
     if (in(1)->in(1) == in(2)) {
       return in(1)->in(2);
-    }
-
-    // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
-    // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
-    // are originally used, although the optimizer sometimes jiggers things).
-    // This folding through an O2 removes a loop-exit use of a loop-varying
-    // value and generally lowers register pressure in and around the loop.
-    if (in(1)->in(2)->Opcode() == Op_Opaque2 && in(1)->in(2)->in(1) == in(2)) {
-      return in(1)->in(1);
     }
   }
 
@@ -628,38 +620,6 @@ Node* CmpNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-#ifndef PRODUCT
-//----------------------------related------------------------------------------
-// Related nodes of comparison nodes include all data inputs (until hitting a
-// control boundary) as well as all outputs until and including control nodes
-// as well as their projections. In compact mode, data inputs till depth 1 and
-// all outputs till depth 1 are considered.
-void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, true);
-    this->collect_nodes(out_rel, -1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-    this->collect_nodes_out_all_ctrl_boundary(out_rel);
-    // Now, find all control nodes in out_rel, and include their projections
-    // and projection targets (if any) in the result.
-    GrowableArray<Node*> proj(Compile::current()->unique());
-    for (GrowableArrayIterator<Node*> it = out_rel->begin(); it != out_rel->end(); ++it) {
-      Node* n = *it;
-      if (n->is_CFG() && !n->is_Proj()) {
-        // Assume projections and projection targets are found at levels 1 and 2.
-        n->collect_nodes(&proj, -2, false, false);
-        for (GrowableArrayIterator<Node*> p = proj.begin(); p != proj.end(); ++p) {
-          out_rel->append_if_missing(*p);
-        }
-        proj.clear();
-      }
-    }
-  }
-}
-
-#endif
-
 CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
   switch (bt) {
     case T_INT:
@@ -848,8 +808,12 @@ bool CmpUNode::is_index_range_check() const {
 Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (phase->type(in(2))->higher_equal(TypeInt::ZERO)) {
     switch (in(1)->Opcode()) {
+    case Op_CmpU3:              // Collapse a CmpU3/CmpI into a CmpU
+      return new CmpUNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpL3:              // Collapse a CmpL3/CmpI into a CmpL
       return new CmpLNode(in(1)->in(1),in(1)->in(2));
+    case Op_CmpUL3:             // Collapse a CmpUL3/CmpI into a CmpUL
+      return new CmpULNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpF3:              // Collapse a CmpF3/CmpI into a CmpF
       return new CmpFNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpD3:              // Collapse a CmpD3/CmpI into a CmpD
@@ -1463,7 +1427,10 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return NULL;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock || cmp->is_SubTypeCheck()) return NULL;
+  if( cop == Op_FastLock || cop == Op_FastUnlock ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+    return NULL;
+  }
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
   if( !cmp1 ) return NULL;
@@ -1480,7 +1447,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Move constants to the right of compare's to canonicalize.
   // Do not muck with Opaque1 nodes, as this indicates a loop
   // guard that cannot change shape.
-  if( con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_Opaque1 &&
+  if (con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_OpaqueZeroTripGuard &&
       // Because of NaN's, CmpD and CmpF are not commutative
       cop != Op_CmpD && cop != Op_CmpF &&
       // Protect against swapping inputs to a compare when it is used by a
@@ -1493,6 +1460,20 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     cmp->swap_edges(1, 2);
     cmp = phase->transform( cmp );
     return new BoolNode( cmp, _test.commute() );
+  }
+
+  // Change "bool eq/ne (cmp (cmove (bool tst (cmp2)) 1 0) 0)" into "bool tst/~tst (cmp2)"
+  if (cop == Op_CmpI &&
+      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      cmp1_op == Op_CMoveI && cmp2->find_int_con(1) == 0) {
+    // 0 should be on the true branch
+    if (cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
+        cmp1->in(CMoveNode::IfFalse)->find_int_con(0) != 0) {
+      BoolNode* target = cmp1->in(CMoveNode::Condition)->as_Bool();
+      return new BoolNode(target->in(1),
+                          (_test._test == BoolTest::eq) ? target->_test._test :
+                                                          target->_test.negate());
+    }
   }
 
   // Change "bool eq/ne (cmp (and X 16) 16)" into "bool ne/eq (cmp (and X 16) 0)".
@@ -1615,14 +1596,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Change x u< 1 or x u<= 0 to x == 0
+  // and    x u> 0 or u>= 1   to x != 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
-      ((_test._test == BoolTest::lt &&
+      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
         cmp2->find_int_con(-1) == 1) ||
-       (_test._test == BoolTest::le &&
+       ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
         cmp2->find_int_con(-1) == 0))) {
     Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
-    return new BoolNode(ncmp, BoolTest::eq);
+    return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
 
   // Change (arraylength <= 0) or (arraylength == 0)
@@ -1789,20 +1771,6 @@ void BoolNode::dump_spec(outputStream *st) const {
   _test.dump_on(st);
   st->print("]");
 }
-
-//-------------------------------related---------------------------------------
-// A BoolNode's related nodes are all of its data inputs, and all of its
-// outputs until control nodes are hit, which are included. In compact
-// representation, inputs till level 3 and immediate outputs are included.
-void BoolNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 3, false, true);
-    this->collect_nodes(out_rel, -1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-    this->collect_nodes_out_all_ctrl_boundary(out_rel);
-  }
-}
 #endif
 
 //----------------------is_counted_loop_exit_test------------------------------
@@ -1894,4 +1862,44 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
   float f = t1->getf();
   if( f < 0.0f ) return Type::FLOAT;
   return TypeF::make( (float)sqrt( (double)f ) );
+}
+
+const Type* ReverseINode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeInt* t1int = t1->isa_int();
+  if (t1int && t1int->is_con()) {
+    jint res = reverse_bits(t1int->get_con());
+    return TypeInt::make(res);
+  }
+  return bottom_type();
+}
+
+const Type* ReverseLNode::Value(PhaseGVN* phase) const {
+  const Type *t1 = phase->type( in(1) );
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeLong* t1long = t1->isa_long();
+  if (t1long && t1long->is_con()) {
+    jlong res = reverse_bits(t1long->get_con());
+    return TypeLong::make(res);
+  }
+  return bottom_type();
+}
+
+Node* ReverseINode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseI) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+Node* ReverseLNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReverseL) {
+    return in(1)->in(1);
+  }
+  return this;
 }

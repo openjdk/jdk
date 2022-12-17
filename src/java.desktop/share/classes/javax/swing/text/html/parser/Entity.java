@@ -114,7 +114,7 @@ class Entity implements DTDConstants {
      * @return the data as a <code>String</code>
      */
     public String getString() {
-        return new String(data, 0, data.length);
+        return new String(data);
     }
 
 

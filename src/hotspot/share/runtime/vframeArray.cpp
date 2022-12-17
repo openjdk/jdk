@@ -452,7 +452,10 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     ttyLocker ttyl;
     tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);
-    RegisterMap map(thread);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::include,
+                    RegisterMap::ProcessFrames::include,
+                    RegisterMap::WalkContinuation::skip);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
     if (WizardMode && Verbose) method()->print_codes();
@@ -544,10 +547,7 @@ void vframeArray::fill_in(JavaThread* thread,
       jint* src = (jint*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
       _callee_registers[i] = src != NULL ? *src : NULL_WORD;
 #endif
-      if (src == NULL) {
-        set_location_valid(i, false);
-      } else {
-        set_location_valid(i, true);
+      if (src != NULL) {
         jint* dst = (jint*) register_location(i);
         *dst = *src;
       }
@@ -567,7 +567,10 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   // Find the skeletal interpreter frames to unpack into
   JavaThread* current = JavaThread::current();
 
-  RegisterMap map(current, false);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;
@@ -586,7 +589,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     st.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
                 p2i(current), p2i(this), exec_mode);
     st.print_cr("   Virtual frames (outermost/oldest first):");
-    tty->print_raw(st.as_string());
+    tty->print_raw(st.freeze());
   }
 
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
@@ -624,7 +627,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       st.print(" - %s", code_name);
       st.print(" @ bci=%d ", bci);
       st.print_cr("sp=" PTR_FORMAT, p2i(elem->iframe()->sp()));
-      tty->print_raw(st.as_string());
+      tty->print_raw(st.freeze());
     }
     elem->unpack_on_stack(caller_actual_parameters,
                           callee_parameters,

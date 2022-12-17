@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/relocInfo.hpp"
-#include "compiler/compilerDefinitions.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/os.hpp"
@@ -35,18 +35,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
-
-JVMFlag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
-  if ((value <= 1) && (Arguments::mode() == Arguments::_comp || Arguments::mode() == Arguments::_mixed)) {
-    JVMFlag::printError(verbose,
-                        "AliasLevel (" INTX_FORMAT ") is not "
-                        "compatible with -Xcomp or -Xmixed\n",
-                        value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
 
 /**
  * Validate the minimum number of compiler threads needed to run the JVM.

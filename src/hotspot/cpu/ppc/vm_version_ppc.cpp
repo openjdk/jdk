@@ -24,10 +24,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
@@ -41,6 +41,7 @@
 
 #include <sys/sysinfo.h>
 #if defined(_AIX)
+#include "os_aix.hpp"
 #include <libperfstat.h>
 #endif
 

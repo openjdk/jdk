@@ -27,14 +27,14 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObjectFactory.hpp"
-#include "ci/ciReplay.hpp"
 #include "classfile/vmClassMacros.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerThread.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompileTask;
 class OopMapSet;
@@ -79,7 +79,6 @@ private:
   bool  _jvmti_can_walk_any_space;
 
   // Cache DTrace flags
-  bool  _dtrace_extended_probes;
   bool  _dtrace_method_probes;
   bool  _dtrace_alloc_probes;
 
@@ -191,15 +190,6 @@ private:
     if (o == NULL) {
       return NULL;
     } else {
-#ifndef PRODUCT
-      if (ReplayCompiles && o->is_klass()) {
-        Klass* k = (Klass*)o;
-        if (k->is_instance_klass() && ciReplay::is_klass_unresolved((InstanceKlass*)k)) {
-          // Klass was unresolved at replay dump time. Simulate this case.
-          return ciEnv::_unloaded_ciinstance_klass;
-        }
-      }
-#endif
       return _factory->get_metadata(o);
     }
   }
@@ -367,7 +357,6 @@ public:
 
   // Cache DTrace flags
   void  cache_dtrace_flags();
-  bool  dtrace_extended_probes() const { return _dtrace_extended_probes; }
   bool  dtrace_method_probes()   const { return _dtrace_method_probes; }
   bool  dtrace_alloc_probes()    const { return _dtrace_alloc_probes; }
 
@@ -395,7 +384,6 @@ public:
                        bool                      has_monitors,
                        int                       immediate_oops_patched,
                        RTMState                  rtm_state = NoRTM);
-
 
   // Access to certain well known ciObjects.
 #define VM_CLASS_FUNC(name, ignore_s) \

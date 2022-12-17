@@ -132,6 +132,8 @@ public:
   int alias() const { return _alias; }
 
   Node* collect_memory_for_infinite_loop(const Node* in);
+
+  void record_new_ctrl(Node* ctrl, Node* region, Node* mem, Node* mem_for_ctrl);
 };
 
 class ShenandoahCompareAndSwapPNode : public CompareAndSwapPNode {

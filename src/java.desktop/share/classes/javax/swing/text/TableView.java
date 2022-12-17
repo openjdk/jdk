@@ -322,7 +322,7 @@ public abstract class TableView extends BoxView {
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children.
-     * @param axis the axis being layed out.
+     * @param axis the axis being laid out.
      * @param offsets the offsets from the origin of the view for
      *  each of the child views.  This is a return value and is
      *  filled in by the implementation of this method.
@@ -405,7 +405,7 @@ public abstract class TableView extends BoxView {
      * give axis.  Table cells that span multiple columns are excluded
      * from the first pass.  A second pass is made to determine if
      * the cells that span multiple columns are satisfied.  If the
-     * column requirements are not satisified, the needs of the
+     * column requirements are not satisfied, the needs of the
      * multi-column cell is mixed into the existing column requirements.
      * The calculation of the multi-column distribution is based upon
      * the proportions of the existing column requirements and taking
@@ -721,7 +721,7 @@ public abstract class TableView extends BoxView {
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children.
-         * @param axis the axis being layed out.
+         * @param axis the axis being laid out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
          *  filled in by the implementation of this method.
@@ -765,7 +765,7 @@ public abstract class TableView extends BoxView {
          *
          * @param targetSpan the total span given to the view, which
          *  would be used to layout the children.
-         * @param axis the axis being layed out.
+         * @param axis the axis being laid out.
          * @param offsets the offsets from the origin of the view for
          *  each of the child views.  This is a return value and is
          *  filled in by the implementation of this method.

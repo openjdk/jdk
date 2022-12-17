@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,10 +306,13 @@ public class CatalogSupportBase {
     public void testXInclude(boolean setUseCatalog, boolean useCatalog, String catalog,
             String xml, MyHandler handler, String expected) throws Exception {
         SAXParser parser = getSAXParser(setUseCatalog, useCatalog, catalog);
-
         parser.parse(new InputSource(new StringReader(xml)), handler);
-        debugPrint("handler.result:" + handler.getResult());
-        Assert.assertEquals(handler.getResult().trim(), expected);
+        // the test verifies the result if handler != null, or no exception
+        // is thrown if handler == null.
+        if (handler != null) {
+            debugPrint("handler.result:" + handler.getResult());
+            Assert.assertEquals(handler.getResult().trim(), expected);
+        }
     }
 
     /*

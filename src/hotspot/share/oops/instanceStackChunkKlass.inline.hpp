@@ -26,32 +26,19 @@
 
 #include "oops/instanceStackChunkKlass.hpp"
 
-#include "classfile/javaClasses.inline.hpp"
-#include "code/codeBlob.inline.hpp"
-#include "code/codeCache.inline.hpp"
-#include "code/nativeInst.hpp"
-#include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gc_globals.hpp"
-#include "logging/log.hpp"
-#include "memory/iterator.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/smallRegisterMap.inline.hpp"
-#include "runtime/stackChunkFrameStream.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 inline size_t InstanceStackChunkKlass::instance_size(size_t stack_size_in_words) const {
-  return align_object_size(size_helper() + stack_size_in_words + bitmap_size(stack_size_in_words));
+  return align_object_size(size_helper() + stack_size_in_words + gc_data_size(stack_size_in_words));
 }
 
 inline size_t InstanceStackChunkKlass::bitmap_size_in_bits(size_t stack_size_in_words) {
@@ -59,6 +46,11 @@ inline size_t InstanceStackChunkKlass::bitmap_size_in_bits(size_t stack_size_in_
   size_t size_in_bits = stack_size_in_words << (LogBitsPerWord - LogBitsPerHeapOop);
 
   return align_up(size_in_bits, BitsPerWord);
+}
+
+inline size_t InstanceStackChunkKlass::gc_data_size(size_t stack_size_in_words) {
+  // At the moment all GCs are okay with GC data big enough to fit a bit map
+  return bitmap_size(stack_size_in_words);
 }
 
 inline size_t InstanceStackChunkKlass::bitmap_size(size_t stack_size_in_words) {
@@ -118,7 +110,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_header_bounded(stackChunkOop chunk
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_stack_bounded(stackChunkOop chunk, OopClosureType* closure, MemRegion mr) {
   if (chunk->has_bitmap()) {
-    intptr_t* start = chunk->sp_address() - frame::metadata_words;
+    intptr_t* start = chunk->sp_address() - frame::metadata_words_at_bottom;
     intptr_t* end = chunk->end_address();
     // mr.end() can actually be less than start. In that case, we only walk the metadata
     if ((intptr_t*)mr.start() > start) {
@@ -136,7 +128,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_bounded(stackChunkOop chunk,
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_stack(stackChunkOop chunk, OopClosureType* closure) {
   if (chunk->has_bitmap()) {
-    oop_oop_iterate_stack_with_bitmap<T>(chunk, closure, chunk->sp_address() - frame::metadata_words, chunk->end_address());
+    oop_oop_iterate_stack_with_bitmap<T>(chunk, closure, chunk->sp_address() - frame::metadata_words_at_bottom, chunk->end_address());
   } else {
     oop_oop_iterate_stack_slow(chunk, closure, chunk->range());
   }

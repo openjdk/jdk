@@ -24,21 +24,26 @@
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
+import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
- * Class to parse the PrintIdeal and PrintOptoAssembly outputs of the test class from the hotspot_pid* file and add them
- * to the collection of {@link IRMethod} created by {@link IREncodingParser}.
+ * Class to parse the ideal compile phases and PrintOptoAssembly outputs of the test class from the hotspot_pid* file
+ * of all methods collected by {@link IREncodingParser}.
  *
  * @see IRMethod
  * @see IREncodingParser
@@ -47,24 +52,29 @@ class HotSpotPidFileParser {
     private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");
 
     private final Pattern compileIdPatternForTestClass;
-    private Map<String, IRMethod> compilationsMap;
+    /**
+     * "Method name" -> TestMethod map created by {@link IREncodingParser} which contains an entry for each method that
+     * needs to be IR matched on.
+     */
+    private final Map<String, TestMethod> testMethodMap;
 
-    public HotSpotPidFileParser(String testClass) {
+    public HotSpotPidFileParser(String testClass, Map<String, TestMethod> testMethodMap) {
         this.compileIdPatternForTestClass = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(testClass) + " (\\S+)");
-    }
-
-    public void setCompilationsMap(Map<String, IRMethod> compilationsMap) {
-        this.compilationsMap = compilationsMap;
+        this.testMethodMap = testMethodMap;
     }
 
     /**
-     * Parse the hotspot_pid*.log file from the test VM. Read the PrintIdeal and PrintOptoAssembly outputs for all
-     * methods of the test class that need to be IR matched (found in compilations map).
+     * Parse the hotspot_pid*.log file from the test VM. Read the ideal compile phase and PrintOptoAssembly outputs for
+     * all methods defined by the IR encoding.
      */
-    public Collection<IRMethod> parseCompilations(String hotspotPidFileName) {
+    public TestClass parse(String hotspotPidFileName) {
         try {
-            processFileLines(hotspotPidFileName);
-            return compilationsMap.values();
+            parseHotSpotFile(hotspotPidFileName);
+            SortedSet<IRMethodMatchable> irMethods = testMethodMap.values().stream()
+                                                                  .map(TestMethod::createIRMethod)
+                                                                  .collect(Collectors.toCollection(TreeSet::new));
+            TestFormat.throwIfAnyFailures();
+            return new TestClass(irMethods);
         } catch (IOException e) {
             throw new TestFrameworkException("Error while reading " + hotspotPidFileName, e);
         } catch (FileCorruptedException e) {
@@ -72,8 +82,8 @@ class HotSpotPidFileParser {
         }
     }
 
-    private void processFileLines(String hotspotPidFileName) throws IOException {
-        Map<Integer, IRMethod> compileIdMap = new HashMap<>();
+    private void parseHotSpotFile(String hotspotPidFileName) throws IOException {
+        Map<Integer, TestMethod> compileIdMap = new HashMap<>();
         try (var reader = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
             Line line = new Line(reader, compileIdPatternForTestClass);
             BlockOutputReader blockOutputReader = new BlockOutputReader(reader, compileIdPatternForTestClass);
@@ -87,22 +97,21 @@ class HotSpotPidFileParser {
         }
     }
 
-    private void processMethodBlock(Map<Integer, IRMethod> compileIdMap, Line line, BlockOutputReader blockOutputReader)
+    private void processMethodBlock(Map<Integer, TestMethod> compileIdMap, Line line, BlockOutputReader blockOutputReader)
             throws IOException {
         Block block = blockOutputReader.readBlock();
         if (block.containsTestClassCompilations()) {
             // Register all test method compilations that could have been emitted during a rare safepoint while
-            // dumping the PrintIdeal/PrintOptoAssembly output.
+            // dumping the ideal compile phase/PrintOptoAssembly output.
             block.getTestClassCompilations().forEach(l -> parseTestMethodCompileId(compileIdMap, l));
         }
         setIRMethodOutput(block.getOutput(), line, compileIdMap);
     }
 
-    private void parseTestMethodCompileId(Map<Integer, IRMethod> compileIdMap, String line) {
+    private void parseTestMethodCompileId(Map<Integer, TestMethod> compileIdMap, String line) {
         String methodName = parseMethodName(line);
         if (isTestAnnotatedMethod(methodName)) {
-            int compileId = getCompileId(line);
-            compileIdMap.put(compileId, getIrMethod(methodName));
+            compileIdMap.put(getCompileId(line), getTestMethod(methodName));
         }
     }
 
@@ -116,11 +125,14 @@ class HotSpotPidFileParser {
      * Is this a @Test method?
      */
     private boolean isTestAnnotatedMethod(String testMethodName) {
-        return compilationsMap.containsKey(testMethodName);
+        return testMethodMap.containsKey(testMethodName);
     }
 
-    private IRMethod getIrMethod(String testMethodName) {
-        return compilationsMap.get(testMethodName);
+    private TestMethod getTestMethod(String testMethodName) {
+        TestMethod testMethod = testMethodMap.get(testMethodName);
+        testMethod.clearOutput();
+        testMethod.setCompiled();
+        return testMethod;
     }
 
     private int getCompileId(String line) {
@@ -134,24 +146,24 @@ class HotSpotPidFileParser {
     /**
      * Is this line the start of a PrintIdeal/PrintOptoAssembly output block of a @Test method?
      */
-    private boolean isTestMethodBlockStart(Line line, Map<Integer, IRMethod> compileIdMap) {
+    private boolean isTestMethodBlockStart(Line line, Map<Integer, TestMethod> compileIdMap) {
       return line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap);
     }
 
-    private boolean isTestClassMethodBlock(Line line, Map<Integer, IRMethod> compileIdMap) {
+    private boolean isTestClassMethodBlock(Line line, Map<Integer, TestMethod> compileIdMap) {
         return compileIdMap.containsKey(getCompileId(line.getLine()));
     }
 
-    public void setIRMethodOutput(String blockOutput, Line blockStartLine, Map<Integer, IRMethod> compileIdMap) {
-        IRMethod irMethod = compileIdMap.get(getCompileId(blockStartLine.getLine()));
-        setIRMethodOutput(blockOutput, blockStartLine, irMethod);
+    private void setIRMethodOutput(String blockOutput, Line blockStartLine, Map<Integer, TestMethod> compileIdMap) {
+        TestMethod testMethod = compileIdMap.get(getCompileId(blockStartLine.getLine()));
+        setIRMethodOutput(blockOutput, blockStartLine, testMethod);
     }
 
-    private void setIRMethodOutput(String blockOutput, Line blockStartLine, IRMethod irMethod) {
+    private void setIRMethodOutput(String blockOutput, Line blockStartLine, TestMethod testMethod) {
         if (blockStartLine.isPrintIdealStart()) {
-            irMethod.setIdealOutput(blockOutput);
+            testMethod.setIdealOutput(blockOutput, blockStartLine.getCompilePhase());
         } else {
-            irMethod.setOptoAssemblyOutput(blockOutput);
+            testMethod.setOptoAssemblyOutput(blockOutput);
         }
     }
 }

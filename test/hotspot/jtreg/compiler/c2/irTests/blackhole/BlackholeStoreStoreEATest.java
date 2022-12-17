@@ -39,6 +39,7 @@ public class BlackholeStoreStoreEATest {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags(
+            "-XX:+UseTLAB",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:CompileCommand=blackhole,compiler.c2.irTests.blackhole.BlackholeStoreStoreEATest::blackhole"
         );

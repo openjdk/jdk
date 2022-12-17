@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -42,10 +44,10 @@ struct Pointer : public AllStatic {
     return (uintx)value;
   }
   static void* allocate_node(void* context, size_t size, const Value& value) {
-    return ::malloc(size);
+    return os::malloc(size, mtTest);
   }
   static void free_node(void* context, void* memory, const Value& value) {
-    ::free(memory);
+    os::free(memory);
   }
 };
 
@@ -60,7 +62,7 @@ struct Allocator {
   uint cur_index;
 
   Allocator() : cur_index(0) {
-    elements = (TableElement*)::malloc(nelements * sizeof(TableElement));
+    elements = (TableElement*)os::malloc(nelements * sizeof(TableElement), mtTest);
   }
 
   void* allocate_node() {
@@ -74,7 +76,7 @@ struct Allocator {
   }
 
   ~Allocator() {
-    ::free(elements);
+    os::free(elements);
   }
 };
 
@@ -1143,4 +1145,80 @@ public:
 
 TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
   mt_test_doer<Driver_BD_Thread>();
+}
+
+class CHTParallelScanTask: public WorkerTask {
+  TestTable* _cht;
+  TestTable::ScanTask* _scan_task;
+  size_t *_total_scanned;
+
+public:
+  CHTParallelScanTask(TestTable* cht,
+                      TestTable::ScanTask* bc,
+                      size_t *total_scanned) :
+    WorkerTask("CHT Parallel Scan"),
+    _cht(cht),
+    _scan_task(bc),
+    _total_scanned(total_scanned)
+  { }
+
+  void work(uint worker_id) {
+    ChtCountScan par_scan;
+    _scan_task->do_safepoint_scan(par_scan);
+    Atomic::add(_total_scanned, par_scan._count);
+  }
+};
+
+class CHTWorkers : AllStatic {
+  static WorkerThreads* _workers;
+  static WorkerThreads* workers() {
+    if (_workers == nullptr) {
+      _workers = new WorkerThreads("CHT Workers", MaxWorkers);
+      _workers->initialize_workers();
+      _workers->set_active_workers(MaxWorkers);
+    }
+    return _workers;
+  }
+
+public:
+  static const uint MaxWorkers = 8;
+  static void run_task(WorkerTask* task) {
+    workers()->run_task(task);
+  }
+};
+
+WorkerThreads* CHTWorkers::_workers = nullptr;
+
+class CHTParallelScan: public VM_GTestExecuteAtSafepoint {
+  TestTable* _cht;
+  uintptr_t _num_items;
+public:
+  CHTParallelScan(TestTable* cht, uintptr_t num_items) :
+    _cht(cht), _num_items(num_items)
+  {}
+
+  void doit() {
+    size_t total_scanned = 0;
+    TestTable::ScanTask scan_task(_cht, 64);
+
+    CHTParallelScanTask task(_cht, &scan_task, &total_scanned);
+    CHTWorkers::run_task(&task);
+
+     EXPECT_TRUE(total_scanned == (size_t)_num_items) << " Should scan all inserted items: " << total_scanned;
+  }
+};
+
+TEST_VM(ConcurrentHashTable, concurrent_par_scan) {
+  TestTable* cht = new TestTable(16, 16, 2);
+
+  uintptr_t num_items = 999999;
+  for (uintptr_t v = 1; v <= num_items; v++ ) {
+    TestLookup tl(v);
+    EXPECT_TRUE(cht->insert(JavaThread::current(), tl, v)) << "Inserting an unique value should work.";
+  }
+
+  // Run the test at a safepoint.
+  CHTParallelScan op(cht, num_items);
+  ThreadInVMfromNative invm(JavaThread::current());
+  VMThread::execute(&op);
 }

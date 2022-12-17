@@ -37,8 +37,8 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
@@ -74,8 +74,7 @@ void ThreadShadow::clear_pending_exception() {
 
 void ThreadShadow::clear_pending_nonasync_exception() {
   // Do not clear probable async exceptions.
-  if (!_pending_exception->is_a(vmClasses::ThreadDeath_klass()) &&
-      (_pending_exception->klass() != vmClasses::InternalError_klass() ||
+  if ((_pending_exception->klass() != vmClasses::InternalError_klass() ||
        java_lang_InternalError::during_unsafe_access(_pending_exception) != JNI_TRUE)) {
     clear_pending_exception();
   }
@@ -147,8 +146,8 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
 
   // tracing (do this up front - so it works during boot strapping)
   // Note, the print_value_string() argument is not called unless logging is enabled!
-  log_info(exceptions)("Exception <%s%s%s> (" INTPTR_FORMAT ") \n"
-                       "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
+  log_info(exceptions)("Exception <%s%s%s> (" PTR_FORMAT ") \n"
+                       "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
                        h_exception->print_value_string(),
                        message ? ": " : "", message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
@@ -161,8 +160,14 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
     return;
   }
 
-  if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    count_out_of_memory_exceptions(h_exception);
+  if (h_exception->is_a(vmClasses::VirtualMachineError_klass())) {
+    // Remove the ScopedValue bindings in case we got a virtual machine
+    // Error while we were trying to manipulate ScopedValue bindings.
+    thread->clear_scopedValueBindings();
+
+    if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
+      count_out_of_memory_exceptions(h_exception);
+    }
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
@@ -351,17 +356,14 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
   if (message == NULL) {
     signature = vmSymbols::void_method_signature();
   } else {
-    // We want to allocate storage, but we can't do that if there's
-    // a pending exception, so we preserve any pending exception
-    // around the allocation.
-    // If we get an exception from the allocation, prefer that to
-    // the exception we are trying to build, or the pending exception.
-    // This is sort of like what PreserveExceptionMark does, except
-    // for the preferencing and the early returns.
-    Handle incoming_exception(thread, NULL);
+    // There should be no pending exception. The caller is responsible for not calling
+    // this with a pending exception.
+    Handle incoming_exception;
     if (thread->has_pending_exception()) {
       incoming_exception = Handle(thread, thread->pending_exception());
       thread->clear_pending_exception();
+      ResourceMark rm(thread);
+      assert(incoming_exception.is_null(), "Pending exception while throwing %s %s", name->as_C_string(), message);
     }
     Handle msg;
     if (to_utf8_safe == safe_to_utf8) {
@@ -371,6 +373,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
       // Make a java string keeping the encoding scheme of the original string.
       msg = java_lang_String::create_from_platform_dependent_str(message, thread);
     }
+    // If we get an exception from the allocation, prefer that to
+    // the exception we are trying to build, or the pending exception (in product mode)
     if (thread->has_pending_exception()) {
       Handle exception(thread, thread->pending_exception());
       thread->clear_pending_exception();
@@ -428,9 +432,9 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
     // in JVMS 6.5.
     if (exception->is_a(vmClasses::Error_klass())) {
       // Pass through an Error, including BootstrapMethodError, any other form
-      // of linkage error, or say ThreadDeath/OutOfMemoryError
+      // of linkage error, or say OutOfMemoryError
       if (ls != NULL) {
-        ls->print_cr("bootstrap method invocation wraps BSME around " INTPTR_FORMAT, p2i((void *)exception));
+        ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i(exception));
         exception->print_on(ls);
       }
       return;
@@ -438,7 +442,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
 
     // Otherwise wrap the exception in a BootstrapMethodError
     if (ls != NULL) {
-      ls->print_cr("%s throws BSME for " INTPTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i((void *)exception));
+      ls->print_cr("%s throws BSME for " PTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i(exception));
       exception->print_on(ls);
     }
     Handle nested_exception(THREAD, exception);

@@ -34,6 +34,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
@@ -1298,20 +1299,27 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
     info = state_for(x);
   }
 
-  LabelObj* L_not_prim = new LabelObj();
-  LabelObj* L_done = new LabelObj();
+  // While reading off the universal constant mirror is less efficient than doing
+  // another branch and returning the constant answer, this branchless code runs into
+  // much less risk of confusion for C1 register allocator. The choice of the universe
+  // object here is correct as long as it returns the same modifiers we would expect
+  // from the primitive class itself. See spec for Class.getModifiers that provides
+  // the typed array klasses with similar modifiers as their component types.
 
+  Klass* univ_klass_obj = Universe::byteArrayKlassObj();
+  assert(univ_klass_obj->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
+  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass_obj);
+
+  LIR_Opr recv_klass = new_register(T_METADATA);
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);
+
+  // Check if this is a Java mirror of primitive type, and select the appropriate klass.
   LIR_Opr klass = new_register(T_METADATA);
-  // Checking if it's a java mirror of primitive type
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
-  __ cmp(lir_cond_notEqual, klass, LIR_OprFact::metadataConst(0));
-  __ branch(lir_cond_notEqual, L_not_prim->label());
-  __ move(LIR_OprFact::intConst(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), result);
-  __ branch(lir_cond_always, L_done->label());
+  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(0));
+  __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
-  __ branch_destination(L_not_prim->label());
+  // Get the answer.
   __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
-  __ branch_destination(L_done->label());
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
@@ -1420,8 +1428,8 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ branch_destination(L_done->label());
 }
 
-void LIRGenerator::do_extentLocalCache(Intrinsic* x) {
-  do_JavaThreadField(x, JavaThread::extentLocalCache_offset());
+void LIRGenerator::do_scopedValueCache(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::scopedValueCache_offset());
 }
 
 // Example: Thread.currentCarrierThread()
@@ -2675,10 +2683,6 @@ void LIRGenerator::do_Base(Base* x) {
       __ lock_object(syncTempOpr(), obj, lock, new_register(T_OBJECT), slow_path, NULL);
     }
   }
-  if (compilation()->age_code()) {
-    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, 0), NULL, false);
-    decrement_age(info);
-  }
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
     profile_parameters(x);
@@ -2944,7 +2948,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
   case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
   case vmIntrinsics::_currentThread:  do_vthread(x);       break;
-  case vmIntrinsics::_extentLocalCache: do_extentLocalCache(x); break;
+  case vmIntrinsics::_scopedValueCache: do_scopedValueCache(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through
@@ -3010,10 +3014,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
-    break;
-
-  case vmIntrinsics::_Continuation_doYield:
-    do_continuation_doYield(x);
     break;
 
   case vmIntrinsics::_blackhole:
@@ -3244,27 +3244,6 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   }
   increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);
 }
-
-void LIRGenerator::decrement_age(CodeEmitInfo* info) {
-  ciMethod* method = info->scope()->method();
-  MethodCounters* mc_adr = method->ensure_method_counters();
-  if (mc_adr != NULL) {
-    LIR_Opr mc = new_pointer_register();
-    __ move(LIR_OprFact::intptrConst(mc_adr), mc);
-    int offset = in_bytes(MethodCounters::nmethod_age_offset());
-    LIR_Address* counter = new LIR_Address(mc, offset, T_INT);
-    LIR_Opr result = new_register(T_INT);
-    __ load(counter, result);
-    __ sub(result, LIR_OprFact::intConst(1), result);
-    __ store(result, counter);
-    // DeoptimizeStub will reexecute from the current state in code info.
-    CodeStub* deopt = new DeoptimizeStub(info, Deoptimization::Reason_tenured,
-                                         Deoptimization::Action_make_not_entrant);
-    __ cmp(lir_cond_lessEqual, result, LIR_OprFact::intConst(0));
-    __ branch(lir_cond_lessEqual, deopt);
-  }
-}
-
 
 void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                                                 ciMethod *method, LIR_Opr step, int frequency,

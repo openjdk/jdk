@@ -41,10 +41,11 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
@@ -90,7 +91,7 @@ void VM_Operation::print_on_error(outputStream* st) const {
 
 void VM_ClearICs::doit() {
   if (_preserve_static_stubs) {
-    CodeCache::cleanup_inline_caches();
+    CodeCache::cleanup_inline_caches_whitebox();
   } else {
     CodeCache::clear_inline_caches();
   }
@@ -116,7 +117,6 @@ void VM_DeoptimizeFrame::doit() {
 #ifndef PRODUCT
 
 void VM_DeoptimizeAll::doit() {
-  DeoptimizationMarker dm;
   JavaThreadIteratorWithHandle jtiwh;
   // deoptimize all java threads in the system
   if (DeoptimizeALot) {
@@ -286,7 +286,7 @@ void VM_ThreadDump::doit() {
     // when there are a lot of inflated monitors. So we deflate idle monitors and
     // gather information about owned monitors at the same time.
     tablep = &table;
-    while (ObjectSynchronizer::deflate_idle_monitors(tablep) >= (size_t)MonitorDeflationMax) {
+    while (ObjectSynchronizer::deflate_idle_monitors(tablep) > 0) {
       ; /* empty */
     }
   }
@@ -366,7 +366,7 @@ int VM_Exit::set_vm_exited() {
   _shutdown_thread = thr_cur;
   _vm_exited = true;                                // global flag
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
-    if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
+    if (thr != thr_cur && thr->thread_state() == _thread_in_native) {
       ++num_active;
       thr->set_terminated(JavaThread::_vm_exited);  // per-thread flag
     }
@@ -494,7 +494,7 @@ void VM_Exit::wait_if_vm_exited() {
   if (_vm_exited &&
       Thread::current_or_null() != _shutdown_thread) {
     // _vm_exited is set at safepoint, and the Threads_lock is never released
-    // we will block here until the process dies
+    // so we will block here until the process dies.
     Threads_lock->lock();
     ShouldNotReachHere();
   }

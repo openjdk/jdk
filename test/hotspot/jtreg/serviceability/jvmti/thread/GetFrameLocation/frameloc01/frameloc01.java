@@ -47,21 +47,10 @@
  * @run main/othervm/native -agentlib:frameloc01 frameloc01
  */
 
-import java.io.PrintStream;
-
 public class frameloc01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("frameloc01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load frameloc01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("frameloc01");
     }
 
     native static void getReady(Class cls);
@@ -73,13 +62,6 @@ public class frameloc01 {
     static Object lock2 = new Object();
 
     public static void main(String args[]) {
-
-
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream ref) {
         frameloc01a thr = new frameloc01a();
 
         getReady(frameloc01a.class);
@@ -98,7 +80,10 @@ public class frameloc01 {
             checkFrame01(thr, frameloc01a.class, true);
         }
 
-        return getRes();
+        int result = getRes();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 
     private static void waitForChildThread(frameloc01a thr) {

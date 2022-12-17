@@ -290,8 +290,10 @@ public class DefaultButtonModel implements ButtonModel, Serializable {
      * {@inheritDoc}
      */
     public void setMnemonic(int key) {
-        mnemonic = key;
-        fireStateChanged();
+        if (this.mnemonic != key) {
+            this.mnemonic = key;
+            fireStateChanged();
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,9 @@
 /* Make sure that we have the intptr_t and uintptr_t definitions */
 #ifdef _WIN32
 
-#if _MSC_VER >= 1300
 using namespace std;
-#endif
 
-#if _MSC_VER >= 1400
 #define strdup _strdup
-#endif
-
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
 
 #ifndef _INTPTR_T_DEFINED
 #ifdef _WIN64
@@ -107,5 +99,9 @@ typedef unsigned int uintptr_t;
 // could have a backpointer to the AD but it's too complicated to pass
 // it everywhere it needs to be available.
 extern ArchDesc* globalAD;
+
+// Performs snprintf and asserts the result is non-negative (so there was not
+// an encoding error) and that the output was not truncated.
+extern int snprintf_checked(char* buf, size_t len, const char* fmt, ...);
 
 #endif // SHARE_ADLC_ADLC_HPP

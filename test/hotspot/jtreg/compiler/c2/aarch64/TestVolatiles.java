@@ -56,7 +56,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 // runner class that spawns a new JVM to exercises a combination of
 // volatile MemOp and GC. The ops are compiled with the dmb -->

@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
+#include "os_posix.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/vm_version.hpp"
@@ -785,7 +786,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  return realpath(buffer, _exePath);
+  return os::Posix::realpath(buffer, _exePath, PATH_MAX);
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {

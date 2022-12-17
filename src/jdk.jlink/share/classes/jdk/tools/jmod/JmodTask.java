@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -166,6 +168,7 @@ public class JmodTask {
         List<PathMatcher> excludes;
         Path extractDir;
         LocalDateTime date;
+        int compressLevel;
     }
 
     // Valid --date range
@@ -437,7 +440,7 @@ public class JmodTask {
         Path target = options.jmodFile;
         Path tempTarget = jmodTempFilePath(target);
         try {
-            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date)) {
+            try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compressLevel)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
@@ -682,11 +685,10 @@ public class JmodTask {
          * Returns the set of packages in the given directory tree.
          */
         Set<String> findPackages(Path dir) {
-            try {
-                return Files.find(dir, Integer.MAX_VALUE,
-                                  ((path, attrs) -> attrs.isRegularFile()),
-                                  FileVisitOption.FOLLOW_LINKS)
-                        .map(dir::relativize)
+            try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
+                                  (path, attrs) -> attrs.isRegularFile(),
+                                  FileVisitOption.FOLLOW_LINKS)) {
+                return stream.map(dir::relativize)
                         .filter(path -> isResource(path.toString()))
                         .map(path -> toPackageName(path))
                         .filter(pkg -> pkg.length() > 0)
@@ -1024,7 +1026,7 @@ public class JmodTask {
         {
 
             try (JmodFile jf = new JmodFile(target);
-                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date))
+                 JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget, options.date, options.compressLevel))
             {
                 jf.stream().forEach(e -> {
                     try (InputStream in = jf.getInputStream(e.section(), e.name())) {
@@ -1177,6 +1179,33 @@ public class JmodTask {
         @Override public Class<LocalDateTime> valueType() { return LocalDateTime.class; }
 
         @Override public String valuePattern() { return "date"; }
+    }
+
+    static class CompLevelConverter implements ValueConverter<Integer> {
+        @Override
+        public Integer convert(String value) {
+            int idx = value.indexOf("-");
+            int lastIdx = value.lastIndexOf("-");
+            if (idx == -1 || idx != lastIdx) {
+                throw new CommandException("err.compress.incorrect", value);
+            }
+            if (!value.substring(0, idx).equals("zip")) {
+                throw new CommandException("err.compress.incorrect", value);
+            }
+            try {
+                int level = Integer.parseInt(value.substring(idx + 1));
+                if (level < 0 || level > 9) {
+                    throw new CommandException("err.compress.incorrect", value);
+                }
+                return level;
+            } catch (NumberFormatException x) {
+                throw new CommandException("err.compress.incorrect", value);
+            }
+        }
+
+        @Override public Class<Integer> valueType() { return Integer.class; }
+
+        @Override public String valuePattern() { return "compress"; }
     }
 
     static class WarnIfResolvedReasonConverter
@@ -1419,6 +1448,11 @@ public class JmodTask {
                         .withRequiredArg()
                         .withValuesConvertedBy(new DateConverter());
 
+        OptionSpec<Integer> compress
+                = parser.accepts("compress", getMessage("main.opt.compress"))
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new CompLevelConverter());
+
         NonOptionArgumentSpec<String> nonOptions
                 = parser.nonOptions();
 
@@ -1487,6 +1521,17 @@ public class JmodTask {
                 if (options.moduleFinder == null)
                     throw new CommandException("err.modulepath.must.be.specified")
                             .showUsage(true);
+            }
+            if (opts.has(compress)) {
+                if (!options.mode.equals(Mode.CREATE)) {
+                    throw new CommandException("err.compress.wrong.mode")
+                            .showUsage(true);
+                }
+                options.compressLevel = getLastElement(opts.valuesOf(compress));
+            } else {
+                // Default to the default from zlib. Hard-coded here to avoid accidental
+                // compression level change if zlib ever changes the default.
+                options.compressLevel = 6;
             }
 
             if (options.mode.equals(Mode.HASH)) {

@@ -140,8 +140,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
-        return new Table(HtmlStyle.summaryTable)
+    protected Table<Element> createSummaryTable() {
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setCaption(contents.getContent("doclet.Enum_Constants"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

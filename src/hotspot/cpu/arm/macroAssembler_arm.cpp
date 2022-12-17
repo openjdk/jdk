@@ -950,13 +950,6 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-void MacroAssembler::eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
-                                 RegisterOrConstant size_expression, Label& slow_case) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, obj_end, tmp1, tmp2, size_expression, slow_case);
-}
-
-// Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void MacroAssembler::tlab_allocate(Register obj, Register obj_end, Register tmp1,
                                  RegisterOrConstant size_expression, Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -1650,7 +1643,7 @@ void MacroAssembler::store_heap_oop_null(Address obj, Register new_val, Register
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
@@ -1662,7 +1655,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);

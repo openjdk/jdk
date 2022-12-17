@@ -33,7 +33,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 #include "jfr/support/jfrKlassExtension.hpp"
 #include "oops/klass.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline traceid JfrTraceId::load(const Klass* klass) {

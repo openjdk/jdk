@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,7 @@ public class Main {
         javacOpts.add("-Xlint:deprecation");
         javacOpts.add("-Xlint:unchecked");
         javacOpts.add("-Xlint:-options");
+        javacOpts.add("-XDsourceLauncher");
         return javacOpts;
     }
 
@@ -689,7 +690,9 @@ public class Main {
             }
 
             try {
-                return new URL(PROTOCOL, null, -1, name, handler);
+                @SuppressWarnings("deprecation")
+                var result = new URL(PROTOCOL, null, -1, name, handler);
+                return result;
             } catch (MalformedURLException e) {
                 return null;
             }

@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
+import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.VariableTree;
@@ -140,13 +141,17 @@ public class Analyzer {
      * the {@code -XDfind} option.
      */
     enum AnalyzerMode {
-        DIAMOND("diamond", Feature.DIAMOND),
-        LAMBDA("lambda", Feature.LAMBDA),
-        METHOD("method", Feature.GRAPH_INFERENCE),
+        DIAMOND("diamond"),
+        LAMBDA("lambda"),
+        METHOD("method"),
         LOCAL("local", Feature.LOCAL_VARIABLE_TYPE_INFERENCE);
 
         final String opt;
         final Feature feature;
+
+        AnalyzerMode(String opt) {
+            this(opt, null);
+        }
 
         AnalyzerMode(String opt, Feature feature) {
             this.opt = opt;
@@ -169,7 +174,7 @@ public class Analyzer {
                 res = EnumSet.allOf(AnalyzerMode.class);
             }
             for (AnalyzerMode mode : values()) {
-                if (modes.contains("-" + mode.opt) || !mode.feature.allowedInSource(source)) {
+                if (modes.contains("-" + mode.opt) || (mode.feature != null && !mode.feature.allowedInSource(source))) {
                     res.remove(mode);
                 } else if (modes.contains(mode.opt)) {
                     res.add(mode);
@@ -420,18 +425,24 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            return !isImplicitlyTyped(tree.var);
+            return tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE &&
+                    !isImplicitlyTyped((JCVariableDecl) tree.varOrRecordPattern);
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
+            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
+
             JCEnhancedForLoop newTree = copier.copy(oldTree);
-            newTree.var = rewriteVarType(oldTree.var);
+            newTree.varOrRecordPattern = rewriteVarType((JCVariableDecl) oldTree.varOrRecordPattern);
             newTree.body = make.at(oldTree.body).Block(0, List.nil());
             return List.of(newTree);
         }
         @Override
         void process(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree, boolean hasErrors){
-            processVar(oldTree.var, newTree.var, hasErrors);
+            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
+
+            processVar((JCVariableDecl) oldTree.varOrRecordPattern,
+                           (JCVariableDecl) newTree.varOrRecordPattern, hasErrors);
         }
     }
 

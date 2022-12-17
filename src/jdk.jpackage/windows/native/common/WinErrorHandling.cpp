@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,4 +123,26 @@ std::wstring SysError::getComErrorMessage(HRESULT hr) {
     }
     return tstrings::format(_T("COM error 0x%08X (%s)"), hrOrig,
             getSystemMessageDescription(hr, NULL));
+}
+
+
+void debugBreak(const SourceCodePos& location, const tstring& envVarName,
+                                                    const tstring& substr) {
+    if (!SysInfo::isEnvVariableSet(envVarName)) {
+        return;
+    }
+
+    const tstring v = SysInfo::getEnvVariable(std::nothrow, envVarName);
+    if (v != _T("*") && v.find(substr) == tstring::npos) {
+        return;
+    }
+
+    tstring msg = tstrings::fromUtf8(makeMessage(
+            std::runtime_error((tstrings::any()
+                    << "debug break. Reason: environment variable "
+                    << envVarName << " is set.").str()),
+            location));
+    tstring caption = FileUtils::basename(SysInfo::getCurrentModulePath());
+
+    MessageBoxW(NULL, msg.c_str(), caption.c_str(), MB_OK | MB_TASKMODAL);
 }

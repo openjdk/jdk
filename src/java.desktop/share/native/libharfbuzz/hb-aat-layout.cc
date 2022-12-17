@@ -55,6 +55,7 @@ AAT::hb_aat_apply_context_t::hb_aat_apply_context_t (const hb_ot_shape_plan_t *p
                                                        buffer (buffer_),
                                                        sanitizer (),
                                                        ankr_table (&Null (AAT::ankr)),
+                                                       gdef_table (face->table.GDEF->table),
                                                        lookup_index (0)
 {
   sanitizer.init (blob);
@@ -107,7 +108,7 @@ static const hb_aat_feature_mapping_t feature_mappings[] =
   {HB_TAG ('f','r','a','c'), HB_AAT_LAYOUT_FEATURE_TYPE_FRACTIONS,               HB_AAT_LAYOUT_FEATURE_SELECTOR_DIAGONAL_FRACTIONS,             HB_AAT_LAYOUT_FEATURE_SELECTOR_NO_FRACTIONS},
   {HB_TAG ('f','w','i','d'), HB_AAT_LAYOUT_FEATURE_TYPE_TEXT_SPACING,            HB_AAT_LAYOUT_FEATURE_SELECTOR_MONOSPACED_TEXT,                (hb_aat_layout_feature_selector_t) 7},
   {HB_TAG ('h','a','l','t'), HB_AAT_LAYOUT_FEATURE_TYPE_TEXT_SPACING,            HB_AAT_LAYOUT_FEATURE_SELECTOR_ALT_HALF_WIDTH_TEXT,            (hb_aat_layout_feature_selector_t) 7},
-  {HB_TAG ('h','i','s','t'), HB_AAT_LAYOUT_FEATURE_TYPE_LIGATURES,               HB_AAT_LAYOUT_FEATURE_SELECTOR_HISTORICAL_LIGATURES_ON,        HB_AAT_LAYOUT_FEATURE_SELECTOR_HISTORICAL_LIGATURES_OFF},
+  {HB_TAG ('h','i','s','t'), (hb_aat_layout_feature_type_t) 40,                  (hb_aat_layout_feature_selector_t) 0,                          (hb_aat_layout_feature_selector_t) 1},
   {HB_TAG ('h','k','n','a'), HB_AAT_LAYOUT_FEATURE_TYPE_ALTERNATE_KANA,          HB_AAT_LAYOUT_FEATURE_SELECTOR_ALTERNATE_HORIZ_KANA_ON,        HB_AAT_LAYOUT_FEATURE_SELECTOR_ALTERNATE_HORIZ_KANA_OFF},
   {HB_TAG ('h','l','i','g'), HB_AAT_LAYOUT_FEATURE_TYPE_LIGATURES,               HB_AAT_LAYOUT_FEATURE_SELECTOR_HISTORICAL_LIGATURES_ON,        HB_AAT_LAYOUT_FEATURE_SELECTOR_HISTORICAL_LIGATURES_OFF},
   {HB_TAG ('h','n','g','l'), HB_AAT_LAYOUT_FEATURE_TYPE_TRANSLITERATION,         HB_AAT_LAYOUT_FEATURE_SELECTOR_HANJA_TO_HANGUL,                HB_AAT_LAYOUT_FEATURE_SELECTOR_NO_TRANSLITERATION},
@@ -169,6 +170,7 @@ static const hb_aat_feature_mapping_t feature_mappings[] =
   {HB_TAG ('v','k','n','a'), HB_AAT_LAYOUT_FEATURE_TYPE_ALTERNATE_KANA,          HB_AAT_LAYOUT_FEATURE_SELECTOR_ALTERNATE_VERT_KANA_ON,         HB_AAT_LAYOUT_FEATURE_SELECTOR_ALTERNATE_VERT_KANA_OFF},
   {HB_TAG ('v','p','a','l'), HB_AAT_LAYOUT_FEATURE_TYPE_TEXT_SPACING,            HB_AAT_LAYOUT_FEATURE_SELECTOR_ALT_PROPORTIONAL_TEXT,          (hb_aat_layout_feature_selector_t) 7},
   {HB_TAG ('v','r','t','2'), HB_AAT_LAYOUT_FEATURE_TYPE_VERTICAL_SUBSTITUTION,   HB_AAT_LAYOUT_FEATURE_SELECTOR_SUBSTITUTE_VERTICAL_FORMS_ON,   HB_AAT_LAYOUT_FEATURE_SELECTOR_SUBSTITUTE_VERTICAL_FORMS_OFF},
+  {HB_TAG ('v','r','t','r'), HB_AAT_LAYOUT_FEATURE_TYPE_VERTICAL_SUBSTITUTION,   (hb_aat_layout_feature_selector_t) 2,                          (hb_aat_layout_feature_selector_t) 3},
   {HB_TAG ('z','e','r','o'), HB_AAT_LAYOUT_FEATURE_TYPE_TYPOGRAPHIC_EXTRAS,      HB_AAT_LAYOUT_FEATURE_SELECTOR_SLASHED_ZERO_ON,                HB_AAT_LAYOUT_FEATURE_SELECTOR_SLASHED_ZERO_OFF},
 };
 
@@ -248,7 +250,9 @@ hb_aat_layout_substitute (const hb_ot_shape_plan_t *plan,
   if (morx.has_data ())
   {
     AAT::hb_aat_apply_context_t c (plan, font, buffer, morx_blob);
+    if (!buffer->message (font, "start table morx")) return;
     morx.apply (&c);
+    (void) buffer->message (font, "end table morx");
     return;
   }
 
@@ -257,7 +261,9 @@ hb_aat_layout_substitute (const hb_ot_shape_plan_t *plan,
   if (mort.has_data ())
   {
     AAT::hb_aat_apply_context_t c (plan, font, buffer, mort_blob);
+    if (!buffer->message (font, "start table mort")) return;
     mort.apply (&c);
+    (void) buffer->message (font, "end table mort");
     return;
   }
 }
@@ -313,8 +319,10 @@ hb_aat_layout_position (const hb_ot_shape_plan_t *plan,
   const AAT::kerx& kerx = *kerx_blob->as<AAT::kerx> ();
 
   AAT::hb_aat_apply_context_t c (plan, font, buffer, kerx_blob);
+  if (!buffer->message (font, "start table kerx")) return;
   c.set_ankr_table (font->face->table.ankr.get ());
   kerx.apply (&c);
+  (void) buffer->message (font, "end table kerx");
 }
 
 

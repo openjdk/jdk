@@ -26,7 +26,11 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "utilities/debug.hpp"
 
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames, bool allow_missing_reg) : _reg_map(thread, update, process_frames) {
+StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames, bool allow_missing_reg)
+  : _reg_map(thread,
+             update ? RegisterMap::UpdateMap::include : RegisterMap::UpdateMap::skip,
+             process_frames ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip,
+             RegisterMap::WalkContinuation::skip) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();
   _is_done = false;

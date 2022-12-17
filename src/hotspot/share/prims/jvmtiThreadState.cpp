@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -268,6 +269,7 @@ JvmtiVTMSTransitionDisabler::disable_VTMS_transitions() {
     ThreadBlockInVM tbivm(thread);
     MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
 
+    assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
     assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
     while (_SR_mode) { // Suspender or resumer is a JvmtiVTMSTransitionDisabler monopolist.
       ml.wait(10);     // Wait while there is an active suspender or resumer.
@@ -574,7 +576,10 @@ int JvmtiThreadState::count_frames() {
            "call by myself / at safepoint / at handshake");
     if (!thread->has_last_Java_frame()) return 0;  // No Java frames.
     // TBD: This might need to be corrected for detached carrier threads.
-    RegisterMap reg_map(thread, /* update_map */ false, /* process_frames */ false, /* walk_cont */ true);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::include);
     jvf = thread->last_java_vframe(&reg_map);
     jvf = JvmtiEnvBase::check_and_skip_hidden_frames(thread, jvf);
   }

@@ -84,7 +84,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(HtmlStyle.summaryTable)
+            var table = new Table<ModuleElement>(HtmlStyle.summaryTable)
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_MODULES_TABLE)

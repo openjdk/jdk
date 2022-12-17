@@ -33,6 +33,7 @@
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
  *          java.base/jdk.internal.misc
+ * @requires !vm.musl
  * @library /test/lib
  * @run main/othervm/native/timeout=300 -Djava.security.manager=allow Basic
  * @run main/othervm/native/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
@@ -44,7 +45,7 @@
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
  *          java.base/jdk.internal.misc
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" & !vm.musl)
  * @library /test/lib
  * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  */

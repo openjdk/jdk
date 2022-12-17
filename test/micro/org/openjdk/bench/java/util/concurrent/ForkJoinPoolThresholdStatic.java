@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
 package org.openjdk.bench.java.util.concurrent;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -41,6 +44,9 @@ import java.util.concurrent.TimeUnit;
  */
 @OutputTimeUnit(TimeUnit.MINUTES)
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
+@Fork(3)
 public class ForkJoinPoolThresholdStatic {
 
     /**
@@ -56,31 +62,40 @@ public class ForkJoinPoolThresholdStatic {
      * versus sequential version.
      */
 
-    @Param("0")
-    private int workers;
-
     @Param("10000000")
     private int size;
 
-    @Param({"1", "5", "10", "50", "100", "500", "1000", "5000", "10000", "50000", "100000", "500000", "1000000", "5000000", "10000000"})
-    private int threshold;
+    /** Encapsulate all the state depended on only by actual test. This avoids running baselines for every parameter value. */
+    @State(Scope.Benchmark)
+    public static class TestState {
 
-    private ForkJoinPool fjp;
+        @Param("0")
+        private int workers;
+
+        @Param({"1", "5", "10", "100", "1000", "10000", "100000", "1000000", "10000000"})
+        private int threshold;
+
+        private ForkJoinPool fjp;
+
+        @Setup
+        public void setup() {
+            if (workers == 0) {
+                workers = Runtime.getRuntime().availableProcessors();
+            }
+            fjp = new ForkJoinPool(workers);
+        }
+
+        @TearDown
+        public void teardown() {
+            fjp.shutdownNow();
+        }
+    }
+
     private Problem problem;
 
     @Setup
     public void setup() {
-        if (workers == 0) {
-            workers = Runtime.getRuntime().availableProcessors();
-        }
-
         problem = new Problem(size);
-        fjp = new ForkJoinPool(workers);
-    }
-
-    @TearDown
-    public void teardown() {
-        fjp.shutdownNow();
     }
 
     @Benchmark
@@ -89,8 +104,8 @@ public class ForkJoinPoolThresholdStatic {
     }
 
     @Benchmark
-    public Long test() throws ExecutionException, InterruptedException {
-        return fjp.invoke(new AdjustableThreshTask(threshold, problem, 0, problem.size()));
+    public Long test(TestState state) throws ExecutionException, InterruptedException {
+        return state.fjp.invoke(new AdjustableThreshTask(state.threshold, problem, 0, problem.size()));
     }
 
     private static class AdjustableThreshTask extends RecursiveTask<Long> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,11 +704,9 @@ class WindowsPath implements Path {
         if (beginIndex >= endIndex)
             throw new IllegalArgumentException();
 
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sb = new StringJoiner("\\");
         for (int i = beginIndex; i < endIndex; i++) {
-            sb.append(elementAsString(i));
-            if (i != (endIndex-1))
-                sb.append("\\");
+            sb.add(elementAsString(i));
         }
         return new WindowsPath(getFileSystem(), WindowsPathType.RELATIVE, "", sb.toString());
     }

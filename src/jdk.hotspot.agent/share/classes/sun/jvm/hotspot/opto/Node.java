@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class Node extends VMObject {
     if (addr == null) return null;
     Node result = nodes.get(addr);
     if (result == null) {
-      result = (Node)virtualConstructor.instantiateWrapperFor(addr);
+      result = virtualConstructor.instantiateWrapperFor(addr);
       nodes.put(addr, result);
     }
     return result;
@@ -147,7 +147,7 @@ public class Node extends VMObject {
     for (int i = 0; i < depth; i++) {
       end = nstack.size();
       for(int j = begin; j < end; j++) {
-        Node tp  = (Node)nstack.get(j);
+        Node tp  = nstack.get(j);
         int limit = d > 0 ? tp.len() : tp.outcnt();
         for(int k = 0; k < limit; k++) {
           Node n = d > 0 ? tp.in(k) : tp.rawOut(k);

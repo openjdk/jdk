@@ -22,18 +22,14 @@
  *
  */
 
-
-#include "jvm.h"
-#ifdef LINUX
 #include "classfile/classLoader.hpp"
-#endif
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/osThread.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -43,12 +39,18 @@
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -135,7 +137,7 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
         success = false;
         break;
       default:
-        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / 1024);
+        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
         success = true;
         break;
     }
@@ -476,14 +478,14 @@ static void print_rlimit(outputStream* st, const char* msg,
     // soft limit
     if (rlim.rlim_cur == RLIM_INFINITY) { st->print("infinity"); }
     else {
-      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024); }
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / K); }
       else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur)); }
     }
     // hard limit
     st->print("/");
     if (rlim.rlim_max == RLIM_INFINITY) { st->print("infinity"); }
     else {
-      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / 1024); }
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / K); }
       else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_max)); }
     }
   }
@@ -552,7 +554,7 @@ void os::Posix::print_umask(outputStream* st, mode_t umsk) {
   st->print((umsk & S_IXOTH) ? "x" : "-");
 }
 
-void os::Posix::print_user_info(outputStream* st) {
+void os::print_user_info(outputStream* st) {
   unsigned id = (unsigned) ::getuid();
   st->print("uid  : %u ", id);
   id = (unsigned) ::geteuid();
@@ -566,13 +568,13 @@ void os::Posix::print_user_info(outputStream* st) {
   mode_t umsk = ::umask(0);
   ::umask(umsk);
   st->print("umask: %04o (", (unsigned) umsk);
-  print_umask(st, umsk);
+  os::Posix::print_umask(st, umsk);
   st->print_cr(")");
   st->cr();
 }
 
 // Print all active locale categories, one line each
-void os::Posix::print_active_locale(outputStream* st) {
+void os::print_active_locale(outputStream* st) {
   st->print_cr("Active Locale:");
   // Posix is quiet about how exactly LC_ALL is implemented.
   // Just print it out too, in case LC_ALL is held separately
@@ -597,6 +599,14 @@ void os::Posix::print_active_locale(outputStream* st) {
     st->print_cr("%s=%s", categories[i].name,
                  ((locale != NULL) ? locale : "<unknown>"));
   }
+}
+
+void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
+  // no prefix required
+}
+
+void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
+  // no suffix required
 }
 
 bool os::get_host_name(char* buf, size_t buflen) {
@@ -706,7 +716,38 @@ void* os::dll_lookup(void* handle, const char* name) {
 }
 
 void os::dll_unload(void *lib) {
-  ::dlclose(lib);
+  // os::Linux::dll_path returns a pointer to a string that is owned by the dynamic loader. Upon
+  // calling dlclose the dynamic loader may free the memory containing the string, thus we need to
+  // copy the string to be able to reference it after dlclose.
+  const char* l_path = NULL;
+#ifdef LINUX
+  char* l_pathdup = NULL;
+  l_path = os::Linux::dll_path(lib);
+  if (l_path != NULL) {
+    l_path = l_pathdup = os::strdup(l_path);
+  }
+#endif  // LINUX
+  if (l_path == NULL) {
+    l_path = "<not available>";
+  }
+  int res = ::dlclose(lib);
+
+  if (res == 0) {
+    Events::log_dll_message(NULL, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
+                            l_path, p2i(lib));
+    log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
+  } else {
+    const char* error_report = ::dlerror();
+    if (error_report == NULL) {
+      error_report = "dlerror returned no error description";
+    }
+
+    Events::log_dll_message(NULL, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+                            l_path, p2i(lib), error_report);
+    log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+                  l_path, p2i(lib), error_report);
+  }
+  LINUX_ONLY(os::free(l_pathdup));
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
@@ -835,6 +876,12 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
+// Sleep forever; naked call to OS-specific sleep; use with CAUTION
+void os::infinite_sleep() {
+  while (true) {    // sleep forever ...
+    ::sleep(100);   // ... 100 seconds at a time
+  }
+}
 
 void os::naked_short_nanosleep(jlong ns) {
   struct timespec req;
@@ -861,7 +908,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   LINUX_ONLY(stack_size -= guard_size);
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
-    stack_size / 1024, guard_size / 1024,
+    stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
 }
@@ -879,7 +926,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify NULL for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  char* p = ::realpath(filename, NULL);
+  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, NULL);)
   if (p != NULL) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -887,7 +934,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     } else {
       errno = ENAMETOOLONG;
     }
-    ::free(p); // *not* os::free
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -896,7 +943,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      p = ::realpath(filename, outbuf);
+      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
       if (p != NULL) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
@@ -1082,8 +1129,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
       return true; // just continue
     }
   } else if (overflow_state->in_stack_red_zone(addr)) {
-    // Fatal red zone violation.  Disable the guard pages and fall through
-    // to handle_unexpected_exception way down below.
+    // Fatal red zone violation. Disable the guard pages and keep
+    // on handling the signal.
     overflow_state->disable_stack_red_zone();
     tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
 
@@ -1093,8 +1140,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
                       "enabled executable stack (see man page execstack(8))");
 
   } else {
-#if !defined(AIX) && !defined(__APPLE__)
-    // bsd and aix don't have this
+#ifdef LINUX
+    // This only works with os::Linux::manually_expand_stack()
 
     // Accessing stack address below sp may cause SEGV if current
     // thread has MAP_GROWSDOWN stack. This should only happen when
@@ -1112,7 +1159,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     }
 #else
     tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
-#endif // AIX or BSD
+#endif // LINUX
   }
   return false;
 }
@@ -1128,62 +1175,6 @@ bool os::Posix::matches_effective_uid_or_root(uid_t uid) {
 
 bool os::Posix::matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid) {
     return is_root(uid) || (geteuid() == uid && getegid() == gid);
-}
-
-Thread* os::ThreadCrashProtection::_protected_thread = NULL;
-os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-
-os::ThreadCrashProtection::ThreadCrashProtection() {
-  _protected_thread = Thread::current();
-  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
-}
-
-/*
- * See the caveats for this class in os_posix.hpp
- * Protects the callback call so that SIGSEGV / SIGBUS jumps back into this
- * method and returns false. If none of the signals are raised, returns true.
- * The callback is supposed to provide the method that should be protected.
- */
-bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-  sigset_t saved_sig_mask;
-
-  // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
-  // since on at least some systems (OS X) siglongjmp will restore the mask
-  // for the process, not the thread
-  pthread_sigmask(0, NULL, &saved_sig_mask);
-  if (sigsetjmp(_jmpbuf, 0) == 0) {
-    // make sure we can see in the signal handler that we have crash protection
-    // installed
-    _crash_protection = this;
-    cb.call();
-    // and clear the crash protection
-    _crash_protection = NULL;
-    _protected_thread = NULL;
-    return true;
-  }
-  // this happens when we siglongjmp() back
-  pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
-  _crash_protection = NULL;
-  _protected_thread = NULL;
-  return false;
-}
-
-void os::ThreadCrashProtection::restore() {
-  assert(_crash_protection != NULL, "must have crash protection");
-  siglongjmp(_jmpbuf, 1);
-}
-
-void os::ThreadCrashProtection::check_crash_protection(int sig,
-    Thread* thread) {
-
-  if (thread != NULL &&
-      thread == _protected_thread &&
-      _crash_protection != NULL) {
-
-    if (sig == SIGSEGV || sig == SIGBUS) {
-      _crash_protection->restore();
-    }
-  }
 }
 
 // Shared clock/time and other supporting routines for pthread_mutex/cond
@@ -1212,7 +1203,7 @@ static void pthread_init_common(void) {
   if ((status = pthread_mutexattr_settype(_mutexAttr, PTHREAD_MUTEX_NORMAL)) != 0) {
     fatal("pthread_mutexattr_settype: %s", os::strerror(status));
   }
-  os::PlatformMutex::init();
+  PlatformMutex::init();
 }
 
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
@@ -1479,11 +1470,6 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
   return localtime_r(clock, res);
 }
 
-
-// Shared pthread_mutex/cond based PlatformEvent implementation.
-// Not currently usable by Solaris.
-
-
 // PlatformEvent
 //
 // Assumption:
@@ -1499,7 +1485,7 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
 //    Having three states allows for some detection of bad usage - see
 //    comments on unpark().
 
-os::PlatformEvent::PlatformEvent() {
+PlatformEvent::PlatformEvent() {
   int status = pthread_cond_init(_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
   status = pthread_mutex_init(_mutex, _mutexAttr);
@@ -1508,7 +1494,7 @@ os::PlatformEvent::PlatformEvent() {
   _nParked = 0;
 }
 
-void os::PlatformEvent::park() {       // AKA "down()"
+void PlatformEvent::park() {       // AKA "down()"
   // Transitions for _event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -1550,7 +1536,7 @@ void os::PlatformEvent::park() {       // AKA "down()"
   guarantee(_event >= 0, "invariant");
 }
 
-int os::PlatformEvent::park(jlong millis) {
+int PlatformEvent::park(jlong millis) {
   // Transitions for _event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -1602,7 +1588,7 @@ int os::PlatformEvent::park(jlong millis) {
   return OS_OK;
 }
 
-void os::PlatformEvent::unpark() {
+void PlatformEvent::unpark() {
   // Transitions for _event:
   //    0 => 1 : just return
   //    1 => 1 : just return
@@ -1645,7 +1631,7 @@ void os::PlatformEvent::unpark() {
 
 // JSR166 support
 
- os::PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
+ PlatformParker::PlatformParker() : _counter(0), _cur_index(-1) {
   int status = pthread_cond_init(&_cond[REL_INDEX], _condAttr);
   assert_status(status == 0, status, "cond_init rel");
   status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
@@ -1654,7 +1640,7 @@ void os::PlatformEvent::unpark() {
   assert_status(status == 0, status, "mutex_init");
 }
 
-os::PlatformParker::~PlatformParker() {
+PlatformParker::~PlatformParker() {
   int status = pthread_cond_destroy(&_cond[REL_INDEX]);
   assert_status(status == 0, status, "cond_destroy rel");
   status = pthread_cond_destroy(&_cond[ABS_INDEX]);
@@ -1776,25 +1762,25 @@ void Parker::unpark() {
 
 #if PLATFORM_MONITOR_IMPL_INDIRECT
 
-os::PlatformMutex::Mutex::Mutex() : _next(NULL) {
+PlatformMutex::Mutex::Mutex() : _next(NULL) {
   int status = pthread_mutex_init(&_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
 }
 
-os::PlatformMutex::Mutex::~Mutex() {
+PlatformMutex::Mutex::~Mutex() {
   int status = pthread_mutex_destroy(&_mutex);
   assert_status(status == 0, status, "mutex_destroy");
 }
 
-pthread_mutex_t os::PlatformMutex::_freelist_lock;
-os::PlatformMutex::Mutex* os::PlatformMutex::_mutex_freelist = NULL;
+pthread_mutex_t PlatformMutex::_freelist_lock;
+PlatformMutex::Mutex* PlatformMutex::_mutex_freelist = NULL;
 
-void os::PlatformMutex::init() {
+void PlatformMutex::init() {
   int status = pthread_mutex_init(&_freelist_lock, _mutexAttr);
   assert_status(status == 0, status, "freelist lock init");
 }
 
-struct os::PlatformMutex::WithFreeListLocked : public StackObj {
+struct PlatformMutex::WithFreeListLocked : public StackObj {
   WithFreeListLocked() {
     int status = pthread_mutex_lock(&_freelist_lock);
     assert_status(status == 0, status, "freelist lock");
@@ -1806,7 +1792,7 @@ struct os::PlatformMutex::WithFreeListLocked : public StackObj {
   }
 };
 
-os::PlatformMutex::PlatformMutex() {
+PlatformMutex::PlatformMutex() {
   {
     WithFreeListLocked wfl;
     _impl = _mutex_freelist;
@@ -1819,26 +1805,26 @@ os::PlatformMutex::PlatformMutex() {
   _impl = new Mutex();
 }
 
-os::PlatformMutex::~PlatformMutex() {
+PlatformMutex::~PlatformMutex() {
   WithFreeListLocked wfl;
   assert(_impl->_next == NULL, "invariant");
   _impl->_next = _mutex_freelist;
   _mutex_freelist = _impl;
 }
 
-os::PlatformMonitor::Cond::Cond() : _next(NULL) {
+PlatformMonitor::Cond::Cond() : _next(NULL) {
   int status = pthread_cond_init(&_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
 }
 
-os::PlatformMonitor::Cond::~Cond() {
+PlatformMonitor::Cond::~Cond() {
   int status = pthread_cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
 }
 
-os::PlatformMonitor::Cond* os::PlatformMonitor::_cond_freelist = NULL;
+PlatformMonitor::Cond* PlatformMonitor::_cond_freelist = NULL;
 
-os::PlatformMonitor::PlatformMonitor() {
+PlatformMonitor::PlatformMonitor() {
   {
     WithFreeListLocked wfl;
     _impl = _cond_freelist;
@@ -1851,7 +1837,7 @@ os::PlatformMonitor::PlatformMonitor() {
   _impl = new Cond();
 }
 
-os::PlatformMonitor::~PlatformMonitor() {
+PlatformMonitor::~PlatformMonitor() {
   WithFreeListLocked wfl;
   assert(_impl->_next == NULL, "invariant");
   _impl->_next = _cond_freelist;
@@ -1860,22 +1846,22 @@ os::PlatformMonitor::~PlatformMonitor() {
 
 #else
 
-os::PlatformMutex::PlatformMutex() {
+PlatformMutex::PlatformMutex() {
   int status = pthread_mutex_init(&_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
 }
 
-os::PlatformMutex::~PlatformMutex() {
+PlatformMutex::~PlatformMutex() {
   int status = pthread_mutex_destroy(&_mutex);
   assert_status(status == 0, status, "mutex_destroy");
 }
 
-os::PlatformMonitor::PlatformMonitor() {
+PlatformMonitor::PlatformMonitor() {
   int status = pthread_cond_init(&_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
 }
 
-os::PlatformMonitor::~PlatformMonitor() {
+PlatformMonitor::~PlatformMonitor() {
   int status = pthread_cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
 }
@@ -1883,7 +1869,7 @@ os::PlatformMonitor::~PlatformMonitor() {
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
 // Must already be locked
-int os::PlatformMonitor::wait(jlong millis) {
+int PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
   if (millis > 0) {
     struct timespec abst;
@@ -1965,6 +1951,25 @@ int os::fork_and_exec(const char* cmd) {
   }
 }
 
+bool os::message_box(const char* title, const char* message) {
+  int i;
+  fdStream err(defaultStream::error_fd());
+  for (i = 0; i < 78; i++) err.print_raw("=");
+  err.cr();
+  err.print_raw_cr(title);
+  for (i = 0; i < 78; i++) err.print_raw("-");
+  err.cr();
+  err.print_raw_cr(message);
+  for (i = 0; i < 78; i++) err.print_raw("=");
+  err.cr();
+
+  char buf[16];
+  // Prevent process from exiting upon "read error" without consuming all CPU
+  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
+
+  return buf[0] == 'y' || buf[0] == 'Y';
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // runtime exit support
 
@@ -2012,8 +2017,12 @@ void os::die() {
   if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
+    ::raise(SIGKILL);
   } else {
     ::abort();
   }
 }
+
+const char* os::file_separator() { return "/"; }
+const char* os::line_separator() { return "\n"; }
+const char* os::path_separator() { return ":"; }

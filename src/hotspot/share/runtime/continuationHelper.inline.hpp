@@ -30,6 +30,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stackValue.hpp"
 #include "utilities/macros.hpp"
@@ -58,21 +59,6 @@ inline intptr_t* ContinuationHelper::Frame::frame_top(const frame &f) {
   } else {
     return CompiledFrame::frame_top(f);
   }
-}
-
-inline Method* ContinuationHelper::Frame::top_java_frame_method(const frame& f) {
-  Method* m = nullptr;
-  if (f.is_interpreted_frame()) {
-    m = f.interpreter_frame_method();
-  } else if (f.is_compiled_frame()) {
-    CompiledMethod* cm = f.cb()->as_compiled_method();
-    ScopeDesc* scope = cm->scope_desc_at(f.pc());
-    m = scope->method();
-  } else if (f.is_native_frame()) {
-    m = f.cb()->as_nmethod()->method();
-  }
-
-  return m;
 }
 
 inline bool ContinuationHelper::Frame::is_deopt_return(address pc, const frame& sender) {
@@ -130,10 +116,6 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f)
   return f.unextended_sp();
 }
 
-inline int ContinuationHelper::InterpretedFrame::size(const frame&f, InterpreterOopMap* mask) {
-  return InterpretedFrame::frame_bottom(f) - InterpretedFrame::frame_top(f, mask);
-}
-
 inline intptr_t* ContinuationHelper::NonInterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
   return f.unextended_sp() + (callee_interpreted ? 0 : callee_argsize);
 }
@@ -155,18 +137,8 @@ inline int ContinuationHelper::NonInterpretedFrame::stack_argsize(const frame& f
   return f.compiled_frame_stack_argsize();
 }
 
-inline int ContinuationHelper::NonInterpretedFrame::num_oops(const frame& f) {
-  assert(!f.is_interpreted_frame(), "");
-  return f.num_oops();
-}
-
 inline bool ContinuationHelper::CompiledFrame::is_instance(const frame& f) {
   return f.is_compiled_frame();
-}
-
-inline int ContinuationHelper::CompiledFrame::num_oops(const frame& f) {
-  assert(CompiledFrame::is_instance(f), "Not a compiled frame");
-  return f.num_oops() + 1;
 }
 
 #ifdef ASSERT

@@ -42,6 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/threads.hpp"
 
 class ShenandoahConcurrentMarkingTask : public WorkerTask {
 private:

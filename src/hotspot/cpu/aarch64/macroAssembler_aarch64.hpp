@@ -110,17 +110,9 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
-  // Helper functions for statistics gathering.
-  // Unconditional atomic increment.
-  void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
-  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2, Register tmp3) {
-    lea(tmp1, counter_addr);
-    atomic_incw(tmp1, tmp2, tmp3);
-  }
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
-    code_section()->relocate(inst_mark(), a.rspec());
     a.lea(this, r);
   }
 
@@ -197,8 +189,11 @@ class MacroAssembler: public Assembler {
   inline void cmp(Register Rd, unsigned char imm8)  { subs(zr, Rd, imm8); }
   inline void cmp(Register Rd, unsigned imm) = delete;
 
-  inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
-  inline void cmn(Register Rd, unsigned imm) { adds(zr, Rd, imm); }
+  template<class T>
+  inline void cmnw(Register Rd, T imm) { addsw(zr, Rd, imm); }
+
+  inline void cmn(Register Rd, unsigned char imm8)  { adds(zr, Rd, imm8); }
+  inline void cmn(Register Rd, unsigned imm) = delete;
 
   void cset(Register Rd, Assembler::Condition cond) {
     csinc(Rd, zr, zr, ~cond);
@@ -630,6 +625,10 @@ public:
   static int patch_oop(address insn_addr, address o);
   static int patch_narrow_klass(address insn_addr, narrowKlass n);
 
+  // Return whether code is emitted to a scratch blob.
+  virtual bool in_scratch_emit_size() {
+    return false;
+  }
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
   void emit_static_call_stub();
 
@@ -650,8 +649,8 @@ public:
   void extend_sign(Register hi, Register lo);
 
   // Load and store values by size and signed-ness
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2 = noreg);
-  void store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2 = noreg);
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
+  void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
   // Support for inc/dec with optimal instruction selection depending on value
 
@@ -823,7 +822,7 @@ public:
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
-  void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -836,23 +835,23 @@ public:
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
-  void resolve_weak_handle(Register result, Register tmp);
-  void resolve_oop_handle(Register result, Register tmp = r5);
-  void load_mirror(Register dst, Register method, Register tmp = r5);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
+  void load_mirror(Register dst, Register method, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                      Register tmp1, Register tmp_thread);
+                      Register tmp1, Register tmp2);
 
-  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
-                       Register tmp1, Register tmp_thread);
+  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
+                       Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1,
+                     Register tmp2, DecoratorSet decorators = 0);
 
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
-  void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register tmp_thread = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                              Register tmp2, DecoratorSet decorators = 0);
+  void store_heap_oop(Address dst, Register val, Register tmp1,
+                      Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be
@@ -897,9 +896,6 @@ public:
 
   void push_cont_fastpath(Register java_thread);
   void pop_cont_fastpath(Register java_thread);
-  void inc_held_monitor_count(Register java_thread);
-  void dec_held_monitor_count(Register java_thread);
-  void reset_held_monitor_count(Register java_thread);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -909,13 +905,6 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // allocation
-  void eden_allocate(
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -1181,15 +1170,14 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: NULL if CodeCache is full.
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
-  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
+  // Return: the call PC or NULL if CodeCache is full.
+  address trampoline_call(Address entry);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Check if branches to the the non nmethod section require a far jump
+  // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
@@ -1205,8 +1193,8 @@ public:
   // The tmp register is invalidated.
   //
   // Far_jump returns the amount of the emitted code.
-  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  void far_call(Address entry, Register tmp = rscratch1);
+  int far_jump(Address entry, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
     if (codestub_branch_needs_far_jump()) {
@@ -1227,7 +1215,7 @@ public:
   Address allocate_metadata_address(Metadata* obj);
   Address constant_oop_address(jobject obj);
 
-  void movoop(Register dst, jobject obj, bool immediate = false);
+  void movoop(Register dst, jobject obj);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len,
@@ -1460,6 +1448,13 @@ public:
                       FloatRegister data = v0, int unrolls = 1);
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
+
+  // ChaCha20 functions support block
+  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
+          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
+          FloatRegister tbl);
+  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
+          FloatRegister dVec, bool colToDiag);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

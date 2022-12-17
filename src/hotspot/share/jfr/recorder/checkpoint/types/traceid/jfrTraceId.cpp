@@ -33,8 +33,8 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -199,6 +199,7 @@ traceid JfrTraceId::load_raw(jclass jc) {
   return load(jc, true);
 }
 
+#if INCLUDE_CDS
 // used by CDS / APPCDS as part of "remove_unshareable_info"
 void JfrTraceId::remove(const Klass* k) {
   assert(k != NULL, "invariant");
@@ -230,6 +231,7 @@ void JfrTraceId::restore(const Klass* k) {
     next_class_id();
   }
 }
+#endif // INCLUDE_CDS
 
 bool JfrTraceId::in_visible_set(const jclass jc) {
   assert(jc != NULL, "invariant");

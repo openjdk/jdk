@@ -128,7 +128,7 @@ public class GetInstance {
 
     /**
      * Return a List of all the available Services that implement any of
-     * the specified algorithms. See getServices(String, String) for detals.
+     * the specified algorithms. See getServices(String, String) for details.
      */
     public static List<Service> getServices(List<ServiceId> ids) {
         ProviderList list = Providers.getProviderList();
@@ -254,7 +254,7 @@ public class GetInstance {
         if (superClass == null) {
             return;
         }
-        if (superClass.isAssignableFrom(subClass) == false) {
+        if (!superClass.isAssignableFrom(subClass)) {
             throw new NoSuchAlgorithmException
                 ("class configured for " + s.getType() + ": "
                 + s.getClassName() + " not a " + s.getType());

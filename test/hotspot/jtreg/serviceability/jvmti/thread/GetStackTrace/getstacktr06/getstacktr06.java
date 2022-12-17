@@ -43,8 +43,6 @@
  * @run main/othervm/native --enable-preview -agentlib:getstacktr06 getstacktr06
  */
 
-import java.io.PrintStream;
-
 public class getstacktr06 {
 
     static {

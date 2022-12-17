@@ -25,10 +25,15 @@
  */
 package jdk.internal.foreign.abi.x64.windows;
 
-import java.lang.foreign.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.VaList;
+import java.lang.foreign.ValueLayout;
 
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
 
@@ -36,7 +41,6 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static jdk.internal.foreign.PlatformLayouts.Win64.C_POINTER;
 
@@ -56,19 +60,16 @@ import static jdk.internal.foreign.PlatformLayouts.Win64.C_POINTER;
 //            ? **(t**)((ap += sizeof(__int64)) - sizeof(__int64))             \
 //            :  *(t* )((ap += sizeof(__int64)) - sizeof(__int64)))
 //
-public non-sealed class WinVaList implements VaList, Scoped {
-    public static final Class<?> CARRIER = MemoryAddress.class;
+public non-sealed class WinVaList implements VaList {
     private static final long VA_SLOT_SIZE_BYTES = 8;
     private static final VarHandle VH_address = C_POINTER.varHandle();
 
-    private static final VaList EMPTY = new SharedUtils.EmptyVaList(MemoryAddress.NULL);
+    private static final VaList EMPTY = new SharedUtils.EmptyVaList(MemorySegment.NULL);
 
     private MemorySegment segment;
-    private final MemorySession session;
 
-    private WinVaList(MemorySegment segment, MemorySession session) {
+    private WinVaList(MemorySegment segment) {
         this.segment = segment;
-        this.session = session;
     }
 
     public static final VaList empty() {
@@ -77,43 +78,44 @@ public non-sealed class WinVaList implements VaList, Scoped {
 
     @Override
     public int nextVarg(ValueLayout.OfInt layout) {
-        return (int) read(int.class, layout);
+        return (int) read(layout);
     }
 
     @Override
     public long nextVarg(ValueLayout.OfLong layout) {
-        return (long) read(long.class, layout);
+        return (long) read(layout);
     }
 
     @Override
     public double nextVarg(ValueLayout.OfDouble layout) {
-        return (double) read(double.class, layout);
+        return (double) read(layout);
     }
 
     @Override
-    public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
-        return (MemoryAddress) read(MemoryAddress.class, layout);
+    public MemorySegment nextVarg(ValueLayout.OfAddress layout) {
+        return (MemorySegment) read(layout);
     }
 
     @Override
     public MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(allocator);
-        return (MemorySegment) read(MemorySegment.class, layout, allocator);
+        return (MemorySegment) read(layout, allocator);
     }
 
-    private Object read(Class<?> carrier, MemoryLayout layout) {
-        return read(carrier, layout, SharedUtils.THROWING_ALLOCATOR);
+    private Object read(MemoryLayout layout) {
+        return read(layout, SharedUtils.THROWING_ALLOCATOR);
     }
 
-    private Object read(Class<?> carrier, MemoryLayout layout, SegmentAllocator allocator) {
+    private Object read(MemoryLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(layout);
         Object res;
-        if (carrier == MemorySegment.class) {
+        checkElement(layout);
+        if (layout instanceof GroupLayout) {
             TypeClass typeClass = TypeClass.typeClassFor(layout, false);
             res = switch (typeClass) {
                 case STRUCT_REFERENCE -> {
-                    MemoryAddress structAddr = (MemoryAddress) VH_address.get(segment);
-                    MemorySegment struct = MemorySegment.ofAddress(structAddr, layout.byteSize(), session());
+                    MemorySegment structAddr = (MemorySegment) VH_address.get(segment);
+                    MemorySegment struct = MemorySegment.ofAddress(structAddr.address(), layout.byteSize(), segment.scope());
                     MemorySegment seg = allocator.allocate(layout);
                     seg.copyFrom(struct);
                     yield seg;
@@ -130,106 +132,102 @@ public non-sealed class WinVaList implements VaList, Scoped {
         return res;
     }
 
+    private void checkElement(MemoryLayout layout) {
+        if (segment.byteSize() < VA_SLOT_SIZE_BYTES) {
+            throw SharedUtils.newVaListNSEE(layout);
+        }
+    }
+
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(session()).checkValidStateSlow();
-        Stream.of(layouts).forEach(Objects::requireNonNull);
-        segment = segment.asSlice(layouts.length * VA_SLOT_SIZE_BYTES);
+        ((MemorySessionImpl) segment.scope()).checkValidState();
+        for (MemoryLayout layout : layouts) {
+            Objects.requireNonNull(layout);
+            checkElement(layout);
+            segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
+        }
     }
 
-    static WinVaList ofAddress(MemoryAddress addr, MemorySession session) {
-        MemorySegment segment = MemorySegment.ofAddress(addr, Long.MAX_VALUE, session);
-        return new WinVaList(segment, session);
+    static WinVaList ofAddress(long address, SegmentScope scope) {
+        return new WinVaList(MemorySegment.ofAddress(address, Long.MAX_VALUE, scope));
     }
 
-    static Builder builder(MemorySession session) {
-        return new Builder(session);
-    }
-
-    @Override
-    public MemorySession session() {
-        return session;
-    }
-
-    @Override
-    public MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session());
+    static Builder builder(SegmentScope scope) {
+        return new Builder(scope);
     }
 
     @Override
     public VaList copy() {
-        MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
-        return new WinVaList(segment, session);
+        ((MemorySessionImpl) segment.scope()).checkValidState();
+        return new WinVaList(segment);
     }
 
     @Override
-    public MemoryAddress address() {
-        return segment.address();
+    public MemorySegment segment() {
+        // make sure that returned segment cannot be accessed
+        return segment.asSlice(0, 0);
     }
 
     public static non-sealed class Builder implements VaList.Builder {
 
-        private final MemorySession session;
+        private final SegmentScope scope;
         private final List<SimpleVaArg> args = new ArrayList<>();
 
-        public Builder(MemorySession session) {
-            MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
-            this.session = session;
+        public Builder(SegmentScope scope) {
+            ((MemorySessionImpl) scope).checkValidState();
+            this.scope = scope;
         }
 
-        private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
+        private Builder arg(MemoryLayout layout, Object value) {
             Objects.requireNonNull(layout);
             Objects.requireNonNull(value);
-            args.add(new SimpleVaArg(carrier, layout, value));
+            args.add(new SimpleVaArg(layout, value));
             return this;
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfInt layout, int value) {
-            return arg(int.class, layout, value);
+            return arg(layout, value);
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfLong layout, long value) {
-            return arg(long.class, layout, value);
+            return arg(layout, value);
         }
 
         @Override
         public Builder addVarg(ValueLayout.OfDouble layout, double value) {
-            return arg(double.class, layout, value);
+            return arg(layout, value);
         }
 
         @Override
-        public Builder addVarg(ValueLayout.OfAddress layout, Addressable value) {
-            return arg(MemoryAddress.class, layout, value.address());
+        public Builder addVarg(ValueLayout.OfAddress layout, MemorySegment value) {
+            return arg(layout, value);
         }
 
         @Override
         public Builder addVarg(GroupLayout layout, MemorySegment value) {
-            return arg(MemorySegment.class, layout, value);
+            return arg(layout, value);
         }
 
         public VaList build() {
             if (args.isEmpty()) {
                 return EMPTY;
             }
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
-            MemorySegment segment = allocator.allocate(VA_SLOT_SIZE_BYTES * args.size());
-            List<MemorySegment> attachedSegments = new ArrayList<>();
-            attachedSegments.add(segment);
+
+            MemorySegment segment = MemorySegment.allocateNative(VA_SLOT_SIZE_BYTES * args.size(), scope);
             MemorySegment cursor = segment;
 
             for (SimpleVaArg arg : args) {
-                if (arg.carrier == MemorySegment.class) {
+                if (arg.layout instanceof GroupLayout) {
                     MemorySegment msArg = ((MemorySegment) arg.value);
                     TypeClass typeClass = TypeClass.typeClassFor(arg.layout, false);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
-                            MemorySegment copy = allocator.allocate(arg.layout);
+                            MemorySegment copy = MemorySegment.allocateNative(arg.layout, scope);
                             copy.copyFrom(msArg); // by-value
-                            attachedSegments.add(copy);
-                            VH_address.set(cursor, copy.address());
+                            VH_address.set(cursor, copy);
                         }
                         case STRUCT_REGISTER ->
                             cursor.copyFrom(msArg.asSlice(0, VA_SLOT_SIZE_BYTES));
@@ -242,7 +240,7 @@ public non-sealed class WinVaList implements VaList, Scoped {
                 cursor = cursor.asSlice(VA_SLOT_SIZE_BYTES);
             }
 
-            return new WinVaList(segment, session);
+            return new WinVaList(segment);
         }
     }
 }

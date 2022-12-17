@@ -26,12 +26,12 @@
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 StringArrayArgument::StringArrayArgument() {
-  _array = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<char *>(32, mtServiceability);
+  _array = new (mtServiceability) GrowableArray<char *>(32, mtServiceability);
   assert(_array != NULL, "Sanity check");
 }
 

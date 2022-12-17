@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171 8287237
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171 8287237 8297609
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -165,7 +165,7 @@ public class Basic {
                 new ExType("gz", List.of("application/gzip", "application/x-gzip")),
                 new ExType("jar", List.of("application/java-archive", "application/x-java-archive", "application/jar")),
                 new ExType("jpg", List.of("image/jpeg")),
-                new ExType("js", List.of("text/javascript", "application/javascript")),
+                new ExType("js", List.of("text/plain", "text/javascript", "application/javascript")),
                 new ExType("json", List.of("application/json")),
                 new ExType("markdown", List.of("text/markdown")),
                 new ExType("md", List.of("text/markdown", "application/x-genesis-rom")),
@@ -180,13 +180,14 @@ public class Basic {
                 new ExType("ppt", List.of("application/vnd.ms-powerpoint")),
                 new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")),
                 new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")),
-                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar")),
+                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar", "application/x-rar-compressed")),
                 new ExType("rtf", List.of("application/rtf", "text/rtf")),
                 new ExType("webm", List.of("video/webm")),
                 new ExType("webp", List.of("image/webp")),
                 new ExType("xls", List.of("application/vnd.ms-excel")),
                 new ExType("xlsx", List.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
                 new ExType("7z", List.of("application/x-7z-compressed")),
+                new ExType("wasm", List.of("application/wasm")),
         };
         failures += checkContentTypes(exTypes);
 

@@ -69,9 +69,15 @@
 
 #endif // clang/gcc version check
 
-#if (__GNUC__ >= 9) || (defined(__clang_major__) && (__clang_major__ >= 14))
+#if (__GNUC__ >= 10)
+// TODO: Re-enable warning attribute for Clang once
+// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
+// || (defined(__clang_major__) && (__clang_major__ >= 14))
 
 // Use "warning" attribute to detect uses of "forbidden" functions.
+//
+// Note: The warning attribute is available since GCC 9, but disabling pragmas
+// does not work reliably in ALLOW_C_FUNCTION. GCC 10+ and up work fine.
 //
 // Note: _FORTIFY_SOURCE transforms calls to certain functions into calls to
 // associated "checking" functions, and that transformation seems to occur
@@ -89,6 +95,6 @@
   __VA_ARGS__                                           \
   PRAGMA_DIAG_POP
 
-#endif // gcc9+ or clang14+
+#endif // gcc10+
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP

@@ -26,6 +26,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
@@ -40,17 +41,14 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
-
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
-
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
 #endif
 
 jlong CompilationPolicy::_start_time = 0;
@@ -82,7 +80,7 @@ bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) 
   if (!can_be_compiled(m, comp_level)) return false;
 
   return !UseInterpreter ||                                              // must compile all methods
-         (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
+         (AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
 void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
@@ -484,8 +482,18 @@ void CompilationPolicy::initialize() {
     } else if (c2_only) {
       set_c2_count(count);
     } else {
-      set_c1_count(MAX2(count / 3, 1));
-      set_c2_count(MAX2(count - c1_count(), 1));
+#if INCLUDE_JVMCI
+      if (UseJVMCICompiler && UseJVMCINativeLibrary) {
+        int libjvmci_count = MAX2((int) (count * JVMCINativeLibraryThreadFraction), 1);
+        int c1_count = MAX2(count - libjvmci_count, 1);
+        set_c2_count(libjvmci_count);
+        set_c1_count(c1_count);
+      } else
+#endif
+      {
+        set_c1_count(MAX2(count / 3, 1));
+        set_c2_count(MAX2(count - c1_count(), 1));
+      }
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();
@@ -758,7 +766,10 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       }
       // Deoptimize immediately (we don't have to wait for a compile).
       JavaThread* jt = THREAD;
-      RegisterMap map(jt, false);
+      RegisterMap map(jt,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame fr = jt->last_frame().sender(&map);
       Deoptimization::deoptimize_frame(jt, fr.id());
     }
@@ -950,7 +961,7 @@ void CompilationPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
     return;
   }
   if (mh->method_data() == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
   }
   if (ProfileInterpreter) {
     MethodData* mdo = mh->method_data();

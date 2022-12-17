@@ -53,8 +53,8 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
@@ -180,18 +180,18 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
 
   {
     StrongRootsScope srs(0);
 
-    gch->full_process_roots(false, // not the adjust phase
-                            GenCollectedHeap::SO_None,
-                            ClassUnloading, // only strong roots if ClassUnloading
-                                            // is enabled
-                            &follow_root_closure,
-                            &follow_cld_closure);
+    CLDClosure* weak_cld_closure = ClassUnloading ? NULL : &follow_cld_closure;
+    MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
+    gch->process_roots(GenCollectedHeap::SO_None,
+                       &follow_root_closure,
+                       &follow_cld_closure,
+                       weak_cld_closure,
+                       &mark_code_closure);
   }
 
   // Process reference objects found during marking
@@ -215,12 +215,13 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
+    CodeCache::UnloadingScope scope(&is_alive);
 
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
     // Unload nmethods.
-    CodeCache::do_unloading(&is_alive, purged_class);
+    CodeCache::do_unloading(purged_class);
 
     // Prune dead klasses from subklass/sibling/implementor lists.
     Klass::clean_weak_klass_links(purged_class);
@@ -260,18 +261,14 @@ void GenMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", gc_timer());
 
-  // Need new claim bits for the pointer adjustment tracing.
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-  {
-    StrongRootsScope srs(0);
-
-    gch->full_process_roots(true,  // this is the adjust phase
-                            GenCollectedHeap::SO_AllCodeCache,
-                            false, // all roots
-                            &adjust_pointer_closure,
-                            &adjust_cld_closure);
-  }
+  CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+  gch->process_roots(GenCollectedHeap::SO_AllCodeCache,
+                     &adjust_pointer_closure,
+                     &adjust_cld_closure,
+                     &adjust_cld_closure,
+                     &code_closure);
 
   gch->gen_process_weak_roots(&adjust_pointer_closure);
 

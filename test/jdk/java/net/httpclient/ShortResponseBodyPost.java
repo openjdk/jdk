@@ -36,7 +36,6 @@
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
@@ -46,8 +45,6 @@ import java.util.concurrent.ExecutionException;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 public class ShortResponseBodyPost extends ShortResponseBody {
 
@@ -60,76 +57,64 @@ public class ShortResponseBodyPost extends ShortResponseBody {
 
 
     @Test(dataProvider = "uris")
-    void testSynchronousPOST(String urlp, String expectedMsg, boolean sameClient)
+    void testSynchronousPOST(String urlp, String expectedMsg)
         throws Exception
     {
         checkSkip();
-        out.print("---\n");
-        HttpClient client = null;
-        for (int i=0; i< ITERATION_COUNT; i++) {
-            String url = uniqueURL(urlp);
-            if (client == null)
-                client = newHttpClient(sameClient);
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                    .POST(BodyPublishers.ofInputStream(() -> new InfiniteInputStream()))
-                    .build();
-            out.println("Request: " + request);
-            try {
-                HttpResponse<String> response = client.send(request, ofString());
-                String body = response.body();
-                out.println(response + ": " + body);
-                fail("UNEXPECTED RESPONSE: " + response);
-            } catch (IOException ioe) {
+        String url = uniqueURL(urlp);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .POST(BodyPublishers.ofInputStream(() -> new InfiniteInputStream()))
+                .build();
+        out.println("Request: " + request);
+        try {
+            HttpResponse<String> response = client.send(request, ofString());
+            String body = response.body();
+            out.println(response + ": " + body);
+            fail("UNEXPECTED RESPONSE: " + response);
+        } catch (IOException ioe) {
+            out.println("Caught expected exception:" + ioe);
+
+            List<String> expectedMessages = new ArrayList<>();
+            expectedMessages.add(expectedMsg);
+            MSGS_ORDER.stream().takeWhile(s -> !s.equals(expectedMsg))
+                               .forEach(expectedMessages::add);
+
+            assertExpectedMessage(request, ioe, expectedMessages);
+            // synchronous API must have the send method on the stack
+            assertSendMethodOnStack(ioe);
+            assertNoConnectionExpiredException(ioe);
+        }
+    }
+
+    @Test(dataProvider = "uris")
+    void testAsynchronousPOST(String urlp, String expectedMsg)
+        throws Exception
+    {
+        checkSkip();
+        String url = uniqueURL(urlp);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .POST(BodyPublishers.ofInputStream(() -> new InfiniteInputStream()))
+                .build();
+        out.println("Request: " + request);
+        try {
+            HttpResponse<String> response = client.sendAsync(request, ofString()).get();
+            String body = response.body();
+            out.println(response + ": " + body);
+            fail("UNEXPECTED RESPONSE: " + response);
+        } catch (ExecutionException ee) {
+            if (ee.getCause() instanceof IOException) {
+                IOException ioe = (IOException) ee.getCause();
                 out.println("Caught expected exception:" + ioe);
 
                 List<String> expectedMessages = new ArrayList<>();
                 expectedMessages.add(expectedMsg);
                 MSGS_ORDER.stream().takeWhile(s -> !s.equals(expectedMsg))
-                                   .forEach(expectedMessages::add);
+                        .forEach(expectedMessages::add);
 
                 assertExpectedMessage(request, ioe, expectedMessages);
-                // synchronous API must have the send method on the stack
-                assertSendMethodOnStack(ioe);
                 assertNoConnectionExpiredException(ioe);
-            }
-        }
-    }
-
-    @Test(dataProvider = "uris")
-    void testAsynchronousPOST(String urlp, String expectedMsg, boolean sameClient)
-        throws Exception
-    {
-        checkSkip();
-        out.print("---\n");
-        HttpClient client = null;
-        for (int i=0; i< ITERATION_COUNT; i++) {
-            String url = uniqueURL(urlp);
-            if (client == null)
-                client = newHttpClient(sameClient);
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                    .POST(BodyPublishers.ofInputStream(() -> new InfiniteInputStream()))
-                    .build();
-            out.println("Request: " + request);
-            try {
-                HttpResponse<String> response = client.sendAsync(request, ofString()).get();
-                String body = response.body();
-                out.println(response + ": " + body);
-                fail("UNEXPECTED RESPONSE: " + response);
-            } catch (ExecutionException ee) {
-                if (ee.getCause() instanceof IOException) {
-                    IOException ioe = (IOException) ee.getCause();
-                    out.println("Caught expected exception:" + ioe);
-
-                    List<String> expectedMessages = new ArrayList<>();
-                    expectedMessages.add(expectedMsg);
-                    MSGS_ORDER.stream().takeWhile(s -> !s.equals(expectedMsg))
-                            .forEach(expectedMessages::add);
-
-                    assertExpectedMessage(request, ioe, expectedMessages);
-                    assertNoConnectionExpiredException(ioe);
-                } else {
-                    throw ee;
-                }
+            } else {
+                throw ee;
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.crypto.SecretKey;
 
 /**
  * Parameters for SSL/TLS master secret generation.
- * This class encapsulates the information necessary to calculate a SSL/TLS
+ * This class encapsulates the information necessary to calculate an SSL/TLS
  * master secret from the premaster secret and other parameters.
  * It is used to initialize KeyGenerators of the type "TlsMasterSecret".
  *

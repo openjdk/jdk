@@ -45,7 +45,7 @@ static int checkVMObjectAllocEvents() {
     LOG("#    (VM might not allocate such objects at all)\n");
   }
 
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 /* ========================================================================== */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,8 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   // Phases and subphases for the full concurrent marking cycle in order.
   //
-  // All these methods return true if the marking should be aborted. Except
-  // phase_clear_cld_claimed_marks() because we must not abort before
-  // scanning the root regions because of a potential deadlock otherwise.
-  void phase_clear_cld_claimed_marks();
+  // All these methods return true if the marking should be aborted.
+  bool phase_clear_cld_claimed_marks();
   bool phase_scan_root_regions();
 
   bool phase_mark_loop();
@@ -67,7 +65,7 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   bool subphase_delay_to_keep_mmu_before_remark();
   bool subphase_remark();
 
-  bool phase_rebuild_remembered_sets();
+  bool phase_rebuild_and_scrub();
   bool phase_delay_to_keep_mmu_before_cleanup();
   bool phase_cleanup();
   bool phase_clear_bitmap_for_next_mark();

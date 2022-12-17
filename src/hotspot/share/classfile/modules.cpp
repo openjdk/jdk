@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
@@ -40,10 +39,12 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -213,8 +214,8 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
       // loop through and add any new packages for java.base
       for (int x = 0; x < pkg_list->length(); x++) {
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
-        package_table->locked_create_entry_if_not_exist(pkg_list->at(x),
-                                                        ModuleEntryTable::javabase_moduleEntry());
+        package_table->locked_create_entry_if_absent(pkg_list->at(x),
+                                                     ModuleEntryTable::javabase_moduleEntry());
         assert(package_table->locked_lookup_only(pkg_list->at(x)) != NULL,
                "Unable to create a " JAVA_BASE_NAME " package entry");
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
@@ -236,7 +237,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
   // so no locking is needed.
 
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(module_handle);
+  ModuleEntryTable::patch_javabase_entries(THREAD, module_handle);
 
   log_info(module, load)(JAVA_BASE_NAME " location: %s",
                          location_symbol != NULL ? location_symbol->as_C_string() : "NULL");
@@ -447,7 +448,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   // If the module is defined to the boot loader and an exploded build is being
-  // used, prepend <java.home>/modules/modules_name to the system boot class path.
+  // used, prepend <java.home>/modules/modules_name to the boot class path.
   if (h_loader.is_null() && !ClassLoader::has_jrt_entry()) {
     ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
@@ -488,7 +489,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 
   Handle java_base_module(THREAD, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(java_base_module);
+  ModuleEntryTable::patch_javabase_entries(THREAD, java_base_module);
 
   if (h_platform_loader.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
@@ -499,9 +500,16 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   }
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
+  SystemDictionary::set_platform_loader(platform_loader_data);
   ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
 
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
+  SystemDictionary::set_system_loader(system_loader_data);
+  // system_loader_data here is always an instance of jdk.internal.loader.ClassLoader$AppClassLoader.
+  // However, if -Djava.system.class.loader=xxx is specified, java_platform_loader() would
+  // be an instance of a user-defined class, so make sure this never happens.
+  assert(Arguments::get_property("java.system.class.loader") == NULL,
+           "archived full module should have been disabled if -Djava.system.class.loader is specified");
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
 

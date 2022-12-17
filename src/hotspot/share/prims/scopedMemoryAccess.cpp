@@ -23,18 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
-#include "classfile/vmSymbols.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
+#include "prims/stackwalk.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/deoptimization.hpp"
-#include "prims/stackwalk.hpp"
-
 
 class CloseScopedMemoryFindOopClosure : public OopClosure {
   oop _deopt;
@@ -81,14 +80,17 @@ public:
 
   void do_thread(Thread* thread) {
 
-    JavaThread* jt = (JavaThread*)thread;
+    JavaThread* jt = JavaThread::cast(thread);
 
     if (!jt->has_last_Java_frame()) {
       return;
     }
 
     frame last_frame = jt->last_frame();
-    RegisterMap register_map(jt, true);
+    RegisterMap register_map(jt,
+                             RegisterMap::UpdateMap::include,
+                             RegisterMap::ProcessFrames::include,
+                             RegisterMap::WalkContinuation::skip);
 
     if (last_frame.is_safepoint_blob_frame()) {
       last_frame = last_frame.sender(&register_map);

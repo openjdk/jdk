@@ -32,10 +32,10 @@ import jdk.vm.ci.code.ReferenceMap;
  */
 public final class HotSpotReferenceMap extends ReferenceMap {
 
-    private final Location[] objects;
-    private final Location[] derivedBase;
-    private final int[] sizeInBytes;
-    private final int maxRegisterSize;
+    final Location[] objects;
+    final Location[] derivedBase;
+    final int[] sizeInBytes;
+    final int maxRegisterSize;
 
     /**
      *

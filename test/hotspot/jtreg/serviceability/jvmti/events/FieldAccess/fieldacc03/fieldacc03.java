@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -48,17 +46,8 @@ import java.io.PrintStream;
 
 public class fieldacc03 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("fieldacc03");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldacc03 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldacc03");
     }
 
     static volatile int result;

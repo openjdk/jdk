@@ -27,10 +27,12 @@
 
 #include "runtime/vframe.hpp"
 
+#include "classfile/javaClasses.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 inline vframeStreamCommon::vframeStreamCommon(RegisterMap reg_map) : _reg_map(reg_map), _cont_entry(NULL) {
   _thread = _reg_map.thread();
@@ -40,7 +42,7 @@ inline oop vframeStreamCommon::continuation() const {
   if (_reg_map.cont() != NULL) {
     return _reg_map.cont();
   } else if (_cont_entry != NULL) {
-    return _cont_entry->cont_oop();
+    return _cont_entry->cont_oop(_reg_map.thread());
   } else {
     return NULL;
   }
@@ -68,8 +70,6 @@ inline int vframeStreamCommon::decode_offset() const {
 
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
 
-inline bool vframeStreamCommon::is_entry_frame() const       { return _frame.is_entry_frame(); }
-
 inline void vframeStreamCommon::next() {
   // handle frames with inlining
   if (_mode == compiled_mode    && fill_in_compiled_inlined_sender()) return;
@@ -80,12 +80,13 @@ inline void vframeStreamCommon::next() {
     if (Continuation::is_continuation_enterSpecial(_frame)) {
       assert(!_reg_map.in_cont(), "");
       assert(_cont_entry != NULL, "");
-      assert(_cont_entry->cont_oop() != NULL, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
+      // Reading oops are only safe if process_frames() is true, and we fix the oops.
+      assert(!_reg_map.process_frames() || _cont_entry->cont_oop(_reg_map.thread()) != NULL, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
       is_enterSpecial_frame = true;
 
       // TODO: handle ShowCarrierFrames
       if (_cont_entry->is_virtual_thread() ||
-          (_continuation_scope.not_null() && _cont_entry->scope() == _continuation_scope())) {
+          (_continuation_scope.not_null() && _cont_entry->scope(_reg_map.thread()) == _continuation_scope())) {
         _mode = at_end_mode;
         break;
       }
@@ -108,7 +109,10 @@ inline void vframeStreamCommon::next() {
 }
 
 inline vframeStream::vframeStream(JavaThread* thread, bool stop_at_java_call_stub, bool process_frame, bool vthread_carrier)
-  : vframeStreamCommon(RegisterMap(thread, true, process_frame, true)) {
+  : vframeStreamCommon(RegisterMap(thread,
+                                   RegisterMap::UpdateMap::include,
+                                   process_frame ? RegisterMap::ProcessFrames::include : RegisterMap::ProcessFrames::skip ,
+                                   RegisterMap::WalkContinuation::include)) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   if (!thread->has_last_Java_frame()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,24 +32,28 @@
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=always_taken_not_fired.xml
  *                   compiler.uncommontrap.TestUnstableIfTrap ALWAYS_TAKEN false
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=always_taken_fired.xml
  *                   compiler.uncommontrap.TestUnstableIfTrap ALWAYS_TAKEN true
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=never_taken_not_fired.xml
  *                   compiler.uncommontrap.TestUnstableIfTrap NEVER_TAKEN false
  * @run main/othervm -Xbatch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100
  *                   -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,UnstableIfExecutable.test
  *                   -XX:LogFile=never_taken_fired.xml
@@ -69,7 +73,7 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
 import java.io.FileWriter;

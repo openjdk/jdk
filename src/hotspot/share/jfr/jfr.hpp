@@ -63,9 +63,10 @@ class Jfr : AllStatic {
   static void on_resolution(const CallInfo& info, TRAPS);
   static void on_resolution(const Parse* parse, const ciKlass* holder, const ciMethod* target);
   static void on_resolution(const GraphBuilder* builder, const ciKlass* holder, const ciMethod* target);
+  static void on_resolution(const Method* caller, const Method* target, TRAPS);
   static void on_java_thread_start(JavaThread* starter, JavaThread* startee);
   static void on_set_current_thread(JavaThread* jt, oop thread);
-  static void on_vm_shutdown(bool exception_handler = false);
+  static void on_vm_shutdown(bool exception_handler = false, bool halt = false);
   static void on_vm_error_report(outputStream* st);
   static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);

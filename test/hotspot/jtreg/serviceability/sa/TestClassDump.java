@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.SA.SATestUtils;
+import jtreg.SkippedException;
 
 /**
  * @test
@@ -87,6 +88,10 @@ public class TestClassDump {
 
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
+        if (SATestUtils.needsPrivileges()) {
+            // This test will create files as root that cannot be easily deleted, so don't run.
+            throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
+        }
         LingeredApp theApp = null;
         try {
             theApp = LingeredApp.startApp();

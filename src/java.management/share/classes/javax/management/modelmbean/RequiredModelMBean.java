@@ -31,8 +31,6 @@
 
 package javax.management.modelmbean;
 
-/* java imports */
-
 import static com.sun.jmx.defaults.JmxProperties.MODELMBEAN_LOGGER;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -976,7 +974,7 @@ public class RequiredModelMBean
                     final String className = opClassName;
                     final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
 
-                    targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+                    targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<>() {
 
                         @Override
                         public Class<?> run() {
@@ -1098,7 +1096,7 @@ public class RequiredModelMBean
         float.class, short.class, byte.class, char.class,
     };
     private static final Map<String,Class<?>> primitiveClassMap =
-        new HashMap<String,Class<?>>();
+        new HashMap<>();
     static {
         for (int i = 0; i < primitiveClasses.length; i++) {
             final Class<?> c = primitiveClasses[i];
@@ -1132,7 +1130,7 @@ public class RequiredModelMBean
             @SuppressWarnings("removal")
             AccessControlContext stack = AccessController.getContext();
             final String className = opClassName;
-            targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+            targetClass = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<>() {
 
                 @Override
                 public Class<?> run() {
@@ -1169,7 +1167,7 @@ public class RequiredModelMBean
             final Throwable[] caughtException = new Throwable[1];
             @SuppressWarnings("removal")
             AccessControlContext stack = AccessController.getContext();
-            Object rslt = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Object>() {
+            Object rslt = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<>() {
 
                 @Override
                 public Object run() {
@@ -1290,7 +1288,7 @@ public class RequiredModelMBean
     private static synchronized boolean isRMMBMethodName(String name) {
         if (rmmbMethodNames == null) {
             try {
-                Set<String> names = new HashSet<String>();
+                Set<String> names = new HashSet<>();
                 Method[] methods = RequiredModelMBean.class.getMethods();
                 for (int i = 0; i < methods.length; i++)
                     names.add(methods[i].getName());
@@ -1582,7 +1580,7 @@ public class RequiredModelMBean
                                 @SuppressWarnings("removal")
                                 AccessControlContext stack = AccessController.getContext();
 
-                                Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+                                Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<>() {
 
                                     @Override
                                     public Class<?> run() {
@@ -2666,7 +2664,7 @@ public class RequiredModelMBean
         AccessControlContext stack = AccessController.getContext();
         final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
 
-        Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+        Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<>() {
 
             @Override
             public Class<?> run() {

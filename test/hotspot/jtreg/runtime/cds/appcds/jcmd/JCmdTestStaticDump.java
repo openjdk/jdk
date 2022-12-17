@@ -29,9 +29,9 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @modules jdk.jcmd/sun.tools.common:+open
- * @build jdk.test.lib.apps.LingeredApp sun.hotspot.WhiteBox Hello
+ * @build jdk.test.lib.apps.LingeredApp jdk.test.whitebox.WhiteBox Hello
  *         JCmdTestDumpBase JCmdTestLingeredApp JCmdTestStaticDump
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestStaticDump
  */
 

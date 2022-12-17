@@ -34,7 +34,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/stack.inline.hpp"
 
 static jobject empty_java_util_arraylist = NULL;
@@ -51,7 +51,7 @@ static const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
+  return new (mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 static bool initialize(TRAPS) {

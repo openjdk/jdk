@@ -39,6 +39,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 template <StringDedupMode STRING_DEDUP>

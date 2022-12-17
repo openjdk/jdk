@@ -79,7 +79,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::move(int from_offset, int to
 
 void InterpreterRuntime::SignatureHandlerGenerator::box(int from_offset, int to_offset) {
   __ lea(temp(), Address(from(), Interpreter::local_offset_in_bytes(from_offset)));
-  __ cmpptr(Address(from(), Interpreter::local_offset_in_bytes(from_offset)), (int32_t)NULL_WORD); // do not use temp() to avoid AGI
+  __ cmpptr(Address(from(), Interpreter::local_offset_in_bytes(from_offset)), NULL_WORD); // do not use temp() to avoid AGI
   Label L;
   __ jcc(Assembler::notZero, L);
   __ movptr(temp(), NULL_WORD);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,13 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp"
+
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+# include "mutex_posix.hpp"
+#else
+# include OS_HEADER(mutex)
+#endif
+
 
 // A Mutex/Monitor is a simple wrapper around a native lock plus condition
 // variable that supports lock ownership tracking, lock ranking for deadlock
@@ -89,7 +95,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
 
  protected:                              // Monitor-Mutex metadata
-  os::PlatformMonitor _lock;             // Native monitor implementation
+  PlatformMonitor _lock;                 // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
@@ -102,7 +108,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Thread* _last_owner;           // the last thread to own the lock
   bool _skip_rank_check;         // read only by owner when doing rank checks
 
-  static bool contains(Mutex* locks, Mutex* lock);
   static Mutex* get_least_ranked_lock(Mutex* locks);
   Mutex* get_least_ranked_lock_besides_this(Mutex* locks);
   bool skip_rank_check() {
@@ -114,7 +119,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Rank   rank() const          { return _rank; }
   const char*  rank_name() const;
   Mutex* next()  const         { return _next; }
-  void   set_next(Mutex *next) { _next = next; }
 #endif // ASSERT
 
  protected:
@@ -192,7 +196,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
-    void print() const                      { print_on(::tty); }
+    void print() const;
   #endif
 };
 

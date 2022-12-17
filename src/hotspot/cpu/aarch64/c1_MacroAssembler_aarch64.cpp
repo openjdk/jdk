@@ -116,6 +116,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   cbnz(hdr, slow_case);
   // done
   bind(done);
+  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -147,6 +148,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
   // done
   bind(done);
+  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 
@@ -155,7 +157,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
   if (UseTLAB) {
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
-    eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
+    b(slow_case);
   }
 }
 
@@ -296,7 +298,7 @@ void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
 
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(this);
+  bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */, NULL /* guard */);
 }
 
 void C1_MacroAssembler::remove_frame(int framesize) {

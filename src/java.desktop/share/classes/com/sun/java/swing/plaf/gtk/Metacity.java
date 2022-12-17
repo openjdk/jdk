@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,11 +118,7 @@ class Metacity implements SynthConstants {
             try {
                 INSTANCE = new Metacity(themeName);
             } catch (FileNotFoundException ex) {
-            } catch (IOException ex) {
-                logError(themeName, ex);
-            } catch (ParserConfigurationException ex) {
-                logError(themeName, ex);
-            } catch (SAXException ex) {
+            } catch (IOException | ParserConfigurationException | SAXException ex) {
                 logError(themeName, ex);
             }
             }
@@ -161,6 +157,7 @@ class Metacity implements SynthConstants {
         this.themeName = themeName;
         themeDir = getThemeDir(themeName);
         if (themeDir != null) {
+            @SuppressWarnings("deprecation")
             URL themeURL = new URL(themeDir, "metacity-theme-1.xml");
             xmlDoc = getXMLDoc(themeURL);
             if (xmlDoc == null) {
@@ -562,7 +559,8 @@ class Metacity implements SynthConstants {
                     if (url != null) {
                         String str = url.toString();
                         try {
-                            themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
+                            @SuppressWarnings("deprecation")
+                            var _unused = themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
                         } catch (MalformedURLException ex) {
                             themeDir = null;
                         }
@@ -580,6 +578,7 @@ class Metacity implements SynthConstants {
                     }
                     // Note: this is a small file (< 1024 bytes) so it's not worth
                     // starting an XML parser or even to use a buffered reader.
+                    @SuppressWarnings("deprecation")
                     URL url = new URL(new File(userHome).toURI().toURL(),
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
@@ -606,8 +605,6 @@ class Metacity implements SynthConstants {
                             }
                         }
                     }
-                } catch (MalformedURLException ex) {
-                    // OK to just ignore. We'll use a fallback theme.
                 } catch (IOException ex) {
                     // OK to just ignore. We'll use a fallback theme.
                 }
@@ -674,6 +671,7 @@ class Metacity implements SynthConstants {
         if (image == null) {
             if (themeDir != null) {
                 try {
+                    @SuppressWarnings("deprecation")
                     URL url = new URL(themeDir, key);
                     image = (Image)new Privileged().doPrivileged(Privileged.GET_IMAGE, url);
                 } catch (MalformedURLException ex) {

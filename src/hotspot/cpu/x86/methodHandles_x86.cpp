@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -78,28 +78,29 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
   Register temp = rdi;
-  Register temp2 = noreg;
-  LP64_ONLY(temp2 = rscratch1);  // used by MacroAssembler::cmpptr and load_klass
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");
   __ verify_oop(obj);
   __ testptr(obj, obj);
   __ jcc(Assembler::zero, L_bad);
-  __ push(temp); if (temp2 != noreg)  __ push(temp2);
-#define UNPUSH { if (temp2 != noreg)  __ pop(temp2);  __ pop(temp); }
-  __ load_klass(temp, obj, temp2);
-  __ cmpptr(temp, ExternalAddress((address) klass_addr));
+#define PUSH { __ push(temp); LP64_ONLY(  __ push(rscratch1); )               }
+#define POP  {                LP64_ONLY(  __ pop(rscratch1);  ) __ pop(temp); }
+  PUSH;
+  __ load_klass(temp, obj, rscratch1);
+  __ cmpptr(temp, ExternalAddress((address) klass_addr), rscratch1);
   __ jcc(Assembler::equal, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
   __ movptr(temp, Address(temp, super_check_offset));
-  __ cmpptr(temp, ExternalAddress((address) klass_addr));
+  __ cmpptr(temp, ExternalAddress((address) klass_addr), rscratch1);
   __ jcc(Assembler::equal, L_ok);
-  UNPUSH;
+  POP;
   __ bind(L_bad);
   __ STOP(error_message);
   __ BIND(L_ok);
-  UNPUSH;
+  POP;
   BLOCK_COMMENT("} verify_klass");
+#undef POP
+#undef PUSH
 }
 
 void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {
@@ -531,12 +532,12 @@ void trace_method_handle_stub(const char* adaptername,
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
-    const int saved_regs_count = RegisterImpl::number_of_registers;
+    const int saved_regs_count = Register::number_of_registers;
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
 #ifdef AMD64
-      assert(RegisterImpl::number_of_registers == 16, "sanity");
+      assert(Register::number_of_registers == 16, "sanity");
       if (r == rsp) {
         // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
         ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
@@ -672,7 +673,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ push(rbx);               // pusha saved_regs
   __ push(rcx);               // mh
   __ push(rcx);               // slot for adaptername
-  __ movptr(Address(rsp, 0), (intptr_t) adaptername);
+  __ movptr(Address(rsp, 0), (intptr_t) adaptername, rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
   __ increment(rsp, sizeof(MethodHandleStubArguments));
 

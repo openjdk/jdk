@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -34,6 +33,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -45,10 +45,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/reflectionUtils.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
@@ -409,6 +410,9 @@ class AbstractDumpWriter : public StackObj {
 
   // Returns true if we have enough room in the buffer for 'len' bytes.
   bool can_write_fast(size_t len);
+
+  void write_address(address a);
+
  public:
   AbstractDumpWriter() :
     _buffer(NULL),
@@ -428,6 +432,7 @@ class AbstractDumpWriter : public StackObj {
   void write_u4(u4 x);
   void write_u8(u8 x);
   void write_objectID(oop o);
+  void write_rootID(oop* p);
   void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
   void write_id(u4 x);
@@ -510,8 +515,7 @@ void AbstractDumpWriter::write_u8(u8 x) {
   WRITE_KNOWN_TYPE(&v, 8);
 }
 
-void AbstractDumpWriter::write_objectID(oop o) {
-  address a = cast_from_oop<address>(o);
+void AbstractDumpWriter::write_address(address a) {
 #ifdef _LP64
   write_u8((u8)a);
 #else
@@ -519,13 +523,16 @@ void AbstractDumpWriter::write_objectID(oop o) {
 #endif
 }
 
+void AbstractDumpWriter::write_objectID(oop o) {
+  write_address(cast_from_oop<address>(o));
+}
+
+void AbstractDumpWriter::write_rootID(oop* p) {
+  write_address((address)p);
+}
+
 void AbstractDumpWriter::write_symbolID(Symbol* s) {
-  address a = (address)((uintptr_t)s);
-#ifdef _LP64
-  write_u8((u8)a);
-#else
-  write_u4((u4)a);
-#endif
+  write_address((address)((uintptr_t)s));
 }
 
 void AbstractDumpWriter::write_id(u4 x) {
@@ -1126,14 +1133,6 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
     }
   }
 
-  // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
-  // arrays.
-  oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
-    field_count++;
-    size += sizeof(address);
-  }
-
   // We write the value itself plus a name and a one byte type tag per field.
   return size + field_count * (sizeof(address) + 1);
 }
@@ -1170,14 +1169,6 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
       writer->write_objectID(prev->constants()->resolved_references());
       prev = prev->previous_versions();
     }
-  }
-
-  // Add init lock to the end if the class is not yet initialized
-  oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
-    writer->write_symbolID(vmSymbols::init_lock_name());         // name
-    writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
-    writer->write_objectID(init_lock);
   }
 }
 
@@ -1596,7 +1587,7 @@ void JNIGlobalsDumper::do_oop(oop* obj_p) {
     u4 size = 1 + 2 * sizeof(address);
     writer()->start_sub_record(HPROF_GC_ROOT_JNI_GLOBAL, size);
     writer()->write_objectID(o);
-    writer()->write_objectID((oopDesc*)obj_p);      // global ref ID
+    writer()->write_rootID(obj_p);      // global ref ID
     writer()->end_sub_record();
   }
 };
@@ -1930,7 +1921,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     WorkerTask("dump heap") {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
-    _klass_map = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
+    _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
     _stack_traces = NULL;
     _num_threads = 0;
     _num_dumper_threads = num_dump_threads;
@@ -2040,7 +2031,10 @@ int VM_HeapDumper::do_thread(JavaThread* java_thread, u4 thread_serial_num) {
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
 
-    RegisterMap reg_map(java_thread);
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     frame f = java_thread->last_frame();
     vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
     frame* last_entry_frame = NULL;

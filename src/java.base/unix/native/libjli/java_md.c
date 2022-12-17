@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jvmcfg[],  jint so_jvmcfg) {
 
     char * jvmtype = NULL;
-    int argc = *pargc;
     char **argv = *pargv;
 
 #ifdef SETENV_REQUIRED

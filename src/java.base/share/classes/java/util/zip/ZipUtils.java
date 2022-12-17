@@ -36,9 +36,13 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.zip.ZipConstants.ENDHDR;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 class ZipUtils {
+
+    static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // used to adjust values between Windows and java epoch
     private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;
@@ -97,8 +101,8 @@ class ZipUtils {
         if (month > 0 && month < 13 && day > 0 && hour < 24 && minute < 60 && second < 60) {
             try {
                 LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
-                return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
-                        ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
+                return TimeUnit.SECONDS.toMillis(ldt.toEpochSecond(
+                        ZoneId.systemDefault().getRules().getOffset(ldt)));
             } catch (DateTimeException dte) {
                 // ignore
             }

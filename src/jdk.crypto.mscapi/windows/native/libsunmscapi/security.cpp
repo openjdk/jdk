@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,22 +128,43 @@ void ThrowExceptionWithMessage(JNIEnv *env, const char *exceptionName,
     }
 }
 
-/*
- * Throws an arbitrary Java exception.
- * The exception message is a Windows system error message.
- */
-void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
-{
-    char szMessage[1024];
+void ThrowExceptionWithMessageAndErrcode(JNIEnv *env, const char *exceptionName,
+                                         const char *msg, DWORD dwError) {
+    char szMessage[500];
     szMessage[0] = '\0';
+    char szMessage2[1024];
+    szMessage2[0] = '\0';
 
     DWORD res = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
         NULL, szMessage, sizeof(szMessage), NULL);
     if (res == 0) {
         strcpy(szMessage, "Unknown error");
     }
+    snprintf(szMessage2, sizeof(szMessage2), "%s: error %lu, %s", msg, dwError, szMessage);
 
-    ThrowExceptionWithMessage(env, exceptionName, szMessage);
+    ThrowExceptionWithMessage(env, exceptionName, szMessage2);
+}
+
+
+/*
+ * Throws an arbitrary Java exception.
+ * The exception message is a Windows system error message.
+ */
+void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
+{
+    char szMessage[500];
+    szMessage[0] = '\0';
+    char szMessage2[1024];
+    szMessage2[0] = '\0';
+
+    DWORD res = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
+        NULL, szMessage, sizeof(szMessage), NULL);
+    if (res == 0) {
+        strcpy(szMessage, "Unknown error");
+    }
+    snprintf(szMessage2, sizeof(szMessage2), "error %lu, %s", dwError, szMessage);
+
+    ThrowExceptionWithMessage(env, exceptionName, szMessage2);
 }
 
 /*
@@ -407,7 +428,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
     const char* pszCertStoreName = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
-    char* pszNameString = NULL; // certificate's friendly name
+    wchar_t* pszNameString = NULL; // certificate's friendly name
     DWORD cchNameString = 0;
 
     __try
@@ -584,17 +605,17 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                             // when storing this cert in the keystore.)
 
                             // Get length of friendly name
-                            if ((cchNameString = CertGetNameString(pc,
+                            if ((cchNameString = CertGetNameStringW(pc,
                                 CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL,
                                 NULL, 0)) > 1) {
 
                                 // Found friendly name
-                                pszNameString = new (env) char[cchNameString];
+                                pszNameString = new (env) wchar_t[cchNameString];
                                 if (pszNameString == NULL) {
                                     __leave;
                                 }
 
-                                CertGetNameString(pc,
+                                CertGetNameStringW(pc,
                                     CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL,
                                     pszNameString, cchNameString);
                             }
@@ -621,12 +642,13 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                     // or SAN.
                     if (pszNameString)
                     {
-                        PP("%s: %s", pszNameString, pCertContext->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId);
+                        PP("%S: %s", pszNameString, pCertContext->pCertInfo->SubjectPublicKeyInfo.Algorithm.pszObjId);
+                        jsize nameLen = (jsize)wcslen(pszNameString);
                         if (bHasNoPrivateKey)
                         {
                             // Generate certificate chain and store into cert chain
                             // collection
-                            jstring name = env->NewStringUTF(pszNameString);
+                            jstring name = env->NewString(pszNameString, nameLen);
                             if (name == NULL) {
                                 __leave;
                             }
@@ -646,7 +668,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                 {
                                     // Generate RSA certificate chain and store into cert
                                     // chain collection
-                                    jstring name = env->NewStringUTF(pszNameString);
+                                    jstring name = env->NewString(pszNameString, nameLen);
                                     if (name == NULL) {
                                         __leave;
                                     }
@@ -663,7 +685,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                 if (::NCryptGetProperty(
                                         hCryptProv, NCRYPT_ALGORITHM_PROPERTY,
                                         (PBYTE)buffer, 32, &len, NCRYPT_SILENT_FLAG) == ERROR_SUCCESS) {
-                                    jstring name = env->NewStringUTF(pszNameString);
+                                    jstring name = env->NewString(pszNameString, nameLen);
                                     if (name == NULL) {
                                         __leave;
                                     }
@@ -1707,13 +1729,13 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
   jbyteArray jCertEncoding, jint jCertEncodingSize) {
 
     const char* pszCertStoreName = NULL;
-    const char* pszCertAliasName = NULL;
+    const wchar_t* pszCertAliasName = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
     PCCERT_CONTEXT pTBDCertContext = NULL;
     jbyte* pbCertEncoding = NULL;
     DWORD cchNameString = 0;
-    char* pszNameString = NULL; // certificate's friendly name
+    wchar_t* pszNameString = NULL; // certificate's friendly name
     BOOL bDeleteAttempted = FALSE;
 
     __try
@@ -1752,24 +1774,24 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
         }
 
         // Check that its friendly name matches the supplied alias
-        if ((cchNameString = ::CertGetNameString(pTBDCertContext,
+        if ((cchNameString = ::CertGetNameStringW(pTBDCertContext,
                 CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, NULL, 0)) > 1) {
 
-            pszNameString = new (env) char[cchNameString];
+            pszNameString = new (env) wchar_t[cchNameString];
             if (pszNameString == NULL) {
                 __leave;
             }
 
-            ::CertGetNameString(pTBDCertContext,
+            ::CertGetNameStringW(pTBDCertContext,
                 CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, pszNameString,
                 cchNameString);
 
             // Compare the certificate's friendly name with supplied alias name
-            if ((pszCertAliasName = env->GetStringUTFChars(jCertAliasName, NULL))
+            if ((pszCertAliasName = env->GetStringChars(jCertAliasName, NULL))
                 == NULL) {
                 __leave;
             }
-            if (strcmp(pszCertAliasName, pszNameString) == 0) {
+            if (wcscmp(pszCertAliasName, pszNameString) == 0) {
 
                 // Only delete the certificate if the alias names matches
                 if (! ::CertDeleteCertificateFromStore(pTBDCertContext)) {
@@ -1797,7 +1819,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
             env->ReleaseStringUTFChars(jCertStoreName, pszCertStoreName);
 
         if (pszCertAliasName)
-            env->ReleaseStringUTFChars(jCertAliasName, pszCertAliasName);
+            env->ReleaseStringChars(jCertAliasName, pszCertAliasName);
 
         if (pbCertEncoding)
             delete [] pbCertEncoding;
@@ -1844,8 +1866,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
         // Destroying the default key container is not permitted
         // (because it may contain more one keypair).
         if (pszKeyContainerName == NULL) {
-
-            ThrowException(env, KEYSTORE_EXCEPTION, NTE_BAD_KEYSET_PARAM);
+            ThrowExceptionWithMessage(env, KEYSTORE_EXCEPTION, "key container name was NULL, NTE_BAD_KEYSET_PARAM");
             __leave;
         }
 
@@ -1857,7 +1878,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
             PROV_RSA_FULL,
             CRYPT_DELETEKEYSET) == FALSE)
         {
-            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            ThrowExceptionWithMessageAndErrcode(env, KEYSTORE_EXCEPTION, "CryptAcquireContext failure", GetLastError());
             __leave;
         }
 
@@ -2561,7 +2582,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
 JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CSignature_importECPublicKey
     (JNIEnv *env, jclass clazz, jstring alg, jbyteArray keyBlob, jint keySize)
 {
-    BCRYPT_ALG_HANDLE hSignAlg = NULL;
     NCRYPT_KEY_HANDLE       hTmpKey         = NULL;
     DWORD dwBlobLen;
     BYTE * pbKeyBlob = NULL;

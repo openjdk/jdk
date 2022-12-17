@@ -23,8 +23,8 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -105,6 +105,9 @@ public class FigureConnection implements Connection {
         builder.append(getOutputSlot().getFigure().getProperties().resolveString(shortNodeText));
         builder.append(" → ");
         builder.append(getInputSlot().getFigure().getProperties().resolveString(shortNodeText));
+        builder.append(" [")
+               .append(getInputSlot().getPosition())
+               .append("]");
         return builder.toString();
     }
 

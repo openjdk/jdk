@@ -91,7 +91,7 @@ int AbstractInterpreter::size_activation(int max_stack,
   // for the callee's params we only need to account for the extra
   // locals.
   int size = overhead +
-             (callee_locals - callee_params) +
+             (callee_locals - callee_params) * Interpreter::stackElementWords +
              monitors * frame::interpreter_frame_monitor_size() +
              // On the top frame, at all times SP <= ESP, and SP is
              // 16-aligned.  We ensure this by adjusting SP on method
@@ -123,10 +123,10 @@ void AbstractInterpreter::layout_activation(Method* method,
   // as determined by a previous call to the size_activation() method.
   // It is also guaranteed to be walkable even though it is in a
   // skeletal state
-  assert_cond(method != NULL && caller != NULL && interpreter_frame != NULL);
-  int max_locals = method->max_locals() * Interpreter::stackElementWords;
-  int extra_locals = (method->max_locals() - method->size_of_parameters()) *
-    Interpreter::stackElementWords;
+
+  const int max_locals = method->max_locals() * Interpreter::stackElementWords;
+  const int params = method->size_of_parameters() * Interpreter::stackElementWords;
+  const int extra_locals = max_locals - params;
 
 #ifdef ASSERT
   assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable");
@@ -136,12 +136,9 @@ void AbstractInterpreter::layout_activation(Method* method,
   // NOTE the difference in using sender_sp and interpreter_frame_sender_sp
   // interpreter_frame_sender_sp is the original sp of the caller (the unextended_sp)
   // and sender_sp is fp
-  intptr_t* locals = NULL;
-  if (caller->is_interpreted_frame()) {
-    locals = caller->interpreter_frame_last_sp() + caller_actual_parameters - 1;
-  } else {
-    locals = interpreter_frame->sender_sp() + max_locals - 1;
-  }
+  intptr_t* const locals = caller->is_interpreted_frame()
+    ? caller->interpreter_frame_last_sp() + caller_actual_parameters - 1
+    : interpreter_frame->sender_sp() + max_locals - 1;
 
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
@@ -160,18 +157,26 @@ void AbstractInterpreter::layout_activation(Method* method,
     popframe_extra_args;
   interpreter_frame->interpreter_frame_set_last_sp(last_sp);
 
+  // We have to add extra reserved slots to max_stack. There are 3 users of the extra slots,
+  // none of which are at the same time, so we just need to make sure there is enough room
+  // for the biggest user:
+  //   -reserved slot for excepton handler
+  //   -reserved slot for JSR292. Method::extra_stack_entries() is the size.
+  //   -reserved slot for TraceBytecodes
+  int max_stack = method->constMethod()->max_stack() + MAX2(3, Method::extra_stack_entries());
+  intptr_t* extended_sp = (intptr_t*) monbot -
+                          (max_stack * Interpreter::stackElementWords) -
+                          popframe_extra_args;
+  extended_sp = align_down(extended_sp, StackAlignmentInBytes);
+  interpreter_frame->interpreter_frame_set_extended_sp(extended_sp);
+
   // All frames but the initial (oldest) interpreter frame we fill in have
   // a value for sender_sp that allows walking the stack but isn't
   // truly correct. Correct the value here.
-  if (extra_locals != 0 &&
-      interpreter_frame->sender_sp() ==
-      interpreter_frame->interpreter_frame_sender_sp()) {
-    interpreter_frame->set_interpreter_frame_sender_sp(caller->sp() +
-                                                       extra_locals);
+  if (extra_locals != 0 && interpreter_frame->sender_sp() == interpreter_frame->interpreter_frame_sender_sp()) {
+    interpreter_frame->set_interpreter_frame_sender_sp(caller->sp() + extra_locals);
   }
 
-  *interpreter_frame->interpreter_frame_cache_addr() =
-    method->constants()->cache();
-  *interpreter_frame->interpreter_frame_mirror_addr() =
-    method->method_holder()->java_mirror();
+  *interpreter_frame->interpreter_frame_cache_addr() = method->constants()->cache();
+  *interpreter_frame->interpreter_frame_mirror_addr() = method->method_holder()->java_mirror();
 }

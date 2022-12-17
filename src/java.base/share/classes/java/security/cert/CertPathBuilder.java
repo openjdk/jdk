@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class CertPathBuilder {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the requested {@code CertPathBuilder}
@@ -319,11 +319,8 @@ public class CertPathBuilder {
     public static final String getDefaultType() {
         @SuppressWarnings("removal")
         String cpbtype =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public String run() {
-                    return Security.getProperty(CPB_TYPE);
-                }
-            });
+            AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                    Security.getProperty(CPB_TYPE));
         return (cpbtype == null) ? "PKIX" : cpbtype;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package jdk.jfr.internal.jfc;
 
-import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jdk.jfr.Configuration;
+import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
@@ -118,7 +120,11 @@ public final class JFC {
      * @see java.lang.SecurityManager#checkRead(java.lang.String)
      */
     public static Configuration create(String name, Reader reader) throws IOException, ParseException {
-        return JFCParser.createConfiguration(name, reader);
+        try {
+            return JFCParser.createConfiguration(name, reader);
+        } catch (ParseException pe) {
+            throw new ParseException("Error reading JFC file. " + pe.getMessage(), -1);
+        }
     }
 
     /**
@@ -281,6 +287,34 @@ public final class JFC {
                 return new StringReader(c.content);
             }
         }
-        return new FileReader(sf.toFile(), StandardCharsets.UTF_8);
+        return Files.newBufferedReader(sf.toFile().toPath(), StandardCharsets.UTF_8);
+    }
+
+    public static String formatException(String prefix, Exception e, String input) {
+        String message = prefix + " " + JFC.exceptionToVerb(e) + " file '" + input + "'";
+        String details = e.getMessage();
+        if (e instanceof JFCModelException m) {
+            return message +  ". " + details;
+        }
+        if (e instanceof ParseException && !details.isEmpty()) {
+            return message +  ". " + details;
+        }
+        return message;
+    }
+
+    private static String exceptionToVerb(Exception e) {
+        if (e instanceof FileNotFoundException || e instanceof NoSuchFileException) {
+            return "find";
+        }
+        if (e instanceof ParseException) {
+            return "parse";
+        }
+        if (e instanceof JFCModelException) {
+            return "use";
+        }
+        if (e instanceof AccessDeniedException) {
+            return "access";
+        }
+        return "open";  // InvalidPath, IOException
     }
 }

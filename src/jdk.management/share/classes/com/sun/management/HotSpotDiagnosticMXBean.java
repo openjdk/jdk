@@ -149,7 +149,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws UnsupportedOperationException if this operation is not supported
      * @since 19
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default void dumpThreads(String outputFile, ThreadDumpFormat format) throws IOException {
         throw new UnsupportedOperationException();
     }
@@ -158,7 +158,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * Thread dump format.
      * @since 19
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     public static enum ThreadDumpFormat {
         /**
          * Plain text format.

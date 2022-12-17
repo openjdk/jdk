@@ -193,9 +193,10 @@ inline void ThawBase::prefetch_chunk_pd(void* start, int size) {
   Prefetch::read(start, size - 64);
 }
 
-void ThawBase::patch_chunk_pd(intptr_t* sp) {
-  intptr_t* fp = _cont.entryFP();
-  *(intptr_t**)(sp - frame::sender_sp_offset) = fp;
+template <typename ConfigT>
+inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
+  // Fast path depends on !PreserveFramePointer. See can_thaw_fast().
+  assert(!PreserveFramePointer, "Frame pointers need to be fixed");
 }
 
 // Slow path
@@ -211,7 +212,9 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
 
   if (FKind::interpreted) {
     intptr_t* heap_sp = hf.unextended_sp();
-    const int fsize = ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp();
+    // If caller is interpreted it already made room for the callee arguments
+    int overlap = caller.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::stack_argsize(hf) : 0;
+    const int fsize = ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap;
     const int locals = hf.interpreter_frame_method()->max_locals();
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     intptr_t* fp = frame_sp + (hf.fp() - heap_sp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
 
 // Synchronizes access to phases_names.
@@ -89,7 +90,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
   {
     PhaseTypeGuard guard(sync);
     if (phase_names == NULL) {
-      phase_names = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<const char*>(100, mtCompiler);
+      phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
       register_jfr_serializer = true;
     } else if (may_exist) {
       index = lookup_phase(phase_name);
@@ -101,7 +102,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
     }
 
     index = phase_names->length();
-    phase_names->append(use_strdup ? strdup(phase_name) : phase_name);
+    phase_names->append(use_strdup ? os::strdup(phase_name) : phase_name);
   }
   if (register_jfr_serializer) {
     JfrSerializer::register_serializer(TYPE_COMPILERPHASETYPE, false, new CompilerPhaseTypeConstant());

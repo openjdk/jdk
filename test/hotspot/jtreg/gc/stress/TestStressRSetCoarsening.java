@@ -24,7 +24,7 @@
 package gc.stress;
 
 import java.util.concurrent.TimeoutException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test TestStressRSetCoarsening.java
@@ -37,8 +37,8 @@ import sun.hotspot.WhiteBox;
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000

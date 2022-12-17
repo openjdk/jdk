@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
  * @test
  * @bug 8075520
  * @summary Varargs access check mishandles capture variables
- * @compile VarargsAndWildcardParameterizedTypeTest3.java
- * @compile -source 8 VarargsAndWildcardParameterizedTypeTest3.java
- * @compile -source 7 VarargsAndWildcardParameterizedTypeTest3.java
+ * @compile             VarargsAndWildcardParameterizedTypeTest3.java
+ * @compile --release 8 VarargsAndWildcardParameterizedTypeTest3.java
  */
 
 class VarargsAndWildcardParameterizedTypeTest2 {

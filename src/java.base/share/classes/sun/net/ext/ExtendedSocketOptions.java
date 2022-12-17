@@ -133,11 +133,11 @@ public abstract class ExtendedSocketOptions {
     }
 
     /** Sets the value of a socket option, for the given socket. */
-    public abstract void setOption(FileDescriptor fd, SocketOption<?> option, Object value)
+    public abstract void setOption(FileDescriptor fd, SocketOption<?> option, Object value, boolean isIPv6)
             throws SocketException;
 
     /** Returns the value of a socket option, for the given socket. */
-    public abstract Object getOption(FileDescriptor fd, SocketOption<?> option)
+    public abstract Object getOption(FileDescriptor fd, SocketOption<?> option, boolean isIPv6)
             throws SocketException;
 
     protected ExtendedSocketOptions(Set<SocketOption<?>> options) {
@@ -206,7 +206,7 @@ public abstract class ExtendedSocketOptions {
         }
 
         @Override
-        public void setOption(FileDescriptor fd, SocketOption<?> option, Object value)
+        public void setOption(FileDescriptor fd, SocketOption<?> option, Object value, boolean isIPv6)
             throws SocketException
         {
             throw new UnsupportedOperationException(
@@ -214,7 +214,7 @@ public abstract class ExtendedSocketOptions {
         }
 
         @Override
-        public Object getOption(FileDescriptor fd, SocketOption<?> option)
+        public Object getOption(FileDescriptor fd, SocketOption<?> option, boolean isIPv6)
             throws SocketException
         {
             throw new UnsupportedOperationException(

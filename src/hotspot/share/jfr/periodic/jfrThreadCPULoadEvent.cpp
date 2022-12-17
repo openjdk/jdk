@@ -29,8 +29,8 @@
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
   return os::javaTimeNanos();
@@ -120,6 +120,7 @@ void JfrThreadCPULoadEvent::send_events() {
     EventThreadCPULoad event(UNTIMED);
     if (JfrThreadCPULoadEvent::update_event(event, jt, cur_wallclock_time, processor_count)) {
       event.set_starttime(event_time);
+      event.set_endtime(event_time);
       if (jt != periodic_thread) {
         // Commit reads the thread id from this thread's trace data, so put it there temporarily
         JfrThreadLocal::impersonate(periodic_thread, JFR_JVM_THREAD_ID(jt));

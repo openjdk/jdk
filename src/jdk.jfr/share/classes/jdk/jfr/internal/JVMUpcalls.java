@@ -59,6 +59,10 @@ final class JVMUpcalls {
     static byte[] onRetransform(long traceId, boolean dummy1, boolean dummy2, Class<?> clazz, byte[] oldBytes) throws Throwable {
         try {
             if (jdk.internal.event.Event.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
+                if (!Utils.shouldInstrument(clazz.getClassLoader() == null, clazz.getName())) {
+                    Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + clazz.getName() + " since container support is missing");
+                    return oldBytes;
+                }
                 EventWriterKey.ensureEventWriterFactory();
                 EventConfiguration configuration = Utils.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
                 if (configuration == null) {
@@ -103,6 +107,10 @@ final class JVMUpcalls {
         try {
             EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
             eventName = ei.getEventName();
+            if (!Utils.shouldInstrument(bootClassLoader,  ei.getEventName())) {
+                Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
+                return oldBytes;
+            }
             if (!forceInstrumentation) {
                 // Assume we are recording
                 MetadataRepository mr = MetadataRepository.getInstance();

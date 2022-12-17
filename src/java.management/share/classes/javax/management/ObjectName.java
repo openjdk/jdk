@@ -494,7 +494,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
         // parses property list
         Property prop;
-        Map<String,Property> keys_map = new HashMap<String,Property>();
+        Map<String,Property> keys_map = new HashMap<>();
         String[] keys;
         String key_name;
         boolean quoted_value;
@@ -708,7 +708,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         _kp_array = new Property[nb_props];
 
         String[] keys = new String[nb_props];
-        final Map<String,Property> keys_map = new HashMap<String,Property>();
+        final Map<String,Property> keys_map = new HashMap<>();
         Property prop;
         int key_index;
         int i = 0;
@@ -1656,7 +1656,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             if (_propertyList == null) {
                 // build (lazy eval) the property list from the canonical
                 // properties array
-                _propertyList = new HashMap<String,String>();
+                _propertyList = new HashMap<>();
                 int len = _ca_array.length;
                 Property prop;
                 for (int i = len - 1; i >= 0; i--) {
@@ -1682,7 +1682,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      */
     // CR 6441274 depends on the modification property defined above
     public Hashtable<String,String> getKeyPropertyList()  {
-        return new Hashtable<String,String>(_getKeyPropertyList());
+        return new Hashtable<>(_getKeyPropertyList());
     }
 
     /**

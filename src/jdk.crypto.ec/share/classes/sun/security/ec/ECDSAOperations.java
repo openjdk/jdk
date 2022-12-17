@@ -114,7 +114,7 @@ public class ECDSAOperations {
      * @return the ECDSA signature value
      * @throws IntermediateValueException if the signature cannot be produced
      *      due to an unacceptable intermediate or final value. If this
-     *      exception is thrown, then the caller should discard the nonnce and
+     *      exception is thrown, then the caller should discard the nonce and
      *      try again with an entirely new nonce value.
      */
     public byte[] signDigest(byte[] privateKey, byte[] digest, Seed seed)
@@ -142,7 +142,7 @@ public class ECDSAOperations {
      * @return the ECDSA signature value
      * @throws IntermediateValueException if the signature cannot be produced
      *      due to an unacceptable intermediate or final value. If this
-     *      exception is thrown, then the caller should discard the nonnce and
+     *      exception is thrown, then the caller should discard the nonce and
      *      try again with an entirely new nonce value.
      */
     public byte[] signDigest(byte[] privateKey, byte[] digest, Nonce nonce)
@@ -243,9 +243,6 @@ public class ECDSAOperations {
         ImmutableIntegerModuloP u1 = e.multiply(sInv);
         ImmutableIntegerModuloP u2 = ri.multiply(sInv);
 
-        AffinePoint pub = new AffinePoint(field.getElement(pp.getAffineX()),
-                field.getElement(pp.getAffineY()));
-
         byte[] temp1 = new byte[length];
         b2a(u1, orderField, temp1);
 
@@ -253,7 +250,7 @@ public class ECDSAOperations {
         b2a(u2, orderField, temp2);
 
         MutablePoint p1 = ecOps.multiply(basePoint, temp1);
-        MutablePoint p2 = ecOps.multiply(pub, temp2);
+        MutablePoint p2 = ecOps.multiply(pp, temp2);
 
         ecOps.setSum(p1, p2.asAffine());
         IntegerModuloP result = p1.asAffine().getX();

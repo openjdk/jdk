@@ -33,7 +33,7 @@ import jdk.test.lib.Utils;
  * @bug 8283307
  * @key randomness
  * @summary Auto-vectorization enhancement for unsigned shift right on signed subword types
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires ((os.arch=="amd64" | os.arch=="x86_64") & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3)) | os.arch=="aarch64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizeURShiftSubword
  */

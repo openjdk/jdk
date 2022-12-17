@@ -65,6 +65,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/memoryService.hpp"
@@ -99,7 +100,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -269,7 +270,7 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
+    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
     thread->oops_do(&roots_closure, &roots_in_blobs);
 
@@ -404,7 +405,7 @@ bool PSScavenge::invoke_no_policy() {
   {
     ResourceMark rm;
 
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(&_gc_tracer);
     GCTraceTime(Info, gc) tm("Pause Young", NULL, gc_cause, true);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause);

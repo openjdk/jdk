@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/oop.inline.hpp"
@@ -35,7 +36,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#include "code/icBuffer.hpp"
 
 int NativeMovRegMem::offset() const {
   switch (kind()) {
@@ -290,7 +290,7 @@ void RawNativeJump::check_verified_entry_alignment(address entry, address verifi
 void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
   int *a = (int *)verified_entry;
-  a[0] = zombie_illegal_instruction; // always illegal
+  a[0] = not_entrant_illegal_instruction; // always illegal
   ICache::invalidate_range((address)&a[0], sizeof a[0]);
 }
 

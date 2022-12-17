@@ -726,7 +726,7 @@ public final class LauncherHelper {
         // main module is in the boot layer
         ModuleLayer layer = ModuleLayer.boot();
         Optional<Module> om = layer.findModule(mainModule);
-        if (!om.isPresent()) {
+        if (om.isEmpty()) {
             // should not happen
             throw new InternalError("Module " + mainModule + " not in boot Layer");
         }
@@ -735,7 +735,7 @@ public final class LauncherHelper {
         // get main class
         if (mainClass == null) {
             Optional<String> omc = m.getDescriptor().mainClass();
-            if (!omc.isPresent()) {
+            if (omc.isEmpty()) {
                 abort(null, "java.launcher.module.error1", mainModule);
             }
             mainClass = omc.get();
@@ -1023,7 +1023,7 @@ public final class LauncherHelper {
 
             // find the module with the FX launcher
             Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
-            if (!om.isPresent()) {
+            if (om.isEmpty()) {
                 abort(null, "java.launcher.cls.error5");
             }
 

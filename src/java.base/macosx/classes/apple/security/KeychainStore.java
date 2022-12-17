@@ -183,12 +183,12 @@ public final class KeychainStore extends KeyStoreSpi {
 
         Object entry = entries.get(alias.toLowerCase());
 
-        if (entry == null || !(entry instanceof KeyEntry)) {
+        if (!(entry instanceof KeyEntry keyEntry)) {
             return null;
         }
 
         // This call gives us a PKCS12 bag, with the key inside it.
-        byte[] exportedKeyInfo = _getEncodedKeyData(((KeyEntry)entry).keyRef, password);
+        byte[] exportedKeyInfo = _getEncodedKeyData(keyEntry.keyRef, password);
         if (exportedKeyInfo == null) {
             return null;
         }
@@ -273,11 +273,11 @@ public final class KeychainStore extends KeyStoreSpi {
 
         Object entry = entries.get(alias.toLowerCase());
 
-        if (entry != null && entry instanceof KeyEntry) {
-            if (((KeyEntry)entry).chain == null) {
+        if (entry instanceof KeyEntry keyEntry) {
+            if (keyEntry.chain == null) {
                 return null;
             } else {
-                return ((KeyEntry)entry).chain.clone();
+                return keyEntry.chain.clone();
             }
         } else {
             return null;
@@ -569,11 +569,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public boolean engineIsKeyEntry(String alias) {
         permissionCheck();
         Object entry = entries.get(alias.toLowerCase());
-        if ((entry != null) && (entry instanceof KeyEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof KeyEntry;
     }
 
     /**
@@ -586,11 +582,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public boolean engineIsCertificateEntry(String alias) {
         permissionCheck();
         Object entry = entries.get(alias.toLowerCase());
-        if ((entry != null) && (entry instanceof TrustedCertEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof TrustedCertEntry;
     }
 
     /**

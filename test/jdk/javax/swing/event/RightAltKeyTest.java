@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 8194873
+ * @bug 8194873 8292062
  * @requires (os.family == "Windows")
  * @summary Checks that right ALT (ALT_GRAPH) key works on Swing components
  * @run main RightAltKeyTest

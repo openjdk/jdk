@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,29 +349,30 @@ public class NTLoginModule implements LoginModule {
             throw new LoginException ("Subject is ReadOnly");
         }
         Set<Principal> principals = subject.getPrincipals();
-        if (principals.contains(userPrincipal)) {
+        if (userPrincipal != null && principals.contains(userPrincipal)) {
             principals.remove(userPrincipal);
         }
-        if (principals.contains(userSID)) {
+        if (userSID != null && principals.contains(userSID)) {
             principals.remove(userSID);
         }
-        if (principals.contains(userDomain)) {
+        if (userDomain != null && principals.contains(userDomain)) {
             principals.remove(userDomain);
         }
-        if (principals.contains(domainSID)) {
+        if (domainSID != null && principals.contains(domainSID)) {
             principals.remove(domainSID);
         }
-        if (principals.contains(primaryGroup)) {
+        if (primaryGroup != null && principals.contains(primaryGroup)) {
             principals.remove(primaryGroup);
         }
-        for (int i = 0; groups != null && i < groups.length; i++) {
-            if (principals.contains(groups[i])) {
-                principals.remove(groups[i]);
+        if (groups != null) {
+            for (NTSidGroupPrincipal gp : groups) {
+                // gp is never null
+                principals.remove(gp);
             }
         }
 
         Set<Object> pubCreds = subject.getPublicCredentials();
-        if (pubCreds.contains(iToken)) {
+        if (iToken != null && pubCreds.contains(iToken)) {
             pubCreds.remove(iToken);
         }
 

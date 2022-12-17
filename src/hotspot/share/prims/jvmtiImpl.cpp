@@ -47,11 +47,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -147,7 +147,7 @@ GrowableCache::~GrowableCache() {
 void GrowableCache::initialize(void *this_obj, void listener_fun(void *, address*) ) {
   _this_obj       = this_obj;
   _listener_fun   = listener_fun;
-  _elements       = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
+  _elements       = new (mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
   recache();
 }
 
@@ -432,7 +432,7 @@ const jvalue VM_BaseGetOrSetLocal::_DEFAULT_VALUE = {0L};
 // Constructor for non-object getter
 
 VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth,
-                                           jint index, BasicType type, jvalue value, bool set)
+                                           jint index, BasicType type, jvalue value, bool set, bool self)
   : _calling_thread(calling_thread)
   , _depth(depth)
   , _index(index)
@@ -440,6 +440,7 @@ VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint dept
   , _value(value)
   , _jvf(NULL)
   , _set(set)
+  , _self(self)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -611,7 +612,7 @@ void VM_BaseGetOrSetLocal::doit() {
 
   frame fr = _jvf->fr();
   if (_set && _depth != 0 && Continuation::is_frame_in_continuation(_jvf->thread(), fr)) {
-    _result = JVMTI_ERROR_OPAQUE_FRAME; // deferred locals currently unsupported in continuations
+    _result = JVMTI_ERROR_OPAQUE_FRAME; // deferred locals are not fully supported in continuations
     return;
   }
 
@@ -644,6 +645,17 @@ void VM_BaseGetOrSetLocal::doit() {
     return;
   }
   if (_set) {
+    if (fr.is_heap_frame()) { // we want this check after the check for JVMTI_ERROR_INVALID_SLOT
+      assert(Continuation::is_frame_in_continuation(_jvf->thread(), fr), "sanity check");
+      // If the topmost frame is a heap frame, then it hasn't been thawed. This can happen
+      // if we are executing at a return barrier safepoint. The callee frame has been popped,
+      // but the caller frame has not been thawed. We can't support a JVMTI SetLocal in the callee
+      // frame at this point, because we aren't truly in the callee yet.
+      // fr.is_heap_frame() is impossible if a continuation is at a single step or breakpoint.
+      _result = JVMTI_ERROR_OPAQUE_FRAME; // deferred locals are not fully supported in continuations
+      return;
+    }
+
     // Force deoptimization of frame if compiled because it's
     // possible the compiler emitted some locals as constant values,
     // meaning they are not mutable.
@@ -732,24 +744,24 @@ bool VM_BaseGetOrSetLocal::allow_nested_vm_operations() const {
 //
 
 // Constructor for non-object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false),
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, bool self)
+  : VM_BaseGetOrSetLocal(NULL, depth, index, type, _DEFAULT_VALUE, false, self),
     _thread(thread),
     _eb(false, NULL, NULL)
 {
 }
 
 // Constructor for object or non-object setter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true),
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value, bool self)
+  : VM_BaseGetOrSetLocal(NULL, depth, index, type, value, true, self),
     _thread(thread),
     _eb(type == T_OBJECT, JavaThread::current(), thread)
 {
 }
 
 // Constructor for object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index)
-  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false),
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index, bool self)
+  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false, self),
     _thread(thread),
     _eb(true, calling_thread, thread)
 {
@@ -759,7 +771,10 @@ vframe *VM_GetOrSetLocal::get_vframe() {
   if (!_thread->has_last_Java_frame()) {
     return NULL;
   }
-  RegisterMap reg_map(_thread, true, true, true);
+  RegisterMap reg_map(_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
   vframe *vf = JvmtiEnvBase::get_cthread_last_java_vframe(_thread, &reg_map);
   int d = 0;
   while ((vf != NULL) && (d < _depth)) {
@@ -771,6 +786,10 @@ vframe *VM_GetOrSetLocal::get_vframe() {
 
 javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
   vframe* vf = get_vframe();
+  if (!(_self || _thread->is_carrier_thread_suspended())) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return NULL;
+  }
   if (vf == NULL) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
     return NULL;
@@ -785,8 +804,8 @@ javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
 }
 
 VM_GetReceiver::VM_GetReceiver(
-    JavaThread* thread, JavaThread* caller_thread, jint depth)
-    : VM_GetOrSetLocal(thread, caller_thread, depth, 0) {}
+    JavaThread* thread, JavaThread* caller_thread, jint depth, bool self)
+    : VM_GetOrSetLocal(thread, caller_thread, depth, 0, self) {}
 
 
 ///////////////////////////////////////////////////////////////
@@ -796,8 +815,8 @@ VM_GetReceiver::VM_GetReceiver(
 
 // Constructor for non-object getter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
-                                                             jint index, BasicType type)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false)
+                                                             jint index, BasicType type, bool self)
+  : VM_BaseGetOrSetLocal(NULL, depth, index, type, _DEFAULT_VALUE, false, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -805,8 +824,8 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 
 // Constructor for object or non-object setter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
-                                                             jint index, BasicType type, jvalue value)
-  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true)
+                                                             jint index, BasicType type, jvalue value, bool self)
+  : VM_BaseGetOrSetLocal(NULL, depth, index, type, value, true, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -814,8 +833,8 @@ VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Hand
 
 // Constructor for object getter
 VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
-                                                             jint depth, int index)
-  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false)
+                                                             jint depth, int index, bool self)
+  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false, self)
 {
   _env = env;
   _vthread_h = vthread_h;
@@ -829,6 +848,11 @@ javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
   javaVFrame* jvf = NULL;
   JavaThread* java_thread = JvmtiEnvBase::get_JavaThread_or_null(_vthread_h());
   bool is_cont_mounted = (java_thread != NULL);
+
+  if (!(_self || JvmtiVTSuspender::is_vthread_suspended(_vthread_h()))) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return NULL;
+  }
 
   if (is_cont_mounted) {
     vframeStream vfs(java_thread);
@@ -864,8 +888,8 @@ javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
 }
 
 VM_VirtualThreadGetReceiver::VM_VirtualThreadGetReceiver(
-    JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth)
-    : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0) {}
+    JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth, bool self)
+    : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0, self) {}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1004,8 +1028,8 @@ void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   }
 }
 
-// The sweeper calls this and marks the nmethods here on the stack so that
-// they cannot be turned into zombies while in the queue.
+// The GC calls this and marks the nmethods here on the stack so that
+// they cannot be unloaded while in the queue.
 void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
   if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
     cf->do_code_blob(_event_data.compiled_method_load);
@@ -1062,7 +1086,7 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
 }
 
 void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
-  // Post events while nmethods are still in the queue and can't be unloaded or made zombie
+  // Post events while nmethods are still in the queue and can't be unloaded.
   while (_queue_head != NULL) {
     _queue_head->event().post_compiled_method_load_event(env);
     dequeue();

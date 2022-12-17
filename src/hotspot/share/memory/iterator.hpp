@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/bitMap.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -108,7 +107,7 @@ class OopIterateClosure : public OopClosure {
 
   // Class redefinition needs to get notified about methods from stackChunkOops
   virtual void do_method(Method* m) = 0;
-  // The code cache sweeper needs to get notified about methods from stackChunkOops
+  // The code cache unloading needs to get notified about methods from stackChunkOops
   virtual void do_nmethod(nmethod* nm) = 0;
 };
 
@@ -122,6 +121,12 @@ public:
   virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
   virtual void do_method(Method* m) { ShouldNotReachHere(); }
   virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
+};
+
+// Interface for applying an OopClosure to a set of oops.
+class OopIterator {
+public:
+  virtual void oops_do(OopClosure* cl) = 0;
 };
 
 enum class derived_pointer : intptr_t;
@@ -233,13 +238,6 @@ class SpaceClosure : public StackObj {
   // Called for each space
   virtual void do_space(Space* s) = 0;
 };
-
-class CompactibleSpaceClosure : public StackObj {
- public:
-  // Called for each compactible space
-  virtual void do_space(CompactibleSpace* s) = 0;
-};
-
 
 // CodeBlobClosure is used for iterating through code blobs
 // in the code cache or on thread stacks
@@ -368,18 +366,6 @@ template <typename E>
 class CompareClosure : public Closure {
 public:
     virtual int do_compare(const E&, const E&) = 0;
-};
-
-// Dispatches to the non-virtual functions if OopClosureType has
-// a concrete implementation, otherwise a virtual call is taken.
-class Devirtualizer {
- public:
-  template <typename OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
-  template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
-  template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
-  template <typename OopClosureType>             static bool do_metadata(OopClosureType* closure);
-  template <typename DerivedOopClosureType>      static void do_derived_oop(DerivedOopClosureType* closure, oop* base, derived_pointer* derived);
-  template <typename BitMapClosureType>          static bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
 };
 
 class OopIteratorClosureDispatch {

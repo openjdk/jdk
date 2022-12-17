@@ -275,7 +275,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
                 return true;
             }
             // Delegate to the fitnessTestPolicy, this will test for the
-            // case where the developer has overriden isFocusTraversable to
+            // case where the developer has overridden isFocusTraversable to
             // return true.
         }
         return fitnessTestPolicy.accept(aComponent);

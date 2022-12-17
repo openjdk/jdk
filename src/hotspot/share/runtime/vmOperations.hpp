@@ -26,9 +26,11 @@
 #define SHARE_RUNTIME_VMOPERATIONS_HPP
 
 #include "oops/oop.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmOperation.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+
+class ObjectMonitorsHashtable;
 
 // A hodge podge of commonly used VM Operations
 

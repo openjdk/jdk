@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -46,12 +47,15 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -533,29 +537,34 @@ void JvmtiEnvBase::destroy_jni_reference(JavaThread *thread, jobject jobj) {
 // Threads
 //
 
-jobject *
-JvmtiEnvBase::new_jobjectArray(int length, Handle *handles) {
+jthread *
+JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
   if (length == 0) {
     return NULL;
   }
 
-  jobject *objArray = (jobject *) jvmtiMalloc(sizeof(jobject) * length);
+  jthread* objArray = (jthread *) jvmtiMalloc(sizeof(jthread) * length);
   NULL_CHECK(objArray, NULL);
 
-  for (int i=0; i<length; i++) {
-    objArray[i] = jni_reference(handles[i]);
+  for (int i = 0; i < length; i++) {
+    objArray[i] = (jthread)jni_reference(handles[i]);
   }
   return objArray;
 }
 
-jthread *
-JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
-  return (jthread *) new_jobjectArray(length,handles);
-}
-
 jthreadGroup *
-JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
-  return (jthreadGroup *) new_jobjectArray(length,handles);
+JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
+  if (length == 0) {
+    return NULL;
+  }
+
+  jthreadGroup* objArray = (jthreadGroup *) jvmtiMalloc(sizeof(jthreadGroup) * length);
+  NULL_CHECK(objArray, NULL);
+
+  for (int i = 0; i < length; i++) {
+    objArray[i] = (jthreadGroup)JNIHandles::make_local(groups->obj_at(i));
+  }
+  return objArray;
 }
 
 // Return the vframe on the specified thread and depth, NULL if no such frame.
@@ -565,7 +574,10 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
   if (!java_thread->has_last_Java_frame()) {
     return NULL;
   }
-  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::include);
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
   jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
@@ -623,6 +635,12 @@ JavaThread* JvmtiEnvBase::get_JavaThread_or_null(oop vthread) {
   }
 
   JavaThread* java_thread = java_lang_Thread::thread(carrier_thread);
+
+  // This could be a different thread to the current one. So we need to ensure that
+  // processing has started before we are allowed to read the continuation oop of
+  // another thread, as it is a direct root of that other thread.
+  StackWatermarkSet::start_processing(java_thread, StackWatermarkKind::gc);
+
   oop cont = java_lang_VirtualThread::continuation(vthread);
   assert(cont != NULL, "must be");
   assert(Continuation::continuation_scope(cont) == java_lang_VirtualThread::vthread_scope(), "must be");
@@ -699,10 +717,14 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
 javaVFrame*
 JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_p) {
   // Strip vthread frames in case of carrier thread with mounted continuation.
-  javaVFrame *jvf = JvmtiEnvBase::is_cthread_with_continuation(jt) ?
-                        jt->carrier_last_java_vframe(reg_map_p) :
-                        jt->last_java_vframe(reg_map_p);
-  jvf = check_and_skip_hidden_frames(jt, jvf);
+  bool cthread_with_cont = JvmtiEnvBase::is_cthread_with_continuation(jt);
+  javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
+                                      : jt->last_java_vframe(reg_map_p);
+  // Skip hidden frames only for carrier threads
+  // which are in non-temporary VTMS transition.
+  if (jt->is_in_VTMS_transition()) {
+    jvf = check_and_skip_hidden_frames(jt, jvf);
+  }
   return jvf;
 }
 
@@ -784,43 +806,33 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
 }
 
 jvmtiError
-JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **group_objs_p) {
-  ObjectLocker ol(group_hdl, current_thread);
+JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p) {
 
-  int ngroups = java_lang_ThreadGroup::ngroups(group_hdl());
-  int nweaks = java_lang_ThreadGroup::nweaks(group_hdl());
-
-  jint count = 0;
-  Handle *group_objs = NULL;
-  if (ngroups > 0 || nweaks > 0) {
-    group_objs = NEW_RESOURCE_ARRAY_RETURN_NULL(Handle, ngroups + nweaks);
-    NULL_CHECK(group_objs, JVMTI_ERROR_OUT_OF_MEMORY);
-
-    if (ngroups > 0) {
-      // Strongly reachable subgroups:
-      objArrayOop groups = java_lang_ThreadGroup::groups(group_hdl());
-      for (int j = 0; j < ngroups; j++) {
-        oop group_obj = groups->obj_at(j);
-        assert(group_obj != NULL, "group_obj != NULL");
-        group_objs[count++] = Handle(current_thread, group_obj);
-      }
-    }
-
-    if (nweaks > 0) {
-      // Weakly reachable subgroups:
-      objArrayOop weaks = java_lang_ThreadGroup::weaks(group_hdl());
-      for (int j = 0; j < nweaks; j++) {
-        oop weak_obj = weaks->obj_at(j);
-        assert(weak_obj != NULL, "weak_obj != NULL");
-        oop group_obj = java_lang_ref_Reference::weak_referent(weak_obj);
-        if (group_obj != NULL) {
-          group_objs[count++] = Handle(current_thread, group_obj);
-        }
-      }
+  // This call collects the strong and weak groups
+  JavaThread* THREAD = current_thread;
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result,
+                          group_hdl,
+                          vmClasses::ThreadGroup_klass(),
+                          SymbolTable::new_permanent_symbol("subgroupsAsArray"),
+                          vmSymbols::void_threadgroup_array_signature(),
+                          THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+    CLEAR_PENDING_EXCEPTION;
+    if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    } else {
+      return JVMTI_ERROR_INTERNAL;
     }
   }
-  *group_objs_p = group_objs;
-  *count_ptr = count;
+
+  assert(result.get_type() == T_OBJECT, "just checking");
+  objArrayOop groups = (objArrayOop)result.get_oop();
+
+  *count_ptr = groups == nullptr ? 0 : groups->length();
+  *group_objs_p = objArrayHandle(current_thread, groups);
+
   return JVMTI_ERROR_NONE;
 }
 
@@ -844,7 +856,10 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark   hm(current_thread);
-  RegisterMap  reg_map(java_thread, /* update_map */ true, /* process_frames */ true);
+  RegisterMap  reg_map(java_thread,
+                       RegisterMap::UpdateMap::include,
+                       RegisterMap::ProcessFrames::include,
+                       RegisterMap::WalkContinuation::skip);
 
   for (javaVFrame *jvf = java_thread->last_java_vframe(&reg_map); jvf != NULL;
        jvf = jvf->java_sender()) {
@@ -927,7 +942,10 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   if (java_thread->has_last_Java_frame()) {
     ResourceMark rm(current_thread);
     HandleMark   hm(current_thread);
-    RegisterMap  reg_map(java_thread);
+    RegisterMap  reg_map(java_thread,
+                         RegisterMap::UpdateMap::include,
+                         RegisterMap::ProcessFrames::include,
+                         RegisterMap::WalkContinuation::skip);
 
     int depth = 0;
     for (javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
@@ -1143,7 +1161,10 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   jvmtiError err = JVMTI_ERROR_NONE;
 
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread, /* update_map */ true, /* process_frames */ false);
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::skip);
     ResourceMark rm(current_thread);
     javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
 
@@ -1181,7 +1202,10 @@ JvmtiEnvBase::get_frame_count(JavaThread* jt, jint *count_ptr) {
     *count_ptr = 0;
   } else {
     ResourceMark rm(current_thread);
-    RegisterMap reg_map(jt, true, true);
+    RegisterMap reg_map(jt,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = get_cthread_last_java_vframe(jt, &reg_map);
 
     *count_ptr = get_frame_count(jvf);
@@ -1236,7 +1260,10 @@ JvmtiEnvBase::get_frame_location(JavaThread *java_thread, jint depth,
   }
   ResourceMark rm(current);
   HandleMark hm(current);
-  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
 
   return get_frame_location(jvf, depth, method_ptr, location_ptr);
@@ -1291,6 +1318,17 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
   return cont_entry != NULL && is_cthread_with_mounted_vthread(jt);
 }
 
+// If (thread == NULL) then return current thread object.
+// Otherwise return JNIHandles::resolve_external_guard(thread).
+oop
+JvmtiEnvBase::current_thread_obj_or_resolve_external_guard(jthread thread) {
+  oop thread_obj = JNIHandles::resolve_external_guard(thread);
+  if (thread == NULL) {
+    thread_obj = get_vthread_or_thread_oop(JavaThread::current());
+  }
+  return thread_obj;
+}
+
 jvmtiError
 JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
                                            JavaThread** jt_pp, oop* thread_oop_p) {
@@ -1320,12 +1358,12 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
       java_thread = get_JavaThread_or_null(thread_oop);
     }
   }
+  *jt_pp = java_thread;
+  *thread_oop_p = thread_oop;
   if (java_lang_VirtualThread::is_instance(thread_oop) &&
       !JvmtiEnvBase::is_vthread_alive(thread_oop)) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
-  *jt_pp = java_thread;
-  *thread_oop_p = thread_oop;
   return JVMTI_ERROR_NONE;
 }
 
@@ -1356,52 +1394,24 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
   uint32_t debug_bits = 0;
   // first derive the object's owner and entry_count (if any)
-  {
-    address owner = NULL;
-    {
-      markWord mark = hobj()->mark();
+  owning_thread = ObjectSynchronizer::get_lock_owner(tlh.list(), hobj);
+  if (owning_thread != NULL) {
+    Handle th(current_thread, get_vthread_or_thread_oop(owning_thread));
+    ret.owner = (jthread)jni_reference(calling_thread, th);
 
-      if (!mark.has_monitor()) {
-        // this object has a lightweight monitor
-
-        if (mark.has_locker()) {
-          owner = (address)mark.locker(); // save the address of the Lock word
-        }
-        // implied else: no owner
-      } else {
-        // this object has a heavyweight monitor
-        mon = mark.monitor();
-
-        // The owner field of a heavyweight monitor may be NULL for no
-        // owner, a JavaThread * or it may still be the address of the
-        // Lock word in a JavaThread's stack. A monitor can be inflated
-        // by a non-owning JavaThread, but only the owning JavaThread
-        // can change the owner field from the Lock word to the
-        // JavaThread * and it may not have done that yet.
-        owner = (address)mon->owner();
-      }
-    }
-
-    if (owner != NULL) {
-      // This monitor is owned so we have to find the owning JavaThread.
-      owning_thread = Threads::owning_thread_from_monitor_owner(tlh.list(), owner);
-      assert(owning_thread != NULL, "owning JavaThread must not be NULL");
-      Handle th(current_thread, get_vthread_or_thread_oop(owning_thread));
-      ret.owner = (jthread)jni_reference(calling_thread, th);
-    }
-
-    if (owning_thread != NULL) {  // monitor is owned
-      // The recursions field of a monitor does not reflect recursions
-      // as lightweight locks before inflating the monitor are not included.
-      // We have to count the number of recursive monitor entries the hard way.
-      // We pass a handle to survive any GCs along the way.
-      ret.entry_count = count_locked_objects(owning_thread, hobj);
-    }
-    // implied else: entry_count == 0
+    // The recursions field of a monitor does not reflect recursions
+    // as lightweight locks before inflating the monitor are not included.
+    // We have to count the number of recursive monitor entries the hard way.
+    // We pass a handle to survive any GCs along the way.
+    ret.entry_count = count_locked_objects(owning_thread, hobj);
   }
+  // implied else: entry_count == 0
 
   jint nWant = 0, nWait = 0;
-  if (mon != NULL) {
+  markWord mark = hobj->mark();
+  if (mark.has_monitor()) {
+    mon = mark.monitor();
+    assert(mon != NULL, "must have monitor");
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor
     nWait = mon->waiters();     // # of threads in Object.wait()
@@ -1636,7 +1646,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     assert(single_resume || is_virtual, "ResumeAllVirtualThreads should never resume non-virtual threads");
     if (java_thread->is_suspended()) {
       if (!JvmtiSuspendControl::resume(java_thread)) {
-        return JVMTI_ERROR_INTERNAL;
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       }
     }
   }
@@ -1645,7 +1655,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
   _env = env;
-  _allocations = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<unsigned char*>(20, mtServiceability);
+  _allocations = new (mtServiceability) GrowableArray<unsigned char*>(20, mtServiceability);
   _failed = false;
 }
 ResourceTracker::~ResourceTracker() {
@@ -2184,7 +2194,10 @@ SetFramePopClosure::doit(Thread *target, bool self) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
     return;
   }
-  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  RegisterMap reg_map(java_thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
   _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
 }
@@ -2253,7 +2266,10 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
                    java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
 
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread, /* update_map */ true, /* process_frames */ true);
+    RegisterMap reg_map(java_thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::include,
+                        RegisterMap::WalkContinuation::skip);
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
     javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
@@ -2317,7 +2333,7 @@ VirtualThreadGetOwnedMonitorInfoClosure::do_thread(Thread *target) {
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
   if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
-    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors((JavaThread*)target,
+    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(java_thread,
                                                          java_thread,
                                                          jvf,
                                                          _owned_monitors_list);

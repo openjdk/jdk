@@ -54,9 +54,15 @@ static jint socketOptionSupported(jint level, jint optname) {
     jint one = 1;
     jint rv, s;
     socklen_t sz = sizeof (one);
-    s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    /* First try IPv6; fall back to IPv4. */
+    s = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
     if (s < 0) {
-        return 0;
+        if (errno == EPFNOSUPPORT || errno == EAFNOSUPPORT) {
+            s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        }
+        if (s < 0) {
+            return 0;
+        }
     }
     rv = getsockopt(s, level, optname, (void *) &one, &sz);
     if (rv != 0 && errno == ENOPROTOOPT) {
@@ -244,34 +250,18 @@ JNIEXPORT jint JNICALL Java_jdk_net_LinuxSocketOptions_getIncomingNapiId0
     return optval;
 }
 
-static int socketFamily(jint fd) {
-    struct sockaddr_storage st;
-    struct sockaddr *sa = (struct sockaddr *)&st;
-    socklen_t sa_len = sizeof(st);
-
-    if (getsockname(fd, sa, &sa_len) == 0) {
-        return sa->sa_family;
-    }
-    return -1;
-}
-
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    setIpDontFragment0
- * Signature: (IZ)V
+ * Signature: (IZZ)V
  */
 JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd, jboolean optval) {
+(JNIEnv *env, jobject unused, jint fd, jboolean optval, jboolean isIPv6) {
     jint rv, optsetting;
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return;
-    }
 
     optsetting = optval ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
 
-    if (family == AF_INET) {
+    if (!isIPv6) {
         rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
     } else {
         rv = setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &optsetting, sizeof (optsetting));
@@ -282,18 +272,13 @@ JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    getIpDontFragment0
- * Signature: (I)Z;
+ * Signature: (IZ)Z;
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_getIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd) {
+(JNIEnv *env, jobject unused, jint fd, jboolean isIPv6) {
     jint optlevel, optname, optval, rv;
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return JNI_FALSE;
-    }
 
-    if (family == AF_INET) {
+    if (!isIPv6) {
         optlevel = IPPROTO_IP;
         optname = IP_MTU_DISCOVER;
     } else {

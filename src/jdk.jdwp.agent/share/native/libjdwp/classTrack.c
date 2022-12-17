@@ -37,6 +37,7 @@
 #include "util.h"
 #include "bag.h"
 #include "classTrack.h"
+#include "eventHandler.h"
 
 #define NOT_TAGGED 0
 
@@ -45,81 +46,67 @@
  */
 static jvmtiEnv* trackingEnv;
 
-/*
- * A bag containing all the deleted classes' signatures. Must be accessed under
- * classTrackLock.
- */
-struct bag* deletedSignatures;
+static void addPreparedClass(JNIEnv *env, jclass klass);
 
 /*
- * Lock to keep integrity of deletedSignatures.
+ * Invoke the callback when classes are freed.
  */
-static jrawMonitorID classTrackLock;
-
-/*
- * Invoke the callback when classes are freed, find and record the signature
- * in deletedSignatures. Those are only used in addPreparedClass() by the
- * same thread.
- */
-static void JNICALL
+void JNICALL
 cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 {
-    debugMonitorEnter(classTrackLock);
-    if (deletedSignatures == NULL) {
-      debugMonitorExit(classTrackLock);
-      return;
-    }
-    *(char**)bagAdd(deletedSignatures) = (char*)jlong_to_ptr(tag);
-
-    debugMonitorExit(classTrackLock);
+    JDI_ASSERT(jvmti_env == trackingEnv);
+    eventHandler_synthesizeUnloadEvent((char*)jlong_to_ptr(tag), getEnv());
 }
 
 /*
- * Called after class unloads have occurred.
- * The signatures of classes which were unloaded are returned.
+ * Invoke the callback when classes are prepared.
  */
-struct bag *
-classTrack_processUnloads(JNIEnv *env)
+void JNICALL
+cbTrackingClassPrepare(jvmtiEnv* jvmti_env, JNIEnv *env, jthread thread, jclass klass)
 {
-    if (deletedSignatures == NULL) {
-      return NULL;
-    }
-
-    /* Allocate new bag outside classTrackLock lock to avoid deadlock.
-     *
-     * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
-     * It is dangerous to call them (via bagCreateBag/bagDestroyBag()) while holding monitor(s),
-     * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and event processing
-     * code may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
-     * which can lead to deadlock.
-     */
-    struct bag* new_bag = bagCreateBag(sizeof(char*), 10);
-    debugMonitorEnter(classTrackLock);
-    struct bag* deleted = deletedSignatures;
-    deletedSignatures = new_bag;
-    debugMonitorExit(classTrackLock);
-    return deleted;
+    JDI_ASSERT(jvmti_env == trackingEnv);
+    addPreparedClass(env, klass);
 }
 
 /*
- * Add a class to the prepared class table.
+ * It's ok to get WRONG_PHASE errors once the vm is dead. We can just
+ * ignore the event in that case.
  */
-void
-classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
+static jboolean
+is_wrong_phase(jvmtiError error)
+{
+    if (error == JVMTI_ERROR_WRONG_PHASE) {
+        JDI_ASSERT(gdata->vmDead);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+
+/*
+ * Add a class to the prepared class hash table.
+ */
+static void
+addPreparedClass(JNIEnv *env, jclass klass)
 {
     jvmtiError error;
-    jvmtiEnv* env = trackingEnv;
 
     char* signature;
     error = classSignature(klass, &signature, NULL);
+    if (is_wrong_phase(error)) {
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"signature");
     }
 
-    if (gdata && gdata->assertOn) {
+    if (gdata->assertOn) {
         // Check if already tagged.
         jlong tag;
-        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(env, klass, &tag);
+        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(trackingEnv, klass, &tag);
+        if (is_wrong_phase(error)) {
+            return;
+        }
         if (error != JVMTI_ERROR_NONE) {
             EXIT_ERROR(error, "Unable to GetTag with class trackingEnv");
         }
@@ -132,7 +119,10 @@ classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
         }
     }
 
-    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(env, klass, ptr_to_jlong(signature));
+    error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(trackingEnv, klass, ptr_to_jlong(signature));
+    if (is_wrong_phase(error)) {
+        return;
+    }
     if (error != JVMTI_ERROR_NONE) {
         jvmtiDeallocate(signature);
         EXIT_ERROR(error,"SetTag");
@@ -151,15 +141,27 @@ setupEvents()
     }
     jvmtiEventCallbacks cb;
     memset(&cb, 0, sizeof(cb));
+
+    // Setup JVMTI callbacks
     cb.ObjectFree = cbTrackingObjectFree;
+    cb.ClassPrepare = cbTrackingClassPrepare;
     error = JVMTI_FUNC_PTR(trackingEnv, SetEventCallbacks)(trackingEnv, &cb, sizeof(cb));
     if (error != JVMTI_ERROR_NONE) {
         return JNI_FALSE;
     }
+
+    // Enable OBJECT_FREE events
     error = JVMTI_FUNC_PTR(trackingEnv, SetEventNotificationMode)(trackingEnv, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL);
     if (error != JVMTI_ERROR_NONE) {
         return JNI_FALSE;
     }
+
+    // Enable CLASS_PREPARE events
+    error = JVMTI_FUNC_PTR(trackingEnv, SetEventNotificationMode)(trackingEnv, JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+    if (error != JVMTI_ERROR_NONE) {
+        return JNI_FALSE;
+    }
+
     return JNI_TRUE;
 }
 
@@ -169,8 +171,6 @@ setupEvents()
 void
 classTrack_initialize(JNIEnv *env)
 {
-    deletedSignatures = NULL;
-    classTrackLock = debugMonitorCreate("Deleted class tag lock");
     trackingEnv = getSpecialJvmti();
     if (trackingEnv == NULL) {
         EXIT_ERROR(AGENT_ERROR_INTERNAL, "Failed to allocate tag-tracking jvmtiEnv");
@@ -194,52 +194,11 @@ classTrack_initialize(JNIEnv *env)
             jint wanted = JVMTI_CLASS_STATUS_PREPARED | JVMTI_CLASS_STATUS_ARRAY;
             status = classStatus(klass);
             if ((status & wanted) != 0) {
-                classTrack_addPreparedClass(env, klass);
+                addPreparedClass(env, klass);
             }
         }
         jvmtiDeallocate(classes);
     } else {
         EXIT_ERROR(error,"loaded classes array");
-    }
-}
-
-/*
- * Called to activate class-tracking when a listener registers for EI_GC_FINISH.
- */
-void
-classTrack_activate(JNIEnv *env)
-{
-    // Allocate bag outside classTrackLock lock to avoid deadlock.
-    // See comments in classTrack_processUnloads() for details.
-    struct bag* new_bag = bagCreateBag(sizeof(char*), 1000);
-    debugMonitorEnter(classTrackLock);
-    deletedSignatures = new_bag;
-    debugMonitorExit(classTrackLock);
-}
-
-static jboolean
-cleanDeleted(void *signatureVoid, void *arg)
-{
-    char* sig = *(char**)signatureVoid;
-    jvmtiDeallocate(sig);
-    return JNI_TRUE;
-}
-
-/*
- * Called when agent detaches.
- */
-void
-classTrack_reset(void)
-{
-    debugMonitorEnter(classTrackLock);
-    struct bag* to_delete = deletedSignatures;
-    deletedSignatures = NULL;
-    debugMonitorExit(classTrackLock);
-
-    // Deallocate bag outside classTrackLock to avoid deadlock.
-    // See comments in classTrack_processUnloads() for details.
-    if (to_delete != NULL) {
-      bagEnumerateOver(to_delete, cleanDeleted, NULL);
-      bagDestroyBag(to_delete);
     }
 }

@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1CardCounts.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class G1CardTableEntryClosure;
@@ -57,8 +57,6 @@ public:
 
 private:
   G1CollectedHeap*  _g1h;
-
-  bool              _use_cache;
 
   G1CardCounts      _card_counts;
 
@@ -90,7 +88,7 @@ private:
   static const int ClaimChunkSize = 32;
 
  public:
-  static bool default_use_cache() {
+  static bool use_cache() {
     return (G1ConcRSLogCacheSize > 0);
   }
 
@@ -98,12 +96,6 @@ private:
   ~G1HotCardCache();
 
   void initialize(G1RegionToSpaceMapper* card_counts_storage);
-
-  bool use_cache() { return _use_cache; }
-
-  void set_use_cache(bool b) {
-    _use_cache = (b ? default_use_cache() : false);
-  }
 
   // Returns the card to be refined or NULL.
   //
@@ -128,7 +120,7 @@ private:
   // Resets the hot card cache and discards the entries.
   void reset_hot_cache() {
     assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-    if (default_use_cache()) {
+    if (use_cache()) {
       reset_hot_cache_internal();
     }
   }

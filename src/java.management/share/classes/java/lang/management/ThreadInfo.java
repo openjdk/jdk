@@ -29,8 +29,6 @@ import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
 import sun.management.ThreadInfoCompositeData;
-import sun.management.Util;
-import static java.lang.Thread.State.*;
 
 /**
  * Thread information. {@code ThreadInfo} contains the information
@@ -226,7 +224,7 @@ public class ThreadInfo {
                             StackTraceElement[] stackTrace,
                             MonitorInfo[] lockedMonitors,
                             LockInfo[] lockedSynchronizers) {
-        this.virtual = Util.isVirtual(t);
+        this.virtual = t.isVirtual();
         this.threadId = t.threadId();
         this.threadName = t.getName();
         this.threadState = ManagementFactoryHelper.toThreadState(state);

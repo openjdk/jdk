@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1922, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ extends GeneralSecurityException {
     private static final long serialVersionUID = 2864672297499471472L;
 
     /**
-     * Constructs an InvalidAlgorithmParameterException with no detail
+     * Constructs an {@code InvalidAlgorithmParameterException} with no detail
      * message.
-     * A detail message is a String that describes this particular
+     * A detail message is a {@code String} that describes this particular
      * exception.
      */
     public InvalidAlgorithmParameterException() {
@@ -54,9 +54,9 @@ extends GeneralSecurityException {
     }
 
     /**
-     * Constructs an InvalidAlgorithmParameterException with the specified
-     * detail message.
-     * A detail message is a String that describes this
+     * Constructs an {@code InvalidAlgorithmParameterException} with the
+     * specified detail message.
+     * A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param msg the detail message.

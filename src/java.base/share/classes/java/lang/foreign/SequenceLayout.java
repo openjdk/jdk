@@ -25,9 +25,7 @@
  */
 package java.lang.foreign;
 
-import java.util.Objects;
-import java.util.Optional;
-
+import jdk.internal.foreign.layout.SequenceLayoutImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -55,46 +53,27 @@ import jdk.internal.javac.PreviewFeature;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public final class SequenceLayout extends AbstractLayout implements MemoryLayout {
+public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayoutImpl {
 
-    private final long elemCount;
-    private final MemoryLayout elementLayout;
-
-    SequenceLayout(long elemCount, MemoryLayout elementLayout) {
-        this(elemCount, elementLayout, elementLayout.bitAlignment(), Optional.empty());
-    }
-
-    SequenceLayout(long elemCount, MemoryLayout elementLayout, long alignment, Optional<String> name) {
-        super(Math.multiplyExact(elemCount, elementLayout.bitSize()), alignment, name);
-        this.elemCount = elemCount;
-        this.elementLayout = elementLayout;
-    }
 
     /**
      * {@return the element layout associated with this sequence layout}
      */
-    public MemoryLayout elementLayout() {
-        return elementLayout;
-    }
+    MemoryLayout elementLayout();
 
     /**
      * {@return the element count of this sequence layout}
      */
-    public long elementCount() {
-        return elemCount;
-    }
+    long elementCount();
 
     /**
-     * Returns a sequence layout with the same element layout, alignment constraints and name as this sequence layout,
+     * Returns a sequence layout with the same element layout, alignment constraint and name as this sequence layout,
      * but with the specified element count.
      * @param elementCount the new element count.
      * @return a sequence layout with the given element count.
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      */
-    public SequenceLayout withElementCount(long elementCount) {
-        AbstractLayout.checkSize(elementCount, true);
-        return new SequenceLayout(elementCount, elementLayout, alignment, name());
-    }
+    SequenceLayout withElementCount(long elementCount);
 
     /**
      * Re-arrange the elements in this sequence layout into a multi-dimensional sequence layout.
@@ -124,53 +103,12 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      * @param elementCounts an array of element counts, of which at most one can be {@code -1}.
      * @return a sequence layout where element layouts in the flattened projection of this
      * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts.
-     * @throws UnsupportedOperationException if this sequence layout does not have an element count.
      * @throws IllegalArgumentException if two or more element counts are set to {@code -1}, or if one
      * or more element count is {@code <= 0} (but other than {@code -1}) or, if, after any required inference,
      * multiplying the element counts does not yield the same element count as the flattened projection of this
      * sequence layout.
      */
-    public SequenceLayout reshape(long... elementCounts) {
-        Objects.requireNonNull(elementCounts);
-        if (elementCounts.length == 0) {
-            throw new IllegalArgumentException();
-        }
-        SequenceLayout flat = flatten();
-        long expectedCount = flat.elementCount();
-
-        long actualCount = 1;
-        int inferPosition = -1;
-        for (int i = 0 ; i < elementCounts.length ; i++) {
-            if (elementCounts[i] == -1) {
-                if (inferPosition == -1) {
-                    inferPosition = i;
-                } else {
-                    throw new IllegalArgumentException("Too many unspecified element counts");
-                }
-            } else if (elementCounts[i] <= 0) {
-                throw new IllegalArgumentException("Invalid element count: " + elementCounts[i]);
-            } else {
-                actualCount = elementCounts[i] * actualCount;
-            }
-        }
-
-        // infer an unspecified element count (if any)
-        if (inferPosition != -1) {
-            long inferredCount = expectedCount / actualCount;
-            elementCounts[inferPosition] = inferredCount;
-            actualCount = actualCount * inferredCount;
-        }
-
-        if (actualCount != expectedCount) {
-            throw new IllegalArgumentException("Element counts do not match expected size: " + expectedCount);
-        }
-
-        MemoryLayout res = flat.elementLayout();
-        for (int i = elementCounts.length - 1 ; i >= 0 ; i--) {
-            res = MemoryLayout.sequenceLayout(elementCounts[i], res);
-        }
-        return (SequenceLayout)res;
-    }
+    SequenceLayout reshape(long... elementCounts);
 
     /**
      * Returns a flattened sequence layout. The element layout of the returned sequence layout
@@ -187,70 +125,12 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      * }
      * @return a sequence layout with the same size as this layout (but, possibly, with different
      * element count), whose element layout is not a sequence layout.
-     * @throws UnsupportedOperationException if this sequence layout, or one of the nested sequence layouts being
-     * flattened, does not have an element count.
      */
-    public SequenceLayout flatten() {
-        long count = elementCount();
-        MemoryLayout elemLayout = elementLayout();
-        while (elemLayout instanceof SequenceLayout elemSeq) {
-            count = count * elemSeq.elementCount();
-            elemLayout = elemSeq.elementLayout();
-        }
-        return MemoryLayout.sequenceLayout(count, elemLayout);
-    }
+    SequenceLayout flatten();
 
     @Override
-    public String toString() {
-        return decorateLayoutString(String.format("[%s:%s]",
-                elemCount, elementLayout));
-    }
+    SequenceLayout withName(String name);
 
     @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        if (!(other instanceof SequenceLayout s)) {
-            return false;
-        }
-        return elemCount == s.elemCount && elementLayout.equals(s.elementLayout);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), elemCount, elementLayout);
-    }
-
-    @Override
-    SequenceLayout dup(long alignment, Optional<String> name) {
-        return new SequenceLayout(elementCount(), elementLayout, alignment, name);
-    }
-
-    @Override
-    boolean hasNaturalAlignment() {
-        return alignment == elementLayout.bitAlignment();
-    }
-
-    //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout
-    //but that causes issues with javadoc, see JDK-8224052
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SequenceLayout withName(String name) {
-        return (SequenceLayout)super.withName(name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public SequenceLayout withBitAlignment(long alignmentBits) {
-        return (SequenceLayout)super.withBitAlignment(alignmentBits);
-    }
+    SequenceLayout withBitAlignment(long bitAlignment);
 }

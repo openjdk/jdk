@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import sun.security.util.LocalizedMessage;
  * <p>The protection domain contains a CodeSource
  * object, which encapsulates its codebase (URL) and public key attributes.
  * It also contains the principals associated with the domain.
- * The Policy object evaluates the global policy in light of who the
+ * The Policy object evaluates the global policy in light of whom the
  * principal is and what the code source is and returns an appropriate
  * Permissions object.
  *
@@ -79,7 +79,7 @@ import sun.security.util.LocalizedMessage;
 
 public class PolicyParser {
 
-    private Vector<GrantEntry> grantEntries;
+    private final Vector<GrantEntry> grantEntries;
     private Map<String, DomainEntry> domainEntries;
 
     // Convenience variables for parsing
@@ -114,7 +114,7 @@ public class PolicyParser {
      */
 
     public PolicyParser() {
-        grantEntries = new Vector<GrantEntry>();
+        grantEntries = new Vector<>();
     }
 
 
@@ -143,7 +143,7 @@ public class PolicyParser {
             policy = new BufferedReader(policy);
         }
 
-        /**
+        /*
          * Configure the stream tokenizer:
          *      Recognize strings between "..."
          *      Don't convert words to lowercase
@@ -169,7 +169,7 @@ public class PolicyParser {
         st.slashSlashComments(true);
         st.slashStarComments(true);
 
-        /**
+        /*
          * The main parsing loop.  The loop is executed once
          * for each entry in the config file.      The entries
          * are delimited by semicolons.   Once we've read in
@@ -200,18 +200,14 @@ public class PolicyParser {
                     domainEntries = new TreeMap<>();
                 }
                 DomainEntry de = parseDomainEntry();
-                if (de != null) {
-                    String domainName = de.getName();
-                    if (!domainEntries.containsKey(domainName)) {
-                        domainEntries.put(domainName, de);
-                    } else {
-                        LocalizedMessage localizedMsg = new LocalizedMessage(
-                            "duplicate.keystore.domain.name");
-                        Object[] source = {domainName};
-                        String msg = "duplicate keystore domain name: " +
-                                     domainName;
-                        throw new ParsingException(msg, localizedMsg, source);
-                    }
+                String domainName = de.getName();
+                if (domainEntries.putIfAbsent(domainName, de) != null) {
+                    LocalizedMessage localizedMsg = new LocalizedMessage(
+                        "duplicate.keystore.domain.name");
+                    Object[] source = {domainName};
+                    String msg = "duplicate keystore domain name: " +
+                                 domainName;
+                    throw new ParsingException(msg, localizedMsg, source);
                 }
             } else {
                 // error?
@@ -320,8 +316,6 @@ public class PolicyParser {
     {
         PrintWriter out = new PrintWriter(new BufferedWriter(policy));
 
-        Enumeration<GrantEntry> enum_ = grantElements();
-
         out.println("/* AUTOMATICALLY GENERATED ON "+
                     (new java.util.Date()) + "*/");
         out.println("/* DO NOT EDIT */");
@@ -337,8 +331,7 @@ public class PolicyParser {
         }
 
         // write "grant" entries
-        while (enum_.hasMoreElements()) {
-            GrantEntry ge = enum_.nextElement();
+        for (GrantEntry ge : grantEntries) {
             ge.write(out);
             out.println();
         }
@@ -575,7 +568,7 @@ public class PolicyParser {
             return null;
         }
 
-        return (ignoreEntry == true) ? null : e;
+        return (ignoreEntry) ? null : e;
     }
 
     /**
@@ -620,9 +613,8 @@ public class PolicyParser {
     private DomainEntry parseDomainEntry()
         throws ParsingException, IOException
     {
-        boolean ignoreEntry = false;
         DomainEntry domainEntry;
-        String name = null;
+        String name;
         Map<String, String> properties = new HashMap<>();
 
         match("domain");
@@ -648,7 +640,7 @@ public class PolicyParser {
         }
         match("}");
 
-        return (ignoreEntry == true) ? null : domainEntry;
+        return domainEntry;
     }
 
     /*
@@ -872,15 +864,15 @@ public class PolicyParser {
         public Vector<PermissionEntry> permissionEntries;
 
         public GrantEntry() {
-            principals = new LinkedList<PrincipalEntry>();
-            permissionEntries = new Vector<PermissionEntry>();
+            principals = new LinkedList<>();
+            permissionEntries = new Vector<>();
         }
 
         public GrantEntry(String signedBy, String codeBase) {
             this.codeBase = codeBase;
             this.signedBy = signedBy;
-            principals = new LinkedList<PrincipalEntry>();
-            permissionEntries = new Vector<PermissionEntry>();
+            principals = new LinkedList<>();
+            permissionEntries = new Vector<>();
         }
 
         public void add(PermissionEntry pe)
@@ -943,9 +935,7 @@ public class PolicyParser {
                 }
             }
             out.println(" {");
-            Enumeration<PermissionEntry> enum_ = permissionEntries.elements();
-            while (enum_.hasMoreElements()) {
-                PermissionEntry pe = enum_.nextElement();
+            for (PermissionEntry pe : permissionEntries) {
                 out.write("  ");
                 pe.write(out);
             }
@@ -956,9 +946,8 @@ public class PolicyParser {
             GrantEntry ge = new GrantEntry();
             ge.codeBase = this.codeBase;
             ge.signedBy = this.signedBy;
-            ge.principals = new LinkedList<PrincipalEntry>(this.principals);
-            ge.permissionEntries =
-                        new Vector<PermissionEntry>(this.permissionEntries);
+            ge.principals = new LinkedList<>(this.principals);
+            ge.permissionEntries = new Vector<>(this.permissionEntries);
             return ge;
         }
     }
@@ -1061,10 +1050,9 @@ public class PolicyParser {
             if (this == obj)
                 return true;
 
-            if (!(obj instanceof PrincipalEntry))
+            if (!(obj instanceof PrincipalEntry that))
                 return false;
 
-            PrincipalEntry that = (PrincipalEntry)obj;
             return (principalClass.equals(that.principalClass) &&
                     principalName.equals(that.principalName));
         }
@@ -1142,10 +1130,8 @@ public class PolicyParser {
             if (obj == this)
                 return true;
 
-            if (! (obj instanceof PermissionEntry))
+            if (! (obj instanceof PermissionEntry that))
                 return false;
-
-            PermissionEntry that = (PermissionEntry) obj;
 
             if (this.permission == null) {
                 if (that.permission != null) return false;
@@ -1166,13 +1152,10 @@ public class PolicyParser {
             }
 
             if (this.signedBy == null) {
-                if (that.signedBy != null) return false;
+                return that.signedBy == null;
             } else {
-                if (!this.signedBy.equals(that.signedBy)) return false;
+                return this.signedBy.equals(that.signedBy);
             }
-
-            // everything matched -- the 2 objects are equal
-            return true;
         }
 
         public void write(PrintWriter out) {
@@ -1187,7 +1170,7 @@ public class PolicyParser {
                 // $name =~ s/\"/\\\"/g;
                 // and then in a java string, it's escaped again
 
-                out.print(name.replaceAll("\\\\", "\\\\\\\\").replaceAll("\\\"", "\\\\\\\""));
+                out.print(name.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\\\""));
                 out.print('"');
             }
             if (action != null) {
@@ -1258,10 +1241,8 @@ public class PolicyParser {
             }
             s.append(" {\n");
 
-            if (entries != null) {
-                for (KeyStoreEntry entry : entries.values()) {
-                    s.append(entry).append("\n");
-                }
+            for (KeyStoreEntry entry : entries.values()) {
+                s.append(entry).append("\n");
             }
             s.append("}");
 

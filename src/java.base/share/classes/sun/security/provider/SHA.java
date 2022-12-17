@@ -156,7 +156,7 @@ public final class SHA extends DigestBase {
         // the buffer
         for (int t = 16; t <= 79; t++) {
             int temp = W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16];
-            W[t] = (temp << 1) | (temp >>> 31);
+            W[t] = Integer.rotateLeft(temp, 1);
         }
 
         int a = state[0];
@@ -167,44 +167,44 @@ public final class SHA extends DigestBase {
 
         // Round 1
         for (int i = 0; i < 20; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 ((b&c)|((~b)&d))+ e + W[i] + round1_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }
 
         // Round 2
         for (int i = 20; i < 40; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 (b ^ c ^ d) + e + W[i] + round2_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }
 
         // Round 3
         for (int i = 40; i < 60; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 ((b&c)|(b&d)|(c&d)) + e + W[i] + round3_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }
 
         // Round 4
         for (int i = 60; i < 80; i++) {
-            int temp = ((a<<5) | (a>>>(32-5))) +
+            int temp = Integer.rotateLeft(a, 5) +
                 (b ^ c ^ d) + e + W[i] + round4_kt;
             e = d;
             d = c;
-            c = ((b<<30) | (b>>>(32-30)));
+            c = Integer.rotateLeft(b, 30);
             b = a;
             a = temp;
         }

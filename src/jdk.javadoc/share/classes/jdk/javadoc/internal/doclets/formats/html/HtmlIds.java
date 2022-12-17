@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
@@ -78,6 +79,7 @@ public class HtmlIds {
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
     static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum-constant-summary");
+    static final HtmlId EXTERNAL_SPECS = HtmlId.of("external-specs");
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
@@ -132,6 +134,19 @@ public class HtmlIds {
         return element == null || element.isUnnamed()
                 ? UNNAMED_PACKAGE_ANCHOR
                 : HtmlId.of(element.getQualifiedName().toString());
+    }
+
+    /**
+     * Returns an id for a package name.
+     *
+     * @param pkgName the package name
+     *
+     * @return the id
+     */
+    HtmlId forPackageName(String pkgName) {
+        return pkgName.isEmpty()
+                ? UNNAMED_PACKAGE_ANCHOR
+                : HtmlId.of(pkgName);
     }
 
     /**
@@ -497,5 +512,30 @@ public class HtmlIds {
      */
     public HtmlId forPage(Navigation.PageMode page) {
         return HtmlId.of(page.name().toLowerCase(Locale.ROOT).replace("_", "-"));
+    }
+
+    /**
+     * Returns an id for a heading in a doc comment. The id value is derived from the contents
+     * of the heading with additional checks to make it unique within its containing page.
+     *
+     * @param headingText the text contained by the heading
+     * @param headingIds the set of heading ids already generated for the current page
+     * @return a unique id value for the heading
+     */
+    public HtmlId forHeading(CharSequence headingText, Set<String> headingIds) {
+        String idValue = headingText.toString()
+                .toLowerCase(Locale.ROOT)
+                .trim()
+                .replaceAll("[^\\w_-]+", "-");
+        // Make id value unique
+        idValue = idValue + "-heading";
+        if (!headingIds.add(idValue)) {
+            int counter = 1;
+            while (!headingIds.add(idValue + counter)) {
+                counter++;
+            }
+            idValue = idValue + counter;
+        }
+        return HtmlId.of(idValue);
     }
 }

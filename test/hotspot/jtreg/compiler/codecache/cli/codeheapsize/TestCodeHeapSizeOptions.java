@@ -40,7 +40,7 @@ package compiler.codecache.cli.codeheapsize;
 import compiler.codecache.cli.common.CodeCacheCLITestBase;
 import compiler.codecache.cli.common.CodeCacheCLITestCase;
 import jdk.test.lib.Platform;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.util.EnumSet;
 

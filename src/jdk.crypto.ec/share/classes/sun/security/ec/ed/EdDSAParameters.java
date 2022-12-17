@@ -85,7 +85,7 @@ public class EdDSAParameters {
             return new SHAKE256Digester(114);
         }
 
-        // Ed448 uses 64bytes long hasg for the signature message
+        // Ed448 uses 64bytes long hash for the signature message
         @Override
         public Digester createDigester(int len) {
             return new SHAKE256Digester(len);

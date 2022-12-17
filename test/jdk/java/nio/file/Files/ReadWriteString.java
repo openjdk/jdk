@@ -24,10 +24,12 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
@@ -46,7 +48,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276 8205058 8209576 8287541
+ * @bug 8201276 8205058 8209576 8287541 8288589
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
@@ -60,6 +62,8 @@ public class ReadWriteString {
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
+    private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
+    private static final Charset WINDOWS_31J = Charset.forName("windows-31j");
 
     static byte[] data = getData();
 
@@ -88,14 +92,14 @@ public class ReadWriteString {
      */
     @DataProvider(name = "malformedWrite")
     public Object[][] getMalformedWrite() throws IOException {
-        Path path = Files.createTempFile("malformedWrite", null);
+        Path path = Files.createFile(Path.of("malformedWrite"));
         return new Object[][]{
             {path, "\ud800", null},  //the default Charset is UTF_8
             {path, "\u00A0\u00A1", US_ASCII},
             {path, "\ud800", UTF_8},
             {path, JA_STRING, ISO_8859_1},
-            {path, "\u041e", Charset.forName("windows-1252")}, // cyrillic capital letter O
-            {path, "\u091c", Charset.forName("windows-31j")}, // devanagari letter ja
+            {path, "\u041e", WINDOWS_1252}, // cyrillic capital letter O
+            {path, "\u091c", WINDOWS_31J}, // devanagari letter ja
         };
     }
 
@@ -105,10 +109,23 @@ public class ReadWriteString {
      */
     @DataProvider(name = "illegalInput")
     public Object[][] getIllegalInput() throws IOException {
-        Path path = Files.createTempFile("illegalInput", null);
+        Path path = Files.createFile(Path.of("illegalInput"));
         return new Object[][]{
             {path, data, ISO_8859_1, null},
             {path, data, ISO_8859_1, UTF_8}
+        };
+    }
+
+    /*
+     * DataProvider for illegal input bytes test
+     */
+    @DataProvider(name = "illegalInputBytes")
+    public Object[][] getIllegalInputBytes() throws IOException {
+        return new Object[][]{
+            {new byte[] {(byte)0x00, (byte)0x20, (byte)0x00}, UTF_16, MalformedInputException.class},
+            {new byte[] {-50}, UTF_16, MalformedInputException.class},
+            {new byte[] {(byte)0x81}, WINDOWS_1252, UnmappableCharacterException.class}, // unused in Cp1252
+            {new byte[] {(byte)0x81, (byte)0xff}, WINDOWS_31J, UnmappableCharacterException.class}, // invalid trailing byte
         };
     }
 
@@ -143,16 +160,9 @@ public class ReadWriteString {
 
     @BeforeClass
     void setup() throws IOException {
-        testFiles[0] = Files.createTempFile("readWriteString", null);
-        testFiles[1] = Files.createTempFile("writeString_file1", null);
-        testFiles[2] = Files.createTempFile("writeString_file2", null);
-    }
-
-    @AfterClass
-    void cleanup() throws IOException {
-        for (Path path : testFiles) {
-            Files.deleteIfExists(path);
-        }
+        testFiles[0] = Files.createFile(Path.of("readWriteString"));
+        testFiles[1] = Files.createFile(Path.of("writeString_file1"));
+        testFiles[2] = Files.createFile(Path.of("writeString_file2"));
     }
 
     /**
@@ -241,11 +251,10 @@ public class ReadWriteString {
      */
     @Test(dataProvider = "malformedWrite", expectedExceptions = UnmappableCharacterException.class)
     public void testMalformedWrite(Path path, String s, Charset cs) throws IOException {
-        path.toFile().deleteOnExit();
         if (cs == null) {
-            Files.writeString(path, s, CREATE);
+            Files.writeString(path, s);
         } else {
-            Files.writeString(path, s, cs, CREATE);
+            Files.writeString(path, s, cs);
         }
     }
 
@@ -261,14 +270,38 @@ public class ReadWriteString {
      */
     @Test(dataProvider = "illegalInput", expectedExceptions = MalformedInputException.class)
     public void testMalformedRead(Path path, byte[] data, Charset csWrite, Charset csRead) throws IOException {
-        path.toFile().deleteOnExit();
         String temp = new String(data, csWrite);
-        Files.writeString(path, temp, csWrite, CREATE);
+        Files.writeString(path, temp, csWrite);
         if (csRead == null) {
             Files.readString(path);
         } else {
             Files.readString(path, csRead);
         }
+    }
+
+    /**
+     * Verifies that IOException is thrown when reading a file containing
+     * illegal bytes
+     *
+     * @param data the data used for the test
+     * @param csRead the Charset to use for reading the file
+     * @param expected exception class
+     * @throws IOException when the Charset used for reading the file is incorrect
+     */
+    @Test(dataProvider = "illegalInputBytes")
+    public void testMalformedReadBytes(byte[] data, Charset csRead, Class<CharacterCodingException> expected)
+            throws IOException {
+        Path path = Path.of("illegalInputBytes");
+        Files.write(path, data);
+        try {
+            Files.readString(path, csRead);
+        } catch (MalformedInputException | UnmappableCharacterException e) {
+            if (expected.isInstance(e)) {
+                // success
+                return;
+            }
+        }
+        throw new RuntimeException("An instance of " + expected + " should be thrown");
     }
 
     private void checkNullPointerException(Callable<?> c) {

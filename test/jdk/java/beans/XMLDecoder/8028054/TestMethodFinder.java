@@ -35,7 +35,7 @@ import java.util.List;
  * @author Sergey Malenkov
  * @modules java.desktop/com.sun.beans.finder
  * @compile -XDignore.symbol.file TestMethodFinder.java
- * @run main/othervm --enable-preview TestMethodFinder
+ * @run main TestMethodFinder
  */
 
 public class TestMethodFinder {
