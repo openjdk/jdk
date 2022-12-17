@@ -53,22 +53,29 @@ public class TestMinMaxIntrinsics {
 
     static WhiteBox wb = WhiteBox.getWhiteBox();
     static int[] intCases = { Integer.MIN_VALUE, -2, -1, 0, 1, 2, Integer.MAX_VALUE };
+    public static long im3l = Integer.MIN_VALUE * 3L;
 
     static void test(IntUnaryOperator std, IntUnaryOperator alt) throws ReflectiveOperationException {
-        assertEQ(std.applyAsInt(0), alt.applyAsInt(0), "Basic check");
+        for (int a : intCases) {
+            assertEQ(std.applyAsInt(a), alt.applyAsInt(a), String.format("Failed on %d", a));
+        }
         var method = alt.getClass().getDeclaredMethod("applyAsInt", int.class);
         wb.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
-        assertTrue(wb.isMethodCompiled(method), "Should be compiled");
+        assertTrue(wb.isMethodCompiled(method));
         for (int a : intCases) {
             assertEQ(std.applyAsInt(a), alt.applyAsInt(a), String.format("Failed on %d", a));
         }
     }
 
     static void test(IntBinaryOperator std, IntBinaryOperator alt) throws ReflectiveOperationException {
-        assertEQ(std.applyAsInt(0, 0), alt.applyAsInt(0, 0), "Basic check");
+        for (int a : intCases) {
+            for (int b : intCases) {
+                assertEQ(std.applyAsInt(a, b), alt.applyAsInt(a, b), String.format("Failed on %d, %d", a, b));
+            }
+        }
         var method = alt.getClass().getDeclaredMethod("applyAsInt", int.class, int.class);
         wb.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
-        assertTrue(wb.isMethodCompiled(method), "Should be compiled");
+        assertTrue(wb.isMethodCompiled(method));
         for (int a : intCases) {
             for (int b : intCases) {
                 assertEQ(std.applyAsInt(a, b), alt.applyAsInt(a, b), String.format("Failed on %d, %d", a, b));
@@ -76,16 +83,30 @@ public class TestMinMaxIntrinsics {
         }
     }
 
+    static int maxL2I(long a, int b) {
+        return Math.max((int) a, b);
+    }
+
+    static void testL2I() throws NoSuchMethodException {
+        assertEQ(0, maxL2I(im3l, 0));
+        var method = TestMinMaxIntrinsics.class.getDeclaredMethod("maxL2I", long.class, int.class);
+        wb.enqueueMethodForCompilation(method, COMP_LEVEL_FULL_OPTIMIZATION);
+        assertTrue(wb.isMethodCompiled(method));
+        assertEQ(0, maxL2I(im3l, 0));
+    }
+
     public static void main(String[] args) throws Exception {
         test(a -> (a <= 0) ? a : 0, a -> Math.min(a, 0));
         test(a -> (a <= 1) ? a : 1, a -> Math.min(a, 1));
         test(a -> (a <= -1) ? a : -1, a -> Math.min(a, -1));
 
-        test(a -> (a >= 0) ? a : 0, a -> Math.max(a, 0));
-        test(a -> (a >= 1) ? a : 1, a -> Math.max(a, 1));
-        test(a -> (a >= -1) ? a : -1, a -> Math.max(a, -1));
+        test(a -> (0 >= a) ? 0 : a, a -> Math.max(0, a));
+        test(a -> (1 >= a) ? 1 : a, a -> Math.max(1, a));
+        test(a -> (-1 >= a) ? -1 : a, a -> Math.max(-1, a));
 
         test((a, b) -> (a <= b) ? a : b, (a, b) -> Math.min(a, b));
         test((a, b) -> (a >= b) ? a : b, (a, b) -> Math.max(a, b));
+
+        testL2I();
     }
 }

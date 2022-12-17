@@ -27,11 +27,10 @@ dnl 2. shift patterns
 dnl
 // BEGIN This section of the file is automatically generated. Do not edit --------------
 // This section is generated from aarch64_ad.m4
-dnl
+
 define(`upcase', `translit(`$*', `a-z', `A-Z')')dnl
 define(`downcase', `translit(`$*', `A-Z', `a-z')')dnl
-dnl
-define(`ORL2I', `ifelse($1,I,orL2I)')
+define(`ORL2I', `ifelse($1,I,orL2I)')dnl
 dnl
 define(`BASE_SHIFT_INSN',
 `// This pattern is automatically generated from aarch64_ad.m4
@@ -192,7 +191,7 @@ ALL_SHIFT_KINDS_WITHOUT_ROR(Add, add)
 ALL_SHIFT_KINDS_WITHOUT_ROR(Sub, sub)
 dnl
 dnl EXTEND mode, rshift_op, src, lshift_count, rshift_count
-define(`EXTEND', `($2$1 (LShift$1 $3 $4) $5)') dnl
+define(`EXTEND', `($2$1 (LShift$1 $3 $4) $5)')dnl
 define(`BFM_INSN',`// This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
@@ -215,7 +214,7 @@ instruct $4$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src, immI lshift_count, immI rsh
 
   ins_pipe(ialu_reg_shift);
 %}
-')
+')dnl
 BFM_INSN(L, 63, RShift, sbfm)
 BFM_INSN(I, 31, RShift, sbfmw)
 BFM_INSN(L, 63, URShift, ubfm)
@@ -339,7 +338,7 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
 %}
 
 
-// Rotations dnl
+// Rotations
 define(`EXTRACT_INSN',`
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
@@ -547,17 +546,15 @@ define(`CMOV_INSN', `// This pattern is automatically generated from aarch64_ad.
 instruct cmov$1_reg_reg_$3(iReg$1NoSp dst, iReg$1 src1, iReg$1 src2, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE src2, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "$2 $dst, $src1, $src2 $3\t"  %}
 
   ins_encode %{
-    __ $2(as_Register($dst$$reg),
-             as_Register($src1$$reg),
-             as_Register($src2$$reg),
+    __ $2($dst$$Register,
+             $src1$$Register,
+             $src2$$Register,
              Assembler::upcase($3));
   %}
-
   ins_pipe(icond_reg_reg);
 %}
 ')dnl
@@ -569,17 +566,15 @@ define(`CMOV_DRAW_INSN', `// This pattern is automatically generated from aarch6
 instruct cmov$1_reg_imm$2_$4(iReg$1NoSp dst, iReg$1 src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "$3 $dst, $src1, zr $4\t"  %}
 
   ins_encode %{
-    __ $3(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ $3($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::upcase($4));
   %}
-
   ins_pipe(icond_reg);
 %}
 ')dnl
@@ -593,8 +588,8 @@ dnl
 define(`MINMAX_DRAW_INSN', `// This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 ifelse($6,,
-instruct downcase($1)$2_reg_imm$4(iReg$2NoSp dst, iReg$2 src, imm$2$3$4 imm),
-instruct downcase($1)$2_imm$4_reg(iReg$2NoSp dst, imm$2$3$4 imm, iReg$2 src))
+instruct downcase($1)$2_reg_imm$4(iReg$2NoSp dst, iReg$2`'ORL2I($2) src, imm$2$3$4 imm),
+instruct downcase($1)$2_imm$4_reg(iReg$2NoSp dst, imm$2$3$4 imm, iReg$2`'ORL2I($2) src))
 %{
   ifelse($6,,
   match(Set dst ($1$2 src imm));,

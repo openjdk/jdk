@@ -11084,7 +11084,6 @@ instruct rShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
 // BEGIN This section of the file is automatically generated. Do not edit --------------
 // This section is generated from aarch64_ad.m4
 
-
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct regL_not_reg(iRegLNoSp dst,
@@ -12900,6 +12899,7 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
 
 
 // Rotations
+
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)
@@ -12970,7 +12970,6 @@ instruct extrAddI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, 
   %}
   ins_pipe(ialu_reg_reg_extr);
 %}
-
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
@@ -13690,17 +13689,15 @@ instruct SubExtI_uxth_and_shift(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2,
 instruct cmovI_reg_reg_lt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE src2, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "cselw $dst, $src1, $src2 lt\t"  %}
 
   ins_encode %{
-    __ cselw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
-             as_Register($src2$$reg),
+    __ cselw($dst$$Register,
+             $src1$$Register,
+             $src2$$Register,
              Assembler::LT);
   %}
-
   ins_pipe(icond_reg_reg);
 %}
 
@@ -13709,17 +13706,15 @@ instruct cmovI_reg_reg_lt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
 instruct cmovI_reg_reg_gt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE src2, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "cselw $dst, $src1, $src2 gt\t"  %}
 
   ins_encode %{
-    __ cselw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
-             as_Register($src2$$reg),
+    __ cselw($dst$$Register,
+             $src1$$Register,
+             $src2$$Register,
              Assembler::GT);
   %}
-
   ins_pipe(icond_reg_reg);
 %}
 
@@ -13728,17 +13723,15 @@ instruct cmovI_reg_reg_gt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
 instruct cmovI_reg_imm0_lt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "cselw $dst, $src1, zr lt\t"  %}
 
   ins_encode %{
-    __ cselw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ cselw($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::LT);
   %}
-
   ins_pipe(icond_reg);
 %}
 
@@ -13747,17 +13740,15 @@ instruct cmovI_reg_imm0_lt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 instruct cmovI_reg_imm0_gt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "cselw $dst, $src1, zr gt\t"  %}
 
   ins_encode %{
-    __ cselw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ cselw($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::GT);
   %}
-
   ins_pipe(icond_reg);
 %}
 
@@ -13766,17 +13757,15 @@ instruct cmovI_reg_imm0_gt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 instruct cmovI_reg_imm1_le(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "csincw $dst, $src1, zr le\t"  %}
 
   ins_encode %{
-    __ csincw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ csincw($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::LE);
   %}
-
   ins_pipe(icond_reg);
 %}
 
@@ -13785,17 +13774,15 @@ instruct cmovI_reg_imm1_le(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 instruct cmovI_reg_imm1_gt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "csincw $dst, $src1, zr gt\t"  %}
 
   ins_encode %{
-    __ csincw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ csincw($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::GT);
   %}
-
   ins_pipe(icond_reg);
 %}
 
@@ -13804,17 +13791,15 @@ instruct cmovI_reg_imm1_gt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 instruct cmovI_reg_immM1_lt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "csinvw $dst, $src1, zr lt\t"  %}
 
   ins_encode %{
-    __ csinvw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ csinvw($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::LT);
   %}
-
   ins_pipe(icond_reg);
 %}
 
@@ -13823,23 +13808,21 @@ instruct cmovI_reg_immM1_lt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 instruct cmovI_reg_immM1_ge(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 %{
   effect(DEF dst, USE src1, USE cr);
-
   ins_cost(INSN_COST * 2);
   format %{ "csinvw $dst, $src1, zr ge\t"  %}
 
   ins_encode %{
-    __ csinvw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
+    __ csinvw($dst$$Register,
+             $src1$$Register,
              zr,
              Assembler::GE);
   %}
-
   ins_pipe(icond_reg);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct minI_reg_imm0(iRegINoSp dst, iRegI src, immI0 imm)
+instruct minI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
 %{
   match(Set dst (MinI src imm));
   ins_cost(INSN_COST * 2);
@@ -13852,7 +13835,7 @@ instruct minI_reg_imm0(iRegINoSp dst, iRegI src, immI0 imm)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct minI_imm0_reg(iRegINoSp dst, immI0 imm, iRegI src)
+instruct minI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
 %{
   match(Set dst (MinI imm src));
   ins_cost(INSN_COST * 2);
@@ -13865,7 +13848,7 @@ instruct minI_imm0_reg(iRegINoSp dst, immI0 imm, iRegI src)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct minI_reg_imm1(iRegINoSp dst, iRegI src, immI_1 imm)
+instruct minI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
 %{
   match(Set dst (MinI src imm));
   ins_cost(INSN_COST * 2);
@@ -13878,7 +13861,7 @@ instruct minI_reg_imm1(iRegINoSp dst, iRegI src, immI_1 imm)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct minI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegI src)
+instruct minI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
 %{
   match(Set dst (MinI imm src));
   ins_cost(INSN_COST * 2);
@@ -13891,7 +13874,7 @@ instruct minI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegI src)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct minI_reg_immM1(iRegINoSp dst, iRegI src, immI_M1 imm)
+instruct minI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
 %{
   match(Set dst (MinI src imm));
   ins_cost(INSN_COST * 2);
@@ -13904,7 +13887,7 @@ instruct minI_reg_immM1(iRegINoSp dst, iRegI src, immI_M1 imm)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct minI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegI src)
+instruct minI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
 %{
   match(Set dst (MinI imm src));
   ins_cost(INSN_COST * 2);
@@ -13917,7 +13900,7 @@ instruct minI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegI src)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct maxI_reg_imm0(iRegINoSp dst, iRegI src, immI0 imm)
+instruct maxI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
 %{
   match(Set dst (MaxI src imm));
   ins_cost(INSN_COST * 2);
@@ -13930,7 +13913,7 @@ instruct maxI_reg_imm0(iRegINoSp dst, iRegI src, immI0 imm)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct maxI_imm0_reg(iRegINoSp dst, immI0 imm, iRegI src)
+instruct maxI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
 %{
   match(Set dst (MaxI imm src));
   ins_cost(INSN_COST * 2);
@@ -13943,7 +13926,7 @@ instruct maxI_imm0_reg(iRegINoSp dst, immI0 imm, iRegI src)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct maxI_reg_imm1(iRegINoSp dst, iRegI src, immI_1 imm)
+instruct maxI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
 %{
   match(Set dst (MaxI src imm));
   ins_cost(INSN_COST * 2);
@@ -13956,7 +13939,7 @@ instruct maxI_reg_imm1(iRegINoSp dst, iRegI src, immI_1 imm)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct maxI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegI src)
+instruct maxI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
 %{
   match(Set dst (MaxI imm src));
   ins_cost(INSN_COST * 2);
@@ -13969,7 +13952,7 @@ instruct maxI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegI src)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct maxI_reg_immM1(iRegINoSp dst, iRegI src, immI_M1 imm)
+instruct maxI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
 %{
   match(Set dst (MaxI src imm));
   ins_cost(INSN_COST * 2);
@@ -13982,7 +13965,7 @@ instruct maxI_reg_immM1(iRegINoSp dst, iRegI src, immI_M1 imm)
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegI src)
+instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
 %{
   match(Set dst (MaxI imm src));
   ins_cost(INSN_COST * 2);
@@ -16004,21 +15987,20 @@ instruct cmpLTMask_reg_zero(iRegINoSp dst, iRegIorL2I src, immI0 zero, rFlagsReg
 // Max and Min
 
 // Like compI_reg_reg or compI_reg_immI0 but without match rule and second zero parameter.
-instruct compI_reg_imm0(rFlagsReg cr, iRegI src1)
-%{
-  effect(DEF cr, USE src1);
 
+instruct compI_reg_imm0(rFlagsReg cr, iRegI src)
+%{
+  effect(DEF cr, USE src);
   ins_cost(INSN_COST);
-  format %{ "cmpw $src1, 0" %}
+  format %{ "cmpw $src, 0" %}
 
   ins_encode %{
-    __ cmpw(as_Register($src1$$reg), 0);
+    __ cmpw($src$$Register, 0);
   %}
-
   ins_pipe(icmp_reg_imm);
 %}
 
-instruct minI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2)
+instruct minI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2)
 %{
   match(Set dst (MinI src1 src2));
   ins_cost(INSN_COST * 3);
@@ -16028,15 +16010,13 @@ instruct minI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2)
     compI_reg_reg(cr, src1, src2);
     cmovI_reg_reg_lt(dst, src1, src2, cr);
   %}
-
 %}
 
-// FROM HERE
-
-instruct maxI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2)
+instruct maxI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2)
 %{
   match(Set dst (MaxI src1 src2));
   ins_cost(INSN_COST * 3);
+
   expand %{
     rFlagsReg cr;
     compI_reg_reg(cr, src1, src2);
