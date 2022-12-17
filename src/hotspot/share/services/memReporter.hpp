@@ -70,30 +70,18 @@ class MemReporterBase : public StackObj {
     // _scale should not be 0, otherwise division by zero at return.
     assert(_scale != 0, "wrong scale");
 
-    // Since size_t is unsigned, the amount >= 0 is always true.
-    // Therefore, shifting the amount half the scale down/up is
-    // decided based on the s1 and s2. Thus, s1 >= s2 means amount >= 0.
-    // ((a + b) > a) where b != 0, is used to check wrap-around of adding two size_t variables.
-    // ((a - b) < a) where b != 0, is used to check wrap-around of subtracting two size_t variables.
-    int64_t amount = s1 - s2;
-    int64_t scale = (int64_t)_scale;
-    if (amount == 0){
-      return 0L;
+    bool is_negative = false;
+    if (s1 < s2) {
+      is_negative = true;
+      swap(s1, s2);
     }
 
-    if (s1 >= s2) {
-      if ((scale / 2) != 0) {
-        assert((amount + scale / 2) > amount, "difference is greater than the upper limit.");
-        amount += scale / 2;
-      }
-      return (amount / scale);
-    }
-
-    if ((scale / 2) != 0){
-      assert((amount - scale / 2) < amount, "difference is less than the lower limit.");
-      amount -= scale / 2;
-    }
-    return amount / scale;
+    size_t amount = s1 - s2;
+    assert(amount <= SIZE_MAX - _scale / 2, "size_t overflow");
+    amount = (amount + _scale / 2) / _scale;
+    // We assume the valid range for deltas [INT64_MIN, INT64_MAX] to simplify the code.
+    assert((sizeof(size_t) < sizeof(int64_t)) || (sizeof(size_t) == sizeof(int64_t) && amount <= INT64_MAX), "cannot fit scaled diff into size_t");
+    return (is_negative) ? -(int64_t)amount : (int64_t)amount;
   }
 
   // Helper functions
