@@ -352,7 +352,9 @@ public:
 
   // Add a memory block to the tree. Its content will be overwritten.
   void add_block(MetaWord* p, size_t word_size) {
+#ifndef ADDRESS_SANITIZER
     DEBUG_ONLY(zap_range(p, word_size));
+#endif
     assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
     // Ensure the memory region for the node is unpoisoned.
     ASAN_UNPOISON_MEMORY_REGION(p, sizeof(Node));
