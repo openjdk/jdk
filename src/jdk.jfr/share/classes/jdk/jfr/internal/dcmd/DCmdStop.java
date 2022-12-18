@@ -59,6 +59,7 @@ final class DCmdStop extends AbstractDCmd {
                     throw new DCmdException("Failed to stop %s. Could not set destination for \"%s\" to file %s", recording.getName(), filename, e.getMessage());
                 }
             }
+            recording.stop();
             reportOperationComplete("Stopped", recording.getName(), safePath);
             recording.close();
         } catch (InvalidPathException | DCmdException e) {
