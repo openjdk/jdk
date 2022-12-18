@@ -35,10 +35,3 @@ runs:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
         location: RUNNER_TEMP
-
-      # We can't run bash until this is completed, so stick with pwsh
-    - name: 'Set MSYS2 path'
-      run: |
-        # Prepend msys2/msys64/usr/bin to the PATH
-        echo "$env:RUNNER_TEMP/msys64/usr/bin" >> $env:GITHUB_PATH
-      shell: pwsh
