@@ -1541,13 +1541,12 @@ void Parse::Block::record_state(Parse* p) {
 
     for (int i = 0; i < jvms->loc_size(); ++i) {
       Node* lv = _start_map->local(jvms, i);
-      if (!mrs.at(i) && _state._alias.contains(lv)) {
+      ObjID obj = _state.is_alias(lv);
+      if (!mrs.at(i) && obj != nullptr) {
         _state._alias.remove(lv);
+        _state._state.remove(obj);
       }
     }
-
-    //state._state.iterate([&](ObjID key, ObjectState* value) {
-    //});
   }
 }
 
@@ -1807,137 +1806,150 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         }
       }
 
+      if (DoPartialEscapeAnalysis) {
+        assert(block()->is_ready(), "all predecessors have parsed");
 
-     if (DoPartialEscapeAnalysis) {
-       // only ObjIDs that exist in all predecessors states and have at least one common alias will survive the merge
-       PEAState& state = target->state();
-       bool changed = true;
+        // Only ObjIDs that exist in all predecessors states and have at least one common alias will survive the merge
+        PEAState& state = target->state();
+        bool changed = true;
 
-       while (changed) {
-         changed = false;
-         GrowableArray<ObjID> dead;
-         GrowableArray<ObjID> worklist;
+        while (changed) {
+          changed = false;
+          GrowableArray<ObjID> dead;
+          GrowableArray<ObjID> worklist;
+          // this is a bad idea. we should traverse _alias!
+          // all live and tracking objects are in _alias.
+          state._state.iterate([&](ObjID key, ObjectState* val) {
+            Unique_Node_List alias;
 
-         state._state.iterate([&](ObjID key, ObjectState* val) {
-           Unique_Node_List alias;
+            state._alias.iterate([&](Node* node, ObjID id) {
+              if (id == key) {
+                alias.push(node);
+              }
+              return true;
+            });
 
-           state._alias.iterate([&](Node* node, ObjID id) {
-             if (id == key) {
-               alias.push(node);
-             }
-             return true;
-           });
+            for (int i=0;  i < target->pred_count(); ++i) {
+              Block* pred = target->predecessor_at(i);
+              PEAState& pred_state = pred->state();
 
-           for (int i=0;  i < target->pred_count(); ++i) {
-             Block* pred = target->predecessor_at(i);
-             PEAState& pred_state = pred->state();
+              if (!pred_state._state.contains(key)) {
+                dead.append(key);
+                break;
+              }
 
-             if (!pred_state._state.contains(key)) {
-               dead.append(key);
-               break;
-             }
+              Unique_Node_List alias2;
+              pred_state._alias.iterate([&](Node* node, ObjID id) {
+                if (id == key) {
+                  alias2.push(node);
+                }
+                return true;
+              });
 
-             Unique_Node_List alias2;
-             pred_state._alias.iterate([&](Node* node, ObjID id) {
-               if (id == key) {
-                 alias2.push(node);
-               }
-               return true;
-             });
+              VectorSet& set = alias.member_set();
+              set &= alias2.member_set();
 
-             VectorSet& set = alias.member_set();
-             set &= alias2.member_set();
+              if (set.is_empty()) {
+                dead.append(key);
+                break;
+              } else {
+                alias.remove_useless_nodes(set);
+              }
+            }
 
-             if (set.is_empty()) {
-               dead.append(key);
-               break;
-             } else {
-               alias.remove_useless_nodes(set);
-             }
-           }
+            worklist.append(key);
+            return true;
+          });
 
-           worklist.append(key);
-           return true;
-         });
+          int n = dead.length();
+          if (n > 0) {
+            changed = true;
+            for (int i = 0; i < n; ++i) {
+              ObjID id = dead.at(i);
 
-         int n = dead.length();
-         if (n > 0) {
-           changed = true;
-           for (int i = 0; i < n; ++i) {
-             ObjID id = dead.at(i);
+              state._state.remove(id);
+              // update alias
+              AliasIterator iter(id);
+              state._alias.unlink(&iter);
+            }
+          } else {
+            while (!worklist.is_empty()) {
+              ObjID obj = worklist.pop();
+              VectorSet bitmap;
+              for (int i=0; i < target->pred_count(); ++i) {
+                Block* pred = target->predecessor_at(i);
+                PEAState& pred_state = pred->state();
 
-             state._state.remove(id);
-             // update alias
-             AliasIterator iter(id);
-             state._alias.unlink(&iter);
-           }
-         }
-         else {
-           while (!worklist.is_empty()) {
-             ObjID obj = worklist.pop();
-             VectorSet bitmap;
-             for (int i=0; i < target->pred_count(); ++i) {
-               Block* pred = target->predecessor_at(i);
-               PEAState& pred_state = pred->state();
+                ObjectState* st = pred_state.get_object_state(obj);
+                if (!st->is_virtual()) {
+                  bitmap.set(i);
+                }
+              }
 
-               ObjectState* st = pred_state.get_object_state(obj);
-               if (!st->is_virtual()) {
-                 bitmap.set(i);
-               }
-             }
+              if (!bitmap.is_empty()) {
+                PhiNode* phi = PhiNode::make(r, obj->result_cast());
+                const int pred_count = target->pred_count();
+                for (int i=0; i < pred_count; ++i) {
+                  Block* block = target->predecessor_at(i);
+                  PEAState& pred_state = block->state();
+                  int pnum2 = pred_count - i; // pnum is opposite to the index
 
-             if (!bitmap.is_empty()) {
-               PhiNode* phi = PhiNode::make(r, obj->result_cast());
-               const int pred_count = target->pred_count();
-               for (int i=0; i < pred_count; ++i) {
-                 Block* block = target->predecessor_at(i);
-                 PEAState& pred_state = block->state();
-                 int pnum2 = pred_count - i; // pnum is opposite to the index
+                  if (!bitmap.test(i)) {
+                    SafePointNode* map = block->start_map();
+                    GraphKit kit(map->jvms());
 
-                 if (!bitmap.test(i)) {
-                   SafePointNode* map = block->start_map();
-                   GraphKit kit(map->jvms());
+                    kit.set_control(r->in(pnum2));
+                    EscapedState* es = pred_state.materialize(&kit, obj, block->start_map());
+                    add_exception_states_from(kit.transfer_exceptions_into_jvms());
+                    // should be ProjNode.
+                    Node* proj = es->get_materialized_value()->in(0);
+                    assert(proj->is_Proj(), "wrong result");
+                    r->set_req(pnum2, proj);
+                    do_exceptions();
+                  }
 
-                   kit.set_control(r->in(pnum2));
-                   EscapedState* es = pred_state.materialize(&kit, obj, block->start_map());
-                   add_exception_states_from(kit.transfer_exceptions_into_jvms());
-                   // should be ProjNode.
-                   Node* proj = es->get_materialized_value()->in(0);
-                   assert(proj->is_Proj(), "wrong result");
-                   r->set_req(pnum2, proj);
-                   do_exceptions();
-                 }
+                  phi->set_req(pnum2, pred_state.get_object_state(obj)->get_materialized_value());
+                }
 
-                 phi->set_req(pnum2, pred_state.get_object_state(obj)->get_materialized_value());
-               }
+                state._state.put(obj, new EscapedState(phi));
+              } else {
+                // all predecessors are virtual:
+                // 1. if all ObjectStates are idential, reuse it.
+                // 2. or create a brand new virtual ObjectState and individual fields.
+                bool identical = true;
+                ObjectState* st = state.get_object_state(obj);
+                for (int i = 0; identical && i < target->pred_count(); ++i) {
+                  Block* pred = target->predecessor_at(i);
+                  PEAState& pred_state = pred->state();
+                  if (pred_state.get_object_state(obj) != st) {
+                    identical = false;
+                  }
+                }
 
-               state._state.put(obj, new EscapedState(phi));
-             } else {
-               // all predecessors are virtual:
-               // 1. if all ObjectStates are idential, reuse it.
-               // 2. or create a brand new virtual ObjectState and individual fields.
-               assert(0, "net implement yet");
-             }
-           }
-         }
+                if (!identical) {
+                  assert(0, "not implement yet. merge fields");
+                }
+              }
+            }
+          }
 
-         // after merging
-         for (int i=0; i < jvms()->loc_size(); ++i) {
-           Node* lv = local(i);
-           ObjID obj = state.is_alias(lv);
+          // after merging
+          for (int i=0; i < jvms()->loc_size(); ++i) {
+            Node* lv = local(i);
+            ObjID obj = state.is_alias(lv);
 
-           if (obj != nullptr) {
-             ObjectState* os = state.get_object_state(obj);
-             Node* val = os->get_materialized_value();
-             // TODO: also need to merge virtual objects? (val == nullptr)
-             if (val != nullptr && val != lv) {
-               set_local(i, val);
-               //changed = true;
-             }
-           }
-         }
-       }
-     }
+            if (obj != nullptr) {
+              ObjectState* os = state.get_object_state(obj);
+              Node* val = os->get_materialized_value();
+              // TODO: also need to merge virtual objects? (val == nullptr)
+              if (val != nullptr && val != lv) {
+                set_local(i, val);
+                //changed = true;
+              }
+            }
+          }
+        } // while(changed)
+      } // DoPartialEscapeAnalysis
 
       record_for_igvn(r);
     }
