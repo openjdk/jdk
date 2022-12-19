@@ -81,6 +81,18 @@
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
 
+// Timestamp to correlate events in the same batch/generation
+Ticks JfrPeriodicEventSet::_timestamp;
+PeriodicType JfrPeriodicEventSet::_type;
+
+Ticks JfrPeriodicEventSet::timestamp(void) {
+  return _timestamp;
+}
+
+PeriodicType JfrPeriodicEventSet::type(void) {
+  return _type;
+}
+
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
   EventJVMInformation event;
@@ -139,6 +151,7 @@ static int _native_library_callback(const char* name, address base, address top,
   event.set_name(name);
   event.set_baseAddress((u8)base);
   event.set_topAddress((u8)top);
+  event.set_starttime(*(JfrTicks*)param);
   event.set_endtime(*(JfrTicks*) param);
   event.commit();
   return 0;
@@ -413,6 +426,7 @@ TRACE_REQUEST_FUNC(InitialSystemProperty) {
       EventInitialSystemProperty event(UNTIMED);
       event.set_key(p->key());
       event.set_value(p->value());
+      event.set_starttime(time_stamp);
       event.set_endtime(time_stamp);
       event.commit();
     }
@@ -439,6 +453,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
     EventThreadAllocationStatistics event(UNTIMED);
     event.set_allocated(allocated.at(i));
     event.set_thread(thread_ids.at(i));
+    event.set_starttime(time_stamp);
     event.set_endtime(time_stamp);
     event.commit();
   }
@@ -573,6 +588,7 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
   event.set_threadCount(CICompilerCount);
   event.set_tieredCompilation(TieredCompilation);
+  event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();
 }
 

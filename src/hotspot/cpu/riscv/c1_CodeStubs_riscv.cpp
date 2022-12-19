@@ -43,7 +43,9 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(__ pc() - __ offset() + safepoint_offset());
   __ relocate(safepoint_pc.rspec(), [&] {
-    __ la(t0, safepoint_pc.target());
+    int32_t offset;
+    __ la_patchable(t0, safepoint_pc.target(), offset);
+    __ addi(t0, t0, offset);
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
 

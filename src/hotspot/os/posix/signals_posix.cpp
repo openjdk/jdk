@@ -639,7 +639,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
-    JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? (JavaThread*) t : NULL;
+    JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? JavaThread::cast(t) : NULL;
     signal_was_handled = PosixSignals::pd_hotspot_signal_handler(sig, info, uc, jt);
   }
 

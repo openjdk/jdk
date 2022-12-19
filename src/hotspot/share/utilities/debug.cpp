@@ -446,7 +446,7 @@ extern "C" JNIEXPORT void disnm(intptr_t p) {
 
 extern "C" JNIEXPORT void printnm(intptr_t p) {
   char buffer[256];
-  sprintf(buffer, "printnm: " INTPTR_FORMAT, p);
+  os::snprintf_checked(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
   CodeBlob* cb = CodeCache::find_blob((address) p);
   if (cb->is_nmethod()) {
