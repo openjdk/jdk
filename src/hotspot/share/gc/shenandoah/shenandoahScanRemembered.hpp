@@ -1024,16 +1024,14 @@ private:
   static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
 
   static const size_t _clusters_in_smallest_chunk = 4;
-  static const size_t _assumed_words_in_card = 64;
 
-  // smallest_chunk_size is 4 clusters (i.e. 128 KiB).  Note that there are 64 words per card and there are 64 cards per
-  // cluster.  Each cluster spans 128 KiB.
+  // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
   // This is computed from CardTable::card_size_in_words() *
   //      ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  // We can't perform this computation here, because of encapsulation and initialization constraints.  We paste
-  // the magic number here, and assert that this number matches the intended computation in constructor.
-  static const size_t _smallest_chunk_size_words = (_clusters_in_smallest_chunk * _assumed_words_in_card *
-                                                    ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster);
+  static size_t smallest_chunk_size_words() {
+      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() *
+             ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  }
 
   // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
   // The chunks of assigned work are divided into groups, where the size of the typical group (_regular_group_size) is half the
