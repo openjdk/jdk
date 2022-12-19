@@ -32,6 +32,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/macros.hpp"
 
 class  FileMapInfo;
