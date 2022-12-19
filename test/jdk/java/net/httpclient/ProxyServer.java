@@ -460,7 +460,7 @@ public class ProxyServer extends Thread implements Closeable {
                 if (debug) {
                     System.out.printf("Proxy: content-length: %d%n", n);
                 }
-            } catch (IllegalFormatException x) {
+            } catch (NumberFormatException x) {
                 if (debug) {
                     System.out.println("Proxy: bad content-length, closing connection");
                     System.out.println("Proxy: \tcontent-length: " + cl);
