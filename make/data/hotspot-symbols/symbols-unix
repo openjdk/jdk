@@ -194,8 +194,6 @@ JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ReportFinalizationComplete
-JVM_ExtentLocalCache
-JVM_SetExtentLocalCache
 JVM_SetArrayElement
 JVM_SetClassSigners
 JVM_SetNativeThreadName
@@ -225,4 +223,10 @@ JVM_VirtualThreadMountEnd
 JVM_VirtualThreadUnmountBegin
 JVM_VirtualThreadUnmountEnd
 JVM_VirtualThreadHideFrames
+
+# Scoped values
+JVM_EnsureMaterializedForStackWalk_func
+JVM_FindScopedValueBindings
+JVM_ScopedValueCache
+JVM_SetScopedValueCache
 #

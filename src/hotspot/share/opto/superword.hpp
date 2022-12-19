@@ -457,6 +457,7 @@ class SuperWord : public ResourceObj {
   bool is_cmov_pack(Node_List* p);
   bool is_cmov_pack_internal_node(Node_List* p, Node* nd) { return is_cmov_pack(p) && !nd->is_CMove(); }
   static bool is_cmove_fp_opcode(int opc) { return (opc == Op_CMoveF || opc == Op_CMoveD); }
+  static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
   bool same_inputs(Node_List* p, int idx);
   // CloneMap utilities

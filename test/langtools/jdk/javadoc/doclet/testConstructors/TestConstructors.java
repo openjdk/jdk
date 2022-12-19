@@ -51,7 +51,7 @@ public class TestConstructors extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a></li>
                     <li><a href="Outer.Inner.html#%3Cinit%3E(int)"><code>Inner(int)</code></a></li>
                     <li><a href="Outer.Inner.NestedInner.html#%3Cinit%3E()"><code>NestedInner()</code></a></li>

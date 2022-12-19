@@ -46,12 +46,6 @@ StubCodeDesc* StubCodeDesc::desc_for(address pc) {
   return p;
 }
 
-const char* StubCodeDesc::name_for(address pc) {
-  StubCodeDesc* p = desc_for(pc);
-  return p == NULL ? NULL : p->name();
-}
-
-
 void StubCodeDesc::freeze() {
   assert(!_frozen, "repeated freeze operation");
   _frozen = true;

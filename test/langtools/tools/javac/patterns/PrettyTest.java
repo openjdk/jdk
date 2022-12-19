@@ -54,7 +54,6 @@ public class PrettyTest {
                       "         b = o instanceof R(var s);\n" +
                       "         b = o instanceof R2(R(var s), String t);\n" +
                       "         b = o instanceof R2(R(var s), var t);\n" +
-                      "         b = o instanceof R(String s) r;\n" +
                       "    }\n" +
                       "    record R(String s) {}\n" +
                       "    record R2(R r, String s) {}\n" +
@@ -71,7 +70,6 @@ public class PrettyTest {
                                   b = o instanceof R(/*missing*/ s);
                                   b = o instanceof R2(R(/*missing*/ s), String t);
                                   b = o instanceof R2(R(/*missing*/ s), /*missing*/ t);
-                                  b = o instanceof R(String s) r;
                               }
                               \n\
                               class R {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,30 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/resourceHash.hpp"
 
-ResourceHashtable<uintptr_t, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass> _resolution_error_table;
+class ResolutionErrorKey {
+  ConstantPool* _cpool;
+  int           _index;
+
+ public:
+  ResolutionErrorKey(ConstantPool* cpool, int index) : _cpool(cpool), _index(index) {
+    assert(_index > 0, "should be already encoded or otherwise greater than zero");
+  }
+
+  ConstantPool* cpool() const { return _cpool; }
+
+  static unsigned hash(const ResolutionErrorKey& key) {
+    Symbol* name = key._cpool->pool_holder()->name();
+    return (unsigned int)(name->identity_hash() ^ key._index);
+  }
+
+  static bool equals(const ResolutionErrorKey& l, const ResolutionErrorKey& r) {
+    return (l._cpool == r._cpool) && (l._index == r._index);
+  }
+};
+
+ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+                  ResolutionErrorKey::hash,
+                  ResolutionErrorKey::equals> _resolution_error_table;
 
 // create new error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
@@ -43,8 +66,9 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(!pool.is_null() && error != NULL, "adding NULL obj");
 
-  ResolutionErrorEntry* entry = new ResolutionErrorEntry(pool(), cp_index, error, message, cause, cause_msg);
-  _resolution_error_table.put(convert_key(pool, cp_index), entry);
+  ResolutionErrorKey key(pool(), cp_index);
+  ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
+  _resolution_error_table.put(key, entry);
 }
 
 // create new nest host error entry
@@ -54,78 +78,54 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(!pool.is_null() && message != NULL, "adding NULL obj");
 
-  ResolutionErrorEntry* entry = new ResolutionErrorEntry(pool(), cp_index, message);
-  _resolution_error_table.put(convert_key(pool, cp_index), entry);
+  ResolutionErrorKey key(pool(), cp_index);
+  ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
+  _resolution_error_table.put(key, entry);
 }
 
 // find entry in the table
 ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle& pool, int cp_index) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  ResolutionErrorEntry** entry = _resolution_error_table.get(convert_key(pool, cp_index));
-  if (entry != nullptr) {
-    return *entry;
-  } else {
-    return nullptr;
-  }
-
+  ResolutionErrorKey key(pool(), cp_index);
+  ResolutionErrorEntry** entry = _resolution_error_table.get(key);
+  return entry == nullptr ? nullptr : *entry;
 }
 
-ResolutionErrorEntry::ResolutionErrorEntry(ConstantPool* pool, int cp_index, Symbol* error, Symbol* message,
+ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, Symbol* message,
       Symbol* cause, Symbol* cause_msg):
-        _cp_index(cp_index),
         _error(error),
         _message(message),
         _cause(cause),
         _cause_msg(cause_msg),
-        _pool(pool),
         _nest_host_error(nullptr) {
 
-  if (_error != nullptr) {
-    _error->increment_refcount();
-  }
-
-  if (_message != nullptr) {
-    _message->increment_refcount();
-  }
-
-  if (_cause != nullptr) {
-    _cause->increment_refcount();
-  }
-
-  if (_cause_msg != nullptr) {
-    _cause_msg->increment_refcount();
-  }
+  Symbol::maybe_increment_refcount(_error);
+  Symbol::maybe_increment_refcount(_message);
+  Symbol::maybe_increment_refcount(_cause);
+  Symbol::maybe_increment_refcount(_cause_msg);
 }
 
 ResolutionErrorEntry::~ResolutionErrorEntry() {
   // decrement error refcount
-  if (error() != NULL) {
-    error()->decrement_refcount();
-  }
-  if (message() != NULL) {
-    message()->decrement_refcount();
-  }
-  if (cause() != NULL) {
-    cause()->decrement_refcount();
-  }
-  if (cause_msg() != NULL) {
-    cause_msg()->decrement_refcount();
-  }
+  Symbol::maybe_decrement_refcount(_error);
+  Symbol::maybe_decrement_refcount(_message);
+  Symbol::maybe_decrement_refcount(_cause);
+  Symbol::maybe_decrement_refcount(_cause_msg);
+
   if (nest_host_error() != NULL) {
     FREE_C_HEAP_ARRAY(char, nest_host_error());
   }
 }
 
-class ResolutionErrorDeleteIterate : StackObj{
-private:
+class ResolutionErrorDeleteIterate : StackObj {
   ConstantPool* p;
 
 public:
   ResolutionErrorDeleteIterate(ConstantPool* pool):
     p(pool) {};
 
-  bool do_entry(uintptr_t key, ResolutionErrorEntry* value){
-    if (value -> pool() == p) {
+  bool do_entry(const ResolutionErrorKey& key, ResolutionErrorEntry* value){
+    if (key.cpool() == p) {
       delete value;
       return true;
     } else {
@@ -142,10 +142,10 @@ void ResolutionErrorTable::delete_entry(ConstantPool* c) {
   _resolution_error_table.unlink(&deleteIterator);
 }
 
-class ResolutionIteratePurgeErrors : StackObj{
+class ResolutionIteratePurgeErrors : StackObj {
 public:
-  bool do_entry(uintptr_t key, ResolutionErrorEntry* value) {
-    ConstantPool* pool = value -> pool();
+  bool do_entry(const ResolutionErrorKey& key, ResolutionErrorEntry* value){
+    ConstantPool* pool = key.cpool();
     if (!(pool->pool_holder()->is_loader_alive())) {
       delete value;
       return true;

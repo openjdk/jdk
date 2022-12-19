@@ -32,7 +32,6 @@ class Generation;
 class CardTableRS;
 class CardTableBarrierSet;
 class DefNewGeneration;
-class KlassRemSet;
 class Method;
 class nmethod;
 

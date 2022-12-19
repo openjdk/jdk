@@ -39,10 +39,14 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/os.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+
+jbyte* JVMCIEnv::_serialized_saved_properties = nullptr;
+int JVMCIEnv::_serialized_saved_properties_len = 0;
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -98,61 +102,73 @@ bool JVMCICompileState::jvmti_state_changed() const {
   return false;
 }
 
-void JVMCIEnv::copy_saved_properties() {
-  assert(!is_hotspot(), "can only copy saved properties from HotSpot to native image");
+jbyte* JVMCIEnv::get_serialized_saved_properties(int& props_len, TRAPS) {
+  jbyte* props = _serialized_saved_properties;
+  if (props == nullptr) {
+    // load VMSupport
+    Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+    Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
 
-  JavaThread* THREAD = JavaThread::current(); // For exception macros.
-
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_services_Services(), Handle(), Handle(), true, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
-  }
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (ik->should_be_initialized()) {
-    ik->initialize(THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->should_be_initialized()) {
+      ik->initialize(CHECK_NULL);
     }
-  }
 
-  // Get the serialized saved properties from HotSpot
-  TempNewSymbol serializeSavedProperties = SymbolTable::new_symbol("serializeSavedProperties");
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args;
-  JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::void_byte_array_signature(), &args, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
-  }
-  oop res = result.get_oop();
-  assert(res->is_typeArray(), "must be");
-  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be");
-  typeArrayOop ba = typeArrayOop(res);
-  int serialized_properties_len = ba->length();
+    // invoke the serializeSavedPropertiesToByteArray method
+    JavaValue result(T_OBJECT);
+    JavaCallArguments args;
 
-  // Copy serialized saved properties from HotSpot object into native buffer
-  jbyte* serialized_properties = NEW_RESOURCE_ARRAY(jbyte, serialized_properties_len);
-  memcpy(serialized_properties, ba->byte_at_addr(0), serialized_properties_len);
+    Symbol* signature = vmSymbols::void_byte_array_signature();
+    JavaCalls::call_static(&result,
+                           ik,
+                           vmSymbols::serializeSavedPropertiesToByteArray_name(),
+                           signature,
+                           &args,
+                           CHECK_NULL);
+
+    oop res = result.get_oop();
+    assert(res->is_typeArray(), "must be");
+    assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be");
+    typeArrayOop ba = typeArrayOop(res);
+    props_len = ba->length();
+
+    // Copy serialized saved properties from HotSpot object into C heap
+    props = NEW_C_HEAP_ARRAY(jbyte, props_len, mtJVMCI);
+    memcpy(props, ba->byte_at_addr(0), props_len);
+
+    _serialized_saved_properties_len = props_len;
+    _serialized_saved_properties = props;
+  } else {
+    props_len = _serialized_saved_properties_len;
+  }
+  return props;
+}
+
+void JVMCIEnv::copy_saved_properties(jbyte* properties, int properties_len, JVMCI_TRAPS) {
+  assert(!is_hotspot(), "can only copy saved properties from HotSpot to native image");
+  JavaThread* thread = JavaThread::current(); // For exception macros.
 
   // Copy native buffer into shared library object
-  JVMCIPrimitiveArray buf = new_byteArray(serialized_properties_len, this);
+  JVMCIPrimitiveArray buf = new_byteArray(properties_len, this);
   if (has_pending_exception()) {
-    describe_pending_exception(true);
-    fatal("Error in copy_saved_properties");
+    _runtime->fatal_exception(JVMCIENV, "Error in copy_saved_properties");
   }
-  copy_bytes_from(serialized_properties, buf, 0, serialized_properties_len);
+  copy_bytes_from(properties, buf, 0, properties_len);
   if (has_pending_exception()) {
-    describe_pending_exception(true);
-    fatal("Error in copy_saved_properties");
+    _runtime->fatal_exception(JVMCIENV, "Error in copy_saved_properties");
   }
 
   // Initialize saved properties in shared library
   jclass servicesClass = JNIJVMCI::Services::clazz();
   jmethodID initializeSavedProperties = JNIJVMCI::Services::initializeSavedProperties_method();
-  JNIAccessMark jni(this, THREAD);
-  jni()->CallStaticVoidMethod(servicesClass, initializeSavedProperties, buf.as_jobject());
-  if (jni()->ExceptionCheck()) {
-    jni()->ExceptionDescribe();
-    fatal("Error calling jdk.vm.ci.services.Services.initializeSavedProperties");
+  bool exception = false;
+  {
+    JNIAccessMark jni(this, thread);
+    jni()->CallStaticVoidMethod(servicesClass, initializeSavedProperties, buf.as_jobject());
+    exception = jni()->ExceptionCheck();
+  }
+  if (exception) {
+    _runtime->fatal_exception(JVMCIENV, "Error calling jdk.vm.ci.services.Services.initializeSavedProperties");
   }
 }
 
@@ -302,34 +318,51 @@ class ExceptionTranslation: public StackObj {
   // Encodes the exception in `_from_env` into `buffer`.
   // Where N is the number of bytes needed for the encoding, returns N if N <= `buffer_size`
   // and the encoding was written to `buffer` otherwise returns -N.
-  virtual int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) = 0;
+  virtual int encode(JavaThread* THREAD, Klass* vmSupport, jlong buffer, int buffer_size) = 0;
 
   // Decodes the exception in `buffer` in `_to_env` and throws it.
-  virtual void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) = 0;
+  virtual void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) = 0;
 
  public:
   void doit(JavaThread* THREAD) {
-    // Resolve HotSpotJVMCIRuntime class explicitly as HotSpotJVMCI::compute_offsets
+    // Resolve VMSupport class explicitly as HotSpotJVMCI::compute_offsets
     // may not have been called.
-    Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, CHECK);
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+    guarantee(!HAS_PENDING_EXCEPTION, "");
 
     int buffer_size = 2048;
     while (true) {
       ResourceMark rm;
-      jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, jbyte, buffer_size);
-      int res = encode(THREAD, runtimeKlass, buffer, buffer_size);
-      if ((_from_env != nullptr && _from_env->has_pending_exception()) || HAS_PENDING_EXCEPTION) {
-        JVMCIRuntime::fatal_exception(_from_env, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+      jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, buffer_size);
+      if (buffer == 0L) {
+        decode(THREAD, vmSupport, 0L);
+        return;
       }
-      if (res < 0) {
+      int res = encode(THREAD, vmSupport, buffer, buffer_size);
+      if (_from_env != nullptr && !_from_env->is_hotspot() && _from_env->has_pending_exception()) {
+        // Cannot get name of exception thrown by `encode` as that involves
+        // calling into libjvmci which in turn can raise another exception.
+        _from_env->clear_pending_exception();
+        decode(THREAD, vmSupport, -2L);
+        return;
+      } else if (HAS_PENDING_EXCEPTION) {
+        Symbol *ex_name = PENDING_EXCEPTION->klass()->name();
+        CLEAR_PENDING_EXCEPTION;
+        if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+          decode(THREAD, vmSupport, -1L);
+        } else {
+          decode(THREAD, vmSupport, -2L);
+        }
+        return;
+      } else if (res < 0) {
         int required_buffer_size = -res;
         if (required_buffer_size > buffer_size) {
           buffer_size = required_buffer_size;
         }
       } else {
-        decode(THREAD, runtimeKlass, buffer);
+        decode(THREAD, vmSupport, buffer);
         if (!_to_env->has_pending_exception()) {
-          JVMCIRuntime::fatal_exception(_to_env, "HotSpotJVMCIRuntime.decodeAndThrowThrowable should throw an exception");
+          _to_env->throw_InternalError("decodeAndThrowThrowable should have thrown an exception");
         }
         return;
       }
@@ -342,23 +375,23 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
  private:
   const Handle& _throwable;
 
-  int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) {
+  int encode(JavaThread* THREAD, Klass* vmSupport, jlong buffer, int buffer_size) {
     JavaCallArguments jargs;
     jargs.push_oop(_throwable);
     jargs.push_long(buffer);
     jargs.push_int(buffer_size);
     JavaValue result(T_INT);
     JavaCalls::call_static(&result,
-                            runtimeKlass,
+                            vmSupport,
                             vmSymbols::encodeThrowable_name(),
                             vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
     return result.get_jint();
   }
 
-  void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) {
+  void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) {
     JNIAccessMark jni(_to_env, THREAD);
-    jni()->CallStaticVoidMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                JNIJVMCI::HotSpotJVMCIRuntime::decodeAndThrowThrowable_method(),
+    jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
+                                JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
                                 buffer);
   }
  public:
@@ -371,19 +404,19 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
  private:
   jthrowable _throwable;
 
-  int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) {
+  int encode(JavaThread* THREAD, Klass* vmSupport, jlong buffer, int buffer_size) {
     JNIAccessMark jni(_from_env, THREAD);
-    return jni()->CallStaticIntMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                      JNIJVMCI::HotSpotJVMCIRuntime::encodeThrowable_method(),
+    return jni()->CallStaticIntMethod(JNIJVMCI::VMSupport::clazz(),
+                                      JNIJVMCI::VMSupport::encodeThrowable_method(),
                                       _throwable, buffer, buffer_size);
   }
 
-  void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) {
+  void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) {
     JavaCallArguments jargs;
     jargs.push_long(buffer);
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
-                            runtimeKlass,
+                            vmSupport,
                             vmSymbols::decodeAndThrowThrowable_name(),
                             vmSymbols::long_void_signature(), &jargs, THREAD);
   }
@@ -400,31 +433,34 @@ void JVMCIEnv::translate_from_jni_exception(JavaThread* THREAD, jthrowable throw
   SharedLibraryToHotSpotExceptionTranslation(hotspot_env, jni_env, throwable).doit(THREAD);
 }
 
-jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env) {
-  if (is_hotspot()) {
-    if (HAS_PENDING_EXCEPTION) {
-      Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
-      CLEAR_PENDING_EXCEPTION;
-      translate_to_jni_exception(THREAD, throwable, this, peer_env);
-      return true;
-    }
-  } else {
-    jthrowable ex = nullptr;
-    {
-      JNIAccessMark jni(this, THREAD);
-      ex = jni()->ExceptionOccurred();
-      if (ex != nullptr) {
-        jni()->ExceptionClear();
-      }
-    }
-    if (ex != nullptr) {
-      translate_from_jni_exception(THREAD, ex, peer_env, this);
-      return true;
-    }
+jboolean JVMCIEnv::transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  if (HAS_PENDING_EXCEPTION) {
+    Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    translate_to_jni_exception(THREAD, throwable, hotspot_env, jni_env);
+    return true;
   }
   return false;
 }
 
+jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env) {
+  if (is_hotspot()) {
+    return transfer_pending_exception_to_jni(THREAD, this, peer_env);
+  }
+  jthrowable ex = nullptr;
+  {
+    JNIAccessMark jni(this, THREAD);
+    ex = jni()->ExceptionOccurred();
+    if (ex != nullptr) {
+      jni()->ExceptionClear();
+    }
+  }
+  if (ex != nullptr) {
+    translate_from_jni_exception(THREAD, ex, peer_env, this);
+    return true;
+  }
+  return false;
+}
 
 JVMCIEnv::~JVMCIEnv() {
   if (_attach_threw_OOME) {
@@ -453,7 +489,8 @@ JVMCIEnv::~JVMCIEnv() {
 
     if (has_pending_exception()) {
       char message[256];
-      jio_snprintf(message, 256, "Uncaught exception exiting JVMCIEnv scope entered at %s:%d", _file, _line);
+      jio_snprintf(message, 256, "Uncaught exception exiting %s JVMCIEnv scope entered at %s:%d",
+          is_hotspot() ? "HotSpot" : "libjvmci", _file, _line);
       JVMCIRuntime::fatal_exception(this, message);
     }
 
