@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,11 +458,14 @@ public class ProxyServer extends Thread implements Closeable {
             try {
                 n = Integer.parseInt(cl);
                 if (debug) {
-                    System.out.printf("Proxy: content-length: %d%n", cl);
+                    System.out.printf("Proxy: content-length: %d%n", n);
                 }
             } catch (IllegalFormatException x) {
                 if (debug) {
                     System.out.println("Proxy: bad content-length, closing connection");
+                    System.out.println("Proxy: \tcontent-length: " + cl);
+                    System.out.println("Proxy: \theaders: " + headers);
+                    System.out.println("Proxy: \t" + x);
                 }
                 return true;  // should close
             }
