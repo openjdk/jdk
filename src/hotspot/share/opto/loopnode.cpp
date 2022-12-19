@@ -3632,6 +3632,17 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
             // Skip to head of inner loop
             assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
             n = nlpt->_head;
+            if (_head == n) {
+              // this and nlpt (inner loop) have the same loop head. This should not happen because
+              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+              // but then attached in the build_loop_tree afterwards, and so still have unmerged
+              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+              // since we have reached the loop head of this.
+              assert(_head->as_Region()->is_in_infinite_subgraph(),
+                     "only expect unmerged backedges in infinite loops");
+              break;
+            }
           }
         }
       }
@@ -6193,7 +6204,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
 void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
   Node* next;
   uint padding = 3;
-  uint node_index_padding_width = static_cast<int>(log10(C->unique())) + 1;
+  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
   for (int i = idom_list.size() - 1; i >= 0; i--) {
     if (i == 9 || i == 99) {
       padding++;
