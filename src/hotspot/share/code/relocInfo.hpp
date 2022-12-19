@@ -904,12 +904,12 @@ class DataRelocation : public Relocation {
  public:
   DataRelocation(relocInfo::relocType type) : Relocation(type) {}
 
-  bool          is_data()                      { return true; }
+  bool          is_data() override             { return true; }
 
   // both target and offset must be computed somehow from relocation data
   virtual int    offset()                      { return 0; }
-  address         value()                      = 0;
-  void        set_value(address x)             { set_value(x, offset()); }
+  address         value() override             = 0;
+  void        set_value(address x) override    { set_value(x, offset()); }
   void        set_value(address x, intptr_t o) {
     if (addr_in_const())
       const_set_data_value(x);
@@ -946,7 +946,7 @@ public:
     return RelocationHolder::construct<post_call_nop_Relocation>();
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 };
 
 class entry_guard_Relocation : public Relocation {
@@ -959,7 +959,7 @@ public:
     return RelocationHolder::construct<entry_guard_Relocation>();
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 };
 
 // A CallRelocation always points at a call instruction.
@@ -968,14 +968,14 @@ class CallRelocation : public Relocation {
  public:
   CallRelocation(relocInfo::relocType type) : Relocation(type) { }
 
-  bool is_call() { return true; }
+  bool is_call() override { return true; }
 
   address  destination()                    { return pd_call_destination(); }
   void     set_destination(address x); // pd_set_call_destination
 
-  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
-  address  value()                          { return destination();  }
-  void     set_value(address x)             { set_destination(x); }
+  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
+  address  value() override                 { return destination();  }
+  void     set_value(address x) override    { set_destination(x); }
 };
 
 class oop_Relocation : public DataRelocation {
@@ -997,7 +997,7 @@ class oop_Relocation : public DataRelocation {
     return RelocationHolder::construct<oop_Relocation>(oop_index, offset);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _oop_index;                  // if > 0, index into CodeBlob::oop_at
@@ -1011,17 +1011,17 @@ class oop_Relocation : public DataRelocation {
 
  public:
   int oop_index() { return _oop_index; }
-  int offset()    { return _offset; }
+  int offset() override { return _offset; }
 
   // data is packed in "2_ints" format:  [i o] or [Ii Oo]
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
   void fix_oop_relocation();        // reasserts oop value
 
   void verify_oop_relocation();
 
-  address value()  { return cast_from_oop<address>(*oop_addr()); }
+  address value() override { return cast_from_oop<address>(*oop_addr()); }
 
   bool oop_is_immediate()  { return oop_index() == 0; }
 
@@ -1048,7 +1048,7 @@ class metadata_Relocation : public DataRelocation {
     return RelocationHolder::construct<metadata_Relocation>(metadata_index, offset);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _metadata_index;            // if > 0, index into nmethod::metadata_at
@@ -1067,15 +1067,15 @@ class metadata_Relocation : public DataRelocation {
 
  public:
   int metadata_index() { return _metadata_index; }
-  int offset()    { return _offset; }
+  int offset() override { return _offset; }
 
   // data is packed in "2_ints" format:  [i o] or [Ii Oo]
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
   void fix_metadata_relocation();        // reasserts metadata value
 
-  address value()  { return (address) *metadata_addr(); }
+  address value() override { return (address) *metadata_addr(); }
 
   bool metadata_is_immediate()  { return metadata_index() == 0; }
 
@@ -1095,7 +1095,7 @@ class virtual_call_Relocation : public CallRelocation {
     return RelocationHolder::construct<virtual_call_Relocation>(cached_value, method_index);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   address _cached_value; // location of set-value instruction
@@ -1121,10 +1121,10 @@ class virtual_call_Relocation : public CallRelocation {
   // oop_limit is set to 0 if the limit falls somewhere within the call.
   // When unpacking, a zero oop_limit is taken to refer to the end of the call.
   // (This has the effect of bringing in the call's delay slot on SPARC.)
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
-  bool clear_inline_cache();
+  bool clear_inline_cache() override;
 };
 
 
@@ -1134,7 +1134,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
     return RelocationHolder::construct<opt_virtual_call_Relocation>(method_index);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _method_index; // resolved method for a Java call
@@ -1150,10 +1150,10 @@ class opt_virtual_call_Relocation : public CallRelocation {
   int     method_index() { return _method_index; }
   Method* method_value();
 
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
-  bool clear_inline_cache();
+  bool clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1166,7 +1166,7 @@ class static_call_Relocation : public CallRelocation {
     return RelocationHolder::construct<static_call_Relocation>(method_index);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   jint _method_index; // resolved method for a Java call
@@ -1182,10 +1182,10 @@ class static_call_Relocation : public CallRelocation {
   int     method_index() { return _method_index; }
   Method* method_value();
 
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
-  bool clear_inline_cache();
+  bool clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1197,7 +1197,7 @@ class static_stub_Relocation : public Relocation {
     return RelocationHolder::construct<static_stub_Relocation>(static_call);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   address _static_call;  // location of corresponding static_call
@@ -1210,13 +1210,13 @@ class static_stub_Relocation : public Relocation {
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
 
  public:
-  bool clear_inline_cache();
+  bool clear_inline_cache() override;
 
   address static_call() { return _static_call; }
 
   // data is packed as a scaled offset in "1_int" format:  [c] or [Cc]
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 };
 
 class runtime_call_Relocation : public CallRelocation {
@@ -1226,7 +1226,7 @@ class runtime_call_Relocation : public CallRelocation {
     return RelocationHolder::construct<runtime_call_Relocation>();
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   friend class RelocationHolder;
@@ -1240,7 +1240,7 @@ class runtime_call_w_cp_Relocation : public CallRelocation {
     return RelocationHolder::construct<runtime_call_w_cp_Relocation>();
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   friend class RelocationHolder;
@@ -1260,8 +1260,8 @@ class runtime_call_w_cp_Relocation : public CallRelocation {
  public:
   void set_constant_pool_offset(int offset) { _offset = offset; }
   int get_constant_pool_offset() { return _offset; }
-  void pack_data_to(CodeSection * dest);
-  void unpack_data();
+  void pack_data_to(CodeSection * dest) override;
+  void unpack_data() override;
 };
 
 // Trampoline Relocations.
@@ -1276,7 +1276,7 @@ class trampoline_stub_Relocation : public Relocation {
     return RelocationHolder::construct<trampoline_stub_Relocation>(static_call);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
  private:
   address _owner;    // Address of the NativeCall that owns the trampoline.
@@ -1293,8 +1293,8 @@ class trampoline_stub_Relocation : public Relocation {
   // Return the address of the NativeCall that owns the trampoline.
   address owner() { return _owner; }
 
-  void pack_data_to(CodeSection * dest);
-  void unpack_data();
+  void pack_data_to(CodeSection * dest) override;
+  void unpack_data() override;
 
   // Find the trampoline stub for a call.
   static address get_trampoline_for(address call, nmethod* code);
@@ -1313,7 +1313,7 @@ class external_word_Relocation : public DataRelocation {
     return RelocationHolder::construct<external_word_Relocation>(nullptr);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
   // Some address looking values aren't safe to treat as relocations
   // and should just be treated as constants.
@@ -1337,12 +1337,12 @@ class external_word_Relocation : public DataRelocation {
   // to short indexes, if they are pre-registered by the stub mechanism.
   // If the "a" value is 0 (i.e., _target is NULL), the address is stored
   // in the code stream.  See external_word_Relocation::target().
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
   address  target();        // if _target==NULL, fetch addr from code stream
-  address  value()          { return target(); }
+  address  value() override { return target(); }
 };
 
 class internal_word_Relocation : public DataRelocation {
@@ -1358,7 +1358,7 @@ class internal_word_Relocation : public DataRelocation {
     return RelocationHolder::construct<internal_word_Relocation>(nullptr);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
   // default section -1 means self-relative
   internal_word_Relocation(address target, int section = -1,
@@ -1381,13 +1381,13 @@ class internal_word_Relocation : public DataRelocation {
   // If the "o" value is 0 (i.e., _target is NULL), the offset is stored
   // in the code stream.  See internal_word_Relocation::target().
   // If _section is not -1, it is appended to the low bits of the offset.
-  void pack_data_to(CodeSection* dest);
-  void unpack_data();
+  void pack_data_to(CodeSection* dest) override;
+  void unpack_data() override;
 
-  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
   address  target();        // if _target==NULL, fetch addr from code stream
   int      section()        { return _section;   }
-  address  value()          { return target();   }
+  address  value() override { return target();   }
 };
 
 class section_word_Relocation : public internal_word_Relocation {
@@ -1396,7 +1396,7 @@ class section_word_Relocation : public internal_word_Relocation {
     return RelocationHolder::construct<section_word_Relocation>(target, section);
   }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 
   section_word_Relocation(address target, int section)
     : internal_word_Relocation(target, section, relocInfo::section_word_type) {
@@ -1405,7 +1405,7 @@ class section_word_Relocation : public internal_word_Relocation {
   }
 
   //void pack_data_to -- inherited
-  void unpack_data();
+  void unpack_data() override;
 
  private:
   friend class RelocationHolder;
@@ -1414,19 +1414,19 @@ class section_word_Relocation : public internal_word_Relocation {
 
 
 class poll_Relocation : public Relocation {
-  bool          is_data()                      { return true; }
-  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
+  bool is_data() override { return true; }
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
  public:
   poll_Relocation(relocInfo::relocType type = relocInfo::poll_type) : Relocation(type) { }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 };
 
 class poll_return_Relocation : public poll_Relocation {
  public:
   poll_return_Relocation() : poll_Relocation(relocInfo::relocInfo::poll_return_type) { }
 
-  void copy_into(RelocationHolder& holder) const;
+  void copy_into(RelocationHolder& holder) const override;
 };
 
 // We know all the xxx_Relocation classes, so now we can define these:
