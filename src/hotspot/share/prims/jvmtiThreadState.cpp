@@ -245,16 +245,17 @@ JvmtiVTMSTransitionDisabler::print_info() {
 #endif
 
 // disable VTMS transitions for one virtual thread
-JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread vthread) {
+// no-op if vthread is non-NULL and not a virtual thread
+JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread vthread)
+  : _is_SR(false), _vthread(vthread)
+{
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
   }
-  if (Thread::current_or_null() == NULL) {
+  if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
-  _is_SR = false;
-  _vthread = vthread;
-  if (_vthread != NULL) {
+  if (_vthread != nullptr) {
     VTMS_transition_disable_for_one(); // disable VTMS transitions for one virtual thread
   } else {
     VTMS_transition_disable_for_all(); // disable VTMS transitions for all virtual threads
@@ -262,15 +263,15 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread vthread) {
 }
 
 // disable VTMS transitions for all virtual threads
-JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR) {
+JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
+  : _is_SR(is_SR), _vthread(nullptr)
+{
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
   }
-  if (Thread::current_or_null() == NULL) {
+  if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
-  _is_SR = is_SR;
-  _vthread = NULL;
   VTMS_transition_disable_for_all();
 }
 
@@ -278,10 +279,10 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is a no-op without virtual threads
   }
-  if (Thread::current_or_null() == NULL) {
+  if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
-  if (_vthread != NULL) {
+  if (_vthread != nullptr) {
     VTMS_transition_enable_for_one(); // enable VTMS transitions for one virtual thread
   } else {
     VTMS_transition_enable_for_all(); // enable VTMS transitions for all virtual threads
@@ -296,7 +297,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(_vthread));
   if (!java_lang_VirtualThread::is_instance(vth())) {
-    return;
+    return; // no-op if _vthread is not a virtual thread
   }
   JvmtiThreadState* vstate = java_lang_Thread::jvmti_thread_state(vth());
 
@@ -369,7 +370,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_one() {
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(_vthread));
   if (!java_lang_VirtualThread::is_instance(vth())) {
-    return;
+    return; // no-op if _vthread is n virtual thread
   }
   MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
   java_lang_Thread::dec_VTMS_transition_disable_count(vth());
@@ -483,7 +484,7 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
 
   // Unblock waiting VTMS transition disablers.
   if (_VTMS_transition_disable_for_one_count > 0 ||
-     _VTMS_transition_disable_for_all_count > 0) {
+      _VTMS_transition_disable_for_all_count > 0) {
     MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
     ml.notify_all();
   }

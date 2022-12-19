@@ -149,7 +149,7 @@ jvmtiError
 JvmtiEnv::SetThreadLocalStorage(jthread thread, const void* data) {
   JavaThread* current = JavaThread::current();
   JvmtiThreadState* state = NULL;
-  JvmtiVTMSTransitionDisabler disabler(thread);;
+  JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(current);
 
   JavaThread* java_thread = NULL;
