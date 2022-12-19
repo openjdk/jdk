@@ -29,7 +29,40 @@
 # and fix the broken property, if needed.
 
 DIR=`dirname $0`
-OUT=`. $DIR/autoconf-config.guess`
+OUT=`. $DIR/autoconf-config.guess 2> /dev/null`
+
+# Handle some cases that autoconf-config.guess is not capable of
+if [ "x$OUT" = x ]; then
+  if [ `uname -s` = Linux ]; then
+    # Test and fix little endian MIPS.
+    if [ `uname -m` = mipsel ]; then
+      OUT=mipsel-unknown-linux-gnu
+    elif [ `uname -m` = mips64el ]; then
+      OUT=mips64el-unknown-linux-gnu
+    # Test and fix little endian PowerPC64.
+    elif [ `uname -m` = ppc64le ]; then
+      OUT=powerpc64le-unknown-linux-gnu
+    # Test and fix LoongArch64.
+    elif [ `uname -m` = loongarch64 ]; then
+      OUT=loongarch64-unknown-linux-gnu
+    # Test and fix RISC-V.
+    elif [ `uname -m` = riscv64 ]; then
+      OUT=riscv64-unknown-linux-gnu
+    fi
+  # Test and fix cygwin machine arch .x86_64
+  elif [[ `uname -s` = CYGWIN* ]]; then
+    if [ `uname -m` = ".x86_64" ]; then
+      OUT=x86_64-unknown-cygwin
+    fi
+  fi
+
+  if [ "x$OUT" = x ]; then
+    # Run autoconf-config.guess again to get the error message.
+    . $DIR/autoconf-config.guess > /dev/null
+  else
+    printf "guessed by custom config.guess... " >&2
+  fi
+fi
 
 # Detect C library.
 # Use '-gnu'  suffix on systems that use glibc.
@@ -79,45 +112,6 @@ if test $? = 0; then
     fi
   fi
   OUT=powerpc$KERNEL_BITMODE`echo $OUT | sed -e 's/[^-]*//'`
-fi
-
-# Test and fix little endian PowerPC64.
-# TODO: should be handled by autoconf-config.guess.
-if [ "x$OUT" = x ]; then
-  if [ `uname -m` = ppc64le ]; then
-    if [ `uname -s` = Linux ]; then
-      OUT=powerpc64le-unknown-linux-gnu
-    fi
-  fi
-fi
-
-# Test and fix little endian MIPS.
-if [ "x$OUT" = x ]; then
-  if [ `uname -s` = Linux ]; then
-    if [ `uname -m` = mipsel ]; then
-      OUT=mipsel-unknown-linux-gnu
-    elif [ `uname -m` = mips64el ]; then
-      OUT=mips64el-unknown-linux-gnu
-    fi
-  fi
-fi
-
-# Test and fix LoongArch64.
-if [ "x$OUT" = x ]; then
-  if [ `uname -s` = Linux ]; then
-    if [ `uname -m` = loongarch64 ]; then
-      OUT=loongarch64-unknown-linux-gnu
-    fi
-  fi
-fi
-
-# Test and fix RISC-V.
-if [ "x$OUT" = x ]; then
-  if [ `uname -s` = Linux ]; then
-    if [ `uname -m` = riscv64 ]; then
-      OUT=riscv64-unknown-linux-gnu
-    fi
-  fi
 fi
 
 # Test and fix cpu on macos-aarch64, uname -p reports arm, buildsys expects aarch64

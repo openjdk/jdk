@@ -59,6 +59,7 @@ class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
 
 class Metadata;
+class OopHandleList;
 class OopStorage;
 class OSThread;
 
@@ -81,13 +82,17 @@ class JavaThread: public Thread {
   friend class HandshakeState;
   friend class Continuation;
   friend class Threads;
+  friend class ServiceThread; // for deferred OopHandle release access
  private:
-  bool           _in_asgct;                      // Is set when this JavaThread is handling ASGCT call
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
+
+  // All references to Java objects managed via OopHandles. These
+  // have to be released by the ServiceThread after the JavaThread has
+  // terminated - see add_oop_handles_for_release().
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
-  OopHandle      _extentLocalCache;
+  OopHandle      _scopedValueCache;
 
   static OopStorage* _thread_oop_storage;
 
@@ -464,11 +469,6 @@ private:
   inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
 
  public:
-  jlong _extentLocal_hash_table_shift;
-
-  void allocate_extentLocal_hash_table(int count);
-
- public:
   // Constructor
   JavaThread();                            // delegating constructor
   JavaThread(bool is_attaching_via_jni);   // for main thread and JNI attached threads
@@ -520,8 +520,9 @@ private:
   void set_threadOopHandles(oop p);
   oop vthread() const;
   void set_vthread(oop p);
-  oop extentLocalCache() const;
-  void set_extentLocalCache(oop p);
+  oop scopedValueCache() const;
+  void set_scopedValueCache(oop p);
+  void clear_scopedValueBindings();
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
 
@@ -589,7 +590,6 @@ private:
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
   // Continuation support
-  oop get_continuation() const;
   ContinuationEntry* last_continuation() const { return _cont_entry; }
   void set_cont_fastpath(intptr_t* x)          { _cont_fastpath = x; }
   void push_cont_fastpath(intptr_t* sp)        { if (sp > _cont_fastpath) _cont_fastpath = sp; }
@@ -664,8 +664,6 @@ private:
 
   // Fast-locking support
   bool is_lock_owned(address adr) const;
-  bool is_lock_owned_current(address adr) const; // virtual if mounted, otherwise whole thread
-  bool is_lock_owned_carrier(address adr) const;
 
   // Accessors for vframe array top
   // The linked list of vframe arrays are sorted on sp. This means when we
@@ -691,22 +689,19 @@ private:
   CompiledMethod* deopt_compiled_method()        { return _deopt_nmethod; }
 
   Method*    callee_target() const               { return _callee_target; }
-  void set_callee_target  (Method* x)          { _callee_target   = x; }
+  void set_callee_target  (Method* x)            { _callee_target   = x; }
 
   // Oop results of vm runtime calls
   oop  vm_result() const                         { return _vm_result; }
   void set_vm_result  (oop x)                    { _vm_result   = x; }
 
-  Metadata*    vm_result_2() const               { return _vm_result_2; }
-  void set_vm_result_2  (Metadata* x)          { _vm_result_2   = x; }
+  void set_vm_result_2  (Metadata* x)            { _vm_result_2   = x; }
 
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
 #if INCLUDE_JVMCI
-  int  pending_deoptimization() const             { return _pending_deoptimization; }
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
-  bool has_pending_monitorenter() const           { return _pending_monitorenter; }
   void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
   void set_pending_deoptimization(int reason)     { _pending_deoptimization = reason; }
   void set_pending_failed_speculation(jlong failed_speculation) { _pending_failed_speculation = failed_speculation; }
@@ -727,8 +722,6 @@ private:
   // Exception handling for compiled methods
   oop      exception_oop() const;
   address  exception_pc() const                  { return _exception_pc; }
-  address  exception_handler_pc() const          { return _exception_handler_pc; }
-  bool     is_method_handle_return() const       { return _is_method_handle_return == 1; }
 
   void set_exception_oop(oop o);
   void set_exception_pc(address a)               { _exception_pc = a; }
@@ -752,7 +745,7 @@ private:
   void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
   bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
 
-  static ByteSize extentLocalCache_offset()       { return byte_offset_of(JavaThread, _extentLocalCache); }
+  static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
@@ -781,7 +774,6 @@ private:
 #if INCLUDE_JVMCI
   static ByteSize pending_deoptimization_offset() { return byte_offset_of(JavaThread, _pending_deoptimization); }
   static ByteSize pending_monitorenter_offset()  { return byte_offset_of(JavaThread, _pending_monitorenter); }
-  static ByteSize pending_failed_speculation_offset() { return byte_offset_of(JavaThread, _pending_failed_speculation); }
   static ByteSize jvmci_alternate_call_target_offset() { return byte_offset_of(JavaThread, _jvmci._alternate_call_target); }
   static ByteSize jvmci_implicit_exception_pc_offset() { return byte_offset_of(JavaThread, _jvmci._implicit_exception_pc); }
   static ByteSize jvmci_counters_offset()        { return byte_offset_of(JavaThread, _jvmci_counters); }
@@ -830,7 +822,7 @@ private:
   // We don't assert it is Thread::current here as that is done at the
   // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
-    JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
+    JavaThread* current = reinterpret_cast<JavaThread*>(((intptr_t)env - in_bytes(jni_environment_offset())));
     // We can't normally get here in a thread that has completed its
     // execution and so "is_terminated", except when the call is from
     // AsyncGetCallTrace, which can be triggered by a signal at any point in
@@ -917,7 +909,6 @@ private:
   void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
   void print_thread_state_on(outputStream*) const;
-  const char* thread_state_name() const;
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
@@ -947,8 +938,17 @@ private:
   Klass* security_get_caller_class(int depth);
 
   // Print stack trace in external format
+  // These variants print carrier/platform thread information only.
   void print_stack_on(outputStream* st);
   void print_stack() { print_stack_on(tty); }
+  // This prints the currently mounted virtual thread.
+  void print_vthread_stack_on(outputStream* st);
+  // This prints the active stack: either carrier/platform or virtual.
+  void print_active_stack_on(outputStream* st);
+  // Print stack trace for checked JNI warnings and JNI fatal errors.
+  // This is the external format from above, but selecting the platform
+  // or vthread as applicable.
+  void print_jni_stack();
 
   // Print stack traces in various internal formats
   void trace_stack()                             PRODUCT_RETURN;
@@ -1038,7 +1038,6 @@ private:
   static ByteSize popframe_condition_offset()         { return byte_offset_of(JavaThread, _popframe_condition); }
   bool has_pending_popframe()                         { return (popframe_condition() & popframe_pending_bit) != 0; }
   bool popframe_forcing_deopt_reexecution()           { return (popframe_condition() & popframe_force_deopt_reexecution_bit) != 0; }
-  void clear_popframe_forcing_deopt_reexecution()     { _popframe_condition &= ~popframe_force_deopt_reexecution_bit; }
 
   bool pop_frame_in_process(void)                     { return ((_popframe_condition & popframe_processing_bit) != 0); }
   void set_pop_frame_in_process(void)                 { _popframe_condition |= popframe_processing_bit; }
@@ -1090,7 +1089,6 @@ private:
   int    _should_post_on_exceptions_flag;
 
  public:
-  int   should_post_on_exceptions_flag()  { return _should_post_on_exceptions_flag; }
   void  set_should_post_on_exceptions_flag(int val)  { _should_post_on_exceptions_flag = val; }
 
  private:
@@ -1165,9 +1163,19 @@ public:
   // resource allocation failure.
   static void vm_exit_on_osthread_failure(JavaThread* thread);
 
-  // AsyncGetCallTrace support
-  inline bool in_asgct(void) {return _in_asgct;}
-  inline void set_in_asgct(bool value) {_in_asgct = value;}
+  // Deferred OopHandle release support
+ private:
+  // List of OopHandles to be released - guarded by the Service_lock.
+  static OopHandleList* _oop_handle_list;
+  // Add our OopHandles to the list for the service thread to release.
+  void add_oop_handles_for_release();
+  // Called by the ServiceThread to release the OopHandles.
+  static void release_oop_handles();
+  // Called by the ServiceThread to poll if there are any OopHandles to release.
+  // Called when holding the Service_lock.
+  static bool has_oop_handles_to_release() {
+    return _oop_handle_list != nullptr;
+  }
 };
 
 inline JavaThread* JavaThread::current_or_null() {

@@ -110,15 +110,22 @@ public class IssuingDistributionPointExtension extends Extension {
      *        issuer CRL entry extension.
      * @throws IllegalArgumentException if more than one of
      *        <code>hasOnlyUserCerts</code>, <code>hasOnlyCACerts</code>,
-     *        <code>hasOnlyAttributeCerts</code> is set to <code>true</code>.
-     * @throws IOException on encoding error.
+     *        <code>hasOnlyAttributeCerts</code> is set to <code>true</code>,
+     *        or all arguments are either <code>null</code> or <code>false</code>.
      */
     public IssuingDistributionPointExtension(
         DistributionPointName distributionPoint, ReasonFlags revocationReasons,
         boolean hasOnlyUserCerts, boolean hasOnlyCACerts,
-        boolean hasOnlyAttributeCerts, boolean isIndirectCRL)
-            throws IOException {
+        boolean hasOnlyAttributeCerts, boolean isIndirectCRL) {
 
+        if (distributionPoint == null &&
+                revocationReasons == null &&
+                !hasOnlyUserCerts &&
+                !hasOnlyCACerts &&
+                !hasOnlyAttributeCerts &&
+                !isIndirectCRL) {
+            throw new IllegalArgumentException("elements cannot be empty");
+        }
         if ((hasOnlyUserCerts && (hasOnlyCACerts || hasOnlyAttributeCerts)) ||
             (hasOnlyCACerts && (hasOnlyUserCerts || hasOnlyAttributeCerts)) ||
             (hasOnlyAttributeCerts && (hasOnlyUserCerts || hasOnlyCACerts))) {
@@ -213,10 +220,9 @@ public class IssuingDistributionPointExtension extends Extension {
      * DerOutputStream.
      *
      * @param out the output stream.
-     * @exception IOException on encoding error.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.IssuingDistributionPoint_Id;
             this.critical = false;
@@ -255,7 +261,7 @@ public class IssuingDistributionPointExtension extends Extension {
     }
 
      // Encodes this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
 
         if (distributionPoint == null &&
             revocationReasons == null &&
