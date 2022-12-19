@@ -39,5 +39,3 @@ public class TestInfiniteLoopWithUnmergedBackedgesMain {
         TestInfiniteLoopWithUnmergedBackedges.test_004(1, 0, 0, 0, 0);
     }
 }
-
-
