@@ -26,8 +26,8 @@
 package java.io;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Objects;
 
 /**
@@ -44,7 +44,7 @@ import java.util.Objects;
  * @since   1.0
  */
 public class SequenceInputStream extends InputStream {
-    private final Enumeration<? extends InputStream> e;
+    private final Iterator<? extends InputStream> e;
     private InputStream in;
 
     /**
@@ -64,8 +64,7 @@ public class SequenceInputStream extends InputStream {
      * @see     java.util.Enumeration
      */
     public SequenceInputStream(Enumeration<? extends InputStream> e) {
-        this.e = e;
-        peekNextStream();
+        this(e.asIterator());
     }
 
     /**
@@ -80,7 +79,18 @@ public class SequenceInputStream extends InputStream {
      * @param   s2   the second input stream to read.
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
-        this(Collections.enumeration(Arrays.asList(s1, s2)));
+        this(Arrays.asList(s1, s2).iterator());
+    }
+
+    /**
+     * Initializes this sequence state on the first available
+     * {@code InputStream} if any.
+     *
+     * @param iterator the iterator of the input streams.
+     */
+    private SequenceInputStream(final Iterator<? extends InputStream> iterator) {
+        this.e = iterator;
+        peekNextStream();
     }
 
     /**
@@ -94,8 +104,8 @@ public class SequenceInputStream extends InputStream {
     }
 
     private void peekNextStream() {
-        if (e.hasMoreElements()) {
-            in = e.nextElement();
+        if (e.hasNext()) {
+            in = e.next();
             if (in == null)
                 throw new NullPointerException();
         } else {
