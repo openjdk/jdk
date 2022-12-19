@@ -486,7 +486,7 @@ public class ProxyServer extends Thread implements Closeable {
                     return true;  // should close
                 }
             }
-            if (n > 0 || n < -1) {
+            if (n > 0) {
                 if (debug) {
                     System.out.println("Proxy: request body with 407, closing connection");
                 }
