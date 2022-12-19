@@ -258,7 +258,7 @@ static unsigned int    used_topSizeBlocks = 0;
 
 static struct SizeDistributionElement*  SizeDistributionArray = NULL;
 
-static unsigned int  latest_compilation_id   = 0;
+static int           latest_compilation_id   = 0;
 static volatile bool initialization_complete = false;
 
 const char* CodeHeapState::get_heapName(CodeHeap* heap) {
@@ -659,27 +659,27 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     prepare_SizeDistArray(out, nSizeDistElements, heapName);
 
     latest_compilation_id = CompileBroker::get_compilation_id();
-    unsigned int highest_compilation_id = 0;
-    size_t       usedSpace     = 0;
-    size_t       t1Space       = 0;
-    size_t       t2Space       = 0;
-    size_t       aliveSpace    = 0;
-    size_t       disconnSpace  = 0;
-    size_t       notentrSpace  = 0;
-    size_t       stubSpace     = 0;
-    size_t       freeSpace     = 0;
-    size_t       maxFreeSize   = 0;
-    HeapBlock*   maxFreeBlock  = NULL;
-    bool         insane        = false;
+    int          highest_compilation_id = 0;
+    size_t       usedSpace              = 0;
+    size_t       t1Space                = 0;
+    size_t       t2Space                = 0;
+    size_t       aliveSpace             = 0;
+    size_t       disconnSpace           = 0;
+    size_t       notentrSpace           = 0;
+    size_t       stubSpace              = 0;
+    size_t       freeSpace              = 0;
+    size_t       maxFreeSize            = 0;
+    HeapBlock*   maxFreeBlock           = NULL;
+    bool         insane                 = false;
 
-    unsigned int n_methods     = 0;
+    unsigned int n_methods              = 0;
 
     for (HeapBlock *h = heap->first_block(); h != NULL && !insane; h = heap->next_block(h)) {
       unsigned int hb_len     = (unsigned int)h->length();  // despite being size_t, length can never overflow an unsigned int.
       size_t       hb_bytelen = ((size_t)hb_len)<<log2_seg_size;
       unsigned int ix_beg     = (unsigned int)(((char*)h-low_bound)/granule_size);
       unsigned int ix_end     = (unsigned int)(((char*)h-low_bound+(hb_bytelen-1))/granule_size);
-      unsigned int compile_id = 0;
+      int compile_id = 0;
       CompLevel    comp_lvl   = CompLevel_none;
       compType     cType      = noComp;
       blobType     cbType     = noType;
@@ -1959,10 +1959,10 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
     granules_per_line = 128;
     for (unsigned int ix = 0; ix < alloc_granules; ix++) {
       print_line_delim(out, ast, low_bound, ix, granules_per_line);
-      unsigned int age1      = StatArray[ix].t1_age;
-      unsigned int age2      = StatArray[ix].t2_age;
-      unsigned int agex      = StatArray[ix].tx_age;
-      unsigned int age       = age1 > age2 ? age1 : age2;
+      int age1      = StatArray[ix].t1_age;
+      int age2      = StatArray[ix].t2_age;
+      int agex      = StatArray[ix].tx_age;
+      int age       = age1 > age2 ? age1 : age2;
       age       = age > agex ? age : agex;
       print_age_single(ast, age);
     }
@@ -2247,9 +2247,7 @@ void CodeHeapState::print_blobType_legend(outputStream* out) {
 }
 
 void CodeHeapState::print_space_legend(outputStream* out) {
-  unsigned int indicator = 0;
-  unsigned int age_range = 256;
-  unsigned int range_beg = latest_compilation_id;
+  int range_beg = latest_compilation_id;
   out->cr();
   printBox(out, '-', "Space ranges, based on granule occupancy", NULL);
   out->print_cr("    -   0%% == occupancy");
@@ -2263,12 +2261,12 @@ void CodeHeapState::print_space_legend(outputStream* out) {
 
 void CodeHeapState::print_age_legend(outputStream* out) {
   unsigned int indicator = 0;
-  unsigned int age_range = 256;
-  unsigned int range_beg = latest_compilation_id;
+  int age_range = 256;
+  int range_beg = latest_compilation_id;
   out->cr();
   printBox(out, '-', "Age ranges, based on compilation id", NULL);
   while (age_range > 0) {
-    out->print_cr("  %d - %6d to %6d", indicator, range_beg, latest_compilation_id - latest_compilation_id/age_range);
+    out->print_cr("  %u - %6d to %6d", indicator, range_beg, latest_compilation_id - latest_compilation_id/age_range);
     range_beg = latest_compilation_id - latest_compilation_id/age_range;
     age_range /= 2;
     indicator += 1;
@@ -2293,9 +2291,9 @@ void CodeHeapState::print_space_single(outputStream* out, unsigned short space) 
   out->print("%c", fraction);
 }
 
-void CodeHeapState::print_age_single(outputStream* out, unsigned int age) {
+void CodeHeapState::print_age_single(outputStream* out, int age) {
   unsigned int indicator = 0;
-  unsigned int age_range = 256;
+  int age_range = 256;
   if (age > 0) {
     while ((age_range > 0) && (latest_compilation_id-age > latest_compilation_id/age_range)) {
       age_range /= 2;
