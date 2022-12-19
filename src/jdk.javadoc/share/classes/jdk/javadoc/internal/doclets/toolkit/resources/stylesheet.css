@@ -28,9 +28,10 @@
     --navbar-text-color: #ffffff;
     /* Background color for subnavigation and various headers */
     --subnav-background-color: #dee3e9;
-    /* Background and text colors for highlighted elements */
-    --highlight-background-color: #f8981d;
-    --highlight-text-color: #253441;
+    /* Background and text colors for selected tabs and navigation items */
+    --selected-background-color: #f8981d;
+    --selected-text-color: #253441;
+    --selected-link-color: #1f389c;
     /* Background colors for generated tables */
     --even-row-color: #ffffff;
     --odd-row-color: #eeeeef;
@@ -42,9 +43,22 @@
     /* Snippet colors */
     --snippet-background-color: #ebecee;
     --snippet-text-color: var(--block-text-color);
+    --snippet-highlight-color: #f7c590;
     /* Border colors for structural elements and user defined tables */
     --border-color: #ededed;
     --table-border-color: #000000;
+    /* Search input colors */
+    --search-input-background-color: #ffffff;
+    --search-input-text-color: #000000;
+    --search-input-placeholder-color: #909090;
+    /* Highlight color for active search tag target */
+    --search-tag-highlight-color: #ffff00;
+    /* Adjustments for icon and active background colors of copy-to-clipboard buttons */
+    --copy-icon-brightness: 100%;
+    --copy-button-background-color-active: rgba(168, 168, 176, 0.3);
+    /* Colors for invalid tag notifications */
+    --invalid-tag-background-color: #ffe6e6;
+    --invalid-tag-text-color: #000000;
 }
 /*
  * Styles for individual HTML elements.
@@ -77,9 +91,6 @@ a:link, a:visited {
 a[href]:hover, a[href]:focus {
     text-decoration:none;
     color:var(--link-color-active);
-}
-a[name] {
-    color:#353833;
 }
 pre {
     font-family:var(--code-font-family);
@@ -180,11 +191,10 @@ button {
     background-color:var(--navbar-background-color);
     color:var(--navbar-text-color);
     float:left;
-    padding:0;
     width:100%;
     clear:right;
     min-height:2.8em;
-    padding-top:10px;
+    padding:10px 0 0 0;
     overflow:hidden;
     font-size:0.857em;
 }
@@ -244,11 +254,11 @@ ul.sub-nav-list li {
     text-transform:uppercase;
 }
 .top-nav a:hover {
-    color:#bb7a2a;
+    color:var(--link-color-active);
 }
 .nav-bar-cell1-rev {
-    background-color:var(--highlight-background-color);
-    color:var(--highlight-text-color);
+    background-color:var(--selected-background-color);
+    color:var(--selected-text-color);
     margin: auto 5px;
 }
 .skip-nav {
@@ -311,7 +321,7 @@ main {
     position:relative;
 }
 dl.notes > dt {
-    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+    font-family: var(--body-font-family);
     font-size:0.856em;
     font-weight:bold;
     margin:10px 0 0 0;
@@ -366,7 +376,6 @@ ul.summary-list > li {
     line-height:1.4;
 }
 ul.ref-list {
-  margin-left:0;
   padding:0;
   margin:0;
 }
@@ -377,15 +386,16 @@ ul.ref-list > li {
     margin-top:0;
     margin-bottom:1px;
 }
-ul.see-list, ul.see-list-long {
+ul.tag-list, ul.tag-list-long {
     padding-left: 0;
     list-style: none;
 }
-ul.see-list li {
+ul.tag-list li {
     display: inline;
 }
-ul.see-list li:not(:last-child):after,
-ul.see-list-long li:not(:last-child):after {
+ul.tag-list li:not(:last-child):after,
+ul.tag-list-long li:not(:last-child):after
+{
     content: ", ";
     white-space: pre-wrap;
 }
@@ -409,16 +419,14 @@ ul.preview-feature-list {
     position:relative;
     text-align:left;
     background-repeat:no-repeat;
-    color:#253441;
+    color:var(--selected-text-color);
     clear:none;
     overflow:hidden;
-    padding:0;
-    padding-top:10px;
-    padding-left:1px;
+    padding: 10px 0 0 1px;
     margin:0;
 }
 .caption a:link, .caption a:visited {
-    color:#1f389c;
+    color:var(--selected-link-color);
 }
 .caption a:hover,
 .caption a:active {
@@ -430,19 +438,13 @@ ul.preview-feature-list {
     padding:5px 12px 7px 12px;
     display:inline-block;
     float:left;
-    background-color:var(--highlight-background-color);
+    background-color:var(--selected-background-color);
     border: none;
     height:16px;
 }
 div.table-tabs {
     padding:10px 0 0 1px;
     margin:10px 0 0 0;
-}
-div.table-tabs > span {
-    background-color: #EEE;
-    color: #000;
-    border: none;
-    padding: 5px 12px 8px 12px;
 }
 div.table-tabs > button {
     border: none;
@@ -452,8 +454,8 @@ div.table-tabs > button {
     margin-right: 8px;
 }
 div.table-tabs > .active-table-tab {
-    background: var(--highlight-background-color);
-    color: var(--highlight-text-color);
+    background: var(--selected-background-color);
+    color: var(--selected-text-color);
 }
 div.table-tabs > button.table-tab {
     background: var(--navbar-background-color);
@@ -635,7 +637,8 @@ div.block {
  * Styles for formatting effect.
  */
 .source-line-no {
-    color:green;
+    /* Color of line numbers in source pages can be set via custom property below */
+    color:var(--source-linenumber-color, green);
     padding:0 30px 0 0;
 }
 .block {
@@ -679,8 +682,9 @@ div.block div.deprecation-comment {
 details.invalid-tag, span.invalid-tag {
     font-size:1em;
     font-family:var(--block-font-family);
-    background: #ffe6e6;
-    border: thin solid #000000;
+    color: var(--invalid-tag-text-color);
+    background: var(--invalid-tag-background-color);
+    border: thin solid var(--table-border-color);
     border-radius:2px;
     padding: 2px 4px;
     display:inline-block;
@@ -699,9 +703,9 @@ main, nav, header, footer, section {
  */
 .ui-state-active {
     /* Overrides the color of selection used in jQuery UI */
-    background: var(--highlight-background-color);
-    border: 1px solid var(--highlight-background-color);
-    color: var(--highlight-text-color);
+    background: var(--selected-background-color);
+    border: 1px solid var(--selected-background-color);
+    color: var(--selected-text-color);
 }
 .ui-autocomplete-category {
     font-weight:bold;
@@ -735,14 +739,14 @@ ul.ui-autocomplete li.ui-static-link {
     left:0;
     background: var(--subnav-background-color);
     padding: 5px 0;
-    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+    font-family: var(--body-font-family);
     font-size: 0.93em;
     font-weight: bolder;
     z-index: 2;
 }
 li.ui-static-link a, li.ui-static-link a:visited {
     text-decoration:none;
-    color:#4A6782;
+    color:var(--link-color);
     float:right;
     margin-right:20px;
 }
@@ -757,6 +761,9 @@ li.ui-static-link a, li.ui-static-link a:visited {
     background-size:13px;
     background-repeat:no-repeat;
     background-position:2px 3px;
+    background-color: var(--search-input-background-color);
+    color: var(--search-input-text-color);
+    border-color: var(--border-color);
     padding-left:20px;
     width: 250px;
     margin: 0;
@@ -779,7 +786,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
     font-size:0;
 }
 ::placeholder {
-    color:#909090;
+    color:var(--search-input-placeholder-color);
     opacity: 1;
 }
 .search-tag-desc-result {
@@ -791,7 +798,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
     font-size:12px;
 }
 .search-tag-result:target {
-    background-color:yellow;
+    background-color:var(--search-tag-highlight-color);
 }
 details.page-search-details {
     display: inline-block;
@@ -923,6 +930,10 @@ button.copy:active {
 button.copy img {
     position: relative;
     background: none;
+    filter: brightness(var(--copy-icon-brightness));
+}
+button.copy:active {
+    background-color: var(--copy-button-background-color-active);
 }
 button.copy span {
     color: var(--body-text-color);
@@ -941,9 +952,6 @@ button.copy-header {
 button.copy-header img {
     height: 0.88em;
     top: 0.1em;
-}
-button.copy-header:active {
-    background-color: rgba(128, 128, 160, 0.2);
 }
 /* search page copy button */
 button#page-search-copy {
@@ -968,12 +976,6 @@ button#page-search-copy span {
 div.page-search-info:hover button#page-search-copy,
 div.page-search-info:hover button#page-search-copy span {
     opacity: 90%;
-}
-div.page-search-info button#page-search-copy:hover {
-    background-color: rgba(128, 128, 160, 0.2);
-}
-div.page-search-info button#page-search-copy:active {
-    background-color: rgba(128, 128, 160, 0.4);
 }
 /* snippet copy button */
 button.snippet-copy {
@@ -1005,9 +1007,6 @@ div.snippet-container:hover button.snippet-copy {
 }
 div.snippet-container button.snippet-copy:hover {
     opacity: 100%;
-}
-button.snippet-copy:active {
-    background-color: rgba(128, 128, 160, 0.2);
 }
 /*
  * Styles for user-provided tables.
@@ -1260,6 +1259,6 @@ pre.snippet .bold {
     font-weight: bold;
 }
 pre.snippet .highlighted {
-    background-color: #f7c590;
+    background-color: var(--snippet-highlight-color);
     border-radius: 10%;
 }

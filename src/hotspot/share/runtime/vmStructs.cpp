@@ -109,11 +109,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-
-#include CPU_HEADER(vmStructs)
-#include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
-
 #ifdef COMPILER2
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -141,6 +136,10 @@
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #endif // COMPILER2
+
+#include CPU_HEADER(vmStructs)
+#include OS_HEADER(vmStructs)
+#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -542,8 +541,10 @@
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                   address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
+     static_field(StubRoutines,                _chacha20Block,                                address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
+     static_field(StubRoutines,                _poly1305_processBlocks,                       address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
@@ -709,7 +710,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _extentLocalCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
@@ -1065,12 +1066,11 @@
   nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
-  nonstatic_field(CompileTask,                 _compile_id,                                   uint)                                  \
+  nonstatic_field(CompileTask,                 _compile_id,                                   int)                                   \
   nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                        int)                                   \
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
-  nonstatic_field(vframeArray,                 _next,                                         vframeArray*)                          \
   nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
   nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
   nonstatic_field(vframeArray,                 _frames,                                       int)                                   \
@@ -1565,11 +1565,10 @@
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
-  declare_c2_type(BlackholeNode, MemBarNode)                              \
+  declare_c2_type(BlackholeNode, MultiNode)                               \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
-  declare_c2_type(Opaque2Node, Node)                                      \
   declare_c2_type(PartialSubtypeCheckNode, Node)                          \
   declare_c2_type(MoveI2FNode, Node)                                      \
   declare_c2_type(MoveL2DNode, Node)                                      \
@@ -1876,7 +1875,7 @@
   declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, Node)                                   \
+  declare_c2_type(VectorTestNode, CmpNode)                                \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
@@ -2099,7 +2098,6 @@
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
   declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
   declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \

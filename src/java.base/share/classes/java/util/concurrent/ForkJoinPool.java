@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.Permission;
@@ -1527,6 +1528,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     private static final long RUNSTATE;
     private static final long PARALLELISM;
     private static final long THREADIDS;
+    private static final Object POOLIDS_BASE;
     private static final long POOLIDS;
 
     private boolean compareAndSetCtl(long c, long v) {
@@ -1545,7 +1547,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         return U.getAndAddLong(this, THREADIDS, 1L);
     }
     private static int getAndAddPoolIds(int x) {
-        return U.getAndAddInt(ForkJoinPool.class, POOLIDS, x);
+        return U.getAndAddInt(POOLIDS_BASE, POOLIDS, x);
     }
     private int getAndSetParallelism(int v) {
         return U.getAndSetInt(this, PARALLELISM, v);
@@ -2850,6 +2852,10 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Submits a ForkJoinTask for execution.
      *
+     * @implSpec
+     * This method is equivalent to {@link #externalSubmit(ForkJoinTask)}
+     * when called from a thread that is not in this pool.
+     *
      * @param task the task to submit
      * @param <T> the type of the task's result
      * @return the task
@@ -2897,6 +2903,31 @@ public class ForkJoinPool extends AbstractExecutorService {
     // Added mainly for possible use in Loom
 
     /**
+     * Submits the given task as if submitted from a non-{@code ForkJoinTask}
+     * client. The task is added to a scheduling queue for submissions to the
+     * pool even when called from a thread in the pool.
+     *
+     * @implSpec
+     * This method is equivalent to {@link #submit(ForkJoinTask)} when called
+     * from a thread that is not in this pool.
+     *
+     * @return the task
+     * @param task the task to submit
+     * @param <T> the type of the task's result
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
+     * @since 20
+     */
+    public <T> ForkJoinTask<T> externalSubmit(ForkJoinTask<T> task) {
+        U.storeStoreFence();  // ensure safely publishable
+        task.markPoolSubmission();
+        WorkQueue q = submissionQueue(true);
+        q.push(task, this, true);
+        return task;
+    }
+
+    /**
      * Submits the given task without guaranteeing that it will
      * eventually execute in the absence of available active threads.
      * In some contexts, this method may reduce contention and
@@ -2907,6 +2938,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param task the task
      * @param <T> the type of the task's result
      * @return the task
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
      * @since 19
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
@@ -3265,6 +3299,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * granularities.
      *
      * @return the number of queued tasks
+     * @see ForkJoinWorkerThread#getQueuedTaskCount()
      */
     public long getQueuedTaskCount() {
         WorkQueue[] qs; WorkQueue q;
@@ -3763,7 +3798,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         U = Unsafe.getUnsafe();
         Class<ForkJoinPool> klass = ForkJoinPool.class;
         try {
-            POOLIDS = U.staticFieldOffset(klass.getDeclaredField("poolIds"));
+            Field poolIdsField = klass.getDeclaredField("poolIds");
+            POOLIDS_BASE = U.staticFieldBase(poolIdsField);
+            POOLIDS = U.staticFieldOffset(poolIdsField);
         } catch (NoSuchFieldException e) {
             throw new ExceptionInInitializerError(e);
         }

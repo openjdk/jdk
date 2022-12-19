@@ -121,7 +121,7 @@ public class ManualHTMLDataFlavorTest extends Applet {
                 "6) The output should contain data in three different formats",
                 "   provided by the system clipboard",
                 "    - Data after the \"ALL:\" marker should include the data",
-                "      from the the \"SELECTION:\" marker",
+                "      from the \"SELECTION:\" marker",
                 "    - Data after the \"FRAGMENT\" marker should include the data",
                 "      from the \"SELECTION:\" marker and may be some closing",
                 "      tags could be added to the mark-up",

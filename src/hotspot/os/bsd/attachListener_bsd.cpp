@@ -248,7 +248,7 @@ int BsdAttachListener::init() {
 //
 BsdAttachOperation* BsdAttachListener::read_request(int s) {
   char ver_str[8];
-  sprintf(ver_str, "%d", ATTACH_PROTOCOL_VER);
+  size_t ver_str_len = os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
   // The request is a sequence of strings so we first figure out the
   // expected count and the maximum possible length of the request.
@@ -288,11 +288,11 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
         // The first string is <ver> so check it now to
         // check for protocol mismatch
         if (str_count == 1) {
-          if ((strlen(buf) != strlen(ver_str)) ||
+          if ((strlen(buf) != ver_str_len) ||
               (atoi(buf) != ATTACH_PROTOCOL_VER)) {
             char msg[32];
-            sprintf(msg, "%d\n", ATTACH_ERROR_BADVERSION);
-            write_fully(s, msg, strlen(msg));
+            int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
+            write_fully(s, msg, msg_len);
             return NULL;
           }
         }
@@ -411,8 +411,8 @@ void BsdAttachOperation::complete(jint result, bufferedStream* st) {
 
   // write operation result
   char msg[32];
-  sprintf(msg, "%d\n", result);
-  int rc = BsdAttachListener::write_fully(this->socket(), msg, strlen(msg));
+  int msg_len = os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
+  int rc = BsdAttachListener::write_fully(this->socket(), msg, msg_len);
 
   // write any result data
   if (rc == 0) {

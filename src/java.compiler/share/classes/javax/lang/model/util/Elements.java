@@ -622,6 +622,8 @@ public interface Elements {
      * overrides another method.
      * When a non-abstract method overrides an abstract one, the
      * former is also said to <i>implement</i> the latter.
+     * As implied by JLS {@jls 8.4.8.1}, a method does <em>not</em>
+     * override itself. The overrides relation is <i>irreflexive</i>.
      *
      * <p> In the simplest and most typical usage, the value of the
      * {@code type} parameter will simply be the class or interface

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,10 +653,8 @@ public class AquaFileChooserUI extends FileChooserUI {
                 int selectableCount = 0;
                 // Double-check that all the list selections are valid for this mode
                 // Directories can be selected in the list regardless of mode
-                if (rows.length > 0) {
-                    for (final int element : rows) {
-                        if (isSelectableForMode(chooser, (File)fFileList.getValueAt(element, 0))) selectableCount++;
-                    }
+                for (final int element : rows) {
+                    if (isSelectableForMode(chooser, (File) fFileList.getValueAt(element, 0))) selectableCount++;
                 }
                 if (selectableCount > 0) {
                     final File[] files = new File[selectableCount];

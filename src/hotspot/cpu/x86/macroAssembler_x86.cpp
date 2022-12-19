@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
+#include "crc32c.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -52,7 +53,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
-#include "crc32c.h"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -1216,6 +1216,19 @@ void MacroAssembler::andps(XMMRegister dst, AddressLiteral src, Register rscratc
 void MacroAssembler::andptr(Register dst, int32_t imm32) {
   LP64_ONLY(andq(dst, imm32)) NOT_LP64(andl(dst, imm32));
 }
+
+#ifdef _LP64
+void MacroAssembler::andq(Register dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    andq(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    andq(dst, Address(rscratch, 0));
+  }
+}
+#endif
 
 void MacroAssembler::atomic_incl(Address counter_addr) {
   lock();
@@ -5095,7 +5108,7 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                                     Register tmp1, Register thread_tmp) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
@@ -5107,7 +5120,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Reg
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
@@ -9000,26 +9013,6 @@ void MacroAssembler::evand(BasicType type, XMMRegister dst, KRegister mask, XMMR
   }
 }
 
-void MacroAssembler::anytrue(Register dst, uint masklen, KRegister src1, KRegister src2) {
-   masklen = masklen < 8 ? 8 : masklen;
-   ktest(masklen, src1, src2);
-   setb(Assembler::notZero, dst);
-   movzbl(dst, dst);
-}
-
-void MacroAssembler::alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch) {
-  if (masklen < 8) {
-    knotbl(kscratch, src2);
-    kortestbl(src1, kscratch);
-    setb(Assembler::carrySet, dst);
-    movzbl(dst, dst);
-  } else {
-    ktest(masklen, src1, src2);
-    setb(Assembler::carrySet, dst);
-    movzbl(dst, dst);
-  }
-}
-
 void MacroAssembler::kortest(uint masklen, KRegister src1, KRegister src2) {
   switch(masklen) {
     case 8:
@@ -9105,6 +9098,40 @@ void MacroAssembler::evrord(BasicType type, XMMRegister dst, KRegister mask, XMM
       fatal("Unexpected type argument %s", type2name(type)); break;
   }
 }
+
+void MacroAssembler::evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    evpandq(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    evpandq(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    evporq(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    evporq(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src3), "missing");
+
+  if (reachable(src3)) {
+    vpternlogq(dst, imm8, src2, as_Address(src3), vector_len);
+  } else {
+    lea(rscratch, src3);
+    vpternlogq(dst, imm8, src2, Address(rscratch, 0), vector_len);
+  }
+}
+
 #if COMPILER2_OR_JVMCI
 
 void MacroAssembler::fill_masked(BasicType bt, Address dst, XMMRegister xmm, KRegister mask,

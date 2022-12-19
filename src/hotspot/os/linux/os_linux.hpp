@@ -172,7 +172,7 @@ class os::Linux {
   // Return the namespace pid if so, otherwise -1.
   static int get_namespace_pid(int vmid);
 
-  // Output structure for query_process_memory_info()
+  // Output structure for query_process_memory_info() (all values in KB)
   struct meminfo_t {
     ssize_t vmsize;     // current virtual size
     ssize_t vmpeak;     // peak virtual size
@@ -264,40 +264,6 @@ class os::Linux {
     Interleave
   };
   static NumaAllocationPolicy _current_numa_policy;
-
-#ifdef __GLIBC__
-  struct glibc_mallinfo {
-    int arena;
-    int ordblks;
-    int smblks;
-    int hblks;
-    int hblkhd;
-    int usmblks;
-    int fsmblks;
-    int uordblks;
-    int fordblks;
-    int keepcost;
-  };
-
-  struct glibc_mallinfo2 {
-    size_t arena;
-    size_t ordblks;
-    size_t smblks;
-    size_t hblks;
-    size_t hblkhd;
-    size_t usmblks;
-    size_t fsmblks;
-    size_t uordblks;
-    size_t fordblks;
-    size_t keepcost;
-  };
-
-  typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
-  typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
-
-  static mallinfo_func_t _mallinfo;
-  static mallinfo2_func_t _mallinfo2;
-#endif
 
  public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
@@ -426,6 +392,39 @@ class os::Linux {
   }
 
   static void* resolve_function_descriptor(void* p);
+
+#ifdef __GLIBC__
+  // os::Linux::get_mallinfo() hides the complexity of dealing with mallinfo() or
+  // mallinfo2() from the user. Use this function instead of raw mallinfo/mallinfo2()
+  // to keep the JVM runtime-compatible with different glibc versions.
+  //
+  // mallinfo2() was added with glibc (>2.32). Legacy mallinfo() was deprecated with
+  // 2.33 and may vanish in future glibcs. So we may have both or either one of
+  // them.
+  //
+  // mallinfo2() is functionally equivalent to legacy mallinfo but returns sizes as
+  // 64-bit on 64-bit platforms. Legacy mallinfo uses 32-bit fields. However, legacy
+  // mallinfo is still perfectly fine to use if we know the sizes cannot have wrapped.
+  // For example, if the process virtual size does not exceed 4G, we cannot have
+  // malloc'ed more than 4G, so the results from legacy mallinfo() can still be used.
+  //
+  // os::Linux::get_mallinfo() will always prefer mallinfo2() if found, but will fall back
+  // to legacy mallinfo() if only that is available. In that case, it will return true
+  // in *might_have_wrapped.
+  struct glibc_mallinfo {
+    size_t arena;
+    size_t ordblks;
+    size_t smblks;
+    size_t hblks;
+    size_t hblkhd;
+    size_t usmblks;
+    size_t fsmblks;
+    size_t uordblks;
+    size_t fordblks;
+    size_t keepcost;
+  };
+  static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
+#endif // GLIBC
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

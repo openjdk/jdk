@@ -600,7 +600,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     Object checkCast(Object obj) {
-        return member.getReturnType().cast(obj);
+        return member.getMethodType().returnType().cast(obj);
     }
 
     // Caching machinery for field accessors:
