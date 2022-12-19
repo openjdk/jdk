@@ -320,7 +320,7 @@ void os::init_system_properties_values() {
 
 #ifndef __APPLE__
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -376,17 +376,16 @@ void os::init_system_properties_values() {
     const char *v_colon = ":";
     if (v == NULL) { v = ""; v_colon = ""; }
     // That's +1 for the colon and +1 for the trailing '\0'.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 +
-                                             sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
+    const size_t ld_library_path_size = strlen(v) + 1 + sizeof(SYS_EXT_DIR) +
+            sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
-  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -401,7 +400,7 @@ void os::init_system_properties_values() {
   size_t system_ext_size = strlen(user_home_dir) + sizeof(SYS_EXTENSIONS_DIR) +
     sizeof(SYS_EXTENSIONS_DIRS);
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -471,11 +470,9 @@ void os::init_system_properties_values() {
     // could cause a change in behavior, but Apple's Java6 behavior
     // can be achieved by putting "." at the beginning of the
     // JAVA_LIBRARY_PATH environment variable.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 + strlen(l) + 1 +
-                                             system_ext_size + 3,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
+    const size_t ld_library_path_size = strlen(v) + 1 + strlen(l) + 1 + system_ext_size + 3;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
@@ -486,7 +483,7 @@ void os::init_system_properties_values() {
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator (so actually one byte more
   // than necessary is allocated).
-  sprintf(buf, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
+  os::snprintf_checked(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
           user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
@@ -2168,28 +2165,6 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
-
-  fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
-
-  // If the open succeeded, the file might still be a directory
-  {
-    struct stat buf;
-    int ret = ::fstat(fd, &buf);
-    int st_mode = buf.st_mode;
-
-    if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
-        ::close(fd);
-        return -1;
-      }
-    } else {
-      ::close(fd);
-      return -1;
-    }
-  }
 
   // All file descriptors that are opened in the JVM and not
   // specifically destined for a subprocess should have the
@@ -2212,14 +2187,27 @@ int os::open(const char *path, int oflag, int mode) {
   // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
   // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
   //
-#ifdef FD_CLOEXEC
+
+  int fd = ::open(path, oflag | O_CLOEXEC, mode);
+  if (fd == -1) return -1;
+
+  // If the open succeeded, the file might still be a directory
   {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
     }
   }
-#endif
 
   return fd;
 }

@@ -69,15 +69,6 @@ Node* SubNode::Identity(PhaseGVN* phase) {
     if (in(1)->in(1) == in(2)) {
       return in(1)->in(2);
     }
-
-    // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
-    // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
-    // are originally used, although the optimizer sometimes jiggers things).
-    // This folding through an O2 removes a loop-exit use of a loop-varying
-    // value and generally lowers register pressure in and around the loop.
-    if (in(1)->in(2)->Opcode() == Op_Opaque2 && in(1)->in(2)->in(1) == in(2)) {
-      return in(1)->in(1);
-    }
   }
 
   return ( phase->type( in(2) )->higher_equal( zero ) ) ? in(1) : this;
@@ -1436,7 +1427,10 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return NULL;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock || cmp->is_SubTypeCheck()) return NULL;
+  if( cop == Op_FastLock || cop == Op_FastUnlock ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+    return NULL;
+  }
   Node *cmp1 = cmp->in(1);
   Node *cmp2 = cmp->in(2);
   if( !cmp1 ) return NULL;
@@ -1453,7 +1447,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Move constants to the right of compare's to canonicalize.
   // Do not muck with Opaque1 nodes, as this indicates a loop
   // guard that cannot change shape.
-  if( con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_Opaque1 &&
+  if (con->is_Con() && !cmp2->is_Con() && cmp2_op != Op_OpaqueZeroTripGuard &&
       // Because of NaN's, CmpD and CmpF are not commutative
       cop != Op_CmpD && cop != Op_CmpF &&
       // Protect against swapping inputs to a compare when it is used by a
@@ -1466,6 +1460,21 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     cmp->swap_edges(1, 2);
     cmp = phase->transform( cmp );
     return new BoolNode( cmp, _test.commute() );
+  }
+
+  // Change "bool eq/ne (cmp (cmove (bool tst (cmp2)) 1 0) 0)" into "bool tst/~tst (cmp2)"
+  if (cop == Op_CmpI &&
+      (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      cmp1_op == Op_CMoveI && cmp2->find_int_con(1) == 0) {
+    // 0 should be on the true branch
+    if (cmp1->in(CMoveNode::Condition)->is_Bool() &&
+        cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
+        cmp1->in(CMoveNode::IfFalse)->find_int_con(0) != 0) {
+      BoolNode* target = cmp1->in(CMoveNode::Condition)->as_Bool();
+      return new BoolNode(target->in(1),
+                          (_test._test == BoolTest::eq) ? target->_test._test :
+                                                          target->_test.negate());
+    }
   }
 
   // Change "bool eq/ne (cmp (and X 16) 16)" into "bool ne/eq (cmp (and X 16) 0)".

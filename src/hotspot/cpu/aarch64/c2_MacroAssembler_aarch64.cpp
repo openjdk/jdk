@@ -45,21 +45,6 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
-  blr(rscratch1);
-  b(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  emit_int32(0);   // nmethod guard value
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 4 * 6;
-}
-
 // Search for str1 in str2 and return index or -1
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
                                        Register cnt2, Register cnt1,

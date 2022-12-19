@@ -116,8 +116,6 @@ public class EdDSAOperations {
         IntegerModuloP rElem = subField.getElement(r);
         MutableIntegerModuloP S = kElem.mutable().setProduct(sElem);
         S.setSum(rElem);
-        // need to be reduced before output conversion
-        S.setReduced();
         byte[] sArr = S.asByteArray(byteLength);
         byte[] rArr = encode(byteLength, R);
 

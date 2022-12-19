@@ -47,15 +47,18 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     private char[] a;
     private char[] b;
     private char[] c;
+    private int[] idx;
 
     public BasicCharOpTest() {
         a = new char[SIZE];
         b = new char[SIZE];
         c = new char[SIZE];
+        idx = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
             a[i] = (char) (20 * i);
             b[i] = (char) (i + 44444);
             c[i] = (char) 10000;
+            idx[i] = i;
         }
     }
 
@@ -186,6 +189,25 @@ public class BasicCharOpTest extends VectorizationTestRunner {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (char) (a[i] >>> 5);
+        }
+        return res;
+    }
+
+    // ------------- ReverseBytes -------------
+    @Test
+    public char[] reverseBytesWithChar() {
+        char[] res = new char[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Character.reverseBytes(a[i]);
+        }
+        return res;
+    }
+
+    @Test
+    public int[] reverseBytesWithInt() {
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Character.reverseBytes((char) idx[i]);
         }
         return res;
     }
