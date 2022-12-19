@@ -79,6 +79,7 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
+gc/g1/TestVerifyGCType.java 8298215 linux-all,macosx-all
 
 #############################################################################
 
@@ -96,6 +97,7 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/vthread/RedefineClass.java 8297286 generic-all
 runtime/vthread/TestObjectAllocationSampleEvent.java 8297286 generic-all
+runtime/StackGuardPages/TestStackGuardPages.java 8293452 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
 

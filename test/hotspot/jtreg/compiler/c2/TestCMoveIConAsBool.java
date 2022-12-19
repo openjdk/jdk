@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CI_CIMETHODTYPE_HPP
-#define SHARE_CI_CIMETHODTYPE_HPP
+/*
+ * @test
+ * @bug 8298824
+ * @summary Test BoolNode::Ideal() transformation with CMoveINode that has a Con node as condition.
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.c2.TestCMoveIConAsBool::test
+ *                   compiler.c2.TestCMoveIConAsBool
+ */
 
-#include "ci/ciInstance.hpp"
+package compiler.c2;
 
-// ciMethodType
-//
-// The class represents a java.lang.invoke.MethodType object.
-class ciMethodType : public ciInstance {
-private:
-  ciType* class_to_citype(oop klass_oop) const;
+public class TestCMoveIConAsBool {
+    static int x;
 
-public:
-  ciMethodType(instanceHandle h_i) : ciInstance(h_i) {}
+    public static void main(String[] strArr) {
+        test();
+    }
 
-  // What kind of ciObject is this?
-  bool is_method_type() const { return true; }
+    static void test() {
+        int i = 7;
+        boolean b = false;
+        float f = 7.135f;
 
-  ciType* rtype() const;
-
-  int ptype_count() const;
-  int ptype_slot_count() const;
-};
-
-#endif // SHARE_CI_CIMETHODTYPE_HPP
+        do {
+            b = i > f | b || x != 7;
+        }
+        while (++i < 0);
+    }
+}

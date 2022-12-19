@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_CI_CIMETHODTYPE_HPP
-#define SHARE_CI_CIMETHODTYPE_HPP
+/*
+ * @test
+ * @bug 8296412
+ * @compile TestInfiniteLoopWithUnmergedBackedges.jasm
+ * @summary Infinite loops may not have the backedges merged, before we call IdealLoopTree::check_safepts
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-LoopUnswitching
+ *      -XX:CompileCommand=compileonly,TestInfiniteLoopWithUnmergedBackedges::test*
+ *      TestInfiniteLoopWithUnmergedBackedgesMain
+ */
 
-#include "ci/ciInstance.hpp"
-
-// ciMethodType
-//
-// The class represents a java.lang.invoke.MethodType object.
-class ciMethodType : public ciInstance {
-private:
-  ciType* class_to_citype(oop klass_oop) const;
-
-public:
-  ciMethodType(instanceHandle h_i) : ciInstance(h_i) {}
-
-  // What kind of ciObject is this?
-  bool is_method_type() const { return true; }
-
-  ciType* rtype() const;
-
-  int ptype_count() const;
-  int ptype_slot_count() const;
-};
-
-#endif // SHARE_CI_CIMETHODTYPE_HPP
+public class TestInfiniteLoopWithUnmergedBackedgesMain {
+    public static void main (String[] args) {
+        TestInfiniteLoopWithUnmergedBackedges.test_001(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_002(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_003(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_004(1, 0, 0, 0, 0);
+    }
+}
