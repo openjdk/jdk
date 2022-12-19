@@ -153,6 +153,11 @@ final class DCmdStart extends AbstractDCmd {
         recording.setSettings(s);
         SafePath safePath = null;
 
+        // Generate dump filename if user has specified a time-based recording
+        if (duration != null && path == null) {
+            path = resolvePath(recording, null).toString();
+        }
+
         if (path != null) {
             try {
                 if (dumpOnExit == null) {
@@ -172,18 +177,6 @@ final class DCmdStart extends AbstractDCmd {
             } catch (IOException | InvalidPathException e) {
                 recording.close();
                 throw new DCmdException("Could not start recording, not able to write to file %s. %s ", path, e.getMessage());
-            }
-        } else if (duration != null && path == null) {
-            try {
-                if (dumpOnExit == null) {
-                    //Generate a filename and set default to dumponexit=true
-                    dumpOnExit = Boolean.TRUE;
-                }
-                safePath = resolvePath(recording, null);
-                recording.setDestination(safePath.toPath());
-            } catch (IOException e) {
-                recording.close();
-                throw new DCmdException("Could not start recording, not able to write to file %s. %s ", safePath, e.getMessage());
             }
         }
 
