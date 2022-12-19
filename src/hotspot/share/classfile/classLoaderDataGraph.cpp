@@ -369,6 +369,13 @@ void ClassLoaderDataGraph::loaded_cld_do(CLDClosure* cl) {
   }
 }
 
+void ClassLoaderDataGraph::loaded_cld_do_no_keepalive(CLDClosure* cl) {
+  ClassLoaderDataGraphIteratorNoKeepAlive iter;
+  while (ClassLoaderData* cld = iter.get_next()) {
+    cl->do_cld(cld);
+  }
+}
+
 // These functions assume that the caller has locked the ClassLoaderDataGraph_lock
 // if they are not calling the function from a safepoint.
 void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {

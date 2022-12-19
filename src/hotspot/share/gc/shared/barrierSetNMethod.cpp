@@ -195,5 +195,6 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
 
   assert(nm->is_osr_method(), "Should not reach here");
   log_trace(nmethod, barrier)("Running osr nmethod entry barrier: " PTR_FORMAT, p2i(nm));
+  OrderAccess::cross_modify_fence();
   return nmethod_entry_barrier(nm);
 }

@@ -50,7 +50,7 @@ sealed public interface BranchInstruction extends Instruction
      * {@return a branch instruction}
      *
      * @param op the opcode for the specific type of branch instruction,
-     *           which must be of kind {@link Kind#BRANCH}
+     *           which must be of kind {@link Opcode.Kind#BRANCH}
      */
     static BranchInstruction of(Opcode op, Label target) {
         Util.checkKind(op, Opcode.Kind.BRANCH);

@@ -41,17 +41,14 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
-
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
-
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
 #endif
 
 jlong CompilationPolicy::_start_time = 0;

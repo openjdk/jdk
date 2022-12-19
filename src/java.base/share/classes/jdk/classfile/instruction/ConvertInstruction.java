@@ -65,7 +65,7 @@ sealed public interface ConvertInstruction extends Instruction
      * {@return a conversion instruction}
      *
      * @param op the opcode for the specific type of conversion instruction,
-     *           which must be of kind {@link Kind#CONVERT}
+     *           which must be of kind {@link Opcode.Kind#CONVERT}
      */
     static ConvertInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.CONVERT);

@@ -63,18 +63,71 @@ sealed public interface CharacterRangeInfo
     int characterRangeEnd();
 
     /**
-     * A flags word, indicating the kind of range.  Multiple flag bits
-     * may be set.  Valid flags include {@link jdk.classfile.Classfile#CRT_STATEMENT},
-     * {@link jdk.classfile.Classfile#CRT_BLOCK},
-     * {@link jdk.classfile.Classfile#CRT_ASSIGNMENT},
-     * {@link jdk.classfile.Classfile#CRT_FLOW_CONTROLLER},
-     * {@link jdk.classfile.Classfile#CRT_FLOW_TARGET},
-     * {@link jdk.classfile.Classfile#CRT_INVOKE},
-     * {@link jdk.classfile.Classfile#CRT_CREATE},
-     * {@link jdk.classfile.Classfile#CRT_BRANCH_TRUE},
-     * {@link jdk.classfile.Classfile#CRT_BRANCH_FALSE}.
-     *
-     * @@@ Need reference for interpretation of flags.
+     * The value of the flags item describes the kind of range. Multiple flags
+     * may be set within flags.
+     * <ul>
+     * <li>{@link jdk.classfile.Classfile#CRT_STATEMENT} Range is a Statement
+     * (except ExpressionStatement), StatementExpression (14.8), as well as each
+     * VariableDeclaratorId = VariableInitializer of
+     * LocalVariableDeclarationStatement (14.4) or FieldDeclaration (8.3) in the
+     * grammar.
+     * <li>{@link jdk.classfile.Classfile#CRT_BLOCK} Range is a Block in the
+     * grammar.
+     * <li>{@link jdk.classfile.Classfile#CRT_ASSIGNMENT} Range is an assignment
+     * expression - Expression1 AssignmentOperator Expression1 in the grammar as
+     * well as increment and decrement expressions (both prefix and postfix).
+     * <li>{@link jdk.classfile.Classfile#CRT_FLOW_CONTROLLER} An expression
+     * whose value will effect control flow. Flowcon in the following:
+     * <pre>
+     * if ( Flowcon ) Statement [else Statement]
+     * for ( ForInitOpt ; [Flowcon] ; ForUpdateOpt ) Statement
+     * while ( Flowcon ) Statement
+     * do Statement while ( Flowcon ) ;
+     * switch ( Flowcon ) { SwitchBlockStatementGroups }
+     * Flowcon || Expression3
+     * Flowcon &amp;&amp; Expression3
+     * Flowcon ? Expression : Expression1
+     * </pre>
+     * <li>{@link jdk.classfile.Classfile#CRT_FLOW_TARGET} Statement or
+     * expression effected by a CRT_FLOW_CONTROLLER. Flowtarg in the following:
+     * <pre>
+     * if ( Flowcon ) Flowtarg [else Flowtarg]
+     * for ( ForInitOpt ; [Flowcon] ; ForUpdateOpt ) Flowtarg
+     * while ( Flowcon ) Flowtarg
+     * do Flowtarg while ( Flowcon ) ;
+     * Flowcon || Flowtarg
+     * Flowcon &amp;&amp; Flowtarg
+     * Flowcon ? Flowtarg : Flowtarg
+     * </pre>
+     * <li>{@link jdk.classfile.Classfile#CRT_INVOKE} Method invocation. For
+     * example: Identifier Arguments.
+     * <li>{@link jdk.classfile.Classfile#CRT_CREATE} New object creation. For
+     * example: new Creator.
+     * <li>{@link jdk.classfile.Classfile#CRT_BRANCH_TRUE} A condition encoded
+     * in the branch instruction immediately contained in the code range for
+     * this item is not inverted towards the corresponding branch condition in
+     * the source code. I.e. actual jump occurs if and only if the the source
+     * code branch condition evaluates to true. Entries of this type are
+     * produced only for conditions that are listed in the description of
+     * CRT_FLOW_CONTROLLER flag. The source range for the entry contains flow
+     * controlling expression. start_pc field for an entry of this type must
+     * point to a branch instruction: if_acmp&lt;cond&gt;, if_icmp&lt;cond&gt;,
+     * if&lt;cond&gt;, ifnonull, ifnull or goto. CRT_BRANCH_TRUE and
+     * CRT_BRANCH_FALSE are special kinds of entries that can be used to
+     * determine what branch of a condition was chosen during the runtime.
+     * <li>{@link jdk.classfile.Classfile#CRT_BRANCH_FALSE} A condition encoded
+     * in the branch instruction immediately contained in the code range for
+     * this item is inverted towards the corresponding branch condition in the
+     * source code. I.e. actual jump occurs if and only if the the source code
+     * branch condition evaluates to false. Entries of this type are produced
+     * only for conditions that are listed in the description of
+     * CRT_FLOW_CONTROLLER flag. The source range for the entry contains flow
+     * controlling expression. start_pc field for an entry of this type must
+     * point to a branch instruction: if_acmp&lt;cond&gt;, if_icmp&lt;cond&gt;,
+     * if&lt;cond&gt;, ifnonull, ifnull or goto.
+     * </ul>
+     * <p>
+     * All bits of the flags item not assigned above are reserved for future use. They should be set to zero in generated class files and should be ignored by Java virtual machine implementations.
      *
      * @return the flags
      */

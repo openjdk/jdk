@@ -120,8 +120,6 @@ public:
   // Returns true iff objects were reallocated and relocked because of access through JVMTI.
   static bool objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id);
 
-  static bool deoptimizing_objects_for_all_threads() { return _deoptimizing_objects_for_all_threads; }
-
   ~EscapeBarrier() {
     if (!barrier_active()) return;
     if (all_threads()) {

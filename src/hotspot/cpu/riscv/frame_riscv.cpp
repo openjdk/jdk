@@ -157,6 +157,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       saved_fp = (intptr_t*) *(sender_sp - 2);
     }
 
+    if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
+      frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
+      sender_sp = s.sp();
+      sender_pc = s.pc();
+    }
 
     // If the potential sender is the interpreter then we can do some more checking
     if (Interpreter::contains(sender_pc)) {
@@ -202,9 +208,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > (address)sender.fp());
-
-      return jcw_safe;
+      return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
     }
 
     CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
@@ -254,15 +258,18 @@ bool frame::safe_for_sender(JavaThread *thread) {
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
+  address pc_old = *pc_addr;
 
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
-                  p2i(pc_addr), p2i(*pc_addr), p2i(pc));
+                  p2i(pc_addr), p2i(pc_old), p2i(pc));
   }
+
+  assert(!Continuation::is_return_barrier_entry(pc_old), "return barrier");
 
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  assert(_pc == *pc_addr || pc == *pc_addr || *pc_addr == 0, "must be");
+  assert(_pc == pc_old || pc == pc_old || pc_old == 0, "must be");
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
@@ -274,10 +281,6 @@ void frame::patch_pc(Thread* thread, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
-}
-
-bool frame::is_interpreted_frame() const  {
-  return Interpreter::contains(pc());
 }
 
 intptr_t* frame::entry_frame_argument_at(int offset) const {
@@ -306,7 +309,7 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  BasicObjectLock* result = (BasicObjectLock*) *addr_at(interpreter_frame_monitor_block_top_offset);
+  BasicObjectLock* result = (BasicObjectLock*) at(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
   assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
   assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer");
@@ -417,6 +420,14 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2
 
+  if (Continuation::is_return_barrier_entry(sender_pc())) {
+    if (map->walk_cont()) { // about to walk into an h-stack
+      return Continuation::top_frame(*this, map);
+    } else {
+      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+    }
+  }
+
   return frame(sender_sp, unextended_sp, link(), sender_pc());
 }
 
@@ -469,9 +480,11 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   }
 
   // validate locals
-  address locals = (address) *interpreter_frame_locals_addr();
-  if (locals > thread->stack_base() || locals < (address) fp()) {
-    return false;
+  if (m->max_locals() > 0) {
+    address locals = (address) *interpreter_frame_locals_addr();
+    if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
+      return false;
+    }
   }
 
   // We'd have to be pretty unlucky to be mislead at this point
@@ -549,6 +562,22 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
     DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
+  }
+
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - 1;
+      fp_loc = real_fp() - 2;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
   }
 }
 #endif

@@ -23,12 +23,12 @@
 
 package q;
 
-import java.io.IOException;
 import sun.security.util.DerEncoder;
 import sun.security.util.DerOutputStream;
 
 public class NoRepl implements DerEncoder {
-    public void derEncode(DerOutputStream out) throws IOException {
-        throw new IOException();
+    @Override
+    public void encode(DerOutputStream out) {
+        throw new RuntimeException();
     }
 }

@@ -39,6 +39,7 @@ import jdk.classfile.impl.ChainedClassBuilder;
 import jdk.classfile.impl.DirectClassBuilder;
 import jdk.classfile.impl.Util;
 import java.lang.reflect.AccessFlag;
+import jdk.classfile.attribute.CodeAttribute;
 
 /**
  * A builder for classfiles.  Builders are not created directly; they are passed
@@ -263,7 +264,7 @@ public sealed interface ClassBuilder
     }
 
     /**
-     * Adds a method, with only a {@Code attribute}.
+     * Adds a method, with only a {@link CodeAttribute}.
      * @param name the name of the method
      * @param descriptor the method descriptor
      * @param methodFlags the access flags

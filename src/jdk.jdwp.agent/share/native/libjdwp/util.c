@@ -222,8 +222,6 @@ util_initialize(JNIEnv *env)
                     "<init>", "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V");
         gdata->threadSetDaemon =
                 getMethod(env, gdata->threadClass, "setDaemon", "(Z)V");
-        gdata->threadResume =
-                getMethod(env, gdata->threadClass, "resume", "()V");
         gdata->systemGetProperty =
                 getStaticMethod(env, gdata->systemClass,
                     "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
@@ -277,12 +275,12 @@ util_initialize(JNIEnv *env)
             localAgentProperties =
                 JNI_FUNC_PTR(env,CallStaticObjectMethod)
                             (env, localVMSupportClass, getAgentProperties);
-            saveGlobalRef(env, localAgentProperties, &(gdata->agent_properties));
             if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
                 EXIT_ERROR(AGENT_ERROR_INTERNAL,
                     "Exception occurred calling VMSupport.getAgentProperties");
             }
+            saveGlobalRef(env, localAgentProperties, &(gdata->agent_properties));
         }
 
     } END_WITH_LOCAL_REFS(env);
@@ -1736,7 +1734,7 @@ getSpecialJvmti(void)
     jvmtiCapabilities caps;
 
     rc = JVM_FUNC_PTR(gdata->jvm,GetEnv)
-                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION_1);
+                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION);
     if (rc != JNI_OK) {
         return NULL;
     }
@@ -1935,7 +1933,7 @@ eventIndexInit(void)
     index2jvmti[EI_THREAD_START       -EI_min] = JVMTI_EVENT_THREAD_START;
     index2jvmti[EI_THREAD_END         -EI_min] = JVMTI_EVENT_THREAD_END;
     index2jvmti[EI_CLASS_PREPARE      -EI_min] = JVMTI_EVENT_CLASS_PREPARE;
-    index2jvmti[EI_GC_FINISH          -EI_min] = JVMTI_EVENT_GARBAGE_COLLECTION_FINISH;
+    index2jvmti[EI_CLASS_UNLOAD       -EI_min] = 0; // No mapping to JVMTI event
     index2jvmti[EI_CLASS_LOAD         -EI_min] = JVMTI_EVENT_CLASS_LOAD;
     index2jvmti[EI_FIELD_ACCESS       -EI_min] = JVMTI_EVENT_FIELD_ACCESS;
     index2jvmti[EI_FIELD_MODIFICATION -EI_min] = JVMTI_EVENT_FIELD_MODIFICATION;
@@ -1958,7 +1956,7 @@ eventIndexInit(void)
     index2jdwp[EI_THREAD_START        -EI_min] = JDWP_EVENT(THREAD_START);
     index2jdwp[EI_THREAD_END          -EI_min] = JDWP_EVENT(THREAD_END);
     index2jdwp[EI_CLASS_PREPARE       -EI_min] = JDWP_EVENT(CLASS_PREPARE);
-    index2jdwp[EI_GC_FINISH           -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
+    index2jdwp[EI_CLASS_UNLOAD        -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
     index2jdwp[EI_CLASS_LOAD          -EI_min] = JDWP_EVENT(CLASS_LOAD);
     index2jdwp[EI_FIELD_ACCESS        -EI_min] = JDWP_EVENT(FIELD_ACCESS);
     index2jdwp[EI_FIELD_MODIFICATION  -EI_min] = JDWP_EVENT(FIELD_MODIFICATION);
@@ -1977,21 +1975,29 @@ eventIndexInit(void)
 }
 
 jdwpEvent
-eventIndex2jdwp(EventIndex i)
+eventIndex2jdwp(EventIndex ei)
 {
-    if ( i < EI_min || i > EI_max ) {
-        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX,"bad EventIndex");
+    jdwpEvent event = 0;
+    if (ei >= EI_min && ei <= EI_max) {
+        event = index2jdwp[ei - EI_min];
     }
-    return index2jdwp[i-EI_min];
+    if (event == 0) {
+        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX, "bad EventIndex");
+    }
+    return event;
 }
 
 jvmtiEvent
-eventIndex2jvmti(EventIndex i)
+eventIndex2jvmti(EventIndex ei)
 {
-    if ( i < EI_min || i > EI_max ) {
-        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX,"bad EventIndex");
+    jvmtiEvent event = 0;
+    if (ei >= EI_min && ei <= EI_max) {
+        event = index2jvmti[ei - EI_min];
     }
-    return index2jvmti[i-EI_min];
+    if (event == 0) {
+        EXIT_ERROR(AGENT_ERROR_INVALID_INDEX, "bad EventIndex");
+    }
+    return event;
 }
 
 #ifdef DEBUG
@@ -2014,8 +2020,8 @@ eventIndex2EventName(EventIndex ei)
             return "EI_THREAD_END";
         case EI_CLASS_PREPARE:
             return "EI_CLASS_PREPARE";
-        case EI_GC_FINISH:
-            return "EI_GC_FINISH";
+        case EI_CLASS_UNLOAD:
+            return "EI_CLASS_UNLOAD";
         case EI_CLASS_LOAD:
             return "EI_CLASS_LOAD";
         case EI_FIELD_ACCESS:
@@ -2071,7 +2077,7 @@ jdwp2EventIndex(jdwpEvent eventType)
         case JDWP_EVENT(CLASS_PREPARE):
             return EI_CLASS_PREPARE;
         case JDWP_EVENT(CLASS_UNLOAD):
-            return EI_GC_FINISH;
+            return EI_CLASS_UNLOAD;
         case JDWP_EVENT(CLASS_LOAD):
             return EI_CLASS_LOAD;
         case JDWP_EVENT(FIELD_ACCESS):
@@ -2127,8 +2133,6 @@ jvmti2EventIndex(jvmtiEvent kind)
             return EI_THREAD_END;
         case JVMTI_EVENT_CLASS_PREPARE:
             return EI_CLASS_PREPARE;
-        case JVMTI_EVENT_GARBAGE_COLLECTION_FINISH:
-            return EI_GC_FINISH;
         case JVMTI_EVENT_CLASS_LOAD:
             return EI_CLASS_LOAD;
         case JVMTI_EVENT_FIELD_ACCESS:

@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
@@ -43,6 +42,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -244,12 +244,6 @@ void Threads::java_threads_do(ThreadClosure* tc) {
   ALL_JAVA_THREADS(p) {
     tc->do_thread(p);
   }
-}
-
-void Threads::java_threads_and_vm_thread_do(ThreadClosure* tc) {
-  assert_locked_or_safepoint(Threads_lock);
-  java_threads_do(tc);
-  tc->do_thread(VMThread::vm_thread());
 }
 
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system).

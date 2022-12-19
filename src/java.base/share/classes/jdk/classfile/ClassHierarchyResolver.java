@@ -51,14 +51,8 @@ public interface ClassHierarchyResolver {
             = new ClassHierarchyImpl.CachedClassHierarchyResolver(
             new Function<ClassDesc, InputStream>() {
                 @Override
-                @SuppressWarnings("removal")
                 public InputStream apply(ClassDesc classDesc) {
-                    return AccessController.doPrivileged(new PrivilegedAction<>() {
-                        @Override
-                        public InputStream run() {
-                            return ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
-                        }
-                    });
+                    return ClassLoader.getSystemResourceAsStream(Util.toInternalName(classDesc) + ".class");
                 }
             });
 

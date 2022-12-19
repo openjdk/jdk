@@ -49,7 +49,7 @@ sealed public interface OperatorInstruction extends Instruction
      * {@return an operator instruction}
      *
      * @param op the opcode for the specific type of array load instruction,
-     *           which must be of kind {@link Kind#OPERATOR}
+     *           which must be of kind {@link Opcode.Kind#OPERATOR}
      */
     static OperatorInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.OPERATOR);
