@@ -100,7 +100,6 @@ jobs:
 
       - name: 'Install toolchain and dependencies'
         run: |
-          echo 'Run Visual Studio Installer'
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
             modify --quiet --installPath 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise' \
