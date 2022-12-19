@@ -491,7 +491,7 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
   LIR_Opr left_op   = left;
   LIR_Opr right_op  = right;
 
-  if (TwoOperandLIRForm && left_op != result_op) {
+  if (two_operand_lir_form && left_op != result_op) {
     assert(right_op != result_op, "malformed");
     __ move(left_op, result_op);
     left_op = result_op;
@@ -563,7 +563,7 @@ void LIRGenerator::arithmetic_op_fpu(Bytecodes::Code code, LIR_Opr result, LIR_O
 
 void LIRGenerator::shift_op(Bytecodes::Code code, LIR_Opr result_op, LIR_Opr value, LIR_Opr count, LIR_Opr tmp) {
 
-  if (TwoOperandLIRForm && value != result_op
+  if (two_operand_lir_form && value != result_op
       // Only 32bit right shifts require two operand form on S390.
       S390_ONLY(&& (code == Bytecodes::_ishr || code == Bytecodes::_iushr))) {
     assert(count != result_op, "malformed");
@@ -585,7 +585,7 @@ void LIRGenerator::shift_op(Bytecodes::Code code, LIR_Opr result_op, LIR_Opr val
 
 
 void LIRGenerator::logic_op (Bytecodes::Code code, LIR_Opr result_op, LIR_Opr left_op, LIR_Opr right_op) {
-  if (TwoOperandLIRForm && left_op != result_op) {
+  if (two_operand_lir_form && left_op != result_op) {
     assert(right_op != result_op, "malformed");
     __ move(left_op, result_op);
     left_op = result_op;
@@ -1428,8 +1428,8 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ branch_destination(L_done->label());
 }
 
-void LIRGenerator::do_extentLocalCache(Intrinsic* x) {
-  do_JavaThreadField(x, JavaThread::extentLocalCache_offset());
+void LIRGenerator::do_scopedValueCache(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::scopedValueCache_offset());
 }
 
 // Example: Thread.currentCarrierThread()
@@ -2948,7 +2948,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
   case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
   case vmIntrinsics::_currentThread:  do_vthread(x);       break;
-  case vmIntrinsics::_extentLocalCache: do_extentLocalCache(x); break;
+  case vmIntrinsics::_scopedValueCache: do_scopedValueCache(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through
@@ -3547,7 +3547,7 @@ void LIRGenerator::do_MemBar(MemBar* x) {
 
 LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info) {
   LIR_Opr value_fixed = rlock_byte(T_BYTE);
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ move(value, value_fixed);
     __ logical_and(value_fixed, LIR_OprFact::intConst(1), value_fixed);
   } else {

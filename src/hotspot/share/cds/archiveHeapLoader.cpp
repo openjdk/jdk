@@ -42,6 +42,8 @@
 bool ArchiveHeapLoader::_closed_regions_mapped = false;
 bool ArchiveHeapLoader::_open_regions_mapped = false;
 bool ArchiveHeapLoader::_is_loaded = false;
+
+bool    ArchiveHeapLoader::_narrow_oop_base_initialized = false;
 address ArchiveHeapLoader::_narrow_oop_base;
 int     ArchiveHeapLoader::_narrow_oop_shift;
 
@@ -59,10 +61,26 @@ intx ArchiveHeapLoader::_runtime_offset_2 = 0;
 intx ArchiveHeapLoader::_runtime_offset_3 = 0;
 bool ArchiveHeapLoader::_loading_failed = false;
 
-// Support for mapped heap (!UseCompressedOops only)
-ptrdiff_t ArchiveHeapLoader::_runtime_delta = 0;
+// Support for mapped heap.
+bool      ArchiveHeapLoader::_mapped_heap_relocation_initialized = false;
+ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
+
+// Every mapped region is offset by _mapped_heap_delta from its requested address.
+// See FileMapInfo::heap_region_requested_address().
+void ArchiveHeapLoader::init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift) {
+  assert(!_mapped_heap_relocation_initialized, "only once");
+  if (!UseCompressedOops) {
+    assert(dumptime_oop_shift == 0, "sanity");
+  }
+  assert(can_map(), "sanity");
+  init_narrow_oop_decoding(CompressedOops::base() + delta, dumptime_oop_shift);
+  _mapped_heap_delta = delta;
+  _mapped_heap_relocation_initialized = true;
+}
 
 void ArchiveHeapLoader::init_narrow_oop_decoding(address base, int shift) {
+  assert(!_narrow_oop_base_initialized, "only once");
+  _narrow_oop_base_initialized = true;
   _narrow_oop_base = base;
   _narrow_oop_shift = shift;
 }
@@ -112,7 +130,7 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
     oop* p = _start + offset;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
-    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::runtime_delta();
+    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
     RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
@@ -192,6 +210,10 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 }
 
 bool ArchiveHeapLoader::can_load() {
+  if (!UseCompressedOops) {
+    // Pointer relocation for uncompressed oops is unimplemented.
+    return false;
+  }
   return Universe::heap()->can_load_archived_objects();
 }
 
@@ -227,12 +249,12 @@ class PatchLoadedRegionPointers: public BitMapClosure {
   }
 
   bool do_bit(size_t offset) {
+    assert(UseCompressedOops, "PatchLoadedRegionPointers for uncompressed oops is unimplemented");
     narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     uintptr_t o = cast_from_oop<uintptr_t>(ArchiveHeapLoader::decode_from_archive(v));
     assert(_base_0 <= o && o < _top, "must be");
-
 
     // We usually have only 2 regions for the default archive. Use template to avoid unnecessary comparisons.
     if (NUM_LOADED_REGIONS > 3 && o >= _base_3) {
@@ -264,7 +286,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
       LoadedArchiveHeapRegion* ri = &loaded_regions[num_loaded_regions++];
       ri->_region_index = i;
       ri->_region_size = r->used();
-      ri->_dumptime_base = (uintptr_t)mapinfo->start_address_as_decoded_from_archive(r);
+      ri->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address(r);
     }
   }
 
@@ -346,6 +368,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
 }
 
 bool ArchiveHeapLoader::load_heap_regions(FileMapInfo* mapinfo) {
+  assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
   LoadedArchiveHeapRegion loaded_regions[MetaspaceShared::max_num_heap_regions];
@@ -386,7 +409,8 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
-    ShouldNotReachHere();
+    // Uncompressed oops are not supported by loaded heaps.
+    Unimplemented();
   }
 };
 

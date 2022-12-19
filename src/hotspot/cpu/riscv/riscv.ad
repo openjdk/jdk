@@ -960,11 +960,13 @@ definitions %{
 source_hpp %{
 
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 #include "opto/convertnode.hpp"
+#include "runtime/objectMonitor.hpp"
 
 extern RegMask _ANY_REG32_mask;
 extern RegMask _ANY_REG_mask;
@@ -1359,8 +1361,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       Label* guard = &dummy_guard;
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for purpose of measuring its size
-        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
-        slow_path = &stub->slow_path();
+        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+        Compile::current()->output()->add_stub(stub);
+        slow_path = &stub->entry();
         continuation = &stub->continuation();
         guard = &stub->guard();
       }
@@ -1441,7 +1444,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
@@ -2976,6 +2981,14 @@ operand immByteMapBase()
 operand immI_16bits()
 %{
   predicate(n->get_int() == 0xFFFF);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIpowerOf2() %{
+  predicate(is_power_of_2((juint)(n->get_int())));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -7226,9 +7239,9 @@ instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 %}
 
 // Math.max(FF)F
-instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
+instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   match(Set dst (MaxF src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "maxF $dst, $src1, $src2" %}
 
@@ -7242,9 +7255,9 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
 %}
 
 // Math.min(FF)F
-instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
+instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   match(Set dst (MinF src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "minF $dst, $src1, $src2" %}
 
@@ -7258,9 +7271,9 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2) %{
 %}
 
 // Math.max(DD)D
-instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
+instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   match(Set dst (MaxD src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "maxD $dst, $src1, $src2" %}
 
@@ -7274,9 +7287,9 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
 %}
 
 // Math.min(DD)D
-instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
+instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   match(Set dst (MinD src1 src2));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, KILL cr);
 
   format %{ "minD $dst, $src1, $src2" %}
 

@@ -149,9 +149,6 @@ class HostPortrange {
                         // regular domain name
                         hoststr = toLowerCase(hoststr);
                     }
-                } else {
-                    // regular domain name
-                    hoststr = toLowerCase(hoststr);
                 }
             }
             hostname = hoststr;
@@ -189,7 +186,8 @@ class HostPortrange {
                 }
                 sb.append((char)(c - CASE_DIFF));
             } else {
-                throw new IllegalArgumentException("Invalid characters in hostname");
+                final String message = String.format("Invalid character \\u%04x in hostname", (int) c);
+                throw new IllegalArgumentException(message);
             }
         }
         return sb == null ? s : sb.toString();
