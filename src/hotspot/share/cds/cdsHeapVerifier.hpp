@@ -69,7 +69,7 @@ class CDSHeapVerifier : public KlassClosure {
     }
     return NULL;
   }
-  int trace_to_root(oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
+  static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
 
   CDSHeapVerifier();
   ~CDSHeapVerifier();
@@ -83,6 +83,8 @@ public:
   inline bool do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value);
 
   static void verify() NOT_DEBUG_RETURN;
+
+  static void trace_to_root(outputStream* st, oop orig_obj);
 };
 
 #endif // INCLUDE_CDS_JAVA_HEAP

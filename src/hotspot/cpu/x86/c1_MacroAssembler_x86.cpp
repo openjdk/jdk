@@ -176,7 +176,6 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
 
   // len_in_bytes is positive and ptr sized
   subptr(len_in_bytes, hdr_size_in_bytes);
-  jcc(Assembler::zero, done);
   zero_memory(obj, len_in_bytes, hdr_size_in_bytes, t1);
   bind(done);
 }

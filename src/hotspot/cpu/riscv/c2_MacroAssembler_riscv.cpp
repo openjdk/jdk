@@ -243,37 +243,6 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
 typedef void (MacroAssembler::* load_chr_insn)(Register rd, const Address &adr, Register temp);
 
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  IncompressibleRegion ir(this);  // Fixed length: see C2_MacroAssembler::entry_barrier_stub_size()
-
-  // make guard value 4-byte aligned so that it can be accessed by atomic instructions on riscv
-  int alignment_bytes = align(4);
-
-  bind(stub->slow_path());
-
-  int32_t offset = 0;
-  movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  jalr(ra, t0, offset);
-  j(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  assert_alignment(pc());
-  emit_int32(0);  // nmethod guard value
-  // make sure the stub with a fixed code size
-  if (alignment_bytes == 2) {
-    assert(UseRVC, "bad alignment");
-    c_nop();
-  } else {
-    assert(alignment_bytes == 0, "bad alignment");
-    nop();
-  }
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 8 * 4 + 4; // 4 bytes for alignment margin
-}
-
 // Search for needle in haystack and return index or -1
 // x10: result
 // x11: haystack
@@ -1329,26 +1298,27 @@ void C2_MacroAssembler::minmax_FD(FloatRegister dst, FloatRegister src1, FloatRe
                                   bool is_double, bool is_min) {
   assert_different_registers(dst, src1, src2);
 
-  Label Done;
-  fsflags(zr);
+  Label Done, Compare;
+
+  is_double ? fclass_d(t0, src1)
+            : fclass_s(t0, src1);
+  is_double ? fclass_d(t1, src2)
+            : fclass_s(t1, src2);
+  orr(t0, t0, t1);
+  andi(t0, t0, 0b1100000000); //if src1 or src2 is quiet or signaling NaN then return NaN
+  beqz(t0, Compare);
+  is_double ? fadd_d(dst, src1, src2)
+            : fadd_s(dst, src1, src2);
+  j(Done);
+
+  bind(Compare);
   if (is_double) {
     is_min ? fmin_d(dst, src1, src2)
            : fmax_d(dst, src1, src2);
-    // Checking NaNs
-    flt_d(zr, src1, src2);
   } else {
     is_min ? fmin_s(dst, src1, src2)
            : fmax_s(dst, src1, src2);
-    // Checking NaNs
-    flt_s(zr, src1, src2);
   }
-
-  frflags(t0);
-  beqz(t0, Done);
-
-  // In case of NaNs
-  is_double ? fadd_d(dst, src1, src2)
-            : fadd_s(dst, src1, src2);
 
   bind(Done);
 }

@@ -62,6 +62,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
+#include "services/mallocHeader.inline.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtPreInit.hpp"
 #include "services/nmtCommon.hpp"
@@ -95,6 +96,16 @@ int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   va_start(args, fmt);
   int result = os::vsnprintf(buf, len, fmt, args);
   va_end(args);
+  return result;
+}
+
+int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  assert(result >= 0, "os::snprintf error");
+  assert(static_cast<size_t>(result) < len, "os::snprintf truncated");
   return result;
 }
 
@@ -174,7 +185,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
 
   // Compute the time zone offset.
   //    localtime_pd() sets timezone to the difference (in seconds)
-  //    between UTC and and local time.
+  //    between UTC and local time.
   //    ISO 8601 says we need the difference between local time and UTC,
   //    we change the sign of the localtime_pd() result.
   const time_t local_to_UTC = -(UTC_to_local);
@@ -714,30 +725,31 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return NULL;
     }
 
-    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
-
-    // De-account the old block from NMT *before* calling the real realloc(3) since it
-    // may invalidate old block including its header. This will also perform integrity checks
-    // on the old block (e.g. overwriters) and mark the old header as dead.
-    void* const old_outer_ptr = MemTracker::record_free(memblock);
+    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
+    // may invalidate the old block, including its header.
+    MallocHeader* header = MallocTracker::malloc_header(memblock);
+    header->assert_block_integrity(); // Assert block hasn't been tampered with.
+    const MallocHeader::FreeInfo free_info = header->free_info();
+    header->mark_block_as_dead();
 
     // the real realloc
-    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
+    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
 
     if (new_outer_ptr == NULL) {
-      // If realloc(3) failed, the old block still exists. We must re-instantiate the old
-      // NMT header then, since we marked it dead already. Otherwise subsequent os::realloc()
-      // or os::free() calls would trigger block integrity asserts.
-      void* p = MemTracker::record_malloc(old_outer_ptr, old_size, memflags, stack);
-      assert(p == memblock, "sanity");
-      return NULL;
+      // realloc(3) failed and the block still exists.
+      // We have however marked it as dead, revert this change.
+      header->revive();
+      return nullptr;
     }
+    // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
+    MemTracker::deaccount(free_info);
 
-    // After a successful realloc(3), we re-account the resized block with its new size
-    // to NMT. This re-instantiates the NMT header.
+    // After a successful realloc(3), we account the resized block with its new size
+    // to NMT.
     void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
 #ifdef ASSERT
+    size_t old_size = free_info.size;
     if (old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
@@ -774,7 +786,7 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
+  // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
@@ -1312,7 +1324,7 @@ char* os::format_boot_path(const char* format_string,
 FILE* os::fopen(const char* path, const char* mode) {
   char modified_mode[20];
   assert(strlen(mode) + 1 < sizeof(modified_mode), "mode chars plus one extra must fit in buffer");
-  sprintf(modified_mode, "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
+  os::snprintf_checked(modified_mode, sizeof(modified_mode), "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
   FILE* file = ::fopen(path, modified_mode);
 
 #if !(defined LINUX || defined BSD || defined _WINDOWS)

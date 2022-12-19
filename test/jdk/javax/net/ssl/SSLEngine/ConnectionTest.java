@@ -26,7 +26,6 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
- * @ignore the dependent implementation details are changed
  * @author Brad Wetmore
  *
  * @run main/othervm ConnectionTest
