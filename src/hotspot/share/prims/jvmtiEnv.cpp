@@ -583,7 +583,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     // ThreadsListHandle that is common to both thread-specific and
     // global code paths.
 
-    JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, (oop) NULL, event_type, enabled);
+    JvmtiEventController::set_user_enabled(this, NULL, (oop) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.
     ThreadsListHandle tlh;
@@ -715,9 +715,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     }
     delete zip_entry;   // no longer needed
 
-    // lock the loader
-    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    ObjectLocker ol(loader, THREAD);
+    Handle loader(THREAD, SystemDictionary::java_system_loader());
 
     // need the path as java.lang.String
     Handle path = java_lang_String::create_from_platform_dependent_str(segment, THREAD);
@@ -3524,7 +3522,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
 
   // does the klass have any local variable information?
   InstanceKlass* ik = method->method_holder();
-  if (!ik->access_flags().has_localvariable_table()) {
+  if (!ik->has_localvariable_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,17 @@ public class setvalue004t {
     static final char    sCharFld = 'a';
     static final boolean sBooleanFld = false;
     static final String  sStrFld = "instance field";
+
+    // tested instance final fields
+    final byte    iByteFld = 127;
+    final short   iShortFld = -32768;
+    final int     iIntFld = 2147483647;
+    final long    iLongFld = 9223372036854775807L;
+    final float   iFloatFld = 5.1F;
+    final double  iDoubleFld = 6.2D;
+    final char    iCharFld = 'a';
+    final boolean iBooleanFld = false;
+    final String  iStrFld = "instance field";
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);

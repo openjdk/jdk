@@ -865,7 +865,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
       in_bytes(JavaThread::osthread_offset()),
       in_bytes(JavaThread::threadObj_offset()),
       in_bytes(JavaThread::vthread_offset()),
-      in_bytes(JavaThread::extentLocalCache_offset()),
+      in_bytes(JavaThread::scopedValueCache_offset()),
     };
 
     for (size_t i = 0; i < sizeof offsets / sizeof offsets[0]; i++) {
@@ -2387,7 +2387,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2488,7 +2488,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p)  return (p == NodeSentinel) ? NULL : p;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2520,7 +2520,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   Node* x = LoadINode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -3261,7 +3261,6 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
-  case Op_Blackhole:         return new BlackholeNode(C, atp, pn);
   default: ShouldNotReachHere(); return NULL;
   }
 }
@@ -3501,26 +3500,6 @@ MemBarNode* MemBarNode::leading_membar() const {
   return mb;
 }
 
-#ifndef PRODUCT
-void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
-  st->print("blackhole ");
-  bool first = true;
-  for (uint i = 0; i < req(); i++) {
-    Node* n = in(i);
-    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
-      if (first) {
-        first = false;
-      } else {
-        st->print(", ");
-      }
-      char buf[128];
-      ra->dump_register(n, buf);
-      st->print("%s", buf);
-    }
-  }
-  st->cr();
-}
-#endif
 
 //===========================InitializeNode====================================
 // SUMMARY:

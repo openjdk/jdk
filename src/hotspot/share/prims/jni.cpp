@@ -25,7 +25,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -47,6 +46,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
+#include "jni.h"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
@@ -626,7 +626,7 @@ JNI_ENTRY(void, jni_FatalError(JNIEnv *env, const char *msg))
   HOTSPOT_JNI_FATALERROR_ENTRY(env, (char *) msg);
 
   tty->print_cr("FATAL ERROR in native method: %s", msg);
-  thread->print_stack();
+  thread->print_jni_stack();
   os::abort(); // Dump core and abort
 JNI_END
 
