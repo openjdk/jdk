@@ -354,8 +354,8 @@ Java_sun_lwawt_macosx_CRobot_nativeGetScreenPixels
                                             picWidth, picHeight,
                                             8, picWidth * sizeof(jint),
                                             picColorSpace,
-                                            kCGBitmapByteOrder32Host |
-                                            kCGImageAlphaPremultipliedFirst);
+                                            kCGBitmapByteOrder32Little |
+                                            kCGImageAlphaNoneSkipFirst);
 
     CGColorSpaceRelease(picColorSpace);
 
