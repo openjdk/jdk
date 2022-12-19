@@ -281,8 +281,13 @@ public class ResponseSubscribers {
 
         @Override
         public void onNext(List<ByteBuffer> items) {
+            int size = Utils.remaining(items, Integer.MAX_VALUE);
             try {
-                out.write(items.toArray(Utils.EMPTY_BB_ARRAY));
+                long bytesWritten = 0;
+                ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
+                while (bytesWritten < size) {
+                    bytesWritten += out.write(buffers);
+                }
             } catch (IOException ex) {
                 close();
                 subscription.cancel();
