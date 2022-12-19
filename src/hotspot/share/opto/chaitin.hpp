@@ -478,7 +478,7 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
 
-  double _high_frequency_lrg;    // Frequency at which LRG will be spilled for debug info
+  double _high_frequency_lrg;   // Frequency at which LRG will be spilled for debug info
 
 #ifndef PRODUCT
   bool _trace_spilling;
