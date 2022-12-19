@@ -274,4 +274,7 @@ public:
                      Register limit, Register result, Register chr,
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
+  void rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XMMRegister src, XMMRegister xtmp1,
+                       XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, KRegister ktmp, int vlen_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

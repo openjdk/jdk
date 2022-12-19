@@ -1853,6 +1853,7 @@ private:
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
   void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
 
   // Shuffle Packed Doublewords
   void pshufd(XMMRegister dst, XMMRegister src, int mode);

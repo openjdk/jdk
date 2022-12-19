@@ -1788,10 +1788,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // Implementation limitation due to how shuffle is loaded
       } else if (size_in_bits == 256 && UseAVX < 2) {
         return false; // Implementation limitation
-      } else if (bt == T_BYTE && size_in_bits > 256 && !VM_Version::supports_avx512_vbmi())  {
-        return false; // Implementation limitation
-      } else if (bt == T_SHORT && size_in_bits > 256 && !VM_Version::supports_avx512bw())  {
-        return false; // Implementation limitation
       }
       break;
     case Op_VectorLoadMask:
@@ -7721,7 +7717,23 @@ instruct rearrangeB_avx(legVec dst, legVec src, vec shuffle, legVec vtmp1, legVe
   ins_pipe( pipe_slow );
 %}
 
-instruct rearrangeB_evex(vec dst, vec src, vec shuffle) %{
+
+instruct rearrangeB_evex(vec dst, vec src, vec shuffle, vec xtmp1, vec xtmp2, vec xtmp3, kReg ktmp, rRegI rtmp) %{
+  predicate(vector_element_basic_type(n) == T_BYTE &&
+            vector_length(n) > 32 && !VM_Version::supports_avx512_vbmi());
+  match(Set dst (VectorRearrange src shuffle));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP ktmp, TEMP rtmp);
+  format %{ "vector_rearrange $dst, $shuffle, $src!\t using $xtmp1, $xtmp2, $xtmp3, $rtmp and $ktmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ rearrange_bytes($dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister,
+                       $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp3$$XMMRegister,
+                       $rtmp$$Register, $ktmp$$KRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct rearrangeB_evex_vbmi(vec dst, vec src, vec shuffle) %{
   predicate(vector_element_basic_type(n) == T_BYTE &&
             vector_length(n) >= 32 && VM_Version::supports_avx512_vbmi());
   match(Set dst (VectorRearrange src shuffle));

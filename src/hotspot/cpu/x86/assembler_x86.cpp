@@ -4713,6 +4713,18 @@ void Assembler::vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
   emit_int16(0x00, (0xC0 | encode));
 }
 
+void Assembler::evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  assert(VM_Version::supports_avx512bw() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x00, (0xC0 | encode));
+}
+
 void Assembler::pshufb(XMMRegister dst, Address src) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionMark im(this);
