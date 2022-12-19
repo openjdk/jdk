@@ -527,35 +527,6 @@ public class MetricsTesterCgroupV1 implements CgroupMetricsTester {
 
     }
 
-    public void testMemoryUsage() throws Exception {
-        CgroupV1Metrics metrics = (CgroupV1Metrics)Metrics.systemMetrics();
-        long memoryMaxUsage = metrics.getMemoryMaxUsage();
-        long memoryUsage = metrics.getMemoryUsage();
-        long newMemoryMaxUsage = 0, newMemoryUsage = 0;
-
-        // allocate memory in a loop and check more than once for new values
-        // otherwise we might see seldom the effect of decreasing new memory values
-        // e.g. because the system could free up memory
-        byte[][] bytes = new byte[32][];
-        for (int i = 0; i < 32; i++) {
-            bytes[i] = new byte[8*1024*1024];
-            newMemoryUsage = metrics.getMemoryUsage();
-            if (newMemoryUsage > memoryUsage) {
-                break;
-            }
-        }
-        newMemoryMaxUsage = metrics.getMemoryMaxUsage();
-
-        if (newMemoryMaxUsage < memoryMaxUsage) {
-            fail(Controller.MEMORY, "getMemoryMaxUsage", memoryMaxUsage,
-                    newMemoryMaxUsage);
-        }
-
-        if (newMemoryUsage < memoryUsage) {
-            fail(Controller.MEMORY, "getMemoryUsage", memoryUsage, newMemoryUsage);
-        }
-    }
-
     @Override
     public void testMisc() {
         testBlkIO();

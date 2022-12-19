@@ -59,7 +59,6 @@ public class MetricsTester {
         tester.testCpuSchedulingMetrics();
         tester.testCpuSets();
         tester.testMemorySubsystem();
-        tester.testMemoryUsage();
         tester.testMisc();
     }
 
