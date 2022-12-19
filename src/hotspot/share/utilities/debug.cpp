@@ -452,6 +452,8 @@ extern "C" JNIEXPORT void printnm(intptr_t p) {
   if (cb != NULL && cb->is_nmethod()) {
     nmethod* nm = (nmethod*)cb;
     nm->print_nmethod(true);
+  } else {
+    tty->print_cr("Invalid address");
   }
 }
 
