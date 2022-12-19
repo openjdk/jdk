@@ -873,7 +873,6 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) 
   __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
 
   OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize) / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
 
   __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
   __ sd(t0, Address(sp, ContinuationEntry::parent_offset()));

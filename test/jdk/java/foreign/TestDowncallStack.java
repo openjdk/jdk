@@ -34,11 +34,10 @@
 
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.SegmentAllocator;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,20 +56,20 @@ public class TestDowncallStack extends TestDowncallBase {
                                   List<CallGeneratorHelper.ParamType> paramTypes,
                                   List<CallGeneratorHelper.StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        Addressable addr = findNativeOrThrow("s" + fName);
+        MemorySegment addr = findNativeOrThrow("s" + fName);
         FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
         Object[] args = makeArgsStack(paramTypes, fields, checks);
-        try (MemorySession session = MemorySession.openShared()) {
+        try (Arena arena = Arena.openShared()) {
             boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
             SegmentAllocator allocator = needsScope ?
-                    SegmentAllocator.newNativeArena(session) :
+                    SegmentAllocator.nativeAllocator(arena.scope()) :
                     THROWING_ALLOCATOR;
             Object res = doCall(addr, allocator, descriptor, args);
             if (ret == CallGeneratorHelper.Ret.NON_VOID) {
                 checks.forEach(c -> c.accept(res));
                 if (needsScope) {
                     // check that return struct has indeed been allocated in the native scope
-                    assertEquals(((MemorySegment)res).session(), session);
+                    assertEquals(((MemorySegment)res).scope(), arena.scope());
                 }
             }
         }

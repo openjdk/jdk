@@ -593,6 +593,11 @@ public class IRNode {
         afterBarrierExpansionToBeforeMatching(MACRO_LOGIC_V, "MacroLogicV");
     }
 
+    public static final String MAX = PREFIX + "MAX" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX, "Max(I|L)");
+    }
+
     public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(MAX_I, "MaxI");
@@ -611,6 +616,11 @@ public class IRNode {
     public static final String MEMBAR_STORESTORE = PREFIX + "MEMBAR_STORESTORE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_STORESTORE, "MemBarStoreStore");
+    }
+
+    public static final String MIN = PREFIX + "MIN" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN, "Min(I|L)");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
@@ -704,6 +714,16 @@ public class IRNode {
         superWordNodes(POPCOUNT_VL, "PopCountVL");
     }
 
+    public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
+    }
+
+    public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    static {
+        superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
+    }
+
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
     static {
         String regex = START + "PopulateIndex" + MID + END;
@@ -750,6 +770,16 @@ public class IRNode {
     public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
     static {
         beforeMatchingNameRegex(ROUND_VF, "RoundVF");
+    }
+
+    public static final String ROTATE_LEFT = PREFIX + "ROTATE_LEFT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROTATE_LEFT, "RotateLeft");
+    }
+
+    public static final String ROTATE_RIGHT = PREFIX + "ROTATE_RIGHT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROTATE_RIGHT, "RotateRight");
     }
 
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
@@ -1049,6 +1079,16 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
     }
 
+    public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
+    }
+
+    public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
+    }
+
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
@@ -1072,6 +1112,11 @@ public class IRNode {
     public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
+    }
+
+    public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_TEST, "VectorTest");
     }
 
     public static final String VFABD = PREFIX + "VFABD" + POSTFIX;

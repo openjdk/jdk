@@ -658,6 +658,7 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
 // a method.
 
 MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS) {
+  assert(!THREAD->owns_locks(), "Should not own any locks");
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
@@ -1819,4 +1820,14 @@ void MethodData::clean_weak_method_links() {
   CleanExtraDataMethodClosure cl;
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
+}
+
+void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
+  release_C_heap_structures();
+}
+
+void MethodData::release_C_heap_structures() {
+#if INCLUDE_JVMCI
+  FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
+#endif
 }

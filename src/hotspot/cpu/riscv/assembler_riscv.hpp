@@ -30,6 +30,10 @@
 #include "asm/register.hpp"
 #include "assembler_riscv.inline.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#include <type_traits>
 
 #define XLEN 64
 
@@ -153,62 +157,128 @@ const FloatRegister g_FPArgReg[Argument::n_float_register_parameters_c] = {
 class Address {
  public:
 
-  enum mode { no_mode, base_plus_offset, pcrel, literal };
+  enum mode { no_mode, base_plus_offset, literal };
 
  private:
-  Register _base;
-  Register _index;
-  int64_t _offset;
+  struct Nonliteral {
+    Nonliteral(Register base, Register index, int64_t offset)
+      : _base(base), _index(index), _offset(offset) {}
+    Register _base;
+    Register _index;
+    int64_t _offset;
+  };
+
+  struct Literal {
+    Literal(address target, const RelocationHolder& rspec)
+      : _target(target), _rspec(rspec) {}
+    // If the target is far we'll need to load the ea of this to a
+    // register to reach it. Otherwise if near we can do PC-relative
+    // addressing.
+    address _target;
+
+    RelocationHolder _rspec;
+  };
+
+  void assert_is_nonliteral() const NOT_DEBUG_RETURN;
+  void assert_is_literal() const NOT_DEBUG_RETURN;
+
+  // Discriminated union, based on _mode.
+  // - no_mode: uses dummy _nonliteral, for ease of copying.
+  // - literal: only _literal is used.
+  // - others: only _nonliteral is used.
   enum mode _mode;
+  union {
+    Nonliteral _nonliteral;
+    Literal _literal;
+  };
 
-  RelocationHolder _rspec;
-
-  // If the target is far we'll need to load the ea of this to a
-  // register to reach it. Otherwise if near we can do PC-relative
-  // addressing.
-  address          _target;
+  // Helper for copy constructor and assignment operator.
+  // Copy mode-relevant part of a into this.
+  void copy_data(const Address& a) {
+    assert(_mode == a._mode, "precondition");
+    if (_mode == literal) {
+      new (&_literal) Literal(a._literal);
+    } else {
+      // non-literal mode or no_mode.
+      new (&_nonliteral) Nonliteral(a._nonliteral);
+    }
+  }
 
  public:
-  Address()
-    : _base(noreg), _index(noreg), _offset(0), _mode(no_mode), _target(NULL) { }
+  // no_mode initializes _nonliteral for ease of copying.
+  Address() :
+    _mode(no_mode),
+    _nonliteral(noreg, noreg, 0)
+  {}
 
-  Address(Register r)
-    : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(NULL) { }
+  Address(Register r) :
+    _mode(base_plus_offset),
+    _nonliteral(r, noreg, 0)
+  {}
 
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  Address(Register r, T o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(NULL) {}
+  Address(Register r, T o) :
+    _mode(base_plus_offset),
+    _nonliteral(r, noreg, o)
+  {}
 
-  Address(Register r, ByteSize disp)
-    : Address(r, in_bytes(disp)) {}
+  Address(Register r, ByteSize disp) : Address(r, in_bytes(disp)) {}
 
-  Address(address target, RelocationHolder const& rspec)
-    : _base(noreg),
-      _index(noreg),
-      _offset(0),
-      _mode(literal),
-      _rspec(rspec),
-      _target(target) { }
+  Address(address target, const RelocationHolder& rspec) :
+    _mode(literal),
+    _literal(target, rspec)
+  {}
 
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
+  Address(const Address& a) : _mode(a._mode) { copy_data(a); }
+
+  // Verify the value is trivially destructible regardless of mode, so our
+  // destructor can also be trivial, and so our assignment operator doesn't
+  // need to destruct the old value before copying over it.
+  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
+  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+
+  Address& operator=(const Address& a) {
+    _mode = a._mode;
+    copy_data(a);
+    return *this;
+  }
+
+  ~Address() = default;
+
   const Register base() const {
-    guarantee((_mode == base_plus_offset | _mode == pcrel | _mode == literal), "wrong mode");
-    return _base;
+    assert_is_nonliteral();
+    return _nonliteral._base;
   }
+
   long offset() const {
-    return _offset;
+    assert_is_nonliteral();
+    return _nonliteral._offset;
   }
+
   Register index() const {
-    return _index;
+    assert_is_nonliteral();
+    return _nonliteral._index;
   }
+
   mode getMode() const {
     return _mode;
   }
 
-  bool uses(Register reg) const { return _base == reg; }
-  const address target() const { return _target; }
-  const RelocationHolder& rspec() const { return _rspec; }
+  bool uses(Register reg) const {
+    return base() == reg;
+  }
+
+  const address target() const {
+    assert_is_literal();
+    return _literal._target;
+  }
+
+  const RelocationHolder& rspec() const {
+    assert_is_literal();
+    return _literal._rspec;
+  }
 };
 
 // Convenience classes
@@ -1670,7 +1740,7 @@ enum Nf {
 
 // ====================================
 // RISC-V Bit-Manipulation Extension
-// Currently only support Zba and Zbb bitmanip extensions.
+// Currently only support Zba, Zbb and Zbs bitmanip extensions.
 // ====================================
 #define INSN(NAME, op, funct3, funct7)                  \
   void NAME(Register Rd, Register Rs1, Register Rs2) {  \
@@ -1745,6 +1815,7 @@ enum Nf {
 
   INSN(rori,    0b0010011, 0b101, 0b011000);
   INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
 

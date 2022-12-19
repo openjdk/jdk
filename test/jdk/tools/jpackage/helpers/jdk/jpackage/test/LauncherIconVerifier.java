@@ -169,9 +169,9 @@ public final class LauncherIconVerifier {
                         "unlockResource", long.class);
                 unlockResource.setAccessible(true);
 
-                iconSwap = executableRebranderClass.getDeclaredMethod("iconSwap",
-                        long.class, String.class);
-                iconSwap.setAccessible(true);
+                iconSwapWrapper = executableRebranderClass.getDeclaredMethod(
+                        "iconSwapWrapper", long.class, String.class);
+                iconSwapWrapper.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchMethodException
                     | SecurityException ex) {
                 throw Functional.rethrowUnchecked(ex);
@@ -180,8 +180,22 @@ public final class LauncherIconVerifier {
 
         private Path extractIconFromExecutable(Path outputDir, Path executable,
                 String label) {
+            // Run .NET code to extract icon from the given executable.
+            // ExtractAssociatedIcon() will succeed even if the target file
+            // is locked (by an antivirus). It will output a default icon
+            // in case of error. To prevent this "fail safe" behavior we try
+            // lock the target file with Open() call. If the attempt
+            // fails ExtractAssociatedIcon() is not called and the script exits
+            // with the exit code that will be trapped
+            // inside of Executor.executeAndRepeatUntilExitCode() method that
+            // will keep running the script until it succeeds or the number of
+            // allowed attempts is exceeded.
+
             Path extractedIcon = outputDir.resolve(label + ".bmp");
             String script = String.join(";",
+                    String.format(
+                            "try { [System.io.File]::Open('%s', 'Open', 'Read', 'None') } catch { exit 100 }",
+                            executable.toAbsolutePath().normalize()),
                     "[System.Reflection.Assembly]::LoadWithPartialName('System.Drawing')",
                     String.format(
                             "[System.Drawing.Icon]::ExtractAssociatedIcon('%s').ToBitmap().Save('%s', [System.Drawing.Imaging.ImageFormat]::Bmp)",
@@ -189,7 +203,7 @@ public final class LauncherIconVerifier {
                             extractedIcon.toAbsolutePath().normalize()));
 
             Executor.of("powershell", "-NoLogo", "-NoProfile", "-Command",
-                    script).execute();
+                    script).executeAndRepeatUntilExitCode(0, 5, 10);
 
             return extractedIcon;
         }
@@ -230,7 +244,7 @@ public final class LauncherIconVerifier {
                                     "Failed to lock [%s] executable",
                                     launcherPath));
                         }
-                        iconSwap.invoke(null, new Object[]{lock,
+                        iconSwapWrapper.invoke(null, new Object[]{lock,
                             iconPath.toAbsolutePath().normalize().toString()});
                     } finally {
                         if (lock != 0) {
@@ -250,7 +264,7 @@ public final class LauncherIconVerifier {
         private final Class executableRebranderClass;
         private final Method lockResource;
         private final Method unlockResource;
-        private final Method iconSwap;
+        private final Method iconSwapWrapper;
     }
 
     private String launcherName;

@@ -33,8 +33,8 @@
  */
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
@@ -67,15 +67,15 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
 
     /** Tests that confined sessions are not supported. */
-    @Test(dataProvider = "confinedSessions")
-    public void testWithConfined(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "confinedArenas")
+    public void testWithConfined(Supplier<Arena> arenaSupplier)
         throws Throwable
     {
         try (var channel = AsynchronousSocketChannel.open();
              var server = AsynchronousServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel);
-             var session = closeableSessionOrNull(sessionSupplier.get())) {
-            var segment = MemorySegment.allocateNative(10, 1, session);
+             var drop = arenaSupplier.get()) {
+            var segment = MemorySegment.allocateNative(10, 1, drop.scope());
             var bb = segment.asByteBuffer();
             var bba = new ByteBuffer[] { bb };
             List<ThrowingConsumer<TestHandler,?>> ioOps = List.of(
@@ -100,17 +100,17 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     }
 
     /** Tests that I/O with a closed session throws a suitable exception. */
-    @Test(dataProvider = "sharedSessionsAndTimeouts")
-    public void testIOWithClosedSharedSession(Supplier<MemorySession> sessionSupplier, int timeout)
+    @Test(dataProvider = "sharedArenasAndTimeouts")
+    public void testIOWithClosedSharedSession(Supplier<Arena> arenaSupplier, int timeout)
         throws Exception
     {
         try (var channel = AsynchronousSocketChannel.open();
              var server = AsynchronousServerSocketChannel.open();
              var connectedChannel = connectChannels(server, channel)) {
-            MemorySession session = sessionSupplier.get();
-            ByteBuffer bb = segmentBufferOfSize(session, 64);
-            ByteBuffer[] buffers = segmentBuffersOfSize(8, session, 32);
-            ((MemorySession)session).close();
+            Arena drop = arenaSupplier.get();
+            ByteBuffer bb = segmentBufferOfSize(drop.scope(), 64);
+            ByteBuffer[] buffers = segmentBuffersOfSize(8, drop.scope(), 32);
+            drop.close();
             {
                 assertCauses(expectThrows(EE, () -> connectedChannel.read(bb).get()), IOE, ISE);
             }
@@ -151,17 +151,17 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     }
 
     /** Tests basic I/O operations work with views over implicit and shared sessions. */
-    @Test(dataProvider = "sharedAndImplicitSessions")
-    public void testBasicIOWithSupportedSession(Supplier<MemorySession> sessionSupplier)
+    @Test(dataProvider = "sharedArenas")
+    public void testBasicIOWithSupportedSession(Supplier<Arena> arenaSupplier)
         throws Exception
     {
-        MemorySession session;
+        Arena drop;
         try (var asc1 = AsynchronousSocketChannel.open();
              var assc = AsynchronousServerSocketChannel.open();
              var asc2 = connectChannels(assc, asc1);
-             var scp = closeableSessionOrNull(session = sessionSupplier.get())) {
-            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, session);
-            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, session);
+             var scp = drop = arenaSupplier.get()) {
+            MemorySegment segment1 = MemorySegment.allocateNative(10, 1, drop.scope());
+            MemorySegment segment2 = MemorySegment.allocateNative(10, 1, drop.scope());
             for (int i = 0; i < 10; i++) {
                 segment1.set(JAVA_BYTE, i, (byte) i);
             }
@@ -184,8 +184,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 assertEquals(bb2.flip(), ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
             }
             {   // Gathering/Scattering variants
-                var writeBuffers = mixedBuffersOfSize(16, session, 32);
-                var readBuffers = mixedBuffersOfSize(16, session, 32);
+                var writeBuffers = mixedBuffersOfSize(16, drop.scope(), 32);
+                var readBuffers = mixedBuffersOfSize(16, drop.scope(), 32);
                 long expectedCount = remaining(writeBuffers);
                 var writeHandler = new TestHandler();
                 asc1.write(writeBuffers, 0, 16, 30L, SECONDS, null, writeHandler);
@@ -199,15 +199,15 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     }
 
     /** Tests that a session is not closeable when there is an outstanding read operation. */
-    @Test(dataProvider = "sharedSessionsAndTimeouts")
-    public void testCloseWithOutstandingRead(Supplier<MemorySession> sessionSupplier, int timeout)
+    @Test(dataProvider = "sharedArenasAndTimeouts")
+    public void testCloseWithOutstandingRead(Supplier<Arena> arenaSupplier, int timeout)
         throws Throwable
     {
         try (var asc1 = AsynchronousSocketChannel.open();
              var assc = AsynchronousServerSocketChannel.open();
              var asc2 = connectChannels(assc, asc1);
-             var session = closeableSessionOrNull(sessionSupplier.get())) {
-            var segment = MemorySegment.allocateNative(10, 1, session);
+             var drop = arenaSupplier.get()) {
+            var segment = MemorySegment.allocateNative(10, 1, drop.scope());
             var bb = segment.asByteBuffer();
             var bba = new ByteBuffer[] { bb };
             List<ThrowingConsumer<TestHandler,?>> readOps = List.of(
@@ -221,28 +221,28 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 var handler = new TestHandler<Long>();
                 ioOp.accept(handler);
                 assertFalse(handler.isDone());
-                assertTrue(session.isAlive());
-                assertMessage(expectThrows(ISE, () -> session.close()), "Session is acquired by");
+                assertTrue(drop.scope().isAlive());
+                assertMessage(expectThrows(ISE, () -> drop.close()), "Session is acquired by");
 
                 // write to allow the blocking read complete, which will
                 // in turn unlock the session and allow it to be closed.
                 asc2.write(ByteBuffer.wrap(new byte[] { 0x01 })).get();
                 handler.await().assertCompleteWith(1L);
-                assertTrue(session.isAlive());
+                assertTrue(drop.scope().isAlive());
             }
         }
     }
 
     /** Tests that a session is not closeable when there is an outstanding write operation. */
     // Note: limited scenarios are checked, given the 5 sec sleep!
-    @Test(dataProvider = "sharedSessionsAndTimeouts")
-    public void testCloseWithOutstandingWrite(Supplier<MemorySession> sessionSupplier, int timeout)
+    @Test(dataProvider = "sharedArenasAndTimeouts")
+    public void testCloseWithOutstandingWrite(Supplier<Arena> arenaSupplier, int timeout)
          throws Throwable
     {
         try (var asc1 = AsynchronousSocketChannel.open();
              var assc = AsynchronousServerSocketChannel.open();
              var asc2 = connectChannels(assc, asc1);
-             var session = closeableSessionOrNull(sessionSupplier.get())) {
+             var drop = arenaSupplier.get()) {
 
             // number of bytes written
             final AtomicLong bytesWritten = new AtomicLong(0);
@@ -252,7 +252,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
 
             // write until socket buffer is full so as to create the conditions
             // for when a write does not complete immediately
-            var bba = segmentBuffersOfSize(32, session, 128);
+            var bba = segmentBuffersOfSize(32, drop.scope(), 128);
             TestHandler<Long> handler;
             outstandingWriteOps.getAndIncrement();
             asc1.write(bba, 0, bba.length, timeout, SECONDS, null,
@@ -261,7 +261,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                             super.completed(result, att);
                             bytesWritten.addAndGet(result);
                             if (continueWriting.get()) {
-                                var bba = segmentBuffersOfSize(32, session, 128);
+                                var bba = segmentBuffersOfSize(32, drop.scope(), 128);
                                 outstandingWriteOps.getAndIncrement();
                                 asc1.write(bba, 0, bba.length, timeout, SECONDS, null, this);
                             }
@@ -271,8 +271,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             // give time for socket buffer to fill up.
             awaitNoFurtherWrites(bytesWritten);
 
-            assertMessage(expectThrows(ISE, () -> session.close()), "Session is acquired by");
-            assertTrue(session.isAlive());
+            assertMessage(expectThrows(ISE, () -> drop.close()), "Session is acquired by");
+            assertTrue(drop.scope().isAlive());
 
             // signal handler to stop further writing
             continueWriting.set(false);
@@ -280,7 +280,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             // read to allow the outstanding write complete, which will
             // in turn unlock the session and allow it to be closed.
             readNBytes(asc2, bytesWritten.get());
-            assertTrue(session.isAlive());
+            assertTrue(drop.scope().isAlive());
             awaitOutstandingWrites(outstandingWriteOps);
             handler.await();
         }
