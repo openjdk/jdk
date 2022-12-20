@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
@@ -39,18 +38,20 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import test.java.awt.regtesthelpers.Util;
 
+import static java.awt.event.InputEvent.BUTTON1_DOWN_MASK;
+
 /**
  * AWT/Swing overlapping test for viewport
  * <p>This test verify if AWT components are drawn correctly being partially shown through viewport
  * <p>See <a href="http://monaco.sfbay.sun.com/detail.jsf?cr=6778882">CR6778882</a> for details
  * <p>See base class for test info.
  */
+
 /*
  * @test
  * @key headful
  * @bug 6778882
  * @summary Viewport overlapping test for each AWT component
- * @author sergey.grinev@oracle.com: area=awt.mixing
  * @library /java/awt/patchlib ../../regtesthelpers
  * @modules java.desktop/sun.awt
  *          java.desktop/java.awt.peer
@@ -127,23 +128,24 @@ public class ViewportOverlapping extends OverlappingTestBase {
         }
         // run robot
         Robot robot = Util.createRobot();
+        robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(ROBOT_DELAY);
 
         robot.mouseMove(hLoc.x, hLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(BUTTON1_DOWN_MASK);
+        robot.mouseRelease(BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         robot.mouseMove(vLoc.x, vLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(BUTTON1_DOWN_MASK);
+        robot.mouseRelease(BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         clickAndBlink(robot, testLoc, false);
         robot.mouseMove(resizeLoc.x, resizeLoc.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(BUTTON1_DOWN_MASK);
         robot.mouseMove(resizeLoc.x + 5, resizeLoc.y + 5);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         clickAndBlink(robot, testLoc, false);

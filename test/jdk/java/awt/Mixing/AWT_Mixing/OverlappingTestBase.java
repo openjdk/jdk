@@ -68,7 +68,7 @@ public abstract class OverlappingTestBase {
      */
     protected static final Color AWT_BACKGROUND_COLOR = new Color(21, 244, 54);
     protected static Color AWT_VERIFY_COLOR = AWT_BACKGROUND_COLOR;
-    protected static final int ROBOT_DELAY = 500;
+    protected static final int ROBOT_DELAY = 400;
     private static final String[] simpleAwtControls = {"Button", "Checkbox", "Label", "TextArea"};
     /**
      * Generic strings array. To be used for population of List based controls.
@@ -156,6 +156,7 @@ public abstract class OverlappingTestBase {
                 }
             });
             Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
             robot.waitForIdle();
             Thread.sleep(ROBOT_DELAY);
             AWT_VERIFY_COLOR = robot.getPixelColor(p[0].x+size/2, p[0].y+size/2);
@@ -458,6 +459,7 @@ public abstract class OverlappingTestBase {
         Robot robot = null;
         try {
             robot = new Robot();
+            robot.setAutoWaitForIdle(true);
         }catch(Exception ignorex) {
         }
         currentAwtControl = component;
@@ -490,6 +492,7 @@ public abstract class OverlappingTestBase {
         Robot robot = null;
         try {
             robot = new Robot();
+            robot.setAutoWaitForIdle(true);
         }catch(Exception ignorex) {
         }
         System.out.println("Testing EmbeddedFrame");
