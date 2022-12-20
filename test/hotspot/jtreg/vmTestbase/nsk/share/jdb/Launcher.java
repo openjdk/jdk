@@ -167,6 +167,7 @@ public class Launcher extends DebugeeBinder {
             boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
             if (vthreadMode) {
                 args.add("-R--enable-preview");
+                args.add("-R-Djdk.virtualThreadScheduler.parallelism=15");
             }
         }
 

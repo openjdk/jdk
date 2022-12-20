@@ -755,6 +755,7 @@ public class Binder extends DebugeeBinder {
         boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
         if (vthreadMode) {
             vmArgs += " --enable-preview";
+            vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
         }
 
 /*
