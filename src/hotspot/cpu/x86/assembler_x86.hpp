@@ -2155,6 +2155,8 @@ private:
   void testb(Address dst, int imm8);
   void testb(Register dst, int imm8);
 
+  void testw(Register dst, int16_t imm16);
+
   void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);
   void testl(Register dst, Register src);
