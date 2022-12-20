@@ -668,7 +668,7 @@ public final class Utils {
     public static long remaining(List<ByteBuffer> bufs) {
         long remain = 0;
         for (ByteBuffer buf : bufs) {
-            remain += buf.remaining();
+            remain = Math.addExact(remain, buf.remaining());
         }
         return remain;
     }

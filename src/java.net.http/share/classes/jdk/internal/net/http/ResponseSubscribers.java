@@ -290,9 +290,9 @@ public class ResponseSubscribers {
                     if (n <= 0) {
                         throw new IOException("zero bytes written");
                     }
-                    bytesWritten += n;
+                    bytesWritten = Math.addExact(bytesWritten, n);
                 }
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 close();
                 subscription.cancel();
                 result.completeExceptionally(ex);
