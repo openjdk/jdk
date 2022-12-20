@@ -30,7 +30,6 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.action.GetPropertyAction;
@@ -72,11 +71,9 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     private volatile StatusResponseManager statusResponseManager;
 
     private final ReentrantLock contextLock = new ReentrantLock();
-    private int currentKeyID = new SecureRandom().nextInt();
-    private final Map<Integer,
-            SessionTicketExtension.StatelessKey> keyHashMap = new ConcurrentHashMap<>();
 
     private void cleanupSessionKeys() {
+        Map<Integer, SessionTicketExtension.StatelessKey> keyHashMap = serverCache.getKeyHashMap();
         for (Map.Entry<Integer, SessionTicketExtension.StatelessKey> entry : keyHashMap.entrySet()) {
             SessionTicketExtension.StatelessKey k = entry.getValue();
             if (k.isInvalid(this)) {
@@ -92,21 +89,21 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     protected void addSessionKey(SessionTicketExtension.StatelessKey key) {
         int newID = key.num;
-        keyHashMap.put(Integer.valueOf(newID), key);
-        currentKeyID = newID;
+        serverCache.getKeyHashMap().put(Integer.valueOf(newID), key);
+        serverCache.setKeyID(newID);
         cleanupSessionKeys();
     }
 
     protected int getID() {
-        return currentKeyID;
+        return serverCache.getKeyID();
     }
 
     protected SessionTicketExtension.StatelessKey getKey(int id) {
-        return keyHashMap.get(id);
+        return serverCache.getKeyHashMap().get(id);
     }
 
     protected SessionTicketExtension.StatelessKey getKey() {
-        return keyHashMap.get(currentKeyID);
+        return serverCache.getKeyHashMap().get(serverCache.getKeyID());
     }
 
     SSLContextImpl() {

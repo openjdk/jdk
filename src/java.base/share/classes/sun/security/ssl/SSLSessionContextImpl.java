@@ -25,10 +25,13 @@
 
 package sun.security.ssl;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
@@ -68,6 +71,11 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                                         // session cache, "host:port" as key
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
+
+    private int currentKeyID = new SecureRandom().nextInt();
+                                        // RFC 5077 session ticket key name
+    private final Map<Integer,          // Maps session keys to session state
+            SessionTicketExtension.StatelessKey> keyHashMap = new ConcurrentHashMap<>();
 
     // Default setting for stateless session resumption support (RFC 5077)
     private boolean statelessSession = true;
@@ -168,6 +176,21 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     @Override
     public int getSessionCacheSize() {
         return cacheLimit;
+    }
+
+    // package-private, used only by SSLContextImpl
+    int getKeyID() {
+        return currentKeyID;
+    }
+
+    // package-private, used only by SSLContextImpl
+    void setKeyID(int keyID) {
+        currentKeyID = keyID;
+    }
+
+    // package-private, used only by SSLContextImpl
+    Map<Integer, SessionTicketExtension.StatelessKey> getKeyHashMap() {
+        return keyHashMap;
     }
 
     // package-private method, used ONLY by ServerHandshaker
