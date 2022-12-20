@@ -302,7 +302,7 @@ public class ResponseSubscribers {
                         bytesWritten = Math.addExact(bytesWritten, n);
                     }
                 }
-            } catch (Exception ex) {
+            } catch (IOException | ArithmeticException ex) {
                 close();
                 subscription.cancel();
                 result.completeExceptionally(ex);
