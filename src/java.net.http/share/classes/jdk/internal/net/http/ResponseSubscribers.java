@@ -281,12 +281,16 @@ public class ResponseSubscribers {
 
         @Override
         public void onNext(List<ByteBuffer> items) {
-            int size = Utils.remaining(items, Integer.MAX_VALUE);
+            long expectedSize = Utils.remaining(items);
             try {
                 long bytesWritten = 0;
                 ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
-                while (bytesWritten < size) {
-                    bytesWritten += out.write(buffers);
+                while (bytesWritten < expectedSize) {
+                    long n = out.write(buffers);
+                    if (n <= 0) {
+                        throw new IOException("zero bytes written");
+                    }
+                    bytesWritten += n;
                 }
             } catch (IOException ex) {
                 close();
