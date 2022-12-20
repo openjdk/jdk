@@ -72,38 +72,27 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     private final ReentrantLock contextLock = new ReentrantLock();
 
-    private void cleanupSessionKeys() {
-        Map<Integer, SessionTicketExtension.StatelessKey> keyHashMap = serverCache.getKeyHashMap();
-        for (Map.Entry<Integer, SessionTicketExtension.StatelessKey> entry : keyHashMap.entrySet()) {
-            SessionTicketExtension.StatelessKey k = entry.getValue();
-            if (k.isInvalid(this)) {
-                try {
-                    k.key.destroy();
-                } catch (Exception e) {
-                    // Suppress
-                }
-                keyHashMap.remove(entry.getKey());
-            }
-        }
-    }
-
-    protected void addSessionKey(SessionTicketExtension.StatelessKey key) {
-        int newID = key.num;
-        serverCache.getKeyHashMap().put(Integer.valueOf(newID), key);
-        serverCache.setKeyID(newID);
-        cleanupSessionKeys();
-    }
-
-    protected int getID() {
-        return serverCache.getKeyID();
-    }
-
     protected SessionTicketExtension.StatelessKey getKey(int id) {
-        return serverCache.getKeyHashMap().get(id);
+        return serverCache.getKey(id);
     }
 
     protected SessionTicketExtension.StatelessKey getKey() {
-        return serverCache.getKeyHashMap().get(serverCache.getKeyID());
+        SessionTicketExtension.StatelessKey ssk = serverCache.getKey();
+        if (ssk != null && !ssk.isExpired()) {
+            return ssk;
+        }
+        synchronized (serverCache) {
+            // If the current key is no longer expired, it was already
+            // updated by a concurrent request, and we can return.
+            ssk = serverCache.getKey();
+            if (ssk != null && !ssk.isExpired()) {
+                return ssk;
+            }
+            int newID = serverCache.getCurrentKeyID() + 1;
+            ssk = new SessionTicketExtension.StatelessKey(getSecureRandom(), newID);
+            serverCache.insertNewSessionKey(newID, ssk);
+            return ssk;
+        }
     }
 
     SSLContextImpl() {

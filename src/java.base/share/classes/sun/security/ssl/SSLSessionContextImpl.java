@@ -179,18 +179,40 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     // package-private, used only by SSLContextImpl
-    int getKeyID() {
+    int getCurrentKeyID() {
         return currentKeyID;
     }
 
+    private void cleanupSessionKeys() {
+        for (Map.Entry<Integer, SessionTicketExtension.StatelessKey> entry : keyHashMap.entrySet()) {
+            SessionTicketExtension.StatelessKey k = entry.getValue();
+            if (k.isInvalid(this)) {
+                try {
+                    k.key.destroy();
+                } catch (Exception e) {
+                    // Suppress
+                }
+                keyHashMap.remove(entry.getKey());
+            }
+        }
+    }
+
+    // Every time we insert a new session key we check for and delete invalid keys.
     // package-private, used only by SSLContextImpl
-    void setKeyID(int keyID) {
-        currentKeyID = keyID;
+    void insertNewSessionKey(int newID, SessionTicketExtension.StatelessKey ssk) {
+        keyHashMap.put(Integer.valueOf(newID), ssk);
+        currentKeyID = newID;
+        cleanupSessionKeys();
     }
 
     // package-private, used only by SSLContextImpl
-    Map<Integer, SessionTicketExtension.StatelessKey> getKeyHashMap() {
-        return keyHashMap;
+    SessionTicketExtension.StatelessKey getKey() {
+        return keyHashMap.get(currentKeyID);
+    }
+
+    // package-private, used only by SSLContextImpl
+    SessionTicketExtension.StatelessKey getKey(int id) {
+        return keyHashMap.get(id);
     }
 
     // package-private method, used ONLY by ServerHandshaker

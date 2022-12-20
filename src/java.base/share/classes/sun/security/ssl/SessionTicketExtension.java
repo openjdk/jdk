@@ -36,6 +36,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.SSLSessionContext;
 
 import static sun.security.ssl.SSLExtension.CH_SESSION_TICKET;
 import static sun.security.ssl.SSLExtension.SH_SESSION_TICKET;
@@ -114,11 +115,12 @@ final class SessionTicketExtension {
         final SecretKey key;
         final int num;
 
-        private StatelessKey(SSLContextImpl sslContext, int num) {
+        // package-private, used only by SSLContextImpl
+        StatelessKey(SecureRandom secRand, int num) {
             SecretKey k = null;
             try {
                 KeyGenerator kg = KeyGenerator.getInstance("AES");
-                kg.init(KEYLEN, sslContext.getSecureRandom());
+                kg.init(KEYLEN, secRand);
                 k = kg.generateKey();
             } catch (NoSuchAlgorithmException e) {
                 // should not happen;
@@ -128,34 +130,14 @@ final class SessionTicketExtension {
             this.num = num;
         }
 
-        // This methods gets called when there's no current, valid key
-        // in sslContext. It locks sslContext while it creates a new key
-        // and adds it to the sslContex with a new key ID.
-        // Adding a new key to sslContex will also cleanup invalid keys
-        // from the sslContex.
-        static StatelessKey getNextKey(SSLContextImpl sslContext) {
-            synchronized (sslContext) {
-                // If the current key is no longer expired, it was already
-                // updated by a previous operation, and we can return.
-                StatelessKey ssk = sslContext.getKey();
-                if (ssk != null && !ssk.isExpired()) {
-                    return ssk;
-                }
-                int nextID = sslContext.getID() + 1;
-                ssk = new StatelessKey(sslContext, nextID);
-                sslContext.addSessionKey(ssk);
-                return ssk;
-            }
-        }
-
         // Check if key needs to be changed
         boolean isExpired() {
             return ((System.currentTimeMillis()) > timeout);
         }
 
         // Check if this key is ready for deletion.
-        boolean isInvalid(SSLContextImpl sslContext) {
-            int sessionTimeout = sslContext.engineGetServerSessionContext().getSessionTimeout() * 1000;
+        boolean isInvalid(SSLSessionContext sslSessionContext) {
+            int sessionTimeout = sslSessionContext.getSessionTimeout() * 1000;
             return ((System.currentTimeMillis()) > (timeout + sessionTimeout));
         }
     }
@@ -166,7 +148,7 @@ final class SessionTicketExtension {
         static StatelessKey getKey(HandshakeContext hc, int num)  {
             StatelessKey ssk = hc.sslContext.getKey(num);
 
-            if (ssk == null || ssk.isInvalid(hc.sslContext)) {
+            if (ssk == null || ssk.isInvalid(hc.sslContext.engineGetServerSessionContext())) {
                 return null;
             }
             return ssk;
@@ -174,12 +156,7 @@ final class SessionTicketExtension {
 
         // Get the current valid key, this will generate a new key if needed
         static StatelessKey getCurrentKey(HandshakeContext hc) {
-            StatelessKey ssk = hc.sslContext.getKey();
-
-            if (ssk != null && !ssk.isExpired()) {
-                return ssk;
-            }
-            return StatelessKey.getNextKey(hc.sslContext);
+            return hc.sslContext.getKey();
         }
     }
 
