@@ -281,8 +281,8 @@ public class ResponseSubscribers {
 
         @Override
         public void onNext(List<ByteBuffer> items) {
-            long expectedSize = Utils.remaining(items);
             try {
+                long expectedSize = Utils.remaining(items);
                 long bytesWritten = 0;
                 ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
                 while (bytesWritten < expectedSize) {
