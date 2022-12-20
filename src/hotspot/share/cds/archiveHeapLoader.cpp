@@ -158,7 +158,7 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
   }
 };
 
-void ArchiveHeapLoader::patch_compressed_pointers(BitMapView bm,
+void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
                                                   FileMapInfo* info,
                                                   FileMapRegion* map_region,
                                                   MemRegion region) {
@@ -200,7 +200,7 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
 #endif
 
   if (UseCompressedOops) {
-    patch_compressed_pointers(bm, info, map_region, region);
+    patch_compressed_embedded_pointers(bm, info, map_region, region);
   } else {
     PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
     bm.iterate(&patcher);
