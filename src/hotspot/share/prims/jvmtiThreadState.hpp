@@ -85,7 +85,7 @@ class JvmtiVTMSTransitionDisabler {
   static volatile int _VTMS_transition_count;            // current number of VTMS transitions
 
   bool _is_SR;                                           // is suspender or resumer
-  jthread _vthread;                                      // virtual thread to disable transitions for
+  jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
 
   DEBUG_ONLY(static void print_info();)
   void VTMS_transition_disable_for_one();
@@ -96,7 +96,7 @@ class JvmtiVTMSTransitionDisabler {
  public:
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
-  JvmtiVTMSTransitionDisabler(jthread vthread);
+  JvmtiVTMSTransitionDisabler(jthread thread);
   ~JvmtiVTMSTransitionDisabler();
 
   static void start_VTMS_transition(jthread vthread, bool is_mount);

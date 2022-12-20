@@ -1736,11 +1736,13 @@ int java_lang_Thread::VTMS_transition_disable_count(oop java_thread) {
 
 void java_lang_Thread::inc_VTMS_transition_disable_count(oop java_thread) {
   int val = VTMS_transition_disable_count(java_thread);
+  assert(JvmtiVTMSTransition_lock->is_locked(), "Must be locked");
   java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val + 1);
 }
 
 void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
   int val = VTMS_transition_disable_count(java_thread);
+  assert(JvmtiVTMSTransition_lock->is_locked(), "Must be locked");
   assert(val > 0, "VTMS_transition_disable_count should never be negative");
   java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val - 1);
 }
