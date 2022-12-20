@@ -453,15 +453,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info_header(outputStream *st, const void *context) {
-  if (context == NULL) return;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-}
-
-void os::print_nth_register_info(outputStream *st, int n, const void *context) {
-  if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
+void os::print_register_info(outputStream *st, int n, const void *context) {
+  if (context == NULL || n < 0 || n >= printable_register_count()) {
     return;
   }
 
@@ -475,7 +468,7 @@ void os::print_nth_register_info(outputStream *st, int n, const void *context) {
   }
 }
 
-int os::print_nth_register_info_max_index() {
+int os::printable_register_count() {
   return 16 /* r0-r15 */ + 1 /* pc */;
 }
 

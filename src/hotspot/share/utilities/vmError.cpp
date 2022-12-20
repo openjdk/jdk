@@ -1053,12 +1053,17 @@ const char* break_on_reenterant_entry_reason = "";
 
   REENTRANT_STEP_IF("printing register info",
       _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
-    os::print_register_info_header(st, _context);
+    if (os::printable_register_count() == 0) {
+      st->print_cr("No register info.");
+    } else {
+      st->print_cr("Register to memory mapping:");
+    }
+    st->cr();
 
-    REENTRANT_LOOP_START(os::print_nth_register_info_max_index())
+    REENTRANT_LOOP_START(os::printable_register_count())
       // decode register contents if possible
       ResourceMark rm(_thread);
-      os::print_nth_register_info(st, REENTRANT_ITERATION_STEP, _context);
+      os::print_register_info(st, REENTRANT_ITERATION_STEP, _context);
     REENTRANT_LOOP_END
 
     st->cr();
