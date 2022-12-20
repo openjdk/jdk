@@ -133,7 +133,6 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
           }
         }
       }
-
       // There is no recovery. Mutator does not touch collector view at all.
       break;
     }
