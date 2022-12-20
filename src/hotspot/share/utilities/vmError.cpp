@@ -1062,10 +1062,7 @@ const char* break_on_reenterant_entry_reason = "";
 
     st->cr();
 
-
-  STEP("printing top of stack, instructions near pc")
-
-  STEP_IF("printing top of stack, instructions near pc", _verbose && _context)
+  STEP_IF("printing top of stack, instructions near pc", _verbose && _context != nullptr)
     // printing top of stack, instructions near pc
     os::print_tos_pc(st, _context);
     st->cr();
@@ -1085,8 +1082,6 @@ const char* break_on_reenterant_entry_reason = "";
     REENTRANT_LOOP_END
 
     st->cr();
-
-  STEP("printing code blobs if possible")
 
   STEP_IF("printing code blobs if possible", _verbose)
     const int printed_capacity = max_error_log_print_code;
@@ -1140,8 +1135,6 @@ const char* break_on_reenterant_entry_reason = "";
       st->cr();
     }
 
-  STEP("printing process")
-
   STEP_IF("printing process", _verbose)
     st->cr();
     st->print_cr("---------------  P R O C E S S  ---------------");
@@ -1150,7 +1143,7 @@ const char* break_on_reenterant_entry_reason = "";
   STEP_IF("printing user info", ExtensiveErrorReports && _verbose)
     os::print_user_info(st);
 
-  STEP_IF("printing all threads", _verbose && _thread)
+  STEP_IF("printing all threads", _verbose && _thread != nullptr)
     // all threads
     Threads::print_on_error(st, _thread, buf, sizeof(buf));
     st->cr();
