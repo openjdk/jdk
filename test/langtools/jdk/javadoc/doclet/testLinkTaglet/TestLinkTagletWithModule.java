@@ -50,8 +50,8 @@ public class TestLinkTagletWithModule extends JavadocTester {
     private final Path src;
 
     public static void main(String... args) throws Exception {
-        TestLinkTagletWithModule tester = new TestLinkTagletWithModule();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestLinkTagletWithModule();
+        tester.runTests();
     }
 
     TestLinkTagletWithModule() throws Exception {

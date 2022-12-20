@@ -42,8 +42,8 @@ import toolbox.ToolBox;
 public class TestNestedLinkTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNestedLinkTag tester = new TestNestedLinkTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestNestedLinkTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

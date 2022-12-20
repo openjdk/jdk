@@ -42,7 +42,7 @@ public class TestDocErrorReporter extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        TestDocErrorReporter tester = new TestDocErrorReporter();
+        var tester = new TestDocErrorReporter();
         tester.runTests();
     }
 

@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestOverriddenPrivateMethodsWithPrivateFlag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestOverriddenPrivateMethodsWithPrivateFlag tester = new TestOverriddenPrivateMethodsWithPrivateFlag();
+        var tester = new TestOverriddenPrivateMethodsWithPrivateFlag();
         tester.runTests();
     }
 

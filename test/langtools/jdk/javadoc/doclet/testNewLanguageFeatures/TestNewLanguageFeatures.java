@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestNewLanguageFeatures extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNewLanguageFeatures tester = new TestNewLanguageFeatures();
+        var tester = new TestNewLanguageFeatures();
         tester.runTests();
     }
 

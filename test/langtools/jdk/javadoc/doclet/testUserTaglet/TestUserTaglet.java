@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestUserTaglet extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestUserTaglet tester = new TestUserTaglet();
+        var tester = new TestUserTaglet();
         tester.runTests();
     }
 

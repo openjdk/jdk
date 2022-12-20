@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestHrefInDocComment extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHrefInDocComment tester = new TestHrefInDocComment();
+        var tester = new TestHrefInDocComment();
         tester.runTests();
     }
 

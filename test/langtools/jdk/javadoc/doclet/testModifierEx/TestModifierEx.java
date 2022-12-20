@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 public class TestModifierEx extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestModifierEx tester = new TestModifierEx();
+        var tester = new TestModifierEx();
         tester.runTests();
     }
 

@@ -47,8 +47,8 @@ import toolbox.ToolBox;
 
 public class TestLegalNotices extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestLegalNotices tester = new TestLegalNotices();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestLegalNotices();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

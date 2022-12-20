@@ -38,7 +38,7 @@ public class TestHelpFile extends JavadocTester {
     public static final int ZERO = 0;
 
     public static void main(String... args) throws Exception {
-        TestHelpFile tester = new TestHelpFile();
+        var tester = new TestHelpFile();
         tester.runTests();
     }
 

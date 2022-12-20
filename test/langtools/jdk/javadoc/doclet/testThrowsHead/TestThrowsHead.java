@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestThrowsHead extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestThrowsHead tester = new TestThrowsHead();
+        var tester = new TestThrowsHead();
         tester.runTests();
     }
 

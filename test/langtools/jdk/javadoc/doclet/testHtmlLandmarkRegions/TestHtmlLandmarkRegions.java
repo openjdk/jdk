@@ -51,8 +51,8 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestHtmlLandmarkRegions tester = new TestHtmlLandmarkRegions();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestHtmlLandmarkRegions();
+        tester.runTests();
     }
 
     TestHtmlLandmarkRegions() {

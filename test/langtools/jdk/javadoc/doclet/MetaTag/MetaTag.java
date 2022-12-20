@@ -45,7 +45,7 @@ public class MetaTag extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        MetaTag tester = new MetaTag();
+        var tester = new MetaTag();
         tester.runTests();
     }
 

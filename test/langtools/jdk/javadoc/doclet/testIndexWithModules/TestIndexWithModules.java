@@ -50,8 +50,8 @@ public class TestIndexWithModules extends JavadocTester {
     private final Path src;
 
     public static void main(String... args) throws Exception {
-        TestIndexWithModules tester = new TestIndexWithModules();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestIndexWithModules();
+        tester.runTests();
     }
 
     TestIndexWithModules() throws Exception{

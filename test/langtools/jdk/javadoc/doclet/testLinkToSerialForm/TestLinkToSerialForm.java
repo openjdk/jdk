@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestLinkToSerialForm extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestLinkToSerialForm tester = new TestLinkToSerialForm();
+        var tester = new TestLinkToSerialForm();
         tester.runTests();
     }
 

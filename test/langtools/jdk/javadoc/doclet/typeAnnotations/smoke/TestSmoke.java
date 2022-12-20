@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestSmoke extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSmoke tester = new TestSmoke();
+        var tester = new TestSmoke();
         tester.runTests();
     }
 

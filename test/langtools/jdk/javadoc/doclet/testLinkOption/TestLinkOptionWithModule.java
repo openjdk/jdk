@@ -51,8 +51,8 @@ public class TestLinkOptionWithModule extends JavadocTester {
     private final Path moduleSrc, packageSrc;
 
     public static void main(String... args) throws Exception {
-        TestLinkOptionWithModule tester = new TestLinkOptionWithModule();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestLinkOptionWithModule();
+        tester.runTests();
     }
 
     TestLinkOptionWithModule() throws Exception {

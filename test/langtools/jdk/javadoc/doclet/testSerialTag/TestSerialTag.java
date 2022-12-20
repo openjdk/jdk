@@ -40,8 +40,8 @@ import javadoc.tester.JavadocTester;
 
 public class TestSerialTag extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSerialTag tester = new TestSerialTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestSerialTag();
+        tester.runTests();
     }
 
     private final ToolBox tb;

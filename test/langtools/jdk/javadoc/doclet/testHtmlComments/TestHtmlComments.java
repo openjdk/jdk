@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlComments extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHtmlComments tester = new TestHtmlComments();
+        var tester = new TestHtmlComments();
         tester.runTests();
     }
 

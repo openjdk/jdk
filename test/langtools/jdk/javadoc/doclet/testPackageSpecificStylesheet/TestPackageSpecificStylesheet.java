@@ -47,8 +47,8 @@ public class TestPackageSpecificStylesheet extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestPackageSpecificStylesheet tester = new TestPackageSpecificStylesheet();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestPackageSpecificStylesheet();
+        tester.runTests();
     }
 
     TestPackageSpecificStylesheet() {

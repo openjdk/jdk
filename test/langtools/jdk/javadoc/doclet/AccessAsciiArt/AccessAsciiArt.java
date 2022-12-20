@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class AccessAsciiArt extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        AccessAsciiArt tester = new AccessAsciiArt();
+        var tester = new AccessAsciiArt();
         tester.runTests();
     }
 

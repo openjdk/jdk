@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlTag extends JavadocTester {
     private static final String defaultLanguage = Locale.getDefault().getLanguage();
     public static void main(String... args) throws Exception {
-        TestHtmlTag tester = new TestHtmlTag();
+        var tester = new TestHtmlTag();
         tester.runTests();
     }
     @Test

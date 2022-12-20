@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestNestedGenerics extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNestedGenerics tester = new TestNestedGenerics();
+        var tester = new TestNestedGenerics();
         tester.runTests();
     }
 

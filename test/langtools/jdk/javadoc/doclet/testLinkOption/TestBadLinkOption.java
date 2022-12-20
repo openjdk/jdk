@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestBadLinkOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestBadLinkOption tester = new TestBadLinkOption();
+        var tester = new TestBadLinkOption();
         tester.runTests();
     }
 

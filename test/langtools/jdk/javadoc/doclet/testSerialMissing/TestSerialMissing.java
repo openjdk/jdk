@@ -41,8 +41,8 @@ import toolbox.ToolBox;
 
 public class TestSerialMissing extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSerialMissing tester = new TestSerialMissing();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) } );
+        var tester = new TestSerialMissing();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

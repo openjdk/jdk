@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 public class TestExceptionInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestExceptionInheritance tester = new TestExceptionInheritance();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestExceptionInheritance();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

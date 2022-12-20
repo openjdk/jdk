@@ -45,7 +45,7 @@ public class TestHiddenMembers extends JavadocTester {
         };
 
     public static void main(String... args) throws Exception {
-        TestHiddenMembers tester = new TestHiddenMembers();
+        var tester = new TestHiddenMembers();
         tester.runTests();
     }
 

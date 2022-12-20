@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestMemberInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMemberInheritance tester = new TestMemberInheritance();
+        var tester = new TestMemberInheritance();
         tester.runTests();
     }
 

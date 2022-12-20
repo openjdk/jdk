@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestNoFrames extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNoFrames tester = new TestNoFrames();
+        var tester = new TestNoFrames();
         tester.runTests();
     }
 

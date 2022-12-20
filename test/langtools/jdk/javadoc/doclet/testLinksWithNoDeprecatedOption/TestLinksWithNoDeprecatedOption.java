@@ -50,8 +50,8 @@ public class TestLinksWithNoDeprecatedOption extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestLinksWithNoDeprecatedOption tester = new TestLinksWithNoDeprecatedOption();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestLinksWithNoDeprecatedOption();
+        tester.runTests();
     }
 
     TestLinksWithNoDeprecatedOption() {

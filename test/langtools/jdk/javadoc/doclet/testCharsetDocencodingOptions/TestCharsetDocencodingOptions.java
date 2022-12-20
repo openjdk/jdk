@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestCharsetDocencodingOptions extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCharsetDocencodingOptions tester = new TestCharsetDocencodingOptions();
+        var tester = new TestCharsetDocencodingOptions();
         tester.runTests();
     }
 

@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 public class TestSingleQuotedLink extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSingleQuotedLink tester = new TestSingleQuotedLink();
+        var tester = new TestSingleQuotedLink();
         tester.runTests();
     }
 

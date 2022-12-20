@@ -43,7 +43,7 @@ import javadoc.tester.JavadocTester;
 public class TestValueTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestValueTag tester = new TestValueTag();
+        var tester = new TestValueTag();
         tester.runTests();
     }
 

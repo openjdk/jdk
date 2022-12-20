@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestHiddenTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHiddenTag tester = new TestHiddenTag();
+        var tester = new TestHiddenTag();
         tester.runTests();
     }
 

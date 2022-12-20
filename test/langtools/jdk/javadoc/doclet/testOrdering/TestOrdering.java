@@ -46,7 +46,7 @@ import javadoc.tester.JavadocTester;
 public class TestOrdering extends JavadocTester {
 
     public static void main(String[] args) throws Exception {
-        TestOrdering tester = new TestOrdering();
+        var tester = new TestOrdering();
         tester.runTests();
     }
 

@@ -43,7 +43,7 @@ import javadoc.tester.JavadocTester;
 public class DocRootSlash extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        DocRootSlash tester = new DocRootSlash();
+        var tester = new DocRootSlash();
         tester.runTests();
     }
 

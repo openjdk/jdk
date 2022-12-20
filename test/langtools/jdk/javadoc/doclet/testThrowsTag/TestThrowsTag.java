@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestThrowsTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestThrowsTag tester = new TestThrowsTag();
+        var tester = new TestThrowsTag();
         tester.runTests();
     }
 

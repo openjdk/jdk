@@ -50,8 +50,8 @@ public class TestSeeTagWithModule extends JavadocTester {
     private final Path src;
 
     public static void main(String... args) throws Exception {
-        TestSeeTagWithModule tester = new TestSeeTagWithModule();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestSeeTagWithModule();
+        tester.runTests();
     }
 
     TestSeeTagWithModule() throws Exception {

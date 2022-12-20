@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestOverriddenPrivateMethods extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestOverriddenPrivateMethods tester = new TestOverriddenPrivateMethods();
+        var tester = new TestOverriddenPrivateMethods();
         tester.runTests();
     }
 

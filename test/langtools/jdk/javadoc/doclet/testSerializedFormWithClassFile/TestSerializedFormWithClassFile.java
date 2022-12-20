@@ -50,8 +50,8 @@ public class TestSerializedFormWithClassFile extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestSerializedFormWithClassFile tester = new TestSerializedFormWithClassFile();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestSerializedFormWithClassFile();
+        tester.runTests();
     }
 
     TestSerializedFormWithClassFile() {

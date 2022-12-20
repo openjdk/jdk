@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestSinceTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSinceTag tester = new TestSinceTag();
+        var tester = new TestSinceTag();
         tester.runTests();
         tester.printSummary();
     }

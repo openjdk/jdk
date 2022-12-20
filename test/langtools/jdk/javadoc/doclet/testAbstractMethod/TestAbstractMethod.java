@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestAbstractMethod extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestAbstractMethod tester = new TestAbstractMethod();
+        var tester = new TestAbstractMethod();
         tester.runTests();
     }
 

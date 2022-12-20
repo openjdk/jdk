@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestNewLineInLink extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNewLineInLink tester = new TestNewLineInLink();
+        var tester = new TestNewLineInLink();
         tester.runTests();
     }
 

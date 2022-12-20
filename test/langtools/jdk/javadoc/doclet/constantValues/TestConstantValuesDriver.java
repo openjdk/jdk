@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 public class TestConstantValuesDriver extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestConstantValuesDriver tester = new TestConstantValuesDriver();
+        var tester = new TestConstantValuesDriver();
         tester.runTests();
     }
 

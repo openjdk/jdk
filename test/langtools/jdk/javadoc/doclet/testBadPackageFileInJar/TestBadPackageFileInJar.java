@@ -47,7 +47,7 @@ public class TestBadPackageFileInJar extends JavadocTester {
     final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
-        TestBadPackageFileInJar tester = new TestBadPackageFileInJar();
+        var tester = new TestBadPackageFileInJar();
         tester.runTests();
     }
 

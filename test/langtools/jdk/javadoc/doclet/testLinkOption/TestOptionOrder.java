@@ -52,8 +52,8 @@ public class TestOptionOrder extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestOptionOrder tester = new TestOptionOrder();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())} );
+        var tester = new TestOptionOrder();
+        tester.runTests();
     }
 
     TestOptionOrder() throws Exception {

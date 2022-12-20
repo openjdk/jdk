@@ -42,8 +42,8 @@ public class TestGroupName extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestGroupName tester = new TestGroupName();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestGroupName();
+        tester.runTests();
     }
 
     public TestGroupName() {

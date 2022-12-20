@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestNonInlineHtmlTagRemoval extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNonInlineHtmlTagRemoval tester = new TestNonInlineHtmlTagRemoval();
+        var tester = new TestNonInlineHtmlTagRemoval();
         tester.runTests();
     }
 

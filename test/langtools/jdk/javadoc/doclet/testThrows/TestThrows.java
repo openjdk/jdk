@@ -42,8 +42,8 @@
  public class TestThrows extends JavadocTester {
 
      public static void main(String... args) throws Exception {
-         TestThrows tester = new TestThrows();
-         tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+         var tester = new TestThrows();
+         tester.runTests();
      }
 
      private final ToolBox tb = new ToolBox();

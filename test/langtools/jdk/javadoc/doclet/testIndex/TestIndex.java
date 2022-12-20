@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestIndex extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestIndex tester = new TestIndex();
+        var tester = new TestIndex();
         tester.runTests();
     }
 

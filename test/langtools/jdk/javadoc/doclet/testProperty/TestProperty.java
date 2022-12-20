@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestProperty extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestProperty tester = new TestProperty();
+        var tester = new TestProperty();
         tester.runTests();
     }
 

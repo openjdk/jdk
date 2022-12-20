@@ -40,7 +40,7 @@ public class AccessSummary extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        AccessSummary tester = new AccessSummary();
+        var tester = new AccessSummary();
         tester.runTests();
     }
 

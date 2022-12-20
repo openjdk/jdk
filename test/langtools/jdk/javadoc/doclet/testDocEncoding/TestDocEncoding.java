@@ -43,7 +43,7 @@ import javadoc.tester.JavadocTester;
 public class TestDocEncoding extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocEncoding tester = new TestDocEncoding();
+        var tester = new TestDocEncoding();
         tester.runTests();
     }
 

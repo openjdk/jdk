@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class AccessH1 extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        AccessH1 tester = new AccessH1();
+        var tester = new AccessH1();
         tester.runTests();
     }
 

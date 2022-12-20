@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestSerialVersionUID extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSerialVersionUID tester = new TestSerialVersionUID();
+        var tester = new TestSerialVersionUID();
         tester.runTests();
     }
 

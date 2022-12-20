@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestCompletionFailure extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCompletionFailure tester = new TestCompletionFailure();
+        var tester = new TestCompletionFailure();
         tester.runTests();
     }
 

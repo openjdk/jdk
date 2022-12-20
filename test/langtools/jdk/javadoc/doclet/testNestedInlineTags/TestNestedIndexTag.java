@@ -42,8 +42,8 @@ import static javadoc.tester.JavadocTester.Output.OUT;
 public class TestNestedIndexTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNestedIndexTag tester = new TestNestedIndexTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestNestedIndexTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestWarnBadParamNames extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestWarnBadParamNames tester = new TestWarnBadParamNames();
+        var tester = new TestWarnBadParamNames();
         tester.runTests();
     }
 

@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestClassLinks extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestClassLinks tester = new TestClassLinks();
+        var tester = new TestClassLinks();
         tester.runTests();
     }
 

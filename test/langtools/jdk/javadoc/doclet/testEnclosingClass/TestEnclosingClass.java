@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestEnclosingClass extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestEnclosingClass tester = new TestEnclosingClass();
+        var tester = new TestEnclosingClass();
         tester.runTests();
     }
 

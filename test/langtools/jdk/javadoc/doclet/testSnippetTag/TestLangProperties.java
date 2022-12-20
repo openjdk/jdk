@@ -44,7 +44,7 @@ import java.util.Optional;
 public class TestLangProperties extends SnippetTester {
 
     public static void main(String... args) throws Exception {
-        new TestLangProperties().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new TestLangProperties().runTests();
     }
 
     @Test

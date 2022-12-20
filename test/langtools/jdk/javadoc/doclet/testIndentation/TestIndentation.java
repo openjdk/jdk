@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestIndentation extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestIndentation tester = new TestIndentation();
+        var tester = new TestIndentation();
         tester.runTests();
     }
 

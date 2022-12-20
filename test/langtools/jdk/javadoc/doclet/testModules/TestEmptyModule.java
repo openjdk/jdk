@@ -45,8 +45,8 @@ public class TestEmptyModule extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestEmptyModule tester = new TestEmptyModule();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestEmptyModule();
+        tester.runTests();
     }
 
     public TestEmptyModule() {

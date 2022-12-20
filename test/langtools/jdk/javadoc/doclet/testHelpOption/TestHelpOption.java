@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestHelpOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHelpOption tester = new TestHelpOption();
+        var tester = new TestHelpOption();
         tester.runTests();
     }
 

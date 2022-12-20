@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestNotifications extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNotifications tester = new TestNotifications();
+        var tester = new TestNotifications();
         tester.runTests();
     }
 

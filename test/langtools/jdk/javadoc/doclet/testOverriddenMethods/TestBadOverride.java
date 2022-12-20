@@ -40,7 +40,7 @@ public class TestBadOverride extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestBadOverride tester = new TestBadOverride();
+        var tester = new TestBadOverride();
         tester.runTests();
     }
 

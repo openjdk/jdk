@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestSerializedFormDeprecationInfo extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSerializedFormDeprecationInfo tester = new TestSerializedFormDeprecationInfo();
+        var tester = new TestSerializedFormDeprecationInfo();
         tester.runTests();
     }
 

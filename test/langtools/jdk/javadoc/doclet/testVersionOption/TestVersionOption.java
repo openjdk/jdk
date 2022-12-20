@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestVersionOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestVersionOption tester = new TestVersionOption();
+        var tester = new TestVersionOption();
         tester.runTests();
     }
 

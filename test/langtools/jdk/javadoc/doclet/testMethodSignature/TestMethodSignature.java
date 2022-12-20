@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestMethodSignature extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMethodSignature tester = new TestMethodSignature();
+        var tester = new TestMethodSignature();
         tester.runTests();
     }
 

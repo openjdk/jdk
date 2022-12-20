@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestPackageDeprecation extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestPackageDeprecation tester = new TestPackageDeprecation();
+        var tester = new TestPackageDeprecation();
         tester.runTests();
     }
 

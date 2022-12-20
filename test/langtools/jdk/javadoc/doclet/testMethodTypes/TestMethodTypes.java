@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestMethodTypes extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMethodTypes tester = new TestMethodTypes();
+        var tester = new TestMethodTypes();
         tester.runTests();
     }
 

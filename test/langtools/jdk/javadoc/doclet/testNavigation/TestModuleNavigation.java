@@ -46,8 +46,8 @@ public class TestModuleNavigation extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestModuleNavigation  tester = new TestModuleNavigation ();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestModuleNavigation ();
+        tester.runTests();
     }
 
     public TestModuleNavigation () {

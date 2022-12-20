@@ -40,7 +40,7 @@ import toolbox.ToolBox;
 public class TestDocFileDir extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocFileDir tester = new TestDocFileDir();
+        var tester = new TestDocFileDir();
         tester.runTests();
     }
 

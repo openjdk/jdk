@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 public class TestHelpPage extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHelpPage tester = new TestHelpPage();
+        var tester = new TestHelpPage();
         tester.runTests();
     }
 

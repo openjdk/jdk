@@ -40,7 +40,7 @@ import toolbox.ToolBox;
 public class TestDiagsLineCaret extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDiagsLineCaret tester = new TestDiagsLineCaret();
+        var tester = new TestDiagsLineCaret();
         tester.runTests();
     }
 

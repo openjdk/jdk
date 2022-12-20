@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestMissingType extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMissingType tester = new TestMissingType();
+        var tester = new TestMissingType();
         tester.runTests();
     }
 

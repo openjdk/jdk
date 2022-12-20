@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class WindowTitles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        WindowTitles tester = new WindowTitles();
+        var tester = new WindowTitles();
         tester.runTests();
     }
 

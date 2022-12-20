@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestSummaryTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSummaryTag tester = new TestSummaryTag();
+        var tester = new TestSummaryTag();
         tester.runTests();
     }
 

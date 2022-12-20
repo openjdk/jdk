@@ -39,8 +39,8 @@ import toolbox.ToolBox;
 public class TestGeneratedClasses extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestGeneratedClasses tester = new TestGeneratedClasses();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestGeneratedClasses();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

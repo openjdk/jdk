@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestPackageAnnotation extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestPackageAnnotation tester = new TestPackageAnnotation();
+        var tester = new TestPackageAnnotation();
         tester.runTests();
     }
 

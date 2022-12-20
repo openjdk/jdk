@@ -103,7 +103,7 @@ public class ReporterGeneratesWarningsInsteadOfNotes extends TestRunner {
     }
 
     public static void main(String... args) throws Exception {
-        ReporterGeneratesWarningsInsteadOfNotes tester = new ReporterGeneratesWarningsInsteadOfNotes();
+        var tester = new ReporterGeneratesWarningsInsteadOfNotes();
         tester.runTests();
     }
 

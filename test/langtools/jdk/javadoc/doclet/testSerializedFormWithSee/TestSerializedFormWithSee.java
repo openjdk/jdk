@@ -51,8 +51,8 @@ import javadoc.tester.JavadocTester;
 public class TestSerializedFormWithSee extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSerializedFormWithSee tester = new TestSerializedFormWithSee();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestSerializedFormWithSee();
+        tester.runTests();
     }
 
     private final ToolBox tb;

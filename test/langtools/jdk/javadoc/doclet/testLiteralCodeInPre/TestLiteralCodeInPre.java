@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestLiteralCodeInPre extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestLiteralCodeInPre tester = new TestLiteralCodeInPre();
+        var tester = new TestLiteralCodeInPre();
         tester.runTests();
     }
 

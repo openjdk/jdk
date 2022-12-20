@@ -41,7 +41,7 @@ import javadoc.tester.JavadocTester;
 public class TestFxProperties extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestFxProperties tester = new TestFxProperties();
+        var tester = new TestFxProperties();
         if (!tester.sanity()) {
             return;
         }

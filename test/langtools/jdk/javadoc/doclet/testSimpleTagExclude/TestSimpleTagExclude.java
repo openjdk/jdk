@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestSimpleTagExclude extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSimpleTagExclude tester = new TestSimpleTagExclude();
+        var tester = new TestSimpleTagExclude();
         tester.runTests();
     }
 

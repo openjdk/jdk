@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestConstructorIndent extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestConstructorIndent tester = new TestConstructorIndent();
+        var tester = new TestConstructorIndent();
         tester.runTests();
     }
 

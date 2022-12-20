@@ -40,7 +40,7 @@ import javadoc.tester.JavadocTester;
 public class TestTypeParameters extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestTypeParameters tester = new TestTypeParameters();
+        var tester = new TestTypeParameters();
         tester.runTests();
     }
 

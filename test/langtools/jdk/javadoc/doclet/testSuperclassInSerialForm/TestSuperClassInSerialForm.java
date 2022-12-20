@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestSuperClassInSerialForm extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSuperClassInSerialForm tester = new TestSuperClassInSerialForm();
+        var tester = new TestSuperClassInSerialForm();
         tester.runTests();
     }
 

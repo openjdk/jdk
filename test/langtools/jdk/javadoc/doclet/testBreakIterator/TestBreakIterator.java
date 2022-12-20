@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestBreakIterator extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestBreakIterator tester = new TestBreakIterator();
+        var tester = new TestBreakIterator();
         tester.runTests();
     }
 

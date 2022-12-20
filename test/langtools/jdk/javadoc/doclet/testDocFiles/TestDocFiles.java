@@ -42,8 +42,8 @@ import javadoc.tester.JavadocTester;
 public class TestDocFiles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocFiles tester = new TestDocFiles();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestDocFiles();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

@@ -41,7 +41,7 @@ public class TestOverriddenMethodDocCopy extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestOverriddenMethodDocCopy tester = new TestOverriddenMethodDocCopy();
+        var tester = new TestOverriddenMethodDocCopy();
         tester.runTests();
     }
 

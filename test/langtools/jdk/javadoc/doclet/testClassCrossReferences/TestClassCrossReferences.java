@@ -39,7 +39,7 @@ public class TestClassCrossReferences extends JavadocTester {
     static final String uri = "http://docs.oracle.com/javase/8/docs/api/";
 
     public static void main(String... args) throws Exception {
-        TestClassCrossReferences tester = new TestClassCrossReferences();
+        var tester = new TestClassCrossReferences();
         tester.runTests();
     }
 

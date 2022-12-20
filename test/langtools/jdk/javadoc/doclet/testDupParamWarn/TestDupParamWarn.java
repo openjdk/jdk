@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestDupParamWarn extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        JavadocTester tester = new TestDupParamWarn();
+        var tester = new TestDupParamWarn();
         tester.runTests();
     }
 

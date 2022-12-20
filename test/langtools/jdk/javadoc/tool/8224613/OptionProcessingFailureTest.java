@@ -79,7 +79,7 @@ public class OptionProcessingFailureTest extends JavadocTester {
     private final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
-        new OptionProcessingFailureTest().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new OptionProcessingFailureTest().runTests();
     }
 
     @Test

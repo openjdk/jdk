@@ -49,8 +49,8 @@ import toolbox.ToolBox;
  */
 public class TestJavaFXCombo extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestJavaFXCombo tester = new TestJavaFXCombo(args);
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestJavaFXCombo(args);
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

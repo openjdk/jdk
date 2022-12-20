@@ -42,7 +42,7 @@ import toolbox.ToolBox;
 public class TestAuthor extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestAuthor tester = new TestAuthor();
+        var tester = new TestAuthor();
         tester.runTests();
     }
 

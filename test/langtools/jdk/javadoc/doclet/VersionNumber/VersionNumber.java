@@ -40,7 +40,7 @@ import javadoc.tester.JavadocTester;
 public class VersionNumber extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        VersionNumber tester = new VersionNumber();
+        var tester = new VersionNumber();
         tester.runTests();
     }
 

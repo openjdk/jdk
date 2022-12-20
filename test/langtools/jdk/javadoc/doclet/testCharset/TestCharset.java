@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestCharset extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCharset tester = new TestCharset();
+        var tester = new TestCharset();
         tester.runTests();
     }
 

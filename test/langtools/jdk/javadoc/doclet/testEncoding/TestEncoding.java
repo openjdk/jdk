@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestEncoding extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestEncoding tester = new TestEncoding();
+        var tester = new TestEncoding();
         tester.runTests();
     }
 

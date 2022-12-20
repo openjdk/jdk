@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestDocRootInlineTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocRootInlineTag tester = new TestDocRootInlineTag();
+        var tester = new TestDocRootInlineTag();
         tester.runTests();
     }
 

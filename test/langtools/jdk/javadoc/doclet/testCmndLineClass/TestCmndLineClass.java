@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestCmndLineClass extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCmndLineClass tester = new TestCmndLineClass();
+        var tester = new TestCmndLineClass();
         tester.runTests();
     }
 

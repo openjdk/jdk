@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class AccessSkipNav extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        AccessSkipNav tester = new AccessSkipNav();
+        var tester = new AccessSkipNav();
         tester.runTests();
     }
 

@@ -47,8 +47,8 @@ import toolbox.ToolBox;
 
 public class TestNestedClasses extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestNestedClasses tester = new TestNestedClasses();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestNestedClasses();
+        tester.runTests();
         tester.runLater();
     }
 

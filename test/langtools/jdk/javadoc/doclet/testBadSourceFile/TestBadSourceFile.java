@@ -42,7 +42,7 @@ public class TestBadSourceFile extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        TestBadSourceFile tester = new TestBadSourceFile();
+        var tester = new TestBadSourceFile();
         tester.runTests();
     }
 

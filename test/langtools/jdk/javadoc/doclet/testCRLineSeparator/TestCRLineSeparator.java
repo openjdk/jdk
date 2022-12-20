@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestCRLineSeparator extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCRLineSeparator tester = new TestCRLineSeparator();
+        var tester = new TestCRLineSeparator();
         tester.runTests();
     }
 

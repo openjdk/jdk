@@ -53,9 +53,9 @@ import toolbox.ToolBox;
 public class TestDocLintOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocLintOption tester = new TestDocLintOption();
+        var tester = new TestDocLintOption();
         tester.generateSrc();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

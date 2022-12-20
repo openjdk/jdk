@@ -49,7 +49,7 @@ import javadoc.tester.JavadocTester;
 public class TestIOException extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestIOException tester = new TestIOException();
+        var tester = new TestIOException();
         tester.runTests();
     }
 

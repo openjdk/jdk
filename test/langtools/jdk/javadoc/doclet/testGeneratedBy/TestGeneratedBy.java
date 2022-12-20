@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestGeneratedBy extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestGeneratedBy tester = new TestGeneratedBy();
+        var tester = new TestGeneratedBy();
         tester.runTests();
     }
 

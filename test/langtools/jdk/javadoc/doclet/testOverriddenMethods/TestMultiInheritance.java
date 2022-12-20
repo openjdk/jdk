@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestMultiInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMultiInheritance tester = new TestMultiInheritance();
+        var tester = new TestMultiInheritance();
         tester.runTests();
     }
 

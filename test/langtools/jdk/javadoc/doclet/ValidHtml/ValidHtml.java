@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class ValidHtml extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        ValidHtml tester = new ValidHtml();
+        var tester = new ValidHtml();
         tester.runTests();
     }
 

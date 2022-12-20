@@ -44,7 +44,7 @@ public class TestHtml4Removal extends JavadocTester {
         Files.write(testFile,
                 List.of("/** Comment. */", "public class C { }"));
 
-        TestHtml4Removal tester = new TestHtml4Removal();
+        var tester = new TestHtml4Removal();
         tester.runTests();
     }
 

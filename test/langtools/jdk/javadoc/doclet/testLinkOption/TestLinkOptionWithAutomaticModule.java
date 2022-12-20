@@ -48,8 +48,8 @@ import javadoc.tester.JavadocTester;
 public class TestLinkOptionWithAutomaticModule extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestLinkOptionWithAutomaticModule tester = new TestLinkOptionWithAutomaticModule();
-        tester.runTests(m -> new Object[]{ Path.of(m.getName()) });
+        var tester = new TestLinkOptionWithAutomaticModule();
+        tester.runTests();
     }
 
     final ToolBox tb = new ToolBox();

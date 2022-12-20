@@ -52,7 +52,7 @@ import java.util.function.Supplier;
 public class OptionsTest extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        new OptionsTest().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new OptionsTest().runTests();
     }
 
     @Test

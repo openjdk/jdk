@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class JavascriptWinTitle extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        JavascriptWinTitle tester = new JavascriptWinTitle();
+        var tester = new JavascriptWinTitle();
         tester.runTests();
     }
 

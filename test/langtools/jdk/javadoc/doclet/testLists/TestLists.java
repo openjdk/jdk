@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 public class TestLists extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestLists tester = new TestLists();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestLists();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

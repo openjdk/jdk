@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestBadHtml extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestBadHtml tester = new TestBadHtml();
+        var tester = new TestBadHtml();
         tester.runTests();
     }
 

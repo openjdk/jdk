@@ -49,7 +49,7 @@ import toolbox.ToolBox;
 
 public class TestBimodalTaglets extends JavadocTester implements Taglet {
     public static void main(String... args) throws Exception {
-        new TestBimodalTaglets().runTests(m -> new Object[] { Path.of(m.getName()) });
+        new TestBimodalTaglets().runTests();
     }
 
     ToolBox tb = new ToolBox();

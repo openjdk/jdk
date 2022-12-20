@@ -60,7 +60,7 @@ public class TestExceptionHandling extends TestRunner {
     final JavadocTask apiTask;
 
     public static void main(String... args) throws Exception {
-        TestExceptionHandling tester = new TestExceptionHandling();
+        var tester = new TestExceptionHandling();
         tester.runTests();
     }
 

@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestGrandParentTypes extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestGrandParentTypes tester = new TestGrandParentTypes();
+        var tester = new TestGrandParentTypes();
         tester.runTests();
     }
 

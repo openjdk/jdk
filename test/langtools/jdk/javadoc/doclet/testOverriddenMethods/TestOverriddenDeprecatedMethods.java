@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestOverriddenDeprecatedMethods extends JavadocTester {
 
     public static void main(String args[]) throws Exception {
-        TestOverriddenDeprecatedMethods tester = new TestOverriddenDeprecatedMethods();
+        var tester = new TestOverriddenDeprecatedMethods();
         tester.runTests();
     }
 

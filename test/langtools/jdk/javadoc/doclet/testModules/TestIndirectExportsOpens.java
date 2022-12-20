@@ -45,8 +45,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestIndirectExportsOpens tester = new TestIndirectExportsOpens();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestIndirectExportsOpens();
+        tester.runTests();
     }
 
     public TestIndirectExportsOpens() {

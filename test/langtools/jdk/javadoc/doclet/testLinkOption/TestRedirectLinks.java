@@ -81,7 +81,7 @@ public class TestRedirectLinks extends JavadocTester {
         if (Platform.isSlowDebugBuild()) {
             throw new SkippedException("Test is unstable with slowdebug bits");
         }
-        TestRedirectLinks tester = new TestRedirectLinks();
+        var tester = new TestRedirectLinks();
         tester.runTests();
     }
 

@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlTableStyles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHtmlTableStyles tester = new TestHtmlTableStyles();
+        var tester = new TestHtmlTableStyles();
         tester.runTests();
     }
 

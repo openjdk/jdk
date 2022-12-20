@@ -44,7 +44,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestJavaPackage extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestJavaPackage tester = new TestJavaPackage();
+        var tester = new TestJavaPackage();
         tester.runTests();
     }
 

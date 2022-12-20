@@ -41,8 +41,8 @@ import toolbox.ToolBox;
 public class TestWErrorOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestWErrorOption tester = new TestWErrorOption();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestWErrorOption();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

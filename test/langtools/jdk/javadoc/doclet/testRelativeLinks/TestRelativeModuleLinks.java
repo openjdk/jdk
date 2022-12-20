@@ -46,8 +46,8 @@ public class TestRelativeModuleLinks extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestRelativeModuleLinks tester = new TestRelativeModuleLinks();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestRelativeModuleLinks();
+        tester.runTests();
     }
 
     public TestRelativeModuleLinks() {

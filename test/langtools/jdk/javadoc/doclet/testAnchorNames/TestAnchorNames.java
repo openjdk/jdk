@@ -42,8 +42,8 @@ public class TestAnchorNames extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestAnchorNames tester = new TestAnchorNames();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestAnchorNames();
+        tester.runTests();
     }
 
     public TestAnchorNames() {

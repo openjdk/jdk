@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 public class TestDocRootLink extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocRootLink tester = new TestDocRootLink();
+        var tester = new TestDocRootLink();
 
         // The test files intentionally contain examples of links that should
         // or should not be affected by the -Xdocrootparent option, and the

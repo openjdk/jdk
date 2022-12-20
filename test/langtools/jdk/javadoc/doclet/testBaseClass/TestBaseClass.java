@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestBaseClass extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestBaseClass tester = new TestBaseClass();
+        var tester = new TestBaseClass();
         tester.runTests();
     }
 

@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestInlineLinkLabel extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestInlineLinkLabel tester = new TestInlineLinkLabel();
+        var tester = new TestInlineLinkLabel();
         tester.runTests();
     }
 

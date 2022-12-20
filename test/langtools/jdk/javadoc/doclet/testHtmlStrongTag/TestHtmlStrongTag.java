@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlStrongTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHtmlStrongTag tester = new TestHtmlStrongTag();
+        var tester = new TestHtmlStrongTag();
         tester.runTests();
     }
 

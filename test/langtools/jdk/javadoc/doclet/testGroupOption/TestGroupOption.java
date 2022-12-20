@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestGroupOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestGroupOption tester = new TestGroupOption();
+        var tester = new TestGroupOption();
         tester.runTests();
     }
 

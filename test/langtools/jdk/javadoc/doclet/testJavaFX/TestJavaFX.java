@@ -42,7 +42,7 @@ import javadoc.tester.JavadocTester;
 public class TestJavaFX extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestJavaFX tester = new TestJavaFX();
+        var tester = new TestJavaFX();
         tester.setAutomaticCheckAccessibility(false);
         tester.setAutomaticCheckLinks(false);
         tester.runTests();

@@ -42,7 +42,7 @@ import toolbox.ToolBox;
 public class TestEmptyInheritDoc extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestEmptyInheritDoc tester = new TestEmptyInheritDoc();
+        var tester = new TestEmptyInheritDoc();
         tester.runTests();
     }
 

@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestSimpleTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSimpleTag tester = new TestSimpleTag();
+        var tester = new TestSimpleTag();
         tester.runTests();
     }
 

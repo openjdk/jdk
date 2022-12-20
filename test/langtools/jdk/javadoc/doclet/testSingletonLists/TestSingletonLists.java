@@ -53,7 +53,7 @@ import toolbox.ToolBox;
 
 public class TestSingletonLists extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSingletonLists tester = new TestSingletonLists();
+        var tester = new TestSingletonLists();
         tester.runTests();
     }
 

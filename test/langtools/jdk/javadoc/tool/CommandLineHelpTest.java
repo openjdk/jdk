@@ -37,8 +37,8 @@ import javadoc.tester.JavadocTester;
 
 public class CommandLineHelpTest extends JavadocTester {
     public static void main(String... args) throws Exception {
-        CommandLineHelpTest tester = new CommandLineHelpTest();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new CommandLineHelpTest();
+        tester.runTests();
     }
 
     @Test

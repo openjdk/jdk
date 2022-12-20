@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestTypeVariableLinks extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestTypeVariableLinks tester = new TestTypeVariableLinks();
+        var tester = new TestTypeVariableLinks();
         tester.runTests();
     }
 

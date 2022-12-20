@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestBackSlashInLink extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestBackSlashInLink tester = new TestBackSlashInLink();
+        var tester = new TestBackSlashInLink();
         tester.runTests();
     }
 

@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestRecurseSubPackages extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestRecurseSubPackages tester = new TestRecurseSubPackages();
+        var tester = new TestRecurseSubPackages();
         tester.runTests();
     }
 

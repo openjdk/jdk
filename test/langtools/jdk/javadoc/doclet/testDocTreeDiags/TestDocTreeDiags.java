@@ -65,8 +65,8 @@ import toolbox.ToolBox;
 public class TestDocTreeDiags extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocTreeDiags tester = new TestDocTreeDiags();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())} );
+        var tester = new TestDocTreeDiags();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

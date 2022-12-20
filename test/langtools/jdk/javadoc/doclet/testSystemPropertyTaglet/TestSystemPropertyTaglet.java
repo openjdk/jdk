@@ -45,8 +45,8 @@ public class TestSystemPropertyTaglet extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestSystemPropertyTaglet tester = new TestSystemPropertyTaglet();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestSystemPropertyTaglet();
+        tester.runTests();
     }
 
     TestSystemPropertyTaglet() {

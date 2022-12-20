@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestTopOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestTopOption tester = new TestTopOption();
+        var tester = new TestTopOption();
         tester.runTests();
     }
 

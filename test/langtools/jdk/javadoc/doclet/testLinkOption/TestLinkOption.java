@@ -43,7 +43,7 @@ public class TestLinkOption extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestLinkOption tester = new TestLinkOption();
+        var tester = new TestLinkOption();
         tester.runTests();
     }
 

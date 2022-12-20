@@ -53,8 +53,8 @@ import toolbox.ToolBox;
  */
 public class TestTagOrder extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestTagOrder tester = new TestTagOrder();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestTagOrder();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

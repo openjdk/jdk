@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 public class TestSnippetPathOption extends SnippetTester {
 
     public static void main(String... args) throws Exception {
-        new TestSnippetPathOption().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new TestSnippetPathOption().runTests();
     }
 
     /*

@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestClassTree extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestClassTree tester = new TestClassTree();
+        var tester = new TestClassTree();
         tester.runTests();
     }
 

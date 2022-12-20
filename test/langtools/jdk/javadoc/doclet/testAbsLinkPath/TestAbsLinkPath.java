@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestAbsLinkPath extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestAbsLinkPath tester = new TestAbsLinkPath();
+        var tester = new TestAbsLinkPath();
         tester.runTests();
     }
 

@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 public class TestNestedSummaryTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestNestedSummaryTag tester = new TestNestedSummaryTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestNestedSummaryTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

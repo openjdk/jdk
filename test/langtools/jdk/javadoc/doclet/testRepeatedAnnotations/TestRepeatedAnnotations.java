@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestRepeatedAnnotations extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestRepeatedAnnotations tester = new TestRepeatedAnnotations();
+        var tester = new TestRepeatedAnnotations();
         tester.runTests();
     }
 

@@ -44,8 +44,8 @@ public class TestEnumConstructor extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestEnumConstructor tester = new TestEnumConstructor();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestEnumConstructor();
+        tester.runTests();
     }
 
     TestEnumConstructor() {

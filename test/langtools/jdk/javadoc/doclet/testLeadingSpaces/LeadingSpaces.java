@@ -43,7 +43,7 @@ public class LeadingSpaces extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        LeadingSpaces tester = new LeadingSpaces();
+        var tester = new LeadingSpaces();
         tester.runTests();
     }
 

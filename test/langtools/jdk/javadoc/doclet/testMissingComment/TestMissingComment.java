@@ -39,8 +39,8 @@ import toolbox.ToolBox;
 
 public class TestMissingComment extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestMissingComment tester = new TestMissingComment();
-        tester.runTests(m -> new Object[] { Path.of(m.getName() )});
+        var tester = new TestMissingComment();
+        tester.runTests();
     }
 
     private ToolBox tb = new ToolBox();

@@ -39,7 +39,7 @@ public class TestExternalOverriddenMethod extends JavadocTester {
     static final String uri = "http://java.sun.com/j2se/1.4.1/docs/api";
 
     public static void main(String... args) throws Exception {
-        TestExternalOverriddenMethod tester = new TestExternalOverriddenMethod();
+        var tester = new TestExternalOverriddenMethod();
         tester.runTests();
     }
 

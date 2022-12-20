@@ -40,7 +40,7 @@ import toolbox.ToolBox;
 public class TestIndexInPackageFiles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestIndexInPackageFiles  tester = new TestIndexInPackageFiles ();
+        var tester = new TestIndexInPackageFiles ();
         tester.runTests();
     }
 

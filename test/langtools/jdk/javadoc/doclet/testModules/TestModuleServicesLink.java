@@ -45,8 +45,8 @@ public class TestModuleServicesLink extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestModuleServicesLink  tester = new TestModuleServicesLink ();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestModuleServicesLink ();
+        tester.runTests();
     }
 
     public TestModuleServicesLink () {

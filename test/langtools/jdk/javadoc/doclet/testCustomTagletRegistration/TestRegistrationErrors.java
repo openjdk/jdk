@@ -42,7 +42,7 @@ import javadoc.tester.JavadocTester;
 public class TestRegistrationErrors extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestRegistrationErrors tester = new TestRegistrationErrors();
+        var tester = new TestRegistrationErrors();
         tester.runTests();
     }
 

@@ -42,7 +42,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestSerializedForm extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSerializedForm tester = new TestSerializedForm();
+        var tester = new TestSerializedForm();
         tester.runTests();
     }
 

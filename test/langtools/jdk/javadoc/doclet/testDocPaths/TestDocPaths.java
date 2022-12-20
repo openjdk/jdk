@@ -37,7 +37,7 @@ import toolbox.TestRunner;
 public class TestDocPaths extends TestRunner {
 
     public static void main(String... args) throws Exception {
-        TestDocPaths tester = new TestDocPaths();
+        var tester = new TestDocPaths();
         tester.runTests();
     }
 

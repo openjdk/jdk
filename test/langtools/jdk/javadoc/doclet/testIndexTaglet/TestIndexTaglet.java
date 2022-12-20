@@ -46,8 +46,8 @@ public class TestIndexTaglet extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestIndexTaglet tester = new TestIndexTaglet();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestIndexTaglet();
+        tester.runTests();
     }
 
     TestIndexTaglet() {
