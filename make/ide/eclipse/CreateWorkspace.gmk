@@ -325,15 +325,17 @@ define SetupEclipseWorkspaceBody
 
     $$(call AppendFile,                <language id="org.eclipse.cdt.core.gcc">, $(LANGUAGE_SETTINGS))
 
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+      $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
-    $$(foreach module, $$(call FindAllModules), $$(foreach dirs, \
-      $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-      $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
-      $$(if $$(call FindJavaHeaderDir, $$(module)), $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS))) \
-      $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))))
+      $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
+        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+        $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
+        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS)) \
+        $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))))
 
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+      $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    endif
 
     $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
 
@@ -350,8 +352,7 @@ define SetupEclipseWorkspaceBody
     # the native source that it needs will not be available. Add them as include paths here
     # instead.
     ifeq ($$($1_NATURE), HOTSPOT)
-      $$(foreach src,$$(strip \
-        $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
+      $$(foreach src, $$(strip $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
         $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>, $(LANGUAGE_SETTINGS)))
       $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(TOPDIR)/src/java.base/share/native/libjimage)"/>, $(LANGUAGE_SETTINGS))
     endif
@@ -367,13 +368,15 @@ define SetupEclipseWorkspaceBody
 
     $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
 
-    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
+      $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
-    $$(foreach module, $$(call FindAllModules), $$(foreach dirs, \
-      $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
-      $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
-      $$(if $$(call FindJavaHeaderDir, $$(module)), $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS))) \
-      $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))))
+      $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
+        $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+        $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
+        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS)) \
+        $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))))
+    endif
 
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
