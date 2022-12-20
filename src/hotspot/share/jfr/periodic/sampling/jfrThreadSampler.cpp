@@ -41,6 +41,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
+#include "runtime/stackWatermark.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
@@ -387,6 +388,7 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
   }
 
   bool ret = false;
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
   thread->set_trace_flag();  // Provides StoreLoad, needed to keep read of thread state from floating up.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();

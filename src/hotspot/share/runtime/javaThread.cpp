@@ -1336,13 +1336,9 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     active_handles()->oops_do(f);
   }
 
-  DEBUG_ONLY(verify_frame_info();)
-
-  if (has_last_Java_frame()) {
-    // Traverse the monitor chunks
-    for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
-      chunk->oops_do(f);
-    }
+  // Traverse the monitor chunks
+  for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
+    chunk->oops_do(f);
   }
 
   assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
@@ -1380,9 +1376,12 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
+  DEBUG_ONLY(verify_frame_info();)
+
   if (!has_last_Java_frame()) {
     return;
   }
+
   // Finish any pending lazy GC activity for the frames
   StackWatermarkSet::finish_processing(this, NULL /* context */, StackWatermarkKind::gc);
   // Traverse the execution stack

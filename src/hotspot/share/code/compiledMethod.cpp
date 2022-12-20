@@ -364,12 +364,6 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
     return;
   }
 
-  // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
-  JavaThread* thread = reg_map->thread();
-  if (thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp()) {
-    return;
-  }
-
   if (!method()->is_native()) {
     address pc = fr.pc();
     bool has_receiver, has_appendix;

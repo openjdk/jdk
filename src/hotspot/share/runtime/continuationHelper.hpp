@@ -47,6 +47,8 @@ public:
   static inline int frame_align_words(int size);
   static inline intptr_t* frame_align_pointer(intptr_t* sp);
 
+  static inline void avoid_lazy_thaw_arguments(RegisterMap* map);
+
   // Abstract helpers for describing frames in general
   class Frame;
   class NonInterpretedFrame;

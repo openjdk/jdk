@@ -30,6 +30,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zVerify.hpp"
 #include "memory/resourceArea.inline.hpp"
+#include "runtime/disableStackTracingMark.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -68,16 +69,22 @@ OopClosure* ZStackWatermark::closure_from_context(void* context) {
 }
 
 void ZStackWatermark::start_processing_impl(void* context) {
-  // Verify the head (no_frames) of the thread is bad before fixing it.
-  ZVerify::verify_thread_head_bad(_jt);
+  {
+    // It isn't safe to trace through this code as that might involve walking through
+    // continuation oops that have not been fixed up yet.
+    DisableStackTracingMark dstm(_jt);
 
-  // Process the non-frame part of the thread
-  _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
-  ZThreadLocalData::do_invisible_root(_jt, ZBarrier::load_barrier_on_invisible_root_oop_field);
+    // Verify the head (no_frames) of the thread is bad before fixing it.
+    ZVerify::verify_thread_head_bad(_jt);
 
-  // Verification of frames is done after processing of the "head" (no_frames).
-  // The reason is that the exception oop is fiddled with during frame processing.
-  ZVerify::verify_thread_frames_bad(_jt);
+    // Process the non-frame part of the thread
+    _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
+    ZThreadLocalData::do_invisible_root(_jt, ZBarrier::load_barrier_on_invisible_root_oop_field);
+
+    // Verification of frames is done after processing of the "head" (no_frames).
+    // The reason is that the exception oop is fiddled with during frame processing.
+    ZVerify::verify_thread_frames_bad(_jt);
+  }
 
   // Update thread local address bad mask
   ZThreadLocalData::set_address_bad_mask(_jt, ZAddressBadMask);
@@ -94,6 +101,10 @@ void ZStackWatermark::start_processing_impl(void* context) {
 }
 
 void ZStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
+  // It isn't safe to trace through this code as that might involve walking through
+  // continuation oops that have not been fixed up yet.
+  DisableStackTracingMark dstm(_jt);
+
   ZVerify::verify_frame_bad(fr, register_map);
   fr.oops_do(closure_from_context(context), &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
 }

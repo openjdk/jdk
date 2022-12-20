@@ -45,6 +45,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/continuationHelper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -66,6 +67,8 @@ RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames
   _process_frames = process_frames == ProcessFrames::include;
   _walk_cont      = walk_cont == WalkContinuation::include;
   clear();
+  // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
+  ContinuationHelper::avoid_lazy_thaw_arguments(this);
   DEBUG_ONLY (_update_for_id = NULL;)
   NOT_PRODUCT(_skip_missing = false;)
   NOT_PRODUCT(_async = false;)

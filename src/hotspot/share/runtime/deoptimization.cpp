@@ -64,6 +64,7 @@
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/disableStackTracingMark.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -751,16 +752,16 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   vframeArray* array = thread->vframe_array_head();
   UnrollBlock* info = array->unroll_block();
 
-  // We set the last_Java frame. But the stack isn't really parsable here. So we
-  // clear it to make sure JFR understands not to try and walk stacks from events
-  // in here.
-  intptr_t* sp = thread->frame_anchor()->last_Java_sp();
-  thread->frame_anchor()->set_last_Java_sp(NULL);
+  {
+    // We set the last_Java frame. But the stack isn't really parsable here. So we
+    // clear it to make sure JFR understands not to try and walk stacks from events
+    // in here.
+    DisableStackTracingMark dstm(thread);
 
-  // Unpack the interpreter frames and any adapter frame (c2 only) we might create.
-  array->unpack_to_stack(stub_frame, exec_mode, info->caller_actual_parameters());
+    // Unpack the interpreter frames and any adapter frame (c2 only) we might create.
+    array->unpack_to_stack(stub_frame, exec_mode, info->caller_actual_parameters());
+  }
 
-  thread->frame_anchor()->set_last_Java_sp(sp);
 
   BasicType bt = info->return_type();
 

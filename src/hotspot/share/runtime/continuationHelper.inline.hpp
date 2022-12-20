@@ -70,6 +70,32 @@ inline bool ContinuationHelper::Frame::is_deopt_return(address pc, const frame& 
 
 #endif
 
+inline void ContinuationHelper::avoid_lazy_thaw_arguments(RegisterMap* map) {
+  // When we lazy thaw frames, we can end up with a compiled method as the top frame,
+  // but it doesn't have a callee. So we don't want to preserve its arguments.
+
+  if (!map->update_map()) {
+    return;
+  }
+
+  JavaThread* thread = map->thread();
+
+  if (!thread->has_last_Java_frame()) {
+    return;
+  }
+
+  frame f = thread->last_frame();
+  if (!CodeCache::contains(f.pc())) {
+    return;
+  }
+
+  if (f.oop_map() == nullptr) {
+    return;
+  }
+
+  map->set_include_argument_oops(false);
+}
+
 inline bool ContinuationHelper::InterpretedFrame::is_instance(const frame& f) {
   return f.is_interpreted_frame();
 }
