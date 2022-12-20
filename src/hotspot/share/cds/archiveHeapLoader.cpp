@@ -77,10 +77,10 @@ void ArchiveHeapLoader::init_mapped_heap_relocation(ptrdiff_t delta, int dumptim
   _mapped_heap_relocation_initialized = true;
 }
 
-void ArchiveHeapLoader::init_narrow_oop_decoding(address dumptime_base, int shift) {
+void ArchiveHeapLoader::init_narrow_oop_decoding(address base, int shift) {
   assert(!_narrow_oop_base_initialized, "only once");
   _narrow_oop_base_initialized = true;
-  _narrow_oop_base = dumptime_base;
+  _narrow_oop_base = base;
   _narrow_oop_shift = shift;
 }
 
@@ -130,8 +130,7 @@ class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
     narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
-    narrowOop new_v;
-    new_v = static_cast<narrowOop>(static_cast<uint32_t>(v) + _delta);
+    narrowOop new_v = CompressedOops::narrow_oop_cast(CompressedOops::narrow_oop_value(v) + _delta);
     assert(!CompressedOops::is_null(new_v), "should never relocate to narrowOop(0)");
 #ifdef ASSERT
     oop o1 = ArchiveHeapLoader::decode_from_mapped_archive(v);
@@ -163,17 +162,16 @@ void ArchiveHeapLoader::patch_compressed_pointers(BitMapView bm,
                                                   FileMapInfo* info,
                                                   FileMapRegion* map_region,
                                                   MemRegion region) {
+  narrowOop dt_encoded_bottom = info->encoded_heap_region_dumptime_address(map_region);
+  narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(region.start()));
+  log_info(cds)("patching heap embedded pointers: narrowOop 0x%8x -> 0x%8x",
+                  (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
+
   // Optimization: if dumptime shift is the same as runtime shift, we can perform a
   // quick conversion from "dumptime narrowOop" -> "runtime narrowOop".
   if (_narrow_oop_shift == CompressedOops::shift()) {
-    narrowOop dt_encoded_bottom = info->encoded_heap_region_dumptime_address(map_region);
-    narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(region.start()));
     uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
-
-    log_info(cds)("patching heap embedded pointers: narrowOop 0x%8x -> 0x%8x",
-                  (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
     log_info(cds)("CDS heap data relocation quick delta = 0x%x", quick_delta);
-
     if (quick_delta == 0) {
       log_info(cds)("CDS heap data relocation unnecessary, quick_delta = 0");
     } else {
@@ -181,7 +179,7 @@ void ArchiveHeapLoader::patch_compressed_pointers(BitMapView bm,
       bm.iterate(&patcher);
     }
   } else {
-    log_info(cds)("CDS heap data relocation not possible");
+    log_info(cds)("CDS heap data quick relocation not possible");
     PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
     bm.iterate(&patcher);
   }
