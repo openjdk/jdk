@@ -43,7 +43,7 @@ import sun.nio.cs.StreamEncoder;
 /**
  * JdkConsole implementation based on the platform's TTY.
  */
-public final class JdkConsoleImpl implements JdkConsole, JdkConsoleProvider {
+public final class JdkConsoleImpl implements JdkConsole {
     @Override
     public PrintWriter writer() {
         return pw;
@@ -167,16 +167,13 @@ public final class JdkConsoleImpl implements JdkConsole, JdkConsoleProvider {
         return charset;
     }
 
-    // The singleton
-    private volatile static JdkConsole INSTANCE;
-
-    private Charset charset;
-    private Object readLock;
-    private Object writeLock;
-    private Reader reader;
-    private Writer out;
-    private PrintWriter pw;
-    private Formatter formatter;
+    private final Charset charset;
+    private final Object readLock;
+    private final Object writeLock;
+    private final Reader reader;
+    private final Writer out;
+    private final PrintWriter pw;
+    private final Formatter formatter;
     private char[] rcb;
     private boolean restoreEcho;
     private boolean shutdownHookInstalled;
@@ -330,38 +327,23 @@ public final class JdkConsoleImpl implements JdkConsole, JdkConsoleProvider {
         }
     }
 
-    @Override
-    public JdkConsole console(boolean isTTY, Charset charset) {
-        if (isTTY) {
-            if (INSTANCE == null) {
-                this.charset = charset;
-                readLock = new Object();
-                writeLock = new Object();
-                out = StreamEncoder.forOutputStreamWriter(
-                        new FileOutputStream(FileDescriptor.out),
-                        writeLock,
-                        charset);
-                pw = new PrintWriter(out, true) {
-                    public void close() {
-                    }
-                };
-                formatter = new Formatter(out);
-                reader = new LineReader(StreamDecoder.forInputStreamReader(
-                        new FileInputStream(FileDescriptor.in),
-                        readLock,
-                        charset));
-                rcb = new char[1024];
-                INSTANCE = this;
+    public JdkConsoleImpl(Charset charset) {
+        this.charset = charset;
+        readLock = new Object();
+        writeLock = new Object();
+        out = StreamEncoder.forOutputStreamWriter(
+                new FileOutputStream(FileDescriptor.out),
+                writeLock,
+                charset);
+        pw = new PrintWriter(out, true) {
+            public void close() {
             }
-            return INSTANCE;
-        } else {
-            // not instantiable
-            return null;
-        }
-    }
-
-    // For convenience
-    public static JdkConsole getJdkConsole(Charset cs) {
-        return INSTANCE != null ? INSTANCE : new JdkConsoleImpl().console(true, cs);
+        };
+        formatter = new Formatter(out);
+        reader = new LineReader(StreamDecoder.forInputStreamReader(
+                new FileInputStream(FileDescriptor.in),
+                readLock,
+                charset));
+        rcb = new char[1024];
     }
 }
