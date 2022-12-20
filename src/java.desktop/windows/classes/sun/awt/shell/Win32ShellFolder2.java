@@ -1399,11 +1399,13 @@ final class Win32ShellFolder2 extends ShellFolder {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
+            assert !resolutionVariants.containsValue(null) : "There are null icons in the MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
+            assert image != null : "Null icons are added into MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }
@@ -1441,7 +1443,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                     }
                 }
             }
-            if ((retVal != null) && (retVal.getWidth(null) != w)) {
+            if (retVal.getWidth(null) != w) {
                 BufferedImage newVariant = new BufferedImage(w, w, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g2d = newVariant.createGraphics();
                 g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
