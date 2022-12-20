@@ -38,16 +38,8 @@ inline void PerfDataList::append(PerfData *p) {
   _set->append(p);
 }
 
-inline void PerfDataList::remove(PerfData *p) {
-  _set->remove(p);
-}
-
 inline PerfData* PerfDataList::at(int index) {
   return _set->at(index);
-}
-
-inline int PerfDataManager::count() {
-  return _all->length();
 }
 
 inline bool PerfDataManager::exists(const char* name) {

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/filemap.hpp"
@@ -32,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "jni.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

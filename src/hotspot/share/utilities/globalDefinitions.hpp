@@ -35,6 +35,7 @@
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
 #include <cstddef>
+#include <type_traits>
 
 class oopDesc;
 
@@ -130,6 +131,7 @@ class oopDesc;
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR
+#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
@@ -371,6 +373,9 @@ inline T byte_size_in_proper_unit(T s) {
     return s;
   }
 }
+
+#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
@@ -1283,5 +1288,9 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 
 // Allow use of C++ thread_local when approved - see JDK-8282469.
 #define APPROVED_CPP_THREAD_LOCAL thread_local
+
+// Converts any type T to a reference type.
+template<typename T>
+std::add_rvalue_reference_t<T> declval() noexcept;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

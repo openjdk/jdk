@@ -275,12 +275,12 @@ util_initialize(JNIEnv *env)
             localAgentProperties =
                 JNI_FUNC_PTR(env,CallStaticObjectMethod)
                             (env, localVMSupportClass, getAgentProperties);
-            saveGlobalRef(env, localAgentProperties, &(gdata->agent_properties));
             if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
                 EXIT_ERROR(AGENT_ERROR_INTERNAL,
                     "Exception occurred calling VMSupport.getAgentProperties");
             }
+            saveGlobalRef(env, localAgentProperties, &(gdata->agent_properties));
         }
 
     } END_WITH_LOCAL_REFS(env);
@@ -1734,7 +1734,7 @@ getSpecialJvmti(void)
     jvmtiCapabilities caps;
 
     rc = JVM_FUNC_PTR(gdata->jvm,GetEnv)
-                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION_1);
+                     (gdata->jvm, (void **)&jvmti, JVMTI_VERSION);
     if (rc != JNI_OK) {
         return NULL;
     }
