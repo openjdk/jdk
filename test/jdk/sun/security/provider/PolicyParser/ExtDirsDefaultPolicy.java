@@ -35,7 +35,7 @@
  * @summary standard extensions path is hard-coded in default
  *      system policy file
  *
- * @run main/othervm/policy=ExtDirs1.policy/secure=default ExtDirsDefaultPolicy
+ * @run main/othervm/policy=ExtDirs1.policy ExtDirsDefaultPolicy
  */
 
 /*
@@ -44,7 +44,7 @@
  * @summary standard extensions path is hard-coded in default
  *      system policy file
  *
- * @run main/othervm/policy=ExtDirs2.policy/secure=default ExtDirsDefaultPolicy
+ * @run main/othervm/policy=ExtDirs2.policy ExtDirsDefaultPolicy
  */
 
 /*
@@ -53,7 +53,7 @@
  * @summary standard extensions path is hard-coded in default
  *      system policy file
  *
- * @run main/othervm/policy=ExtDirs3.policy/secure=default ExtDirsDefaultPolicy
+ * @run main/othervm/policy=ExtDirs3.policy ExtDirsDefaultPolicy
  */
 
 public class ExtDirsDefaultPolicy {

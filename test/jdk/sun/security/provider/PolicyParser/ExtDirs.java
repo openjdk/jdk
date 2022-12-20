@@ -34,7 +34,7 @@
  * @bug 4215035
  * @summary standard extensions path is hard-coded in default
  *      system policy file
- * @run main/othervm/policy=ExtDirs.policy/secure=default ExtDirs
+ * @run main/othervm/policy=ExtDirs.policy ExtDirs
  */
 
 public class ExtDirs {

@@ -26,7 +26,7 @@
  * @bug 4993819
  * @summary standard extensions path is hard-coded in default
  *      system policy file
- * @run main/othervm/policy=ExtDirsChange.policy/secure=default ExtDirsChange
+ * @run main/othervm/policy=ExtDirsChange.policy ExtDirsChange
  */
 
 import java.security.*;
