@@ -173,13 +173,8 @@ class VectorizedHashCodeNode: public Node {
   // as well as adjusting for special treatment of various encoding of String
   // arrays. Must correspond to declared constants in jdk.internal.util.ArraysSupport
   typedef enum HashModes { LATIN1 = 0, UTF16 = 1, BYTE = 2, CHAR = 3, SHORT = 4, INT = 5 } HashMode;
- private:
-  HashMode _mode;
- public:
-  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, HashMode mode)
-    : Node(control, ary_mem, arg1, cnt1), _mode(mode) {};
-  bool is_unsigned() const { return _mode == LATIN1 || _mode == UTF16 || _mode == CHAR; }
-  HashMode mode() const { return _mode; }
+  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, Node* mode)
+    : Node(control, ary_mem, arg1, cnt1, mode) {};
   static BasicType adr_basic_type(HashMode mode) {
     switch (mode) {
     case LATIN1:
@@ -200,7 +195,7 @@ class VectorizedHashCodeNode: public Node {
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
-  virtual const TypePtr* adr_type() const { return TypeAryPtr::get_array_body_type(adr_basic_type(_mode)); }
+  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);

@@ -5947,13 +5947,12 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
     return false; // Only intrinsify if mode argument is constant
   }
   VectorizedHashCodeNode::HashMode mode_value = (VectorizedHashCodeNode::HashMode)mode_t->get_con();
-
   BasicType bt = VectorizedHashCodeNode::adr_basic_type(mode_value);
   // Get start addr and length of first argument
   Node* arg1_start  = array_element_address(arg1, intcon(0), bt);
   Node* arg1_cnt    = load_array_length(arg1);
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)), arg1_start, arg1_cnt, mode_value)));
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)), arg1_start, arg1_cnt, mode)));
   clear_upper_avx();
 
   return true;
