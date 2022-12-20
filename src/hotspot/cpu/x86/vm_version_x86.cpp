@@ -1696,7 +1696,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
   if (UseAVX >= 2) {
-    FLAG_SET_ERGO_IF_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   } else if (UseVectorizedHashCodeIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic))
       warning("vectorizedHashCode intrinsics are not available on this CPU");
