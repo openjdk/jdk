@@ -25,8 +25,8 @@
 package jdk.internal.foreign.abi.x64.windows;
 
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 enum TypeClass {
@@ -38,7 +38,7 @@ enum TypeClass {
     VARARG_FLOAT;
 
     private static TypeClass classifyValueType(ValueLayout type, boolean isVararg) {
-        // No 128 bit integers in the Windows C ABI. There are __m128(i|d) intrinsic types but they act just
+        // No 128-bit integers in the Windows C ABI. There are __m128(i|d) intrinsic types but they act just
         // like a struct when passing as an argument (passed by pointer).
         // https://docs.microsoft.com/en-us/cpp/cpp/m128?view=vs-2019
 
@@ -57,7 +57,7 @@ enum TypeClass {
             } else {
                 return FLOAT;
             }
-        } else if (carrier == MemoryAddress.class) {
+        } else if (carrier == MemorySegment.class) {
             return POINTER;
         } else {
             throw new IllegalStateException("Cannot get here: " + carrier.getName());
@@ -85,7 +85,7 @@ enum TypeClass {
         } else if (type instanceof GroupLayout) {
             return classifyStructType(type);
         } else {
-            throw new IllegalArgumentException("Unhandled type " + type);
+            throw new IllegalArgumentException("Unsupported layout: " + type);
         }
     }
 }

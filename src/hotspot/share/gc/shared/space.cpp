@@ -161,12 +161,6 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   _min_done = bottom;
 }
 
-DirtyCardToOopClosure* Space::new_dcto_cl(OopIterateClosure* cl,
-                                          CardTable::PrecisionStyle precision,
-                                          HeapWord* boundary) {
-  return new DirtyCardToOopClosure(this, cl, precision, boundary);
-}
-
 HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
                                                HeapWord* top_obj) {
   if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
@@ -189,9 +183,9 @@ HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
   return top;
 }
 
-void FilteringDCTOC::walk_mem_region(MemRegion mr,
-                                     HeapWord* bottom,
-                                     HeapWord* top) {
+void ContiguousSpaceDCTOC::walk_mem_region(MemRegion mr,
+                                           HeapWord* bottom,
+                                           HeapWord* top) {
   // Note that this assumption won't hold if we have a concurrent
   // collector in this space, which may have freed up objects after
   // they were dirtied and before the stop-the-world GC that is
@@ -290,17 +284,17 @@ bool ContiguousSpace::is_free_block(const HeapWord* p) const {
 }
 
 #if INCLUDE_SERIALGC
-void OffsetTableContigSpace::clear(bool mangle_space) {
+void TenuredSpace::clear(bool mangle_space) {
   ContiguousSpace::clear(mangle_space);
   _offsets.initialize_threshold();
 }
 
-void OffsetTableContigSpace::set_bottom(HeapWord* new_bottom) {
+void TenuredSpace::set_bottom(HeapWord* new_bottom) {
   Space::set_bottom(new_bottom);
   _offsets.set_bottom(new_bottom);
 }
 
-void OffsetTableContigSpace::set_end(HeapWord* new_end) {
+void TenuredSpace::set_end(HeapWord* new_end) {
   // Space should not advertise an increase in size
   // until after the underlying offset table has been enlarged.
   _offsets.resize(pointer_delta(new_end, bottom()));
@@ -596,7 +590,7 @@ void ContiguousSpace::print_on(outputStream* st) const {
 }
 
 #if INCLUDE_SERIALGC
-void OffsetTableContigSpace::print_on(outputStream* st) const {
+void TenuredSpace::print_on(outputStream* st) const {
   print_short_on(st);
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", "
                 PTR_FORMAT ", " PTR_FORMAT ")",
@@ -739,18 +733,18 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 }
 
 #if INCLUDE_SERIALGC
-void OffsetTableContigSpace::initialize_threshold() {
+void TenuredSpace::initialize_threshold() {
   _offsets.initialize_threshold();
 }
 
-void OffsetTableContigSpace::alloc_block(HeapWord* start, HeapWord* end) {
+void TenuredSpace::alloc_block(HeapWord* start, HeapWord* end) {
   _offsets.alloc_block(start, end);
 }
 
-OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
-                                               MemRegion mr) :
+TenuredSpace::TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+                           MemRegion mr) :
   _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::safepoint, "OffsetTableContigSpaceParAlloc_lock", true)
+  _par_alloc_lock(Mutex::safepoint, "TenuredSpaceParAlloc_lock", true)
 {
   _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
@@ -759,7 +753,7 @@ OffsetTableContigSpace::OffsetTableContigSpace(BlockOffsetSharedArray* sharedOff
 #define OBJ_SAMPLE_INTERVAL 0
 #define BLOCK_SAMPLE_INTERVAL 100
 
-void OffsetTableContigSpace::verify() const {
+void TenuredSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   int objs = 0;

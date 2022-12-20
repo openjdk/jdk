@@ -583,7 +583,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     // ThreadsListHandle that is common to both thread-specific and
     // global code paths.
 
-    JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, (oop) NULL, event_type, enabled);
+    JvmtiEventController::set_user_enabled(this, NULL, (oop) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.
     ThreadsListHandle tlh;
@@ -715,9 +715,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     }
     delete zip_entry;   // no longer needed
 
-    // lock the loader
-    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    ObjectLocker ol(loader, THREAD);
+    Handle loader(THREAD, SystemDictionary::java_system_loader());
 
     // need the path as java.lang.String
     Handle path = java_lang_String::create_from_platform_dependent_str(segment, THREAD);
@@ -1358,7 +1356,7 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(calling_thread);
@@ -1431,7 +1429,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+         new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(calling_thread);
@@ -1670,7 +1668,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;
-  Handle *group_objs  = NULL;
+  objArrayHandle group_objs;
   jint nthreads = 0;
   jint ngroups = 0;
   int hidden_threads = 0;
@@ -3524,7 +3522,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
 
   // does the klass have any local variable information?
   InstanceKlass* ik = method->method_holder();
-  if (!ik->access_flags().has_localvariable_table()) {
+  if (!ik->has_localvariable_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 

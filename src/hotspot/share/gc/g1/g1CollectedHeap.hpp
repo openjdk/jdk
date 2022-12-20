@@ -40,8 +40,9 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -145,7 +146,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1SegmentedArrayFreeMemoryTask* _free_segmented_array_memory_task;
+  G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;
@@ -162,9 +163,9 @@ private:
   HeapRegionSet _humongous_set;
 
   // Young gen memory statistics before GC.
-  G1SegmentedArrayMemoryStats _young_gen_card_set_stats;
+  G1MonotonicArenaMemoryStats _young_gen_card_set_stats;
   // Collection set candidates memory statistics after GC.
-  G1SegmentedArrayMemoryStats _collection_set_candidates_card_set_stats;
+  G1MonotonicArenaMemoryStats _collection_set_candidates_card_set_stats;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
@@ -239,8 +240,8 @@ public:
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
   bool should_sample_collection_set_candidates() const;
-  void set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats);
-  void set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats);
+  void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
+  void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
 private:
 
@@ -787,6 +788,8 @@ private:
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
+  G1MonotonicArenaFreePool _card_set_freelist_pool;
+
 public:
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -912,6 +915,9 @@ public:
   G1Policy* policy() const { return _policy; }
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
+
+  const G1MonotonicArenaFreePool* card_set_freelist_pool() const { return &_card_set_freelist_pool; }
+  G1MonotonicArenaFreePool* card_set_freelist_pool() { return &_card_set_freelist_pool; }
 
   inline G1GCPhaseTimes* phase_times() const;
 

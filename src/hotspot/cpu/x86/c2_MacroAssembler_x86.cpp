@@ -138,8 +138,9 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
       Label* continuation = &dummy_continuation;
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
-        slow_path = &stub->slow_path();
+        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+        Compile::current()->output()->add_stub(stub);
+        slow_path = &stub->entry();
         continuation = &stub->continuation();
       }
       bs->nmethod_entry_barrier(this, slow_path, continuation);
@@ -149,16 +150,6 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
 #endif
   }
-}
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
-  jmp(stub->continuation(), false /* maybe_short */);
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 10;
 }
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
@@ -704,11 +695,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 #if INCLUDE_RTM_OPT
   } // use_rtm()
 #endif
-  // DONE_LABEL is a hot target - we'd really like to place it at the
-  // start of cache line by padding with NOPs.
-  // See the AMD and Intel software optimization manuals for the
-  // most efficient "long" NOP encodings.
-  // Unfortunately none of our alignment mechanisms suffice.
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -770,7 +756,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
-  Label DONE_LABEL, Stacked, CheckSucc, COUNT, NO_COUNT;
+  Label DONE_LABEL, Stacked, COUNT, NO_COUNT;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -829,8 +815,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // each other and there's no need for an explicit barrier (fence).
   // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
 #ifndef _LP64
-  get_thread (boxReg);
-
   // Note that we could employ various encoding schemes to reduce
   // the number of loads below (currently 4) to just 2 or 3.
   // Refer to the comments in synchronizer.cpp.
@@ -840,30 +824,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jccb  (Assembler::notZero, DONE_LABEL);
   movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  jccb  (Assembler::notZero, CheckSucc);
+  jccb  (Assembler::notZero, DONE_LABEL);
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
   jmpb  (DONE_LABEL);
-
-  bind (Stacked);
-  // It's not inflated and it's not recursively stack-locked.
-  // It must be stack-locked.
-  // Try to reset the header to displaced header.
-  // The "box" value on the stack is stable, so we can reload
-  // and be assured we observe the same value as above.
-  movptr(tmpReg, Address(boxReg, 0));
-  lock();
-  cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-  // Intention fall-thru into DONE_LABEL
-
-  // DONE_LABEL is a hot target - we'd really like to place it at the
-  // start of cache line by padding with NOPs.
-  // See the AMD and Intel software optimization manuals for the
-  // most efficient "long" NOP encodings.
-  // Unfortunately none of our alignment mechanisms suffice.
-  bind (CheckSucc);
 #else // _LP64
   // It's inflated
-  Label LNotRecursive, LSuccess, LGoSlowPath;
+  Label CheckSucc, LNotRecursive, LSuccess, LGoSlowPath;
 
   cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
   jccb(Assembler::equal, LNotRecursive);
@@ -936,13 +902,14 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   testl (boxReg, 0);                      // set ICC.ZF=1 to indicate success
   jmpb  (DONE_LABEL);
 
+#endif
   if (!UseHeavyMonitors) {
     bind  (Stacked);
     movptr(tmpReg, Address (boxReg, 0));      // re-fetch
     lock();
     cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    // Intentional fall-thru into DONE_LABEL
   }
-#endif
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -2439,58 +2406,32 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
   }
 }
 
-void C2_MacroAssembler::vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
-                                   XMMRegister vtmp1, XMMRegister vtmp2, KRegister mask) {
-  switch(vlen) {
-    case 4:
-      assert(vtmp1 != xnoreg, "required.");
-      // Broadcast lower 32 bits to 128 bits before ptest
-      pshufd(vtmp1, src1, 0x0);
-      if (bt == BoolTest::overflow) {
-        assert(vtmp2 != xnoreg, "required.");
-        pshufd(vtmp2, src2, 0x0);
-      } else {
-        assert(vtmp2 == xnoreg, "required.");
-        vtmp2 = src2;
-      }
-      ptest(vtmp1, vtmp2);
-     break;
-    case 8:
-      assert(vtmp1 != xnoreg, "required.");
-      // Broadcast lower 64 bits to 128 bits before ptest
-      pshufd(vtmp1, src1, 0x4);
-      if (bt == BoolTest::overflow) {
-        assert(vtmp2 != xnoreg, "required.");
-        pshufd(vtmp2, src2, 0x4);
-      } else {
-        assert(vtmp2 == xnoreg, "required.");
-        vtmp2 = src2;
-      }
-      ptest(vtmp1, vtmp2);
-     break;
-    case 16:
-      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-      ptest(src1, src2);
-      break;
-    case 32:
-      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-      vptest(src1, src2, Assembler::AVX_256bit);
-      break;
-    case 64:
-      {
-        assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-        evpcmpeqb(mask, src1, src2, Assembler::AVX_512bit);
-        if (bt == BoolTest::ne) {
-          ktestql(mask, mask);
-        } else {
-          assert(bt == BoolTest::overflow, "required");
-          kortestql(mask, mask);
-        }
-      }
-      break;
-    default:
-      assert(false,"Should not reach here.");
-      break;
+void C2_MacroAssembler::vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes) {
+  assert(vlen_in_bytes <= 32, "");
+  int esize = type2aelembytes(bt);
+  if (vlen_in_bytes == 32) {
+    assert(vtmp == xnoreg, "required.");
+    if (esize >= 4) {
+      vtestps(src1, src2, AVX_256bit);
+    } else {
+      vptest(src1, src2, AVX_256bit);
+    }
+    return;
+  }
+  if (vlen_in_bytes < 16) {
+    // Duplicate the lower part to fill the whole register,
+    // Don't need to do so for src2
+    assert(vtmp != xnoreg, "required");
+    int shuffle_imm = (vlen_in_bytes == 4) ? 0x00 : 0x04;
+    pshufd(vtmp, src1, shuffle_imm);
+  } else {
+    assert(vtmp == xnoreg, "required");
+    vtmp = src1;
+  }
+  if (esize >= 4 && VM_Version::supports_avx()) {
+    vtestps(vtmp, src2, AVX_128bit);
+  } else {
+    ptest(vtmp, src2);
   }
 }
 
@@ -5279,7 +5220,7 @@ void C2_MacroAssembler::vector_reverse_bit(BasicType bt, XMMRegister dst, XMMReg
     // Get the reverse bit sequence of lower nibble of each byte.
     vmovdqu(xtmp1, ExternalAddress(StubRoutines::x86::vector_reverse_bit_lut()), vec_enc, noreg);
     vbroadcast(T_INT, xtmp2, 0x0F0F0F0F, rtmp, vec_enc);
-    vpandq(dst, xtmp2, src, vec_enc);
+    evpandq(dst, xtmp2, src, vec_enc);
     vpshufb(dst, xtmp1, dst, vec_enc);
     vpsllq(dst, dst, 4, vec_enc);
 
@@ -5290,7 +5231,7 @@ void C2_MacroAssembler::vector_reverse_bit(BasicType bt, XMMRegister dst, XMMReg
 
     // Perform logical OR operation b/w left shifted reverse bit sequence of lower nibble and
     // right shifted reverse bit sequence of upper nibble to obtain the reverse bit sequence of each byte.
-    vporq(xtmp2, dst, xtmp2, vec_enc);
+    evporq(xtmp2, dst, xtmp2, vec_enc);
     vector_reverse_byte(bt, dst, xtmp2, vec_enc);
 
   } else if(vec_enc == Assembler::AVX_512bit) {
@@ -5345,11 +5286,11 @@ void C2_MacroAssembler::vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, X
 void C2_MacroAssembler::vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
                                           XMMRegister xtmp1, Register rtmp, int vec_enc) {
   vbroadcast(T_INT, xtmp1, bitmask, rtmp, vec_enc);
-  vpandq(dst, xtmp1, src, vec_enc);
+  evpandq(dst, xtmp1, src, vec_enc);
   vpsllq(dst, dst, nbits, vec_enc);
   vpandn(xtmp1, xtmp1, src, vec_enc);
   vpsrlq(xtmp1, xtmp1, nbits, vec_enc);
-  vporq(dst, dst, xtmp1, vec_enc);
+  evporq(dst, dst, xtmp1, vec_enc);
 }
 
 void C2_MacroAssembler::vector_reverse_byte64(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,

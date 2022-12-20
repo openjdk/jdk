@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -32,6 +31,7 @@
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -51,7 +51,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-
 
 // put OS-includes here
 # include <sys/types.h>
@@ -279,10 +278,6 @@ int os::print_nth_register_info_max_index() {
 }
 
 void os::setup_fpu() {
-}
-
-bool os::supports_sse() {
-  return true;
 }
 
 #ifndef PRODUCT

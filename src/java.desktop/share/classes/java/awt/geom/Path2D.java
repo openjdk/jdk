@@ -69,6 +69,7 @@ import sun.awt.geom.Curve;
  *
  * @author Jim Graham
  * @since 1.6
+ * @sealedGraph
  */
 public abstract sealed class Path2D implements Shape, Cloneable
     permits Path2D.Double,

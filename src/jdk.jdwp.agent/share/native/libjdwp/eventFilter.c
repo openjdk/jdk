@@ -397,7 +397,7 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
      * Suppress most events if they happen in debug threads
      */
     if ((evinfo->ei != EI_CLASS_PREPARE) &&
-        (evinfo->ei != EI_GC_FINISH) &&
+        (evinfo->ei != EI_CLASS_UNLOAD) &&
         (evinfo->ei != EI_CLASS_LOAD) &&
         threadControl_isDebugThread(thread)) {
         return JNI_FALSE;
@@ -749,7 +749,7 @@ eventFilter_setThreadOnlyFilter(HandlerNode *node, jint index,
     if (index >= FILTER_COUNT(node)) {
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }
-    if (NODE_EI(node) == EI_GC_FINISH) {
+    if (NODE_EI(node) == EI_CLASS_UNLOAD) {
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }
 
@@ -821,7 +821,7 @@ eventFilter_setClassOnlyFilter(HandlerNode *node, jint index,
         return AGENT_ERROR_ILLEGAL_ARGUMENT;
     }
     if (
-        (NODE_EI(node) == EI_GC_FINISH) ||
+        (NODE_EI(node) == EI_CLASS_UNLOAD) ||
         (NODE_EI(node) == EI_THREAD_START) ||
         (NODE_EI(node) == EI_THREAD_END)) {
 
@@ -1265,7 +1265,7 @@ enableEvents(HandlerNode *node)
         case EI_THREAD_END:
         case EI_VM_INIT:
         case EI_VM_DEATH:
-        case EI_GC_FINISH:
+        case EI_CLASS_UNLOAD:
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
             return error;
@@ -1325,7 +1325,7 @@ disableEvents(HandlerNode *node)
         case EI_THREAD_END:
         case EI_VM_INIT:
         case EI_VM_DEATH:
-        case EI_GC_FINISH:
+        case EI_CLASS_UNLOAD:
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
             return error;

@@ -24,6 +24,11 @@
 #
 
 ###############################################################################
+# It is recommended to use exactly this version of pandoc, especially for
+# re-generating checked in html files
+RECOMMENDED_PANDOC_VERSION=2.19.2
+
+###############################################################################
 # Setup the most fundamental tools that relies on not much else to set up,
 # but is used by much of the early bootstrap code.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
@@ -426,22 +431,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 [
   UTIL_LOOKUP_PROGS(PANDOC, pandoc)
 
-  PANDOC_MARKDOWN_FLAG="markdown"
-  if test -n "$PANDOC"; then
-    AC_MSG_CHECKING(if the pandoc smart extension needs to be disabled for markdown)
+  if test "x$PANDOC" != x; then
+    AC_MSG_CHECKING([for pandoc version])
+    PANDOC_VERSION=`$PANDOC --version 2>&1 | $HEAD -1 | $CUT -d " " -f 2`
+    AC_MSG_RESULT([$PANDOC_VERSION])
+
+    if test "x$PANDOC_VERSION" != x$RECOMMENDED_PANDOC_VERSION; then
+      AC_MSG_WARN([pandoc is version $PANDOC_VERSION, not the recommended version $RECOMMENDED_PANDOC_VERSION])
+    fi
+
+    PANDOC_MARKDOWN_FLAG="markdown"
+    AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
     if $PANDOC --list-extensions | $GREP -q '\+smart'; then
       AC_MSG_RESULT([yes])
       PANDOC_MARKDOWN_FLAG="markdown-smart"
     else
       AC_MSG_RESULT([no])
     fi
-  fi
 
-  if test -n "$PANDOC"; then
     ENABLE_PANDOC="true"
   else
     ENABLE_PANDOC="false"
   fi
+
   AC_SUBST(ENABLE_PANDOC)
   AC_SUBST(PANDOC_MARKDOWN_FLAG)
 ])

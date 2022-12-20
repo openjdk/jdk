@@ -24,7 +24,6 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,6 +31,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_ppc.hpp"
 #include "os_aix.hpp"

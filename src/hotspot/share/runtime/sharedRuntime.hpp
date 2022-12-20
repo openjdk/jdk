@@ -272,8 +272,6 @@ class SharedRuntime: AllStatic {
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
 
-  static oop retrieve_receiver(Symbol* sig, frame caller);
-
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
@@ -556,26 +554,20 @@ class SharedRuntime: AllStatic {
   // Statistics code
   // stats for "normal" compiled calls (non-interface)
   static int64_t _nof_normal_calls;               // total # of calls
-  static int64_t _nof_optimized_calls;            // total # of statically-bound calls
   static int64_t _nof_inlined_calls;              // total # of inlined normal calls
   static int64_t _nof_static_calls;               // total # of calls to static methods or super methods (invokespecial)
   static int64_t _nof_inlined_static_calls;       // total # of inlined static calls
   // stats for compiled interface calls
   static int64_t _nof_interface_calls;            // total # of compiled calls
-  static int64_t _nof_optimized_interface_calls;  // total # of statically-bound interface calls
   static int64_t _nof_inlined_interface_calls;    // total # of inlined interface calls
-  static int64_t _nof_megamorphic_interface_calls;// total # of megamorphic interface calls
 
  public: // for compiler
   static address nof_normal_calls_addr()                { return (address)&_nof_normal_calls; }
-  static address nof_optimized_calls_addr()             { return (address)&_nof_optimized_calls; }
   static address nof_inlined_calls_addr()               { return (address)&_nof_inlined_calls; }
   static address nof_static_calls_addr()                { return (address)&_nof_static_calls; }
   static address nof_inlined_static_calls_addr()        { return (address)&_nof_inlined_static_calls; }
   static address nof_interface_calls_addr()             { return (address)&_nof_interface_calls; }
-  static address nof_optimized_interface_calls_addr()   { return (address)&_nof_optimized_interface_calls; }
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
-  static address nof_megamorphic_interface_calls_addr() { return (address)&_nof_megamorphic_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
   static void print_statistics();
   static void print_ic_miss_histogram();

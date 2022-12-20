@@ -181,10 +181,6 @@ void G1FullCollector::prepare_collection() {
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
-    // Need cleared claim bits for the mark phase.
-    ClassLoaderDataGraph::clear_claimed_marks();
-  } else {
-    ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
   }
 
   _heap->gc_prologue(true);
@@ -227,7 +223,7 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
-  // Need cleared claim bits for the next concurrent marking.
+  // Need completely cleared claim bits for the next concurrent marking or full gc.
   ClassLoaderDataGraph::clear_claimed_marks();
 
   // Prepare the bitmap for the next (potentially concurrent) marking.

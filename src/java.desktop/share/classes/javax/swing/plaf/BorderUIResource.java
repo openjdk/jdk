@@ -172,6 +172,8 @@ public class BorderUIResource implements Border, UIResource, Serializable
         /**
          * Constructs an {@code EmptyBorderUIResource}.
          * @param insets the insets of the border
+         * @throws NullPointerException if the spcecified {@code insets}
+         *         is {@code null}
          */
         @ConstructorProperties({"borderInsets"})
         public EmptyBorderUIResource(Insets insets) {
