@@ -120,12 +120,7 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-# Turn off all warnings for debug_mem.c This is needed because the specific warning
-# about initializing a declared 'extern' cannot be turned off individually. Only
-# applies to debug builds. This limitation in gcc is tracked in
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=45977
 ifeq ($(TOOLCHAIN_TYPE), gcc)
-  BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
   # This option improves performance of MaskFill in Java2D by 20% for some gcc
   LIBAWT_CFLAGS += -fgcse-after-reload
 endif
@@ -149,7 +144,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
     DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare, \
     DISABLED_WARNINGS_clang_awt_parseImage.c := sign-compare, \
-    DISABLED_WARNINGS_clang_debug_mem.c := extern-initializer format-nonliteral, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \

@@ -68,10 +68,10 @@ typedef struct MemoryListLink {
 /**************************************************
  * Global Data structures
  */
-static DMemState                DMemGlobalState;
-extern const DMemState *        DMemStatePtr = &DMemGlobalState;
-static MemoryListLink           MemoryList = {NULL,NULL,FALSE};
-static dmutex_t                 DMemMutex = NULL;
+static DMemState         DMemGlobalState;
+const DMemState *        DMemStatePtr = &DMemGlobalState;
+static MemoryListLink    MemoryList = {NULL,NULL,FALSE};
+static dmutex_t          DMemMutex = NULL;
 
 /**************************************************/
 
@@ -271,10 +271,10 @@ Exit:
 }
 
 static void DMem_DumpHeader(MemoryBlockHeader * header) {
-    char        report[FILENAME_MAX+MAX_DECIMAL_DIGITS*3+1];
-    static const char * reportFormat =
+    char        report[FILENAME_MAX+MAX_DECIMAL_DIGITS*3+42];
+    static const char * const reportFormat =
         "file:  %s, line %d\n"
-        "size:  %d bytes\n"
+        "size:  %zd bytes\n"
         "order: %d\n"
         "-------";
 
