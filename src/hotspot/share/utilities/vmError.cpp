@@ -1051,7 +1051,8 @@ const char* break_on_reenterant_entry_reason = "";
     os::print_context(st, _context);
     st->cr();
 
-  REENTRANT_STEP_IF("printing register info", _verbose && _context && _thread && Universe::is_fully_initialized())
+  REENTRANT_STEP_IF("printing register info",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
     os::print_register_info_header(st, _context);
 
     REENTRANT_LOOP_START(os::print_nth_register_info_max_index())
@@ -1067,7 +1068,8 @@ const char* break_on_reenterant_entry_reason = "";
     os::print_tos_pc(st, _context);
     st->cr();
 
-  REENTRANT_STEP_IF("inspecting top of stack", _verbose && _context && _thread && Universe::is_fully_initialized())
+  REENTRANT_STEP_IF("inspecting top of stack",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
     st->print_cr("Stack slot to memory mapping:");
 
     REENTRANT_LOOP_START(8)
