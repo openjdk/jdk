@@ -279,18 +279,28 @@ public class ResponseSubscribers {
             subscription.request(1);
         }
 
+        // Arbitrary value chosen to tolerate short writes, while avoiding
+        // potential infinite busy loop.
+        private static final int MAX_WRITE_RETRIES = 10;
+
         @Override
         public void onNext(List<ByteBuffer> items) {
             try {
                 long expectedSize = Utils.remaining(items);
                 long bytesWritten = 0;
                 ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
+                int retries = 0;
                 while (bytesWritten < expectedSize) {
                     long n = out.write(buffers);
                     if (n <= 0) {
-                        throw new IOException("zero bytes written");
+                        retries++;
+                        if (retries > MAX_WRITE_RETRIES) {
+                            throw new IOException("zero bytes written");
+                        }
+                    } else {
+                        retries = 0;
+                        bytesWritten = Math.addExact(bytesWritten, n);
                     }
-                    bytesWritten = Math.addExact(bytesWritten, n);
                 }
             } catch (Exception ex) {
                 close();
