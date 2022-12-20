@@ -1024,14 +1024,9 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   }
 
   auto rsize = [&]() {
-    BasicType rtype = T_ILLEGAL;
-    int sz = 0;
-
-    rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
-    if (rtype < T_CONFLICT)
-      sz = type2size[rtype];
-
-    return sz;
+    assert(code != Bytecodes::_illegal, "code is illegal!");
+    BasicType rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
+    return (rtype < T_CONFLICT) ? type2size[rtype] : 0;
   };
 
   switch (code) {
