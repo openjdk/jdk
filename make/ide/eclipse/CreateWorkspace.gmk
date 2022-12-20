@@ -29,13 +29,15 @@ include $(SPEC)
 include MakeBase.gmk
 include Modules.gmk
 
+JVM_VARIANT := $(JVM_VARIANT_MAIN)
+include hotspot/HotspotCommon.gmk
+
 IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
 
 CLASSPATH_FILE := $(IDE_OUTPUTDIR)/.classpath
 WORKSPACE_FILE := $(IDE_OUTPUTDIR)/.project
 NATIVE_FILE := $(IDE_OUTPUTDIR)/.cproject
 LANGUAGE_SETTINGS := $(IDE_OUTPUTDIR)/.settings/language.settings.xml
-ANT_BUILDFILE := $(IDE_OUTPUTDIR)/build.xml
 
 # FixPath already removes $(FIXPATH) automatically, but if we rely on FixPath
 # to do it for us dir won't be able to handle the converted path (if on Windows).
@@ -76,6 +78,10 @@ FindModuleNativeDirs = \
       $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native \
       $(TOPDIR)/src/$(strip $1)/share/native))
 
+# Taken from JdkNativeCompilation.gmk
+FindJavaHeaderDir = \
+  $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
+
 JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
     $(patsubst $(TOPDIR)/%,%,$(filter-out $(OUTPUTDIR)%, \
     $(call FindModuleSrcDirs, $(module))))))
@@ -111,13 +117,6 @@ EmitMatchingMakeTarget = \
     $(call AppendFile,                <runAllBuilders>true</runAllBuilders>, $(NATIVE_FILE)) \
     $(call AppendFile,            </target>, $(NATIVE_FILE))
 
-# Similar reasoning to EmitMatchingMakeTarget
-EmitMatchingAntTarget = \
-    $(call AppendFile,    <target name="$(strip $(1))">, $(ANT_BUILDFILE)) \
-    $(call AppendFile,        <call-make args = "$(strip $(1))"/>, $(ANT_BUILDFILE)) \
-    $(call AppendFile,    </target>, $(ANT_BUILDFILE)) \
-    $(call EmitEmptyLine, $(ANT_BUILDFILE))
-
 ################################################################################
 # Create an Eclipse Workspace with the specified nature
 #
@@ -144,7 +143,7 @@ define SetupEclipseWorkspaceBody
   #   endif
   # endif
 
-  $$(shell mkdir -p $(IDE_OUTPUTDIR))
+  $$(call MakeDir, $(IDE_OUTPUTDIR))
 
   # Start with the Workspace file first
   $$(call WriteFile,<?xml version="1.0" encoding="UTF-8"?>, $(WORKSPACE_FILE))
@@ -185,38 +184,6 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,</classpath>, $(CLASSPATH_FILE))
 
     $$(call AppendFile,        <nature>org.eclipse.jdt.core.javanature</nature>, $(WORKSPACE_FILE))
-
-    $$(call WriteFile,<project name="Java">, $(ANT_BUILDFILE))
-
-    $$(call EmitEmptyLine, $(ANT_BUILDFILE))
-    $$(call AppendFile,    <macrodef name="call-make">, $(ANT_BUILDFILE))
-    $$(call AppendFile,        <attribute name="args"/>, $(ANT_BUILDFILE))
-    $$(call AppendFile,        <sequential>, $(ANT_BUILDFILE))
-    $$(call AppendFile,            <exec executable="$(MAKE_EXE)" dir="$$(call FixPath, $(TOPDIR))" failonerror="true">, $(ANT_BUILDFILE))
-    $$(call AppendFile,                <arg line="@{args}"/>, $(ANT_BUILDFILE))
-    $$(call AppendFile,            </exec>, $(ANT_BUILDFILE))
-    $$(call AppendFile,        </sequential>, $(ANT_BUILDFILE))
-    $$(call AppendFile,    </macrodef>, $(ANT_BUILDFILE))
-    $$(call EmitEmptyLine, $(ANT_BUILDFILE))
-
-    # For now just expose the same targets we do with the regular make system
-    $$(call EmitMatchingAntTarget, update-build-docs)
-    $$(call EmitMatchingAntTarget, docs)
-    $$(call EmitMatchingAntTarget, gensrc)
-    $$(call EmitMatchingAntTarget, gendata)
-    $$(call EmitMatchingAntTarget, copy)
-    $$(call EmitMatchingAntTarget, java)
-    $$(call EmitMatchingAntTarget, launchers)
-    $$(call EmitMatchingAntTarget, libs)
-    $$(call EmitMatchingAntTarget, hotspot)
-    $$(call EmitMatchingAntTarget, jdk)
-    $$(call EmitMatchingAntTarget, product-images)
-    $$(call EmitMatchingAntTarget, bootcycle-images)
-    $$(call EmitMatchingAntTarget, all-images)
-    $$(call EmitMatchingAntTarget, test-image)
-    $$(call EmitMatchingAntTarget, clean)
-
-    $$(call AppendFile,</project>, $(ANT_BUILDFILE))
 
   endif
 
@@ -270,12 +237,6 @@ define SetupEclipseWorkspaceBody
     # This is always emitted, no matter which of the 3 natures were selected
     $$(call EmitNativeDir, src/hotspot)
 
-    ifeq ($$($1_NATURE), HOTSPOT)
-      # HotSpot still needs these source directories even if indexing for only it is requested
-      $$(foreach src,$$(strip $$(patsubst $(TOPDIR)/%,%/include,$$(call FindModuleNativeDirs, java.base))),$$(call EmitNativeDir, $$(src)))
-      $$(call EmitNativeDir, src/java.base/share/native/libjimage)
-    endif
-
     ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
       $$(foreach src,$(NATIVE_DIRS),$$(call EmitNativeDir, $$(src)))
     endif
@@ -312,7 +273,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,    </storageModule>, $(NATIVE_FILE))
     $$(call AppendFile,</cproject>, $(NATIVE_FILE))
 
-    $$(shell mkdir -p $(IDE_OUTPUTDIR)/.settings)
+    $$(call MakeDir, $(IDE_OUTPUTDIR)/.settings)
 
     $$(call WriteFile,<?xml version="1.0" encoding="UTF-8" standalone="no"?>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,<project>, $(LANGUAGE_SETTINGS))
@@ -360,26 +321,67 @@ define SetupEclipseWorkspaceBody
 
     # Now for the tricky part: Setting up the proper environment and macros that were defined during configure...
     $$(call AppendFile,            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
     $$(call AppendFile,                <language id="org.eclipse.cdt.core.gcc">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                   <resource project-relative-path="">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                       <entry kind="macro" name="PRODUCT" value=""/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                       <entry kind="macro" name="_WINDOWS" value=""/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                   </resource>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,            </provider>, $(LANGUAGE_SETTINGS))
 
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
-    $$(call AppendFile,            <provider class="org.eclipse.cdt.core.language.settings.providers.LanguageSettingsGenericProvider" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider" name="CDT User Setting Entries" prefer-non-shared="true" store-entries-with-project="true">, $(LANGUAGE_SETTINGS))
+    $$(foreach module, $$(call FindAllModules), $$(foreach dirs, \
+      $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+      $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
+      $$(if $$(call FindJavaHeaderDir, $$(module)), $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS))) \
+      $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
     $$(call AppendFile,                <language id="org.eclipse.cdt.core.g++">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                    <resource project-relative-path="">, $(LANGUAGE_SETTINGS))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    # HotSpot first
+    $$(call AppendFile,                    <resource project-relative-path="src/hotspot">, $(LANGUAGE_SETTINGS))
+
+    # If only the Java Virtual Machine sources were requested, headers from other parts of
+    # the native source that it needs will not be available. Add them as include paths here
+    # instead.
+    ifeq ($$($1_NATURE), HOTSPOT)
+      $$(foreach src,$$(strip \
+        $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
+        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>, $(LANGUAGE_SETTINGS)))
+      $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(TOPDIR)/src/java.base/share/native/libjimage)"/>, $(LANGUAGE_SETTINGS))
+    endif
+
+    $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc)"/>, $(LANGUAGE_SETTINGS))
+
+    ifeq ($$(call check-jvm-feature, compiler2), true)
+      $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles)"/>, $(LANGUAGE_SETTINGS))
+    endif
+
     # $$(call AppendFile,                        <entry kind="macro" name="PRODUCT" value=""/>, $(LANGUAGE_SETTINGS))
     # $$(call AppendFile,                        <entry kind="macro" name="_WINDOWS" value=""/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
-    $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
+
+    $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
 
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    $$(foreach module, $$(call FindAllModules), $$(foreach dirs, \
+      $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+      $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
+      $$(if $$(call FindJavaHeaderDir, $$(module)), $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS))) \
+      $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    $$(call AppendFile,                </language>, $(LANGUAGE_SETTINGS))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,           </provider>, $(LANGUAGE_SETTINGS))
+
     $$(call AppendFile,        </extension>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,    </configuration>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,</project>, $(LANGUAGE_SETTINGS))
@@ -398,14 +400,6 @@ define SetupEclipseWorkspaceBody
 
   ifneq ($$(findstring $$($1_NATURE), JAVA FULL), )
     $$(foreach src,$(JAVA_DIRS),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
-  endif
-
-  ifeq ($$($1_NATURE), HOTSPOT)
-    # Workspace support for only the Java Virtual Machine was requested
-    # However, some headers from java.base are still needed by it, so if only the VM
-    # was requested, add a special case here to pull in all those headers
-    $$(foreach src,$$(strip $$(patsubst $(TOPDIR)/%,%/include,$$(call FindModuleNativeDirs, java.base))),$$(call EmitLinkedDirectory, $$(src),$(TOPDIR)/$$(src)))
-    $$(call EmitLinkedDirectory, src/java.base/share/native/libjimage,$(TOPDIR)/src/java.base/share/native/libjimage)
   endif
 
   ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE FULL), )

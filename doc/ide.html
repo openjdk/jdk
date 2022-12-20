@@ -148,15 +148,11 @@ Workspace by running:</p>
 way as you would with Eclipse CDT:</p>
 <p>Follow
 <code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and
-select the <code>ide\eclipse</code> directory in the build output
-folder. The Java Workspace comes with an automatically generated Ant
-buildfile to match the CDT's managed make targets, which you can invoke
-by dragging onto the Eclipse Ant view in the sidebar.</p>
-<p>A common bug with Eclipse is that running an Ant target will trigger
-the building of every single codebase it knows of. To avoid this pitfall
-and the headaches that come with it, head to:</p>
-<p><code>External Tools Configurations -&gt; Ant Build -&gt; &lt;build.xml&gt; -&gt; Build</code>
-and make sure the <code>Build before launch</code> option is
-unchecked.</p>
+select the <code>ide\eclipse</code> directory in the build output folder
+to import the newly created Java Workspace.</p>
+<p>As mentioned above for Eclipse CDT, you can create a combined Java
+and C/C++ Workspace which can conveniently switch between Java and C/C++
+natures during development by running:</p>
+<pre class="shell"><code>make eclipse-full-env</code></pre>
 </body>
 </html>
