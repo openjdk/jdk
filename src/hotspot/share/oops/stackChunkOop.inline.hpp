@@ -86,7 +86,18 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
-inline oop stackChunkOopDesc::cont() const                { return jdk_internal_vm_StackChunk::cont(as_oop()); }
+inline oop stackChunkOopDesc::cont() const                { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
+template<typename P>
+inline oop stackChunkOopDesc::cont() const                {
+  // The state of the cont oop is used by ZCollectedHeap::requires_barriers,
+  // to determine the age of the stackChunkOopDesc. For that to work, it is
+  // only the GC that is allowed to perform a load barrier on the oop.
+  // This function is used by non-GC code and therfore create a stack-local
+  // copy on the oop and perform the load barrier on that copy instead.
+  oop obj = jdk_internal_vm_StackChunk::cont_raw<P>(as_oop());
+  obj = (oop)NativeAccess<>::oop_load(&obj);
+  return obj;
+}
 inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
 inline void stackChunkOopDesc::set_cont_raw(oop value)    { jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
@@ -192,7 +203,7 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
   bool should_continue = true;
 
   if (f.is_stub()) {
-    RegisterMap full_map((JavaThread*)nullptr,
+    RegisterMap full_map(nullptr,
                          RegisterMap::UpdateMap::include,
                          RegisterMap::ProcessFrames::skip,
                          RegisterMap::WalkContinuation::include);

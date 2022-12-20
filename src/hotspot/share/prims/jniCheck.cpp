@@ -142,7 +142,7 @@ static const char * fatal_non_utf8_class_name2 = "\"";
 // When in VM state:
 static void ReportJNIWarning(JavaThread* thr, const char *msg) {
   tty->print_cr("WARNING in native method: %s", msg);
-  thr->print_stack();
+  thr->print_jni_stack();
 }
 
 // When in NATIVE state:
@@ -193,7 +193,7 @@ check_pending_exception(JavaThread* thr) {
     IN_VM(
       tty->print_cr("WARNING in native method: JNI call made without checking exceptions when required to from %s",
         thr->get_pending_jni_exception_check());
-      thr->print_stack();
+      thr->print_jni_stack();
     )
     thr->clear_pending_jni_exception_check(); // Just complain once
   }

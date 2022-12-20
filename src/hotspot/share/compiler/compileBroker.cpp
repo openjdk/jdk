@@ -932,7 +932,7 @@ void CompileBroker::init_compiler_threads() {
     // for JVMCI compiler which can create further ones on demand.
     JVMCI_ONLY(if (!UseJVMCICompiler || !UseDynamicNumberOfCompilerThreads || i == 0) {)
     // Create a name for our thread.
-    sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
     Handle thread_oop = create_thread_oop(name_buffer, CHECK);
     thread_handle = JNIHandles::make_global(thread_oop);
     JVMCI_ONLY(})
@@ -954,7 +954,7 @@ void CompileBroker::init_compiler_threads() {
 
   for (int i = 0; i < _c1_count; i++) {
     // Create a name for our thread.
-    sprintf(name_buffer, "C1 CompilerThread%d", i);
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "C1 CompilerThread%d", i);
     Handle thread_oop = create_thread_oop(name_buffer, CHECK);
     jobject thread_handle = JNIHandles::make_global(thread_oop);
     _compiler1_objects[i] = thread_handle;
@@ -1018,7 +1018,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         // transitions if we bind them to new JavaThreads.
         if (!THREAD->can_call_java()) break;
         char name_buffer[256];
-        sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
+        os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
         Handle thread_oop;
         {
           // We have to give up the lock temporarily for the Java calls.
@@ -1566,7 +1566,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 // CompileBroker::assign_compile_id_unlocked
 //
 // Public wrapper for assign_compile_id that acquires the needed locks
-uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci) {
+int CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci) {
   MutexLocker locker(thread, MethodCompileQueue_lock);
   return assign_compile_id(method, osr_bci);
 }
@@ -2109,7 +2109,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   }
 
   // Common flags.
-  uint compile_id = task->compile_id();
+  int compile_id = task->compile_id();
   int osr_bci = task->osr_bci();
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != NULL);
@@ -2432,7 +2432,7 @@ void CompileBroker::update_compile_perf_data(CompilerThread* thread, const metho
 void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task) {
   bool success = task->is_success();
   methodHandle method (thread, task->method());
-  uint compile_id = task->compile_id();
+  int compile_id = task->compile_id();
   bool is_osr = (task->osr_bci() != standard_entry_bci);
   const int comp_level = task->comp_level();
   CompilerCounters* counters = thread->counters();
@@ -2600,7 +2600,7 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
     char tier_name[256];
     for (int tier = CompLevel_simple; tier <= CompilationPolicy::highest_compile_level(); tier++) {
       CompilerStatistics* stats = &_stats_per_level[tier-1];
-      sprintf(tier_name, "Tier%d", tier);
+      os::snprintf_checked(tier_name, sizeof(tier_name), "Tier%d", tier);
       print_times(tier_name, stats);
     }
   }

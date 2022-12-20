@@ -173,14 +173,6 @@ class Space: public CHeapObj<mtGC> {
   // included in the iteration.
   virtual void object_iterate(ObjectClosure* blk) = 0;
 
-  // Create and return a new dirty card to oop closure. Can be
-  // overridden to return the appropriate type of closure
-  // depending on the type of space in which the closure will
-  // operate. ResourceArea allocated.
-  virtual DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                             CardTable::PrecisionStyle precision,
-                                             HeapWord* boundary);
-
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
   // some heaps may not pack objects densely; a chunk may either be an
@@ -474,10 +466,9 @@ class ContiguousSpace: public CompactibleSpace {
     set_top(compaction_top());
   }
 
-  // Override.
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
-                                     HeapWord* boundary) override;
+                                     HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
@@ -559,22 +550,25 @@ public:
   {}
 };
 
-// A ContigSpace that Supports an efficient "block_start" operation via
-// a BlockOffsetArray (whose BlockOffsetSharedArray may be shared with
-// other spaces.)  This is the abstract base class for old generation
-// (tenured) spaces.
 
 #if INCLUDE_SERIALGC
-class OffsetTableContigSpace: public ContiguousSpace {
+
+// Class TenuredSpace is used by TenuredGeneration; it supports an efficient
+// "block_start" operation via a BlockOffsetArray (whose BlockOffsetSharedArray
+// may be shared with other spaces.)
+
+class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
   BlockOffsetArrayContigSpace _offsets;
   Mutex _par_alloc_lock;
 
+  // Mark sweep support
+  size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
-                         MemRegion mr);
+  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+               MemRegion mr);
 
   void set_bottom(HeapWord* value) override;
   void set_end(HeapWord* value) override;
@@ -595,21 +589,6 @@ class OffsetTableContigSpace: public ContiguousSpace {
 
   // Debugging
   void verify() const override;
-};
-
-
-// Class TenuredSpace is used by TenuredGeneration
-
-class TenuredSpace: public OffsetTableContigSpace {
-  friend class VMStructs;
- protected:
-  // Mark sweep support
-  size_t allowed_dead_ratio() const override;
- public:
-  // Constructor
-  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
-               MemRegion mr) :
-    OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
 #endif //INCLUDE_SERIALGC
 

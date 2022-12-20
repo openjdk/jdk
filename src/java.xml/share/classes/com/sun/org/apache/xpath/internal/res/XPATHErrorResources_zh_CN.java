@@ -140,6 +140,7 @@ public class XPATHErrorResources_zh_CN extends ListResourceBundle
          "ER_EXPECTED_SINGLE_QUOTE";
   public static final String ER_EMPTY_EXPRESSION = "ER_EMPTY_EXPRESSION";
   public static final String ER_EXPECTED_BUT_FOUND = "ER_EXPECTED_BUT_FOUND";
+  public static final String ER_UNION_MUST_BE_NODESET = "ER_UNION_MUST_BE_NODESET";
   public static final String ER_INCORRECT_PROGRAMMER_ASSERTION =
          "ER_INCORRECT_PROGRAMMER_ASSERTION";
   public static final String ER_BOOLEAN_ARG_NO_LONGER_OPTIONAL =
@@ -203,9 +204,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "ER_FUNCTION_TOKEN_NOT_FOUND";
   public static final String ER_CANNOT_DEAL_XPATH_TYPE =
          "ER_CANNOT_DEAL_XPATH_TYPE";
-  public static final String ER_NODESET_NOT_MUTABLE = "ER_NODESET_NOT_MUTABLE";
-  public static final String ER_NODESETDTM_NOT_MUTABLE =
-         "ER_NODESETDTM_NOT_MUTABLE";
    /**  Variable not resolvable:   */
   public static final String ER_VAR_NOT_RESOLVABLE = "ER_VAR_NOT_RESOLVABLE";
    /** Null error handler  */
@@ -309,6 +307,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
   public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
+  public static final String ER_NO_XPATH_VARIABLE_RESOLVER = "ER_NO_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_NO_XPATH_FUNCTION_PROVIDER = "ER_NO_XPATH_FUNCTION_PROVIDER";
   public static final String ER_UNSUPPORTED_RETURN_TYPE = "ER_UNSUPPORTED_RETURN_TYPE";
   public static final String ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL = "ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL";
   public static final String ER_ARG_CANNOT_BE_NULL = "ER_ARG_CANNOT_BE_NULL";
@@ -326,6 +326,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
   public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
   public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
+  public static final String ER_XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";
+  public static final String ER_XPATH_OPERATOR_LIMIT = "XPATH_OPERATOR_LIMIT";
+
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
   public static final String WG_LOCALE_NAME_NOT_HANDLED =
@@ -457,6 +460,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_EXPECTED_BUT_FOUND,
      "\u9700\u8981{0}, \u4F46\u627E\u5230: {1}"},
 
+  { ER_UNION_MUST_BE_NODESET,
+     "\u8054\u5408\u7684\u64CD\u4F5C\u6570\u5FC5\u987B\u4E3A\u8282\u70B9\u96C6\u3002"},
+
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
       "\u7A0B\u5E8F\u5458\u65AD\u8A00\u9519\u8BEF! - {0}"},
 
@@ -570,12 +576,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_CANNOT_DEAL_XPATH_TYPE,
        "\u65E0\u6CD5\u5904\u7406 XPath \u7C7B\u578B: {0}"},
-
-  { ER_NODESET_NOT_MUTABLE,
-       "\u6B64 NodeSet \u4E0D\u53EF\u53D8"},
-
-  { ER_NODESETDTM_NOT_MUTABLE,
-       "\u6B64 NodeSetDTM \u4E0D\u53EF\u53D8"},
 
   { ER_VAR_NOT_RESOLVABLE,
         "\u65E0\u6CD5\u89E3\u6790\u53D8\u91CF: {0}"},
@@ -777,15 +777,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RESOLVE_VARIABLE_RETURNS_NULL,
        "\u53D8\u91CF{0}\u7684 resolveVariable \u8FD4\u56DE\u7A7A\u503C"},
 
+  { ER_NO_XPATH_VARIABLE_RESOLVER,
+       "\u6B63\u5728\u5C1D\u8BD5\u89E3\u6790\u53D8\u91CF {0}\uFF0C\u4F46\u672A\u8BBE\u7F6E\u53D8\u91CF\u89E3\u6790\u5668\u3002"},
+
+  { ER_NO_XPATH_FUNCTION_PROVIDER,
+       "\u6B63\u5728\u5C1D\u8BD5\u8C03\u7528\u6269\u5C55\u51FD\u6570 {0}\uFF0C\u4F46\u672A\u8BBE\u7F6E\u6269\u5C55\u63D0\u4F9B\u65B9\u3002"},
+
   /** Field ER_UNSUPPORTED_RETURN_TYPE                       */
 
   { ER_UNSUPPORTED_RETURN_TYPE,
        "\u4E0D\u652F\u6301\u8BE5\u8FD4\u56DE\u7C7B\u578B: {0}"},
-
-  /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
-
-  { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "\u6E90\u548C/\u6216\u8FD4\u56DE\u7C7B\u578B\u4E0D\u80FD\u4E3A\u7A7A\u503C"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
@@ -859,6 +860,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_GETTING_UNKNOWN_PROPERTY,
        "\u5C1D\u8BD5\u83B7\u53D6\u672A\u77E5\u5C5E\u6027 \"{0}\":{1}#getProperty({0})"},
+
+  { ER_XPATH_GROUP_LIMIT,
+      "JAXP0801001\uFF1A\u7F16\u8BD1\u5668\u9047\u5230\u5305\u542B ''{0}'' \u7EC4\u7684 XPath \u8868\u8FBE\u5F0F\uFF0C\u8BE5\u8868\u8FBE\u5F0F\u8D85\u8FC7\u4E86 ''{2}'' \u8BBE\u7F6E\u7684 ''{1}'' \u9650\u5236\u3002"},
+
+  { ER_XPATH_OPERATOR_LIMIT,
+      "JAXP0801002\uFF1A\u7F16\u8BD1\u5668\u9047\u5230\u5305\u542B ''{0}'' \u8FD0\u7B97\u7B26\u7684 XPath \u8868\u8FBE\u5F0F\uFF0C\u8BE5\u8868\u8FBE\u5F0F\u8D85\u8FC7\u4E86 ''{2}'' \u8BBE\u7F6E\u7684 ''{1}'' \u9650\u5236\u3002"},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 
