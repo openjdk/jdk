@@ -37,7 +37,7 @@ import jdk.internal.misc.Unsafe;
 
 public final class ByteOrder {
 
-    private String name;
+    private final String name;
 
     private ByteOrder(String name) {
         this.name = name;
