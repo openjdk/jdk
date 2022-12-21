@@ -995,6 +995,8 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
       if (dels < num_del) {
         ndel[dels] = rem_n;
       } else {
+        guarantee(dels < std::numeric_limits<int>::max(),
+                  "Growable array size is limited by a (signed) int, something is seriously bad if we reach this point, better exit");
         extra.append(rem_n);
       }
       ++dels;
