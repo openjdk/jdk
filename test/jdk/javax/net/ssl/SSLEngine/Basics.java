@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 import java.security.*;
 import java.io.*;
 import java.nio.*;
+import java.util.Arrays;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 
@@ -52,6 +53,9 @@ public class Basics {
     private static String trustFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
+
+    private static final String TLS13_CIPHER_SUITE = "TLS_AES_256_GCM_SHA384";
+    private static final String TLS13_PROTOCOL = "TLSv1.3";
 
     public static void main(String args[]) throws Exception {
 
@@ -77,34 +81,44 @@ public class Basics {
         System.out.println(ssle);
 
         String [] suites = ssle.getSupportedCipherSuites();
-        String secondSuite = suites[1];
-        String [] oneSuites = new String [] { secondSuite };
+        // sanity check that the ciphersuite we want to use is still supported
+        Arrays.stream(suites)
+                .filter(s -> s.equals(TLS13_CIPHER_SUITE))
+                .findFirst()
+                .orElseThrow((() ->
+                        new RuntimeException(TLS13_CIPHER_SUITE +
+                                " is not a supported ciphersuite.")));
 
         printStrings("Supported Ciphersuites", suites);
         printStrings("Enabled Ciphersuites", ssle.getEnabledCipherSuites());
-        ssle.setEnabledCipherSuites(oneSuites);
+        ssle.setEnabledCipherSuites(new String [] { TLS13_CIPHER_SUITE });
         printStrings("Set Ciphersuites", ssle.getEnabledCipherSuites());
 
         suites = ssle.getEnabledCipherSuites();
         if ((ssle.getEnabledCipherSuites().length != 1) ||
-                !(suites[0].equals(secondSuite))) {
+                !(suites[0].equals(TLS13_CIPHER_SUITE))) {
             throw new Exception("set ciphers not what was expected");
         }
 
         System.out.println();
 
         String [] protocols = ssle.getSupportedProtocols();
-        String secondProtocol = protocols[1];
-        String [] oneProtocols = new String [] { protocols[1] };
+        // sanity check that the protocol we want is still supported
+        Arrays.stream(protocols)
+                .filter(p -> p.equals(TLS13_PROTOCOL))
+                .findFirst()
+                .orElseThrow(() ->
+                        new RuntimeException(TLS13_PROTOCOL +
+                                " is not a supported TLS protocol."));
 
         printStrings("Supported Protocols", protocols);
         printStrings("Enabled Protocols", ssle.getEnabledProtocols());
-        ssle.setEnabledProtocols(oneProtocols);
+        ssle.setEnabledProtocols(new String[]{ TLS13_PROTOCOL });
         printStrings("Set Protocols", ssle.getEnabledProtocols());
 
         protocols = ssle.getEnabledProtocols();
         if ((ssle.getEnabledProtocols().length != 1) ||
-                !(protocols[0].equals(secondProtocol))) {
+                !(protocols[0].equals(TLS13_PROTOCOL))) {
             throw new Exception("set protocols not what was expected");
         }
 
@@ -177,11 +191,6 @@ public class Basics {
         // until received SSL/TLS application data.
         // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
-        //
-        //if (ssle.unwrap(smallBB, smallBB).getStatus() !=
-        //      Status.BUFFER_OVERFLOW) {
-        //    throw new Exception("unwrap should have overflowed");
-        //}
 
         SSLSession ssls = ssle.getSession();
 
@@ -199,11 +208,15 @@ public class Basics {
             throw new Exception("initial client hello needs unwrap");
         }
 
-        /* Checking for overflow wrap/unwrap() */
-
-        if (ssle.wrap(appBB, netBB).getStatus() !=
-                Status.BUFFER_OVERFLOW) {
-            throw new Exception("unwrap should have overflowed");
+        /*
+         * After the first call to wrap(), the handshake status is
+         * NEED_UNWRAP and we need to receive data before doing anymore
+         * handshaking.
+         */
+        SSLEngineResult result = ssle.wrap(appBB, netBB);
+        if (result.getStatus() != Status.OK
+            && result.bytesConsumed() != 0 && result.bytesProduced() != 0) {
+            throw new Exception("wrap should have returned without doing anything");
         }
 
         ByteBuffer ro = appBB.asReadOnlyBuffer();
@@ -254,10 +267,17 @@ public class Basics {
 
         // junk inbound message
         try {
+            /*
+             * Exceptions are thrown when:
+             *    - the length field is correct but the data can't be decoded.
+             *    - the length field is larger than max allowed.
+             */
             ssle.unwrap(ByteBuffer.wrap(gobblydegook), appBB);
-            throw new Exception("Didn't catch the nasty SSLException");
-        } catch (SSLException e) {
-            System.out.println("caught the nasty SSLException: " + e);
+            throw new Exception("Expected SSLProtocolException was not thrown "
+                    + "for bad input");
+        } catch (SSLProtocolException e) {
+            System.out.println("caught the SSLProtocolException for bad decoding: "
+                    + e);
         }
 
         System.out.println("Test PASSED");
@@ -278,8 +298,8 @@ public class Basics {
         (byte) 0x00 };
 
     static byte [] gobblydegook = new byte [] {
-        // "HELLO HELLO"
-        (byte) 0x48, (byte) 0x45, (byte) 0x4C, (byte) 0x4C, (byte) 0x20,
+        // bad data but correct record length to cause decryption error
+        (byte) 0x48, (byte) 0x45, (byte) 0x4C, (byte) 0x00, (byte) 0x04,
         (byte) 0x48, (byte) 0x45, (byte) 0x4C, (byte) 0x4C };
 
     static void printStrings(String label, String [] strs) {
