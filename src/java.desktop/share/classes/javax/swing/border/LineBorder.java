@@ -148,8 +148,8 @@ public class LineBorder extends AbstractBorder
 
     private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
                                      int w, int h, double scale, int stroke) {
-        if ((this.thickness > 0)) {
-            int offs =  this.thickness * (int) scale;
+        if (this.thickness > 0) {
+            int offs = this.thickness * (int) scale;
             Color oldColor = g.getColor();
             g.setColor(this.lineColor);
 
