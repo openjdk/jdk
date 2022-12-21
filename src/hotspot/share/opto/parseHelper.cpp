@@ -446,7 +446,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 
   Compile* C = kit->C;
   // clean up map/jvms before we clone a new AllocateNode.
-  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), map->control(), alloc->memory(), alloc->i_o(),
+  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), map->control(), alloc->memory(), map->i_o(),
                                            alloc->in(AllocateNode::AllocSize),
                                            alloc->in(AllocateNode::KlassNode),
                                            alloc->in(AllocateNode::InitialTest));
