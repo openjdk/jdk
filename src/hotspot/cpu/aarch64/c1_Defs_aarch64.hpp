@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,6 +76,10 @@ enum {
 // AArch64 where floats and doubles are stored in their native form.
 enum {
   pd_float_saved_as_double = false
+};
+
+enum {
+  pd_two_operand_lir_form = false
 };
 
 #endif // CPU_AARCH64_C1_DEFS_AARCH64_HPP
