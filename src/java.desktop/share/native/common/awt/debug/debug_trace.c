@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,28 +301,6 @@ void DTrace_SetOutputCallback(DTRACE_OUTPUT_CALLBACK pfn) {
 static void JNICALL DTrace_PrintStdErr(const char *msg) {
     fprintf(stderr, "%s", msg);
     fflush(stderr);
-}
-
-static void DTrace_JavaPrint(const char * msg) {
-#if defined(DEBUG)
-    DMutex_Enter(DTraceMutex);
-    DTrace_ClientPrint(msg);
-    DMutex_Exit(DTraceMutex);
-#else
-    DTrace_PrintStdErr(msg);
-#endif
-}
-
-static void DTrace_JavaPrintln(const char * msg) {
-#if defined(DEBUG)
-    DMutex_Enter(DTraceMutex);
-    DTrace_ClientPrint(msg);
-    DTrace_ClientPrint("\n");
-    DMutex_Exit(DTraceMutex);
-#else
-    DTrace_PrintStdErr(msg);
-    DTrace_PrintStdErr("\n");
-#endif
 }
 
 /*********************************************************************************
