@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,38 +21,21 @@
  * questions.
  */
 
-package jdk.test.lib.artifacts;
-
-/**
- * Thrown by the ArtifactResolver when failing to resolve an Artifact.
+/*
+ * @test
+ * @bug 8296412
+ * @compile TestInfiniteLoopWithUnmergedBackedges.jasm
+ * @summary Infinite loops may not have the backedges merged, before we call IdealLoopTree::check_safepts
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-LoopUnswitching
+ *      -XX:CompileCommand=compileonly,TestInfiniteLoopWithUnmergedBackedges::test*
+ *      TestInfiniteLoopWithUnmergedBackedgesMain
  */
-public class ArtifactResolverException extends Exception {
 
-    public ArtifactResolverException(String message) {
-        super(message);
-    }
-
-    public ArtifactResolverException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public String toString() {
-        Throwable root = getRootCause();
-        if (root != null) {
-            return super.toString() + ": " + root.toString();
-        } else {
-            return super.toString();
-        }
-    }
-
-    public Throwable getRootCause() {
-        Throwable root = getCause();
-        if (root == null) {
-            return null;
-        }
-        while (root.getCause() != null && root.getCause() != root) {
-            root = root.getCause();
-        }
-        return root;
+public class TestInfiniteLoopWithUnmergedBackedgesMain {
+    public static void main (String[] args) {
+        TestInfiniteLoopWithUnmergedBackedges.test_001(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_002(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_003(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_004(1, 0, 0, 0, 0);
     }
 }
