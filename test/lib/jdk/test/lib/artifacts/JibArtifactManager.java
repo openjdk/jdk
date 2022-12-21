@@ -114,26 +114,23 @@ public class JibArtifactManager implements ArtifactManager {
     @Override
     public Path resolve(Artifact artifact) throws ArtifactResolverException {
         HashMap<String, Object> artifactDescription = new HashMap<>();
-        artifactDescription.put("module", artifact.name());
-        artifactDescription.put("organization", artifact.organization());
-        artifactDescription.put("ext", artifact.extension());
-        artifactDescription.put("revision", artifact.revision());
-
-        artifactDescription.put("server", artifact.server());
-        artifactDescription.put("product", artifact.product());
-        artifactDescription.put("version", artifact.version());
-        artifactDescription.put("build_number", artifact.build_number());
-        artifactDescription.put("file", artifact.file());
+        if (artifact.name().length() > 0 ) {
+            artifactDescription.put("module", artifact.name());
+            artifactDescription.put("organization", artifact.organization());
+            artifactDescription.put("ext", artifact.extension());
+            artifactDescription.put("revision", artifact.revision());
+        } else {
+            artifactDescription.put("server", artifact.server());
+            artifactDescription.put("product", artifact.product());
+            artifactDescription.put("version", artifact.version());
+            artifactDescription.put("build_number", artifact.build_number());
+            artifactDescription.put("file", artifact.file());
+        }
 
         if (artifact.classifier().length() > 0) {
             artifactDescription.put("classifier", artifact.classifier());
         }
-        if (name.length() > 0) {
-            return resolve(artifact.name(), artifactDescription, artifact.unpack());
-        } else {
-            return "--server-type " + artifact.server() + "--product " + artifact.product() + "--product-version " + artifact.version() +
-                "--build-number " + artifact.build_number() + "--file " + artifact.file() + "--build-type PROMOTED";
-        }
+        return resolve(artifact.name(), artifactDescription, artifact.unpack());
 
     }
 

@@ -53,7 +53,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // If you're unning this test using something like
     // "make test TEST=test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java",
     // the test.boot.jdk property is passed by make/RunTests.gmk
-    private static final String BOOT_JDK = System.getProperty("test.boot.jdk", null);
+    //private static final String BOOT_JDK = System.getProperty("test.boot.jdk", null);
+    private static final String BOOT_JDK = fetchBootJDK(LINUX_X64.class);
 
     private static final String USER_DIR = System.getProperty("user.dir", ".");
     private static final String FS = System.getProperty("file.separator", "/");
@@ -155,7 +156,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         String path = null;
         try {
             path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + "eee";
+                    .findAny().get().getValue() + "/jdk-19/";
             System.out.println("path: " + path);
         } catch (ArtifactResolverException e) {
             Throwable cause = e.getCause();
@@ -179,7 +180,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
             product = "jdk",
             version = "19",
             build_number = "36",
-            file = "bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz")
+            file = "bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz",
+            unpack = true)
     private static class LINUX_X64 { }
 
     /*@Artifact(
