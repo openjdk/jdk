@@ -409,9 +409,9 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 
   mv(c_rarg0, reg); // c_rarg0 : x10
   {
-    // The length of the instruction sequence emitted should be independent
-    // of the value of the local char buffer address so that the size of mach
-    // nodes for scratch emit and normal emit matches.
+    // The length of the instruction sequence emitted should not depend
+    // on the address of the char buffer so that the size of mach nodes for
+    // scratch emit and normal emit matches.
     IncompressibleRegion ir(this);  // Fixed length
     movptr(t0, (address) b);
   }
@@ -454,9 +454,9 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   }
 
   {
-    // The length of the instruction sequence emitted should be independent
-    // of the value of the local char buffer address so that the size of mach
-    // nodes for scratch emit and normal emit matches.
+    // The length of the instruction sequence emitted should not depend
+    // on the address of the char buffer so that the size of mach nodes for
+    // scratch emit and normal emit matches.
     IncompressibleRegion ir(this);  // Fixed length
     movptr(t0, (address) b);
   }
