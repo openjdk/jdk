@@ -175,9 +175,9 @@ public abstract sealed class MemorySessionImpl
         return owner;
     }
 
-    public static boolean sameOwnerThread(SegmentScope session1, SegmentScope session2) {
-        return ((MemorySessionImpl) session1).ownerThread() ==
-                ((MemorySessionImpl) session2).ownerThread();
+    public static boolean sameOwnerThread(SegmentScope scope1, SegmentScope scope2) {
+        return ((MemorySessionImpl) scope1).ownerThread() ==
+                ((MemorySessionImpl) scope2).ownerThread();
     }
 
     @Override

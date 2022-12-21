@@ -1758,6 +1758,14 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
   }
 }
 
+void JavaThread::print_active_stack_on(outputStream* st) {
+  if (is_vthread_mounted()) {
+    print_vthread_stack_on(st);
+  } else {
+    print_stack_on(st);
+  }
+}
+
 #if INCLUDE_JVMTI
 // Rebind JVMTI thread state from carrier to virtual or from virtual to carrier.
 JvmtiThreadState* JavaThread::rebind_to_jvmti_thread_state_of(oop thread_oop) {

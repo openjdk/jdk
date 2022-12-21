@@ -68,8 +68,8 @@ public final class Windowsx64Linker extends AbstractLinker {
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope session) {
-        return WinVaList.ofAddress(address, session);
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
+        return WinVaList.ofAddress(address, scope);
     }
 
     public static VaList emptyVaList() {

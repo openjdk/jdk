@@ -550,22 +550,25 @@ public:
   {}
 };
 
-// A ContigSpace that Supports an efficient "block_start" operation via
-// a BlockOffsetArray (whose BlockOffsetSharedArray may be shared with
-// other spaces.)  This is the abstract base class for old generation
-// (tenured) spaces.
 
 #if INCLUDE_SERIALGC
-class OffsetTableContigSpace: public ContiguousSpace {
+
+// Class TenuredSpace is used by TenuredGeneration; it supports an efficient
+// "block_start" operation via a BlockOffsetArray (whose BlockOffsetSharedArray
+// may be shared with other spaces.)
+
+class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
   BlockOffsetArrayContigSpace _offsets;
   Mutex _par_alloc_lock;
 
+  // Mark sweep support
+  size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
-                         MemRegion mr);
+  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+               MemRegion mr);
 
   void set_bottom(HeapWord* value) override;
   void set_end(HeapWord* value) override;
@@ -586,21 +589,6 @@ class OffsetTableContigSpace: public ContiguousSpace {
 
   // Debugging
   void verify() const override;
-};
-
-
-// Class TenuredSpace is used by TenuredGeneration
-
-class TenuredSpace: public OffsetTableContigSpace {
-  friend class VMStructs;
- protected:
-  // Mark sweep support
-  size_t allowed_dead_ratio() const override;
- public:
-  // Constructor
-  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
-               MemRegion mr) :
-    OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
 #endif //INCLUDE_SERIALGC
 
