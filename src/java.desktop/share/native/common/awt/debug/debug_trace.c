@@ -25,9 +25,9 @@
 
 #include "debug_util.h"
 
+#if defined(DEBUG)
 static void JNICALL DTrace_PrintStdErr(const char *msg);
 
-#if defined(DEBUG)
 enum {
     MAX_TRACES = 200,           /* max number of defined trace points allowed */
     MAX_TRACE_BUFFER = 512,     /* maximum size of a given trace output */
@@ -292,8 +292,6 @@ void DTrace_SetOutputCallback(DTRACE_OUTPUT_CALLBACK pfn) {
     DMutex_Exit(DTraceMutex);
 }
 
-#endif /* DEBUG */
-
 /**********************************************************************************
  * Support for Java tracing in release or debug mode builds
  */
@@ -302,6 +300,7 @@ static void JNICALL DTrace_PrintStdErr(const char *msg) {
     fprintf(stderr, "%s", msg);
     fflush(stderr);
 }
+#endif /* DEBUG */
 
 /*********************************************************************************
  * Native method implementations. Java print trace calls are functional in
