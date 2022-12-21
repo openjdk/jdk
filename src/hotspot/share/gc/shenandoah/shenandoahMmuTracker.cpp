@@ -28,9 +28,9 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "logging/log.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "logging/log.hpp"
 
 
 class ShenandoahMmuTask : public PeriodicTask {
@@ -94,12 +94,17 @@ void ShenandoahMmuTracker::report() {
   // This is only called by the periodic thread.
   double process_time_s = process_time_seconds();
   double elapsed_process_time_s = process_time_s - _process_reference_time_s;
+  if (elapsed_process_time_s <= 0.01) {
+    // No cpu time for this interval?
+    return;
+  }
+
   _process_reference_time_s = process_time_s;
-  double verify_time_s = gc_thread_time_seconds();
-  double verify_elapsed = verify_time_s - _collector_reference_time_s;
-  _collector_reference_time_s = verify_time_s;
-  double verify_mmu = ((elapsed_process_time_s - verify_elapsed) / elapsed_process_time_s) * 100;
-  _mmu_average.add(verify_mmu);
+  double collector_time_s = gc_thread_time_seconds();
+  double elapsed_collector_time_s = collector_time_s - _collector_reference_time_s;
+  _collector_reference_time_s = collector_time_s;
+  double minimum_mutator_utilization = ((elapsed_process_time_s - elapsed_collector_time_s) / elapsed_process_time_s) * 100;
+  _mmu_average.add(minimum_mutator_utilization);
   log_info(gc)("Average MMU = %.3f", _mmu_average.davg());
 }
 
