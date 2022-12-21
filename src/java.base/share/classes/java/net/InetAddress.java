@@ -1062,6 +1062,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
+            validate(host);
             InetAddress[] addrs;
             long comp = Blocker.begin();
             try {
@@ -1475,6 +1476,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             return ret;
         }
 
+        validate(host);
         boolean ipv6Expected = false;
         if (host.charAt(0) == '[') {
             // This is supposed to be an IPv6 literal
@@ -1872,5 +1874,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         pf.put("address", holder().getAddress());
         pf.put("family", holder().getFamily());
         s.writeFields();
+    }
+
+    private static void validate(String host) throws UnknownHostException {
+        if (host.indexOf(0) != -1) {
+            throw new UnknownHostException("NUL character not allowed in hostname");
+        }
     }
 }
