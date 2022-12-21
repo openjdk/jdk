@@ -457,6 +457,13 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 
   if (oop_type->isa_instptr()) {
     ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+#ifndef PRODUCT
+    if (Verbose) {
+      tty->print("ciInstanceKlass: ");
+      ik->print_name_on(tty);
+      tty->cr();
+    }
+#endif
 
     for (int i = 0; i < ik->nof_nonstatic_fields(); ++i) {
       Node* val = virt->_entries[i];
@@ -506,6 +513,13 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 
   EscapedState* escaped = new EscapedState(objx);
   _state.put(alloc, escaped);
+
+#ifndef PRODUCT
+  if (Verbose) {
+    tty->print("new object: ");
+    objx->dump();
+  }
+#endif
 
   // replace obj with objx
   replace_in_map(kit, obj, objx);
