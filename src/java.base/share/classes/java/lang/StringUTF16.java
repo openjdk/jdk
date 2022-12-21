@@ -412,11 +412,11 @@ final class StringUTF16 {
     }
 
     public static int hashCode(byte[] value) {
-        if (value.length == 0) {
-            return 0;
-        } else {
-            return ArraysSupport.vectorizedHashCode(value, ArraysSupport.UTF16);
-        }
+        return switch (value.length) {
+            case 0 -> 0;
+            case 2 -> getChar(value, 0);
+            default -> ArraysSupport.vectorizedHashCode(value, ArraysSupport.UTF16);
+        };
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {

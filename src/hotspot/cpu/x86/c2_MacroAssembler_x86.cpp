@@ -3417,7 +3417,6 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   subl(result, tmp2);
   arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
   addl(result, tmp3);
-  jmp(END);
   // }
   bind(END);
 
