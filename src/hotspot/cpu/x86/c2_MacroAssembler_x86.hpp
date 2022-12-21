@@ -304,7 +304,7 @@ public:
   void arrays_hashcode_elload(Register dst, Address src, BasicType eltype, bool is_string_hashcode);
   void arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype);
   void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
-  void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
+  void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype, bool is_string_hashcode);
 
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
@@ -322,6 +322,9 @@ public:
 
   void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
                             BasicType from_elem_bt, BasicType to_elem_bt);
+
+  void vector_signed_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                          BasicType from_elem_bt, BasicType to_elem_bt);
 
   void vector_cast_int_to_subword(BasicType to_elem_bt, XMMRegister dst, XMMRegister zero,
                                   XMMRegister xtmp, Register rscratch, int vec_enc);

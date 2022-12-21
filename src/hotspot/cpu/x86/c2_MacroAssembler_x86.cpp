@@ -3247,12 +3247,18 @@ void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, AddressLiteral 
   load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
 }
 
-void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype) {
+void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype, bool is_string_hashcode) {
   switch (eltype) {
   case T_BYTE:
-    vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_BYTE, T_INT);
+    if (is_string_hashcode) {
+      vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_BYTE, T_INT);
+    } else {
+      vector_signed_cast(dst, dst, Assembler::AVX_256bit, T_BYTE, T_INT);
+    }
     break;
   case T_SHORT:
+    vector_signed_cast(dst, dst, Assembler::AVX_256bit, T_SHORT, T_INT);
+    break;
   case T_CHAR:
     vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_SHORT, T_INT);
     break;
@@ -3301,8 +3307,6 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   const bool is_string_hashcode = hashMode == VectorizedHashCodeNode::LATIN1 || hashMode == VectorizedHashCodeNode::UTF16;
   const bool is_unsigned = is_string_hashcode || hashMode == VectorizedHashCodeNode::CHAR;
   const int elsize = arrays_hashcode_elsize(eltype);
-  // vector loops does not currently support short and signed byte arrays for now, need to figure out how to properly sign-extend when loading into vectors
-  const bool generate_vectorized_loop = is_unsigned || hashMode == VectorizedHashCodeNode::INT;
 
   // int result = 0|1;
   if (is_string_hashcode) {
@@ -3324,7 +3328,6 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
     shrl(cnt1, 1);
   }
 
-  if (generate_vectorized_loop) {
   cmpl(cnt1, 32);
   jcc(Assembler::less, SHORT_UNROLLED_BEGIN);
 
@@ -3360,7 +3363,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // vresult = vresult * vnext + ary1[index+8*idx:index+8*idx+7];
   for (int idx = 0; idx < 4; idx++) {
     vpmulld(vresult[idx], vresult[idx], vnext, Assembler::AVX_256bit);
-    arrays_hashcode_elvcast(vtmp[idx], eltype);
+    arrays_hashcode_elvcast(vtmp[idx], eltype, is_string_hashcode);
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
   }
   // index += 32;
@@ -3382,8 +3385,6 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
 
   lea(ary1, Address(ary1, bound, Address::times(elsize)));
   subl(cnt1, bound);
-
-  } // generate_vectorized_loop
 
   // } else if (cnt1 < 32) {
 
@@ -4900,6 +4901,33 @@ void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, i
     case T_INT:
       assert(to_elem_bt == T_LONG, "");
       vpmovzxdq(dst, src, vlen_enc);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::vector_signed_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                                           BasicType from_elem_bt, BasicType to_elem_bt) {
+  switch (from_elem_bt) {
+    case T_BYTE:
+      switch (to_elem_bt) {
+        case T_SHORT: vpmovsxbw(dst, src, vlen_enc); break;
+        case T_INT:   vpmovsxbd(dst, src, vlen_enc); break;
+        case T_LONG:  vpmovsxbq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_SHORT:
+      switch (to_elem_bt) {
+        case T_INT:  vpmovsxwd(dst, src, vlen_enc); break;
+        case T_LONG: vpmovsxwq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_INT:
+      assert(to_elem_bt == T_LONG, "");
+      vpmovsxdq(dst, src, vlen_enc);
       break;
     default:
       ShouldNotReachHere();
