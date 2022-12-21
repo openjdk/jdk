@@ -36,6 +36,8 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Formatter;
+import java.util.Objects;
+
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
@@ -163,7 +165,6 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public Charset charset() {
-        assert charset != null : "charset() should not return null";
         return charset;
     }
 
@@ -328,6 +329,7 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     public JdkConsoleImpl(Charset charset) {
+        Objects.requireNonNull(charset);
         this.charset = charset;
         readLock = new Object();
         writeLock = new Object();
