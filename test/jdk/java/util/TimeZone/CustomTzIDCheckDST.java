@@ -58,7 +58,7 @@ public class CustomTzIDCheckDST {
         }
     }
 
-    /* TZ code will always be set to "MEZ-1MESZ,M3.5.0,M10.5.0/3".
+    /* TZ is set to "MEZ-1MESZ,M3.5.0,M10.5.0/3", it will be the northern hemisphere.
      * This ensures the transition periods for Daylights Savings should be at March's last
      * Sunday and October's last Sunday.
      */
@@ -67,7 +67,7 @@ public class CustomTzIDCheckDST {
         String tzStr = System.getenv("TZ");
         if (tzStr == null)
             throw new RuntimeException("Got unexpected timezone information: TZ is null");
-        boolean nor = tzStr.matches(".*,M3\\..*,M10\\..*");
+        boolean nor = CUSTOM_TZ.equals(tzStr);
         TimeZone tz = new SimpleTimeZone(3600000, tzStr,
             nor ? Calendar.MARCH : Calendar.OCTOBER, -1,
             Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
