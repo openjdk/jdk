@@ -21,11 +21,4 @@
  * questions.
  */
 
-/* Base definition for compilation by javac. */
-/*public class FieldName {
-  public static int x = 123;
-}*/
-
-public class FieldName {
-  public static char[][] x;
-}
+ public class TestClass {}

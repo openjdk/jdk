@@ -30,6 +30,15 @@
  * @run main NoSuchFieldOutputTest
  * @compile FieldName2.jasm
  * @run main NoSuchFieldOutputTest
+ * @compile NoSuchFieldOutputTest.java FieldName3.java
+ * @compile FieldName2.jasm
+ * @run main NoSuchFieldOutputTest
+ * @compile NoSuchFieldOutputTest.java FieldName4.java
+ * @compile FieldName2.jasm
+ * @run main NoSuchFieldOutputTest
+ * @compile NoSuchFieldOutputTest.java FieldName5.java
+ * @compile FieldName2.jasm
+ * @run main NoSuchFieldOutputTest
  */
 
 import java.util.regex.Matcher;

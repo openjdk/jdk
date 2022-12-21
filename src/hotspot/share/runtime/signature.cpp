@@ -435,6 +435,29 @@ Symbol* Signature::strip_envelope(const Symbol* signature) {
                                  signature->utf8_length() - 2);
 }
 
+const char* Signature::field_type_string(const Symbol* signature) {
+  if (basic_type(signature->char_at(0)) == T_OBJECT) {
+    return strip_envelope(signature)->as_C_string();
+  } else if (basic_type(signature->char_at(0)) == T_ARRAY) {
+    char* buf = NEW_RESOURCE_ARRAY(char, 64);
+    buf[signature->utf8_length()] = '\0';
+    int i;
+    for (i = 0; i < signature->utf8_length() && signature->char_at(i) == JVM_SIGNATURE_ARRAY; i++);
+    if (basic_type(signature->char_at(i)) == T_OBJECT) {
+      strcpy(buf, strip_envelope(signature)->as_C_string());
+    } else {
+      strcpy(buf, type2name(Signature::basic_type(signature->char_at(i))));
+    }
+    for (int j = 0; j < i; j++) {
+      buf[strlen(buf)] = '\0';
+      strncat(buf, "[]", strlen(buf));
+    }
+    return buf;
+  } else {
+    return (char*)type2name(Signature::basic_type(signature->char_at(0)));
+  }
+}
+
 static const int jl_len = 10, object_len = 6, jl_object_len = jl_len + object_len;
 static const char jl_str[] = "java/lang/";
 

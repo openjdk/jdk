@@ -125,6 +125,8 @@ class Signature : AllStatic {
   // Symbol's refcount, use TempNewSymbol.
   static Symbol* strip_envelope(const Symbol* signature);
 
+  static const char* field_type_string(const Symbol* signature);
+
   // Assuming it's either a field or method descriptor, determine
   // whether it is in fact a method descriptor:
   static bool is_method(const Symbol* signature) {
