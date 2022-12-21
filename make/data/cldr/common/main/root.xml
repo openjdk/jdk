@@ -2932,6 +2932,18 @@ for derived annotations.
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh</exemplarCity>
 			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>Bahía de Banderas</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>Cancún</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Ciudad Juárez</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>Mérida</exemplarCity>
+			</zone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
