@@ -652,7 +652,7 @@ public final class Utils {
     public static long remaining(ByteBuffer[] bufs) {
         long remain = 0;
         for (ByteBuffer buf : bufs) {
-            remain = Math.addExact(remain, buf.remaining());
+            remain += buf.remaining();
         }
         return remain;
     }
@@ -665,10 +665,18 @@ public final class Utils {
         return false;
     }
 
+    public static boolean hasRemaining(ByteBuffer[] bufs) {
+        for (ByteBuffer buf : bufs) {
+            if (buf.hasRemaining())
+                return true;
+        }
+        return false;
+    }
+
     public static long remaining(List<ByteBuffer> bufs) {
         long remain = 0;
         for (ByteBuffer buf : bufs) {
-            remain = Math.addExact(remain, buf.remaining());
+            remain += buf.remaining();
         }
         return remain;
     }
