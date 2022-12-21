@@ -133,6 +133,16 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
+    DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
+    DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
+    DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
+    DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
+    DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
+    DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
+    DISABLED_WARNINGS_microsoft := 4244 4996, \
+    DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
