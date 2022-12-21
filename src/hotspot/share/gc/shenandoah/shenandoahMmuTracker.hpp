@@ -34,8 +34,10 @@ class ShenandoahMmuTask;
 /**
  * This class is responsible for tracking and adjusting the minimum mutator
  * utilization (MMU). MMU is defined as the percentage of CPU time available
- * to mutator threads over an arbitrary, fixed interval of time. MMU is measured
- * by summing all of the time given to the GC threads and comparing this too
+ * to mutator threads over an arbitrary, fixed interval of time. This interval
+ * defaults to 5 seconds and is configured by GCPauseIntervalMillis. The class
+ * maintains a decaying average of the last 10 values. The MMU is measured
+ * by summing all of the time given to the GC threads and comparing this to
  * the total CPU time for the process. There are OS APIs to support this on
  * all major platforms.
  *
@@ -49,16 +51,12 @@ class ShenandoahMmuTask;
  */
 class ShenandoahMmuTracker {
 
-  double _initial_collector_time_s;
-  double _initial_process_time_s;
-  double _initial_verify_collector_time_s;
-
-  double _resize_increment;
+  double _generational_reference_time_s;
+  double _process_reference_time_s;
+  double _collector_reference_time_s;
 
   ShenandoahMmuTask* _mmu_periodic_task;
   TruncatedSeq _mmu_average;
-
-  bool transfer_capacity(ShenandoahGeneration* from, ShenandoahGeneration* to);
 
   static double gc_thread_time_seconds();
   static double process_time_seconds();
@@ -83,17 +81,75 @@ public:
   // This method also logs the average MMU.
   void report();
 
+  double average() {
+    return _mmu_average.davg();
+  }
+};
+
+class ShenandoahGenerationSizer {
+private:
+  enum SizerKind {
+    SizerDefaults,
+    SizerNewSizeOnly,
+    SizerMaxNewSizeOnly,
+    SizerMaxAndNewSize,
+    SizerNewRatio
+  };
+  SizerKind _sizer_kind;
+
+  // False when using a fixed young generation size due to command-line options,
+  // true otherwise.
+  bool _use_adaptive_sizing;
+
+  size_t _min_desired_young_size;
+  size_t _max_desired_young_size;
+
+  double _resize_increment;
+  ShenandoahMmuTracker* _mmu_tracker;
+
+  static size_t calculate_min_size(size_t heap_size);
+  static size_t calculate_max_size(size_t heap_size);
+
+  // Update the given values for minimum and maximum young gen length in regions
+  // given the number of heap regions depending on the kind of sizing algorithm.
+  void recalculate_min_max_young_length(size_t heap_size);
+
+  // This will attempt to transfer capacity from one generation to the other. It
+  // returns true if a transfer is made, false otherwise.
+  bool transfer_capacity(ShenandoahGeneration* from, ShenandoahGeneration* to);
+
+  // These two methods are responsible for enforcing the minimum and maximum
+  // constraints for the size of the generations.
+  size_t adjust_transfer_from_young(ShenandoahGeneration* from, size_t bytes_to_transfer) const;
+  size_t adjust_transfer_to_young(ShenandoahGeneration* to, size_t bytes_to_transfer) const;
+
+public:
+  ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_tracker);
+
+  // Calculate the maximum length of the young gen given the number of regions
+  // depending on the sizing algorithm.
+  void heap_size_changed(size_t heap_size);
+
+  size_t min_young_size() const {
+    return _min_desired_young_size;
+  }
+  size_t max_young_size() const {
+    return _max_desired_young_size;
+  }
+
+  bool use_adaptive_sizing() const {
+    return _use_adaptive_sizing;
+  }
+
   // This is invoked at the end of a collection. This happens on a safepoint
   // to avoid any races with allocators (and to avoid interfering with
   // allocators by taking the heap lock). The amount of capacity to move
   // from one generation to another is controlled by YoungGenerationSizeIncrement
-  // and defaults to 20% of the heap. The minimum and maximum sizes of the
-  // young generation are controlled by ShenandoahMinYoungPercentage and
-  // ShenandoahMaxYoungPercentage, respectively. The method returns true
-  // when and adjustment is made, false otherwise.
+  // and defaults to 20% of the available capacity of the donor generation.
+  // The minimum and maximum sizes of the young generation are controlled by
+  // ShenandoahMinYoungPercentage and ShenandoahMaxYoungPercentage, respectively.
+  // The method returns true when an adjustment is made, false otherwise.
   bool adjust_generation_sizes();
 };
-
-
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP

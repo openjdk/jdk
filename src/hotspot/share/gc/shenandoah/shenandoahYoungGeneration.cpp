@@ -44,7 +44,7 @@ const char* ShenandoahYoungGeneration::name() const {
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  if (_old_gen_task_queues != nullptr && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
+  if (is_bootstrap_cycle() && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
     // This is not a bug. When the bootstrapping marking phase is complete,
     // the old generation marking is still in progress, unless it's not.
     // In the case that old-gen preparation for mixed evacuation has been
@@ -75,7 +75,7 @@ bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
 
 void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
   ShenandoahGeneration::reserve_task_queues(workers);
-  if (_old_gen_task_queues != NULL) {
+  if (is_bootstrap_cycle()) {
     _old_gen_task_queues->reserve(workers);
   }
 }
@@ -92,7 +92,7 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
 }
 
 void ShenandoahYoungGeneration::add_collection_time(double time_seconds) {
-  if (_old_gen_task_queues != NULL) {
+  if (is_bootstrap_cycle()) {
     // This is a bootstrap cycle, so attribute time to old gc
     ShenandoahHeap::heap()->old_generation()->add_collection_time(time_seconds);
   } else {

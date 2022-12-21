@@ -991,12 +991,14 @@ size_t ShenandoahGeneration::adjusted_unaffiliated_regions() const {
 
 void ShenandoahGeneration::increase_capacity(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
+  assert(_max_capacity + increment <= ShenandoahHeap::heap()->max_size_for(this), "Cannot increase generation capacity beyond maximum.");
   _max_capacity += increment;
   _soft_max_capacity += increment;
 }
 
 void ShenandoahGeneration::decrease_capacity(size_t decrement) {
   shenandoah_assert_heaplocked_or_safepoint();
+  assert(_max_capacity - decrement >= ShenandoahHeap::heap()->min_size_for(this), "Cannot decrease generation capacity beyond minimum.");
   _max_capacity -= decrement;
   _soft_max_capacity -= decrement;
 }

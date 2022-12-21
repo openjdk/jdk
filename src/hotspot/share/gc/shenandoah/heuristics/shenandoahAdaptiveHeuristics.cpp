@@ -317,10 +317,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 ", max_capacity: " SIZE_FORMAT ", allocated: " SIZE_FORMAT,
                 _generation->name(), available, capacity, max_capacity, allocated);
 
-  // Make sure the code below treats available without the soft tail.
-  size_t soft_tail = max_capacity - capacity;
-  available = (available > soft_tail) ? (available - soft_tail) : 0;
-
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when deciding whether to start a GC.
   size_t usable = ShenandoahHeap::heap()->free_set()->available();

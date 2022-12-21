@@ -168,7 +168,7 @@ private:
   virtual void reserve_task_queues(uint workers);
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
-  // Scan remembered set at start of concurrent young-gen marking. */
+  // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
 
   // Return the updated value of affiliated_region_count
@@ -187,7 +187,14 @@ private:
   virtual void record_success_concurrent(bool abbreviated);
   virtual void record_success_degenerated();
 
+  // Record the total on-cpu time a thread has spent collecting this
+  // generation. This is only called by the control thread (at the start
+  // of a collection) and by the VM thread at the end of the collection,
+  // so there are no locking concerns.
   virtual void add_collection_time(double time_seconds);
+
+  // This returns the accumulated collection time and resets it to zero.
+  // This is used to decide which generation should be resized.
   double reset_collection_time();
 };
 

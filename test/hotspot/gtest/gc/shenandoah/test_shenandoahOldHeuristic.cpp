@@ -281,3 +281,5 @@ TEST_VM_F(ShenandoahOldHeuristicTest, unpinned_region_is_middle) {
   EXPECT_EQ(_collection_set->get_old_garbage(), g1 + g3);
   EXPECT_EQ(_heuristics->unprocessed_old_collection_candidates(), 0UL);
 }
+
+#undef SKIP_IF_NOT_SHENANDOAH
