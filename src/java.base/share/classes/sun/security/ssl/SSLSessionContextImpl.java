@@ -29,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,8 +73,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
 
-    private int currentKeyID = new SecureRandom().nextInt();
-                                        // RFC 5077 session ticket key name
+    private int currentKeyID;           // RFC 5077 session ticket key name
     private final Map<Integer,          // Maps session keys to session state
             SessionTicketExtension.StatelessKey> keyHashMap = new ConcurrentHashMap<>();
 
@@ -178,39 +178,48 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         return cacheLimit;
     }
 
-    // package-private, used only by SSLContextImpl
+    // Package-private, used only from SSLContextImpl::engineInit() to initialie currentKeyID.
+    void initCurrentKeyID(int keyID) {
+        currentKeyID = keyID;
+    }
+
+    // Package-private, used only from SSLContextImpl::getKey() to create a new session key.
     int getCurrentKeyID() {
         return currentKeyID;
     }
 
     private void cleanupSessionKeys() {
-        for (Map.Entry<Integer, SessionTicketExtension.StatelessKey> entry : keyHashMap.entrySet()) {
+        Iterator<Map.Entry<Integer, SessionTicketExtension.StatelessKey>> it =
+            keyHashMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, SessionTicketExtension.StatelessKey> entry = it.next();
             SessionTicketExtension.StatelessKey k = entry.getValue();
             if (k.isInvalid(this)) {
+                it.remove();
                 try {
                     k.key.destroy();
                 } catch (Exception e) {
                     // Suppress
                 }
-                keyHashMap.remove(entry.getKey());
             }
         }
     }
 
     // Every time we insert a new session key we check for and delete invalid keys.
-    // package-private, used only by SSLContextImpl
+    // Package-private, used only from SSLContextImpl::getKey() to create a new session key.
     void insertNewSessionKey(int newID, SessionTicketExtension.StatelessKey ssk) {
+        assert newID != currentKeyID : "Must use a new ID for a new session key!";
         keyHashMap.put(Integer.valueOf(newID), ssk);
         currentKeyID = newID;
         cleanupSessionKeys();
     }
 
-    // package-private, used only by SSLContextImpl
+    // Package-private, used only from SSLContextImpl::getKey().
     SessionTicketExtension.StatelessKey getKey() {
         return keyHashMap.get(currentKeyID);
     }
 
-    // package-private, used only by SSLContextImpl
+    // Package-private, used only from SSLContextImpl::getKey(int id).
     SessionTicketExtension.StatelessKey getKey(int id) {
         return keyHashMap.get(id);
     }

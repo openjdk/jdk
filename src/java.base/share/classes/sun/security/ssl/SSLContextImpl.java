@@ -130,10 +130,12 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.finest("trigger seeding of SecureRandom");
         }
-        secureRandom.nextInt();
+        int keyID = secureRandom.nextInt();
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.finest("done seeding of SecureRandom");
         }
+        // Use the "priming output" to initialize the FC 5077 session ticket key name
+        serverCache.initCurrentKeyID(keyID);
 
         isInitialized = true;
     }
