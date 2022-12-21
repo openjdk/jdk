@@ -125,8 +125,7 @@ public class TestVerifyGCType {
                                           new String[] {"-XX:+G1EvacuationFailureALot",
                                                         "-XX:G1EvacuationFailureALotCount=100",
                                                         "-XX:G1EvacuationFailureALotInterval=1",
-                                                        "-XX:+UnlockDiagnosticVMOptions",
-                                                        "-XX:-G1UsePreventiveGC"});
+                                                        "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 
         verifyCollection("Pause Young (Normal)", false, false, true, output.getStdout());
@@ -190,18 +189,18 @@ public class TestVerifyGCType {
         Asserts.assertTrue(ci != null, "Expected GC not found: " + name + "\n" + data);
 
         // Verify Before
-        verifyType(ci, expectBefore, VERIFY_BEFORE);
+        verifyType(ci, expectBefore, VERIFY_BEFORE, data);
         // Verify During
-        verifyType(ci, expectDuring, VERIFY_DURING);
+        verifyType(ci, expectDuring, VERIFY_DURING, data);
         // Verify After
-        verifyType(ci, expectAfter, VERIFY_AFTER);
+        verifyType(ci, expectAfter, VERIFY_AFTER, data);
     }
 
-    private static void verifyType(CollectionInfo ci, boolean shouldExist, String pattern) {
+    private static void verifyType(CollectionInfo ci, boolean shouldExist, String pattern, String data) {
         if (shouldExist) {
-            Asserts.assertTrue(ci.containsVerification(pattern), "Missing expected verification pattern " + pattern + " for: " + ci.getName());
+            Asserts.assertTrue(ci.containsVerification(pattern), "Missing expected verification pattern " + pattern + " for: " + ci.getName() + "\n" + data);
         } else {
-            Asserts.assertFalse(ci.containsVerification(pattern), "Found unexpected verification pattern " + pattern + " for: " + ci.getName());
+            Asserts.assertFalse(ci.containsVerification(pattern), "Found unexpected verification pattern " + pattern + " for: " + ci.getName() + "\n" + data);
         }
     }
 

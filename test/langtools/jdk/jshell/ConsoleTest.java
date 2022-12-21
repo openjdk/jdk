@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.shared;
+/*
+ * @test
+ * @bug 8298425
+ * @summary Verify behavior of System.console()
+ * @build KullaTesting TestingInputStream
+ * @run testng ConsoleTest
+ */
 
-import sun.jvm.hotspot.debugger.*;
 
-/** No additional functionality for now */
+import org.testng.annotations.Test;
 
-public class OffsetTableContigSpace extends ContiguousSpace {
-  public OffsetTableContigSpace(Address addr) {
-    super(addr);
-  }
+public class ConsoleTest extends KullaTesting {
+
+    @Test
+    public void testConsole1() {
+        assertEval("System.console()", "null");
+    }
+
 }

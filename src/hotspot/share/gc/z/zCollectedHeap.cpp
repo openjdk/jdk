@@ -224,6 +224,10 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
   return true;
 }
 
+MemoryUsage ZCollectedHeap::memory_usage() {
+  return _heap.serviceability_memory_pool()->get_memory_usage();
+}
+
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
   GrowableArray<GCMemoryManager*> memory_managers(2);
   memory_managers.append(_heap.serviceability_cycle_memory_manager());

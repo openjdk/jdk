@@ -355,6 +355,8 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  static bool is_zero_trip_guard_if(const IfNode* iff);
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
