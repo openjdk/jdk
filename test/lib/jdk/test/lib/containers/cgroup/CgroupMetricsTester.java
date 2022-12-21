@@ -39,6 +39,7 @@ interface CgroupMetricsTester {
     public void testCpuSchedulingMetrics();
     public void testCpuSets();
     public void testCpuConsumption() throws IOException, InterruptedException;
+    public void testMemoryUsage() throws Exception;
     public void testMisc();
 
     public static long convertStringToLong(String strval, long initialVal, long overflowRetval) {
