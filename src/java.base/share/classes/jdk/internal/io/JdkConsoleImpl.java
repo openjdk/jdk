@@ -57,7 +57,7 @@ public final class JdkConsoleImpl implements JdkConsole {
     }
 
     @Override
-    public JdkConsole format(String fmt, Object ...args) {
+    public JdkConsole format(String fmt, Object ... args) {
         formatter.format(fmt, args).flush();
         return this;
     }
