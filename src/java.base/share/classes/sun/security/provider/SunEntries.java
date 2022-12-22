@@ -185,6 +185,9 @@ public final class SunEntries {
                 "sun.security.provider.DSA$SHA3_384withDSAinP1363Format");
         add(p, "Signature", "SHA3-512withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA3_512withDSAinP1363Format");
+
+        add(p, "Signature", "HSS/LMS", "sun.security.provider.HSS");
+        add(p, "KeyFactory", "HSS/LMS", "sun.security.provider.HSS$KeyFactoryImpl");
         /*
          *  Key Pair Generator engines
          */
