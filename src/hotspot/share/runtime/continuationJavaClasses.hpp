@@ -124,7 +124,8 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_maxThawingSize(oop chunk, int value);
 
   // cont oop's processing is essential for the chunk's GC protocol
-  static inline oop cont(oop chunk);
+  template<typename P>
+  static inline oop cont_raw(oop chunk);
   static inline void set_cont(oop chunk, oop value);
   template<typename P>
   static inline void set_cont_raw(oop chunk, oop value);

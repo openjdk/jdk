@@ -189,6 +189,9 @@ public final class System {
      */
     public static final PrintStream err = null;
 
+    // Holder for the initial value of `in`, set within `initPhase1()`.
+    private static InputStream initialIn;
+
     // indicates if a security manager is possible
     private static final int NEVER = 1;
     private static final int MAYBE = 2;
@@ -2174,7 +2177,8 @@ public final class System {
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
-        setIn0(new BufferedInputStream(fdIn));
+        initialIn = new BufferedInputStream(fdIn);
+        setIn0(initialIn);
         // stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
@@ -2483,6 +2487,10 @@ public final class System {
 
             public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            }
+
+            public InputStream initialSystemIn() {
+                return initialIn;
             }
 
             public void setCause(Throwable t, Throwable cause) {

@@ -1714,7 +1714,7 @@ void java_lang_Thread::serialize_offsets(SerializeClosure* f) {
 #endif
 
 JavaThread* java_lang_Thread::thread(oop java_thread) {
-  return (JavaThread*)java_thread->address_field(_eetop_offset);
+  return reinterpret_cast<JavaThread*>(java_thread->address_field(_eetop_offset));
 }
 
 void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
@@ -2492,17 +2492,18 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
   }
 
   // Allocate temporary buffer with extra space for formatting and line number
-  char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
+  const size_t buf_size = buf_len + 64;
+  char* buf = NEW_RESOURCE_ARRAY(char, buf_size);
 
   // Print stack trace line in buffer
-  sprintf(buf, "\tat %s.%s(", klass_name, method_name);
+  size_t buf_off = os::snprintf_checked(buf, buf_size, "\tat %s.%s(", klass_name, method_name);
 
   // Print module information
   if (module_name != NULL) {
     if (module_version != NULL) {
-      sprintf(buf + (int)strlen(buf), "%s@%s/", module_name, module_version);
+      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s@%s/", module_name, module_version);
     } else {
-      sprintf(buf + (int)strlen(buf), "%s/", module_name);
+      buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s/", module_name);
     }
   }
 
@@ -2517,17 +2518,17 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
     } else {
       if (source_file_name != NULL && (line_number != -1)) {
         // Sourcename and linenumber
-        sprintf(buf + (int)strlen(buf), "%s:%d)", source_file_name, line_number);
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s:%d)", source_file_name, line_number);
       } else if (source_file_name != NULL) {
         // Just sourcename
-        sprintf(buf + (int)strlen(buf), "%s)", source_file_name);
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "%s)", source_file_name);
       } else {
         // Neither sourcename nor linenumber
-        sprintf(buf + (int)strlen(buf), "Unknown Source)");
+        buf_off += os::snprintf_checked(buf + buf_off, buf_size - buf_off, "Unknown Source)");
       }
       CompiledMethod* nm = method->code();
       if (WizardMode && nm != NULL) {
-        sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
+        os::snprintf_checked(buf + buf_off, buf_size - buf_off, "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }
     }
   }
