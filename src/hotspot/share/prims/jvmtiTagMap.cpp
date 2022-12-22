@@ -247,7 +247,8 @@ void inline CallbackWrapper::post_callback_tag_update(oop o,
     if (obj_tag != 0) {
       // callback has tagged the object
       assert(Thread::current()->is_VM_thread(), "must be VMThread");
-      hashmap->add(o, obj_tag);
+      bool is_added = hashmap->add(o, obj_tag);
+      assert(is_added, "Expected to add obj,tag but updated.");
     }
   } else {
     // object was previously tagged - the callback may have untagged
@@ -256,7 +257,8 @@ void inline CallbackWrapper::post_callback_tag_update(oop o,
       hashmap->remove(o);
     } else {
       if (obj_tag != current_tag) {
-        hashmap->update(o, obj_tag);
+        bool is_updated = hashmap->update(o, obj_tag);
+        assert(is_updated, "Expected to update obj,tag but added.");
       }
     }
   }
@@ -353,7 +355,8 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // if the object is not already tagged then we tag it
   if (found_tag == 0) {
     if (tag != 0) {
-      hashmap->add(o, tag);
+      bool is_added = hashmap->add(o, tag);
+      assert(is_added, "Expected to add obj,tag but is updated.");
     } else {
       // no-op
     }
@@ -364,7 +367,8 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
     if (tag == 0) {
       hashmap->remove(o);
     } else {
-      hashmap->update(o, tag);
+      bool is_updated = hashmap->update(o, tag);
+      assert(is_updated, "Expected to update obj,tag but is added.");
     }
   }
 }

@@ -92,6 +92,7 @@ jlong JvmtiTagMapTable::find(oop obj) {
   }
 
   if (obj->fast_no_hash_check()) {
+    // Objects in the table all have a hashcode.
     return 0;
   }
 

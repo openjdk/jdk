@@ -69,7 +69,7 @@ class JvmtiTagMapKey : public CHeapObj<mtInternal> {
 
 typedef
 ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
-                              AnyObj::C_HEAP, mtInternal,
+                              AnyObj::C_HEAP, mtServiceability,
                               JvmtiTagMapKey::get_hash,
                               JvmtiTagMapKey::equals> ResizableResourceHT;
 
