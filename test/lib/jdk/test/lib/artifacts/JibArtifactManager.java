@@ -131,7 +131,6 @@ public class JibArtifactManager implements ArtifactManager {
             artifactDescription.put("classifier", artifact.classifier());
         }
         return resolve(artifact.name(), artifactDescription, artifact.unpack());
-
     }
 
     public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack)

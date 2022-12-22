@@ -34,13 +34,12 @@
  */
 
 import java.io.File;
-import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
+import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestAutoCreateSharedArchiveUpgrade {
     // The JDK being tested
@@ -52,9 +51,9 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     // If you're unning this test using something like
     // "make test TEST=test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java",
-    // the test.boot.jdk property is passed by make/RunTests.gmk
-    //private static final String BOOT_JDK = System.getProperty("test.boot.jdk", null);
-    private static final String BOOT_JDK = fetchBootJDK(LINUX_X64.class);
+    // the test.boot.jdk property is normally passed by make/RunTests.gmk
+    // now it is pulled by the artifactory
+    private static final String BOOT_JDK = fetchBootJDK(getOsId());
 
     private static final String USER_DIR = System.getProperty("user.dir", ".");
     private static final String FS = System.getProperty("file.separator", "/");
@@ -68,8 +67,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     public static void main(String[] args) throws Throwable {
         setupJVMs();
         doTest();
-        String path = fetchBootJDK(LINUX_X64.class);
-        System.out.println(path);
     }
 
     static void setupJVMs() throws Throwable {
@@ -152,6 +149,27 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // Earliest testable version is 19
     int n = java.lang.Runtime.version().major() - 1;
 
+    // Fetch JDK artifact depending on platform
+    private static String fetchBootJDK(String osID) {
+        switch (osId) {
+        case "Windows-x86-32":
+            return fetchBootJDK(WINDOWS_X86.class);
+
+        case "Windows-amd64-64":
+            return fetchBootJDK(WINDOWS_X64.class);
+
+        case "MacOSX-x86_64-64":
+            return fetchBootJDK(MACOSX_X64.class);
+
+        case "Linux-amd64-64":
+            return fetchBootJDK(LINUX_X64.class);
+
+        default:
+            return null;
+        }
+    }
+
+    // Fetch JDK version from artifactory
     private static String fetchBootJDK(Class<?> clazz) {
         String path = null;
         try {
