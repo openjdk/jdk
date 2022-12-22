@@ -45,19 +45,18 @@ import jdk.test.lib.security.SecurityUtils;
 
 public class Basics {
 
-    private static final String pathToStores = "../etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
-    private static final String passwd = "passphrase";
+    private static final String PATH_TO_STORES = "../etc";
+    private static final String KEY_STORE_FILE = "keystore";
+    private static final String TRUSTSTORE_FILE = "truststore";
 
-    private static final String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static final String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+    private static final String KEYSTORE_PATH =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + KEY_STORE_FILE;
+    private static final String TRUSTSTORE_PATH =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + TRUSTSTORE_FILE;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
 
         runTest("TLSv1.3", "TLS_AES_256_GCM_SHA384");
@@ -72,8 +71,8 @@ public class Basics {
         KeyStore ts = KeyStore.getInstance("JKS");
         char[] passphrase = "passphrase".toCharArray();
 
-        ks.load(new FileInputStream(keyFilename), passphrase);
-        ts.load(new FileInputStream(trustFilename), passphrase);
+        ks.load(new FileInputStream(KEYSTORE_PATH), passphrase);
+        ts.load(new FileInputStream(TRUSTSTORE_PATH), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -134,12 +133,12 @@ public class Basics {
         System.out.println("Checking get/setUseClientMode");
 
         ssle.setUseClientMode(true);
-        if (ssle.getUseClientMode() != true) {
+        if (!ssle.getUseClientMode()) {
             throw new RuntimeException("set/getUseClientMode false");
         }
 
         ssle.setUseClientMode(false);
-        if (ssle.getUseClientMode() != false) {
+        if (ssle.getUseClientMode()) {
             throw new RuntimeException("set/getUseClientMode true");
         }
 
@@ -147,27 +146,27 @@ public class Basics {
         System.out.println("Checking get/setClientAuth");
 
         ssle.setNeedClientAuth(false);
-        if (ssle.getNeedClientAuth() != false) {
+        if (ssle.getNeedClientAuth()) {
             throw new RuntimeException("set/getNeedClientAuth true");
         }
 
         ssle.setNeedClientAuth(true);
-        if (ssle.getNeedClientAuth() != true) {
+        if (!ssle.getNeedClientAuth()) {
             throw new RuntimeException("set/getNeedClientAuth false");
         }
 
         ssle.setWantClientAuth(true);
 
-        if (ssle.getNeedClientAuth() == true) {
+        if (ssle.getNeedClientAuth()) {
             throw new RuntimeException("set/getWantClientAuth need = true");
         }
 
-        if (ssle.getWantClientAuth() != true) {
+        if (!ssle.getWantClientAuth()) {
             throw new RuntimeException("set/getNeedClientAuth false");
         }
 
         ssle.setWantClientAuth(false);
-        if (ssle.getWantClientAuth() != false) {
+        if (ssle.getWantClientAuth()) {
             throw new RuntimeException("set/getNeedClientAuth true");
         }
 
@@ -179,12 +178,12 @@ public class Basics {
         System.out.println("checking session creation");
 
         ssle.setEnableSessionCreation(false);
-        if (ssle.getEnableSessionCreation() != false) {
+        if (ssle.getEnableSessionCreation()) {
             throw new RuntimeException("set/getSessionCreation true");
         }
 
         ssle.setEnableSessionCreation(true);
-        if (ssle.getEnableSessionCreation() != true) {
+        if (!ssle.getEnableSessionCreation()) {
             throw new RuntimeException("set/getSessionCreation false");
         }
 
