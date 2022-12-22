@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Check that -XX:+AutoCreateSharedArchive automatically recreates an archive when you change the JDK version.
- * @requires os.family == "linux" & vm.bits == "64" & (os.arch=="amd64" | os.arch=="x86_64")
+ * @requires vm.cds
  * @library /test/lib
  * @compile -source 1.8 -target 1.8 ../test-classes/HelloJDK8.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar Hello.jar HelloJDK8
@@ -158,17 +158,29 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // Fetch JDK artifact depending on platform
     private static String fetchBootJDK(String osID, int version) {
         switch (osID) {
-        case "Windows-x86-32":
-            return fetchBootJDK(WINDOWS_X86.class, version);
-
         case "Windows-amd64-64":
-            return fetchBootJDK(WINDOWS_X64.class, version);
+            switch(version) {
+                case 19:
+                    return fetchBootJDK(WINDOWS_X64_19.class, version);
+                case 20:
+                    return fetchBootJDK(WINDOWS_X64_20.class, version);
+            }
 
         case "MacOSX-x86_64-64":
-            return fetchBootJDK(MACOSX_X64.class, version);
+            switch(version) {
+                case 19:
+                    return fetchBootJDK(MACOSX_X64_19.class, version);
+                case 20:
+                    return fetchBootJDK(MACOSX_X64_20.class, version);
+            }
 
         case "Linux-amd64-64":
-            return fetchBootJDK(LINUX_X64.class, version);
+            switch(version) {
+                case 19:
+                    return fetchBootJDK(LINUX_X64_19.class, version);
+                case 20:
+                    return fetchBootJDK(LINUX_X64_20.class, version);
+            }
 
         default:
             return null;
@@ -214,7 +226,16 @@ public class TestAutoCreateSharedArchiveUpgrade {
             build_number = "36",
             file = "bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz",
             unpack = true)
-    private static class LINUX_X64 { }
+    private static class LINUX_X64_19 { }
+
+    @Artifact(
+            server = "jpg",
+            product = "jdk",
+            version = "20",
+            build_number = "29",
+            file = "bundles/linux-x64/jdk-20_linux-x64_bin.tar.gz",
+            unpack = true)
+    private static class LINUX_X64_20 { }
 
     @Artifact(
             server = "jpg",
@@ -223,23 +244,32 @@ public class TestAutoCreateSharedArchiveUpgrade {
             build_number = "36",
             file = "bundles/macosx-x64/jdk-19_macosx-x64_bin.tar.gz",
             unpack = true)
-    private static class MACOSX_X64 { }
+    private static class MACOSX_X64_19 { }
+
+    @Artifact(
+            server = "jpg",
+            product = "jdk",
+            version = "20",
+            build_number = "29",
+            file = "bundles/macosx-x64/jdk-20_macosx-x64_bin.tar.gz",
+            unpack = true)
+    private static class MACOSX_X64_20 { }
 
     @Artifact(
             server = "jpg",
             product = "jdk",
             version = "19",
             build_number = "36",
-            file = "bundles/windows-x64/jdk-19_windows-x64_bin.tar.gz",
+            file = "bundles/windows-x64/jdk-19_windows-x64_bin.zip",
             unpack = true)
-    private static class WINDOWS_X64 { }
+    private static class WINDOWS_X64_19 { }
 
     @Artifact(
             server = "jpg",
             product = "jdk",
-            version = "19",
-            build_number = "36",
-            file = "bundles/windows-x86/jdk-19_windows-x86_bin.tar.gz",
+            version = "20",
+            build_number = "29",
+            file = "bundles/windows-x64/jdk-20_windows-x64_bin.zip",
             unpack = true)
-    private static class WINDOWS_X86 { }
+    private static class WINDOWS_X64_20 { }
 }
