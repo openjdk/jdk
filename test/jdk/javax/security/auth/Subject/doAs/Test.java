@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,46 @@
  * questions.
  */
 
+ /*
+ * @test
+ * @bug 4399067 8179880
+ * @summary Subject.doAs(null, action) does not clear the executing subject
+ * @run main/othervm/policy=policy Test
+ */
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import java.security.*;
 import java.util.*;
 
 public class Test {
+
     public static Subject get(String name) {
+
         return new Subject(true,
-                           Collections.singleton(new X500Principal(name)),
-                           new HashSet(),
-                           Collections.singleton(Boolean.TRUE));
+                Collections.singleton(new X500Principal(name)),
+                new HashSet(),
+                Collections.singleton(Boolean.TRUE));
     }
 
     public static void main(String[] args) {
+
         System.setSecurityManager(new SecurityManager());
         try {
             Subject.doAsPrivileged(get("CN=joe"), new PrivilegedAction() {
                 public Object run() {
                     return Subject.doAs(null, new PrivilegedAction() {
                         public Object run() {
-                        return System.getProperty("foobar");
+                            return System.getProperty("foobar");
                         }
                     });
                 }
             }, null);
-        throw new RuntimeException
-                 ("Access control exception should have occcured");
+            throw new RuntimeException(
+                    "AccessControlException should have occcured");
         } catch (java.security.AccessControlException e) {
-                // Expected exception occured
+            // Expected exception occurred
+            e.printStackTrace(System.out);
+            System.out.println("Expected exception occurred");
         }
     }
 }

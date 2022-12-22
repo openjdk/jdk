@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package sun.nio.fs;
 
-import java.lang.ref.Reference;
 import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.*;
+
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.UnixConstants.*;
@@ -42,6 +44,8 @@ abstract class UnixUserDefinedFileAttributeView
     extends AbstractUserDefinedFileAttributeView
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // namespace for extended user attributes
     private static final String USER_NAMESPACE = "user.";
@@ -133,7 +137,7 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get list of extended attributes: " +
                 x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -157,7 +161,7 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get size of extended attribute '" + name +
                 "': " + x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -174,14 +178,15 @@ abstract class UnixUserDefinedFileAttributeView
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        if (dst instanceof sun.nio.ch.DirectBuffer buf) {
+        if (dst instanceof sun.nio.ch.DirectBuffer ddst) {
+            NIO_ACCESS.acquireSession(dst);
             try {
-                long address = buf.address() + pos;
+                long address = ddst.address() + pos;
                 int n = read(name, address, rem);
                 dst.position(pos + n);
                 return n;
             } finally {
-                Reference.reachabilityFence(buf);
+                NIO_ACCESS.releaseSession(dst);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
@@ -221,7 +226,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error reading extended attribute '" + name + "': " + msg);
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -237,13 +242,14 @@ abstract class UnixUserDefinedFileAttributeView
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof sun.nio.ch.DirectBuffer buf) {
+            NIO_ACCESS.acquireSession(src);
             try {
                 long address = buf.address() + pos;
                 write(name, address, rem);
                 src.position(pos + rem);
                 return rem;
             } finally {
-                Reference.reachabilityFence(buf);
+                NIO_ACCESS.releaseSession(src);
             }
         } else {
             try (NativeBuffer nb = NativeBuffers.getNativeBuffer(rem)) {
@@ -283,7 +289,7 @@ abstract class UnixUserDefinedFileAttributeView
                     null, "Error writing extended attribute '" + name + "': " +
                     x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -305,7 +311,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -337,13 +343,10 @@ abstract class UnixUserDefinedFileAttributeView
         throws UnixException
     {
         int size = fgetxattr(ofd, name, 0L, 0);
-        NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             long address = buffer.address();
             size = fgetxattr(ofd, name, address, size);
             fsetxattr(nfd, name, address, size);
-        } finally {
-            buffer.release();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ import javax.lang.model.type.*;
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see javax.annotation.processing.ProcessingEnvironment#getTypeUtils
  * @since 1.6
  */
@@ -136,6 +133,10 @@ public interface Types {
      * will appear last in the list. For an interface type with no direct
      * super-interfaces, a type mirror representing {@code java.lang.Object}
      * is returned.
+     * The type {@code java.lang.Object} has no direct supertype (JLS
+     * {@jls 8.1.4}, {@jls 8.1.5}) so an empty list is returned for
+     * the direct supertypes of a type mirror representing {@code
+     * java.lang.Object}.
      *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/genOopClosures.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
@@ -50,7 +50,7 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
   }
-  // Mangle all of the the initial generation.
+  // Mangle all of the initial generation.
   if (ZapUnusedHeapArea) {
     MemRegion mangle_region((HeapWord*)_virtual_space.low(),
       (HeapWord*)_virtual_space.high());
@@ -87,7 +87,7 @@ void Generation::print_on(outputStream* st)  const {
   st->print(" %-20s", name());
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
              capacity()/K, used()/K);
-  st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
               p2i(_virtual_space.low_boundary()),
               p2i(_virtual_space.high()),
               p2i(_virtual_space.high_boundary()));
@@ -156,7 +156,7 @@ bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const 
 
 // Ignores "ref" and calls allocate().
 oop Generation::promote(oop obj, size_t obj_size) {
-  assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
+  assert(obj_size == obj->size(), "bad obj_size passed in");
 
 #ifndef PRODUCT
   if (GenCollectedHeap::heap()->promotion_should_fail()) {
@@ -164,21 +164,24 @@ oop Generation::promote(oop obj, size_t obj_size) {
   }
 #endif  // #ifndef PRODUCT
 
+  // Allocate new object.
   HeapWord* result = allocate(obj_size, false);
-  if (result != NULL) {
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
-    return cast_to_oop(result);
-  } else {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    return gch->handle_failed_promotion(this, obj, obj_size);
+  if (result == NULL) {
+    // Promotion of obj into gen failed.  Try to expand and allocate.
+    result = expand_and_allocate(obj_size, false);
+    if (result == NULL) {
+      return NULL;
+    }
   }
-}
 
-oop Generation::par_promote(int thread_num,
-                            oop obj, markWord m, size_t word_sz) {
-  // Could do a bad general impl here that gets a lock.  But no.
-  ShouldNotCallThis();
-  return NULL;
+  // Copy to new location.
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
+  oop new_obj = cast_to_oop<HeapWord*>(result);
+
+  // Transform object if it is a stack chunk.
+  ContinuationGCSupport::transform_stack_chunk(new_obj);
+
+  return new_obj;
 }
 
 Space* Generation::space_containing(const void* p) const {

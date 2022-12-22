@@ -65,7 +65,7 @@ public class Test8017492 {
             @Override
             public void uncaughtException(Thread thread, Throwable throwable) {
                 throwable.printStackTrace();
-                System.exit(1);
+                throw new RuntimeException(throwable);
             }
         });
         thread.start();

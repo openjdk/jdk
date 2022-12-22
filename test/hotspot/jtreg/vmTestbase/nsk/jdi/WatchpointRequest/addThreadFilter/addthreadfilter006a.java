@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.WatchpointRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class addthreadfilter006a {
 
     //====================================================== test program
 
-    static Threadaddthreadfilter006a thread1 = null;
+    static Thread thread1 = null;
 
     static addthreadfilter006aTestClass objTC = new addthreadfilter006aTestClass();
 
@@ -98,7 +97,7 @@ public class addthreadfilter006a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Threadaddthreadfilter006a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Threadaddthreadfilter006a("thread1"));
                             break;
 
                     case 1:
@@ -149,7 +148,7 @@ public class addthreadfilter006a {
         return PASSED;
     }
 
-    static class Threadaddthreadfilter006a extends Thread {
+    static class Threadaddthreadfilter006a extends NamedTask {
 
         public Threadaddthreadfilter006a(String threadName) {
             super(threadName);

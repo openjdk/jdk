@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,9 +25,10 @@
 
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "os_posix.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/safefetch.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
@@ -59,16 +60,15 @@ void VMError::reporting_started() {
 void VMError::interrupt_reporting_thread() {
   // We misuse SIGILL here, but it does not really matter. We need
   //  a signal which is handled by crash_handler and not likely to
-  //  occurr during error reporting itself.
+  //  occur during error reporting itself.
   ::pthread_kill(reporter_thread_id, SIGILL);
 }
 
-static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
+static void crash_handler(int sig, siginfo_t* info, void* context) {
 
   PosixSignals::unblock_error_signals();
 
-  // support safefetch faults in error handling
-  ucontext_t* const uc = (ucontext_t*) ucVoid;
+  ucontext_t* const uc = (ucontext_t*) context;
   address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
   // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
@@ -76,22 +76,21 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
-  // Needed to make it possible to call SafeFetch.. APIs in error handling.
-  if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-    os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+  // Handle safefetch here too, to be able to use SafeFetch() inside the error handler
+  if (handle_safefetch(sig, pc, uc)) {
     return;
   }
 
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
   if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
+    if (handle_assert_poison_fault(context, info->si_addr)) {
       return;
     }
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-  VMError::report_and_die(NULL, sig, pc, info, ucVoid);
+  VMError::report_and_die(NULL, sig, pc, info, context);
 }
 
 const void* VMError::crash_handler_address = CAST_FROM_FN_PTR(void *, crash_handler);
@@ -102,7 +101,10 @@ void VMError::install_secondary_signal_handler() {
     0 // end
   };
   for (int i = 0; signals_to_handle[i] != 0; i++) {
-    os::signal(signals_to_handle[i], CAST_FROM_FN_PTR(void *, crash_handler));
+    struct sigaction sigAct, oldSigAct;
+    PosixSignals::install_sigaction_signal_handler(&sigAct, &oldSigAct,
+                                                   signals_to_handle[i], crash_handler);
+    // No point checking the return code during error reporting.
   }
 }
 

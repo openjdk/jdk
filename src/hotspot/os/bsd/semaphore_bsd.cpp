@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include <semaphore.h>
 
 #ifdef __APPLE__
-// OS X doesn't support unamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
+// OS X doesn't support unnamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
 
 static const char* sem_init_strerror(kern_return_t value) {
   switch (value) {
@@ -84,7 +84,7 @@ bool OSXSemaphore::timedwait(int64_t millis) {
 
   kr = semaphore_timedwait(_semaphore, waitspec);
   while (kr == KERN_ABORTED) {
-    // reduce the timout and try again
+    // reduce the timeout and try again
     int64_t totalwait = millis_to_nanos(millis);
     int64_t current = os::javaTimeNanos();
     int64_t passedtime = current - starttime;

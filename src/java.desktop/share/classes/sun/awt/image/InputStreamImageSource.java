@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.image.*;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.BufferedInputStream;
-import java.util.Hashtable;
 
 public abstract class InputStreamImageSource implements ImageProducer,
                                                         ImageFetchable
@@ -268,10 +267,7 @@ public abstract class InputStreamImageSource implements ImageProducer,
             setDecoder(imgd);
             try {
                 imgd.produceImage();
-            } catch (IOException e) {
-                e.printStackTrace();
-                // the finally clause will send an error.
-            } catch (ImageFormatException e) {
+            } catch (IOException | ImageFormatException e) {
                 e.printStackTrace();
                 // the finally clause will send an error.
             } finally {

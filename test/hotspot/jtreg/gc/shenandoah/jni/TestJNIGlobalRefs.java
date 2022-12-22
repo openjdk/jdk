@@ -22,7 +22,7 @@
  *
  */
 
-/* @test TestJNIGlobalRefs
+/* @test id=aggressive-verify
  * @summary Test JNI Global Refs with Shenandoah
  * @requires vm.gc.Shenandoah
  *
@@ -32,7 +32,7 @@
  *      TestJNIGlobalRefs
  */
 
-/* @test TestJNIGlobalRefs
+/* @test id=aggressive
  * @summary Test JNI Global Refs with Shenandoah
  * @requires vm.gc.Shenandoah
  *

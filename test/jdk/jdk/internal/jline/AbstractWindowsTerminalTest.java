@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,6 @@ public class AbstractWindowsTerminalTest {
             }
         };
         var t = new AbstractWindowsTerminal(out, "test", "vt100", null, -1, false, SignalHandler.SIG_DFL, isWrapper) {
-            @Override
-            protected int getConsoleOutputCP() {
-                throw new UnsupportedOperationException("unexpected.");
-            }
-
             @Override
             protected int getConsoleMode() {
                 return -1;

@@ -140,7 +140,7 @@ public:
 
   bool is_wide() const { return ( _pc == _was_wide ); }
 
-  // Does this instruction contain an index which refes into the CP cache?
+  // Does this instruction contain an index which refers into the CP cache?
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
   int get_index_u1() const {
@@ -203,11 +203,13 @@ public:
   }
 
   // For a lookup or switch table, return target destination
-  int get_int_table( int index ) const {
-    return Bytes::get_Java_u4((address)&_table_base[index]); }
+  jint get_int_table( int index ) const {
+    return (jint)Bytes::get_Java_u4((address)&_table_base[index]);
+  }
 
   int get_dest_table( int index ) const {
-    return cur_bci() + get_int_table(index); }
+    return cur_bci() + get_int_table(index);
+  }
 
   // --- Constant pool access ---
   int get_constant_raw_index() const;
@@ -217,6 +219,7 @@ public:
 
   // If this bytecode is a new, newarray, multianewarray, instanceof,
   // or checkcast, get the referenced klass.
+  ciKlass* get_klass();
   ciKlass* get_klass(bool& will_link);
   int get_klass_index() const;
 
@@ -224,18 +227,53 @@ public:
   // constant.  Do not attempt to resolve it, since that would require
   // execution of Java code.  If it is not resolved, return an unloaded
   // object (ciConstant.as_object()->is_loaded() == false).
-  ciConstant get_constant();
+  ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
+  BasicType   get_basic_type_for_constant_at(int index) const;
 
-  // True if the klass-using bytecode points to an unresolved klass
+  constantTag get_raw_pool_tag_at(int index) const;
+
+  constantTag get_raw_pool_tag() const {
+    int index = get_constant_pool_index();
+    return get_raw_pool_tag_at(index);
+  }
+
+    // True if the klass-using bytecode points to an unresolved klass
   bool is_unresolved_klass() const {
     constantTag tag = get_constant_pool_tag(get_klass_index());
     return tag.is_unresolved_klass();
   }
 
-  bool is_unresolved_klass_in_error() const {
-    constantTag tag = get_constant_pool_tag(get_klass_index());
-    return tag.is_unresolved_klass_in_error();
+  bool is_dynamic_constant() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    constantTag tag = get_raw_pool_tag();
+    return tag.is_dynamic_constant() ||
+           tag.is_dynamic_constant_in_error();
+  }
+
+  bool is_string_constant() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    constantTag tag = get_raw_pool_tag();
+    return tag.is_string();
+  }
+
+  bool is_in_error() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    int index = get_constant_pool_index();
+    constantTag tag = get_constant_pool_tag(index);
+    return tag.is_unresolved_klass_in_error() ||
+           tag.is_method_handle_in_error()    ||
+           tag.is_method_type_in_error()      ||
+           tag.is_dynamic_constant_in_error();
   }
 
   // If this bytecode is one of get_field, get_static, put_field,

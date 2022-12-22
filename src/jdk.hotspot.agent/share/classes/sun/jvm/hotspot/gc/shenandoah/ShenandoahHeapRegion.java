@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class ShenandoahHeapRegion extends VMObject implements LiveRegionsProvide
         });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ShenandoahHeapRegion");
         RegionSizeBytesField = type.getCIntegerField("RegionSizeBytes");
         RegionStateField = type.getField("_state");

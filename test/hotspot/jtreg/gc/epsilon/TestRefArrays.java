@@ -30,24 +30,50 @@ package gc.epsilon;
  * @summary Epsilon is able to allocate arrays, and does not corrupt their state
  * @library /test/lib
  *
- * @run main/othervm -Xmx1g                                        -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xint                                  -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xbatch -Xcomp                         -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xbatch -Xcomp -XX:TieredStopAtLevel=1 -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xbatch -Xcomp -XX:-TieredCompilation  -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
+ * @run main/othervm -XX:+UseTLAB -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
  *
- * @run main/othervm -Xmx1g                                        -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xint                                  -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xbatch -Xcomp                         -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xbatch -Xcomp -XX:TieredStopAtLevel=1 -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
- * @run main/othervm -Xmx1g -Xbatch -Xcomp -XX:-TieredCompilation  -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestRefArrays
+ * @run main/othervm -XX:+UseTLAB -Xmx256m
+ *                   -Xint
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
+ *
+ * @run main/othervm -XX:+UseTLAB -Xmx256m
+ *                   -Xbatch -Xcomp -XX:TieredStopAtLevel=1
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
+ *
+ * @run main/othervm -XX:+UseTLAB -Xmx256m
+ *                   -Xbatch -Xcomp -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
+ *
+ * @run main/othervm -XX:-UseTLAB -Xmx256m
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
+ *
+ * @run main/othervm -XX:-UseTLAB -Xmx256m
+ *                   -Xint
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
+ *
+ * @run main/othervm -XX:-UseTLAB -Xmx256m
+ *                   -Xbatch -Xcomp -XX:TieredStopAtLevel=1
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
+ *
+ * @run main/othervm -XX:-UseTLAB -Xmx256m
+ *                   -Xbatch -Xcomp -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestRefArrays
  */
 
 import java.util.Random;
 import jdk.test.lib.Utils;
 
 public class TestRefArrays {
-  static int COUNT = Integer.getInteger("count", 1000); // ~500 MB allocation
+  static int COUNT = Integer.getInteger("count", 200); // ~100 MB allocation
 
   static MyObject[][] arr;
 

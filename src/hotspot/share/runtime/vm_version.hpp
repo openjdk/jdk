@@ -25,7 +25,8 @@
 #ifndef SHARE_RUNTIME_VM_VERSION_HPP
 #define SHARE_RUNTIME_VM_VERSION_HPP
 
-#include "utilities/macros.hpp"  // for CPU_HEADER() macro.
+#include "runtime/globals.hpp"
+#include "utilities/macros.hpp"
 #include CPU_HEADER(vm_version)
 
 #endif // SHARE_RUNTIME_VM_VERSION_HPP

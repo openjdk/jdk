@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,17 @@
 package java.math;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.ObjectStreamException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.ThreadLocalRandom;
 
 import jdk.internal.math.DoubleConsts;
@@ -717,7 +722,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (numBytes > 0) {
             rnd.nextBytes(randomBits);
             int excessBits = 8*numBytes - numBits;
-            randomBits[0] &= (1 << (8-excessBits)) - 1;
+            randomBits[0] &= (byte)((1 << (8-excessBits)) - 1);
         }
         return randomBits;
     }
@@ -865,6 +870,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     * @return the first integer greater than this {@code BigInteger} that
     *         is probably prime.
     * @throws ArithmeticException {@code this < 0} or {@code this} is too large.
+    * @implNote Due to the nature of the underlying algorithm,
+    *          and depending on the size of {@code this},
+    *          this method could consume a large amount of memory, up to
+    *          exhaustion of available heap space, or could run for a long time.
     * @since 1.5
     */
     public BigInteger nextProbablePrime() {
@@ -941,7 +950,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  certainty a measure of the uncertainty that the caller is
      *         willing to tolerate: if the call returns {@code true}
      *         the probability that this BigInteger is prime exceeds
-     *         {@code (1 - 1/2<sup>certainty</sup>)}.  The execution time of
+     *         <code>(1 - 1/2<sup>certainty</sup>)</code>.  The execution time of
      *         this method is proportional to the value of this parameter.
      * @return {@code true} if this BigInteger is probably prime,
      *         {@code false} if it's definitely composite.
@@ -1221,7 +1230,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Assumes that the input array will not be modified (the returned
      * BigInteger will reference the input array if feasible).
      */
-    private static BigInteger valueOf(int val[]) {
+    private static BigInteger valueOf(int[] val) {
         return (val[0] > 0 ? new BigInteger(val, 1) : new BigInteger(val));
     }
 
@@ -1270,13 +1279,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * with just the very first value.  Additional values will be created
          * on demand.
          */
-        powerCache = new BigInteger[Character.MAX_RADIX+1][];
+        BigInteger[][] cache = new BigInteger[Character.MAX_RADIX+1][];
         logCache = new double[Character.MAX_RADIX+1];
 
         for (int i=Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
-            powerCache[i] = new BigInteger[] { BigInteger.valueOf(i) };
+            cache[i] = new BigInteger[] { BigInteger.valueOf(i) };
             logCache[i] = Math.log(i);
         }
+        BigInteger.powerCache = cache;
     }
 
     /**
@@ -1581,7 +1591,31 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this * val}
      */
     public BigInteger multiply(BigInteger val) {
-        return multiply(val, false);
+        return multiply(val, false, false, 0);
+    }
+
+    /**
+     * Returns a BigInteger whose value is {@code (this * val)}.
+     * When both {@code this} and {@code val} are large, typically
+     * in the thousands of bits, parallel multiply might be used.
+     * This method returns the exact same mathematical result as
+     * {@link #multiply}.
+     *
+     * @implNote This implementation may offer better algorithmic
+     * performance when {@code val == this}.
+     *
+     * @implNote Compared to {@link #multiply}, an implementation's
+     * parallel multiplication algorithm would typically use more
+     * CPU resources to compute the result faster, and may do so
+     * with a slight increase in memory consumption.
+     *
+     * @param  val value to be multiplied by this BigInteger.
+     * @return {@code this * val}
+     * @see #multiply
+     * @since 19
+     */
+    public BigInteger parallelMultiply(BigInteger val) {
+        return multiply(val, false, true, 0);
     }
 
     /**
@@ -1590,16 +1624,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  val value to be multiplied by this BigInteger.
      * @param  isRecursion whether this is a recursive invocation
+     * @param  parallel whether the multiply should be done in parallel
      * @return {@code this * val}
      */
-    private BigInteger multiply(BigInteger val, boolean isRecursion) {
+    private BigInteger multiply(BigInteger val, boolean isRecursion, boolean parallel, int depth) {
         if (val.signum == 0 || signum == 0)
             return ZERO;
 
         int xlen = mag.length;
 
         if (val == this && xlen > MULTIPLY_SQUARE_THRESHOLD) {
-            return square();
+            return square(true, parallel, depth);
         }
 
         int ylen = val.mag.length;
@@ -1670,14 +1705,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     // are only considering the magnitudes as non-negative. The
                     // Toom-Cook multiplication algorithm determines the sign
                     // at its end from the two signum values.
-                    if (bitLength(mag, mag.length) +
-                        bitLength(val.mag, val.mag.length) >
+                    if ((long)bitLength(mag, mag.length) +
+                        (long)bitLength(val.mag, val.mag.length) >
                         32L*MAX_MAG_LENGTH) {
                         reportOverflow();
                     }
                 }
 
-                return multiplyToomCook3(this, val);
+                return multiplyToomCook3(this, val, parallel, depth);
             }
         }
     }
@@ -1844,6 +1879,88 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
+    @SuppressWarnings("serial")
+    private abstract static sealed class RecursiveOp extends RecursiveTask<BigInteger> {
+        /**
+         * The threshold until when we should continue forking recursive ops
+         * if parallel is true. This threshold is only relevant for Toom Cook 3
+         * multiply and square.
+         */
+        private static final int PARALLEL_FORK_DEPTH_THRESHOLD =
+                calculateMaximumDepth(ForkJoinPool.getCommonPoolParallelism());
+
+        private static final int calculateMaximumDepth(int parallelism) {
+            return 32 - Integer.numberOfLeadingZeros(parallelism);
+        }
+
+        final boolean parallel;
+        /**
+         * The current recursing depth. Since it is a logarithmic algorithm,
+         * we do not need an int to hold the number.
+         */
+        final byte depth;
+
+        private RecursiveOp(boolean parallel, int depth) {
+            this.parallel = parallel;
+            this.depth = (byte) depth;
+        }
+
+        private static int getParallelForkDepthThreshold() {
+            if (Thread.currentThread() instanceof ForkJoinWorkerThread fjwt) {
+                return calculateMaximumDepth(fjwt.getPool().getParallelism());
+            }
+            else {
+                return PARALLEL_FORK_DEPTH_THRESHOLD;
+            }
+        }
+
+        protected RecursiveTask<BigInteger> forkOrInvoke() {
+            if (parallel && depth <= getParallelForkDepthThreshold()) fork();
+            else invoke();
+            return this;
+        }
+
+        @SuppressWarnings("serial")
+        private static final class RecursiveMultiply extends RecursiveOp {
+            private final BigInteger a;
+            private final BigInteger b;
+
+            public RecursiveMultiply(BigInteger a, BigInteger b, boolean parallel, int depth) {
+                super(parallel, depth);
+                this.a = a;
+                this.b = b;
+            }
+
+            @Override
+            public BigInteger compute() {
+                return a.multiply(b, true, parallel, depth);
+            }
+        }
+
+        @SuppressWarnings("serial")
+        private static final class RecursiveSquare extends RecursiveOp {
+            private final BigInteger a;
+
+            public RecursiveSquare(BigInteger a, boolean parallel, int depth) {
+                super(parallel, depth);
+                this.a = a;
+            }
+
+            @Override
+            public BigInteger compute() {
+                return a.square(true, parallel, depth);
+            }
+        }
+
+        private static RecursiveTask<BigInteger> multiply(BigInteger a, BigInteger b, boolean parallel, int depth) {
+            return new RecursiveMultiply(a, b, parallel, depth).forkOrInvoke();
+        }
+
+        private static RecursiveTask<BigInteger> square(BigInteger a, boolean parallel, int depth) {
+            return new RecursiveSquare(a, parallel, depth).forkOrInvoke();
+        }
+    }
+
     /**
      * Multiplies two BigIntegers using a 3-way Toom-Cook multiplication
      * algorithm.  This is a recursive divide-and-conquer algorithm which is
@@ -1872,7 +1989,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * LNCS #4547. Springer, Madrid, Spain, June 21-22, 2007.
      *
      */
-    private static BigInteger multiplyToomCook3(BigInteger a, BigInteger b) {
+    private static BigInteger multiplyToomCook3(BigInteger a, BigInteger b, boolean parallel, int depth) {
         int alen = a.mag.length;
         int blen = b.mag.length;
 
@@ -1896,16 +2013,20 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1, db1;
 
-        v0 = a0.multiply(b0, true);
+        depth++;
+        var v0_task = RecursiveOp.multiply(a0, b0, parallel, depth);
         da1 = a2.add(a0);
         db1 = b2.add(b0);
-        vm1 = da1.subtract(a1).multiply(db1.subtract(b1), true);
+        var vm1_task = RecursiveOp.multiply(da1.subtract(a1), db1.subtract(b1), parallel, depth);
         da1 = da1.add(a1);
         db1 = db1.add(b1);
-        v1 = da1.multiply(db1, true);
+        var v1_task = RecursiveOp.multiply(da1, db1, parallel, depth);
         v2 = da1.add(a2).shiftLeft(1).subtract(a0).multiply(
-             db1.add(b2).shiftLeft(1).subtract(b0), true);
-        vinf = a2.multiply(b2, true);
+             db1.add(b2).shiftLeft(1).subtract(b0), true, parallel, depth);
+        vinf = a2.multiply(b2, true, parallel, depth);
+        v0 = v0_task.join();
+        vm1 = vm1_task.join();
+        v1 = v1_task.join();
 
         // The algorithm requires two divisions by 2 and one by 3.
         // All divisions are known to be exact, that is, they do not produce
@@ -2066,22 +2187,22 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     // Squaring
 
     /**
-     * Returns a BigInteger whose value is {@code (this<sup>2</sup>)}.
+     * Returns a BigInteger whose value is <code>(this<sup>2</sup>)</code>.
      *
-     * @return {@code this<sup>2</sup>}
+     * @return <code>this<sup>2</sup></code>
      */
     private BigInteger square() {
-        return square(false);
+        return square(false, false, 0);
     }
 
     /**
-     * Returns a BigInteger whose value is {@code (this<sup>2</sup>)}. If
+     * Returns a BigInteger whose value is <code>(this<sup>2</sup>)</code>. If
      * the invocation is recursive certain overflow checks are skipped.
      *
      * @param isRecursion whether this is a recursive invocation
-     * @return {@code this<sup>2</sup>}
+     * @return <code>this<sup>2</sup></code>
      */
-    private BigInteger square(boolean isRecursion) {
+    private BigInteger square(boolean isRecursion, boolean parallel, int depth) {
         if (signum == 0) {
             return ZERO;
         }
@@ -2103,7 +2224,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     }
                 }
 
-                return squareToomCook3();
+                return squareToomCook3(parallel, depth);
             }
         }
     }
@@ -2237,7 +2358,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * that has better asymptotic performance than the algorithm used in
      * squareToLen or squareKaratsuba.
      */
-    private BigInteger squareToomCook3() {
+    private BigInteger squareToomCook3(boolean parallel, int depth) {
         int len = mag.length;
 
         // k is the size (in ints) of the lower-order slices.
@@ -2254,13 +2375,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         a0 = getToomSlice(k, r, 2, len);
         BigInteger v0, v1, v2, vm1, vinf, t1, t2, tm1, da1;
 
-        v0 = a0.square(true);
+        depth++;
+        var v0_fork = RecursiveOp.square(a0, parallel, depth);
         da1 = a2.add(a0);
-        vm1 = da1.subtract(a1).square(true);
+        var vm1_fork = RecursiveOp.square(da1.subtract(a1), parallel, depth);
         da1 = da1.add(a1);
-        v1 = da1.square(true);
-        vinf = a2.square(true);
-        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true);
+        var v1_fork = RecursiveOp.square(da1, parallel, depth);
+        vinf = a2.square(true, parallel, depth);
+        v2 = da1.add(a2).shiftLeft(1).subtract(a0).square(true, parallel, depth);
+        v0 = v0_fork.join();
+        vm1 = vm1_fork.join();
+        v1 = v1_fork.join();
 
         // The algorithm requires two divisions by 2 and one by 3.
         // All divisions are known to be exact, that is, they do not produce
@@ -3271,7 +3396,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Mask out any excess bits
         int excessBits = (numInts << 5) - p;
-        mag[0] &= (1L << (32-excessBits)) - 1;
+        mag[0] &= (int)((1L << (32-excessBits)) - 1);
 
         return (mag[0] == 0 ? new BigInteger(1, mag) : new BigInteger(mag, 1));
     }
@@ -3761,6 +3886,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         this method is proportional to the value of this parameter.
      * @return {@code true} if this BigInteger is probably prime,
      *         {@code false} if it's definitely composite.
+     * @throws ArithmeticException {@code this} is too large.
+     * @implNote Due to the nature of the underlying primality test algorithm,
+     *          and depending on the size of {@code this} and {@code certainty},
+     *          this method could consume a large amount of memory, up to
+     *          exhaustion of available heap space, or could run for a long time.
      */
     public boolean isProbablePrime(int certainty) {
         if (certainty <= 0)
@@ -3770,7 +3900,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return true;
         if (!w.testBit(0) || w.equals(ONE))
             return false;
-
+        if (w.bitLength() > PRIME_SEARCH_BIT_LENGTH_LIMIT + 1) {
+            throw new ArithmeticException("Primality test implementation restriction on bitLength");
+        }
         return w.primeToCertainty(certainty, null);
     }
 
@@ -3806,7 +3938,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param val BigInteger whose magnitude array to be compared.
      * @return -1, 0 or 1 as this magnitude array is less than, equal to or
-     *         greater than the magnitude aray for the specified BigInteger's.
+     *         greater than the magnitude array for the specified BigInteger's.
      */
     final int compareMagnitude(BigInteger val) {
         int[] m1 = mag;
@@ -4412,7 +4544,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a copy of the input array stripped of any leading zero bytes.
      */
-    private static int[] stripLeadingZeroInts(int val[]) {
+    private static int[] stripLeadingZeroInts(int[] val) {
         int vlen = val.length;
         int keep;
 
@@ -4426,7 +4558,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the input array stripped of any leading zero bytes.
      * Since the source is trusted the copying may be skipped.
      */
-    private static int[] trustedStripLeadingZeroInts(int val[]) {
+    private static int[] trustedStripLeadingZeroInts(int[] val) {
         int vlen = val.length;
         int keep;
 
@@ -4439,7 +4571,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns a copy of the input array stripped of any leading zero bytes.
      */
-    private static int[] stripLeadingZeroBytes(byte a[], int off, int len) {
+    private static int[] stripLeadingZeroBytes(byte[] a, int off, int len) {
         int indexBound = off + len;
         int keep;
 
@@ -4465,7 +4597,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero bytes) unsigned whose value is -a.
      */
-    private static int[] makePositive(byte a[], int off, int len) {
+    private static int[] makePositive(byte[] a, int off, int len) {
         int keep, k;
         int indexBound = off + len;
 
@@ -4513,7 +4645,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero ints) unsigned whose value is -a.
      */
-    private static int[] makePositive(int a[]) {
+    private static int[] makePositive(int[] a) {
         int keep, j;
 
         // Find first non-sign (0xffffffff) int of input
@@ -4706,17 +4838,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // prepare to read the alternate persistent fields
         ObjectInputStream.GetField fields = s.readFields();
 
-        // Read the alternate persistent fields that we care about
-        int sign = fields.get("signum", -2);
-        byte[] magnitude = (byte[])fields.get("magnitude", null);
+        // Read and validate the alternate persistent fields that we
+        // care about, signum and magnitude
 
-        // Validate signum
+        // Read and validate signum
+        int sign = fields.get("signum", -2);
         if (sign < -1 || sign > 1) {
             String message = "BigInteger: Invalid signum value";
             if (fields.defaulted("signum"))
                 message = "BigInteger: Signum not present in stream";
             throw new java.io.StreamCorruptedException(message);
         }
+
+        // Read and validate magnitude
+        byte[] magnitude = (byte[])fields.get("magnitude", null);
+        magnitude = magnitude.clone(); // defensive copy
         int[] mag = stripLeadingZeroBytes(magnitude, 0, magnitude.length);
         if ((mag.length == 0) != (sign == 0)) {
             String message = "BigInteger: signum-magnitude mismatch";
@@ -4725,18 +4861,24 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             throw new java.io.StreamCorruptedException(message);
         }
 
-        // Commit final fields via Unsafe
-        UnsafeHolder.putSign(this, sign);
-
-        // Calculate mag field from magnitude and discard magnitude
-        UnsafeHolder.putMag(this, mag);
-        if (mag.length >= MAX_MAG_LENGTH) {
-            try {
-                checkRange();
-            } catch (ArithmeticException e) {
-                throw new java.io.StreamCorruptedException("BigInteger: Out of the supported range");
-            }
+        // Equivalent to checkRange() on mag local without assigning
+        // this.mag field
+        if (mag.length > MAX_MAG_LENGTH ||
+            (mag.length == MAX_MAG_LENGTH && mag[0] < 0)) {
+            throw new java.io.StreamCorruptedException("BigInteger: Out of the supported range");
         }
+
+        // Commit final fields via Unsafe
+        UnsafeHolder.putSignAndMag(this, sign, mag);
+    }
+
+    /**
+     * Serialization without data not supported for this class.
+     */
+    @java.io.Serial
+    private void readObjectNoData()
+        throws ObjectStreamException {
+        throw new InvalidObjectException("Deserialized BigInteger objects need data");
     }
 
     // Support for resetting final fields while deserializing
@@ -4748,11 +4890,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         private static final long magOffset
                 = unsafe.objectFieldOffset(BigInteger.class, "mag");
 
-        static void putSign(BigInteger bi, int sign) {
+        static void putSignAndMag(BigInteger bi, int sign, int[] magnitude) {
             unsafe.putInt(bi, signumOffset, sign);
-        }
-
-        static void putMag(BigInteger bi, int[] magnitude) {
             unsafe.putReference(bi, magOffset, magnitude);
         }
     }

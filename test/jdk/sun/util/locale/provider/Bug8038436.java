@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8038436 8158504 8065555 8167143 8167273 8189272
+ * @bug 8038436 8158504 8065555 8167143 8167273 8189272 8287340
  * @summary Test for changes in 8038436
  * @modules java.base/sun.util.locale.provider
  *          java.base/sun.util.spi
@@ -32,18 +32,9 @@
  * @run main/othervm  -Djava.locale.providers=COMPAT Bug8038436  availlocs
  */
 
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
-import java.util.Formatter;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 public class Bug8038436 {
@@ -61,73 +52,74 @@ public class Bug8038436 {
     }
 
 
-    static final String[] bipLocs = ("ar, ar-JO, ar-LB, ar-SY, be, be-BY, bg, " +
-        "bg-BG, ca, ca-ES, cs, cs-CZ, da, da-DK, de, de-AT, de-CH, de-DE, " +
-        "de-LU, el, el-CY, el-GR, en, en-AU, en-CA, en-GB, en-IE, en-IN, " +
-        "en-MT, en-NZ, en-PH, en-SG, en-US, en-ZA, es, es-AR, es-BO, es-CL, " +
-        "es-CO, es-CR, es-DO, es-EC, es-ES, es-GT, es-HN, es-MX, es-NI, " +
-        "es-PA, es-PE, es-PR, es-PY, es-SV, es-US, es-UY, es-VE, et, et-EE, " +
-        "fi, fi-FI, fr, fr-BE, fr-CA, fr-CH, fr-FR, ga, ga-IE, he, he-IL, " +
-        "hi-IN, hr, hr-HR, hu, hu-HU, id, id-ID, is, is-IS, it, it-CH, it-IT, " +
-        "ja, ja-JP, ko, ko-KR, lt, lt-LT, lv, lv-LV, mk, mk-MK, ms, ms-MY, mt, " +
-        "mt-MT, nb, nb-NO, nl, nl-BE, nl-NL, nn-NO, no, no-NO, no-NO, pl, pl-PL, pt, pt-BR, " +
-        "pt-PT, ro, ro-RO, ru, ru-RU, sk, sk-SK, sl, sl-SI, sq, sq-AL, sr, " +
-        "sr-BA, sr-CS, sr-Latn, sr-Latn-ME, sr-ME, sr-RS, sv, sv-SE, th, th-TH, " +
-        "tr, tr-TR, uk, uk-UA, und, vi, vi-VN, zh, zh-CN, zh-HK, zh-Hans-CN, " +
-        "zh-Hans-SG, zh-Hant-HK, zh-Hant-TW, zh-SG, zh-TW, ").split(",\\s*");
+    static final String[] bipLocs = (", ar, ar_JO, ar_LB, ar_SY, be, be_BY, bg, " +
+        "bg_BG, ca, ca_ES, cs, cs_CZ, da, da_DK, de, de_AT, de_CH, de_DE, " +
+        "de_LU, el, el_CY, el_GR, en, en_AU, en_CA, en_GB, en_IE, en_IN, " +
+        "en_MT, en_NZ, en_PH, en_SG, en_US, en_ZA, es, es_AR, es_BO, es_CL, " +
+        "es_CO, es_CR, es_DO, es_EC, es_ES, es_GT, es_HN, es_MX, es_NI, " +
+        "es_PA, es_PE, es_PR, es_PY, es_SV, es_US, es_UY, es_VE, et, et_EE, " +
+        "fi, fi_FI, fr, fr_BE, fr_CA, fr_CH, fr_FR, ga, ga_IE, he, he_IL, " +
+        "hi_IN, hr, hr_HR, hu, hu_HU, id, id_ID, is, is_IS, it, it_CH, it_IT, " +
+        "ja, ja_JP, ko, ko_KR, lt, lt_LT, lv, lv_LV, mk, mk_MK, ms, ms_MY, mt, " +
+        "mt_MT, nb, nb_NO, nl, nl_BE, nl_NL, nn_NO, no, no_NO, no_NO_NY, pl, pl_PL, pt, pt_BR, " +
+        "pt_PT, ro, ro_RO, ru, ru_RU, sk, sk_SK, sl, sl_SI, sq, sq_AL, sr, " +
+        "sr_BA, sr_CS, sr_ME, sr_ME_#Latn, sr_RS, sr__#Latn, sv, sv_SE, th, th_TH, " +
+        "tr, tr_TR, uk, uk_UA, vi, vi_VN, zh, zh_CN, zh_CN_#Hans, zh_HK, " +
+        "zh_HK_#Hant, zh_SG, zh_SG_#Hans, zh_TW, zh_TW_#Hant, ").split(",\\s*");
+
     static final String[] dfpLocs = bipLocs;
     static final String[] datefspLocs = bipLocs;
     static final String[] decimalfspLocs = bipLocs;
     static final String[] calnpLocs = bipLocs;
-    static final String[] cpLocs = ("ar, be, bg, ca, cs, da, el, es, et, fi, " +
-        "fr, he, hi, hr, hu, is, ja, ko, lt, lv, mk, nb, nb-NO, nn-NO, no, pl, ro, ru, sk, sl, " +
-        "sq, sr, sr-Latn, sv, th, tr, uk, und, vi, zh, zh-HK, zh-Hant-HK, " +
-        "zh-Hant-TW, zh-TW, ").split(",\\s*");
-    static final String[] nfpLocs = ("ar, ar-AE, ar-BH, ar-DZ, ar-EG, ar-IQ, " +
-        "ar-JO, ar-KW, ar-LB, ar-LY, ar-MA, ar-OM, ar-QA, ar-SA, ar-SD, ar-SY, " +
-        "ar-TN, ar-YE, be, be-BY, bg, bg-BG, ca, ca-ES, cs, cs-CZ, da, da-DK, " +
-        "de, de-AT, de-CH, de-DE, de-LU, el, el-CY, el-GR, en, en-AU, " +
-        "en-CA, en-GB, en-IE, en-IN, en-MT, en-NZ, en-PH, en-SG, en-US, en-ZA, " +
-        "es, es-AR, es-BO, es-CL, es-CO, es-CR, es-CU, es-DO, es-EC, es-ES, " +
-        "es-GT, es-HN, es-MX, es-NI, es-PA, es-PE, es-PR, es-PY, es-SV, es-US, " +
-        "es-UY, es-VE, et, et-EE, fi, fi-FI, fr, fr-BE, fr-CA, fr-CH, fr-FR, " +
-        "fr-LU, ga, ga-IE, he, he-IL, hi, hi-IN, hr, hr-HR, hu, hu-HU, id, " +
-        "id-ID, is, is-IS, it, it-CH, it-IT, ja, ja-JP, " +
-        "ja-JP-u-ca-japanese-x-lvariant-JP, ko, ko-KR, lt, lt-LT, lv, lv-LV, " +
-        "mk, mk-MK, ms, ms-MY, mt, mt-MT, nb, nb-NO, nl, nl-BE, nl-NL, nn-NO, " +
-        "nn-NO, no, no-NO, pl, pl-PL, pt, pt-BR, pt-PT, ro, ro-RO, ru, ru-RU, " +
-        "sk, sk-SK, sl, sl-SI, sq, sq-AL, sr, sr-BA, sr-CS, sr-Latn, " +
-        "sr-Latn-BA, sr-Latn-ME, sr-Latn-RS, sr-ME, sr-RS, sv, sv-SE, th, " +
-        "th-TH, th-TH-u-nu-thai-x-lvariant-TH, tr, tr-TR, uk, uk-UA, und, vi, " +
-        "vi-VN, zh, zh-CN, zh-HK, zh-Hans-CN, zh-Hans-SG, zh-Hant-HK, " +
-        "zh-Hant-TW, zh-SG, zh-TW, ").split(",\\s*");
-    static final String[] currencynpLocs = ("ar-AE, ar-BH, ar-DZ, ar-EG, ar-IQ, " +
-        "ar-JO, ar-KW, ar-LB, ar-LY, ar-MA, ar-OM, ar-QA, ar-SA, ar-SD, ar-SY, " +
-        "ar-TN, ar-YE, be-BY, bg-BG, ca-ES, cs-CZ, da-DK, de, de-AT, de-CH, " +
-        "de-DE, de-LU, el-CY, el-GR, en-AU, en-CA, en-GB, en-IE, en-IN, " +
-        "en-MT, en-NZ, en-PH, en-SG, en-US, en-ZA, es, es-AR, es-BO, es-CL, " +
-        "es-CO, es-CR, es-CU, es-DO, es-EC, es-ES, es-GT, es-HN, es-MX, es-NI, " +
-        "es-PA, es-PE, es-PR, es-PY, es-SV, es-US, es-UY, es-VE, et-EE, fi-FI, " +
-        "fr, fr-BE, fr-CA, fr-CH, fr-FR, fr-LU, ga-IE, he-IL, hi-IN, hr-HR, " +
-        "hu-HU, id-ID, is-IS, it, it-CH, it-IT, ja, ja-JP, ko, ko-KR, lt-LT, " +
-        "lv-LV, mk-MK, ms-MY, mt-MT, nb,  nb-NO, nl-BE, nl-NL, nn-NO, no-NO, pl-PL, pt, pt-BR, " +
-        "pt-PT, ro-RO, ru-RU, sk-SK, sl-SI, sq-AL, sr-BA, sr-CS, sr-Latn-BA, " +
-        "sr-Latn-ME, sr-Latn-RS, sr-ME, sr-RS, sv, sv-SE, th-TH, tr-TR, uk-UA, " +
-        "und, vi-VN, zh-CN, zh-HK, zh-Hans-CN, zh-Hans-SG, zh-Hant-HK, " +
-        "zh-Hant-TW, zh-SG, zh-TW, ").split(",\\s*");
-    static final String[] lnpLocs = ("ar, be, bg, ca, cs, da, de, el, el-CY, " +
-        "en, en-MT, en-PH, en-SG, es, es-US, et, fi, fr, ga, he, hi, hr, hu, " +
-        "id, is, it, ja, ko, lt, lv, mk, ms, mt, nb, nb-NO, nl, nn-NO, no, no-NO, pl, pt, pt-BR, " +
-        "pt-PT, ro, ru, sk, sl, sq, sr, sr-Latn, sv, th, tr, uk, und, vi, zh, " +
-        "zh-HK, zh-Hans-SG, zh-Hant-HK, zh-Hant-TW, zh-SG, zh-TW, ").split(",\\s*");
-    static final String[] tznpLocs = ("de, en, en-CA, en-GB, en-IE, es, fr, hi, " +
-        "it, ja, ko, nb,  nb-NO, nn-NO, pt-BR, sv, und, zh-CN, zh-HK, zh-Hans-CN, zh-Hant-HK, " +
-        "zh-Hant-TW, zh-TW, ").split(",\\s*");
-    static final String[] caldpLocs = ("ar, be, bg, ca, cs, da, de, el, el-CY, " +
-        "en, en-GB, en-IE, en-MT, es, es-ES, es-US, et, fi, fr, fr-CA, he, hi, " +
-        "hr, hu, id-ID, is, it, ja, ko, lt, lv, mk, ms-MY, mt, mt-MT, nb, nb-NO, nl, nn-NO, no, " +
-        "pl, pt, pt-BR, pt-PT, ro, ru, sk, sl, sq, sr, sr-Latn-BA, sr-Latn-ME, " +
-        "sr-Latn-RS, sv, th, tr, uk, und, vi, zh, ").split(",\\s*");
+    static final String[] cpLocs = (", ar, be, bg, ca, cs, da, el, es, et, fi, " +
+        "fr, he, hi, hr, hu, is, ja, ko, lt, lv, mk, nb, nb_NO, nn_NO, no, pl, ro, ru, sk, sl, " +
+        "sq, sr, sr__#Latn, sv, th, tr, uk, vi, zh, zh_HK, zh_HK_#Hant, " +
+        "zh_TW, zh_TW_#Hant, ").split(",\\s*");
+    static final String[] nfpLocs = (", ar, ar_AE, ar_BH, ar_DZ, ar_EG, ar_IQ, " +
+        "ar_JO, ar_KW, ar_LB, ar_LY, ar_MA, ar_OM, ar_QA, ar_SA, ar_SD, ar_SY, " +
+        "ar_TN, ar_YE, be, be_BY, bg, bg_BG, ca, ca_ES, cs, cs_CZ, da, da_DK, " +
+        "de, de_AT, de_CH, de_DE, de_LU, el, el_CY, el_GR, en, en_AU, " +
+        "en_CA, en_GB, en_IE, en_IN, en_MT, en_NZ, en_PH, en_SG, en_US, en_ZA, " +
+        "es, es_AR, es_BO, es_CL, es_CO, es_CR, es_CU, es_DO, es_EC, es_ES, " +
+        "es_GT, es_HN, es_MX, es_NI, es_PA, es_PE, es_PR, es_PY, es_SV, es_US, " +
+        "es_UY, es_VE, et, et_EE, fi, fi_FI, fr, fr_BE, fr_CA, fr_CH, fr_FR, " +
+        "fr_LU, ga, ga_IE, he, he_IL, hi, hi_IN, hr, hr_HR, hu, hu_HU, id, " +
+        "id_ID, is, is_IS, it, it_CH, it_IT, ja, ja_JP, " +
+        "ja_JP_JP_#u-ca-japanese, ko, ko_KR, lt, lt_LT, lv, lv_LV, " +
+        "mk, mk_MK, ms, ms_MY, mt, mt_MT, nb, nb_NO, nl, nl_BE, nl_NL, nn_NO, " +
+        "no, no_NO, no_NO_NY, pl, pl_PL, pt, pt_BR, pt_PT, ro, ro_RO, ru, ru_RU, " +
+        "sk, sk_SK, sl, sl_SI, sq, sq_AL, sr, sr_BA, sr_BA_#Latn, sr_CS, sr_ME, " +
+        "sr_ME_#Latn, sr_RS, sr_RS_#Latn, sr__#Latn, sv, sv_SE, th, " +
+        "th_TH, th_TH_TH_#u-nu-thai, tr, tr_TR, uk, uk_UA, vi, " +
+        "vi_VN, zh, zh_CN, zh_CN_#Hans, zh_HK, zh_HK_#Hant, zh_SG, zh_SG_#Hans, " +
+        "zh_TW, zh_TW_#Hant, ").split(",\\s*");
+    static final String[] currencynpLocs = (", ar_AE, ar_BH, ar_DZ, ar_EG, ar_IQ, " +
+        "ar_JO, ar_KW, ar_LB, ar_LY, ar_MA, ar_OM, ar_QA, ar_SA, ar_SD, ar_SY, " +
+        "ar_TN, ar_YE, be_BY, bg_BG, ca_ES, cs_CZ, da_DK, de, de_AT, de_CH, " +
+        "de_DE, de_LU, el_CY, el_GR, en_AU, en_CA, en_GB, en_IE, en_IN, " +
+        "en_MT, en_NZ, en_PH, en_SG, en_US, en_ZA, es, es_AR, es_BO, es_CL, " +
+        "es_CO, es_CR, es_CU, es_DO, es_EC, es_ES, es_GT, es_HN, es_MX, es_NI, " +
+        "es_PA, es_PE, es_PR, es_PY, es_SV, es_US, es_UY, es_VE, et_EE, fi_FI, " +
+        "fr, fr_BE, fr_CA, fr_CH, fr_FR, fr_LU, ga_IE, he_IL, hi_IN, hr_HR, " +
+        "hu_HU, id_ID, is_IS, it, it_CH, it_IT, ja, ja_JP, ko, ko_KR, lt_LT, " +
+        "lv_LV, mk_MK, ms_MY, mt_MT, nb,  nb_NO, nl_BE, nl_NL, nn_NO, no_NO, pl_PL, pt, pt_BR, " +
+        "pt_PT, ro_RO, ru_RU, sk_SK, sl_SI, sq_AL, sr_BA, sr_BA_#Latn, sr_CS, " +
+        "sr_ME, sr_ME_#Latn, sr_RS, sr_RS_#Latn, sv, sv_SE, th_TH, tr_TR, uk_UA, " +
+        "vi_VN, zh_CN, zh_CN_#Hans, zh_HK, zh_HK_#Hant, zh_SG, zh_SG_#Hans, " +
+        "zh_TW, zh_TW_#Hant, ").split(",\\s*");
+    static final String[] lnpLocs = (", ar, be, bg, ca, cs, da, de, el, el_CY, " +
+        "en, en_MT, en_PH, en_SG, es, es_US, et, fi, fr, ga, he, hi, hr, hu, " +
+        "id, is, it, ja, ko, lt, lv, mk, ms, mt, nb, nb_NO, nl, nn_NO, no, no_NO_NY, pl, pt, pt_BR, " +
+        "pt_PT, ro, ru, sk, sl, sq, sr, sr__#Latn, sv, th, tr, uk, vi, zh, " +
+        "zh_HK, zh_HK_#Hant, zh_SG, zh_SG_#Hans, zh_TW, zh_TW_#Hant, ").split(",\\s*");
+    static final String[] tznpLocs = (", de, en, en_CA, en_GB, en_IE, es, fr, hi, " +
+        "it, ja, ko, nb,  nb_NO, nn_NO, pt_BR, sv, zh_CN, zh_CN_#Hans, zh_HK, zh_HK_#Hant, " +
+        "zh_TW, zh_TW_#Hant, ").split(",\\s*");
+    static final String[] caldpLocs = (", ar, be, bg, ca, cs, da, de, el, el_CY, " +
+        "en, en_GB, en_IE, en_MT, es, es_ES, es_US, et, fi, fr, fr_CA, he, hi, " +
+        "hr, hu, id_ID, is, it, ja, ko, lt, lv, mk, ms_MY, mt, mt_MT, nb, nb_NO, nl, nn_NO, no, " +
+        "pl, pt, pt_BR, pt_PT, ro, ru, sk, sl, sq, sr, sr_BA_#Latn, sr_ME_#Latn, sr_RS_#Latn, " +
+        "sv, th, tr, uk, vi, zh, ").split(",\\s*");
     static final String[] calpLocs = caldpLocs;
 
     /*
@@ -167,18 +159,15 @@ public class Bug8038436 {
 
     private static void checkAvailableLocales(String testName, Locale[] got, String[] expected) {
         System.out.println("Testing available locales for " + testName);
-        List<Locale> gotList = Arrays.asList(got).stream()
-            .map(Locale::toLanguageTag)
+        List<String> gotList = Arrays.stream(got)
+            .map(Locale::toString)
             .sorted()
-            .map(Locale::forLanguageTag)
-            .collect(Collectors.toList());
-        List<Locale> expectedList = Arrays.asList(expected).stream()
-            .map(Locale::forLanguageTag)
-            .collect(Collectors.toList());
+            .toList();
+        List<String> expectedList = Arrays.stream(expected)
+            .toList();
 
         if (!gotList.equals(expectedList)) {
-            throw new RuntimeException("\n" + gotList.toString() + "\n is not equal to \n" +
-                                       expectedList.toString());
+            throw new RuntimeException("\n" + gotList + "\n is not equal to \n" + expectedList);
         }
     }
 }

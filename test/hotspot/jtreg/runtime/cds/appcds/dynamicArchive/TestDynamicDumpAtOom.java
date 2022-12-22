@@ -31,9 +31,9 @@
  * @comment Test dynamic dump at OOM, currently only works with SerialGC
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @compile ./test-classes/MiniStoreOom.java
- * @build LambHello sun.hotspot.WhiteBox
+ * @build LambHello jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar ministore.jar MiniStoreOom
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestDynamicDumpAtOom
  */
 
@@ -53,7 +53,7 @@ public class TestDynamicDumpAtOom extends DynamicArchiveTestBase {
              jarFile,
              mainClass,
              "1024").assertAbnormalExit(output -> {
-                 output.shouldContain("ArchiveClassesAtExit has failed")
+                 output.shouldContain("Dynamic dump has failed")
                        .shouldContain("java.lang.OutOfMemoryError: Java heap space");
              });
     }

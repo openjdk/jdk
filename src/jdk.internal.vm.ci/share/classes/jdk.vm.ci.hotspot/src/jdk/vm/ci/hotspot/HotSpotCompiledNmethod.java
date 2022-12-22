@@ -54,10 +54,37 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
      */
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "set by the VM") private String installationFailureMessage;
 
-    public HotSpotCompiledNmethod(String name, byte[] targetCode, int targetCodeSize, Site[] sites, Assumption[] assumptions, ResolvedJavaMethod[] methods, Comment[] comments, byte[] dataSection,
-                    int dataSectionAlignment, DataPatch[] dataSectionPatches, boolean isImmutablePIC, int totalFrameSize, StackSlot deoptRescueSlot, HotSpotResolvedJavaMethod method, int entryBCI,
-                    int id, long compileState, boolean hasUnsafeAccess) {
-        super(name, targetCode, targetCodeSize, sites, assumptions, methods, comments, dataSection, dataSectionAlignment, dataSectionPatches, isImmutablePIC, totalFrameSize, deoptRescueSlot);
+    public HotSpotCompiledNmethod(String name,
+                    byte[] targetCode,
+                    int targetCodeSize,
+                    Site[] sites,
+                    Assumption[] assumptions,
+                    ResolvedJavaMethod[] methods,
+                    Comment[] comments,
+                    byte[] dataSection,
+                    int dataSectionAlignment,
+                    DataPatch[] dataSectionPatches,
+                    boolean isImmutablePIC,
+                    int totalFrameSize,
+                    StackSlot deoptRescueSlot,
+                    HotSpotResolvedJavaMethod method,
+                    int entryBCI,
+                    int id,
+                    long compileState,
+                    boolean hasUnsafeAccess) {
+        super(name,
+                        targetCode,
+                        targetCodeSize,
+                        sites,
+                        assumptions,
+                        methods,
+                        comments,
+                        dataSection,
+                        dataSectionAlignment,
+                        dataSectionPatches,
+                        isImmutablePIC,
+                        totalFrameSize,
+                        deoptRescueSlot);
         this.method = method;
         this.entryBCI = entryBCI;
         this.id = id;

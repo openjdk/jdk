@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
 
 static LogDecorators::Decorator decorator_array[] = {
@@ -79,10 +80,10 @@ TEST(LogDecorators, from_and_to_name) {
     EXPECT_EQ(decorator, decorator2);
 
     // Test case insensitivity
-    char* name_cpy = strdup(name);
+    char* name_cpy = os::strdup(name, mtTest);
     name_cpy[0] = toupper(name_cpy[0]);
     decorator2 = LogDecorators::from_string(name_cpy);
-    free(name_cpy);
+    os::free(name_cpy);
     EXPECT_EQ(decorator, decorator2);
   }
 }
@@ -99,10 +100,10 @@ TEST(LogDecorators, from_and_to_abbr) {
     ASSERT_EQ(decorator, decorator2);
 
     // Test case insensitivity
-    char* abbr_cpy = strdup(abbr);
+    char* abbr_cpy = os::strdup(abbr);
     abbr_cpy[0] = toupper(abbr_cpy[0]);
     decorator2 = LogDecorators::from_string(abbr_cpy);
-    free(abbr_cpy);
+    os::free(abbr_cpy);
     EXPECT_EQ(decorator, decorator2);
   }
 }
@@ -207,6 +208,13 @@ TEST(LogDecorators, none) {
   LogDecorators dec = LogDecorators::None;
   for (size_t i = 0; i < LogDecorators::Count; i++) {
     EXPECT_FALSE(dec.is_decorator(decorator_array[i]));
+  }
+}
+
+TEST(LogDecorators, all) {
+  LogDecorators dec = LogDecorators::All;
+  for (size_t i = 0; i < LogDecorators::Count; i++) {
+    EXPECT_TRUE(dec.is_decorator(decorator_array[i]));
   }
 }
 

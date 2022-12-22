@@ -23,57 +23,56 @@
 
 package jdk.test.lib.util;
 
-import java.lang.ref.Cleaner;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.util.function.BooleanSupplier;
 
 /**
  * Utility class to invoke System.gc()
  */
 public class ForceGC {
-    private final CountDownLatch cleanerInvoked = new CountDownLatch(1);
-    private final Cleaner cleaner = Cleaner.create();
-    private Object o;
-
-    public ForceGC() {
-        this.o = new Object();
-        cleaner.register(o, () -> cleanerInvoked.countDown());
-    }
-
-    private void doit(int iter) {
-        try {
-            for (int i = 0; i < 10; i++) {
-                System.gc();
-                System.out.println("doit() iter: " + iter + ", gc " + i);
-                if (cleanerInvoked.await(1L, TimeUnit.SECONDS)) {
-                    return;
-                }
-            }
-        } catch (InterruptedException unexpected) {
-            throw new AssertionError("unexpected InterruptedException");
-        }
-    }
+    // The jtreg testing timeout factor.
+    private static final double TIMEOUT_FACTOR = Double.valueOf(
+            System.getProperty("test.timeout.factor", "1.0"));
 
     /**
-     * Causes the current thread to wait until the {@code BooleanSupplier} returns true,
-     * unless the thread is interrupted or a predefined waiting time elapses.
+     * Causes the current thread to wait until the {@code booleanSupplier}
+     * returns true, or a specific waiting time elapses.  The waiting time
+     * is 1 second scaled with the jtreg testing timeout factor.
      *
-     * @param s boolean supplier
-     * @return true if the {@code BooleanSupplier} returns true and false if
-     *         the predefined waiting time elapsed before the count reaches zero.
-     * @throws InterruptedException if the current thread is interrupted while waiting
+     * @param booleanSupplier boolean supplier
+     * @return true if the {@code booleanSupplier} returns true, or false
+     *     if did not complete after the specific waiting time.
      */
-    public boolean await(BooleanSupplier s) {
-        o = null; // Keep reference to Object until now, to ensure the Cleaner
-                  // doesn't count down the latch before await() is called.
-        for (int i = 0; i < 10; i++) {
-            if (s.getAsBoolean()) return true;
-            doit(i);
-            try { Thread.sleep(1000); } catch (InterruptedException e) {
-                throw new AssertionError("unexpected interrupted sleep", e);
+    public static boolean wait(BooleanSupplier booleanSupplier) {
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        Object obj = new Object();
+        PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
+        obj = null;
+        Reference.reachabilityFence(obj);
+        Reference.reachabilityFence(ref);
+
+        int retries = (int)(Math.round(1000L * TIMEOUT_FACTOR) / 200);
+        for (; retries >= 0; retries--) {
+            if (booleanSupplier.getAsBoolean()) {
+                return true;
+            }
+
+            System.gc();
+
+            try {
+                // The remove() will always block for the specified milliseconds
+                // if the reference has already been removed from the queue.
+                // But it is fine.  For most cases, the 1st GC is sufficient
+                // to trigger and complete the cleanup.
+                queue.remove(200L);
+            } catch (InterruptedException ie) {
+                // ignore, the loop will try again
             }
         }
-        return false;
+
+        return booleanSupplier.getAsBoolean();
     }
 }
+

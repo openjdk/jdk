@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,6 +399,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     /*
      * Setup data to copy to target process
      */
+    memset(&data, 0, sizeof(data));
     data._GetModuleHandle = _GetModuleHandle;
     data._GetProcAddress = _GetProcAddress;
 

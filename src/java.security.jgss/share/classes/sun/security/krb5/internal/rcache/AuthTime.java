@@ -134,8 +134,8 @@ public class AuthTime {
      * Encodes to be used in a dfl file
      */
     protected byte[] encode0(String cstring, String sstring) {
-        byte[] c = cstring.getBytes(StandardCharsets.UTF_8);;
-        byte[] s = sstring.getBytes(StandardCharsets.UTF_8);;
+        byte[] c = cstring.getBytes(StandardCharsets.UTF_8);
+        byte[] s = sstring.getBytes(StandardCharsets.UTF_8);
         byte[] zero = new byte[1];
         int len = 4 + c.length + 1 + 4 + s.length + 1 + 4 + 4;
         ByteBuffer bb = ByteBuffer.allocate(len)

@@ -56,6 +56,11 @@ biz                     biz             null
 site.biz                biz             site.biz
 w.site.biz              biz             site.biz
 
+# br
+br                      br              null
+dev.br                  dev.br          null
+x.dev.br                dev.br          x.dev.br
+
 # cn (unicode)
 #
 foo.mil.cn              mil.cn          foo.mil.cn

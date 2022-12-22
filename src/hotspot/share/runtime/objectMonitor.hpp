@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
 #include "oops/weakHandle.hpp"
-#include "runtime/os.hpp"
-#include "runtime/park.hpp"
 #include "runtime/perfDataTypes.hpp"
 
 class ObjectMonitor;
+class ParkEvent;
 
 // ObjectWaiter serves as a "proxy" or surrogate thread.
 // TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
@@ -47,7 +46,7 @@ class ObjectWaiter : public StackObj {
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
   JavaThread*   _thread;
-  jlong         _notifier_tid;
+  uint64_t      _notifier_tid;
   ParkEvent *   _event;
   volatile int  _notified;
   volatile TStates TState;
@@ -127,7 +126,7 @@ class ObjectWaiter : public StackObj {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 #endif
 
-class ObjectMonitor : public CHeapObj<mtInternal> {
+class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -148,13 +147,13 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
   void* volatile _owner;            // pointer to owning thread OR BasicLock
-  volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
+  volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
   DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
-                        sizeof(volatile jlong));
+                        sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
@@ -168,13 +167,13 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
-  jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
+  int _contentions;                 // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
-  volatile jint  _waiters;          // number of waiting threads
+  volatile int  _waiters;           // number of waiting threads
  private:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
 
@@ -203,15 +202,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   static int Knob_SpinLimit;
 
-  void* operator new (size_t size) throw();
-  void* operator new[] (size_t size) throw();
-  void operator delete(void* p);
-  void operator delete[] (void* p);
-
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.
-  static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header); }
-  static int object_offset_in_bytes()      { return offset_of(ObjectMonitor, _object); }
   static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
   static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
   static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
@@ -238,9 +230,10 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
-    intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
-    if (contentions() > 0) {
-      ret_code |= contentions();
+    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
+    int cnts = contentions(); // read once
+    if (cnts > 0) {
+      ret_code |= intptr_t(cnts);
     }
     if (!owner_is_DEFLATER_MARKER()) {
       ret_code |= intptr_t(owner_raw());
@@ -251,6 +244,8 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   intptr_t  is_entered(JavaThread* current) const;
 
+  // Returns true if this OM has an owner, false otherwise.
+  bool      has_owner() const;
   void*     owner() const;  // Returns NULL if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
@@ -270,21 +265,13 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;
-  // Get _next_om field with acquire semantics.
-  ObjectMonitor* next_om_acquire() const;
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
-  // Set _next_om field to new_value with release semantics.
-  void release_set_next_om(ObjectMonitor* new_value);
-  // Try to set _next_om field to new_value if the current value matches
-  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
-  // _next_om field. Returns the prior value of the _next_om field.
-  ObjectMonitor* try_set_next_om(ObjectMonitor* old_value, ObjectMonitor* new_value);
 
-  jint      waiters() const;
+  int       waiters() const;
 
-  jint      contentions() const;
-  void      add_to_contentions(jint value);
+  int       contentions() const;
+  void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
 
   // JVM/TI GetObjectMonitorUsage() needs this:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,37 @@
  */
 
 /* @test
- * @bug 4607272 6822643 6830721 6842687
+ * @bug 4607272 5041655 6822643 6830721 6842687
  * @summary Unit test for AsynchronousFileChannel
  * @key randomness
  */
 
-import java.nio.file.*;
-import java.nio.channels.*;
-import java.nio.ByteBuffer;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.CompletionHandler;
+import java.nio.channels.FileLock;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeoutException;;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import static java.nio.file.StandardOpenOption.*;
 
@@ -176,7 +195,12 @@ public class Basic {
             // test 1 - acquire lock and check that tryLock throws
             // OverlappingFileLockException
             try {
-                fl = ch.lock().get();
+                long pos = rand.nextInt(Integer.MAX_VALUE);
+                fl = ch.lock(pos, 0, false).get();
+                long expectedSize = Long.MAX_VALUE - pos;
+                if(fl.size() != expectedSize)
+                    throw new RuntimeException("Lock size " + fl.size() +
+                        " != " + expectedSize + " for position " + pos);
             } catch (ExecutionException x) {
                 throw new RuntimeException(x);
             } catch (InterruptedException x) {
@@ -192,7 +216,12 @@ public class Basic {
             fl.release();
 
             // test 2 - acquire try and check that lock throws OverlappingFileLockException
-            fl = ch.tryLock();
+            long pos = rand.nextInt(Integer.MAX_VALUE);
+            fl = ch.tryLock(pos, 0, false);
+            long expectedSize = Long.MAX_VALUE - pos;
+            if(fl.size() != expectedSize)
+                throw new RuntimeException("Lock size " + fl.size() + " != " +
+                    expectedSize + " for position " + pos);
             if (fl == null)
                 throw new RuntimeException("Unable to acquire lock");
             try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,18 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestVarHandleCombinators
  */
 
-import jdk.incubator.foreign.MemoryHandles;
-import jdk.incubator.foreign.ResourceScope;
-import org.testng.annotations.DataProvider;
+import java.lang.foreign.Arena;
+import java.lang.foreign.SegmentScope;
+import java.lang.foreign.ValueLayout;
+
 import org.testng.annotations.Test;
 
-import jdk.incubator.foreign.MemorySegment;
-
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
@@ -43,16 +45,16 @@ public class TestVarHandleCombinators {
 
     @Test
     public void testElementAccess() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder());
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_BYTE);
 
         byte[] arr = { 0, 0, -1, 0 };
         MemorySegment segment = MemorySegment.ofArray(arr);
         assertEquals((byte) vh.get(segment, 2), (byte) -1);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testUnalignedElement() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 4, ByteOrder.nativeOrder());
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_BYTE.withBitAlignment(32));
         MemorySegment segment = MemorySegment.ofArray(new byte[4]);
         vh.get(segment, 2L); //should throw
         //FIXME: the VH only checks the alignment of the segment, which is fine if the VH is derived from layouts,
@@ -60,28 +62,19 @@ public class TestVarHandleCombinators {
         //FIXME: at least until the VM is fixed
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testAlignNotPowerOf2() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 3, ByteOrder.nativeOrder());
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testAlignNegative() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, -1, ByteOrder.nativeOrder());
-    }
-
     @Test
     public void testAlign() {
-        VarHandle vh = MemoryHandles.varHandle(byte.class, 2, ByteOrder.nativeOrder());
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_BYTE.withBitAlignment(16));
 
-        MemorySegment segment = MemorySegment.allocateNative(1, 2, ResourceScope.newImplicitScope());
+        MemorySegment segment = MemorySegment.allocateNative(1L, 2, SegmentScope.auto());
         vh.set(segment, 0L, (byte) 10); // fine, memory region is aligned
         assertEquals((byte) vh.get(segment, 0L), (byte) 10);
     }
 
     @Test
     public void testByteOrderLE() {
-        VarHandle vh = MemoryHandles.varHandle(short.class, 2, ByteOrder.LITTLE_ENDIAN);
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_SHORT
+                .withOrder(ByteOrder.LITTLE_ENDIAN).withBitAlignment(8));
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
         vh.set(segment, 0L, (short) 0xFF);
@@ -91,7 +84,8 @@ public class TestVarHandleCombinators {
 
     @Test
     public void testByteOrderBE() {
-        VarHandle vh = MemoryHandles.varHandle(short.class, 2, ByteOrder.BIG_ENDIAN);
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_SHORT
+                .withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8));
         byte[] arr = new byte[2];
         MemorySegment segment = MemorySegment.ofArray(arr);
         vh.set(segment, 0L, (short) 0xFF);
@@ -106,10 +100,10 @@ public class TestVarHandleCombinators {
 
         //[10 : [5 : [x32 i32]]]
 
-        VarHandle vh = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
+        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT.withBitAlignment(32));
         int count = 0;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8, 4, scope);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(inner_size * outer_size * 8, 4, arena.scope());;
             for (long i = 0; i < outer_size; i++) {
                 for (long j = 0; j < inner_size; j++) {
                     vh.set(segment, i * 40 + j * 8, count);
@@ -121,21 +115,4 @@ public class TestVarHandleCombinators {
             }
         }
     }
-
-    @Test(dataProvider = "badCarriers", expectedExceptions = IllegalArgumentException.class)
-    public void testBadCarrier(Class<?> carrier) {
-        MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());
-    }
-
-    @DataProvider(name = "badCarriers")
-    public Object[][] createBadCarriers() {
-        return new Object[][] {
-                { void.class },
-                { boolean.class },
-                { Object.class },
-                { int[].class },
-                { MemorySegment.class }
-        };
-    }
-
 }

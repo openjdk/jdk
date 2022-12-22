@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public final class TypeResolver {
      * of those parameters.  For example, Map&lt;K,V> is a generic class, and
      * a corresponding ParameterizedType might look like
      * Map&lt;K=String,V=Integer>.  Given such a ParameterizedType, this method
-     * will replace K with String, or List&lt;K> with List&ltString;, or
+     * will replace K with String, or List&lt;K> with List&lt;String>, or
      * List&lt;? super K> with List&lt;? super String>.</p>
      *
      * <p>The {@code actual} argument to this method can also be a Class.

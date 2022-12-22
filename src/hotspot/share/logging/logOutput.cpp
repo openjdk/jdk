@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
-LogOutput::~LogOutput() {
-  os::free(_config_string);
-}
-
 void LogOutput::describe(outputStream *out) {
   out->print("%s ", name());
   out->print_raw(config_string()); // raw printed because length might exceed O_BUFLEN
@@ -56,34 +52,16 @@ void LogOutput::describe(outputStream *out) {
 }
 
 void LogOutput::set_config_string(const char* string) {
-  os::free(_config_string);
-  _config_string = os::strdup(string, mtLogging);
-  _config_string_buffer_size = strlen(_config_string) + 1;
+  _config_string.reset();
+  _config_string.print_raw(string);
 }
 
 void LogOutput::add_to_config_string(const LogSelection& selection) {
-  if (_config_string_buffer_size < InitialConfigBufferSize) {
-    _config_string_buffer_size = InitialConfigBufferSize;
-    _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
-  }
-
-  size_t offset = strlen(_config_string);
-  if (offset > 0) {
+  if (_config_string.size() > 0) {
     // Add commas in-between tag and level combinations in the config string
-    _config_string[offset++] = ',';
+    _config_string.print_raw(",");
   }
-
-  for (;;) {
-    int ret = selection.describe(_config_string + offset,
-                                 _config_string_buffer_size - offset);
-    if (ret == -1) {
-      // Double the buffer size and retry
-      _config_string_buffer_size *= 2;
-      _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
-      continue;
-    }
-    break;
-  };
+  selection.describe_on(&_config_string);
 }
 
 
@@ -334,8 +312,51 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
 
     assert(n_deviates < deviating_tagsets, "deviating tag set array overflow");
     assert(prev_deviates > n_deviates, "number of deviating tag sets must never grow");
+
+    if (n_deviates == 1 && n_selections == 0) {
+      // we're done as we couldn't reduce things any further
+      break;
+    }
   }
   FREE_C_HEAP_ARRAY(LogTagSet*, deviates);
   FREE_C_HEAP_ARRAY(Selection, selections);
 }
 
+bool LogOutput::parse_options(const char* options, outputStream* errstream) {
+  if (options == NULL || strlen(options) == 0) {
+    return true;
+  }
+  bool success = true;
+  char* opts = os::strdup_check_oom(options, mtLogging);
+
+  char* comma_pos;
+  char* pos = opts;
+  do {
+    comma_pos = strchr(pos, ',');
+    if (comma_pos != NULL) {
+      *comma_pos = '\0';
+    }
+    char* equals_pos = strchr(pos, '=');
+    if (equals_pos == NULL) {
+      errstream->print_cr("Invalid option '%s' for log output (%s).", pos, name());
+      success = false;
+      break;
+    }
+
+    char* key = pos;
+    char* value_str = equals_pos + 1;
+    *equals_pos = '\0';
+    julong errstream_count_before = errstream->count();
+    success = set_option(key, value_str, errstream);
+    if (!success) {
+      if (errstream->count() == errstream_count_before) {
+        errstream->print_cr("Invalid option '%s' for log output (%s).", key, name());
+      }
+      break;
+    }
+    pos = comma_pos + 1;
+  } while (comma_pos != NULL);
+
+  os::free(opts);
+  return success;
+}

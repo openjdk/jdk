@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, Intel Corporation.
+* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -35,12 +35,11 @@ void MacroAssembler::fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1,
   XMMRegister msg1, XMMRegister msg2, XMMRegister msg3, XMMRegister shuf_mask,
   Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block) {
 
-  Label start, done_hash, loop0;
+  Label done_hash, loop0;
 
   address upper_word_mask = StubRoutines::x86::upper_word_mask_addr();
   address shuffle_byte_flip_mask = StubRoutines::x86::shuffle_byte_flip_mask_addr();
 
-  bind(start);
   movdqu(abcd, Address(state, 0));
   pinsrd(e0, Address(state, 16), 3);
   movdqu(shuf_mask, ExternalAddress(upper_word_mask)); // 0xFFFFFFFF000000000000000000000000
@@ -248,12 +247,11 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
   Register buf, Register state, Register ofs, Register limit, Register rsp,
   bool multi_block) {
 #endif
-  Label start, done_hash, loop0;
+  Label done_hash, loop0;
 
   address K256 = StubRoutines::x86::k256_addr();
   address pshuffle_byte_flip_mask = StubRoutines::x86::pshuffle_byte_flip_mask_addr();
 
-  bind(start);
   movdqu(state0, Address(state, 0));
   movdqu(state1, Address(state, 16));
 
@@ -525,12 +523,12 @@ void MacroAssembler::sha256_AVX2_one_round_compute(
     addl(reg_old_h, reg_y2);   // reg_h = k + w + reg_h + S0 + S1 + CH = t1 + S0; --
   }
   movl(reg_y2, reg_f);         // reg_y2 = reg_f                                ; CH
-  rorxd(reg_y0, reg_e, 25);    // reg_y0 = reg_e >> 25   ; S1A
-  rorxd(reg_y1, reg_e, 11);    // reg_y1 = reg_e >> 11    ; S1B
+  rorxl(reg_y0, reg_e, 25);    // reg_y0 = reg_e >> 25   ; S1A
+  rorxl(reg_y1, reg_e, 11);    // reg_y1 = reg_e >> 11    ; S1B
   xorl(reg_y2, reg_g);         // reg_y2 = reg_f^reg_g                              ; CH
 
   xorl(reg_y0, reg_y1);        // reg_y0 = (reg_e>>25) ^ (reg_h>>11)  ; S1
-  rorxd(reg_y1, reg_e, 6);     // reg_y1 = (reg_e >> 6)    ; S1
+  rorxl(reg_y1, reg_e, 6);     // reg_y1 = (reg_e >> 6)    ; S1
   andl(reg_y2, reg_e);         // reg_y2 = (reg_f^reg_g)&reg_e                          ; CH
 
   if (iter%4 > 0) {
@@ -538,13 +536,13 @@ void MacroAssembler::sha256_AVX2_one_round_compute(
   }
 
   xorl(reg_y0, reg_y1);       // reg_y0 = (reg_e>>25) ^ (reg_e>>11) ^ (reg_e>>6) ; S1
-  rorxd(reg_T1, reg_a, 13);   // reg_T1 = reg_a >> 13    ; S0B
+  rorxl(reg_T1, reg_a, 13);   // reg_T1 = reg_a >> 13    ; S0B
   xorl(reg_y2, reg_g);        // reg_y2 = CH = ((reg_f^reg_g)&reg_e)^reg_g                 ; CH
-  rorxd(reg_y1, reg_a, 22);   // reg_y1 = reg_a >> 22    ; S0A
+  rorxl(reg_y1, reg_a, 22);   // reg_y1 = reg_a >> 22    ; S0A
   movl(reg_y3, reg_a);        // reg_y3 = reg_a                                ; MAJA
 
   xorl(reg_y1, reg_T1);       // reg_y1 = (reg_a>>22) ^ (reg_a>>13)  ; S0
-  rorxd(reg_T1, reg_a, 2);    // reg_T1 = (reg_a >> 2)    ; S0
+  rorxl(reg_T1, reg_a, 2);    // reg_T1 = (reg_a >> 2)    ; S0
   addl(reg_h, Address(rsp, rdx, Address::times_1, 4*iter)); // reg_h = k + w + reg_h ; --
   orl(reg_y3, reg_c);         // reg_y3 = reg_a|reg_c                              ; MAJA
 
@@ -598,27 +596,27 @@ void MacroAssembler::sha256_AVX2_one_round_and_sched(
         int iter)
 {
   movl(rcx, reg_a);           // rcx = reg_a               ; MAJA
-  rorxd(r13, reg_e, 25);      // r13 = reg_e >> 25    ; S1A
-  rorxd(r14, reg_e, 11);      //  r14 = reg_e >> 11    ; S1B
+  rorxl(r13, reg_e, 25);      // r13 = reg_e >> 25    ; S1A
+  rorxl(r14, reg_e, 11);      //  r14 = reg_e >> 11    ; S1B
   addl(reg_h, Address(rsp, rdx, Address::times_1, 4*iter));
   orl(rcx, reg_c);            // rcx = reg_a|reg_c          ; MAJA
 
   movl(r15, reg_f);           // r15 = reg_f               ; CH
-  rorxd(r12, reg_a, 13);      // r12 = reg_a >> 13      ; S0B
+  rorxl(r12, reg_a, 13);      // r12 = reg_a >> 13      ; S0B
   xorl(r13, r14);             // r13 = (reg_e>>25) ^ (reg_e>>11)  ; S1
   xorl(r15, reg_g);           // r15 = reg_f^reg_g         ; CH
 
-  rorxd(r14, reg_e, 6);       // r14 = (reg_e >> 6)    ; S1
+  rorxl(r14, reg_e, 6);       // r14 = (reg_e >> 6)    ; S1
   andl(r15, reg_e);           // r15 = (reg_f^reg_g)&reg_e ; CH
 
   xorl(r13, r14);             // r13 = (reg_e>>25) ^ (reg_e>>11) ^ (reg_e>>6) ; S1
-  rorxd(r14, reg_a, 22);      // r14 = reg_a >> 22    ; S0A
+  rorxl(r14, reg_a, 22);      // r14 = reg_a >> 22    ; S0A
   addl(reg_d, reg_h);         // reg_d = k + w + reg_h + reg_d                     ; --
 
   andl(rcx, reg_b);          // rcx = (reg_a|reg_c)&reg_b                          ; MAJA
   xorl(r14, r12);            // r14 = (reg_a>>22) ^ (reg_a>>13)  ; S0
 
-  rorxd(r12, reg_a, 2);      // r12 = (reg_a >> 2)    ; S0
+  rorxl(r12, reg_a, 2);      // r12 = (reg_a >> 2)    ; S0
   xorl(r15, reg_g);          // r15 = CH = ((reg_f^reg_g)&reg_e)^reg_g                 ; CH
 
   xorl(r14, r12);            // r14 = (reg_a>>22) ^ (reg_a>>13) ^ (reg_a>>2) ; S0
@@ -821,9 +819,9 @@ enum {
   movl(h, Address(CTX, 4*7));
 
   pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
-  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +0)); //[PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-  vmovdqu(SHUF_00BA, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));     //[_SHUF_00BA wrt rip]
-  vmovdqu(SHUF_DC00, ExternalAddress(pshuffle_byte_flip_mask_addr + 64));     //[_SHUF_DC00 wrt rip]
+  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+  vmovdqu(SHUF_00BA,      ExternalAddress(pshuffle_byte_flip_mask_addr + 32)); // [_SHUF_00BA wrt rip]
+  vmovdqu(SHUF_DC00,      ExternalAddress(pshuffle_byte_flip_mask_addr + 64)); // [_SHUF_DC00 wrt rip]
 
   movl(g, Address(CTX, 4*6));
 
@@ -984,9 +982,9 @@ bind(only_one_block);
 
 
   pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
-  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //[PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-  vmovdqu(SHUF_00BA, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));     //[_SHUF_00BA wrt rip]
-  vmovdqu(SHUF_DC00, ExternalAddress(pshuffle_byte_flip_mask_addr + 64));     //[_SHUF_DC00 wrt rip]
+  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+  vmovdqu(SHUF_00BA,      ExternalAddress(pshuffle_byte_flip_mask_addr + 32)); // [_SHUF_00BA wrt rip]
+  vmovdqu(SHUF_DC00,      ExternalAddress(pshuffle_byte_flip_mask_addr + 64)); // [_SHUF_DC00 wrt rip]
 
   movl(g, Address(CTX, 4*6));   // 0x1f83d9ab
 
@@ -1376,8 +1374,8 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     movq(h, Address(CTX, 8 * 7));
 
     pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask_sha512;
-    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //PSHUFFLE_BYTE_FLIP_MASK wrt rip
-    vmovdqu(YMM_MASK_LO, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));
+    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // PSHUFFLE_BYTE_FLIP_MASK wrt rip
+    vmovdqu(YMM_MASK_LO,    ExternalAddress(pshuffle_byte_flip_mask_addr + 32));
 
     movq(g, Address(CTX, 8 * 6));
 

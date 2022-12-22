@@ -35,10 +35,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.inline.hpp"
 
-bool EdgeUtils::is_leak_edge(const Edge& edge) {
-  return (const Edge*)edge.pointee()->mark().to_pointer() == &edge;
-}
-
 static bool is_static_field(const oop ref_owner, const InstanceKlass* ik, int offset) {
   assert(ref_owner != NULL, "invariant");
   assert(ik != NULL, "invariant");
@@ -52,9 +48,10 @@ static int field_offset(const Edge& edge, const oop ref_owner) {
   assert(ref_owner->is_instance(), "invariant");
   UnifiedOopRef reference = edge.reference();
   assert(!reference.is_null(), "invariant");
-  const int offset = (int)(reference.addr<uintptr_t>() - cast_from_oop<uintptr_t>(ref_owner));
+  const size_t offset = (reference.addr<uintptr_t>() - cast_from_oop<uintptr_t>(ref_owner));
   assert(offset < ref_owner->size() * HeapWordSize, "invariant");
-  return offset;
+  assert(offset <= size_t(INT_MAX), "invariant");
+  return (int)offset;
 }
 
 const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {

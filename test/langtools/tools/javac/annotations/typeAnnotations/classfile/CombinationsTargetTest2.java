@@ -42,7 +42,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
 
     // Base test case template descriptions;true==annotations in code attribute.
     enum srce  {
-        src1("(repeating) type annotations on on field in method body",true),
+        src1("(repeating) type annotations on field in method body",true),
         src2("(repeating) type annotations on type parameters, bounds and  type arguments", true),
         src3("(repeating) type annotations on type parameters of class, method return value in method", true),
         src4("(repeating) type annotations on field in anonymous class", false),
@@ -410,8 +410,6 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     "    boolean dataIsString = ( data instanceof _As_ _Bs_ String str && str.isEmpty());\n" +
                     "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
                     "\n\n";
-                extraOptions = List.of("--enable-preview",
-                                       "-source", JDK_VERSION);
                 hasInnerClass=false;
                 break;
             case src8: // (repeating) type annotations in use of instanceof
@@ -464,8 +462,6 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
                     "    }\n" +
                     "}\n").concat(sourceBase).replace("_OTHER_", annot2).replace("_As_",As).replace("_Bs_",Bs) +
                     "\n\n";
-                extraOptions = List.of("--enable-preview",
-                                       "-source", JDK_VERSION);
                 hasInnerClass=false;
                 break;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,24 @@
 
  /*
  * Obtain test artifacts for Buypass Class 2 and Class 3 CAs from:
- *  Class 2:
- *      https://valid.domainplus.ca22.ssl.buypass.no/CA2Class2   (valid)
- *      https://revoked.domainplus.ca22.ssl.buypass.no        (revoked)
- *
- *  Class3:
- *      https://valid.business.ca23.ssl.buypass.no    (valid)
- *      https://revoked.business.ca23.ssl.buypass.no    (revoked)
+ *  Buypass Class 3 CA 2
+ *  https://valid.qcevident.ca23.ssl.buypass.no/
+ *  https://revoked.qcevident.ca23.ssl.buypass.no/
+ *  https://expired.qcevident.ca23.ssl.buypass.no/
+ *  https://valid.evident.ca23.ssl.buypass.no/
+ *  https://revoked.evident.ca23.ssl.buypass.no/
+ *  https://expired.evident.ca23.ssl.buypass.no/
+ *  https://valid.businessplus.ca23.ssl.buypass.no
+ *  https://revoked.businessplus.ca23.ssl.buypass.no
+ *  https://expired.businessplus.ca23.ssl.buypass.no
+
+ *  Buypass Class 2 CA 2
+ *  https://valid.business.ca22.ssl.buypass.no
+ *  https://revoked.business.ca22.ssl.buypass.no
+ *  https://expired.business.ca22.ssl.buypass.no
+ *  https://valid.domain.ca22.ssl.buypass.no
+ *  https://revoked.domain.ca22.ssl.buypass.no
+ *  https://expired.domain.ca22.ssl.buypass.no/
  */
 public class BuypassCA {
 
@@ -46,18 +57,15 @@ public class BuypassCA {
 
         ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
 
-        boolean ocspEnabled = true;
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
             pathValidator.enableCRLCheck();
-            ocspEnabled = false;
         } else {
             // OCSP check by default
             pathValidator.enableOCSPCheck();
         }
 
         new BuypassClass2().runTest(pathValidator);
-        new BuypassClass3().runTest(pathValidator, ocspEnabled);
+        new BuypassClass3().runTest(pathValidator);
     }
 }
 
@@ -65,99 +73,116 @@ class BuypassClass2 {
 
     // Owner: CN=Buypass Class 2 CA 2, O=Buypass AS-983163327, C=NO
     // Issuer: CN=Buypass Class 2 Root CA, O=Buypass AS-983163327, C=NO
-    private static final String INT_CLASS_2 = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFCzCCAvOgAwIBAgIBGDANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJOTzEd\n"
-            + "MBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxIDAeBgNVBAMMF0J1eXBhc3Mg\n"
-            + "Q2xhc3MgMiBSb290IENBMB4XDTEwMTAyNjEwMTYxN1oXDTMwMTAyNjEwMTYxN1ow\n"
-            + "SzELMAkGA1UEBhMCTk8xHTAbBgNVBAoMFEJ1eXBhc3MgQVMtOTgzMTYzMzI3MR0w\n"
-            + "GwYDVQQDDBRCdXlwYXNzIENsYXNzIDIgQ0EgMjCCASIwDQYJKoZIhvcNAQEBBQAD\n"
-            + "ggEPADCCAQoCggEBAJyrZ8aWSw0PkdLsyswzK/Ny/A5/uU6EqQ99c6omDMpI+yNo\n"
-            + "HjUO42ryrATs4YHla+xj+MieWyvz9HYaCnrGL0CE4oX8M7WzD+g8h6tUCS0AakJx\n"
-            + "dC5PBocUkjQGZ5ZAoF92ms6C99qfQXhHx7lBP/AZT8sCWP0chOf9/cNxCplspYVJ\n"
-            + "HkQjKN3VGa+JISavCcBqf33ihbPZ+RaLjOTxoaRaWTvlkFxHqsaZ3AsW71qSJwaE\n"
-            + "55l9/qH45vn5mPrHQJ8h5LjgQcN5KBmxUMoA2iT/VSLThgcgl+Iklbcv9rs6aaMC\n"
-            + "JH+zKbub+RyRijmyzD9YBr+ZTaowHvJs9G59uZMCAwEAAaOB9jCB8zAPBgNVHRMB\n"
-            + "Af8EBTADAQH/MB8GA1UdIwQYMBaAFMmAd+BikoL1RpzzuvdMw964o605MB0GA1Ud\n"
-            + "DgQWBBSSrWWJsgAPy1ENwSPslE6PwQQ/dzAOBgNVHQ8BAf8EBAMCAQYwEQYDVR0g\n"
-            + "BAowCDAGBgRVHSAAMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jcmwuYnV5cGFz\n"
-            + "cy5uby9jcmwvQlBDbGFzczJSb290Q0EuY3JsMD4GCCsGAQUFBwEBBDIwMDAuBggr\n"
-            + "BgEFBQcwAYYiaHR0cDovL29jc3AuYnV5cGFzcy5uby9vY3NwL0JQT2NzcDANBgkq\n"
-            + "hkiG9w0BAQsFAAOCAgEAq8IVUouNdeHQljyp8xpa9GC7rpSRXGRRTolSXNa9TUfU\n"
-            + "48Z0Vj3x9jT58I+I8P7fKp+p4Wdu0kcwxOXsooP8hdGLqXY4nV9amkNRiTs99xa3\n"
-            + "Qu/KdLeAPEeeKztxDCLXGmsC4+1G6DuDrOkwSm9Tm+HxSZRGR4Qo3mU3CCSz37us\n"
-            + "q7I0mnY4cCeBPQ3zW5J7k7KmMpUlxOPnLpaASY2JhoeiWIWddH6LUsMkZk1jDv+M\n"
-            + "Hyw2JWZUEUMCZoxLZ7F+4xP7v8wcEtICFo6tZIaawq9p/S6+mJLcoQ7wdQBM0+NA\n"
-            + "cc1MnSbPz75WP4cFhVf1SFq5gBBMCgzYaw+A9bJxDgqV3IMG6TtWfOWz7KhMV+EL\n"
-            + "iVp0fXua2GITRwr+htWnID3ShbHOtCMUm9qrqC6aWNPvJqqKLdhgU9bQ/s5o05a0\n"
-            + "D8NFT07l8yY6+ge+PPHOidnZrTNFIF9dtEdtyXGNrcqhZF0QvqeV1yZ/Kf2+W4pa\n"
-            + "Wor82CuDZNfcf0lje3guk+oZexxpIO57eGJQh9iGLM5dBeEMF7+f5j/1/rGsf6vA\n"
-            + "KkudpjiTl1v/GoO2zMDTTQVcjEsLSYSV0+s2p5QTXuAXrL0/ER3KQRvewIAtmzFg\n"
-            + "IaPy7t2TV0olHISRMvaEz4Guh2biuO/N6SP3pkk3dsMxiEVw7Xc+ouCb03Rz3aA=\n"
-            + "-----END CERTIFICATE-----";
+    // Serial number: 1b781c6d5e34ce1f77
+    // Valid from: Mon Mar 25 05:17:10 PDT 2019 until: Sat Oct 26 02:16:17 PDT 2030
+    private static final String INT_CLASS_2 = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFKTCCAxGgAwIBAgIJG3gcbV40zh93MA0GCSqGSIb3DQEBCwUAME4xCzAJBgNV\n" +
+            "BAYTAk5PMR0wGwYDVQQKDBRCdXlwYXNzIEFTLTk4MzE2MzMyNzEgMB4GA1UEAwwX\n" +
+            "QnV5cGFzcyBDbGFzcyAyIFJvb3QgQ0EwHhcNMTkwMzI1MTIxNzEwWhcNMzAxMDI2\n" +
+            "MDkxNjE3WjBLMQswCQYDVQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMx\n" +
+            "NjMzMjcxHTAbBgNVBAMMFEJ1eXBhc3MgQ2xhc3MgMiBDQSAyMIIBIjANBgkqhkiG\n" +
+            "9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnKtnxpZLDQ+R0uzKzDMr83L8Dn+5ToSpD31z\n" +
+            "qiYMykj7I2geNQ7javKsBOzhgeVr7GP4yJ5bK/P0dhoKesYvQITihfwztbMP6DyH\n" +
+            "q1QJLQBqQnF0Lk8GhxSSNAZnlkCgX3aazoL32p9BeEfHuUE/8BlPywJY/RyE5/39\n" +
+            "w3EKmWylhUkeRCMo3dUZr4khJq8JwGp/feKFs9n5FouM5PGhpFpZO+WQXEeqxpnc\n" +
+            "CxbvWpInBoTnmX3+ofjm+fmY+sdAnyHkuOBBw3koGbFQygDaJP9VItOGByCX4iSV\n" +
+            "ty/2uzppowIkf7Mpu5v5HJGKObLMP1gGv5lNqjAe8mz0bn25kwIDAQABo4IBCzCC\n" +
+            "AQcwDwYDVR0TAQH/BAUwAwEB/zAfBgNVHSMEGDAWgBTJgHfgYpKC9Uac87r3TMPe\n" +
+            "uKOtOTAdBgNVHQ4EFgQUkq1libIAD8tRDcEj7JROj8EEP3cwDgYDVR0PAQH/BAQD\n" +
+            "AgEGMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjARBgNVHSAECjAIMAYG\n" +
+            "BFUdIAAwPQYDVR0fBDYwNDAyoDCgLoYsaHR0cDovL2NybC5idXlwYXNzLm5vL2Ny\n" +
+            "bC9CUENsYXNzMlJvb3RDQS5jcmwwMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzAB\n" +
+            "hhdodHRwOi8vb2NzcC5idXlwYXNzLmNvbTANBgkqhkiG9w0BAQsFAAOCAgEApNka\n" +
+            "48a+qhJXXS9R24p34CWnirlyxPMhxFfQyvPFXnwBQGHvrm7H5KY3/9/etShFXdY/\n" +
+            "N05Aq6UnE8my8jR4iHMm2e9iEf4v+O2E2JGH/5/H8wup160GBAsp4zAmJIT8KEgh\n" +
+            "YAA1j+NaClVryZfEaaDfAdF6LbU3cW0ZgooILPMeeCEXso23KsdCD1Q+SMvD6nQJ\n" +
+            "86iTvzWPY2GFJyEmvG/N2f29nBaHxWwZBwCfWB4Hqsw9wdKfY5M9SE/AGSLZ7LRM\n" +
+            "BmkkF9nqkWxxISadx12nbxn0LsU2k8Xyt830DqhHGSoYHEC/iGxbU4Bub8NC0uw/\n" +
+            "QNBj5Gd5cXLFhRUWLLBTq4p6P6kLc7JudpM4FNQ+stWK/eDZylbDLN3iCBRnHH4p\n" +
+            "qg6HAlWuieiAKVsidBMxPUyDLJ/8Dt+aW8Z3vCNcYC2n7wqrLZz5e4FG+Wn9teFW\n" +
+            "Rt5pO6ZUZAkDS59ZVojbbjOdQzNw3QHtZl0IMHeNYXJlPIUlHi4hGL3maGZ9sBF+\n" +
+            "AMfMLDu56+J2DewIuTXPzCeJeSTam/ybNt5FxTznxCSCIDqwmZMy3AQEz9nGSbE8\n" +
+            "zfwB5VT2ijLB0PpPX4YbLf33Vodf0NAkBUv6N5It30XiTUPhdk+caBYPoljz/J9U\n" +
+            "15T5+EGHs8ccHQWyYQ6gqYk8o4JgP4rSJqO1sMI=\n" +
+            "-----END CERTIFICATE-----";
 
-    // Owner: CN=valid.domainplus.ca22.ssl.buypass.no
+    // Owner: CN=valid.domain.ca22.ssl.buypass.no
     // Issuer: CN=Buypass Class 2 CA 2, O=Buypass AS-983163327, C=NO
-    // Serial number: f0673c7183c95b38c93
-    // Valid from: Mon Jan 25 00:20:55 PST 2016 until: Fri Jan 25 14:59:00 PST 2019
-    private static final String VALID_CLASS_2 = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIEgzCCA2ugAwIBAgIKDwZzxxg8lbOMkzANBgkqhkiG9w0BAQsFADBLMQswCQYD\n"
-            + "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n"
-            + "FEJ1eXBhc3MgQ2xhc3MgMiBDQSAyMB4XDTE2MDEyNTA4MjA1NVoXDTE5MDEyNTIy\n"
-            + "NTkwMFowLzEtMCsGA1UEAwwkdmFsaWQuZG9tYWlucGx1cy5jYTIyLnNzbC5idXlw\n"
-            + "YXNzLm5vMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwhA0eVz8ADqx\n"
-            + "dcrIZUzCf1n+kaBFyEF4WteUMtM4ta7szTm19f1/O4LRwr+pI5qQDgWHnHMX9sit\n"
-            + "rKOJPfMRgWrViaQ5y9QCZ4h2BIuDe61XVGkEcUiOoNojLRvDrbjpknI69nb1wbjn\n"
-            + "fpmCQVjYXoandr7RsexdWG4e+s6rk5Jk/zAUzU3Vbi0lmDJ62Dd+Dk3/IVrSebOp\n"
-            + "eIDniRX4vjIeucnDDTQ1VqSIN+gYNR/bMxXKFbScGAG+BpgZMwetJBJhTi7zlOgR\n"
-            + "4zAtdvvpJNN1pmNCsmJaM25WQgH6a05cTQtgYN//MKqTDww7z+LfK37mOxh3vBTu\n"
-            + "TR5S6VxzQQIDAQABo4IBgzCCAX8wCQYDVR0TBAIwADAfBgNVHSMEGDAWgBSSrWWJ\n"
-            + "sgAPy1ENwSPslE6PwQQ/dzAdBgNVHQ4EFgQUIs9OWkfc6S1c8mbYgi6Ns1kzh0Mw\n"
-            + "DgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAf\n"
-            + "BgNVHSAEGDAWMAoGCGCEQgEaAQIEMAgGBmeBDAECATA6BgNVHR8EMzAxMC+gLaAr\n"
-            + "hilodHRwOi8vY3JsLmJ1eXBhc3Mubm8vY3JsL0JQQ2xhc3MyQ0EyLmNybDAvBgNV\n"
-            + "HREEKDAmgiR2YWxpZC5kb21haW5wbHVzLmNhMjIuc3NsLmJ1eXBhc3Mubm8wdQYI\n"
-            + "KwYBBQUHAQEEaTBnMC4GCCsGAQUFBzABhiJodHRwOi8vb2NzcC5idXlwYXNzLm5v\n"
-            + "L29jc3AvQlBPY3NwMDUGCCsGAQUFBzAChilodHRwOi8vY3J0LmJ1eXBhc3Mubm8v\n"
-            + "Y3J0L0JQQ2xhc3MyQ0EyLmNlcjANBgkqhkiG9w0BAQsFAAOCAQEAjDPxDQnnzH+v\n"
-            + "Mnj8dRM6NPBVXl4JNofWlwqzYdu+HauFeF3AOZVVyr/YbOR9/ewDrScOvrGohndV\n"
-            + "7Si0l5hz3fo51Ra81TyR8kWR7nJC2joidT1X4a0hF9zu8CNQNVmkOhoACgeuv42R\n"
-            + "NDwmj9TfpNRyC4RA7/NzXMeRJYfOrh18S9VHhCzsWScd9td3u7hrhBOPPOql9f2K\n"
-            + "t9Hcevo+cceE6bGYwbW6xNr3iPOh31shMxgRUMojVamtH70tYMi+0e0lrzXdxgGO\n"
-            + "ISnXBS2HptakUIxF3feTOjBhhh5vb9RJxfdJA///ggkR3L51MfjrusucpNoz3k3P\n"
-            + "f5e7ZlSJ6g==\n"
-            + "-----END CERTIFICATE-----";
+    // Serial number: 34e2bff8063debd18d79
+    // Valid from: Mon Sep 23 04:12:34 PDT 2019 until: Mon Oct 11 14:59:00 PDT 2021
+    private static final String VALID_CLASS_2 = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIF8jCCBNqgAwIBAgIKNOK/+AY969GNeTANBgkqhkiG9w0BAQsFADBLMQswCQYD\n" +
+            "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n" +
+            "FEJ1eXBhc3MgQ2xhc3MgMiBDQSAyMB4XDTE5MDkyMzExMTIzNFoXDTIxMTAxMTIx\n" +
+            "NTkwMFowKzEpMCcGA1UEAwwgdmFsaWQuZG9tYWluLmNhMjIuc3NsLmJ1eXBhc3Mu\n" +
+            "bm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCeu/8j7y55R3OucDek\n" +
+            "gtdoVOEJQb2XaCR4OwiRzn74hLYhKGdFmFwSp+bPCT62NzjdK1urVeKrCQdC1Gkm\n" +
+            "e7iSOsHHO5aC8oxkgdv8mwEwwvH7xHCcpEVLDlE5Oc0d4cS4QIwFAhNIC77slixL\n" +
+            "fEdupc5e8FfQf3MlnhX+8gpgRzTx3iw8sb3gUwi3+7PRommHOhC7Ll+iI9LiLODJ\n" +
+            "qrkHnCbM2HJMK+SGTOQ/whiQwMCnkLaEG0WO1rYc4BGRGfFb8qmQWw/tDKkEey7X\n" +
+            "nLIFHSC33OiexQshAwRIAE7r1h9gMY1aAAB2Uxwi9/3l6fsd/VPmK7s7lYTBsrpK\n" +
+            "r4bTAgMBAAGjggL2MIIC8jAJBgNVHRMEAjAAMB8GA1UdIwQYMBaAFJKtZYmyAA/L\n" +
+            "UQ3BI+yUTo/BBD93MB0GA1UdDgQWBBSy+COaEmU2/BeF4g1OglFvAEYkIDAOBgNV\n" +
+            "HQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB8GA1Ud\n" +
+            "IAQYMBYwCgYIYIRCARoBAgQwCAYGZ4EMAQIBMDoGA1UdHwQzMDEwL6AtoCuGKWh0\n" +
+            "dHA6Ly9jcmwuYnV5cGFzcy5uby9jcmwvQlBDbGFzczJDQTIuY3JsMCsGA1UdEQQk\n" +
+            "MCKCIHZhbGlkLmRvbWFpbi5jYTIyLnNzbC5idXlwYXNzLm5vMGoGCCsGAQUFBwEB\n" +
+            "BF4wXDAjBggrBgEFBQcwAYYXaHR0cDovL29jc3AuYnV5cGFzcy5jb20wNQYIKwYB\n" +
+            "BQUHMAKGKWh0dHA6Ly9jcnQuYnV5cGFzcy5uby9jcnQvQlBDbGFzczJDQTIuY2Vy\n" +
+            "MIIBfgYKKwYBBAHWeQIEAgSCAW4EggFqAWgAdwC72d+8H4pxtZOUI5eqkntHOFeV\n" +
+            "CqtS6BqQlmQ2jh7RhQAAAW1d0tivAAAEAwBIMEYCIQDFRAH98gYpvMMTVa3d5Wcq\n" +
+            "0tOwpZZyUHiOjUlR3SD14QIhAKZp0cdwFpm+hh0taFVSTmluGsHmXPMCIQq9hLAB\n" +
+            "VYgyAHYApLkJkLQYWBSHuxOizGdwCjw1mAT5G9+443fNDsgN3BAAAAFtXdLbFwAA\n" +
+            "BAMARzBFAiBhr7KQc9yO3zb1iLlE0JW9whR0/bhrPDkk5BYnBKjzFAIhAMMTdHfk\n" +
+            "1ljso5jKzIUcBpSW0HnTcuKiB3VxGpL7GFVWAHUAb1N2rDHwMRnYmQCkURX/dxUc\n" +
+            "EdkCwQApBo2yCJo32RMAAAFtXdLYSAAABAMARjBEAiADoZr6Cp5AGM1eT2aUeRaQ\n" +
+            "kv0vRaegjRGIhKRCvRGyFAIgWLU/7zh28LI8vAyWr8mpDqlUXvF13i3zSD3whq4L\n" +
+            "Lu4wDQYJKoZIhvcNAQELBQADggEBAJH1RhTuMbhEOYlw+Efbx7PP7EEC/GQ1ijET\n" +
+            "vZS45jFQyTKhFUcdP2QPAtEVo1nS8PBs0txQJBf0xceWUjer9ruxiAS+JlW21AOi\n" +
+            "Uq9Kahpj5k63Z7tN8KTeOUE8wZGmHyvVcPP6mkC94RbjYIb4gd13eYxd2Vv1a7YX\n" +
+            "dNI+J3g7sX5ijssfJxzDd0hORj2584YY2WiKKvIGxwDnLkxk09i3IvjEKsAi4Cgn\n" +
+            "5798X5sSL1Q9C6gHEWt+cB5UtfILCfbLNRczS9zGku6gjh1c8dB7zc63mn7oCf1C\n" +
+            "gnQ2xqwbZb3Wau8CPwcMqJWgQZLQFPbZd+4Xo5SDDqYppV4oN2A=\n" +
+            "-----END CERTIFICATE-----";
 
-    // Owner: CN=revoked.domainplus.ca22.ssl.buypass.no
+    // Owner: CN=revoked.domain.ca22.ssl.buypass.no
     // Issuer: CN=Buypass Class 2 CA 2, O=Buypass AS-983163327, C=NO
-    // Serial number: f07a517dfc19ea8bf8f
-    // Valid from: Mon Jan 25 00:22:09 PST 2016 until: Fri Jan 25 14:59:00 PST 2019
-    private static final String REVOKED_CLASS_2 = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIEhzCCA2+gAwIBAgIKDwelF9/Bnqi/jzANBgkqhkiG9w0BAQsFADBLMQswCQYD\n"
-            + "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n"
-            + "FEJ1eXBhc3MgQ2xhc3MgMiBDQSAyMB4XDTE2MDEyNTA4MjIwOVoXDTE5MDEyNTIy\n"
-            + "NTkwMFowMTEvMC0GA1UEAwwmcmV2b2tlZC5kb21haW5wbHVzLmNhMjIuc3NsLmJ1\n"
-            + "eXBhc3Mubm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDjp/5BLRjH\n"
-            + "03XNNT2YXqg+txclRaUu88Rjbj4oEudFbkGTl+oBhmXX4QjM4WGvgw1AHW7nePWF\n"
-            + "/j3aR1kWJCl/ZOe097mb0V0dIwK6u6RVx9ERd4ITa/cmUJjy1+D+vCsT0elJY1vf\n"
-            + "vbwCdaloS7MZDG3wmJGxrUz7fo7t/JdsW481Ymau3xVTQ+45MusPmOE8RZ6nggIQ\n"
-            + "dZIA00XPhlQwg5ivuPwtcNNZIkk1fkU+5J+RUOI5qHA9zH2s1Hly6PzTATCxSDSi\n"
-            + "zqAmBH0ehrWqCWiKH5P3J8dCRA6qa2n5pD71CweLrUsbmztkBHUlYKlZ0fP6bGiI\n"
-            + "ZDMBLL/aFQybAgMBAAGjggGFMIIBgTAJBgNVHRMEAjAAMB8GA1UdIwQYMBaAFJKt\n"
-            + "ZYmyAA/LUQ3BI+yUTo/BBD93MB0GA1UdDgQWBBQZICByGObE/pJISOcMavbKRl2L\n"
-            + "+zAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC\n"
-            + "MB8GA1UdIAQYMBYwCgYIYIRCARoBAgQwCAYGZ4EMAQIBMDoGA1UdHwQzMDEwL6At\n"
-            + "oCuGKWh0dHA6Ly9jcmwuYnV5cGFzcy5uby9jcmwvQlBDbGFzczJDQTIuY3JsMDEG\n"
-            + "A1UdEQQqMCiCJnJldm9rZWQuZG9tYWlucGx1cy5jYTIyLnNzbC5idXlwYXNzLm5v\n"
-            + "MHUGCCsGAQUFBwEBBGkwZzAuBggrBgEFBQcwAYYiaHR0cDovL29jc3AuYnV5cGFz\n"
-            + "cy5uby9vY3NwL0JQT2NzcDA1BggrBgEFBQcwAoYpaHR0cDovL2NydC5idXlwYXNz\n"
-            + "Lm5vL2NydC9CUENsYXNzMkNBMi5jZXIwDQYJKoZIhvcNAQELBQADggEBAAdjMdlP\n"
-            + "qYNK+YkrqTgQV0dblIazL/cIhMPByjnEkfxew9tDxpcMWafIFKcgM/QxYJG/mzoL\n"
-            + "sSQ9pzzuGLQX7eAPA3rlWoQBusOeOaC3HQqy73kGStd7H8HPa3m+q47Z6JG0w+Fb\n"
-            + "rk8odrml+8rAEPLBlldB39xJuNVHjmlyTEDSC4azEXjfV4+kj8uE86sm+AoTt4Ba\n"
-            + "tEZSbKp70oH63QKBAEHORMM4gXeP+WG276p3kTcL1VUfgQw7vVmGN0C8DjhK4BAC\n"
-            + "0PUChr8agu0F5YcqpGxjLemMnDrqW+Bi/JYmGhEjWTiLSyYSlvJb1dAFUyPlc958\n"
-            + "pmOu5xTMEatiPFI=\n"
-            + "-----END CERTIFICATE-----";
+    // Serial number: 34e4b97261795f98c495
+    // Valid from: Mon Sep 23 04:52:42 PDT 2019 until: Thu Sep 23 14:59:00 PDT 2021
+    private static final String REVOKED_CLASS_2 = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIF9zCCBN+gAwIBAgIKNOS5cmF5X5jElTANBgkqhkiG9w0BAQsFADBLMQswCQYD\n" +
+            "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n" +
+            "FEJ1eXBhc3MgQ2xhc3MgMiBDQSAyMB4XDTE5MDkyMzExNTI0MloXDTIxMDkyMzIx\n" +
+            "NTkwMFowLTErMCkGA1UEAwwicmV2b2tlZC5kb21haW4uY2EyMi5zc2wuYnV5cGFz\n" +
+            "cy5ubzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOiChajGbQktGjbl\n" +
+            "k/i5PtqfMN6cMyjJdOirxzXdUG8dT+QErC5zcElCwuyy5MH7DQJRbSYsPxQmr6z5\n" +
+            "OSheBxX0lPPLjJFfEafBZ+Fw1xmCVy3Xjt3GEl85iqv5y0/E/UlQPc0f7s6WxU0L\n" +
+            "cItkyN0rWAa+uQY018qDFn+gDYIKWPzTCf5nkXIgob/IgBM1Bj7vSZ/LI1iB+I+G\n" +
+            "dgLbSGBlJgK6lhCTc1tunZlSbKdPM2Th8Hbl6Uk7WormR/8SrGQA9AAd7BWa43V5\n" +
+            "HHvf/oArsx0afp3zXNiMw9RgHVHI5uUAzkNnL8NMUpI1sK7/ndTlm0nXsHpPKrPo\n" +
+            "e+NpKaMCAwEAAaOCAvkwggL1MAkGA1UdEwQCMAAwHwYDVR0jBBgwFoAUkq1libIA\n" +
+            "D8tRDcEj7JROj8EEP3cwHQYDVR0OBBYEFDoBaIahoDhRhA3WVyT/XukqZzmAMA4G\n" +
+            "A1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHwYD\n" +
+            "VR0gBBgwFjAKBghghEIBGgECBDAIBgZngQwBAgEwOgYDVR0fBDMwMTAvoC2gK4Yp\n" +
+            "aHR0cDovL2NybC5idXlwYXNzLm5vL2NybC9CUENsYXNzMkNBMi5jcmwwLQYDVR0R\n" +
+            "BCYwJIIicmV2b2tlZC5kb21haW4uY2EyMi5zc2wuYnV5cGFzcy5ubzBqBggrBgEF\n" +
+            "BQcBAQReMFwwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLmJ1eXBhc3MuY29tMDUG\n" +
+            "CCsGAQUFBzAChilodHRwOi8vY3J0LmJ1eXBhc3Mubm8vY3J0L0JQQ2xhc3MyQ0Ey\n" +
+            "LmNlcjCCAX8GCisGAQQB1nkCBAIEggFvBIIBawFpAHYAu9nfvB+KcbWTlCOXqpJ7\n" +
+            "RzhXlQqrUugakJZkNo4e0YUAAAFtXfeApgAABAMARzBFAiARoEDgK57YWEW2R21d\n" +
+            "jFMphF5c9PypIwbZFHiWxdyCyAIhALsjjtPGgcrT/7KebYFPuKDyQO6rc8YYvm0z\n" +
+            "Q+Xt7NhxAHYApLkJkLQYWBSHuxOizGdwCjw1mAT5G9+443fNDsgN3BAAAAFtXfeD\n" +
+            "eQAABAMARzBFAiBCXKlCGkqa85QVqMR5dYDDz3F5aQgLXPubrQLX7cAZ0wIhALRr\n" +
+            "p8F6OfIdccSUhzEcNdtensQ/7zxgn81bUzn1ar9EAHcAb1N2rDHwMRnYmQCkURX/\n" +
+            "dxUcEdkCwQApBo2yCJo32RMAAAFtXfeBSQAABAMASDBGAiEAyrR31T85HGekHZdD\n" +
+            "r/m6flxqQaUIGcAJ5WcrBuIBuYkCIQD0rDdm+vM5/lNXIfjjrPLhATFEvrxpXJvu\n" +
+            "+sW4Ntm94jANBgkqhkiG9w0BAQsFAAOCAQEAjbMEFeNXFy3YQSr8O0+fY7qwaAzk\n" +
+            "vq65Ef/B2zvqO375+JI21grUikmFUnDiAaM8Y+8PJkOXDiuxR2/XCLsXpxCcPqQh\n" +
+            "V0MZlqXtjKZjBACILBX7aqGibojJTIlo0Dkd+LfPwswfXscTbb1CUXpUPn7CiUj5\n" +
+            "0WwfvjjQXny0NAB6WEkBMEBx6/Q75dvltoV9N1BZVer9hov6UTDuSad86faX2QF2\n" +
+            "aIEjrTJY3m2HqnIYf/lQxuDUDW0h7ddGGsIEBDM8z7M/rvT068ssRqJ8uecGjMaz\n" +
+            "JElX8VDgMux2kyjTAiAFD5QO+KTfySri9QXptik3wo66zDOmkVES1snvVQ==\n" +
+            "-----END CERTIFICATE-----";
 
     public void runTest(ValidatePathWithParams pathValidator) throws Exception {
         // Validate valid
@@ -167,7 +192,7 @@ class BuypassClass2 {
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED_CLASS_2, INT_CLASS_2},
                 ValidatePathWithParams.Status.REVOKED,
-                "Mon Jan 25 00:24:47 PST 2016", System.out);
+                "Mon Sep 23 04:53:18 PDT 2019", System.out);
     }
 }
 
@@ -175,117 +200,131 @@ class BuypassClass3 {
 
     // Owner: CN=Buypass Class 3 CA 2, O=Buypass AS-983163327, C=NO
     // Issuer: CN=Buypass Class 3 Root CA, O=Buypass AS-983163327, C=NO
-    private static final String INT_CLASS_3 = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFCzCCAvOgAwIBAgIBGDANBgkqhkiG9w0BAQsFADBOMQswCQYDVQQGEwJOTzEd\n"
-            + "MBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxIDAeBgNVBAMMF0J1eXBhc3Mg\n"
-            + "Q2xhc3MgMyBSb290IENBMB4XDTEwMTAyNjA5MTYxN1oXDTMwMTAyNjA5MTYxN1ow\n"
-            + "SzELMAkGA1UEBhMCTk8xHTAbBgNVBAoMFEJ1eXBhc3MgQVMtOTgzMTYzMzI3MR0w\n"
-            + "GwYDVQQDDBRCdXlwYXNzIENsYXNzIDMgQ0EgMjCCASIwDQYJKoZIhvcNAQEBBQAD\n"
-            + "ggEPADCCAQoCggEBAL1OFdoURRXuCuwTBJpuCKDE8Euzcg0AeCRGq3VdagbChyCE\n"
-            + "CQ5vYWwmpHCyFl1b+r2KyWdQBBdG+msAcIYZal5cjZzrTWvbkfiAD/OneMjhqYB0\n"
-            + "pTQIXbTjpPUMOjFM8waNZcqGJqC9H+Z9NkjK5THAK0oOOfKNPHg1MeImbOHVw0fR\n"
-            + "48WnNrPpnQDt+SbPFSvw+dACDAybx1XgjMPq7pmZDWbkajOz4yCvrgZm6jvAPeT3\n"
-            + "qkBFh7zOZ3IZVdfmRjVahx0iXp5TJ1SsrRr/uCiae1O+NR//XDG3dl9j17HsFlhY\n"
-            + "Rl6EvEfVV0OcW94Ret9uBUF73ANZl0b+gwCXnV0CAwEAAaOB9jCB8zAPBgNVHRMB\n"
-            + "Af8EBTADAQH/MB8GA1UdIwQYMBaAFEe4zf/lb+74suwvTg75JbCOPGvDMB0GA1Ud\n"
-            + "DgQWBBQiMC7S+/ZLysC4O9IExOly5pebDDAOBgNVHQ8BAf8EBAMCAQYwEQYDVR0g\n"
-            + "BAowCDAGBgRVHSAAMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jcmwuYnV5cGFz\n"
-            + "cy5uby9jcmwvQlBDbGFzczNSb290Q0EuY3JsMD4GCCsGAQUFBwEBBDIwMDAuBggr\n"
-            + "BgEFBQcwAYYiaHR0cDovL29jc3AuYnV5cGFzcy5uby9vY3NwL0JQT2NzcDANBgkq\n"
-            + "hkiG9w0BAQsFAAOCAgEAaOLyxpj2t9k9Rzkxkcj/teTNOWxBLPZDi+eFx3u7laf2\n"
-            + "mX/ZUSSE4g7OiKnD7ozWk9Qgocn3rBWGDKsp676RwWV97Elofz73Oebei6P3Gg/9\n"
-            + "CD8y6rf8xHRxru5d1ZQ1NkWdPwYI38jlt3LaDjJKZjJW7pOPIMRvw1Y1AY3mYgCJ\n"
-            + "Qqpw8jgukHIP0454DPzkUXzg/ZVJG0swmFmjYfARleSPidcs5BJx5ngpcUS4745g\n"
-            + "mN9PQ578+ROIbML4Jx83myivlyTQSPdYSwzSswb1RVBJmiF9qC0B1hivCrs4BATu\n"
-            + "YeaPV6CiNDr0jGnbxAskz7QDNR6uJSUKX3L9iY2TB/4/5hJ9TZ/YDI6OEG/wVtBz\n"
-            + "5FkU0ucztyQa4UG1mXR8Zbs/zt9Fj0Xn8f5IM3dB/s/r8c1AFDIcLRUqP/LkI9Wj\n"
-            + "XovWr79PEJcIfIln0AfzYfBBxCRE+4QHcVhci6p/mbyl2a+Rf8ZGNTiDLaWSZp5x\n"
-            + "jqdaq5UQaoZK8XQ+JVR0etep/KPgVMXq5Zv16YEb2vjs//RfxT8psDZLe/37+Bs4\n"
-            + "AG9sdT/bsH7HDQwodTon/HvMmxt4EiU/1Sjco4Fok9VmSE2UVjIghajbbTSKR3LV\n"
-            + "UuU19x12fKp+htO8L+wVlGgxXb9WvDBNHCe6RmR4jqavmvrAyCPtrx3cXwqGmXA=\n"
-            + "-----END CERTIFICATE-----";
+    // Serial number: 1be0dc6a3e7f220475
+    // Valid from: Mon Mar 25 05:12:16 PDT 2019 until: Sat Oct 26 01:16:17 PDT 2030
+    private static final String INT_CLASS_3 = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFKTCCAxGgAwIBAgIJG+Dcaj5/IgR1MA0GCSqGSIb3DQEBCwUAME4xCzAJBgNV\n" +
+            "BAYTAk5PMR0wGwYDVQQKDBRCdXlwYXNzIEFTLTk4MzE2MzMyNzEgMB4GA1UEAwwX\n" +
+            "QnV5cGFzcyBDbGFzcyAzIFJvb3QgQ0EwHhcNMTkwMzI1MTIxMjE2WhcNMzAxMDI2\n" +
+            "MDgxNjE3WjBLMQswCQYDVQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMx\n" +
+            "NjMzMjcxHTAbBgNVBAMMFEJ1eXBhc3MgQ2xhc3MgMyBDQSAyMIIBIjANBgkqhkiG\n" +
+            "9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvU4V2hRFFe4K7BMEmm4IoMTwS7NyDQB4JEar\n" +
+            "dV1qBsKHIIQJDm9hbCakcLIWXVv6vYrJZ1AEF0b6awBwhhlqXlyNnOtNa9uR+IAP\n" +
+            "86d4yOGpgHSlNAhdtOOk9Qw6MUzzBo1lyoYmoL0f5n02SMrlMcArSg458o08eDUx\n" +
+            "4iZs4dXDR9Hjxac2s+mdAO35Js8VK/D50AIMDJvHVeCMw+rumZkNZuRqM7PjIK+u\n" +
+            "BmbqO8A95PeqQEWHvM5nchlV1+ZGNVqHHSJenlMnVKytGv+4KJp7U741H/9cMbd2\n" +
+            "X2PXsewWWFhGXoS8R9VXQ5xb3hF6324FQXvcA1mXRv6DAJedXQIDAQABo4IBCzCC\n" +
+            "AQcwDwYDVR0TAQH/BAUwAwEB/zAfBgNVHSMEGDAWgBRHuM3/5W/u+LLsL04O+SWw\n" +
+            "jjxrwzAdBgNVHQ4EFgQUIjAu0vv2S8rAuDvSBMTpcuaXmwwwDgYDVR0PAQH/BAQD\n" +
+            "AgEGMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjARBgNVHSAECjAIMAYG\n" +
+            "BFUdIAAwPQYDVR0fBDYwNDAyoDCgLoYsaHR0cDovL2NybC5idXlwYXNzLm5vL2Ny\n" +
+            "bC9CUENsYXNzM1Jvb3RDQS5jcmwwMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzAB\n" +
+            "hhdodHRwOi8vb2NzcC5idXlwYXNzLmNvbTANBgkqhkiG9w0BAQsFAAOCAgEAo42Y\n" +
+            "fp96nUiZbZsqvYBID3Sqtx3jJfU8gNHFeXgkS0pxYHHYUwsVSVRjw+BGVEGUswpF\n" +
+            "MaYMCZD37ZL0JpvvXWrCDaMb/GqDJAQHLLTyVKPGGGIWCZH/FrhnNvcpt2XXA8lU\n" +
+            "Ujzp5nZPuqvenzQ/aXHI4sH5sN/QjyKVMSa/6RbWBeQmvIdgyM+0jIR5/r6UGiKM\n" +
+            "ar55trZgnlIbvQJ/w8QTmI/NwvA5CtRaOslQBxeKoAR0BuA/lRWnocXa/BM5uO6P\n" +
+            "ULL7ct/uI1bS+YThHXHmFybI6kDf+RhRzWY9165ZP96PBph6smQkxPDAz2b8v+mh\n" +
+            "LThH+5hkqnoetYfK2MdBYinceGPP3gZ+uBSDDI2o6vdVvdg7G96GP1OEtgTEqZa3\n" +
+            "glVafckpn/8F5CisypdQuZ5zyy/6SXZCKkPcikR87ysSKnjtteXbxMWVtwkeBALT\n" +
+            "K7DbJA+5aOCYRNj6CJGULQKiGlC01/ipORKewf5J3yus81lLHzBmgQMA5l9RL8rV\n" +
+            "6dI246mPpQ+8WDLsDrK3ydSDv5izgdVHzhL0tT2u4vwSq2WUqCgi4xLIA1N/fA2H\n" +
+            "xEW7zh0X/3YVz++g/6bd7iqRD9nRRZxACekRbza7AqU5xN1UjvVtCJQ9VC74K9KP\n" +
+            "pBoLWE2Bz5ksL9VUc4kS+WGORvZrSE1EpBq6cHc=\n" +
+            "-----END CERTIFICATE-----";
 
-    // Owner: SERIALNUMBER=983163327, CN=valid.business.ca23.ssl.buypass.no,
-    // O=BUYPASS AS, L=OSLO, OID.2.5.4.17=0484, C=NO
+    // Owner: SERIALNUMBER=983163327, CN=valid.businessplus.ca23.ssl.buypass.no, O=BUYPASS AS,
+    // L=OSLO, OID.2.5.4.17=0484, C=NO
     // Issuer: CN=Buypass Class 3 CA 2, O=Buypass AS-983163327, C=NO
-    // Serial number: 97631b91e98293b35c8
-    // Valid from: Fri Feb 06 00:57:04 PST 2015 until: Fri Feb 09 14:59:00 PST 2018
-    private static final String VALID_CLASS_3 = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIE1DCCA7ygAwIBAgIKCXYxuR6YKTs1yDANBgkqhkiG9w0BAQsFADBLMQswCQYD\n"
-            + "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n"
-            + "FEJ1eXBhc3MgQ2xhc3MgMyBDQSAyMB4XDTE1MDIwNjA4NTcwNFoXDTE4MDIwOTIy\n"
-            + "NTkwMFowgYExCzAJBgNVBAYTAk5PMQ0wCwYDVQQRDAQwNDg0MQ0wCwYDVQQHDARP\n"
-            + "U0xPMRMwEQYDVQQKDApCVVlQQVNTIEFTMSswKQYDVQQDDCJ2YWxpZC5idXNpbmVz\n"
-            + "cy5jYTIzLnNzbC5idXlwYXNzLm5vMRIwEAYDVQQFEwk5ODMxNjMzMjcwggEiMA0G\n"
-            + "CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbahUoF2A7upqIxDQKraZ+aEOzNkHF\n"
-            + "1fIQEtUMQS1OTB8la7pWsBnv1gk9Ja2ifIrwdSxAjefL3SXR47h4vxUMnufMnkTk\n"
-            + "PERXft/XR8/jZQZRpznnN/V89ctb8qcVhHCooTIELOBzF9QAmDnawZQogwhDNLNy\n"
-            + "kLtWsl75X547DS/Z5hsqCqXPyOiFzkHY59uamYu48TF9d7HwQ741H0YhehoxTl/O\n"
-            + "YqzW2wqYxqhQuCX5IuYER7G/P3G6UAm+VB9aujtWW+TBT9+iWh0aT+C7ezDtREse\n"
-            + "lwb44svf8S3iW18KlSF8EMT0qwqNpA8njOCQiSgluYD+Uk9E5f8505UzAgMBAAGj\n"
-            + "ggGBMIIBfTAJBgNVHRMEAjAAMB8GA1UdIwQYMBaAFCIwLtL79kvKwLg70gTE6XLm\n"
-            + "l5sMMB0GA1UdDgQWBBQncKIaP6HdQV8RIBO+dddWDSKvJjAOBgNVHQ8BAf8EBAMC\n"
-            + "BaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB8GA1UdIAQYMBYwCgYI\n"
-            + "YIRCARoBAwQwCAYGZ4EMAQICMDoGA1UdHwQzMDEwL6AtoCuGKWh0dHA6Ly9jcmwu\n"
-            + "YnV5cGFzcy5uby9jcmwvQlBDbGFzczNDQTIuY3JsMC0GA1UdEQQmMCSCInZhbGlk\n"
-            + "LmJ1c2luZXNzLmNhMjMuc3NsLmJ1eXBhc3Mubm8wdQYIKwYBBQUHAQEEaTBnMC4G\n"
-            + "CCsGAQUFBzABhiJodHRwOi8vb2NzcC5idXlwYXNzLm5vL29jc3AvQlBPY3NwMDUG\n"
-            + "CCsGAQUFBzAChilodHRwOi8vY3J0LmJ1eXBhc3Mubm8vY3J0L0JQQ2xhc3MzQ0Ey\n"
-            + "LmNlcjANBgkqhkiG9w0BAQsFAAOCAQEAqeA3IqMPn/az52twbNnimXIhIb7tWj7U\n"
-            + "NSBqr+httoQvNo7NbtVCgO/fM3/t0YN7rgZfP07QTn7L7CwoddrgHbnuCuFr9UhD\n"
-            + "df7cfY3cwDhWx+YKgXTkRZpXXrOPqeY2+9gaJlcQCnw66t5EBa4lSBnN0ZtkB4lT\n"
-            + "ujFP6BAyzZAjRdXWUidtErDWZri1uLmWAP0kQNez2toOcQ0XpbrbL8+nQtvOVOJv\n"
-            + "b/c8WoaoC14C32mAeC5bx4dQ3mpf3hQv9man1SPjY/rsDsWWjsaJAijl3YPtP2bU\n"
-            + "JRCCM7qfZWrY8/uBLG2llfjviKV9I6sT76w7TnawPsz+SkDXFm/nwg==\n"
-            + "-----END CERTIFICATE-----";
+    // Serial number: 267b7a9f0c3da9b94b39
+    // Valid from: Mon Sep 23 04:17:42 PDT 2019 until: Mon Oct 11 14:59:00 PDT 2021
+    private static final String VALID_CLASS_3 = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIGUTCCBTmgAwIBAgIKJnt6nww9qblLOTANBgkqhkiG9w0BAQsFADBLMQswCQYD\n" +
+            "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n" +
+            "FEJ1eXBhc3MgQ2xhc3MgMyBDQSAyMB4XDTE5MDkyMzExMTc0MloXDTIxMTAxMTIx\n" +
+            "NTkwMFowgYUxCzAJBgNVBAYTAk5PMQ0wCwYDVQQRDAQwNDg0MQ0wCwYDVQQHDARP\n" +
+            "U0xPMRMwEQYDVQQKDApCVVlQQVNTIEFTMS8wLQYDVQQDDCZ2YWxpZC5idXNpbmVz\n" +
+            "c3BsdXMuY2EyMy5zc2wuYnV5cGFzcy5ubzESMBAGA1UEBRMJOTgzMTYzMzI3MIIB\n" +
+            "IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArqj6dPVIQUULBV/S+u2/Rfko\n" +
+            "3BljX/KMEAclJHPu6AbJ2Dw5oLqCynOfTwLmGl3IRBQuDUAuoLdaptIhaXR2VTsF\n" +
+            "8SWdHNXkykC2eD0XkAUdTuKgRm/3U4f0T3XQsjwKOEQGECwGEWJekBL73retSRWe\n" +
+            "Ccc19NpSKZ5rmRnQSlKLfqUyihmw2xXmIWwEmBq0OOyG8ic3C11Zxh6yUOtlZJqB\n" +
+            "lWqbAAOK5SXTNV0qozwgkSvtAtJvUo2++rng35Oj8MvjKQjLi92NnSpjbj3rUivW\n" +
+            "++44X94IgoF9dITkSMnubXhaTLnciM08R8jmCFj877NRrVJRmcJhPfP1yHnR3wID\n" +
+            "AQABo4IC+jCCAvYwCQYDVR0TBAIwADAfBgNVHSMEGDAWgBQiMC7S+/ZLysC4O9IE\n" +
+            "xOly5pebDDAdBgNVHQ4EFgQUKJCKAxRR7K6pedVONDSn58EOzQcwDgYDVR0PAQH/\n" +
+            "BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAfBgNVHSAEGDAW\n" +
+            "MAoGCGCEQgEaAQMEMAgGBmeBDAECAjA6BgNVHR8EMzAxMC+gLaArhilodHRwOi8v\n" +
+            "Y3JsLmJ1eXBhc3Mubm8vY3JsL0JQQ2xhc3MzQ0EyLmNybDAxBgNVHREEKjAogiZ2\n" +
+            "YWxpZC5idXNpbmVzc3BsdXMuY2EyMy5zc2wuYnV5cGFzcy5ubzBqBggrBgEFBQcB\n" +
+            "AQReMFwwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLmJ1eXBhc3MuY29tMDUGCCsG\n" +
+            "AQUFBzAChilodHRwOi8vY3J0LmJ1eXBhc3Mubm8vY3J0L0JQQ2xhc3MzQ0EyLmNl\n" +
+            "cjCCAXwGCisGAQQB1nkCBAIEggFsBIIBaAFmAHYAu9nfvB+KcbWTlCOXqpJ7RzhX\n" +
+            "lQqrUugakJZkNo4e0YUAAAFtXdd3CgAABAMARzBFAiEA/pTOtw6i2DJS0R56KwVF\n" +
+            "Huy+LonG7bICWAe1vnCNud4CIE7/KRDu9Jys24rtmLz9yCNYJfZDvooK5PT9+rWR\n" +
+            "OC4+AHUApLkJkLQYWBSHuxOizGdwCjw1mAT5G9+443fNDsgN3BAAAAFtXdd54gAA\n" +
+            "BAMARjBEAiB09qp4sGA+Kxg823hea3ZyTV7mU1ZQ9j9fqqX8KZ1mpwIgUICM2H0Y\n" +
+            "8z+V9m+6SutZ5WTD+Arg3K8O6/dvyKu0QmEAdQBvU3asMfAxGdiZAKRRFf93FRwR\n" +
+            "2QLBACkGjbIImjfZEwAAAW1d13cSAAAEAwBGMEQCIFLqxvNOKVFlTjHPXwk93VeW\n" +
+            "zCqFtcxJkunD/iiv0Kn9AiBoyvUrjYn4MPTht9zb0OyaSMWb00/HXP/4AVmUzHrz\n" +
+            "YzANBgkqhkiG9w0BAQsFAAOCAQEAsmQAOn1f1CbvnOpggS2efmy1pQXvvw+YeCYP\n" +
+            "bElO578h7scn8al4N7huQZ/z14BELe0chGWNA/ReW5nAu3SUOiv+E8/kv9i9Y8ul\n" +
+            "MJPL62nXW6Z/mkyystuBNtON420iWL/gS/vduxSZE/iBB4znctDpXS917/XWf31Y\n" +
+            "ZonemF3MSfi/s9V0Ic82ZY/+HZ4NLTDyKRd4kFF58OoH9RZNb6g8MbTp+gPadiUG\n" +
+            "UcfPGV3yGiugQa7WHTl7QJ9ishyafiZ4hpeKem6TMDEztgGyLIZ4MSxQvoeI2jJP\n" +
+            "KjHd5fW/HClbEcrN+w0a0MUNMaAOaZfMS7jS6sDpaVL8D0EX5A==\n" +
+            "-----END CERTIFICATE-----";
 
-    // Owner: SERIALNUMBER=983163327, CN=revoked.business.ca23.ssl.buypass.no,
-    // O=BUYPASS AS, L=OSLO, OID.2.5.4.17=0402, C=NO
+    // Owner: SERIALNUMBER=983163327, CN=revoked.businessplus.ca23.ssl.buypass.no, O=BUYPASS AS,
+    // L=OSLO, OID.2.5.4.17=0484, C=NO
     // Issuer: CN=Buypass Class 3 CA 2, O=Buypass AS-983163327, C=NO
-    private static final String REVOKED_CLASS_3 = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIE2DCCA8CgAwIBAgIKARno/wYhPtNtmjANBgkqhkiG9w0BAQsFADBLMQswCQYD\n"
-            + "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n"
-            + "FEJ1eXBhc3MgQ2xhc3MgMyBDQSAyMB4XDTEzMDIwMTA5MTE0NFoXDTE2MDIwMTA5\n"
-            + "MTE0NFowgYMxCzAJBgNVBAYTAk5PMQ0wCwYDVQQRDAQwNDAyMQ0wCwYDVQQHDARP\n"
-            + "U0xPMRMwEQYDVQQKDApCVVlQQVNTIEFTMS0wKwYDVQQDDCRyZXZva2VkLmJ1c2lu\n"
-            + "ZXNzLmNhMjMuc3NsLmJ1eXBhc3Mubm8xEjAQBgNVBAUTCTk4MzE2MzMyNzCCASIw\n"
-            + "DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMmBUI0wNCz4kLikR5wog4QTUEmO\n"
-            + "XoGgjnQv0cKfDogbewK+0ngdyyR8dZOqSauQTGLlPTpo6DEWpD3Jqrr444MV6Vc1\n"
-            + "AGWnjk3T+KT5tKl6qJOQq17Y+HEnsTEzCo1kieVygpSu7FBa2OnhHNmLWThhGUEi\n"
-            + "mLqrEyfjMSb9zacvo06Zr7S8BauLRB3aM5BeMVF7Bj/9f/FvnB/y1cRDLG32WRCx\n"
-            + "K9IAFwCaJkfWsXx+bnaO4uEQwLFZ96p7L5mr+QNvI6QuweIY1hDM3RDM6HQkGTK9\n"
-            + "8iHSzGBSCGwOM24Ym3XM5vTbiV5uLno+QEYlJL/+qbYvarbO2gPF+6A6M10CAwEA\n"
-            + "AaOCAYMwggF/MAkGA1UdEwQCMAAwHwYDVR0jBBgwFoAUIjAu0vv2S8rAuDvSBMTp\n"
-            + "cuaXmwwwHQYDVR0OBBYEFNI2C2XKZkNRHZrHLkBhCMeDRN0KMA4GA1UdDwEB/wQE\n"
-            + "AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHwYDVR0gBBgwFjAK\n"
-            + "BghghEIBGgEDBDAIBgZngQwBAgIwOgYDVR0fBDMwMTAvoC2gK4YpaHR0cDovL2Ny\n"
-            + "bC5idXlwYXNzLm5vL2NybC9CUENsYXNzM0NBMi5jcmwwLwYDVR0RBCgwJoIkcmV2\n"
-            + "b2tlZC5idXNpbmVzcy5jYTIzLnNzbC5idXlwYXNzLm5vMHUGCCsGAQUFBwEBBGkw\n"
-            + "ZzAuBggrBgEFBQcwAYYiaHR0cDovL29jc3AuYnV5cGFzcy5uby9vY3NwL0JQT2Nz\n"
-            + "cDA1BggrBgEFBQcwAoYpaHR0cDovL2NydC5idXlwYXNzLm5vL2NydC9CUENsYXNz\n"
-            + "M0NBMi5jZXIwDQYJKoZIhvcNAQELBQADggEBAGNQe9cgrw/mN7bChof205NRS+TH\n"
-            + "A8f0JcKk1KrPYYW+ilyp6j3My26Sm9a4ZyKRhAS8fCxYUXWzfNvJNFYv2ttLuegl\n"
-            + "SFfeXjSJJZW9+wC5oRLta++62UTTxXp0Zf5UkMsHZCIjvnk0yGWZa0phyRCH89ca\n"
-            + "4vfRTOGNTNfX3d0jm/+fm70UNYHKZ/VcxVj0vH2Ij/kDUy7r2cw1gQ65RDUotnTu\n"
-            + "Yt59y3COyMZeYNMcuoss2XWnedFoD7fwCSkNqVbwjCxGVkL1+ivbWhqlCefaniZX\n"
-            + "Wy35oP1635RSxHbCMU9msmUO7FS8n1VH2edEC797gduK5pn2aBhy/MW0unU=\n"
-            + "-----END CERTIFICATE-----";
+    // Serial number: 267cee3fab06c615fb27
+    // Valid from: Mon Sep 23 04:56:56 PDT 2019 until: Thu Sep 23 14:59:00 PDT 2021
+    private static final String REVOKED_CLASS_3 = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIGWDCCBUCgAwIBAgIKJnzuP6sGxhX7JzANBgkqhkiG9w0BAQsFADBLMQswCQYD\n" +
+            "VQQGEwJOTzEdMBsGA1UECgwUQnV5cGFzcyBBUy05ODMxNjMzMjcxHTAbBgNVBAMM\n" +
+            "FEJ1eXBhc3MgQ2xhc3MgMyBDQSAyMB4XDTE5MDkyMzExNTY1NloXDTIxMDkyMzIx\n" +
+            "NTkwMFowgYcxCzAJBgNVBAYTAk5PMQ0wCwYDVQQRDAQwNDg0MQ0wCwYDVQQHDARP\n" +
+            "U0xPMRMwEQYDVQQKDApCVVlQQVNTIEFTMTEwLwYDVQQDDChyZXZva2VkLmJ1c2lu\n" +
+            "ZXNzcGx1cy5jYTIzLnNzbC5idXlwYXNzLm5vMRIwEAYDVQQFEwk5ODMxNjMzMjcw\n" +
+            "ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDtpNExWd+hjl/ouL/B/pdc\n" +
+            "InUzEywQO3rzXs3psBdQ1lDhG/9Fcq78uqyri4edtJNDGb1XadktKeRC+NtUqMkE\n" +
+            "IFOXvaVjLxa61c8K5mh3CVDrAiPyxVcnm8vkuQPMsy1BTOl9TZq9heIukG/lcfzW\n" +
+            "6tU6mOD9yx1NzXSVN5cvDCbbDnEZiJSuazXI4O02as66SWI27WKsk21+SKCGAtGC\n" +
+            "kI0PW4FrXm43/jxX1CoImIfTLkDInMq7HHsQRsGQ3OjbJLfRz/2obyjHUU5ki6vd\n" +
+            "z16mA5ITLFIG36HxbPn337175R9RwOpWkN84xVlL3VQdznCVoiOjzBiOMpdm0Jwp\n" +
+            "AgMBAAGjggL/MIIC+zAJBgNVHRMEAjAAMB8GA1UdIwQYMBaAFCIwLtL79kvKwLg7\n" +
+            "0gTE6XLml5sMMB0GA1UdDgQWBBSGUQTUB4BilG/EMaHHDAYNPewf8zAOBgNVHQ8B\n" +
+            "Af8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB8GA1UdIAQY\n" +
+            "MBYwCgYIYIRCARoBAwQwCAYGZ4EMAQICMDoGA1UdHwQzMDEwL6AtoCuGKWh0dHA6\n" +
+            "Ly9jcmwuYnV5cGFzcy5uby9jcmwvQlBDbGFzczNDQTIuY3JsMDMGA1UdEQQsMCqC\n" +
+            "KHJldm9rZWQuYnVzaW5lc3NwbHVzLmNhMjMuc3NsLmJ1eXBhc3Mubm8wagYIKwYB\n" +
+            "BQUHAQEEXjBcMCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5idXlwYXNzLmNvbTA1\n" +
+            "BggrBgEFBQcwAoYpaHR0cDovL2NydC5idXlwYXNzLm5vL2NydC9CUENsYXNzM0NB\n" +
+            "Mi5jZXIwggF/BgorBgEEAdZ5AgQCBIIBbwSCAWsBaQB2ALvZ37wfinG1k5Qjl6qS\n" +
+            "e0c4V5UKq1LoGpCWZDaOHtGFAAABbV37Y7oAAAQDAEcwRQIgYbaNSR3R5x9p9sYJ\n" +
+            "UzRDdd/lbELb05u9GqlLtl4M61YCIQCTBecXTbMs4zuG/wu722HZy/XgD6fiQySp\n" +
+            "FhHDO3CYagB2AKS5CZC0GFgUh7sTosxncAo8NZgE+RvfuON3zQ7IDdwQAAABbV37\n" +
+            "Y7wAAAQDAEcwRQIgD8j40M03oLMCg5WmFBN7VL6169F7rKatE12btLQRYtYCIQC0\n" +
+            "rDhQiZP7j14Y4JqEFQx6UHl3dvxLxZTDW34Z54IUWQB3AG9Tdqwx8DEZ2JkApFEV\n" +
+            "/3cVHBHZAsEAKQaNsgiaN9kTAAABbV37YOUAAAQDAEgwRgIhANTGHD1g2pbsTtoN\n" +
+            "CJ2m6nfxm9jB3huftKGDjeo7EyxHAiEA3EYNUc6hr+4Q9lMAphUgpW6oyaNCsIzl\n" +
+            "izbNhq8dBRYwDQYJKoZIhvcNAQELBQADggEBADUuO4MmYjPkmkik5tjUPiiDDXEQ\n" +
+            "A41jr72qmdleYdkhnaKAJa8Enn6j/ySRV0enA7yqJeNp1qgPQFvlOh3TqFB3Ae5b\n" +
+            "XAfL2B7vKbegpjKm8dVH5RurqVm9xZcXb1nbwfu2k3lqqsp/uwqvLBItJDvA8pfi\n" +
+            "2R46sEtj2gFpAlKFDwepuaklqhrvEoIjIaAL0RrGfKY0oRQw1YMbPNIebsVaWr04\n" +
+            "rt6tlxrq7PyW1w9Mt3445WA1NzSWc7pAjFLfY6u87QaPHI4ES31H9xxRDsxmr6Y3\n" +
+            "BJmiWd5uUxev0nVw0saqvlo4yAEBq4rI/DieKcQI4qEI8myzoS0R0azMfLM=\n" +
+            "-----END CERTIFICATE-----";
 
-    public void runTest(ValidatePathWithParams pathValidator, boolean ocspEnabled)
-            throws Exception {
+    public void runTest(ValidatePathWithParams pathValidator) throws Exception {
         // Validate valid
         pathValidator.validate(new String[]{VALID_CLASS_3, INT_CLASS_3},
                 ValidatePathWithParams.Status.GOOD, null, System.out);
 
-        if (ocspEnabled) {
-            // Revoked test certificate is expired
-            // and backdated revocation check is only possible with OCSP
-            pathValidator.setValidationDate("July 01, 2013");
-        }
-
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED_CLASS_3, INT_CLASS_3},
                 ValidatePathWithParams.Status.REVOKED,
-                "Wed Feb 06 02:56:32 PST 2013", System.out);
+                "Mon Sep 23 04:57:31 PDT 2019", System.out);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+package gc.z;
+
 /**
  * @test TestMemoryManagerMXBean
  * @requires vm.gc.Z
  * @summary Test ZGC memory manager MXBean
  * @modules java.management
- * @run main/othervm -XX:+UseZGC -Xmx128M TestMemoryManagerMXBean
+ * @run main/othervm -XX:+UseZGC -Xmx128M gc.z.TestMemoryManagerMXBean
  */
 
 import java.lang.management.ManagementFactory;

@@ -33,6 +33,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/registerMap.hpp"
@@ -51,7 +52,7 @@
 // Returns true iff objects were reallocated and relocked because of access through JVMTI
 bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // first/oldest update holds the flag
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
   bool result = false;
   if (list != NULL) {
     for (int i = 0; i < list->length(); i++) {
@@ -79,7 +80,10 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
     KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
-    RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
+    RegisterMap  reg_map(deoptee_thread(),
+                         RegisterMap::UpdateMap::skip,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::skip);
     vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
     int cur_depth = 0;
 
@@ -119,6 +123,11 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   if (!barrier_active()) return true;
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    oop vt_oop = jt->jvmti_vthread();
+    // Skip virtual threads
+    if (vt_oop != NULL && java_lang_VirtualThread::is_instance(vt_oop)) {
+      continue;
+    }
     if (jt->frames_to_pop_failed_realloc() > 0) {
       // The deoptee thread jt has frames with reallocation failures on top of its stack.
       // These frames are about to be removed. We must not interfere with that and signal failure.
@@ -126,7 +135,10 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
     }
     if (jt->has_last_Java_frame()) {
       KeepStackGCProcessedMark ksgcpm(jt);
-      RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
+      RegisterMap reg_map(jt,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::skip,
+                          RegisterMap::WalkContinuation::skip);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
              "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",
@@ -291,7 +303,7 @@ void EscapeBarrier::thread_removed(JavaThread* jt) {
 // Remember that objects were reallocated and relocked for the compiled frame with the given id
 static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // set in first/oldest update
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list =
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list =
     JvmtiDeferredUpdates::deferred_locals(thread);
   DEBUG_ONLY(bool found = false);
   if (list != NULL) {

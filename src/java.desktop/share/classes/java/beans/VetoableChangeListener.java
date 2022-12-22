@@ -37,7 +37,7 @@ public interface VetoableChangeListener extends java.util.EventListener {
      *
      * @param     evt a {@code PropertyChangeEvent} object describing the
      *                event source and the property that has changed.
-     * @exception PropertyVetoException if the recipient wishes the property
+     * @throws PropertyVetoException if the recipient wishes the property
      *              change to be rolled back.
      */
     void vetoableChange(PropertyChangeEvent evt)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class virtual_parse_stack {
       /* don't transfer if the real stack is empty */
       if (real_next >= real_stack.size()) return;
 
-      /* get a copy of the first Symbol we have not transfered */
+      /* get a copy of the first Symbol we have not transferred */
       stack_sym = real_stack.get(real_stack.size()-1-real_next);
 
       /* record the transfer */

@@ -42,7 +42,7 @@
 
  build
    |-bin (scripts to invoke various tools, javac etc.)
-   |-genrsc (generated sources - i.e. properties)
+   |-gensrc (generated sources - i.e. properties)
    |-modules (compiled classes in a modular layout)
    |-jtreg (test work/results)
    |-toolclasses (tools used for building - like the property compiler)
@@ -109,7 +109,7 @@
         <os family="windows"/>
     </condition>
 
-    <!-- Standard property values, if not overriden by earlier settings. -->
+    <!-- Standard property values, if not overridden by earlier settings. -->
     <property file="${make.dir}/build.properties"/>
 
     <condition property="langtools.jdk.home" value="${jdk.home}">
@@ -238,7 +238,6 @@
         <build-tool name="javadoc"/>
         <build-tool name="javap"/>
         <build-tool name="jdeps"/>
-        <build-tool name="sjavac"/>
         <build-tool name="jshell"/>
     </target>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package gc.stress;
 
 import java.util.concurrent.TimeoutException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test TestStressRSetCoarsening.java
@@ -37,8 +37,8 @@ import sun.hotspot.WhiteBox;
  * @summary Stress G1 Remembered Set by creating a lot of cross region links
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=300
  *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
@@ -101,6 +101,8 @@ public class TestStressRSetCoarsening {
 
     private static final long KB = 1024;
     private static final long MB = 1024 * KB;
+
+    private static final int CARDSIZE = 512; // Card size in bytes.
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
@@ -229,20 +231,27 @@ public class TestStressRSetCoarsening {
     }
 
     public void go() throws InterruptedException {
-        // threshold for sparce -> fine
-        final int FINE = WB.getIntxVMFlag("G1RSetSparseRegionEntries").intValue();
+        // Threshold for Array of Cards -> Howl
+        final int ARRAY_TO_HOWL_THRESHOLD = WB.getUintVMFlag("G1RemSetArrayOfCardsEntries").intValue();
 
-        // threshold for fine -> coarse
-        final int COARSE = WB.getIntxVMFlag("G1RSetRegionEntries").intValue();
+        // Threshold for Howl -> Full
+        int coarsenHowlToFullPercent = WB.getUintVMFlag("G1RemSetCoarsenHowlToFullPercent").intValue();
+        int cardsPerRegion = WB.getSizeTVMFlag("G1HeapRegionSize").intValue() / CARDSIZE;
+        final int HOWL_TO_FULL_THRESHOLD = (cardsPerRegion * coarsenHowlToFullPercent) / 100;
 
         // regToRegRefCounts - array of reference counts from region to region
-        // at the the end of iteration.
+        // at the end of iteration.
         // The number of test iterations is array length - 1.
         // If c[i] > c[i-1] then during the iteration i more references will
         // be created.
         // If c[i] < c[i-1] then some referenes will be cleaned.
-        int[] regToRegRefCounts = {0, FINE / 2, 0, FINE, (FINE + COARSE) / 2, 0,
-            COARSE, COARSE + 10, FINE + 1, FINE / 2, 0};
+        int[] regToRegRefCounts = {
+            0, ARRAY_TO_HOWL_THRESHOLD / 2,
+            0, ARRAY_TO_HOWL_THRESHOLD,
+            (ARRAY_TO_HOWL_THRESHOLD + HOWL_TO_FULL_THRESHOLD) / 2, 0,
+            HOWL_TO_FULL_THRESHOLD, HOWL_TO_FULL_THRESHOLD + 10,
+            ARRAY_TO_HOWL_THRESHOLD + 1, ARRAY_TO_HOWL_THRESHOLD / 2,
+            0};
 
         // For progress tracking
         int[] progress = new int[regToRegRefCounts.length];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ import java.util.Locale;
 public class ToLowerCase {
 
     public static void main(String[] args) {
-        Locale turkish = new Locale("tr", "TR");
-        Locale lt = new Locale("lt"); // Lithanian
-        Locale az = new Locale("az"); // Azeri
+        Locale turkish = Locale.of("tr", "TR");
+        Locale lt = Locale.of("lt"); // Lithanian
+        Locale az = Locale.of("az"); // Azeri
 
         // Greek Sigma final/non-final tests
         test("\u03A3", Locale.US, "\u03C3");

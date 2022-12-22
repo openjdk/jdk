@@ -66,7 +66,7 @@ public class VetoableChangeListenerProxy
     *
     * @param event  the property change event
     *
-    * @exception PropertyVetoException if the recipient wishes the property
+    * @throws PropertyVetoException if the recipient wishes the property
     *                                  change to be rolled back
     */
     public void vetoableChange(PropertyChangeEvent event) throws PropertyVetoException{

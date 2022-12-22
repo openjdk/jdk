@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_SUSPENDIBLETHREADSET_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 // A SuspendibleThreadSet is a set of threads that can be suspended.
 // A thread can join and later leave the set, and periodically yield.
@@ -40,9 +41,10 @@ class SuspendibleThreadSet : public AllStatic {
   friend class SuspendibleThreadSetLeaver;
 
 private:
+  static volatile bool _suspend_all;
+
   static uint   _nthreads;
   static uint   _nthreads_stopped;
-  static bool   _suspend_all;
   static double _suspend_all_start;
 
   static bool is_synchronized();
@@ -53,9 +55,11 @@ private:
   // Removes the current thread from the set.
   static void leave();
 
+  static bool suspend_all() { return Atomic::load(&_suspend_all); }
+
 public:
   // Returns true if an suspension is in progress.
-  static bool should_yield() { return _suspend_all; }
+  static bool should_yield() { return suspend_all(); }
 
   // Suspends the current thread if a suspension is in progress.
   static void yield();

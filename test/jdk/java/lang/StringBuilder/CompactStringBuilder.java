@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,6 +365,43 @@ public class CompactStringBuilder {
         assertEquals(new StringBuilder(ORIGIN).offsetByCodePoints(1, 1), 2);
         assertEquals(new StringBuilder(ORIGIN).offsetByCodePoints(2, 1), 3);
         check(new StringBuilder(ORIGIN).reverse(), "\uD801\uFF21\uDC01A");
+    }
+
+    /*
+     * Tests for maybeLatin1 attribute
+     */
+    @Test
+    public void testCompactStringForMaybeLatin1() {
+      StringBuilder sb = new StringBuilder("A\uDC01");
+
+      sb.setLength(0);      // maybeLatin1 become true
+      check(sb, "");
+      check(new StringBuilder(sb).append('A'), "A");
+      check(new StringBuilder().append(sb), "");
+
+      sb = new StringBuilder("A\uDC01");
+      sb.setCharAt(1, 'B');   // maybeLatin1 become true
+      check(sb, "AB");
+      check(new StringBuilder(sb).append('A'), "ABA");
+      check(new StringBuilder().append(sb), "AB");
+
+      sb = new StringBuilder("A\uDC01");
+      sb.deleteCharAt(1);   // maybeLatin1 become true
+      check(sb, "A");
+      check(new StringBuilder(sb).append('B'), "AB");
+      check(new StringBuilder().append(sb), "A");
+
+      sb = new StringBuilder("A\uDC01\uFF21\uD801");
+      sb.delete(1, 4);
+      check(sb, "A");      // maybeLatin1 become true
+      check(new StringBuilder(sb).append('B'), "AB");
+      check(new StringBuilder().append(sb), "A");
+
+      sb = new StringBuilder("A\uDC01\uFF21\uD801");
+      sb.replace(1, 4, "B");
+      check(sb, "AB");      // maybeLatin1 become true
+      check(new StringBuilder(sb).append('A'), "ABA");
+      check(new StringBuilder().append(sb), "AB");
     }
 
     private void checkGetChars(StringBuilder sb, int srcBegin, int srcEnd,

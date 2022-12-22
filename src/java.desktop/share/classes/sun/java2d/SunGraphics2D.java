@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ import java.awt.image.renderable.RenderContext;
 import java.awt.image.renderable.RenderableImage;
 import java.lang.annotation.Native;
 import java.text.AttributedCharacterIterator;
-import java.util.Iterator;
 import java.util.Map;
 
 import sun.awt.ConstrainableGraphics;
@@ -102,7 +101,7 @@ import static java.awt.geom.AffineTransform.TYPE_MASK_SCALE;
 import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
 
 /**
- * This is a the master Graphics2D superclass for all of the Sun
+ * This is the master Graphics2D superclass for all of the Sun
  * Graphics implementations.  This class relies on subclasses to
  * manage the various device information, but provides an overall
  * general framework for performing all of the requests in the
@@ -409,7 +408,7 @@ public final class SunGraphics2D
      * drawback of the workaround is that the resulting
      * clip and device origin cannot be "enforced".
      *
-     * @exception IllegalStateException If the Graphics
+     * @throws IllegalStateException If the Graphics
      * to be constrained has a complex transform.
      */
     @Override
@@ -523,7 +522,7 @@ public final class SunGraphics2D
     Shape intersectByArea(Shape s1, Shape s2, boolean keep1, boolean keep2) {
         Area a1, a2;
 
-        // First see if we can find an overwriteable source shape
+        // First see if we can find an overwritable source shape
         // to use as our destination area to avoid duplication.
         if (!keep1 && (s1 instanceof Area)) {
             a1 = (Area) s1;
@@ -1571,7 +1570,7 @@ public final class SunGraphics2D
     /**
      * Composes a Transform object with the transform in this
      * Graphics2D according to the rule last-specified-first-applied.
-     * If the currrent transform is Cx, the result of composition
+     * If the current transform is Cx, the result of composition
      * with Tx is a new transform Cx'.  Cx' becomes the current
      * transform for this Graphics2D.
      * Transforming a point p by the updated transform Cx' is
@@ -1784,7 +1783,7 @@ public final class SunGraphics2D
 
     /**
      * Sets the background color in this context used for clearing a region.
-     * When Graphics2D is constructed for a component, the backgroung color is
+     * When Graphics2D is constructed for a component, the background color is
      * inherited from the component. Setting the background color in the
      * Graphics2D context only affects the subsequent clearRect() calls and
      * not the background color of the component. To change the background
@@ -2575,7 +2574,7 @@ public final class SunGraphics2D
      * Returns a rectangle in image coordinates that may be required
      * in order to draw the given image into the given clipping region
      * through a pair of AffineTransforms.  In addition, horizontal and
-     * vertical padding factors for antialising and interpolation may
+     * vertical padding factors for antialiasing and interpolation may
      * be used.
      */
     private static Rectangle getImageRegion(RenderedImage img,
@@ -2838,22 +2837,22 @@ public final class SunGraphics2D
                 WritableRaster wRaster = null;
                 if (raster instanceof WritableRaster) {
                     wRaster = (WritableRaster)raster;
+
+                    // Translate wRaster to start at (0, 0) and to contain
+                    // only the relevant portion of the tile
+                    wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
+                                                          tileRect.width,
+                                                          tileRect.height,
+                                                          0, 0,
+                                                          null);
                 } else {
                     // Create a WritableRaster in the same coordinate system
-                    // as the original raster.
+                    // as the original raster, except origin which is (0,0).
                     wRaster =
                         Raster.createWritableRaster(raster.getSampleModel(),
                                                     raster.getDataBuffer(),
                                                     null);
                 }
-
-                // Translate wRaster to start at (0, 0) and to contain
-                // only the relevent portion of the tile
-                wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
-                                                      tileRect.width,
-                                                      tileRect.height,
-                                                      0, 0,
-                                                      null);
 
                 // Wrap wRaster in a BufferedImage
                 BufferedImage bufImg =
@@ -3634,7 +3633,7 @@ public final class SunGraphics2D
     /**
      * This object has no resources to dispose of per se, but the
      * doc comments for the base method in java.awt.Graphics imply
-     * that this object will not be useable after it is disposed.
+     * that this object will not be usable after it is disposed.
      * So, we sabotage the object to prevent further use to prevent
      * developers from relying on behavior that may not work on
      * other, less forgiving, VMs that really need to dispose of
@@ -3656,7 +3655,7 @@ public final class SunGraphics2D
      * enough to know that if our override is empty then it should not
      * mark us as finalizeable.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
         // DO NOT REMOVE THIS METHOD
     }

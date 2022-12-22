@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.beans.*;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
@@ -139,7 +138,7 @@ public class BasicTreeUI extends TreeUI
      * return a FixedHeightLayoutCache instance. */
     protected boolean           largeModel;
 
-    /** Reponsible for telling the TreeState the size needed for a node. */
+    /** Responsible for telling the TreeState the size needed for a node. */
     protected AbstractLayoutCache.NodeDimensions     nodeDimensions;
 
     /** Used to determine what to display. */
@@ -203,7 +202,7 @@ public class BasicTreeUI extends TreeUI
     private boolean lineTypeDashed;
 
     /**
-     * The time factor to treate the series of typed alphanumeric key
+     * The time factor to treat the series of typed alphanumeric key
      * as prefix for first letter navigation.
      */
     private long timeFactor = 1000L;
@@ -666,7 +665,7 @@ public class BasicTreeUI extends TreeUI
     /**
       * Returns the Rectangle enclosing the label portion that the
       * last item in path will be drawn into.  Will return null if
-      * any component in path is currently valid.
+      * any component in path is currently invalid.
       */
     public Rectangle getPathBounds(JTree tree, TreePath path) {
         if(tree != null && treeState != null) {
@@ -858,9 +857,9 @@ public class BasicTreeUI extends TreeUI
         // JTree's original row height is 16.  To correctly display the
         // contents on Linux we should have set it to 18, Windows 19 and
         // Solaris 20.  As these values vary so much it's too hard to
-        // be backward compatable and try to update the row height, we're
-        // therefor NOT going to adjust the row height based on font.  If the
-        // developer changes the font, it's there responsibility to update
+        // be backward compatible and try to update the row height, we're
+        // therefore NOT going to adjust the row height based on font.  If the
+        // developer changes the font, it's their responsibility to update
         // the row height.
 
         setExpandedIcon( (Icon)UIManager.get( "Tree.expandedIcon" ) );
@@ -1132,10 +1131,8 @@ public class BasicTreeUI extends TreeUI
      * @return a default cell editor
      */
     protected TreeCellEditor createDefaultCellEditor() {
-        if(currentCellRenderer != null &&
-           (currentCellRenderer instanceof DefaultTreeCellRenderer)) {
-            DefaultTreeCellEditor editor = new DefaultTreeCellEditor
-                        (tree, (DefaultTreeCellRenderer)currentCellRenderer);
+        if (currentCellRenderer instanceof DefaultTreeCellRenderer defaultRenderer) {
+            DefaultTreeCellEditor editor = new DefaultTreeCellEditor(tree, defaultRenderer);
 
             return editor;
         }
@@ -1179,7 +1176,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Invoked before unstallation of UI.
+     * Invoked before uninstallation of UI.
      */
     protected void prepareForUIUninstall() {
     }
@@ -3681,10 +3678,10 @@ public class BasicTreeUI extends TreeUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent c) {
@@ -3751,7 +3748,7 @@ public class BasicTreeUI extends TreeUI
             for (TreePath path : paths) {
                 selOrder.add(path);
             }
-            Collections.sort(selOrder, this);
+            selOrder.sort(this);
             int n = selOrder.size();
             TreePath[] displayPaths = new TreePath[n];
             for (int i = 0; i < n; i++) {
@@ -4838,7 +4835,7 @@ public class BasicTreeUI extends TreeUI
                         newIndex = rowCount - 1;
                 }
                 else
-                    /* Aparently people don't like wrapping;( */
+                    /* Apparently people don't like wrapping;( */
                     newIndex = Math.min(rowCount - 1, Math.max
                                         (0, (selIndex + direction)));
                 if(addToSelection && ui.treeSelectionModel.

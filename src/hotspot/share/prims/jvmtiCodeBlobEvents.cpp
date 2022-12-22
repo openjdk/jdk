@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
 //
 // The created list is growable array of JvmtiCodeBlobDesc - each one describes
 // a CodeBlob. Note that the list is static - this is because CodeBlob::blobs_do
-// requires a a C or static function so we can't use an instance function. This
+// requires a C or static function so we can't use an instance function. This
 // isn't a problem as the iteration is serial anyway as we need the CodeCache_lock
 // to iterate over the code cache.
 //
@@ -173,7 +173,7 @@ void CodeBlobCollector::collect() {
   assert(_global_code_blobs == NULL, "checking");
 
   // create the global list
-  _global_code_blobs = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
+  _global_code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
 
   // iterate over the stub code descriptors and put them in the list first.
   for (StubCodeDesc* desc = StubCodeDesc::first(); desc != NULL; desc = StubCodeDesc::next(desc)) {
@@ -227,12 +227,14 @@ jvmtiError JvmtiCodeBlobEvents::generate_compiled_method_load_events(JvmtiEnv* e
   {
     NoSafepointVerifier nsv;  // safepoints are not safe while collecting methods to post.
     {
-      // Walk the CodeCache notifying for live nmethods, don't release the CodeCache_lock
-      // because the sweeper may be running concurrently.
+      // Walk the CodeCache notifying for live nmethods. We hold the CodeCache_lock
+      // to ensure the iteration is safe and nmethods are not concurrently freed.
+      // However, they may still change states and become !is_alive(). Filtering
+      // those out is done inside of nmethod::post_compiled_method_load_event().
       // Save events to the queue for posting outside the CodeCache_lock.
       MutexLocker mu(java_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
       // Iterate over non-profiled and profiled nmethods
-      NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+      NMethodIterator iter(NMethodIterator::only_not_unloading);
       while(iter.next()) {
         nmethod* current = iter.method();
         current->post_compiled_method_load_event(state);

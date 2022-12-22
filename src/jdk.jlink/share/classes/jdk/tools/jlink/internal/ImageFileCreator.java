@@ -109,7 +109,7 @@ public final class ImageFileCreator {
     }
 
     private void readAllEntries(Set<Archive> archives) {
-        archives.stream().forEach((archive) -> {
+        archives.forEach((archive) -> {
             Map<Boolean, List<Entry>> es;
             try (Stream<Entry> entries = archive.entries()) {
                 es = entries.collect(Collectors.partitioningBy(n -> n.type()
@@ -158,8 +158,10 @@ public final class ImageFileCreator {
         BasicImageWriter writer = new BasicImageWriter(byteOrder);
         ResourcePoolManager allContent = createPoolManager(archives,
                 entriesForModule, byteOrder, writer);
-        ResourcePool result = generateJImage(allContent,
-             writer, plugins, plugins.getJImageFileOutputStream());
+        ResourcePool result;
+        try (DataOutputStream out = plugins.getJImageFileOutputStream()) {
+            result = generateJImage(allContent, writer, plugins, out);
+        }
 
         //Handle files.
         try {
@@ -235,7 +237,7 @@ public final class ImageFileCreator {
         out.write(bytes, 0, bytes.length);
 
         // write module content
-        content.stream().forEach((res) -> {
+        content.forEach((res) -> {
             res.write(out);
         });
 

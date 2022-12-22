@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
  * @bug 8259070
  * @summary Test jcmd to dump dynamic shared archive.
  * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @requires vm.flagless
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @modules jdk.jcmd/sun.tools.common:+open
- * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
- * @build sun.hotspot.WhiteBox
- * @build JCmdTestLingeredApp JCmdTestDynamicDump
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.lib.apps.LingeredApp jdk.test.whitebox.WhiteBox Hello
+ *        JCmdTestDumpBase JCmdTestLingeredApp JCmdTestDynamicDump
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestDynamicDump
  */
 
@@ -63,7 +63,7 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
 
         // Test dynamic dump twice to same process.
         print2ln(test_count++ + " Test dynamic dump second time to the same process.");
-        test("02.jsa", pid, noBoot,  EXPECT_FAIL);
+        test("02.jsa", pid, noBoot,  EXPECT_PASS);
         app.stopApp();
 
         // Test dynamic dump with -XX:-RecordDynamicDumpInfo.
@@ -80,18 +80,11 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
         test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
         app.stopApp();
 
-        // Test dynamic dump with flags -XX:+RecordDynamicDumpInfo -XX:-DynamicDumpSharedSpaces.
-        print2ln(test_count++ + " Test dynamic dump with flags -XX:+RecordDynamicDumpInfo -XX:-DynamicDumpSharedSpaces.");
-        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo", "-XX:-DynamicDumpSharedSpaces");
+        // Test dynamic dump with flag -XX:+RecordDynamicDumpInfo
+        print2ln(test_count++ + " Test dynamic dump with flag -XX:+RecordDynamicDumpInfo.");
+        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
         pid = app.getPid();
         test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
-        app.stopApp();
-
-        // Test dynamic dump with flags -XX:-DynamicDumpSharedSpaces -XX:+RecordDynamicDumpInfo.
-        print2ln(test_count++ + " Test dynamic dump with flags -XX:-DynamicDumpSharedSpaces -XX:+RecordDynamicDumpInfo.");
-        app = createLingeredApp("-cp", allJars, "-XX:-DynamicDumpSharedSpaces", "-XX:+RecordDynamicDumpInfo");
-        pid = app.getPid();
-        test(null, pid, noBoot,  EXPECT_PASS, DYNAMIC_MESSAGES);
         app.stopApp();
 
         // Test dynamic with -Xbootclasspath/a:boot.jar
@@ -123,6 +116,17 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
                 throw new RuntimeException("The JCmdTestLingeredApp should not start up!");
             }
         }
+        // Test dynamic dump with -Xlog:cds to check lambda invoker class regeneration
+        print2ln(test_count++ + " Test dynamic dump with -Xlog:cds to check lambda invoker class regeneration");
+        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo", "-Xlog:cds",
+                                "-XX:SharedArchiveFile=" + archiveFile);
+        pid = app.getPid();
+        test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
+        String stdout = app.getProcessStdout();
+        if (stdout.contains("Regenerate MethodHandle Holder classes...")) {
+            throw new RuntimeException("jcmd VM.cds dynamic_dump should not regenerate MethodHandle Holder classes");
+        }
+        app.stopApp();
     }
 
     // Dump a static archive, not using TestCommon.dump(...), we do not take jtreg args.

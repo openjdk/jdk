@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 package vm.share.gc;
 
 import nsk.share.test.ExecutionController;
-import metaspace.stressHierarchy.common.exceptions.GotWrongOOMEException;
 import nsk.share.gc.gp.classload.GeneratedClassProducer;
 
 public class TriggerUnloadingByFillingMetaspace implements
@@ -50,7 +49,7 @@ public class TriggerUnloadingByFillingMetaspace implements
                 generatedClassProducer.get().create(-100500); //argument is not used.
             } catch (Throwable oome) {
                 if (!isInMetaspace(oome)) {
-                    throw new GotWrongOOMEException("Got OOME in heap while triggering OOME in metaspace. Test result can't be valid.");
+                    throw new HeapOOMEException("Got OOME in heap while triggering OOME in metaspace. Test result can't be valid.");
                 }
                 gotOOME = true;
             }

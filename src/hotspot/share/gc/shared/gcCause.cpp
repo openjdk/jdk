@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,11 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _allocation_failure:
       return "Allocation Failure";
 
-    case _tenured_generation_full:
-      return "Tenured Generation Full";
+    case _codecache_GC_threshold:
+      return "CodeCache GC Threshold";
+
+    case _codecache_GC_aggressive:
+      return "CodeCache GC Aggressive";
 
     case _metadata_GC_threshold:
       return "Metadata GC Threshold";
@@ -81,23 +84,23 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _metadata_GC_clear_soft_refs:
       return "Metadata GC Clear Soft References";
 
-    case _old_generation_expanded_on_last_scavenge:
-      return "Old Generation Expanded On Last Scavenge";
-
-    case _old_generation_too_full_to_scavenge:
-      return "Old Generation Too Full To Scavenge";
-
     case _adaptive_size_policy:
       return "Ergonomics";
 
     case _g1_inc_collection_pause:
       return "G1 Evacuation Pause";
 
+    case _g1_compaction_pause:
+      return "G1 Compaction Pause";
+
     case _g1_humongous_allocation:
       return "G1 Humongous Allocation";
 
     case _g1_periodic_collection:
       return "G1 Periodic Collection";
+
+    case _g1_preventive_collection:
+      return "G1 Preventive Collection";
 
     case _dcmd_gc_run:
       return "Diagnostic Command";

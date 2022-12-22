@@ -43,7 +43,7 @@ public class GenerateTestImage {
         Graphics2D graphics2D = image.createGraphics();
         graphics2D.setColor(Color.red);
         graphics2D.fillOval(0, 0, IMAGE_SIZE, IMAGE_SIZE);
-        graphics2D.dispose();;
+        graphics2D.dispose();
 
        ImageIO.write(image, "png", file);
     }

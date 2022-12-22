@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define CPU_AARCH64_JNITYPES_AARCH64_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 // This file holds platform-dependent routines used to write primitive jni

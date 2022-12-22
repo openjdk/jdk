@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class CheckSecurityProvider {
         String os = System.getProperty("os.name");
         /*
          * This array should be updated whenever new security providers
-         * are added to the the java.security file.
+         * are added to the java.security file.
          * NOTE: it should be in the same order as the java.security file
          */
 

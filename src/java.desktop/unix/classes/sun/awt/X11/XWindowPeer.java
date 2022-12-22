@@ -47,12 +47,10 @@ import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
-import java.io.UnsupportedEncodingException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,6 +64,8 @@ import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class XWindowPeer extends XPanelPeer implements WindowPeer,
                                                 DisplayChangedListener {
@@ -305,8 +305,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (iconImages.size() != 0) {
             //read icon images from target
             winAttr.iconsInherited = false;
-            for (Iterator<Image> i = iconImages.iterator(); i.hasNext(); ) {
-                Image image = i.next();
+            for (Image image : iconImages) {
                 if (image == null) {
                     if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                         log.finest("XWindowPeer.updateIconImages: Skipping the image passed into Java because it's null.");
@@ -402,8 +401,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     static void dumpIcons(java.util.List<IconInfo> icons) {
         if (iconLog.isLoggable(PlatformLogger.Level.FINEST)) {
             iconLog.finest(">>> Sizes of icon images:");
-            for (Iterator<IconInfo> i = icons.iterator(); i.hasNext(); ) {
-                iconLog.finest("    {0}", i.next());
+            for (IconInfo icon : icons) {
+                iconLog.finest("    {0}", icon);
             }
         }
     }
@@ -417,10 +416,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         for (int i = 0; i < cnt; i++) {
             final ComponentPeer childPeer = acc.getPeer(children[i]);
-            if (childPeer != null && childPeer instanceof XWindowPeer) {
-                if (((XWindowPeer)childPeer).winAttr.iconsInherited) {
-                    ((XWindowPeer)childPeer).winAttr.icons = icons;
-                    ((XWindowPeer)childPeer).recursivelySetIcon(icons);
+            if (childPeer instanceof XWindowPeer xWindowPeer) {
+                if (xWindowPeer.winAttr.iconsInherited) {
+                    xWindowPeer.winAttr.icons = icons;
+                    xWindowPeer.recursivelySetIcon(icons);
                 }
             }
         }
@@ -431,7 +430,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
     void setIconHints(java.util.List<IconInfo> icons) {
         //This does nothing for XWindowPeer,
-        //It's overriden in XDecoratedPeer
+        //It's overridden in XDecoratedPeer
     }
 
     private static ArrayList<IconInfo> defaultIconInfo;
@@ -487,7 +486,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     //This bug is regression for
     //5025858: Resizing a decorated frame triggers componentResized event twice.
     //Since events are not posted from Component.setBounds we need to send them here.
-    //Note that this function is overriden in XDecoratedPeer so event
+    //Note that this function is overridden in XDecoratedPeer so event
     //posting is not changing for decorated peers
     public void setBounds(int x, int y, int width, int height, int op) {
         XToolkit.awtLock();
@@ -566,7 +565,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     /*
-     * Retrives real native focused window and converts it into Java peer.
+     * Retrieves real native focused window and converts it into Java peer.
      */
     static XWindowPeer getNativeFocusedWindowPeer() {
         XBaseWindow baseWindow = XToolkit.windowToXWindow(xGetInputFocus());
@@ -576,7 +575,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     /*
-     * Retrives real native focused window and converts it into Java window.
+     * Retrieves real native focused window and converts it into Java window.
      */
     static Window getNativeFocusedWindow() {
         XWindowPeer peer = getNativeFocusedWindowPeer();
@@ -766,7 +765,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         } else {
             // ICCCM 4.1.5 states that a real ConfigureNotify will be sent when
             // a window is resized but the client can not tell if the window was
-            // moved or not. The client should consider the position as unkown
+            // moved or not. The client should consider the position as unknown
             // and use TranslateCoordinates to find the actual position.
             //
             // TODO this should be the default for every case.
@@ -1200,7 +1199,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // This doesn't make the application unusable though looks quite ugly.
         // Probobly we need to find some hint to assign to our Security
         // Warning window in order to exclude it from the snapping option.
-        // We are not currently aware of existance of such a property.
+        // We are not currently aware of existence of such a property.
         if (warningWindow != null) {
             // We can't use the coordinates stored in the XBaseWindow since
             // they are zeros for decorated frames.
@@ -1358,12 +1357,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         messageBuilder.append('"');
         messageBuilder.append('\0');
-        final byte[] message;
-        try {
-            message = messageBuilder.toString().getBytes("UTF-8");
-        } catch (UnsupportedEncodingException cannotHappen) {
-            return;
-        }
+        final byte[] message = messageBuilder.toString().getBytes(UTF_8);
 
         XClientMessageEvent req = null;
 
@@ -1544,7 +1538,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      */
     static Vector<XWindowPeer> collectJavaToplevels() {
         Vector<XWindowPeer> javaToplevels = new Vector<XWindowPeer>();
-        Vector<Long> v = new Vector<Long>();
+        ArrayList<Long> v = new ArrayList<Long>();
         X11GraphicsEnvironment ge =
             (X11GraphicsEnvironment)GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
@@ -1949,7 +1943,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public boolean requestWindowFocus(long time, boolean timeProvided) {
         focusLog.fine("Request for window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
-        // If this is Window and its owner Frame is active we can be sure request succedded.
+        // If this is Window and its owner Frame is active we can be sure request succeeded.
         Window ownerWindow  = XWindowPeer.getDecoratedOwner((Window)target);
         Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
@@ -1974,7 +1968,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return false;
     }
 
-    // This method is to be overriden in XDecoratedPeer.
+    // This method is to be overridden in XDecoratedPeer.
     void setActualFocusedWindow(XWindowPeer actualFocusedWindow) {
     }
 
@@ -2232,7 +2226,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             }
 
             // note that we need to pass dragging events to the grabber (6390326)
-            // see comment above for more inforamtion.
+            // see comment above for more information.
             if (!containsGlobal(scaleDown(xme.get_x_root()),
                                 scaleDown(xme.get_y_root()))
                     && !dragging) {

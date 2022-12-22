@@ -111,7 +111,6 @@ import sun.util.logging.PlatformLogger;
  * @see java.math.BigDecimal
  * @since 1.4
  */
-@SuppressWarnings("removal")
 public final class Currency implements Serializable {
 
     @java.io.Serial
@@ -210,6 +209,11 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 3;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
@@ -276,7 +280,7 @@ public final class Currency implements Serializable {
 
     /**
      * Constructs a {@code Currency} instance. The constructor is private
-     * so that we can insure that there's never more than one instance for a
+     * so that we can ensure that there's never more than one instance for a
      * given currency.
      */
     private Currency(String currencyCode, int defaultFractionDigits, int numericCode) {

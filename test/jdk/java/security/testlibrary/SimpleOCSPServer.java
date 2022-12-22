@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,8 +174,7 @@ public class SimpleOCSPServer {
                     issuerAlias + " not found");
             }
         }
-
-        sigAlgId = AlgorithmId.get("Sha256withRSA");
+        sigAlgId = AlgorithmId.get(SignatureUtil.getDefaultSigAlgForKey(signerKey));
         respId = new ResponderId(signerCert.getSubjectX500Principal());
         listenAddress = addr;
         listenPort = port;
@@ -443,7 +442,7 @@ public class SimpleOCSPServer {
     }
 
     /**
-     * Check the status database for revocation information one one or more
+     * Check the status database for revocation information on one or more
      * certificates.
      *
      * @param reqList the list of {@code LocalSingleRequest} objects taken
@@ -1348,13 +1347,14 @@ public class SimpleOCSPServer {
             basicORItemStream.write(tbsResponseBytes);
 
             try {
-                sigAlgId.derEncode(basicORItemStream);
-
                 // Create the signature
-                Signature sig = Signature.getInstance(sigAlgId.getName());
-                sig.initSign(signerKey);
+                Signature sig = SignatureUtil.fromKey(
+                        sigAlgId.getName(), signerKey, (Provider)null);
                 sig.update(tbsResponseBytes);
                 signature = sig.sign();
+                // Rewrite signAlg, RSASSA-PSS needs some parameters.
+                sigAlgId = SignatureUtil.fromSignature(sig, signerKey);
+                sigAlgId.encode(basicORItemStream);
                 basicORItemStream.putBitString(signature);
             } catch (GeneralSecurityException exc) {
                 err(exc);

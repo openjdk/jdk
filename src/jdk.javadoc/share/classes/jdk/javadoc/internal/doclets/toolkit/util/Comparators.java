@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- *  A collection of {@code Comparator} factory methods.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A collection of {@code Comparator} factory methods.
  */
 public class Comparators {
 
@@ -217,17 +212,17 @@ public class Comparators {
     private Comparator<Element> indexUseComparator = null;
 
     /**
-     *  Returns an {@code Element} Comparator for index file presentations, and are sorted as follows.
-     *  If comparing modules and/or packages then simply compare the qualified names,
-     *  if comparing a module or a package with a type/member then compare the
-     *  FullyQualifiedName of the module or a package with the SimpleName of the entity,
-     *  otherwise:
-     *  1. compare the ElementKind ex: Module, Package, Interface etc.
-     *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
-     *      a case insensitive comparison of parameter the type signatures
-     *  2b. if equal, case sensitive comparison of the type signatures
-     *  3. if equal, compare the FQNs of the entities
-     *  4. finally, if equal, compare the names of the enclosing modules
+     * Returns an {@code Element} Comparator for index file presentations, and are sorted as follows.
+     * If comparing modules and/or packages then simply compare the qualified names,
+     * if comparing a module or a package with a type/member then compare the
+     * FullyQualifiedName of the module or a package with the SimpleName of the entity,
+     * otherwise:
+     * 1. compare the ElementKind ex: Module, Package, Interface etc.
+     * 2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
+     *     a case insensitive comparison of parameter the type signatures
+     * 2b. if equal, case sensitive comparison of the type signatures
+     * 3. if equal, compare the FQNs of the entities
+     * 4. finally, if equal, compare the names of the enclosing modules
      * @return an element comparator for index file use
      */
     public Comparator<Element> makeIndexElementComparator() {

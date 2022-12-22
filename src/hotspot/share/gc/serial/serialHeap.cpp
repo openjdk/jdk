@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/universe.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/memoryManager.hpp"
 
 SerialHeap* SerialHeap::heap() {
@@ -92,10 +94,32 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
 void SerialHeap::young_process_roots(OopIterateClosure* root_closure,
                                      OopIterateClosure* old_gen_closure,
                                      CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
+  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
 
   process_roots(SO_ScavengeCodeCache, root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
 
   old_gen()->younger_refs_iterate(old_gen_closure);
+}
+
+void SerialHeap::safepoint_synchronize_begin() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize();
+  }
+}
+
+void SerialHeap::safepoint_synchronize_end() {
+  if (UseStringDeduplication) {
+    SuspendibleThreadSet::desynchronize();
+  }
+}
+
+HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
+  MutexLocker ml(Heap_lock);
+  return old_gen()->allocate(word_size, false /* is_tlab */);
+}
+
+void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  assert(old_gen()->used_region().contains(archive_space), "Archive space not contained in old gen");
+  old_gen()->complete_loaded_archive_space(archive_space);
 }

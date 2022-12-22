@@ -33,11 +33,11 @@
  * @compile ../test-classes/ChildOldSuper.java ../test-classes/GChild.java
  * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java
  * @compile ../test-classes/GChild2.java
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar OldClassApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadees.jar OldSuper ChildOldSuper GChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadees2.jar OldInf ChildOldInf GChild2
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar OldClassAndInf
  */
 
@@ -80,13 +80,10 @@ public class OldClassAndInf extends DynamicArchiveTestBase {
                      "-Xlog:cds",
                      "-Xlog:cds+dynamic=debug",
                      "-cp", appJar,
-                     mainAppClass, loadeesJar, inArchive),
+                     mainAppClass, loadeesJar, inArchive, "keep-alive"),
              loadees))
              .assertNormalExit(output -> {
                  output.shouldContain("Written dynamic archive 0x")
-                       .shouldContain("Pre JDK 6 class not supported by CDS: 49.0 " + loadeesArray[0])
-                       .shouldMatch("Skipping " + loadeesArray[1] +":.*" + loadeesArray[0] + " is excluded")
-                       .shouldMatch("Skipping " + loadeesArray[2] +": super.*" + loadeesArray[1] + " is excluded")
                        .shouldHaveExitValue(0);
                  });
 
@@ -105,7 +102,7 @@ public class OldClassAndInf extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 for (String loadee : loadees) {
-                    output.shouldMatch(".class.load. " + loadee + " source:.*" + loadeesJar);
+                    output.shouldContain(loadee + " source: shared objects file (top)");
                 }
                 });
     }

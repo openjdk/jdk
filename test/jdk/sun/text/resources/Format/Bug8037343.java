@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class Bug8037343
 
     public static void main(String[] arg)
     {
-        final Locale esDO = new Locale("es", "DO");
+        final Locale esDO = Locale.of("es", "DO");
         final String expectedShort = "31/03/12";
         final String expectedMedium = "31/03/2012";
 

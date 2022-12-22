@@ -276,7 +276,7 @@ class Selector {
 
     @Override
     public int hashCode() {
-        return (int) (asBits() ^ (asBits() >>> 32));
+        return Long.hashCode(asBits());
     }
 
     /**
@@ -302,7 +302,7 @@ class Selector {
 
         <E extends Enum<E> & SelectorInstanceWithDoc<E>>
         SelectorKind(Class<E> k) {
-            this.all = EnumSet.allOf(FormatCase.class);;
+            this.all = EnumSet.allOf(FormatCase.class);
             this.k = k;
         }
     }

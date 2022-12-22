@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,10 +234,8 @@ public class KRBError implements java.io.Serializable {
                     System.out.println("Unable to parse eData field of KRB-ERROR:\n" +
                             new sun.security.util.HexDumpEncoder().encodeBuffer(data));
                 }
-                IOException ioe = new IOException(
-                        "Unable to parse eData field of KRB-ERROR");
-                ioe.initCause(e);
-                throw ioe;
+                throw new IOException(
+                        "Unable to parse eData field of KRB-ERROR", e);
             }
         } else {
             if (DEBUG) {

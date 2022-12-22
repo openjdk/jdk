@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, Red Hat, Inc.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @bug 7170638
  * @summary Test SDT probes available on GNU/Linux when DTRACE_ENABLED
  * @requires os.family == "linux"
+ * @requires vm.flagless
+ * @requires vm.hasDTrace
  *
  * @library /test/lib
  * @run driver SDTProbesGNULinuxTest
@@ -35,7 +37,6 @@
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,17 +44,7 @@ import java.nio.file.Paths;
 
 public class SDTProbesGNULinuxTest {
     public static void main(String[] args) throws Throwable {
-        {
-            var pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+ExtendedDTraceProbes",
-                    "-version");
-            var oa = new OutputAnalyzer(pb.start());
-            // This test only matters when build with DTRACE_ENABLED.
-            if (oa.getExitValue() != 0) {
-                throw new SkippedException("Not build using DTRACE_ENABLED");
-            }
-        }
-
+        // This test only matters when build with DTRACE_ENABLED.
         try (var libjvms = Files.walk(Paths.get(Utils.TEST_JDK))) {
             libjvms.filter(p -> "libjvm.so".equals(p.getFileName().toString()))
                    .map(Path::toAbsolutePath)

@@ -27,11 +27,11 @@
 #include "gc/shared/gc_globals.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
-#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
+#include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/chains/objectSampleMarker.hpp"
 #include "jfr/leakprofiler/chains/rootSetClosure.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
@@ -84,7 +84,7 @@ void PathToGcRootsOperation::doit() {
   assert(_cutoff_ticks > 0, "invariant");
 
   // The bitset used for marking is dimensioned as a function of the heap size
-  BitSet mark_bits;
+  JFRBitSet mark_bits;
 
   // The edge queue is dimensioned as a fraction of the heap size
   const size_t edge_queue_reservation_size = edge_queue_memory_reservation();

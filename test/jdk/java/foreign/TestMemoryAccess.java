@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,23 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  */
 
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.Arena;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.function.Function;
 
 import org.testng.annotations.*;
@@ -47,45 +48,51 @@ import static org.testng.Assert.*;
 public class TestMemoryAccess {
 
     @Test(dataProvider = "elements")
-    public void testAccess(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, Class<?> carrier, Checker checker) {
+    public void testAccess(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, Checker checker) {
         ValueLayout layout = elemLayout.withName("elem");
-        testAccessInternal(viewFactory, layout, layout.varHandle(carrier), checker);
+        testAccessInternal(viewFactory, layout, layout.varHandle(), checker);
     }
 
     @Test(dataProvider = "elements")
-    public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, Checker checker) {
+    public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Checker checker) {
         GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"));
-        testAccessInternal(viewFactory, layout, layout.varHandle(carrier, PathElement.groupElement("elem")), checker);
+        testAccessInternal(viewFactory, layout, layout.varHandle(PathElement.groupElement("elem")), checker);
     }
 
     @Test(dataProvider = "elements")
-    public void testPaddedAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, Checker checker) {
+    public void testPaddedAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Checker checker) {
         SequenceLayout layout = MemoryLayout.sequenceLayout(2, elemLayout);
-        testAccessInternal(viewFactory, layout, layout.varHandle(carrier, PathElement.sequenceElement(1)), checker);
+        testAccessInternal(viewFactory, layout, layout.varHandle(PathElement.sequenceElement(1)), checker);
     }
 
     @Test(dataProvider = "arrayElements")
-    public void testArrayAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
+    public void testArrayAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
-        testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, PathElement.sequenceElement()), checker);
+        testArrayAccessInternal(viewFactory, seq, seq.varHandle(PathElement.sequenceElement()), checker);
     }
 
     @Test(dataProvider = "arrayElements")
-    public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
+    public void testArrayAccessAlt(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, ArrayChecker checker) {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
+        testArrayAccessInternal(viewFactory, seq, elemLayout.arrayElementVarHandle(), checker);
+    }
+
+    @Test(dataProvider = "arrayElements")
+    public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem")));
-        testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
+        testArrayAccessInternal(viewFactory, seq, seq.varHandle(MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
     }
 
     @Test(dataProvider = "arrayElements")
-    public void testPaddedArrayAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, ArrayChecker checker) {
+    public void testPaddedArrayAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout));
-        testArrayAccessInternal(viewFactory, seq, seq.varHandle(carrier, PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement(1)), checker);
+        testArrayAccessInternal(viewFactory, seq, seq.varHandle(PathElement.sequenceElement(), MemoryLayout.PathElement.sequenceElement(1)), checker);
     }
 
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
         MemorySegment outer_segment;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, scope));
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, arena.scope()));
             boolean isRO = segment.isReadOnly();
             try {
                 checker.check(handle, segment);
@@ -108,19 +115,19 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment);
-            throw new AssertionError(); //not ok, scope is closed
+            throw new AssertionError(); //not ok, session is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (scope is closed)
+            //ok, should fail (session is closed)
         }
     }
 
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
         MemorySegment outer_segment;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, arena.scope()));
             boolean isRO = segment.isReadOnly();
             try {
-                for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
+                for (int i = 0; i < seq.elementCount(); i++) {
                     checker.check(handle, segment, i);
                 }
                 if (isRO) {
@@ -133,7 +140,7 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, segment, seq.elementCount().getAsLong());
+                checker.check(handle, segment, seq.elementCount());
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
@@ -142,55 +149,55 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment, 0);
-            throw new AssertionError(); //not ok, scope is closed
+            throw new AssertionError(); //not ok, session is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (scope is closed)
+            //ok, should fail (session is closed)
         }
     }
 
     @Test(dataProvider = "matrixElements")
-    public void testMatrixAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
+    public void testMatrixAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
                 MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
-        testMatrixAccessInternal(viewFactory, seq, seq.varHandle(carrier,
+        testMatrixAccessInternal(viewFactory, seq, seq.varHandle(
                 PathElement.sequenceElement(), PathElement.sequenceElement()), checker);
     }
 
     @Test(dataProvider = "matrixElements")
-    public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
+    public void testMatrixAccessAlt(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, MatrixChecker checker) {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
+        testMatrixAccessInternal(viewFactory, seq, elemLayout.arrayElementVarHandle(10), checker);
+    }
+
+    @Test(dataProvider = "matrixElements")
+    public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
                 MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"))));
         testMatrixAccessInternal(viewFactory, seq,
-                seq.varHandle(carrier,
+                seq.varHandle(
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.groupElement("elem")),
                 checker);
     }
 
     @Test(dataProvider = "matrixElements")
-    public void testPaddedMatrixAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Class<?> carrier, MatrixChecker checker) {
+    public void testPaddedMatrixAccessByIndexSeq(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
                 MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(2, elemLayout)));
         testMatrixAccessInternal(viewFactory, seq,
-                seq.varHandle(carrier,
+                seq.varHandle(
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.sequenceElement(1)),
                 checker);
     }
 
-    @Test(dataProvider = "badCarriers",
-          expectedExceptions = IllegalArgumentException.class)
-    public void testBadCarriers(Class<?> carrier) {
-        ValueLayout l = MemoryLayouts.BITS_32_LE.withName("elem");
-        l.varHandle(carrier);
-    }
-
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
         MemorySegment outer_segment;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, arena.scope()));
             boolean isRO = segment.isReadOnly();
             try {
-                for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
-                    for (int j = 0; j < ((SequenceLayout) seq.elementLayout()).elementCount().getAsLong(); j++) {
+                for (int i = 0; i < seq.elementCount(); i++) {
+                    for (int j = 0; j < ((SequenceLayout) seq.elementLayout()).elementCount(); j++) {
                         checker.check(handle, segment, i, j);
                     }
                 }
@@ -204,8 +211,8 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, segment, seq.elementCount().getAsLong(),
-                        ((SequenceLayout)seq.elementLayout()).elementCount().getAsLong());
+                checker.check(handle, segment, seq.elementCount(),
+                        ((SequenceLayout)seq.elementLayout()).elementCount());
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
@@ -214,9 +221,9 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment, 0, 0);
-            throw new AssertionError(); //not ok, scope is closed
+            throw new AssertionError(); //not ok, session is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (scope is closed)
+            //ok, should fail (session is closed)
         }
     }
 
@@ -227,37 +234,37 @@ public class TestMemoryAccess {
     public Object[][] createData() {
         return new Object[][] {
                 //BE, RW
-                { ID, MemoryLayouts.BITS_8_BE, byte.class, Checker.BYTE },
-                { ID, MemoryLayouts.BITS_16_BE, short.class, Checker.SHORT },
-                { ID, MemoryLayouts.BITS_16_BE, char.class, Checker.CHAR },
-                { ID, MemoryLayouts.BITS_32_BE, int.class, Checker.INT },
-                { ID, MemoryLayouts.BITS_64_BE, long.class, Checker.LONG },
-                { ID, MemoryLayouts.BITS_32_BE, float.class, Checker.FLOAT },
-                { ID, MemoryLayouts.BITS_64_BE, double.class, Checker.DOUBLE },
+                { ID, ValueLayout.JAVA_BYTE, Checker.BYTE },
+                { ID, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), Checker.SHORT },
+                { ID, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), Checker.CHAR },
+                { ID, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), Checker.INT },
+                { ID, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), Checker.LONG },
+                { ID, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), Checker.FLOAT },
+                { ID, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), Checker.DOUBLE },
                 //BE, RO
-                { IMMUTABLE, MemoryLayouts.BITS_8_BE, byte.class, Checker.BYTE },
-                { IMMUTABLE, MemoryLayouts.BITS_16_BE, short.class, Checker.SHORT },
-                { IMMUTABLE, MemoryLayouts.BITS_16_BE, char.class, Checker.CHAR },
-                { IMMUTABLE, MemoryLayouts.BITS_32_BE, int.class, Checker.INT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_BE, long.class, Checker.LONG },
-                { IMMUTABLE, MemoryLayouts.BITS_32_BE, float.class, Checker.FLOAT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_BE, double.class, Checker.DOUBLE },
+                { IMMUTABLE, ValueLayout.JAVA_BYTE, Checker.BYTE },
+                { IMMUTABLE, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), Checker.SHORT },
+                { IMMUTABLE, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), Checker.CHAR },
+                { IMMUTABLE, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), Checker.INT },
+                { IMMUTABLE, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), Checker.LONG },
+                { IMMUTABLE, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), Checker.FLOAT },
+                { IMMUTABLE, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), Checker.DOUBLE },
                 //LE, RW
-                { ID, MemoryLayouts.BITS_8_LE, byte.class, Checker.BYTE },
-                { ID, MemoryLayouts.BITS_16_LE, short.class, Checker.SHORT },
-                { ID, MemoryLayouts.BITS_16_LE, char.class, Checker.CHAR },
-                { ID, MemoryLayouts.BITS_32_LE, int.class, Checker.INT },
-                { ID, MemoryLayouts.BITS_64_LE, long.class, Checker.LONG },
-                { ID, MemoryLayouts.BITS_32_LE, float.class, Checker.FLOAT },
-                { ID, MemoryLayouts.BITS_64_LE, double.class, Checker.DOUBLE },
+                { ID, ValueLayout.JAVA_BYTE, Checker.BYTE },
+                { ID, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.SHORT },
+                { ID, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.CHAR },
+                { ID, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.INT },
+                { ID, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.LONG },
+                { ID, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.FLOAT },
+                { ID, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.DOUBLE },
                 //LE, RO
-                { IMMUTABLE, MemoryLayouts.BITS_8_LE, byte.class, Checker.BYTE },
-                { IMMUTABLE, MemoryLayouts.BITS_16_LE, short.class, Checker.SHORT },
-                { IMMUTABLE, MemoryLayouts.BITS_16_LE, char.class, Checker.CHAR },
-                { IMMUTABLE, MemoryLayouts.BITS_32_LE, int.class, Checker.INT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_LE, long.class, Checker.LONG },
-                { IMMUTABLE, MemoryLayouts.BITS_32_LE, float.class, Checker.FLOAT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_LE, double.class, Checker.DOUBLE },
+                { IMMUTABLE, ValueLayout.JAVA_BYTE, Checker.BYTE },
+                { IMMUTABLE, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.SHORT },
+                { IMMUTABLE, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.CHAR },
+                { IMMUTABLE, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.INT },
+                { IMMUTABLE, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.LONG },
+                { IMMUTABLE, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.FLOAT },
+                { IMMUTABLE, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), Checker.DOUBLE },
         };
     }
 
@@ -304,37 +311,37 @@ public class TestMemoryAccess {
     public Object[][] createArrayData() {
         return new Object[][] {
                 //BE, RW
-                { ID, MemoryLayouts.BITS_8_BE, byte.class, ArrayChecker.BYTE },
-                { ID, MemoryLayouts.BITS_16_BE, short.class, ArrayChecker.SHORT },
-                { ID, MemoryLayouts.BITS_16_BE, char.class, ArrayChecker.CHAR },
-                { ID, MemoryLayouts.BITS_32_BE, int.class, ArrayChecker.INT },
-                { ID, MemoryLayouts.BITS_64_BE, long.class, ArrayChecker.LONG },
-                { ID, MemoryLayouts.BITS_32_BE, float.class, ArrayChecker.FLOAT },
-                { ID, MemoryLayouts.BITS_64_BE, double.class, ArrayChecker.DOUBLE },
+                { ID, ValueLayout.JAVA_BYTE, ArrayChecker.BYTE },
+                { ID, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.SHORT },
+                { ID, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.CHAR },
+                { ID, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.INT },
+                { ID, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.LONG },
+                { ID, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.FLOAT },
+                { ID, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.DOUBLE },
                 //BE, RO
-                { IMMUTABLE, MemoryLayouts.BITS_8_BE, byte.class, ArrayChecker.BYTE },
-                { IMMUTABLE, MemoryLayouts.BITS_16_BE, short.class, ArrayChecker.SHORT },
-                { IMMUTABLE, MemoryLayouts.BITS_16_BE, char.class, ArrayChecker.CHAR },
-                { IMMUTABLE, MemoryLayouts.BITS_32_BE, int.class, ArrayChecker.INT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_BE, long.class, ArrayChecker.LONG },
-                { IMMUTABLE, MemoryLayouts.BITS_32_BE, float.class, ArrayChecker.FLOAT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_BE, double.class, ArrayChecker.DOUBLE },
+                { IMMUTABLE, ValueLayout.JAVA_BYTE, ArrayChecker.BYTE },
+                { IMMUTABLE, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.SHORT },
+                { IMMUTABLE, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.CHAR },
+                { IMMUTABLE, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.INT },
+                { IMMUTABLE, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.LONG },
+                { IMMUTABLE, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.FLOAT },
+                { IMMUTABLE, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), ArrayChecker.DOUBLE },
                 //LE, RW
-                { ID, MemoryLayouts.BITS_8_LE, byte.class, ArrayChecker.BYTE },
-                { ID, MemoryLayouts.BITS_16_LE, short.class, ArrayChecker.SHORT },
-                { ID, MemoryLayouts.BITS_16_LE, char.class, ArrayChecker.CHAR },
-                { ID, MemoryLayouts.BITS_32_LE, int.class, ArrayChecker.INT },
-                { ID, MemoryLayouts.BITS_64_LE, long.class, ArrayChecker.LONG },
-                { ID, MemoryLayouts.BITS_32_LE, float.class, ArrayChecker.FLOAT },
-                { ID, MemoryLayouts.BITS_64_LE, double.class, ArrayChecker.DOUBLE },
+                { ID, ValueLayout.JAVA_BYTE, ArrayChecker.BYTE },
+                { ID, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.SHORT },
+                { ID, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.CHAR },
+                { ID, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.INT },
+                { ID, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.LONG },
+                { ID, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.FLOAT },
+                { ID, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.DOUBLE },
                 //LE, RO
-                { IMMUTABLE, MemoryLayouts.BITS_8_LE, byte.class, ArrayChecker.BYTE },
-                { IMMUTABLE, MemoryLayouts.BITS_16_LE, short.class, ArrayChecker.SHORT },
-                { IMMUTABLE, MemoryLayouts.BITS_16_LE, char.class, ArrayChecker.CHAR },
-                { IMMUTABLE, MemoryLayouts.BITS_32_LE, int.class, ArrayChecker.INT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_LE, long.class, ArrayChecker.LONG },
-                { IMMUTABLE, MemoryLayouts.BITS_32_LE, float.class, ArrayChecker.FLOAT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_LE, double.class, ArrayChecker.DOUBLE },
+                { IMMUTABLE, ValueLayout.JAVA_BYTE, ArrayChecker.BYTE },
+                { IMMUTABLE, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.SHORT },
+                { IMMUTABLE, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.CHAR },
+                { IMMUTABLE, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.INT },
+                { IMMUTABLE, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.LONG },
+                { IMMUTABLE, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.FLOAT },
+                { IMMUTABLE, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), ArrayChecker.DOUBLE },
         };
     }
 
@@ -381,37 +388,45 @@ public class TestMemoryAccess {
     public Object[][] createMatrixData() {
         return new Object[][] {
                 //BE, RW
-                { ID, MemoryLayouts.BITS_8_BE, byte.class, MatrixChecker.BYTE },
-                { ID, MemoryLayouts.BITS_16_BE, short.class, MatrixChecker.SHORT },
-                { ID, MemoryLayouts.BITS_16_BE, char.class, MatrixChecker.CHAR },
-                { ID, MemoryLayouts.BITS_32_BE, int.class, MatrixChecker.INT },
-                { ID, MemoryLayouts.BITS_64_BE, long.class, MatrixChecker.LONG },
-                { ID, MemoryLayouts.BITS_32_BE, float.class, MatrixChecker.FLOAT },
-                { ID, MemoryLayouts.BITS_64_BE, double.class, MatrixChecker.DOUBLE },
+                { ID, ValueLayout.JAVA_BYTE, MatrixChecker.BYTE },
+                { ID, ValueLayout.JAVA_BOOLEAN, MatrixChecker.BOOLEAN },
+                { ID, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.SHORT },
+                { ID, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.CHAR },
+                { ID, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.INT },
+                { ID, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.LONG },
+                { ID, ValueLayout.ADDRESS.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.ADDR },
+                { ID, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.FLOAT },
+                { ID, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.DOUBLE },
                 //BE, RO
-                { IMMUTABLE, MemoryLayouts.BITS_8_BE, byte.class, MatrixChecker.BYTE },
-                { IMMUTABLE, MemoryLayouts.BITS_16_BE, short.class, MatrixChecker.SHORT },
-                { IMMUTABLE, MemoryLayouts.BITS_16_BE, char.class, MatrixChecker.CHAR },
-                { IMMUTABLE, MemoryLayouts.BITS_32_BE, int.class, MatrixChecker.INT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_BE, long.class, MatrixChecker.LONG },
-                { IMMUTABLE, MemoryLayouts.BITS_32_BE, float.class, MatrixChecker.FLOAT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_BE, double.class, MatrixChecker.DOUBLE },
+                { IMMUTABLE, ValueLayout.JAVA_BYTE, MatrixChecker.BYTE },
+                { IMMUTABLE, ValueLayout.JAVA_BOOLEAN, MatrixChecker.BOOLEAN },
+                { IMMUTABLE, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.SHORT },
+                { IMMUTABLE, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.CHAR },
+                { IMMUTABLE, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.INT },
+                { IMMUTABLE, ValueLayout.JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.LONG },
+                { IMMUTABLE, ValueLayout.ADDRESS.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.ADDR },
+                { IMMUTABLE, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.FLOAT },
+                { IMMUTABLE, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN), MatrixChecker.DOUBLE },
                 //LE, RW
-                { ID, MemoryLayouts.BITS_8_LE, byte.class, MatrixChecker.BYTE },
-                { ID, MemoryLayouts.BITS_16_LE, short.class, MatrixChecker.SHORT },
-                { ID, MemoryLayouts.BITS_16_LE, char.class, MatrixChecker.CHAR },
-                { ID, MemoryLayouts.BITS_32_LE, int.class, MatrixChecker.INT },
-                { ID, MemoryLayouts.BITS_64_LE, long.class, MatrixChecker.LONG },
-                { ID, MemoryLayouts.BITS_32_LE, float.class, MatrixChecker.FLOAT },
-                { ID, MemoryLayouts.BITS_64_LE, double.class, MatrixChecker.DOUBLE },
+                { ID, ValueLayout.JAVA_BYTE, MatrixChecker.BYTE },
+                { ID, ValueLayout.JAVA_BOOLEAN, MatrixChecker.BOOLEAN },
+                { ID, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.SHORT },
+                { ID, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.CHAR },
+                { ID, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.INT },
+                { ID, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.LONG },
+                { ID, ValueLayout.ADDRESS.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.ADDR },
+                { ID, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.FLOAT },
+                { ID, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.DOUBLE },
                 //LE, RO
-                { IMMUTABLE, MemoryLayouts.BITS_8_LE, byte.class, MatrixChecker.BYTE },
-                { IMMUTABLE, MemoryLayouts.BITS_16_LE, short.class, MatrixChecker.SHORT },
-                { IMMUTABLE, MemoryLayouts.BITS_16_LE, char.class, MatrixChecker.CHAR },
-                { IMMUTABLE, MemoryLayouts.BITS_32_LE, int.class, MatrixChecker.INT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_LE, long.class, MatrixChecker.LONG },
-                { IMMUTABLE, MemoryLayouts.BITS_32_LE, float.class, MatrixChecker.FLOAT },
-                { IMMUTABLE, MemoryLayouts.BITS_64_LE, double.class, MatrixChecker.DOUBLE },
+                { IMMUTABLE, ValueLayout.JAVA_BYTE, MatrixChecker.BYTE },
+                { IMMUTABLE, ValueLayout.JAVA_BOOLEAN, MatrixChecker.BOOLEAN },
+                { IMMUTABLE, ValueLayout.JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.SHORT },
+                { IMMUTABLE, ValueLayout.JAVA_CHAR.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.CHAR },
+                { IMMUTABLE, ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.INT },
+                { IMMUTABLE, ValueLayout.JAVA_LONG.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.LONG },
+                { IMMUTABLE, ValueLayout.ADDRESS.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.ADDR },
+                { IMMUTABLE, ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.FLOAT },
+                { IMMUTABLE, ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.LITTLE_ENDIAN), MatrixChecker.DOUBLE },
         };
     }
 
@@ -421,6 +436,11 @@ public class TestMemoryAccess {
         MatrixChecker BYTE = (handle, segment, r, c) -> {
             handle.set(segment, r, c, (byte)(r + c));
             assertEquals(r + c, (byte)handle.get(segment, r, c));
+        };
+
+        MatrixChecker BOOLEAN = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, (r + c) != 0);
+            assertEquals((r + c) != 0, (boolean)handle.get(segment, r, c));
         };
 
         MatrixChecker SHORT = (handle, segment, r, c) -> {
@@ -443,6 +463,11 @@ public class TestMemoryAccess {
             assertEquals(r + c, (long)handle.get(segment, r, c));
         };
 
+        MatrixChecker ADDR = (handle, segment, r, c) -> {
+            handle.set(segment, r, c, MemorySegment.ofAddress(r + c));
+            assertEquals(MemorySegment.ofAddress(r + c), (MemorySegment) handle.get(segment, r, c));
+        };
+
         MatrixChecker FLOAT = (handle, segment, r, c) -> {
             handle.set(segment, r, c, (float)(r + c));
             assertEquals((float)(r + c), (float)handle.get(segment, r, c));
@@ -451,16 +476,6 @@ public class TestMemoryAccess {
         MatrixChecker DOUBLE = (handle, segment, r, c) -> {
             handle.set(segment, r, c, (double)(r + c));
             assertEquals((double)(r + c), (double)handle.get(segment, r, c));
-        };
-    }
-
-    @DataProvider(name = "badCarriers")
-    public Object[][] createBadCarriers() {
-        return new Object[][] {
-                { void.class },
-                { boolean.class },
-                { Object.class },
-                { int[].class }
         };
     }
 }

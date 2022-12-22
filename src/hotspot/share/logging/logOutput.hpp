@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class LogDecorations;
 class LogMessageBuffer;
@@ -43,15 +44,13 @@ class LogOutput : public CHeapObj<mtLogging> {
   friend class LogConfiguration;
 
  private:
-  static const size_t InitialConfigBufferSize = 256;
-
   // Track if the output has been reconfigured dynamically during runtime.
   // The status is set each time the configuration of the output is modified,
   // and is reset once after logging initialization is complete.
+  // This is only used during logging of the configuration.
   bool _reconfigured;
 
-  char* _config_string;
-  size_t _config_string_buffer_size;
+  stringStream _config_string;
 
   // Adds the log selection to the config description (e.g. "tag1+tag2*=level").
   void add_to_config_string(const LogSelection& selection);
@@ -59,7 +58,7 @@ class LogOutput : public CHeapObj<mtLogging> {
  protected:
   LogDecorators _decorators;
 
-  // Replaces the current config description with the given string.
+  // Replaces the current config description with a copy of the given string.
   void set_config_string(const char* string);
 
   // Update the config string for this output to reflect its current configuration
@@ -79,13 +78,13 @@ class LogOutput : public CHeapObj<mtLogging> {
   }
 
   const char* config_string() const {
-    return _config_string;
+    return _config_string.base();
   }
 
-  LogOutput() : _reconfigured(false), _config_string(NULL), _config_string_buffer_size(0) {
+  LogOutput() : _reconfigured(false), _config_string(){
   }
 
-  virtual ~LogOutput();
+  virtual ~LogOutput() {};
 
   // If the output can be rotated, trigger a forced rotation, otherwise do nothing.
   // Log outputs with rotation capabilities should override this.
@@ -93,10 +92,13 @@ class LogOutput : public CHeapObj<mtLogging> {
     // Do nothing by default.
   }
 
+  bool parse_options(const char* options, outputStream* errstream);
+
   virtual void describe(outputStream *out);
 
   virtual const char* name() const = 0;
   virtual bool initialize(const char* options, outputStream* errstream) = 0;
+  virtual bool set_option(const char* key, const char* value, outputStream* errstream) = 0;
   virtual int write(const LogDecorations& decorations, const char* msg) = 0;
   virtual int write(LogMessageBuffer::Iterator msg_iterator) = 0;
 };

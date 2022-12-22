@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,14 @@ import java.util.ArrayList;
 class ClassLoaderHelper {
 
     private ClassLoaderHelper() {}
+
+    /**
+     * Returns true if loading a native library only if
+     * it's present on the file system.
+     */
+    static boolean loadLibraryOnlyIfPresent() {
+        return true;
+    }
 
     /**
      * Returns an alternate path name for the given file

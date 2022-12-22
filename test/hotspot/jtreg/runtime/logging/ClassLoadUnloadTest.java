@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 /*
  * @test ClassLoadUnloadTest
  * @bug 8142506
- * @requires vm.opt.final.ClassUnloading
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library classes
  * @build test.Empty
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver ClassLoadUnloadTest
  */
 
@@ -77,7 +79,10 @@ public class ClassLoadUnloadTest {
         List<String> argsList = new ArrayList<>();
         Collections.addAll(argsList, args);
         Collections.addAll(argsList, "-Xmn8m");
-        Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
+        Collections.addAll(argsList, "-Xbootclasspath/a:.");
+        Collections.addAll(argsList, "-XX:+UnlockDiagnosticVMOptions");
+        Collections.addAll(argsList, "-XX:+WhiteBoxAPI");
+        Collections.addAll(argsList, "-XX:+ClassUnloading");
         Collections.addAll(argsList, ClassUnloadTestMain.class.getName());
         return ProcessTools.createJavaProcessBuilder(argsList);
     }

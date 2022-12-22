@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@
   address pd_location(VMReg reg) const {return NULL;}
 
   address pd_location(VMReg base_reg, int slot_idx) const {
-    return location(base_reg->next(slot_idx));
+    return location(base_reg->next(slot_idx), nullptr);
   }
 
   // No PD state to clear or copy.

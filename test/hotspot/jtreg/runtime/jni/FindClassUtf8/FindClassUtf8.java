@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
  * @bug 8166358
  * @summary verify that -Xcheck:jni finds a bad utf8 name for class name.
  * @library /test/lib
- * @run main/native/othervm FindClassUtf8 test
+ * @run main/native FindClassUtf8 test
  */
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -42,7 +43,10 @@ public final class FindClassUtf8 {
     public static void main(String... args) throws Exception {
         if (args.length == 1) {
             // run java -Xcheck:jni FindClassUtf8 and check that the -Xcheck:jni message comes out.
-            ProcessTools.executeTestJvm("-Xcheck:jni", "-XX:-CreateCoredumpOnCrash", "FindClassUtf8")
+            ProcessTools.executeTestJvm("-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                        "-Xcheck:jni",
+                                        "-XX:-CreateCoredumpOnCrash",
+                                        "FindClassUtf8")
                       .shouldContain("JNI class name is not a valid UTF8 string")
                       .shouldNotHaveExitValue(0);  // you get a core dump from -Xcheck:jni failures
         } else {

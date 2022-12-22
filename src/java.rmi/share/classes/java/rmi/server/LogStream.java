@@ -176,7 +176,7 @@ public class LogStream extends PrintStream {
             synchronized (this) {
                 synchronized (logOut) {
                     // construct prefix for log messages:
-                    buffer.setLength(0);;
+                    buffer.setLength(0);
                     buffer.append(              // date/time stamp...
                         (new Date()).toString());
                     buffer.append(':');

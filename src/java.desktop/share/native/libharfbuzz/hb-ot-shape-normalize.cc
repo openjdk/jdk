@@ -29,7 +29,7 @@
 #ifndef HB_NO_OT_SHAPE
 
 #include "hb-ot-shape-normalize.hh"
-#include "hb-ot-shape-complex.hh"
+#include "hb-ot-shaper.hh"
 #include "hb-ot-shape.hh"
 
 
@@ -69,7 +69,7 @@
  *   - When a font does not support a character but supports its canonical
  *     decomposition, well, use the decomposition.
  *
- *   - The complex shapers can customize the compose and decompose functions to
+ *   - The shapers can customize the compose and decompose functions to
  *     offload some of their requirements to the normalizer.  For example, the
  *     Indic shaper may want to disallow recomposing of two matras.
  */
@@ -143,8 +143,7 @@ decompose (const hb_ot_shape_normalize_context_t *c, bool shortest, hb_codepoint
     return 1;
   }
 
-  unsigned int ret;
-  if ((ret = decompose (c, shortest, a))) {
+  if (unsigned ret = decompose (c, shortest, a)) {
     if (b) {
       output_char (buffer, b, b_glyph);
       return ret + 1;
@@ -171,7 +170,7 @@ decompose_current_character (const hb_ot_shape_normalize_context_t *c, bool shor
   hb_codepoint_t u = buffer->cur().codepoint;
   hb_codepoint_t glyph = 0;
 
-  if (shortest && c->font->get_nominal_glyph (u, &glyph))
+  if (shortest && c->font->get_nominal_glyph (u, &glyph, c->not_found))
   {
     next_char (buffer, glyph);
     return;
@@ -183,7 +182,7 @@ decompose_current_character (const hb_ot_shape_normalize_context_t *c, bool shor
     return;
   }
 
-  if (!shortest && c->font->get_nominal_glyph (u, &glyph))
+  if (!shortest && c->font->get_nominal_glyph (u, &glyph, c->not_found))
   {
     next_char (buffer, glyph);
     return;
@@ -193,7 +192,8 @@ decompose_current_character (const hb_ot_shape_normalize_context_t *c, bool shor
   {
     hb_codepoint_t space_glyph;
     hb_unicode_funcs_t::space_t space_type = buffer->unicode->space_fallback_type (u);
-    if (space_type != hb_unicode_funcs_t::NOT_SPACE && c->font->get_nominal_glyph (0x0020u, &space_glyph))
+    if (space_type != hb_unicode_funcs_t::NOT_SPACE &&
+        (c->font->get_nominal_glyph (0x0020, &space_glyph) || (space_glyph = buffer->invisible)))
     {
       _hb_glyph_info_set_unicode_space_fallback_type (&buffer->cur(), space_type);
       next_char (buffer, space_glyph);
@@ -222,7 +222,7 @@ handle_variation_selector_cluster (const hb_ot_shape_normalize_context_t *c,
                                    unsigned int end,
                                    bool short_circuit HB_UNUSED)
 {
-  /* TODO Currently if there's a variation-selector we give-up, it's just too hard. */
+  /* Currently if there's a variation-selector we give-up on normalization, it's just too hard. */
   hb_buffer_t * const buffer = c->buffer;
   hb_font_t * const font = c->font;
   for (; buffer->idx < end - 1 && buffer->successful;) {
@@ -312,6 +312,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
     buffer,
     font,
     buffer->unicode,
+    buffer->not_found,
     plan->shaper->decompose ? plan->shaper->decompose : decompose_unicode,
     plan->shaper->compose   ? plan->shaper->compose   : compose_unicode
   };
@@ -373,7 +374,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
       decompose_multi_char_cluster (&c, end, always_short_circuit);
     }
     while (buffer->idx < count && buffer->successful);
-    buffer->swap_buffers ();
+    buffer->sync ();
   }
 
 
@@ -393,7 +394,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
           break;
 
       /* We are going to do a O(n^2).  Only do this if the sequence is short. */
-      if (end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
+      if (end - i > HB_OT_SHAPE_MAX_COMBINING_MARKS) {
         i = end;
         continue;
       }
@@ -476,7 +477,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
       if (info_cc (buffer->prev()) == 0)
         starter = buffer->out_len - 1;
     }
-    buffer->swap_buffers ();
+    buffer->sync ();
   }
 }
 

@@ -37,7 +37,6 @@ import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.BlitBg;
 import sun.awt.image.SurfaceManager;
-import sun.awt.image.SurfaceManager.FlushableCacheData;
 
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
@@ -74,7 +73,7 @@ public abstract class SurfaceDataProxy
         @SuppressWarnings("removal")
         String manimg = AccessController.doPrivileged(
             new GetPropertyAction("sun.java2d.managedimages"));
-        if (manimg != null && manimg.equals("false")) {
+        if ("false".equals(manimg)) {
             cachingAllowed = false;
             System.out.println("Disabling managed images");
         }
@@ -369,7 +368,7 @@ public abstract class SurfaceDataProxy
      * It relies on the subclass to determine if the cached version will
      * be useful given the operational parameters.
      * This method checks any preexisting cached copy for being "up to date"
-     * and tries to update it if it is stale or non-existant and the
+     * and tries to update it if it is stale or non-existent and the
      * appropriate number of accesses have occurred since it last was stale.
      * <p>
      * An outline of the process is as follows:

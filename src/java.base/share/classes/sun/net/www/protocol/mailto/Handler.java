@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@ package sun.net.www.protocol.mailto;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.io.*;
-import sun.net.www.*;
-//import sun.net.www.protocol.news.ArticlePoster;
-import sun.net.smtp.SmtpClient;
 
 /** open an nntp input stream given a URL */
 public class Handler extends URLStreamHandler {
@@ -99,7 +95,7 @@ public class Handler extends URLStreamHandler {
 //     }
     */
 
-    public synchronized URLConnection openConnection(URL u) {
+    public URLConnection openConnection(URL u) {
         return new MailToURLConnection(u);
     }
 
@@ -126,33 +122,16 @@ public class Handler extends URLStreamHandler {
         /*
          * Let's just make sure we DO have an Email address in the URL.
          */
-        boolean nogood = false;
-        if (file == null || file.isEmpty())
-            nogood = true;
-        else {
-            boolean allwhites = true;
-            for (int i = 0; i < file.length(); i++)
-                if (!Character.isWhitespace(file.charAt(i)))
-                    allwhites = false;
-            if (allwhites)
-                nogood = true;
-        }
-        if (nogood)
+        if (file.isBlank())
             throw new RuntimeException("No email address");
-        setURLHandler(u, protocol, host, port, file, null);
+        setURLHandler(u, protocol, host, port, file);
     }
 
     /**
      * This method is used to suppress the deprecated warning
-     *
-     * @param   u the URL to receive the result of parsing the spec
-     * @param   spec the URL string to parse
-     * @param   start the character position to start parsing at.  This is
-     *          just past the ':'.
-     * @param   limit the character position to stop parsing at.
      */
     @SuppressWarnings("deprecation")
-    private void setURLHandler(URL u, String protocol, String host, int port, String file, String ref) {
-        setURL(u,protocol,host,port,file,null);
+    private void setURLHandler(URL u, String protocol, String host, int port, String file) {
+        setURL(u, protocol, host, port, file, null);
     }
 }

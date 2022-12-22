@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,21 +72,21 @@ public class crstepreq003a {
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ test case section
                 case 0:
 
-                    Thread thread0 = new Thread0crstepreq003a("thread0");
+                    Thread thread0 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread0"));
                     threadStart(thread0);
                     threadJoin (thread0, "0");
                     break;
 
                 case 1:
 
-                    Thread thread1 = new Thread0crstepreq003a("thread1");
+                    Thread thread1 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread1"));
                     threadStart(thread1);
                     threadJoin (thread1, "1");
                     break;
 
                 case 2:
 
-                    Thread thread2 = new Thread0crstepreq003a("thread2");
+                    Thread thread2 = JDIThreadFactory.newThread(new Thread0crstepreq003a("thread2"));
                     threadStart(thread2);
                     threadJoin (thread2, "2");
 
@@ -160,7 +160,7 @@ public class crstepreq003a {
 /**
  * This thread will be suspended on breakpoint. No locks are used.
  */
-class Thread0crstepreq003a extends Thread {
+class Thread0crstepreq003a extends NamedTask {
     public Thread0crstepreq003a (String name) {
         super(name);
     }

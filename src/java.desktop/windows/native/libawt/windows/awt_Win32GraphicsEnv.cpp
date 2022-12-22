@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ Java_sun_awt_Win32FontManager_registerFontWithPlatform(JNIEnv *env,
                                                        jclass cl,
                                                        jstring fontName)
 {
-    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
+    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
     if (file) {
         ::AddFontResourceEx(file, FR_PRIVATE, NULL);
         JNU_ReleaseStringPlatformChars(env, fontName, file);
@@ -203,7 +203,7 @@ Java_sun_awt_Win32FontManager_deRegisterFontWithPlatform(JNIEnv *env,
                                                          jclass cl,
                                                          jstring fontName)
 {
-    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
+    LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
     if (file) {
         ::RemoveFontResourceEx(file, FR_PRIVATE, NULL);
         JNU_ReleaseStringPlatformChars(env, fontName, file);
@@ -234,7 +234,7 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
     unsigned long fontPathLen = MAX_PATH + 1;
     WCHAR  tmpPath[MAX_PATH + 1];
     LPWSTR fontPath = fontPathBuf;
-    LPWSTR eudcKey = NULL;
+    LPCWSTR eudcKey = NULL;
 
     LANGID langID = GetSystemDefaultLangID();
     //lookup for encoding ID, EUDC only supported in
@@ -283,7 +283,7 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
             return NULL;
         }
     } else if (wcscmp(fontPath, L"EUDC.TTE") == 0) {
-        //else to see if it only inludes "EUDC.TTE"
+        //else to see if it only includes "EUDC.TTE"
         WCHAR systemRoot[MAX_PATH + 1];
         if (GetWindowsDirectory(systemRoot, MAX_PATH + 1) != 0) {
             swprintf(tmpPath, MAX_PATH, L"%s\\FONTS\\EUDC.TTE", systemRoot);

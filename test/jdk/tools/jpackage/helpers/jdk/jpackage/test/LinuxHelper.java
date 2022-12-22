@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -39,13 +41,27 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
+public final class LinuxHelper {
+    private static String getReleaseSuffix(JPackageCommand cmd) {
+        String value = null;
+        final PackageType packageType = cmd.packageType();
+        switch (packageType) {
+            case LINUX_DEB:
+                value = Optional.ofNullable(cmd.getArgumentValue(
+                        "--linux-app-release", () -> null)).map(v -> "-" + v).orElse(
+                        "");
+                break;
 
-public class LinuxHelper {
-    private static String getRelease(JPackageCommand cmd) {
-        return cmd.getArgumentValue("--linux-app-release", () -> "1");
+            case LINUX_RPM:
+                value = "-" + cmd.getArgumentValue("--linux-app-release",
+                        () -> "1");
+                break;
+        }
+        return value;
     }
 
     public static String getPackageName(JPackageCommand cmd) {
@@ -67,6 +83,14 @@ public class LinuxHelper {
                 desktopFileName);
     }
 
+    static Path getServiceUnitFilePath(JPackageCommand cmd, String launcherName) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+        return cmd.pathToUnpackedPackageFile(
+                Path.of("/lib/systemd/system").resolve(getServiceUnitFileName(
+                        getPackageName(cmd),
+                        Optional.ofNullable(launcherName).orElseGet(cmd::name))));
+    }
+
     static String getBundleName(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
 
@@ -74,18 +98,18 @@ public class LinuxHelper {
         String format = null;
         switch (packageType) {
             case LINUX_DEB:
-                format = "%s_%s-%s_%s";
+                format = "%s_%s%s_%s";
                 break;
 
             case LINUX_RPM:
-                format = "%s-%s-%s.%s";
+                format = "%s-%s%s.%s";
                 break;
         }
 
-        final String release = getRelease(cmd);
+        final String releaseSuffix = getReleaseSuffix(cmd);
         final String version = cmd.version();
 
-        return String.format(format, getPackageName(cmd), version, release,
+        return String.format(format, getPackageName(cmd), version, releaseSuffix,
                 getDefaultPackageArch(packageType)) + packageType.getSuffix();
     }
 
@@ -169,7 +193,10 @@ public class LinuxHelper {
         };
         deb.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("sudo", "dpkg", "-r", getPackageName(cmd)).execute();
+            var packageName = getPackageName(cmd);
+            String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
+                    packageName, packageName);
+            Executor.of("sh", "-c", script).execute();
         };
         deb.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.LINUX_DEB);
@@ -186,13 +213,16 @@ public class LinuxHelper {
         PackageHandlers rpm = new PackageHandlers();
         rpm.installHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-i")
+            Executor.of("sudo", "rpm", "-U")
             .addArgument(cmd.outputBundle())
             .execute();
         };
         rpm.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-e", getPackageName(cmd)).execute();
+            var packageName = getPackageName(cmd);
+            String script = String.format("! rpm -q %s || sudo rpm -e %s",
+                    packageName, packageName);
+            Executor.of("sh", "-c", script).execute();
         };
         rpm.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
@@ -349,10 +379,10 @@ public class LinuxHelper {
 
         test.addInstallVerifier(cmd -> {
             // Verify .desktop files.
-            try (var files = Files.walk(cmd.appLayout().destktopIntegrationDirectory(), 1)) {
+            try (var files = Files.list(cmd.appLayout().destktopIntegrationDirectory())) {
                 List<Path> desktopFiles = files
                         .filter(path -> path.getFileName().toString().endsWith(".desktop"))
-                        .collect(Collectors.toList());
+                        .toList();
                 if (!integrated) {
                     TKit.assertStringListEquals(List.of(),
                             desktopFiles.stream().map(Path::toString).collect(
@@ -442,13 +472,24 @@ public class LinuxHelper {
                 "Failed to locate system .desktop files folder"));
     }
 
+    private static void withTestFileAssociationsFile(FileAssociations fa,
+            ThrowingConsumer<Path> consumer) {
+        boolean iterated[] = new boolean[] { false };
+        PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
+            if (!iterated[0]) {
+                iterated[0] = true;
+                consumer.accept(testFiles.get(0));
+            }
+        });
+    }
+
     static void addFileAssociationsVerifier(PackageTest test, FileAssociations fa) {
         test.addInstallVerifier(cmd -> {
             if (cmd.isPackageUnpacked("Not running file associations checks")) {
                 return;
             }
 
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
@@ -456,28 +497,23 @@ public class LinuxHelper {
 
                 String desktopFileName = queryMimeTypeDefaultHandler(mimeType);
 
-                Path desktopFile = getSystemDesktopFilesFolder().resolve(
+                Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
+                        desktopFileName);
+                Path appDesktopFile = cmd.appLayout().destktopIntegrationDirectory().resolve(
                         desktopFileName);
 
-                TKit.assertFileExists(desktopFile);
+                TKit.assertFileExists(systemDesktopFile);
+                TKit.assertFileExists(appDesktopFile);
 
-                TKit.trace(String.format("Reading [%s] file...", desktopFile));
-                String mimeHandler = Files.readAllLines(desktopFile).stream().peek(
-                        v -> TKit.trace(v)).filter(
-                                v -> v.startsWith("Exec=")).map(
-                                v -> v.split("=", 2)[1]).findFirst().orElseThrow();
-
-                TKit.trace(String.format("Done"));
-
-                TKit.assertEquals(cmd.appLauncherPath().toString(),
-                        mimeHandler, String.format(
-                                "Check mime type handler is the main application launcher"));
-
+                TKit.assertStringListEquals(Files.readAllLines(appDesktopFile),
+                        Files.readAllLines(systemDesktopFile), String.format(
+                        "Check [%s] file is a copy of [%s] file",
+                        systemDesktopFile, appDesktopFile));
             });
         });
 
         test.addUninstallVerifier(cmd -> {
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
@@ -654,6 +690,31 @@ public class LinuxHelper {
         return arch;
     }
 
+    private static String getServiceUnitFileName(String packageName,
+            String launcherName) {
+        try {
+            return getServiceUnitFileName.invoke(null, packageName, launcherName).toString();
+        } catch (InvocationTargetException | IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static Method initGetServiceUnitFileName() {
+        try {
+            return Class.forName(
+                    "jdk.jpackage.internal.LinuxLaunchersAsServices").getMethod(
+                            "getServiceUnitFileName", String.class, String.class);
+        } catch (ClassNotFoundException ex) {
+            if (TKit.isLinux()) {
+                throw new RuntimeException(ex);
+            } else {
+                return null;
+            }
+        } catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));
 
@@ -663,4 +724,6 @@ public class LinuxHelper {
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
     private final static Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+
+    private final static Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

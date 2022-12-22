@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@
  *      @author Daryl Puryear
  *      @copyright 1999-2004 Wily Technology, Inc.  All rights reserved.
  */
-public class TestClass1
-{
-        public
-        TestClass1()
-        {
-        }
+public class TestClass1 {
+    public TestClass1() {
+    }
 }

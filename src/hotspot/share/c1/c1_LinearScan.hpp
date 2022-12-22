@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,8 +547,8 @@ class Interval : public CompilationResourceObj {
   // accessors
   int              reg_num() const               { return _reg_num; }
   void             set_reg_num(int r)            { assert(_reg_num == -1, "cannot change reg_num"); _reg_num = r; }
-  BasicType        type() const                  { assert(_reg_num == -1 || _reg_num >= LIR_OprDesc::vreg_base, "cannot access type for fixed interval"); return _type; }
-  void             set_type(BasicType type)      { assert(_reg_num < LIR_OprDesc::vreg_base || _type == T_ILLEGAL || _type == type, "overwriting existing type"); _type = type; }
+  BasicType        type() const                  { assert(_reg_num == -1 || _reg_num >= LIR_Opr::vreg_base, "cannot access type for fixed interval"); return _type; }
+  void             set_type(BasicType type)      { assert(_reg_num < LIR_Opr::vreg_base || _type == T_ILLEGAL || _type == type, "overwriting existing type"); _type = type; }
 
   Range*           first() const                 { return _first; }
   int              from() const                  { return _first->from(); }
@@ -690,7 +690,7 @@ class IntervalWalker : public CompilationResourceObj {
   void walk_to(IntervalState state, int from);
 
   // activate_current() is called when an unhandled interval becomes active (in current(), current_kind()).
-  // Return false if current() should not be moved the the active interval list.
+  // Return false if current() should not be moved the active interval list.
   // It is safe to append current to any interval list but the unhandled list.
   virtual bool activate_current() { return true; }
 

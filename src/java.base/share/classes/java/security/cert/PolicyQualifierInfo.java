@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import sun.security.util.DerValue;
  *
  * <p>Note that the PKIX certification path validation algorithm specifies
  * that any policy qualifier in a certificate policies extension that is
- * marked critical must be processed and validated. Otherwise the
+ * marked critical must be processed and validated. Otherwise, the
  * certification path must be rejected. If the
  * {@code policyQualifiersRejected} flag is set to false, it is up to
  * the application to validate all policy qualifiers in this manner in order
@@ -84,9 +84,9 @@ import sun.security.util.DerValue;
  */
 public class PolicyQualifierInfo {
 
-    private byte [] mEncoded;
-    private String mId;
-    private byte [] mData;
+    private final byte [] mEncoded;
+    private final String mId;
+    private final byte [] mData;
     private String pqiString;
 
     /**
@@ -161,13 +161,11 @@ public class PolicyQualifierInfo {
         if (pqiString != null)
             return pqiString;
         HexDumpEncoder enc = new HexDumpEncoder();
-        StringBuilder sb = new StringBuilder();
-        sb.append("PolicyQualifierInfo: [\n");
-        sb.append("  qualifierID: " + mId + "\n");
-        sb.append("  qualifier: " +
-            (mData == null ? "null" : enc.encodeBuffer(mData)) + "\n");
-        sb.append("]");
-        pqiString = sb.toString();
+        pqiString = "PolicyQualifierInfo: [\n" +
+                "  qualifierID: " + mId + "\n" +
+                "  qualifier: " +
+                (mData == null ? "null" : enc.encodeBuffer(mData)) + "\n" +
+                "]";
         return pqiString;
     }
 }

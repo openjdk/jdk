@@ -328,12 +328,13 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
         private final MethodType transformHelperType(int whichtm) {
             MemberName tm = transformMethods().get(whichtm);
+            MethodType tmt = tm.getMethodType();
             ArrayList<Class<?>> args = new ArrayList<>();
             ArrayList<Class<?>> fields = new ArrayList<>();
-            Collections.addAll(args, tm.getParameterTypes());
+            Collections.addAll(args, tmt.ptypes());
             fields.addAll(fieldTypes());
             List<Class<?>> helperArgs = deriveTransformHelperArguments(tm, whichtm, args, fields);
-            return MethodType.methodType(tm.getReturnType(), helperArgs);
+            return MethodType.methodType(tmt.returnType(), helperArgs);
         }
 
         // Hooks for subclasses:
@@ -432,7 +433,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             final Class<T> topc = topClass();
             if (!topClassIsSuper) {
                 try {
-                    final Constructor<T> con = reflectConstructor(topc, baseConstructorType().parameterArray());
+                    final Constructor<T> con = reflectConstructor(topc, baseConstructorType().ptypes());
                     if (!topc.isInterface() && !Modifier.isPrivate(con.getModifiers())) {
                         topClassIsSuper = true;
                     }
@@ -621,7 +622,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
-            cw.visit(V1_6, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
+            cw.visit(CLASSFILE_VERSION, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
 
             final String sourceFile = className.substring(className.lastIndexOf('.')+1);
             cw.visitSource(sourceFile, null);
@@ -853,14 +854,14 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         }
 
         private int typeLoadOp(char t) {
-            switch (t) {
-            case 'L': return ALOAD;
-            case 'I': return ILOAD;
-            case 'J': return LLOAD;
-            case 'F': return FLOAD;
-            case 'D': return DLOAD;
-            default : throw newInternalError("unrecognized type " + t);
-            }
+            return switch (t) {
+                case 'L' -> ALOAD;
+                case 'I' -> ILOAD;
+                case 'J' -> LLOAD;
+                case 'F' -> FLOAD;
+                case 'D' -> DLOAD;
+                default -> throw newInternalError("unrecognized type " + t);
+            };
         }
 
         private void emitIntConstant(int con, MethodVisitor mv) {

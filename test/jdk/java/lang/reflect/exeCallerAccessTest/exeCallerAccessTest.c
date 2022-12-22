@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,15 @@ static jclass    iaeClass;
 static jmethodID mid_Class_forName;
 static jmethodID mid_Class_getField;
 static jmethodID mid_Field_get;
+static jmethodID mid_Field_canAccess;
+static jmethodID mid_Field_trySetAccessible;
+static jmethodID mid_Field_setAccessible;
 
 int getField(JNIEnv *env, char* declaringClass_name, char* field_name);
 int checkAndClearIllegalAccessExceptionThrown(JNIEnv *env);
+int setAccessible(JNIEnv *env, char* declaringClass_name, char* field_name);
+int trySetAccessible(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess);
+int checkAccess(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess);
 
 int main(int argc, char** args) {
     JavaVM *jvm;
@@ -65,6 +71,12 @@ int main(int argc, char** args) {
     jclass fieldClass = (*env)->FindClass(env, "java/lang/reflect/Field");
     mid_Field_get = (*env)->GetMethodID(env, fieldClass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
     assert(mid_Class_getField != NULL);
+    mid_Field_canAccess = (*env)->GetMethodID(env, fieldClass, "canAccess", "(Ljava/lang/Object;)Z");
+    assert(mid_Field_canAccess != NULL);
+    mid_Field_setAccessible = (*env)->GetMethodID(env, fieldClass, "setAccessible", "(Z)V");
+    assert(mid_Field_setAccessible != NULL);
+    mid_Field_trySetAccessible = (*env)->GetMethodID(env, fieldClass, "trySetAccessible", "()Z");
+    assert(mid_Field_trySetAccessible != NULL);
 
     // can access to public member of an exported type
     if ((rc = getField(env, "java.lang.Integer", "TYPE")) != 0) {
@@ -92,6 +104,32 @@ int main(int argc, char** args) {
         exit(-1);
     }
 
+    // expect IAE to jdk.internal.misc.Unsafe class
+    if ((rc = setAccessible(env, "jdk.internal.misc.Unsafe", "INVALID_FIELD_OFFSET")) == 0) {
+        printf("ERROR: IAE not thrown\n");
+        exit(-1);
+    }
+    if (checkAndClearIllegalAccessExceptionThrown(env) != JNI_TRUE) {
+        printf("ERROR: exception is not an instance of IAE\n");
+        exit(-1);
+    }
+
+    if ((rc = trySetAccessible(env, "java.lang.reflect.Modifier", "PUBLIC", JNI_TRUE)) != 0) {
+        printf("ERROR: unexpected result from trySetAccessible on Modifier::PUBLIC field\n");
+        exit(-1);
+    }
+    if ((rc = trySetAccessible(env, "jdk.internal.misc.Unsafe", "INVALID_FIELD_OFFSET", JNI_FALSE)) != 0) {
+        printf("ERROR: unexpected result from trySetAccessible on Unsafe public field\n");
+        exit(-1);
+    }
+
+    if ((rc = checkAccess(env, "java.lang.reflect.Modifier", "PUBLIC", JNI_TRUE)) != 0) {
+        printf("ERROR: unexpected result from trySetAccessible on Modifier::PUBLIC field\n");
+        exit(-1);
+    }
+    if ((rc = checkAccess(env, "jdk.internal.misc.Unsafe", "INVALID_FIELD_OFFSET", JNI_FALSE)) != 0) {
+        printf("ERROR: unexpected result from trySetAccessible on Unsafe public field\n");
+    }
     (*jvm)->DestroyJavaVM(jvm);
     return 0;
 }
@@ -127,3 +165,74 @@ int getField(JNIEnv *env, char* declaringClass_name, char* field_name) {
     return 0;
 }
 
+int setAccessible(JNIEnv *env, char* declaringClass_name, char* field_name) {
+    jobject c = (*env)->CallStaticObjectMethod(env, classClass, mid_Class_forName,
+                                               (*env)->NewStringUTF(env, declaringClass_name));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 1;
+    }
+
+    jobject f = (*env)->CallObjectMethod(env, c, mid_Class_getField, (*env)->NewStringUTF(env, field_name));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 2;
+    }
+
+    (*env)->CallVoidMethod(env, f, mid_Field_setAccessible, JNI_TRUE);
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 3;
+    }
+    return 0;
+}
+
+int trySetAccessible(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess) {
+    jobject c = (*env)->CallStaticObjectMethod(env, classClass, mid_Class_forName,
+                                               (*env)->NewStringUTF(env, declaringClass_name));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 1;
+    }
+
+    jobject f = (*env)->CallObjectMethod(env, c, mid_Class_getField, (*env)->NewStringUTF(env, field_name));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 2;
+    }
+
+    jboolean rc = (*env)->CallBooleanMethod(env, f, mid_Field_trySetAccessible);
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 3;
+    }
+    if (rc != canAccess) {
+        return 4;
+    }
+    return 0;
+}
+
+int checkAccess(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess) {
+    jobject c = (*env)->CallStaticObjectMethod(env, classClass, mid_Class_forName,
+                                               (*env)->NewStringUTF(env, declaringClass_name));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 1;
+    }
+
+    jobject f = (*env)->CallObjectMethod(env, c, mid_Class_getField, (*env)->NewStringUTF(env, field_name));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 2;
+    }
+
+    jboolean rc = (*env)->CallBooleanMethod(env, f, mid_Field_canAccess, NULL);
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        (*env)->ExceptionDescribe(env);
+        return 3;
+    }
+    if (rc != canAccess) {
+        return 4;
+    }
+    return 0;
+}

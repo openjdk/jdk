@@ -56,12 +56,12 @@ private:
 
   static bool _has_app_classes;
   static bool _has_platform_classes;
+  static bool _has_non_jar_in_classpath;
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
-  static ClassPathEntry* find_classpath_entry_from_cache(JavaThread* current, const char* path);
 
 public:
-  static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry, bool check_for_duplicates);
+  static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry);
 
   // Called by JVMTI code to add boot classpath
   static void append_boot_classpath(ClassPathEntry* new_entry);
@@ -107,15 +107,21 @@ public:
     return _has_app_classes || _has_platform_classes;
   }
 
-  static void record_result(const s2 classpath_index, InstanceKlass* result);
-  static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
+  static bool has_non_jar_in_classpath() {
+    return _has_non_jar_in_classpath;
+  }
+
+  static void record_result(const s2 classpath_index, InstanceKlass* result, bool redefined);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }
   static void set_has_platform_classes() {
     _has_platform_classes = true;
   }
-#endif
+  static void set_has_non_jar_in_classpath() {
+    _has_non_jar_in_classpath = true;
+  }
+#endif // INCLUDE_CDS
 };
 
 #endif // SHARE_CLASSFILE_CLASSLOADEREXT_HPP

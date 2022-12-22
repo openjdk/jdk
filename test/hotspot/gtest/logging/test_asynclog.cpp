@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
+#include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
@@ -66,79 +68,40 @@ LOG_LEVEL_LIST
     log_trace(logging)("log_trace-test");
     log_debug(logging)("log_debug-test");
   }
+
+  void test_asynclog_drop_messages() {
+    auto writer = AsyncLogWriter::instance();
+    if (writer != nullptr) {
+      const size_t sz = 2000;
+
+      // shrink async buffer.
+      AsyncLogWriter::BufferUpdater saver(1024);
+      LogMessage(logging) lm;
+
+      // write more messages than its capacity in burst
+      for (size_t i = 0; i < sz; ++i) {
+        lm.debug("a lot of log...");
+      }
+      lm.flush();
+    }
+  }
+
+  // stdout/stderr support
+  bool write_to_file(const std::string& output) {
+    FILE* f = os::fopen(TestLogFileName, "w");
+
+    if (f != NULL) {
+      size_t sz = output.size();
+      size_t written = fwrite(output.c_str(), sizeof(char), output.size(), f);
+
+      if (written == sz * sizeof(char)) {
+        return fclose(f) == 0;
+      }
+    }
+
+    return false;
+  }
 };
-
-TEST_VM(AsyncLogBufferTest, fifo) {
-  LinkedListDeque<int, mtLogging> fifo;
-  LinkedListImpl<int, ResourceObj::C_HEAP, mtLogging> result;
-
-  fifo.push_back(1);
-  EXPECT_EQ((size_t)1, fifo.size());
-  EXPECT_EQ(1, *(fifo.back()));
-
-  fifo.pop_all(&result);
-  EXPECT_EQ((size_t)0, fifo.size());
-  EXPECT_EQ(NULL, fifo.back());
-  EXPECT_EQ((size_t)1, result.size());
-  EXPECT_EQ(1, *(result.head()->data()));
-  result.clear();
-
-  fifo.push_back(2);
-  fifo.push_back(1);
-  fifo.pop_all(&result);
-  EXPECT_EQ((size_t)2, result.size());
-  EXPECT_EQ(2, *(result.head()->data()));
-  EXPECT_EQ(1, *(result.head()->next()->data()));
-  result.clear();
-  const int N = 1000;
-  for (int i=0; i<N; ++i) {
-    fifo.push_back(i);
-  }
-  fifo.pop_all(&result);
-
-  EXPECT_EQ((size_t)N, result.size());
-  LinkedListIterator<int> it(result.head());
-  for (int i=0; i<N; ++i) {
-    int* e = it.next();
-    EXPECT_EQ(i, *e);
-  }
-}
-
-TEST_VM(AsyncLogBufferTest, deque) {
-  LinkedListDeque<int, mtLogging> deque;
-  const int N = 10;
-
-  EXPECT_EQ(NULL, deque.front());
-  EXPECT_EQ(NULL, deque.back());
-  for (int i = 0; i < N; ++i) {
-    deque.push_back(i);
-  }
-
-  EXPECT_EQ(0, *(deque.front()));
-  EXPECT_EQ(N-1, *(deque.back()));
-  EXPECT_EQ((size_t)N, deque.size());
-
-  deque.pop_front();
-  EXPECT_EQ((size_t)(N - 1), deque.size());
-  EXPECT_EQ(1, *(deque.front()));
-  EXPECT_EQ(N - 1, *(deque.back()));
-
-  deque.pop_front();
-  EXPECT_EQ((size_t)(N - 2), deque.size());
-  EXPECT_EQ(2, *(deque.front()));
-  EXPECT_EQ(N - 1, *(deque.back()));
-
-
-  for (int i=2; i < N-1; ++i) {
-    deque.pop_front();
-  }
-  EXPECT_EQ((size_t)1, deque.size());
-  EXPECT_EQ(N - 1, *(deque.back()));
-  EXPECT_EQ(deque.back(), deque.front());
-
-  deque.pop_front();
-  EXPECT_EQ((size_t)0, deque.size());
-}
 
 TEST_VM_F(AsyncLogTest, asynclog) {
   set_log_config(TestLogFileName, "logging=debug");
@@ -196,21 +159,136 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "a noisy message from other logger"));
 }
 
+TEST_VM_F(AsyncLogTest, logBuffer) {
+  const auto Default = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
+                                      LogDecorators());
+  size_t len = strlen(TestLogFileName) + strlen(LogFileOutput::Prefix) + 1;
+  char* name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
+  snprintf(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
+
+  LogFileStreamOutput* output = new LogFileOutput(name);
+  output->initialize(nullptr, nullptr);
+  auto buffer = new AsyncLogWriter::Buffer(1024);
+
+  int line = 0;
+  int written;
+  uintptr_t addr;
+  const uintptr_t mask = (uintptr_t)(sizeof(void*) - 1);
+  bool res;
+
+  res = buffer->push_back(output, Default, "a log line");
+  EXPECT_TRUE(res) << "first message should succeed.";
+  line++;
+  res = buffer->push_back(output, Default, "yet another");
+  EXPECT_TRUE(res) << "second message should succeed.";
+  line++;
+
+  auto it = buffer->iterator();
+  EXPECT_TRUE(it.hasNext());
+  const AsyncLogWriter::Message* e = it.next();
+  addr = reinterpret_cast<uintptr_t>(e);
+  EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1))); // returned vaue aligns on sizeof(pointer)
+  EXPECT_EQ(output, e->output());
+  EXPECT_EQ(0, memcmp(&Default, &e->decorations(), sizeof(LogDecorations)));
+  EXPECT_STREQ("a log line", e->message());
+  written = e->output()->write_blocking(e->decorations(), e->message());
+  EXPECT_GT(written, 0);
+
+  EXPECT_TRUE(it.hasNext());
+  e = it.next();
+  addr = reinterpret_cast<uintptr_t>(e);
+  EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1)));
+  EXPECT_EQ(output, e->output());
+  EXPECT_EQ(0, memcmp(&Default, &e->decorations(), sizeof(LogDecorations)));
+  EXPECT_STREQ("yet another", e->message());
+  written = e->output()->write_blocking(e->decorations(), e->message());
+  EXPECT_GT(written, 0);
+
+  while (buffer->push_back(output, Default, "0123456789abcdef")) {
+    line++;
+  }
+
+  EXPECT_GT(line, 2);
+  while (it.hasNext()) {
+    e = it.next();
+    addr = reinterpret_cast<uintptr_t>(e);
+    EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1)));
+    EXPECT_EQ(output, e->output());
+    EXPECT_STREQ("0123456789abcdef", e->message());
+    written = e->output()->write_blocking(e->decorations(), e->message());
+    EXPECT_GT(written, 0);
+    line--;
+  }
+  EXPECT_EQ(line, 2);
+
+  // last one, flush token. expect to succeed even buffer has been full.
+  buffer->push_flush_token();
+  EXPECT_TRUE(it.hasNext());
+  e = it.next();
+  EXPECT_EQ(e->output(), nullptr);
+  EXPECT_TRUE(e->is_token());
+  EXPECT_STREQ("", e->message());
+  EXPECT_FALSE(it.hasNext());
+
+  // reset buffer
+  buffer->reset();
+  EXPECT_FALSE(buffer->iterator().hasNext());
+
+  delete output; // close file
+  FREE_C_HEAP_ARRAY(char, name);
+
+  const char* strs[4];
+  strs[0] = "a log line";
+  strs[1] = "yet another";
+  strs[2] = "0123456789abcdef";
+  strs[3] = nullptr; // sentinel!
+  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
+}
+
 TEST_VM_F(AsyncLogTest, droppingMessage) {
   set_log_config(TestLogFileName, "logging=debug");
-  const size_t sz = 100;
+  test_asynclog_drop_messages();
+
+  AsyncLogWriter::flush();
+  if (AsyncLogWriter::instance() != nullptr) {
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+  }
+}
+
+TEST_VM_F(AsyncLogTest, stdoutOutput) {
+  testing::internal::CaptureStdout();
+  set_log_config("stdout", "logging=debug");
+
+  test_asynclog_ls();
+  test_asynclog_drop_messages();
+
+  AsyncLogWriter::flush();
+  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStdout()));
+
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
   if (AsyncLogWriter::instance() != nullptr) {
-    // shrink async buffer.
-    AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
-    LogMessage(logging) lm;
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+  }
+}
 
-    // write 100x more messages than its capacity in burst
-    for (size_t i = 0; i < sz * 100; ++i) {
-      lm.debug("a lot of log...");
-    }
-    lm.flush();
-    AsyncLogWriter::flush();
+TEST_VM_F(AsyncLogTest, stderrOutput) {
+  testing::internal::CaptureStderr();
+  set_log_config("stderr", "logging=debug");
+
+  test_asynclog_ls();
+  test_asynclog_drop_messages();
+
+  AsyncLogWriter::flush();
+  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStderr()));
+
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
+
+  if (AsyncLogWriter::instance() != nullptr) {
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
 }

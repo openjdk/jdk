@@ -25,7 +25,7 @@
  * @test
  * @bug 4722333
  * @library /test/lib
- * @run main/othervm B4722333
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 B4722333
  * @summary JRE Proxy Authentication Not Working with ISA2000
  */
 

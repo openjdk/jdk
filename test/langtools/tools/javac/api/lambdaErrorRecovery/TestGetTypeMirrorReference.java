@@ -26,8 +26,7 @@
  * @bug 8240658 8266281
  * @summary Verify that broken method invocations with lambdas get type inference done
  * @modules jdk.compiler
- * @compile --enable-preview -source ${jdk.version} TestGetTypeMirrorReference.java
- * @run main/othervm --enable-preview TestGetTypeMirrorReference
+ * @run main TestGetTypeMirrorReference
  */
 
 import com.sun.source.tree.CompilationUnitTree;

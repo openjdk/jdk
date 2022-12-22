@@ -57,7 +57,7 @@ public class CommentChecker {
     static int errors = 0;
 
     // Turn on this flag and recompile to dump this tool's state changes.
-    final static boolean verbose = false;
+    static final boolean verbose = false;
 
     static void check(String fileName) {
         BufferedReader in = null;

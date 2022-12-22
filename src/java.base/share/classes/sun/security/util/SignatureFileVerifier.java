@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,13 @@ package sun.security.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.CodeSigner;
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertPath;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.HexFormat;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.jar.Attributes;
-import java.util.jar.JarException;
-import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import sun.security.jca.Providers;
@@ -61,24 +45,24 @@ public class SignatureFileVerifier {
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
 
-    private ArrayList<CodeSigner[]> signerCache;
+    private final ArrayList<CodeSigner[]> signerCache;
 
     private static final String ATTR_DIGEST =
         "-DIGEST-" + ManifestDigester.MF_MAIN_ATTRS.toUpperCase(Locale.ENGLISH);
 
     /** the PKCS7 block for this .DSA/.RSA/.EC file */
-    private PKCS7 block;
+    private final PKCS7 block;
 
     /** the raw bytes of the .SF file */
     private byte[] sfBytes;
 
-    /** the name of the signature block file, uppercased and without
+    /** the name of the signature block file, uppercase and without
      *  the extension (.DSA/.RSA/.EC)
      */
-    private String name;
+    private final String name;
 
     /** the ManifestDigester */
-    private ManifestDigester md;
+    private final ManifestDigester md;
 
     /** cache of created MessageDigest objects */
     private HashMap<String, MessageDigest> createdDigests;
@@ -87,12 +71,12 @@ public class SignatureFileVerifier {
     private boolean workaround = false;
 
     /* for generating certpath objects */
-    private CertificateFactory certificateFactory = null;
+    private final CertificateFactory certificateFactory;
 
     /** Algorithms that have been previously checked against disabled
      *  constraints.
      */
-    private Map<String, Boolean> permittedAlgs = new HashMap<>();
+    private final Map<String, Boolean> permittedAlgs = new HashMap<>();
 
     /** ConstraintsParameters for checking disabled algorithms */
     private JarConstraintsParameters params;
@@ -244,8 +228,7 @@ public class SignatureFileVerifier {
 
     /** get digest from cache */
 
-    private MessageDigest getDigest(String algorithm)
-            throws SignatureException {
+    private MessageDigest getDigest(String algorithm) {
         if (createdDigests == null)
             createdDigests = new HashMap<>();
 
@@ -270,16 +253,16 @@ public class SignatureFileVerifier {
      *
      */
     public void process(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
-            JarException, CertificateException
+            CertificateException
     {
         // calls Signature.getInstance() and MessageDigest.getInstance()
         // need to use local providers here, see Providers class
         Object obj = null;
         try {
             obj = Providers.startJarVerification();
-            processImpl(signers, manifestDigests);
+            processImpl(signers, manifestDigests, manifestName);
         } finally {
             Providers.stopJarVerification(obj);
         }
@@ -287,9 +270,9 @@ public class SignatureFileVerifier {
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
-            JarException, CertificateException
+            CertificateException
     {
         Manifest sf = new Manifest();
         sf.read(new ByteArrayInputStream(sfBytes));
@@ -299,7 +282,7 @@ public class SignatureFileVerifier {
 
         if ((version == null) || !(version.equalsIgnoreCase("1.0"))) {
             // XXX: should this be an exception?
-            // for now we just ignore this signature file
+            // for now, we just ignore this signature file
             return;
         }
 
@@ -368,7 +351,7 @@ public class SignatureFileVerifier {
         }
 
         // MANIFEST.MF is always regarded as signed
-        updateSigners(newSigners, signers, JarFile.MANIFEST_NAME);
+        updateSigners(newSigners, signers, manifestName);
     }
 
     /**
@@ -383,10 +366,11 @@ public class SignatureFileVerifier {
             try {
                 params.setExtendedExceptionMsg(name + ".SF", key + " attribute");
                 DisabledAlgorithmConstraints
-                    .jarConstraints().permits(algorithm, params);
+                    .jarConstraints().permits(algorithm, params, false);
             } catch (GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
-                permittedAlgs.put(key.toUpperCase(), Boolean.FALSE);
+                permittedAlgs.put(key.toUpperCase(Locale.ENGLISH),
+                        Boolean.FALSE);
                 if (debug != null) {
                     if (e.getMessage() != null) {
                         debug.println(key + ":  " + e.getMessage());
@@ -441,7 +425,7 @@ public class SignatureFileVerifier {
     private boolean verifyManifestHash(Manifest sf,
                                        ManifestDigester md,
                                        List<Object> manifestDigests)
-         throws IOException, SignatureException
+         throws SignatureException
     {
         Attributes mattr = sf.getMainAttributes();
         boolean manifestSigned = false;
@@ -512,7 +496,7 @@ public class SignatureFileVerifier {
     }
 
     private boolean verifyManifestMainAttrs(Manifest sf, ManifestDigester md)
-         throws IOException, SignatureException
+         throws SignatureException
     {
         Attributes mattr = sf.getMainAttributes();
         boolean attrsVerified = true;
@@ -543,6 +527,10 @@ public class SignatureFileVerifier {
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
                     ManifestDigester.Entry mde = md.getMainAttsEntry(false);
+                    if (mde == null) {
+                        throw new SignatureException("Manifest Main Attribute check " +
+                                "failed due to missing main attributes entry");
+                    }
                     byte[] computedHash = mde.digest(digest);
                     byte[] expectedHash =
                         Base64.getMimeDecoder().decode((String)se.getValue());
@@ -606,7 +594,7 @@ public class SignatureFileVerifier {
     private boolean verifySection(Attributes sfAttr,
                                   String name,
                                   ManifestDigester md)
-         throws IOException, SignatureException
+         throws SignatureException
     {
         boolean oneDigestVerified = false;
         ManifestDigester.Entry mde = md.get(name,block.isOldStyle());
@@ -740,7 +728,7 @@ public class SignatureFileVerifier {
         }
 
         if (signers != null) {
-            return signers.toArray(new CodeSigner[signers.size()]);
+            return signers.toArray(new CodeSigner[0]);
         } else {
             return null;
         }
@@ -763,7 +751,6 @@ public class SignatureFileVerifier {
         if (set == subset)
             return true;
 
-        boolean match;
         for (int i = 0; i < subset.length; i++) {
             if (!contains(set, subset[i]))
                 return false;
@@ -782,8 +769,6 @@ public class SignatureFileVerifier {
         // special case
         if ((oldSigners == null) && (signers == newSigners))
             return true;
-
-        boolean match;
 
         // make sure all oldSigners are in signers
         if ((oldSigners != null) && !isSubSet(oldSigners, signers))

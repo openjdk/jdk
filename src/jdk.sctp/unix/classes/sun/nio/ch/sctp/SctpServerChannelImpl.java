@@ -267,7 +267,8 @@ public class SctpServerChannelImpl extends SctpServerChannel
     @Override
     public void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            SctpNet.preClose(fdVal);
+            if (state != ChannelState.KILLED)
+                SctpNet.preClose(fdVal);
             if (thread != 0)
                 NativeThread.signal(thread);
             if (!isRegistered())
@@ -282,14 +283,15 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 return;
             if (state == ChannelState.UNINITIALIZED) {
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
                 return;
             }
             assert !isOpen() && !isRegistered();
 
             // Postpone the kill if there is a thread in accept
             if (thread == 0) {
-                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
             } else {
                 state = ChannelState.KILLPENDING;
             }

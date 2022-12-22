@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,27 @@
  */
 package javax.swing.text;
 
-import java.util.*;
-import java.awt.*;
+import java.awt.Container;
+import java.awt.Font;
+import java.awt.Rectangle;
+import java.awt.font.FontRenderContext;
+import java.awt.font.LineBreakMeasurer;
+import java.awt.font.TextAttribute;
+import java.awt.font.TextLayout;
 import java.text.AttributedCharacterIterator;
 import java.text.BreakIterator;
-import java.awt.font.*;
-import java.awt.geom.AffineTransform;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
+
 import javax.swing.JComponent;
 import javax.swing.event.DocumentEvent;
+
 import sun.font.BidiUtils;
 
 /**
- * A flow strategy that uses java.awt.font.LineBreakMeasureer to
+ * A flow strategy that uses java.awt.font.LineBreakMeasurer to
  * produce java.awt.font.TextLayout for i18n capable rendering.
  * If the child view being placed into the flow is of type
  * GlyphView and can be rendered by TextLayout, a GlyphPainter
@@ -98,9 +107,9 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
     }
 
     /**
-     * Does a a full layout on the given View.  This causes all of
+     * Does a full layout on the given View.  This causes all of
      * the rows (child views) to be rebuilt to match the given
-     * constraints for each row.  This is called by a FlowView.layout
+     * constraints for each row.  This is called by FlowView.layout
      * to update the child views in the flow.
      *
      * @param fv the view to reflow
@@ -119,7 +128,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
      * @param rowIndex the row to fill in with views.  This is assumed
      *   to be empty on entry.
      * @param p0  The current position in the children of
-     *   this views element from which to start.
+     *   this view element from which to start.
      * @return the position to start the next row
      */
     protected int layoutRow(FlowView fv, int rowIndex, int p0) {
@@ -171,7 +180,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
      *
      * @param fv the view holding the flow
      * @param startOffset the start location for the view being created
-     * @param spanLeft the about of span left to fill in the row
+     * @param spanLeft the amount of span left to fill in the row
      * @param rowIndex the row the view will be placed into
      */
     protected View createView(FlowView fv, int startOffset, int spanLeft, int rowIndex) {

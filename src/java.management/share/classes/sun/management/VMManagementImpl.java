@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ class VMManagementImpl implements VMManagement {
         }
         initOptionalSupportFields();
     }
-    private native static String getVersion0();
-    private native static void initOptionalSupportFields();
+    private static native String getVersion0();
+    private static native void initOptionalSupportFields();
 
     // Optional supports
     public boolean isCompilationTimeMonitoringSupported() {
@@ -205,7 +205,7 @@ class VMManagementImpl implements VMManagement {
     public String   getCompilerName() {
         @SuppressWarnings("removal")
         String name =  AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
+            new PrivilegedAction<>() {
                 public String run() {
                     return System.getProperty("sun.management.compiler");
                 }
@@ -258,7 +258,7 @@ class VMManagementImpl implements VMManagement {
         @SuppressWarnings("removal")
         Perf perf =  AccessController.doPrivileged(new Perf.GetPerfAction());
         try {
-            ByteBuffer bb = perf.attach(0, "r");
+            ByteBuffer bb = perf.attach(0);
             if (bb.capacity() == 0) {
                 noPerfData = true;
                 return null;

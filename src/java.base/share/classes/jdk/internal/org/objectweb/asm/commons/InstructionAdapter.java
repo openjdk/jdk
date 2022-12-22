@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
@@ -83,7 +84,7 @@ public class InstructionAdapter extends MethodVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public InstructionAdapter(final MethodVisitor methodVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, methodVisitor);
+        this(/* latest api = */ Opcodes.ASM9, methodVisitor);
         if (getClass() != InstructionAdapter.class) {
             throw new IllegalStateException();
         }
@@ -92,9 +93,8 @@ public class InstructionAdapter extends MethodVisitor {
     /**
       * Constructs a new {@link InstructionAdapter}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param methodVisitor the method visitor to which this adapter delegates calls.
       */
     protected InstructionAdapter(final int api, final MethodVisitor methodVisitor) {
@@ -455,40 +455,40 @@ public class InstructionAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
         switch (opcode) {
             case Opcodes.ILOAD:
-                load(var, Type.INT_TYPE);
+                load(varIndex, Type.INT_TYPE);
                 break;
             case Opcodes.LLOAD:
-                load(var, Type.LONG_TYPE);
+                load(varIndex, Type.LONG_TYPE);
                 break;
             case Opcodes.FLOAD:
-                load(var, Type.FLOAT_TYPE);
+                load(varIndex, Type.FLOAT_TYPE);
                 break;
             case Opcodes.DLOAD:
-                load(var, Type.DOUBLE_TYPE);
+                load(varIndex, Type.DOUBLE_TYPE);
                 break;
             case Opcodes.ALOAD:
-                load(var, OBJECT_TYPE);
+                load(varIndex, OBJECT_TYPE);
                 break;
             case Opcodes.ISTORE:
-                store(var, Type.INT_TYPE);
+                store(varIndex, Type.INT_TYPE);
                 break;
             case Opcodes.LSTORE:
-                store(var, Type.LONG_TYPE);
+                store(varIndex, Type.LONG_TYPE);
                 break;
             case Opcodes.FSTORE:
-                store(var, Type.FLOAT_TYPE);
+                store(varIndex, Type.FLOAT_TYPE);
                 break;
             case Opcodes.DSTORE:
-                store(var, Type.DOUBLE_TYPE);
+                store(varIndex, Type.DOUBLE_TYPE);
                 break;
             case Opcodes.ASTORE:
-                store(var, OBJECT_TYPE);
+                store(varIndex, OBJECT_TYPE);
                 break;
             case Opcodes.RET:
-                ret(var);
+                ret(varIndex);
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -685,8 +685,8 @@ public class InstructionAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
-        iinc(var, increment);
+    public void visitIincInsn(final int varIndex, final int increment) {
+        iinc(varIndex, increment);
     }
 
     @Override
@@ -815,16 +815,16 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitLdcInsn(constantDynamic);
     }
 
-    public void load(final int var, final Type type) {
-        mv.visitVarInsn(type.getOpcode(Opcodes.ILOAD), var);
+    public void load(final int varIndex, final Type type) {
+        mv.visitVarInsn(type.getOpcode(Opcodes.ILOAD), varIndex);
     }
 
     public void aload(final Type type) {
         mv.visitInsn(type.getOpcode(Opcodes.IALOAD));
     }
 
-    public void store(final int var, final Type type) {
-        mv.visitVarInsn(type.getOpcode(Opcodes.ISTORE), var);
+    public void store(final int varIndex, final Type type) {
+        mv.visitVarInsn(type.getOpcode(Opcodes.ISTORE), varIndex);
     }
 
     public void astore(final Type type) {
@@ -915,8 +915,8 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitInsn(type.getOpcode(Opcodes.IXOR));
     }
 
-    public void iinc(final int var, final int increment) {
-        mv.visitIincInsn(var, increment);
+    public void iinc(final int varIndex, final int increment) {
+        mv.visitIincInsn(varIndex, increment);
     }
 
     /**
@@ -1059,8 +1059,8 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitJumpInsn(Opcodes.JSR, label);
     }
 
-    public void ret(final int var) {
-        mv.visitVarInsn(Opcodes.RET, var);
+    public void ret(final int varIndex) {
+        mv.visitVarInsn(Opcodes.RET, varIndex);
     }
 
     public void tableswitch(final int min, final int max, final Label dflt, final Label... labels) {
@@ -1121,7 +1121,7 @@ public class InstructionAdapter extends MethodVisitor {
             final String owner, final String name, final String descriptor, final boolean isInterface) {
         if (api < Opcodes.ASM5) {
             if (isInterface) {
-                throw new IllegalArgumentException("INVOKEVIRTUAL on interfaces require ASM 5");
+                throw new UnsupportedOperationException("INVOKEVIRTUAL on interfaces require ASM 5");
             }
             invokevirtual(owner, name, descriptor);
             return;
@@ -1159,7 +1159,7 @@ public class InstructionAdapter extends MethodVisitor {
             final String owner, final String name, final String descriptor, final boolean isInterface) {
         if (api < Opcodes.ASM5) {
             if (isInterface) {
-                throw new IllegalArgumentException("INVOKESPECIAL on interfaces require ASM 5");
+                throw new UnsupportedOperationException("INVOKESPECIAL on interfaces require ASM 5");
             }
             invokespecial(owner, name, descriptor);
             return;
@@ -1197,7 +1197,7 @@ public class InstructionAdapter extends MethodVisitor {
             final String owner, final String name, final String descriptor, final boolean isInterface) {
         if (api < Opcodes.ASM5) {
             if (isInterface) {
-                throw new IllegalArgumentException("INVOKESTATIC on interfaces require ASM 5");
+                throw new UnsupportedOperationException("INVOKESTATIC on interfaces require ASM 5");
             }
             invokestatic(owner, name, descriptor);
             return;
@@ -1329,3 +1329,4 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitLabel(label);
     }
 }
+

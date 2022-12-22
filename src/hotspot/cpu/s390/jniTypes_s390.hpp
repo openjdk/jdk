@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
 // jni types to the array of arguments passed into JavaCalls::call.
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 class JNITypes : AllStatic {

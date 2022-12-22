@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 // This is for dumping detailed statistics for the allocations
 // in the shared spaces.
-class DumpAllocStats : public ResourceObj {
+class DumpAllocStats : public StackObj {
 public:
 
   // Here's poor man's enum inheritance
@@ -65,12 +65,17 @@ public:
   int _counts[2][_number_of_types];
   int _bytes [2][_number_of_types];
 
+  int _num_klass_cp_entries;
+  int _num_klass_cp_entries_archived;
+
 public:
   enum { RO = 0, RW = 1 };
 
   DumpAllocStats() {
     memset(_counts, 0, sizeof(_counts));
     memset(_bytes,  0, sizeof(_bytes));
+    _num_klass_cp_entries = 0;
+    _num_klass_cp_entries_archived = 0;
   };
 
   CompactHashtableStats* symbol_stats() { return &_symbol_stats; }
@@ -95,6 +100,11 @@ public:
 
   void record_cpp_vtables(int byte_size) {
     _bytes[RW][CppVTablesType] += byte_size;
+  }
+
+  void record_klass_cp_entry(bool archived) {
+    _num_klass_cp_entries ++;
+    _num_klass_cp_entries_archived += archived ? 1 : 0;
   }
 
   void print_stats(int ro_all, int rw_all);

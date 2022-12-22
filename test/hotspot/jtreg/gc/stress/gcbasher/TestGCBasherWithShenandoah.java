@@ -27,7 +27,7 @@ package gc.stress.gcbasher;
 import java.io.IOException;
 
 /*
- * @test TestGCBasherWithShenandoah
+ * @test id=passive
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -46,7 +46,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherWithShenandoah
+ * @test id=aggressive
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -69,7 +69,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherWithShenandoah
+ * @test id=adaptive
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -87,7 +87,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=compact
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -100,7 +100,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherWithShenandoah
+ * @test id=iu-aggressive
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -123,7 +123,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherWithShenandoah
+ * @test id=iu
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -141,7 +141,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=passive-deopt-nmethod
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -162,7 +162,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=aggressive-deopt-nmethod
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -188,7 +188,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=adaptive-deopt-nmethod
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -208,7 +208,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=compact-deopt-nmethod
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -222,7 +222,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=iu-aggressive-deopt-nmethod
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
@@ -248,7 +248,7 @@ import java.io.IOException;
  */
 
 /*
- * @test TestGCBasherDeoptWithShenandoah
+ * @test id=iu-deopt-nmethod
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah

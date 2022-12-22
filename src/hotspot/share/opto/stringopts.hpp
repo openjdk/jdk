@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,15 @@ class PhaseStringOpts : public Phase {
   };
 
  public:
-  PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List* worklist);
+  PhaseStringOpts(PhaseGVN* gvn);
+
+#ifndef PRODUCT
+  static void print_statistics();
+ private:
+  static uint _stropts_replaced;
+  static uint _stropts_merged;
+  static uint _stropts_total;
+#endif
 };
 
 #endif // SHARE_OPTO_STRINGOPTS_HPP

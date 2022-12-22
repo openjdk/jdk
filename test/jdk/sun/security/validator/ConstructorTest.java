@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,21 +404,6 @@ public class ConstructorTest {
         valNoGood = Validator.getInstance(Validator.TYPE_PKIX,
                 "BogusVariant", certSet);
         System.out.println("\tSuccessful construction [PASS]");
-
-        // Case 6: Provide a null variant
-        // Expected result: throw NullPointerException
-        System.out.println("Constructor test 6: null variant");
-        try {
-            valNoGood = Validator.getInstance(Validator.TYPE_PKIX, null,
-                    certSet);
-            // Throw something non Runtime-related to indicate we shouldn't
-            // have succeeded on construction.
-            throw new IOException(
-                    "Constructor did not throw NullPointerException");
-        } catch (NullPointerException npe) {
-            System.out.println("\tCaught RuntimeException (" + npe.toString() +
-                    ") [PASS])");
-        }
     }
 
     public static void testCtorByPKIXBuilderParams(Set<X509Certificate> certSet)
@@ -429,9 +414,9 @@ public class ConstructorTest {
         X509Certificate[] chain = new X509Certificate[1];
         Set<X509Certificate> intermeds = new HashSet<>();
 
-        // Case 7: Make a PKIXValidator with valid arguments
+        // Case 6: Make a PKIXValidator with valid arguments
         // Expected result: Well-formed PKIXValidator object
-        System.out.println("Constructor test 7: Valid inputs");
+        System.out.println("Constructor test 6: Valid inputs");
 
         // Set up the PKIXBuilderParameters
         X509CertSelector sel = new X509CertSelector();
@@ -450,9 +435,9 @@ public class ConstructorTest {
 
         showValidatedChain(valOK, chain, intermeds);
 
-        // Case 8: Make a PKIXValidator but provide a null PKIXBuilderParameters
+        // Case 7: Make a PKIXValidator but provide a null PKIXBuilderParameters
         // Expected result: throw NullPointerException
-        System.out.println("Constructor test 8: null params");
+        System.out.println("Constructor test 7: null params");
         try {
             valNoGood = Validator.getInstance(Validator.TYPE_PKIX,
                     Validator.VAR_GENERIC, (PKIXBuilderParameters)null);

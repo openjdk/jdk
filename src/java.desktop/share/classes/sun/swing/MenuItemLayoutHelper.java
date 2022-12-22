@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,7 +333,7 @@ public class MenuItemLayoutHelper {
             calcMaxWidth(labelSize, MAX_LABEL_WIDTH);
             // If maxLabelWidth is wider
             // than the widest icon + the widest text + gap,
-            // we should update the maximal text witdh
+            // we should update the maximal text width
             int candidateTextWidth = labelSize.maxWidth - iconSize.maxWidth;
             if (iconSize.maxWidth > 0) {
                 candidateTextWidth -= gap;
@@ -378,10 +378,10 @@ public class MenuItemLayoutHelper {
         if (miParent != null) {
             value = miParent.getClientProperty(propertyName);
         }
-        if ((value == null) || !(value instanceof Integer)) {
-            value = 0;
+        if (value instanceof Integer intValue) {
+            return intValue;
         }
-        return (Integer) value;
+        return 0;
     }
 
     public static boolean isColumnLayout(boolean isLeftToRight,
@@ -831,7 +831,7 @@ public class MenuItemLayoutHelper {
     /**
      * Finds and returns maximal integer value in the given array.
      * @param values array where the search will be performed.
-     * @return maximal vaule.
+     * @return maximal value.
      */
     public static int max(int... values) {
         int maxValue = Integer.MIN_VALUE;

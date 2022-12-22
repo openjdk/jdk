@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
  *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
  *     -XX:+SegmentedCodeCache
@@ -44,7 +44,7 @@ package compiler.codecache.jmx;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import javax.management.ListenerNotFoundException;
 import javax.management.Notification;

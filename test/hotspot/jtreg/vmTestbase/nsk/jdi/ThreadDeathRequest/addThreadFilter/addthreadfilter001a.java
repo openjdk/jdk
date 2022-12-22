@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ThreadDeathRequest.addThreadFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class addthreadfilter001a {
 
     //====================================================== test program
 
-    static Thread2addthreadfilter001a thread2 = null;
+    static Thread thread2 = null;
 
     //------------------------------------------------------ common section
 
@@ -99,7 +98,7 @@ public class addthreadfilter001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                           thread2 = new Thread2addthreadfilter001a("thread2");
+                           thread2 = JDIThreadFactory.newThread(new Thread2addthreadfilter001a("thread2"));
                            methodForCommunication();
 
                            threadStart(thread2);
@@ -138,21 +137,18 @@ public class addthreadfilter001a {
     }
 
 
-    static class Thread2addthreadfilter001a extends Thread {
-
-        String tName = null;
+    static class Thread2addthreadfilter001a extends NamedTask {
 
         public Thread2addthreadfilter001a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log3("  'run': enter  :: threadName == " + tName);
+            log3("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
             }
-            log3("  'run': exit   :: threadName == " + tName);
+            log3("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

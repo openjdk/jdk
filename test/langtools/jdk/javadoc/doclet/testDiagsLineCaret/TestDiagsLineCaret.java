@@ -62,6 +62,7 @@ public class TestDiagsLineCaret extends JavadocTester {
                 "-XDaccessInternalAPI",
                 "-tagletpath", testClasses,
                 "-taglet", "MyTaglet",
+                "-Xdoclint:none",
                 "MyClass.java");
         checkExit(Exit.ERROR);
 
@@ -70,7 +71,7 @@ public class TestDiagsLineCaret extends JavadocTester {
                     error: This is a error
                     warning: This is a warning
                     warning: This is a mandatory_warning
-                    This is a note
+                    Note: This is a note
                     MyClass.java:5: error: This is a error for MyClass
                     public class MyClass { }
                            ^

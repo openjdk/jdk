@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -67,7 +67,7 @@ fi
 
 # Test and fix architecture string on AIX
 # On AIX 'config.guess' returns 'powerpc' as architecture but 'powerpc' is
-# implicitely handled as 32-bit architecture in 'platform.m4' so we check
+# implicitly handled as 32-bit architecture in 'platform.m4' so we check
 # for the kernel mode rewrite it to 'powerpc64' if we'Re running in 64-bit mode.
 # The check could also be done with `/usr/sbin/prtconf | grep "Kernel Type" | grep "64-bit"`
 echo $OUT | grep powerpc-ibm-aix > /dev/null 2> /dev/null
@@ -98,6 +98,24 @@ if [ "x$OUT" = x ]; then
       OUT=mipsel-unknown-linux-gnu
     elif [ `uname -m` = mips64el ]; then
       OUT=mips64el-unknown-linux-gnu
+    fi
+  fi
+fi
+
+# Test and fix LoongArch64.
+if [ "x$OUT" = x ]; then
+  if [ `uname -s` = Linux ]; then
+    if [ `uname -m` = loongarch64 ]; then
+      OUT=loongarch64-unknown-linux-gnu
+    fi
+  fi
+fi
+
+# Test and fix RISC-V.
+if [ "x$OUT" = x ]; then
+  if [ `uname -s` = Linux ]; then
+    if [ `uname -m` = riscv64 ]; then
+      OUT=riscv64-unknown-linux-gnu
     fi
   fi
 fi

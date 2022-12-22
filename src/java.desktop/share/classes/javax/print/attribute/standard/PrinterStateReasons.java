@@ -227,7 +227,7 @@ public final class PrinterStateReasons
         return new PrinterStateReasonSet (severity, entrySet());
     }
 
-    private class PrinterStateReasonSet
+    private static class PrinterStateReasonSet
         extends AbstractSet<PrinterStateReason>
     {
         private Severity mySeverity;
@@ -242,9 +242,7 @@ public final class PrinterStateReasons
 
         public int size() {
             int result = 0;
-            Iterator<PrinterStateReason> iter = iterator();
-            while (iter.hasNext()) {
-                iter.next();
+            for (PrinterStateReason ignored : this) {
                 ++ result;
             }
             return result;
@@ -256,7 +254,7 @@ public final class PrinterStateReasons
         }
     }
 
-    private class PrinterStateReasonSetIterator implements Iterator<PrinterStateReason> {
+    private static class PrinterStateReasonSetIterator implements Iterator<PrinterStateReason> {
         private Severity mySeverity;
         private Iterator<Map.Entry<PrinterStateReason, Severity>> myIterator;
         private Map.Entry<PrinterStateReason, Severity> myEntry;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class ConnectState {
         // For instance on Solaris, when using a server colocated on the
         // machine we cannot guarantee that we will get a
         // ConnectionPendingException when connecting twice on the same
-        // non-blocking socket. We may instead get a an
+        // non-blocking socket. We may instead get an
         // AlreadyConnectedException, which is also valid: it simply means
         // that the first connection has been immediately accepted.
         Test(String name, Collection<Class<?>> exceptions, int state)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @run main Log1pTests
  * @bug 4851638 4939441 8078672
  * @summary Tests for {Math, StrictMath}.log1p (use -Dseed=X to set PRNG seed)
- * @author Joseph D. Darcy
  * @key randomness
  */
 
@@ -167,9 +166,7 @@ public class Log1pTests {
                                           pcNeighborsStrictLog1p[j+1] );
                     }
 
-
                 }
-
             }
         }
 
@@ -185,16 +182,12 @@ public class Log1pTests {
                                                double expected,
                                                double ulps) {
         int failures = 0;
-        failures += Tests.testUlpDiff("Math.lop1p(double",
-                                      input, Math.log1p(input),
-                                      expected, ulps);
-        failures += Tests.testUlpDiff("StrictMath.log1p(double",
-                                      input, StrictMath.log1p(input),
-                                      expected, ulps);
+        failures += Tests.testUlpDiff("Math.lop1p",       input, Math::log1p,       expected, ulps);
+        failures += Tests.testUlpDiff("StrictMath.log1p", input, StrictMath::log1p, expected, ulps);
         return failures;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testLog1p();

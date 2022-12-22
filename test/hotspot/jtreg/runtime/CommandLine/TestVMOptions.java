@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,13 @@ public class TestVMOptions {
         "-XX:+IgnoreUnrecognizedVMOptions",
         "-XX:+PrintFlagsInitial");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
     output.shouldContain("bool UseSerialGC");
 
     pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-PrintVMOptions", "-version");
     output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(0);
     output.shouldMatch("(openjdk|java)\\sversion");
 
     File dir = new File(System.getProperty("test.src", "."));
@@ -54,6 +56,7 @@ public class TestVMOptions {
     String s = file.getAbsolutePath();
     pb = ProcessTools.createJavaProcessBuilder("-XX:Flags="+s);
     output = new OutputAnalyzer(pb.start());
+    output.shouldNotHaveExitValue(0);
     output.shouldContain("VM option '-IgnoreUnrecognizedVMOptions'");
   }
 }

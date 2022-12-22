@@ -70,7 +70,7 @@ RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
 }
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(NULL), _throw_index_out_of_bounds_exception(true) {
+  : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
   assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
@@ -95,7 +95,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   if (_throw_index_out_of_bounds_exception) {
     stub_id = Runtime1::throw_index_exception_id;
   } else {
-    assert(_array != NULL, "sanity");
+    assert(_array != LIR_Opr::nullOpr(), "sanity");
     __ mov(rscratch2, _array->as_pointer_register());
     stub_id = Runtime1::throw_range_check_failed_id;
   }
@@ -124,7 +124,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   }
   __ bind(_entry);
-  __ far_call(Address(Runtime1::entry_for(Runtime1::throw_div0_exception_id), relocInfo::runtime_call_type));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::throw_div0_exception_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 #ifdef ASSERT
@@ -308,7 +308,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   if (_obj->is_cpu_register()) {
     __ mov(rscratch1, _obj->as_register());
   }
-  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), NULL, rscratch2);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), rscratch2);
   ce->add_call_info_here(_info);
   debug_only(__ should_not_reach_here());
 }
@@ -361,8 +361,10 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(info());
 
 #ifndef PRODUCT
-  __ lea(rscratch2, ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt));
-  __ incrementw(Address(rscratch2));
+  if (PrintC1Statistics) {
+    __ lea(rscratch2, ExternalAddress((address)&Runtime1::_arraycopy_slowcase_cnt));
+    __ incrementw(Address(rscratch2));
+  }
 #endif
 
   __ b(_continuation);

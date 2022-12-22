@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,8 +25,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -44,9 +42,12 @@
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -72,18 +73,21 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/memTracker.hpp"
@@ -97,7 +101,7 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_10;
+static jint CurrentVersion = JNI_VERSION_20;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -107,10 +111,10 @@ extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 // '-return' probe regardless of the return path is taken out of the function.
 // Methods that have multiple return paths use this to avoid having to
 // instrument each return path.  Methods that use CHECK or THROW must use this
-// since those macros can cause an immedate uninstrumented return.
+// since those macros can cause an immediate uninstrumented return.
 //
 // In order to get the return value, a reference to the variable containing
-// the return value must be passed to the contructor of the object, and
+// the return value must be passed to the constructor of the object, and
 // the return value must be set before return (since the mark object has
 // a reference to it).
 //
@@ -548,7 +552,9 @@ JNI_END
 
 static void jni_check_async_exceptions(JavaThread *thread) {
   assert(thread == Thread::current(), "must be itself");
-  thread->check_and_handle_async_exceptions();
+  if (thread->has_async_exception_condition()) {
+    SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
+  }
 }
 
 JNI_ENTRY_NO_PRESERVE(jthrowable, jni_ExceptionOccurred(JNIEnv *env))
@@ -569,35 +575,31 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
   if (thread->has_pending_exception()) {
     Handle ex(thread, thread->pending_exception());
     thread->clear_pending_exception();
-    if (ex->is_a(vmClasses::ThreadDeath_klass())) {
-      // Don't print anything if we are being killed.
+    jio_fprintf(defaultStream::error_stream(), "Exception ");
+    if (thread != NULL && thread->threadObj() != NULL) {
+      ResourceMark rm(THREAD);
+      jio_fprintf(defaultStream::error_stream(),
+                  "in thread \"%s\" ", thread->name());
+    }
+    if (ex->is_a(vmClasses::Throwable_klass())) {
+      JavaValue result(T_VOID);
+      JavaCalls::call_virtual(&result,
+                              ex,
+                              vmClasses::Throwable_klass(),
+                              vmSymbols::printStackTrace_name(),
+                              vmSymbols::void_method_signature(),
+                              THREAD);
+      // If an exception is thrown in the call it gets thrown away. Not much
+      // we can do with it. The native code that calls this, does not check
+      // for the exception - hence, it might still be in the thread when DestroyVM gets
+      // called, potentially causing a few asserts to trigger - since no pending exception
+      // is expected.
+      CLEAR_PENDING_EXCEPTION;
     } else {
-      jio_fprintf(defaultStream::error_stream(), "Exception ");
-      if (thread != NULL && thread->threadObj() != NULL) {
-        ResourceMark rm(THREAD);
-        jio_fprintf(defaultStream::error_stream(),
-        "in thread \"%s\" ", thread->get_thread_name());
-      }
-      if (ex->is_a(vmClasses::Throwable_klass())) {
-        JavaValue result(T_VOID);
-        JavaCalls::call_virtual(&result,
-                                ex,
-                                vmClasses::Throwable_klass(),
-                                vmSymbols::printStackTrace_name(),
-                                vmSymbols::void_method_signature(),
-                                THREAD);
-        // If an exception is thrown in the call it gets thrown away. Not much
-        // we can do with it. The native code that calls this, does not check
-        // for the exception - hence, it might still be in the thread when DestroyVM gets
-        // called, potentially causing a few asserts to trigger - since no pending exception
-        // is expected.
-        CLEAR_PENDING_EXCEPTION;
-      } else {
-        ResourceMark rm(THREAD);
-        jio_fprintf(defaultStream::error_stream(),
-        ". Uncaught exception of type %s.",
-        ex->klass()->external_name());
-      }
+      ResourceMark rm(THREAD);
+      jio_fprintf(defaultStream::error_stream(),
+                  ". Uncaught exception of type %s.",
+                  ex->klass()->external_name());
     }
   }
 
@@ -638,11 +640,8 @@ JNI_ENTRY(jint, jni_PushLocalFrame(JNIEnv *env, jint capacity))
     HOTSPOT_JNI_PUSHLOCALFRAME_RETURN((uint32_t)JNI_ERR);
     return JNI_ERR;
   }
-  JNIHandleBlock* old_handles = thread->active_handles();
-  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
-  assert(new_handles != NULL, "should not be NULL");
-  new_handles->set_pop_frame_link(old_handles);
-  thread->set_active_handles(new_handles);
+
+  thread->push_jni_handle_block();
   jint ret = JNI_OK;
   HOTSPOT_JNI_PUSHLOCALFRAME_RETURN(ret);
   return ret;
@@ -976,7 +975,7 @@ JNI_ENTRY(jobject, jni_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   HOTSPOT_JNI_NEWOBJECTA_ENTRY(env, clazz, (uintptr_t) methodID);
 
   jobject obj = NULL;
-  DT_RETURN_MARK(NewObjectA, jobject, (const jobject)obj);
+  DT_RETURN_MARK(NewObjectA, jobject, (const jobject&)obj);
 
   instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
   obj = JNIHandles::make_local(THREAD, i);
@@ -2233,7 +2232,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
   if (s_value != NULL) {
     size_t length = java_lang_String::utf8_length(java_string, s_value);
     /* JNI Specification states return NULL on OOM */
-    result = AllocateHeap(length + 1, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
+    result = AllocateHeap(length + 1, mtInternal, AllocFailStrategy::RETURN_NULL);
     if (result != NULL) {
       java_lang_String::as_utf8_string(java_string, s_value, result, (int) length + 1);
       if (isCopy != NULL) {
@@ -2717,8 +2716,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_enter(obj, thread);
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 DT_RETURN_MARK_DECL(MonitorExit, jint
@@ -2736,9 +2734,7 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-
-  ret = JNI_OK;
-  return ret;
+  return JNI_OK;
 JNI_END
 
 //
@@ -2822,13 +2818,8 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
     *isCopy = JNI_FALSE;
   }
   oop a = lock_gc_or_pin_object(thread, array);
-  assert(a->is_array(), "just checking");
-  BasicType type;
-  if (a->is_objArray()) {
-    type = T_OBJECT;
-  } else {
-    type = TypeArrayKlass::cast(a->klass())->element_type();
-  }
+  assert(a->is_typeArray(), "Primitive array only");
+  BasicType type = TypeArrayKlass::cast(a->klass())->element_type();
   void* ret = arrayOop(a)->base(type);
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_RETURN(ret);
   return ret;
@@ -2842,19 +2833,45 @@ HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
 
+static typeArrayOop lock_gc_or_pin_string_value(JavaThread* thread, oop str) {
+  if (Universe::heap()->supports_object_pinning()) {
+    // Forbid deduplication before obtaining the value array, to prevent
+    // deduplication from replacing the value array while setting up or in
+    // the critical section.  That would lead to the release operation
+    // unpinning the wrong object.
+    if (StringDedup::is_enabled()) {
+      NoSafepointVerifier nsv;
+      StringDedup::forbid_deduplication(str);
+    }
+    typeArrayOop s_value = java_lang_String::value(str);
+    return (typeArrayOop) Universe::heap()->pin_object(thread, s_value);
+  } else {
+    Handle h(thread, str);      // Handlize across potential safepoint.
+    GCLocker::lock_critical(thread);
+    return java_lang_String::value(h());
+  }
+}
+
+static void unlock_gc_or_unpin_string_value(JavaThread* thread, oop str) {
+  if (Universe::heap()->supports_object_pinning()) {
+    typeArrayOop s_value = java_lang_String::value(str);
+    Universe::heap()->unpin_object(thread, s_value);
+  } else {
+    GCLocker::unlock_critical(thread);
+  }
+}
+
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
-  oop s = lock_gc_or_pin_object(thread, string);
-  typeArrayOop s_value = java_lang_String::value(s);
-  bool is_latin1 = java_lang_String::is_latin1(s);
-  if (isCopy != NULL) {
-    *isCopy = is_latin1 ? JNI_TRUE : JNI_FALSE;
-  }
+  oop s = JNIHandles::resolve_non_null(string);
   jchar* ret;
-  if (!is_latin1) {
+  if (!java_lang_String::is_latin1(s)) {
+    typeArrayOop s_value = lock_gc_or_pin_string_value(thread, s);
     ret = (jchar*) s_value->base(T_CHAR);
+    if (isCopy != NULL) *isCopy = JNI_FALSE;
   } else {
     // Inflate latin1 encoded string to UTF16
+    typeArrayOop s_value = java_lang_String::value(s);
     int s_len = java_lang_String::length(s, s_value);
     ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
     /* JNI Specification states return NULL on OOM */
@@ -2864,6 +2881,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
       }
       ret[s_len] = 0;
     }
+    if (isCopy != NULL) *isCopy = JNI_TRUE;
   }
  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;
@@ -2872,15 +2890,16 @@ JNI_END
 
 JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar *chars))
   HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
-  // The str and chars arguments are ignored for UTF16 strings
   oop s = JNIHandles::resolve_non_null(str);
   bool is_latin1 = java_lang_String::is_latin1(s);
   if (is_latin1) {
     // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
     FREE_C_HEAP_ARRAY(jchar, chars);
+  } else {
+    // For non-latin1 string, drop the associated gc-locker/pin.
+    unlock_gc_or_unpin_string_value(thread, s);
   }
-  unlock_gc_or_unpin_object(thread, str);
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 
@@ -3110,6 +3129,15 @@ JNI_END
 
 JNI_ENTRY(jobject, jni_GetModule(JNIEnv* env, jclass clazz))
   return Modules::get_module(clazz, THREAD);
+JNI_END
+
+JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
+  oop thread_obj = JNIHandles::resolve_external_guard(obj);
+  if (thread_obj != NULL && thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+    return JNI_TRUE;
+  } else {
+    return JNI_FALSE;
+  }
 JNI_END
 
 
@@ -3396,7 +3424,11 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Module features
 
-    jni_GetModule
+    jni_GetModule,
+
+    // Virtual threads
+
+    jni_IsVirtualThread
 };
 
 
@@ -3471,7 +3503,7 @@ static void post_thread_start_event(const JavaThread* jt) {
   assert(jt != NULL, "invariant");
   EventThreadStart event;
   if (event.should_commit()) {
-    event.set_thread(JFR_THREAD_ID(jt));
+    event.set_thread(JFR_JVM_THREAD_ID(jt));
     event.set_parentThread((traceid)0);
 #if INCLUDE_JFR
     if (EventThreadStart::is_stacktrace_enabled()) {
@@ -3621,9 +3653,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     post_thread_start_event(thread);
 
-#ifndef PRODUCT
     if (ReplayCompiles) ciReplay::replay(thread);
-#endif
 
 #ifdef ASSERT
     // Some platforms (like Win*) need a wrapper around these test
@@ -3634,7 +3664,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #endif
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
-    ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
+    ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
     MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
   } else {
     // If create_vm exits because of a pending exception, exit with that
@@ -3724,8 +3754,15 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
     return res;
   }
 
-  // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
   JavaThread* thread = JavaThread::current();
+
+  // Make sure we are actually in a newly attached thread, with no
+  // existing Java frame.
+  if (thread->has_last_Java_frame()) {
+    return JNI_ERR;
+  }
+
+  // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
 
   // We are going to VM, change W^X state to the expected one.
   MACOS_AARCH64_ONLY(WXMode oldmode = thread->enable_wx(WXWrite));
@@ -3767,7 +3804,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     // If executing from an atexit hook we may be in the VMThread.
     if (t->is_Java_thread()) {
       // If the thread has been attached this operation is a no-op
-      *(JNIEnv**)penv = t->as_Java_thread()->jni_environment();
+      *(JNIEnv**)penv = JavaThread::cast(t)->jni_environment();
       return JNI_OK;
     } else {
       return JNI_ERR;
@@ -3854,11 +3891,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   *(JNIEnv**)penv = thread->jni_environment();
 
   // Now leaving the VM, so change thread_state. This is normally automatically taken care
-  // of in the JVM_ENTRY. But in this situation we have to do it manually. Notice, that by
-  // using ThreadStateTransition::transition, we do a callback to the safepoint code if
-  // needed.
-
-  ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
+  // of in the JVM_ENTRY. But in this situation we have to do it manually.
+  ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
   MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
 
   // Perform any platform dependent FPU setup
@@ -3904,7 +3938,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
 
   VM_Exit::block_if_vm_exited();
 
-  JavaThread* thread = current->as_Java_thread();
+  JavaThread* thread = JavaThread::cast(current);
   if (thread->has_last_Java_frame()) {
     HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
     // Can't detach a thread that's running java, that can't work.
@@ -3952,6 +3986,13 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
     return ret;
   }
 
+  // No JVM TI with --enable-preview and no continuations support.
+  if (!VMContinuations && Arguments::enable_preview() && JvmtiExport::is_jvmti_version(version)) {
+    *penv = NULL;
+    ret = JNI_EVERSION;
+    return ret;
+  }
+
   if (JniExportedInterface::GetExportedInterface(vm, penv, version, &ret)) {
     return ret;
   }
@@ -3966,7 +4007,7 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
   Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread()) {
     if (Threads::is_supported_jni_version_including_1_1(version)) {
-      *(JNIEnv**)penv = thread->as_Java_thread()->jni_environment();
+      *(JNIEnv**)penv = JavaThread::cast(thread)->jni_environment();
       ret = JNI_OK;
       return ret;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6520665 6357133
- * @modules java.base/sun.net.www
  * @library /test/lib
  * @run main/othervm NTLMTest
  * @summary 6520665 & 6357133: NTLM authentication issues.
@@ -32,7 +31,8 @@
 
 import java.net.*;
 import java.io.*;
-import sun.net.www.MessageHeader;
+
+import jdk.test.lib.net.HttpHeaderParser;
 import jdk.test.lib.net.URIBuilder;
 
 public class NTLMTest
@@ -70,7 +70,7 @@ public class NTLMTest
             uc.getInputStream().readAllBytes();
 
         } catch (ProtocolException e) {
-            /* java.net.ProtocolException: Server redirected too many  times (20) */
+            /* java.net.ProtocolException: Server redirected too many times (20) */
             throw new RuntimeException("Failed: ProtocolException", e);
         } catch (IOException ioe) {
             /* IOException is OK. We are expecting "java.io.IOException: Server
@@ -160,7 +160,7 @@ public class NTLMTest
             OutputStream os = s.getOutputStream();
 
             for (int i=start; i<end; i++) {
-                MessageHeader header = new MessageHeader (s.getInputStream());
+                HttpHeaderParser httpHeaderParser = new HttpHeaderParser(s.getInputStream());
                 //System.out.println("Input :" + header);
                 //System.out.println("Output:" + resp[i]);
                 os.write(resp[i].getBytes("ASCII"));

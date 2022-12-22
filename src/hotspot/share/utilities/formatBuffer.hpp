@@ -27,6 +27,7 @@
 
 #include "jvm_io.h"
 #include "utilities/globalDefinitions.hpp"
+
 #include <stdarg.h>
 
 // Simple class to format the ctor arguments into a fixed-sized buffer.
@@ -62,7 +63,7 @@ class FormatBuffer : public FormatBufferBase {
   int size() { return bufsz; }
 
  private:
-  FormatBuffer(const FormatBuffer &); // prevent copies
+  NONCOPYABLE(FormatBuffer);
   char _buffer[bufsz];
 
  protected:

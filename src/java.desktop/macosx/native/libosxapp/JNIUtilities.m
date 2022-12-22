@@ -40,11 +40,18 @@ NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
 }
 
 jstring NSStringToJavaString(JNIEnv* env, NSString *str) {
-
     if (str == NULL) {
        return NULL;
     }
-    jstring jStr = (*env)->NewStringUTF(env, [str UTF8String]);
+    jsize len = [str length];
+    unichar *buffer = (unichar*)calloc(len, sizeof(unichar));
+    if (buffer == NULL) {
+       return NULL;
+    }
+    NSRange crange = NSMakeRange(0, len);
+    [str getCharacters:buffer range:crange];
+    jstring jStr = (*env)->NewString(env, buffer, len);
+    free(buffer);
     CHECK_EXCEPTION();
     return jStr;
 }

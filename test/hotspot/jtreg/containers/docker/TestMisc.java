@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build CheckContainerized sun.hotspot.WhiteBox PrintContainerInfo
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build CheckContainerized jdk.test.whitebox.WhiteBox PrintContainerInfo
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestMisc
  */
 import jdk.test.lib.containers.docker.Common;
@@ -50,12 +50,13 @@ public class TestMisc {
         }
 
         Common.prepareWhiteBox();
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testMinusContainerSupport();
             testIsContainerized();
             testPrintContainerInfo();
+            testPrintContainerInfoActiveProcessorCount();
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
@@ -92,6 +93,15 @@ public class TestMisc {
         checkContainerInfo(Common.run(opts));
     }
 
+    private static void testPrintContainerInfoActiveProcessorCount() throws Exception {
+        Common.logNewTestCase("Test print_container_info()");
+
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo").addJavaOpts("-XX:ActiveProcessorCount=2");
+        Common.addWhiteBoxOpts(opts);
+
+        OutputAnalyzer out = Common.run(opts);
+        out.shouldContain("but overridden by -XX:ActiveProcessorCount 2");
+    }
 
     private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
         String[] expectedToContain = new String[] {
@@ -105,11 +115,26 @@ public class TestMisc {
             "Memory Soft Limit",
             "Memory Usage",
             "Maximum Memory Usage",
-            "memory_max_usage_in_bytes"
+            "memory_max_usage_in_bytes",
+            "maximum number of tasks",
+            "current number of tasks"
         };
 
         for (String s : expectedToContain) {
             out.shouldContain(s);
+        }
+        String str = out.getOutput();
+        if (str.contains("cgroupv1")) {
+            out.shouldContain("kernel_memory_usage_in_bytes");
+            out.shouldContain("kernel_memory_max_usage_in_bytes");
+            out.shouldContain("kernel_memory_limit_in_bytes");
+        } else {
+            if (str.contains("cgroupv2")) {
+                out.shouldContain("memory_swap_current_in_bytes");
+                out.shouldContain("memory_swap_max_limit_in_bytes");
+            } else {
+                throw new RuntimeException("Output has to contain information about cgroupv1 or cgroupv2");
+            }
         }
     }
 

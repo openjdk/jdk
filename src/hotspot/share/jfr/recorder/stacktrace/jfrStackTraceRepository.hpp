@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   traceid add_trace(const JfrStackTrace& stacktrace);
   static traceid add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace);
   static traceid add(const JfrStackTrace& stacktrace);
-  traceid record_for(JavaThread* thread, int skip, JfrStackFrame* frames, u4 max_frames);
+  traceid record(JavaThread* current_thread, int skip, JfrStackFrame* frames, u4 max_frames);
 
  public:
-  static traceid record(Thread* thread, int skip = 0);
+  static traceid record(Thread* current_thread, int skip = 0);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_HPP

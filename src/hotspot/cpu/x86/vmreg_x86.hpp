@@ -25,7 +25,7 @@
 #ifndef CPU_X86_VMREG_X86_HPP
 #define CPU_X86_VMREG_X86_HPP
 
-
+#include "register_x86.hpp"
 
 inline bool is_Register() {
   return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
@@ -36,14 +36,8 @@ inline bool is_FloatRegister() {
 }
 
 inline bool is_XMMRegister() {
-  int uarch_max_xmm = ConcreteRegisterImpl::max_xmm;
-
-#ifdef _LP64
-  if (UseAVX < 3) {
-    int half_xmm = (XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers) / 2;
-    uarch_max_xmm -= half_xmm;
-  }
-#endif
+  int uarch_max_xmm = ConcreteRegisterImpl::max_fpr +
+    (XMMRegister::max_slots_per_register * XMMRegister::available_xmm_registers());
 
   return (value() >= ConcreteRegisterImpl::max_fpr && value() < uarch_max_xmm);
 }
@@ -90,7 +84,13 @@ inline   bool is_concrete() {
 #ifndef AMD64
   if (is_Register()) return true;
 #endif // AMD64
-  return is_even(value());
+  // Do not use is_XMMRegister() here as it depends on the UseAVX setting.
+  if (value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm) {
+    int base = value() - ConcreteRegisterImpl::max_fpr;
+    return (base % XMMRegister::max_slots_per_register) == 0;
+  } else {
+    return is_even(value());   // General, float, and K registers are all two slots wide
+  }
 }
 
 #endif // CPU_X86_VMREG_X86_HPP

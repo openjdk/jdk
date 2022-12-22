@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -71,7 +71,7 @@ public:
     return (encoding() & 0xff000000) == 0x10000000;
   }
 
-  inline bool is_nop();
+  inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
   inline bool is_jump_or_nop();
@@ -79,7 +79,7 @@ public:
   bool is_safepoint_poll();
   bool is_movz();
   bool is_movk();
-  bool is_sigill_zombie_not_entrant();
+  bool is_sigill_not_entrant();
   bool is_stop();
 
 protected:
@@ -543,7 +543,7 @@ class NativeTstRegMem: public NativeInstruction {
 public:
 };
 
-inline bool NativeInstruction::is_nop() {
+inline bool NativeInstruction::is_nop() const{
   uint32_t insn = *(uint32_t*)addr_at(0);
   return insn == 0xd503201f;
 }
@@ -665,5 +665,72 @@ inline NativeLdSt* NativeLdSt_at(address addr) {
   assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
   return (NativeLdSt*)addr;
 }
+
+// A NativePostCallNop takes the form of three instructions:
+//     nop; movk zr, lo; movk zr, hi
+//
+// The nop is patchable for a deoptimization trap. The two movk
+// instructions execute as nops but have a 16-bit payload in which we
+// can store an offset from the initial nop to the nmethod.
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const {
+    uint64_t insns = *(uint64_t*)addr_at(0);
+    // Check for two instructions: nop; movk zr, xx
+    // These instructions only ever appear together in a post-call
+    // NOP, so it's unnecessary to check that the third instruction is
+    // a MOVK as well.
+    return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
+  }
+
+  jint displacement() const {
+    uint64_t movk_insns = *(uint64_t*)addr_at(4);
+    uint32_t lo = (movk_insns >> 5) & 0xffff;
+    uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
+    uint32_t result = (hi << 16) | lo;
+
+    return (jint)result;
+  }
+
+  void patch(jint diff);
+  void make_deopt();
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
+  return NULL;
+}
+
+inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  assert(nop->check(), "");
+  return nop;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+ public:
+  enum {
+    instruction_size            =    4,
+    instruction_offset          =    0,
+  };
+
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  void  verify();
+
+  static bool is_deopt_at(address instr) {
+    assert(instr != NULL, "");
+    uint32_t value = *(uint32_t *) instr;
+    return value == 0xd4ade001;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos);
+};
 
 #endif // CPU_AARCH64_NATIVEINST_AARCH64_HPP

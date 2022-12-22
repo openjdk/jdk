@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ public final class ModuleInfo {
 
                 int exports_to_count = in.readUnsignedShort();
                 if (exports_to_count > 0) {
-                    Set<String> targets = new HashSet<>(exports_to_count);
+                    Set<String> targets = HashSet.newHashSet(exports_to_count);
                     for (int j=0; j<exports_to_count; j++) {
                         int exports_to_index = in.readUnsignedShort();
                         String target = cpool.getModuleName(exports_to_index);
@@ -486,7 +486,7 @@ public final class ModuleInfo {
 
                 int open_to_count = in.readUnsignedShort();
                 if (open_to_count > 0) {
-                    Set<String> targets = new HashSet<>(open_to_count);
+                    Set<String> targets = HashSet.newHashSet(open_to_count);
                     for (int j=0; j<open_to_count; j++) {
                         int opens_to_index = in.readUnsignedShort();
                         String target = cpool.getModuleName(opens_to_index);
@@ -540,7 +540,7 @@ public final class ModuleInfo {
         throws IOException
     {
         int package_count = in.readUnsignedShort();
-        Set<String> packages = new HashSet<>(package_count);
+        Set<String> packages = HashSet.newHashSet(package_count);
         for (int i=0; i<package_count; i++) {
             int index = in.readUnsignedShort();
             String pn = cpool.getPackageName(index);
@@ -588,7 +588,7 @@ public final class ModuleInfo {
         String algorithm = cpool.getUtf8(algorithm_index);
 
         int hash_count = in.readUnsignedShort();
-        Map<String, byte[]> map = new HashMap<>(hash_count);
+        Map<String, byte[]> map = HashMap.newHashMap(hash_count);
         for (int i=0; i<hash_count; i++) {
             int module_name_index = in.readUnsignedShort();
             String mn = cpool.getModuleName(module_name_index);

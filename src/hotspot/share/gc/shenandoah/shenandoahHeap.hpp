@@ -61,7 +61,7 @@ class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
-class ShenandoahWorkGang;
+class ShenandoahWorkerThreads;
 class VMStructs;
 
 // Used for buffering per-region liveness data.
@@ -207,15 +207,15 @@ public:
 //
 private:
   uint _max_workers;
-  ShenandoahWorkGang* _workers;
-  ShenandoahWorkGang* _safepoint_workers;
+  ShenandoahWorkerThreads* _workers;
+  ShenandoahWorkerThreads* _safepoint_workers;
 
 public:
   uint max_workers();
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
-  WorkGang* workers() const;
-  WorkGang* safepoint_workers();
+  WorkerThreads* workers() const;
+  WorkerThreads* safepoint_workers();
 
   void gc_threads_do(ThreadClosure* tcl) const;
 
@@ -470,6 +470,8 @@ public:
 
   bool is_in(const void* p) const;
 
+  bool requires_barriers(stackChunkOop obj) const;
+
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
@@ -484,7 +486,7 @@ public:
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
   // Parallel heap iteration support
-  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
@@ -500,7 +502,6 @@ public:
 public:
   void register_nmethod(nmethod* nm);
   void unregister_nmethod(nmethod* nm);
-  void flush_nmethod(nmethod* nm);
   void verify_nmethod(nmethod* nm) {}
 
 // ---------- Pinning hooks
@@ -635,9 +636,17 @@ public:
   template <class T>
   inline void update_with_forwarded(T* p);
 
-  static inline oop cas_oop(oop n, narrowOop* addr, oop c);
-  static inline oop cas_oop(oop n, oop* addr, oop c);
-  static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);
+  static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline bool atomic_update_oop_check(oop update,       oop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline void atomic_clear_oop(      oop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
 

@@ -62,8 +62,8 @@ public class MouseInfo {
      * permission before creating and returning a {@code PointerInfo}
      * object. This may result in a {@code SecurityException}.
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
-     * @exception SecurityException if a security manager exists and its
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless() returns true
+     * @throws SecurityException if a security manager exists and its
      *            {@code checkPermission} method doesn't allow the operation
      * @see       GraphicsConfiguration
      * @see       SecurityManager#checkPermission
@@ -124,7 +124,7 @@ public class MouseInfo {
      * by requesting the {@code "awt.mouse.numButtons"} desktop property
      * which is set by the underlying native platform.
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless() returns true
      * @return number of buttons on the mouse
      * @see Toolkit#getDesktopProperty
      * @since 1.5

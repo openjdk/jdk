@@ -114,7 +114,7 @@ public class JSpec implements Taglet  {
         return EnumSet.allOf(jdk.javadoc.doclet.Taglet.Location.class);
     }
 
-    //@Override // uncomment when JDK 15 is the boot JDK
+    @Override
     public boolean isBlockTag() {
         return true;
     }
@@ -163,7 +163,7 @@ public class JSpec implements Taglet  {
                 String chapter = m.group("chapter");
                 String section = m.group("section");
 
-                String url = String.format("%1$s/%2$s-%3$s.html#jls-%3$s%4$s",
+                String url = String.format("%1$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
                         baseURL, idPrefix, chapter, section);
 
                 sb.append("<a href=\"")

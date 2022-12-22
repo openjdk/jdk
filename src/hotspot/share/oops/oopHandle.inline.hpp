@@ -48,7 +48,7 @@ inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
 }
 
 inline void OopHandle::release(OopStorage* storage) {
-  if (peek() != NULL) {
+  if (_obj != NULL) {
     // Clear the OopHandle first
     NativeAccess<>::oop_store(_obj, (oop)NULL);
     storage->release(_obj);

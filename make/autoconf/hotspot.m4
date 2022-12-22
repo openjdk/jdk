@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,19 +83,10 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
     AC_MSG_ERROR([Cannot continue])
   fi
 
-  # All "special" variants share the same output directory ("server")
-  VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  UTIL_GET_NON_MATCHING_VALUES(INVALID_MULTIPLE_VARIANTS, $JVM_VARIANTS, \
-      $VALID_MULTIPLE_JVM_VARIANTS)
-  if  test "x$INVALID_MULTIPLE_VARIANTS" != x && \
-      test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
-    AC_MSG_ERROR([You can only build multiple variants using these variants: '$VALID_MULTIPLE_JVM_VARIANTS'])
-  fi
-
   # The "main" variant is the one used by other libs to link against during the
   # build.
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
-    MAIN_VARIANT_PRIO_ORDER="server client minimal"
+    MAIN_VARIANT_PRIO_ORDER="server client minimal zero"
     for variant in $MAIN_VARIANT_PRIO_ORDER; do
       if HOTSPOT_CHECK_JVM_VARIANT($variant); then
         JVM_VARIANT_MAIN="$variant"
@@ -123,12 +114,26 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
     HOTSPOT_TARGET_CPU_ARCH=zero
   fi
 
+
   AC_ARG_WITH([hotspot-build-time], [AS_HELP_STRING([--with-hotspot-build-time],
-  [timestamp to use in hotspot version string, empty for on-the-fly @<:@empty@:>@])])
+  [timestamp to use in hotspot version string, empty means determined at build time @<:@source-date/empty@:>@])])
+
+  AC_MSG_CHECKING([what hotspot build time to use])
 
   if test "x$with_hotspot_build_time" != x; then
     HOTSPOT_BUILD_TIME="$with_hotspot_build_time"
+    AC_MSG_RESULT([$HOTSPOT_BUILD_TIME (from --with-hotspot-build-time)])
+  else
+    if test "x$SOURCE_DATE" = xupdated; then
+      HOTSPOT_BUILD_TIME=""
+      AC_MSG_RESULT([determined at build time (default)])
+    else
+      # If we have a fixed value for SOURCE_DATE, use it as default
+      HOTSPOT_BUILD_TIME="$SOURCE_DATE_ISO_8601"
+      AC_MSG_RESULT([$HOTSPOT_BUILD_TIME (from --with-source-date)])
+    fi
   fi
+
   AC_SUBST(HOTSPOT_BUILD_TIME)
 
 
@@ -137,10 +142,4 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
     HOTSPOT_TARGET_CPU=arm_32
     HOTSPOT_TARGET_CPU_DEFINE="ARM32"
   fi
-
-  # --with-cpu-port is no longer supported
-  UTIL_DEPRECATED_ARG_WITH(with-cpu-port)
-
-  # in jdk15 hotspot-gtest was replaced with --with-gtest
-  UTIL_DEPRECATED_ARG_ENABLE(hotspot-gtest)
 ])

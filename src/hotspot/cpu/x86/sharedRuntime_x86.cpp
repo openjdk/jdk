@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   if (method->intrinsic_id() == vmIntrinsics::_identityHashCode) {
     Label Continue;
     // return 0 for null reference input
-    __ cmpptr(obj_reg, (int32_t)NULL_WORD);
+    __ cmpptr(obj_reg, NULL_WORD);
     __ jcc(Assembler::notEqual, Continue);
     __ xorptr(result, result);
     __ ret(0);
@@ -61,12 +61,6 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
   // check if locked
   __ testptr(result, markWord::unlocked_value);
   __ jcc(Assembler::zero, slowCase);
-
-  if (UseBiasedLocking) {
-    // Check if biased and fall through to runtime if so
-    __ testptr(result, markWord::biased_lock_bit_in_place);
-    __ jcc(Assembler::notZero, slowCase);
-  }
 
   // get hash
 #ifdef _LP64

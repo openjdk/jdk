@@ -24,7 +24,6 @@
  */
 
 package sun.net.www;
-import java.net.URL;
 import java.io.*;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
@@ -61,34 +60,6 @@ public class MimeEntry implements Cloneable {
         // Default action is UNKNOWN so clients can decide what the default
         // should be, typically save to file or ask user.
         this(type, UNKNOWN, null, null, null);
-    }
-
-    //
-    // The next two constructors are used only by the deprecated
-    // PlatformMimeTable classes or, in last case, is called by the public
-    // constructor.  They are kept here anticipating putting support for
-    // mailcap formatted config files back in (so BOTH the properties format
-    // and the mailcap formats are supported).
-    //
-    MimeEntry(String type, String imageFileName, String extensionString) {
-        typeName = type.toLowerCase();
-        action = UNKNOWN;
-        command = null;
-        this.imageFileName = imageFileName;
-        setExtensions(extensionString);
-        starred = isStarred(typeName);
-    }
-
-    // For use with MimeTable::parseMailCap
-    MimeEntry(String typeName, int action, String command,
-              String tempFileNameTemplate) {
-        this.typeName = typeName.toLowerCase();
-        this.action = action;
-        this.command = command;
-        this.imageFileName = null;
-        this.fileExtensions = null;
-
-        this.tempFileNameTemplate = tempFileNameTemplate;
     }
 
     // This is the one called by the public constructor.

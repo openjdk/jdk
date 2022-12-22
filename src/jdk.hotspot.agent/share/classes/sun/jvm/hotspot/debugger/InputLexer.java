@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package sun.jvm.hotspot.debugger;
 
 import java.io.*;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /** InputLexer is the lexer through which the current set of debuggers
     see the debug server. It provides the ability to read all of the
@@ -152,12 +154,7 @@ public class InputLexer {
     for (int i = 0; i < len; i++) {
       b[i] = readByte();
     }
-    try {
-      return new String(b, "US-ASCII");
-    }
-    catch (UnsupportedEncodingException e) {
-      throw new IOException(e.toString());
-    }
+    return new String(b, US_ASCII);
   }
 
   /** Reads binary data; a Unicode string of the specified length */

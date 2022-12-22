@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 // MacroAssembler extends Assembler by a few frequently used macros.
 
 class ciTypeArray;
+class OopMap;
 
 class MacroAssembler: public Assembler {
  public:
@@ -87,6 +88,16 @@ class MacroAssembler: public Assembler {
 
   // nop padding
   void align(int modulus, int max = 252, int rem = 0);
+
+  // Align prefix opcode to make sure it's not on the last word of a
+  // 64-byte block.
+  //
+  // Note: do not call align_prefix() in a .ad file (e.g. ppc.ad).  Instead
+  // add ins_alignment(2) to the instruct definition and implement the
+  // compute_padding() method of the instruct node to use
+  // compute_prefix_padding().  See loadConI32Node::compute_padding() in
+  // ppc.ad for an example.
+  void align_prefix();
 
   //
   // Constants, loading constants, TOC support
@@ -406,6 +417,8 @@ class MacroAssembler: public Assembler {
   inline address call_stub(Register function_entry);
   inline void call_stub_and_return_to(Register function_entry, Register return_pc);
 
+  void post_call_nop();
+
   //
   // Java utilities
   //
@@ -589,33 +602,12 @@ class MacroAssembler: public Assembler {
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
-  // Biased locking support
-  // Upon entry,obj_reg must contain the target object, and mark_reg
-  // must contain the target object's header.
-  // Destroys mark_reg if an attempt is made to bias an anonymously
-  // biased lock. In this case a failure will go either to the slow
-  // case or fall through with the notEqual condition code set with
-  // the expectation that the slow case in the runtime will be called.
-  // In the fall-through case where the CAS-based lock is done,
-  // mark_reg is not destroyed.
-  void biased_locking_enter(ConditionRegister cr_reg, Register obj_reg, Register mark_reg, Register temp_reg,
-                            Register temp2_reg, Label& done, Label* slow_case = NULL);
-  // Upon entry, the base register of mark_addr must contain the oop.
-  // Destroys temp_reg.
-  // If allow_delay_slot_filling is set to true, the next instruction
-  // emitted after this one will go in an annulled delay slot if the
-  // biased locking exit case failed.
-  void biased_locking_exit(ConditionRegister cr_reg, Register mark_addr, Register temp_reg, Label& done);
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
 
   // allocation (for C1)
-  void eden_allocate(
-    Register obj,                      // result: pointer to object after successful allocation
-    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
-    int      con_size_in_bytes,        // object size in bytes if   known at compile time
-    Register t1,                       // temp register
-    Register t2,                       // temp register
-    Label&   slow_case                 // continuation point if fast allocation fails
-  );
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -655,7 +647,6 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                  Register tmp1, Register tmp2, Register tmp3,
-                                 bool try_bias = UseBiasedLocking,
                                  RTMLockingCounters* rtm_counters = NULL,
                                  RTMLockingCounters* stack_rtm_counters = NULL,
                                  Metadata* method_data = NULL,
@@ -663,7 +654,7 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3,
-                                   bool try_bias = UseBiasedLocking, bool use_rtm = false);
+                                   bool use_rtm = false);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
@@ -917,7 +908,7 @@ class MacroAssembler: public Assembler {
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line) {}
 
   // Convenience method returning function entry. For the ELFv1 case
-  // creates function descriptor at the current address and returs
+  // creates function descriptor at the current address and returns
   // the pointer to it. For the ELFv2 case returns the current address.
   inline address function_entry();
 

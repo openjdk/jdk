@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@
 
 import jdk.javadoc.internal.doclets.formats.html.markup.*;
 
-import static jdk.javadoc.internal.doclets.toolkit.util.DocletConstants.NL;
-
 /**
  * The class reads each file, complete with newlines, into a string to easily
  * compare the existing markup with the generated markup.
@@ -56,7 +54,7 @@ public class TestHtmlDocument extends JavadocTester {
     public void test() {
         checking("markup");
         // Check whether the generated markup is same as the existing markup.
-        String expected = readFile(testSrc, "testMarkup.html").replace("\n", NL);
+        String expected = readFile(testSrc, "testMarkup.html");
         String actual = generateHtmlTree();
         if (actual.equals(expected)) {
             passed("");
@@ -82,17 +80,10 @@ public class TestHtmlDocument extends JavadocTester {
         meta.put(HtmlAttr.NAME, "keywords");
         meta.put(HtmlAttr.CONTENT, "testContent");
         head.add(meta);
-        // Test invalid META tag
-        HtmlTree invmeta = new HtmlTree(TagName.META);
-        head.add(invmeta);
-        // Test LINK tag
         HtmlTree link = new HtmlTree(TagName.LINK);
         link.put(HtmlAttr.REL, "testRel");
         link.put(HtmlAttr.HREF, "testLink.html");
         head.add(link);
-        // Test invalid LINK tag
-        HtmlTree invlink = new HtmlTree(TagName.LINK);
-        head.add(invlink);
         html.add(head);
         // Comment within the document
         Comment bodyMarker = new Comment("======== START OF BODY ========");

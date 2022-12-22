@@ -228,7 +228,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param e list data event
      * @deprecated Obsolete method, not used anymore.
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalAdded(ListDataEvent e) {
     }
 
@@ -237,7 +237,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param e list data event
      * @deprecated Obsolete method, not used anymore.
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalRemoved(ListDataEvent e) {
     }
 
@@ -257,7 +257,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param b another file
      * @deprecated Obsolete method, not used anymore.
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     protected boolean lt(File a, File b) {
         // First ignore case when comparing
         int diff = a.getName().toLowerCase().compareTo(b.getName().toLowerCase());
@@ -492,7 +492,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
     /**
      * Set the busy state for the model. The model is considered
-     * busy when it is running a separate (interruptable)
+     * busy when it is running a separate (interruptible)
      * thread in order to load the contents of a directory.
      */
     private synchronized void setBusy(final boolean busy, int fid) {

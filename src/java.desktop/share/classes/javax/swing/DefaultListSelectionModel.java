@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import javax.swing.event.*;
  * @see ListSelectionModel
  * @since 1.2
  */
-@SuppressWarnings("serial") // Same-version serialization only
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public class DefaultListSelectionModel implements ListSelectionModel, Cloneable, Serializable
 {
     private static final int MIN = -1;
@@ -205,6 +205,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     }
 
     /**
+     * Notifies <code>ListSelectionListeners</code> that the value
+     * of the selection, in the closed interval <code>firstIndex</code>,
+     * <code>lastIndex</code>, has changed and if this is the final change
+     * in the series of adjustments.
+     *
      * @param firstIndex the first index in the interval
      * @param lastIndex the last index in the interval
      * @param isAdjusting true if this is the final change in a series of
@@ -230,7 +235,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
         if (lastAdjustedIndex == MIN) {
             return;
         }
-        /* If getValueAdjusting() is true, (eg. during a drag opereration)
+        /* If getValueAdjusting() is true, (eg. during a drag operation)
          * record the bounds of the changes so that, when the drag finishes (and
          * setValueAdjusting(false) is called) we can post a single event
          * with bounds covering all of these individual adjustments.
@@ -279,7 +284,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      *          on this model,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code> doesn't
+     * @throws ClassCastException if <code>listenerType</code> doesn't
      *          specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -361,7 +366,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
            and therefore that the minIndex and maxIndex had 'real' values.
 
            If we have cleared the whole selection, set the minIndex and maxIndex
-           to their cannonical values so that the next set command always works
+           to their canonical values so that the next set command always works
            just by using Math.min and Math.max.
         */
         if (isSelectionEmpty()) {
@@ -738,14 +743,14 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      */
     public String toString() {
         String s =  ((getValueIsAdjusting()) ? "~" : "=") + value.toString();
-        return getClass().getName() + " " + Integer.toString(hashCode()) + " " + s;
+        return getClass().getName() + " " + hashCode() + " " + s;
     }
 
     /**
      * Returns a clone of this selection model with the same selection.
      * <code>listenerLists</code> are not duplicated.
      *
-     * @exception CloneNotSupportedException if the selection model does not
+     * @throws CloneNotSupportedException if the selection model does not
      *    both (a) implement the Cloneable interface and (b) define a
      *    <code>clone</code> method.
      */
@@ -825,7 +830,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * anchor and the new lead are either all selected or all deselected.
      * If the value at the anchor index is selected, first clear all the
      * values in the range [anchor, oldLeadIndex], then select all the values
-     * values in the range [anchor, newLeadIndex], where oldLeadIndex is the old
+     * in the range [anchor, newLeadIndex], where oldLeadIndex is the old
      * leadIndex and newLeadIndex is the new one.
      * <p>
      * If the value at the anchor index is not selected, do the same thing in

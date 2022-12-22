@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
@@ -68,6 +70,7 @@ import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -110,7 +113,8 @@ public final class Module implements AnnotatedElement {
     private final ModuleDescriptor descriptor;
 
     // true, if this module allows restricted native access
-    private volatile boolean enableNativeAccess;
+    @Stable
+    private boolean enableNativeAccess;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
@@ -254,25 +258,77 @@ public final class Module implements AnnotatedElement {
     /**
      * Update this module to allow access to restricted methods.
      */
-    Module implAddEnableNativeAccess() {
+    synchronized Module implAddEnableNativeAccess() {
         enableNativeAccess = true;
         return this;
     }
 
     /**
-     * Update all unnamed modules to allow access to restricted methods.
+     * Returns {@code true} if this module can access
+     * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
+     *
+     * @since 20
+     *
+     * @return {@code true} if this module can access <em>restricted</em> methods.
      */
-    static void implAddEnableNativeAccessAllUnnamed() {
-        ALL_UNNAMED_MODULE.enableNativeAccess = true;
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public boolean isNativeAccessEnabled() {
+        Module target = moduleForNativeAccess();
+        synchronized(target) {
+            return target.enableNativeAccess;
+        }
     }
 
+    // Returns the Module object that holds the enableNativeAccess
+    // flag for this module.
+    private Module moduleForNativeAccess() {
+        return isNamed() ? this : ALL_UNNAMED_MODULE;
+    }
+
+    // This is invoked from Reflection.ensureNativeAccess
+    void ensureNativeAccess(Class<?> owner, String methodName) {
+        // The target module whose enableNativeAccess flag is ensured
+        Module target = moduleForNativeAccess();
+        // racy read of the enable native access flag
+        boolean isNativeAccessEnabled = target.enableNativeAccess;
+        if (!isNativeAccessEnabled) {
+            synchronized (target) {
+                // safe read of the enableNativeAccess of the target module
+                isNativeAccessEnabled = target.enableNativeAccess;
+
+                // check again with the safely read flag
+                if (isNativeAccessEnabled) {
+                    // another thread beat us to it - nothing to do
+                    return;
+                } else if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
+                    throw new IllegalCallerException("Illegal native access from: " + this);
+                } else {
+                    // warn and set flag, so that only one warning is reported per module
+                    String cls = owner.getName();
+                    String mtd = cls + "::" + methodName;
+                    String mod = isNamed() ? "module " + getName() : "the unnamed module";
+                    String modflag = isNamed() ? getName() : "ALL-UNNAMED";
+                    System.err.printf("""
+                        WARNING: A restricted method in %s has been called
+                        WARNING: %s has been called by %s
+                        WARNING: Use --enable-native-access=%s to avoid a warning for this module
+                        %n""", cls, mtd, mod, modflag);
+
+                    // set the flag
+                    target.enableNativeAccess = true;
+                }
+            }
+        }
+    }
+
+
     /**
-     * Returns true if module m can access restricted methods.
+     * Update all unnamed modules to allow access to restricted methods.
      */
-    boolean implIsEnableNativeAccess() {
-        return isNamed() ?
-                enableNativeAccess :
-                ALL_UNNAMED_MODULE.enableNativeAccess;
+    static void implAddEnableNativeAccessToAllUnnamed() {
+        synchronized (ALL_UNNAMED_MODULE) {
+            ALL_UNNAMED_MODULE.enableNativeAccess = true;
+        }
     }
 
     // --
@@ -978,7 +1034,7 @@ public final class Module implements AnnotatedElement {
         // the packages to all unnamed modules.
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages == null) {
-            openPackages = new HashMap<>((4 * (concealedPkgs.size() + exportedPkgs.size()) / 3) + 1);
+            openPackages = HashMap.newHashMap(concealedPkgs.size() + exportedPkgs.size());
         } else {
             openPackages = new HashMap<>(openPackages);
         }
@@ -1131,8 +1187,7 @@ public final class Module implements AnnotatedElement {
         boolean isBootLayer = (ModuleLayer.boot() == null);
 
         int numModules = cf.modules().size();
-        int cap = (int)(numModules / 0.75f + 1.0f);
-        Map<String, Module> nameToModule = new HashMap<>(cap);
+        Map<String, Module> nameToModule = HashMap.newHashMap(numModules);
 
         // to avoid repeated lookups and reduce iteration overhead, we create
         // arrays holding correlated information about each module.
@@ -1652,11 +1707,11 @@ public final class Module implements AnnotatedElement {
             if (caller != this && caller != Object.class.getModule()) {
                 String pn = Resources.toPackageName(name);
                 if (getPackages().contains(pn)) {
-                    if (caller == null && !isOpen(pn)) {
-                        // no caller, package not open
-                        return null;
-                    }
-                    if (!isOpen(pn, caller)) {
+                    if (caller == null) {
+                        if (!isOpen(pn)) {
+                            return null;
+                        }
+                    } else if (!isOpen(pn, caller)) {
                         // package not open to caller
                         return null;
                     }

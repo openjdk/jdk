@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
 // the format of Java objects so the fields can be accessed from C++.
@@ -57,8 +59,16 @@ class oopDesc {
     narrowKlass _compressed_klass;
   } _metadata;
 
+  // There may be ordering constraints on the initialization of fields that
+  // make use of the C++ copy/assign incorrect.
+  NONCOPYABLE(oopDesc);
+
  public:
+  // Must be trivial; see verifying static assert after the class.
+  oopDesc() = default;
+
   inline markWord  mark()          const;
+  inline markWord  mark_acquire()  const;
   inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
@@ -81,44 +91,43 @@ class oopDesc {
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression
-  inline int klass_gap() const;
-  inline void set_klass_gap(int z);
   static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
-  static int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
 
-  // Returns the actual oop size of the object
-  inline int size();
+  // Returns the actual oop size of the object in machine words
+  inline size_t size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline int size_given_klass(Klass* klass);
+  inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
-  inline bool is_instance()            const;
-  inline bool is_array()               const;
-  inline bool is_objArray()            const;
-  inline bool is_typeArray()           const;
+  inline bool is_instance()    const;
+  inline bool is_instanceRef() const;
+  inline bool is_stackChunk()  const;
+  inline bool is_array()       const;
+  inline bool is_objArray()    const;
+  inline bool is_typeArray()   const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()          const;
-  bool is_array_noinline()             const;
-  bool is_objArray_noinline()          const;
-  bool is_typeArray_noinline()         const;
+  bool is_instance_noinline()    const;
+  bool is_instanceRef_noinline() const;
+  bool is_stackChunk_noinline()  const;
+  bool is_array_noinline()       const;
+  bool is_objArray_noinline()    const;
+  bool is_typeArray_noinline()   const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
 
  public:
-  // field addresses in oop
-  inline void* field_addr(int offset) const;
-
-  // Need this as public for garbage collection.
-  template <class T> inline T* obj_field_addr(int offset) const;
+  template<typename T>
+  inline T* field_addr(int offset) const;
 
   template <typename T> inline size_t field_offset(T* p) const;
 
@@ -138,15 +147,17 @@ class oopDesc {
   }
 
   // Access to fields in a instanceOop through these methods.
-  template <DecoratorSet decorator>
+  template<DecoratorSet decorators>
   oop obj_field_access(int offset) const;
   oop obj_field(int offset) const;
+
   void obj_field_put(int offset, oop value);
   void obj_field_put_raw(int offset, oop value);
   void obj_field_put_volatile(int offset, oop value);
+  template<DecoratorSet decorators>
+  void obj_field_put_access(int offset, oop value);
 
   Metadata* metadata_field(int offset) const;
-  Metadata* metadata_field_raw(int offset) const;
   void metadata_field_put(int offset, Metadata* value);
 
   Metadata* metadata_field_acquire(int offset) const;
@@ -164,7 +175,6 @@ class oopDesc {
   void bool_field_put_volatile(int offset, jboolean contents);
 
   jint int_field(int offset) const;
-  jint int_field_raw(int offset) const;
   void int_field_put(int offset, jint contents);
 
   jshort short_field(int offset) const;
@@ -233,7 +243,6 @@ class oopDesc {
   // locking operations
   inline bool is_locked()   const;
   inline bool is_unlocked() const;
-  inline bool has_bias_pattern() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj, bool ignore_mark_word = false);
@@ -248,7 +257,6 @@ class oopDesc {
   void verify_forwardee(oop forwardee) NOT_DEBUG_RETURN;
 
   inline void forward_to(oop p);
-  inline bool cas_forward_to(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
@@ -257,7 +265,6 @@ class oopDesc {
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
-  inline oop forwardee_acquire() const;
 
   // Age of object during scavenge
   inline uint age() const;
@@ -270,10 +277,10 @@ class oopDesc {
   inline void oop_iterate(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl);
+  inline size_t oop_iterate_size(OopClosureType* cl);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl, MemRegion mr);
+  inline size_t oop_iterate_size(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
@@ -284,10 +291,9 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  // NOTE with the introduction of UseBiasedLocking that identity_hash() might reach a
-  // safepoint if called on a biased object. Calling code must be aware of that.
   inline intptr_t identity_hash();
   intptr_t slow_identity_hash();
+  inline bool fast_no_hash_check();
 
   // marks are forwarded to stack when object is locked
   inline bool     has_displaced_mark() const;
@@ -297,7 +303,6 @@ class oopDesc {
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
-  inline bool mark_must_be_preserved_for_promotion_failure(markWord m) const;
 
   static bool has_klass_gap();
 
@@ -313,9 +318,14 @@ class oopDesc {
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
 
-  // Avoid include gc_globals.hpp in oop.inline.hpp
-  DEBUG_ONLY(bool get_UseParallelGC();)
-  DEBUG_ONLY(bool get_UseG1GC();)
+  DEBUG_ONLY(bool size_might_change();)
 };
+
+// An oopDesc is not initialized via a constructor.  Space is allocated in
+// the Java heap, and static functions provided here on HeapWord* are used
+// to fill in certain parts of that memory.  The allocated memory is then
+// treated as referring to an oopDesc.  For that to be valid, the oopDesc
+// class must have a trivial default constructor (C++14 3.8/1).
+static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
 
 #endif // SHARE_OOPS_OOP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,6 @@ DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
     return TRUE;
 }
 
-void platformInit() {}
-
 /*
  * Since winsock doesn't have the equivalent of strerror(errno)
  * use table to lookup error text for the error.
@@ -194,28 +192,19 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
 }
 
 void
-NET_ThrowCurrent(JNIEnv *env, char *msg)
-{
-    NET_ThrowNew(env, WSAGetLastError(), msg);
-}
-
-void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
     JNU_ThrowByNameWithMessageAndLastError(env, name, defaultDetail);
 }
 
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
-}
-
 jint  IPv4_supported()
 {
-    /* TODO: properly check for IPv4 support on Windows */
+    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) {
+        return JNI_FALSE;
+    }
+    closesocket(s);
+
     return JNI_TRUE;
 }
 
@@ -230,7 +219,7 @@ jint  IPv6_supported()
     return JNI_TRUE;
 }
 
-jint reuseport_supported()
+jint reuseport_supported(int ipv6_available)
 {
     /* SO_REUSEPORT is not supported on Windows */
     return JNI_FALSE;
@@ -467,77 +456,6 @@ NET_WinBind(int s, SOCKETADDRESS *sa, int len, jboolean exclBind)
     return NET_Bind(s, sa, len);
 }
 
-JNIEXPORT int JNICALL
-NET_SocketClose(int fd) {
-    struct linger l = {0, 0};
-    int ret = 0;
-    int len = sizeof (l);
-    if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, &len) == 0) {
-        if (l.l_onoff == 0) {
-            shutdown(fd, SD_SEND);
-        }
-    }
-    ret = closesocket (fd);
-    return ret;
-}
-
-JNIEXPORT int JNICALL
-NET_Timeout(int fd, long timeout) {
-    int ret;
-    fd_set tbl;
-    struct timeval t;
-    t.tv_sec = timeout / 1000;
-    t.tv_usec = (timeout % 1000) * 1000;
-    FD_ZERO(&tbl);
-    FD_SET(fd, &tbl);
-    ret = select (fd + 1, &tbl, 0, 0, &t);
-    return ret;
-}
-
-
-/*
- * differs from NET_Timeout() as follows:
- *
- * If timeout = -1, it blocks forever.
- *
- * returns 1 or 2 depending if only one or both sockets
- * fire at same time.
- *
- * *fdret is (one of) the active fds. If both sockets
- * fire at same time, *fdret = fd always.
- */
-JNIEXPORT int JNICALL
-NET_Timeout2(int fd, int fd1, long timeout, int *fdret) {
-    int ret;
-    fd_set tbl;
-    struct timeval t, *tP = &t;
-    if (timeout == -1) {
-        tP = 0;
-    } else {
-        t.tv_sec = timeout / 1000;
-        t.tv_usec = (timeout % 1000) * 1000;
-    }
-    FD_ZERO(&tbl);
-    FD_SET(fd, &tbl);
-    FD_SET(fd1, &tbl);
-    ret = select (0, &tbl, 0, 0, tP);
-    switch (ret) {
-    case 0:
-        return 0; /* timeout */
-    case 1:
-        if (FD_ISSET (fd, &tbl)) {
-            *fdret= fd;
-        } else {
-            *fdret= fd1;
-        }
-        return 1;
-    case 2:
-        *fdret= fd;
-        return 2;
-    }
-    return -1;
-}
-
 
 void dumpAddr (char *str, void *addr) {
     struct sockaddr_in6 *a = (struct sockaddr_in6 *)addr;
@@ -560,195 +478,6 @@ void dumpAddr (char *str, void *addr) {
         printf ("%04x", ntohs(in->s6_words[7]));
         printf (" scope %d\n", a->sin6_scope_id);
     }
-}
-
-/* Macro, which cleans-up the iv6bind structure,
- * closes the two sockets (if open),
- * and returns SOCKET_ERROR. Used in NET_BindV6 only.
- */
-
-#define CLOSE_SOCKETS_AND_RETURN do {   \
-    if (fd != -1) {                     \
-        closesocket (fd);               \
-        fd = -1;                        \
-    }                                   \
-    if (ofd != -1) {                    \
-        closesocket (ofd);              \
-        ofd = -1;                       \
-    }                                   \
-    if (close_fd != -1) {               \
-        closesocket (close_fd);         \
-        close_fd = -1;                  \
-    }                                   \
-    if (close_ofd != -1) {              \
-        closesocket (close_ofd);        \
-        close_ofd = -1;                 \
-    }                                   \
-    b->ipv4_fd = b->ipv6_fd = -1;       \
-    return SOCKET_ERROR;                \
-} while(0)
-
-/*
- * if ipv6 is available, call NET_BindV6 to bind to the required address/port.
- * Because the same port number may need to be reserved in both v4 and v6 space,
- * this may require socket(s) to be re-opened. Therefore, all of this information
- * is passed in and returned through the ipv6bind structure.
- *
- * If the request is to bind to a specific address, then this (by definition) means
- * only bind in either v4 or v6, and this is just the same as normal. ie. a single
- * call to bind() will suffice. The other socket is closed in this case.
- *
- * The more complicated case is when the requested address is ::0 or 0.0.0.0.
- *
- * Two further cases:
- * 2. If the requested port is 0 (ie. any port) then we try to bind in v4 space
- *    first with a wild-card port argument. We then try to bind in v6 space
- *    using the returned port number. If this fails, we repeat the process
- *    until a free port common to both spaces becomes available.
- *
- * 3. If the requested port is a specific port, then we just try to get that
- *    port in both spaces, and if it is not free in both, then the bind fails.
- *
- * On failure, sockets are closed and an error returned with CLOSE_SOCKETS_AND_RETURN
- */
-
-JNIEXPORT int JNICALL
-NET_BindV6(struct ipv6bind *b, jboolean exclBind) {
-    int fd=-1, ofd=-1, rv, len;
-    /* need to defer close until new sockets created */
-    int close_fd=-1, close_ofd=-1;
-    SOCKETADDRESS oaddr; /* other address to bind */
-    int family = b->addr->sa.sa_family;
-    int ofamily;
-    u_short port; /* requested port parameter */
-    u_short bound_port;
-
-    if (family == AF_INET && (b->addr->sa4.sin_addr.s_addr != INADDR_ANY)) {
-        /* bind to v4 only */
-        int ret;
-        ret = NET_WinBind((int)b->ipv4_fd, b->addr,
-                          sizeof(SOCKETADDRESS), exclBind);
-        if (ret == SOCKET_ERROR) {
-            CLOSE_SOCKETS_AND_RETURN;
-        }
-        closesocket (b->ipv6_fd);
-        b->ipv6_fd = -1;
-        return 0;
-    }
-    if (family == AF_INET6 && (!IN6_IS_ADDR_ANY(&b->addr->sa6.sin6_addr))) {
-        /* bind to v6 only */
-        int ret;
-        ret = NET_WinBind((int)b->ipv6_fd, b->addr,
-                          sizeof(SOCKETADDRESS), exclBind);
-        if (ret == SOCKET_ERROR) {
-            CLOSE_SOCKETS_AND_RETURN;
-        }
-        closesocket (b->ipv4_fd);
-        b->ipv4_fd = -1;
-        return 0;
-    }
-
-    /* We need to bind on both stacks, with the same port number */
-
-    memset (&oaddr, 0, sizeof(oaddr));
-    if (family == AF_INET) {
-        ofamily = AF_INET6;
-        fd = (int)b->ipv4_fd;
-        ofd = (int)b->ipv6_fd;
-        port = (u_short)GET_PORT (b->addr);
-        IN6ADDR_SETANY(&oaddr.sa6);
-        oaddr.sa6.sin6_port = port;
-    } else {
-        ofamily = AF_INET;
-        ofd = (int)b->ipv4_fd;
-        fd = (int)b->ipv6_fd;
-        port = (u_short)GET_PORT (b->addr);
-        oaddr.sa4.sin_family = AF_INET;
-        oaddr.sa4.sin_port = port;
-        oaddr.sa4.sin_addr.s_addr = INADDR_ANY;
-    }
-
-    rv = NET_WinBind(fd, b->addr, sizeof(SOCKETADDRESS), exclBind);
-    if (rv == SOCKET_ERROR) {
-        CLOSE_SOCKETS_AND_RETURN;
-    }
-
-    /* get the port and set it in the other address */
-    len = sizeof(SOCKETADDRESS);
-    if (getsockname(fd, (struct sockaddr *)b->addr, &len) == -1) {
-        CLOSE_SOCKETS_AND_RETURN;
-    }
-    bound_port = GET_PORT (b->addr);
-    SET_PORT (&oaddr, bound_port);
-    if ((rv = NET_WinBind(ofd, &oaddr,
-                          sizeof(SOCKETADDRESS), exclBind)) == SOCKET_ERROR) {
-        int retries;
-        int sotype, arglen=sizeof(sotype);
-
-        /* no retries unless, the request was for any free port */
-
-        if (port != 0) {
-            CLOSE_SOCKETS_AND_RETURN;
-        }
-
-        getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&sotype, &arglen);
-
-#define SOCK_RETRIES 50
-        /* 50 is an arbitrary limit, just to ensure that this
-         * cannot be an endless loop. Would expect socket creation to
-         * succeed sooner.
-         */
-        for (retries = 0; retries < SOCK_RETRIES; retries ++) {
-            int len;
-            close_fd = fd; fd = -1;
-            close_ofd = ofd; ofd = -1;
-            b->ipv4_fd = SOCKET_ERROR;
-            b->ipv6_fd = SOCKET_ERROR;
-
-            /* create two new sockets */
-            fd = (int)socket (family, sotype, 0);
-            if (fd == SOCKET_ERROR) {
-                CLOSE_SOCKETS_AND_RETURN;
-            }
-            ofd = (int)socket (ofamily, sotype, 0);
-            if (ofd == SOCKET_ERROR) {
-                CLOSE_SOCKETS_AND_RETURN;
-            }
-
-            /* bind random port on first socket */
-            SET_PORT (&oaddr, 0);
-            rv = NET_WinBind(ofd, &oaddr, sizeof(SOCKETADDRESS), exclBind);
-            if (rv == SOCKET_ERROR) {
-                CLOSE_SOCKETS_AND_RETURN;
-            }
-            /* close the original pair of sockets before continuing */
-            closesocket (close_fd);
-            closesocket (close_ofd);
-            close_fd = close_ofd = -1;
-
-            /* bind new port on second socket */
-            len = sizeof(SOCKETADDRESS);
-            if (getsockname(ofd, &oaddr.sa, &len) == -1) {
-                CLOSE_SOCKETS_AND_RETURN;
-            }
-            bound_port = GET_PORT (&oaddr);
-            SET_PORT (b->addr, bound_port);
-            rv = NET_WinBind(fd, b->addr, sizeof(SOCKETADDRESS), exclBind);
-
-            if (rv != SOCKET_ERROR) {
-                if (family == AF_INET) {
-                    b->ipv4_fd = fd;
-                    b->ipv6_fd = ofd;
-                } else {
-                    b->ipv4_fd = ofd;
-                    b->ipv6_fd = fd;
-                }
-                return 0;
-            }
-        }
-        CLOSE_SOCKETS_AND_RETURN;
-    }
-    return 0;
 }
 
 /**
@@ -795,7 +524,7 @@ IsWindows10RS3OrGreater() {
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopbackConnect(int fd) {
     TCP_INITIAL_RTO_PARAMETERS rto = {
-        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overriden by the Administrator
+        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overridden by the Administrator
         1                                   // Minimum possible value before Windows 10 RS3
     };
 

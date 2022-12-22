@@ -38,7 +38,7 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm RunCommandOnServerTest
+ * @run driver RunCommandOnServerTest
  */
 
 public class RunCommandOnServerTest {

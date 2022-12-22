@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,20 +41,20 @@
  *           during the OnLoad phase
  *         - enables events via SetEventNotificationMode during the OnLoad phase
  *           for all optional events
- *         - provides the state to provoke generation of choosen events
- *         - checks that VM_INIT and choosen events were sent.
+ *         - provides the state to provoke generation of chosen events
+ *         - checks that VM_INIT and chosen events were sent.
  *       (2)
  *         - sets off callbacks for all optional events
- *         - changes callbacks for choosen events
- *         - provides the state to provoke generation of choosen events
- *         - checks that choosen events were sent
+ *         - changes callbacks for chosen events
+ *         - provides the state to provoke generation of chosen events
+ *         - checks that chosen events were sent
  *         - checks that altered callback works.
  *       (3)
- *         - sets off callbacks for choosen events
+ *         - sets off callbacks for chosen events
  *         - sets callback for VM_DEATH event
- *         - checks that no choosen events are sent until VMDeath event.
+ *         - checks that no chosen events are sent until VMDeath event.
  *     This test checks that:
- *     (a) except for choosen events no other optional events are generated on
+ *     (a) except for chosen events no other optional events are generated on
  *         steps (1) and (2).
  *     (b) Numbers of expected event on steps (1) and (2) is equal to 1.
  *     (c) except for VM_DEATH no other events are generated on step (3).

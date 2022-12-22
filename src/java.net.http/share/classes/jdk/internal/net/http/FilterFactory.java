@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,20 @@
 
 package jdk.internal.net.http;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 class FilterFactory {
 
     // Strictly-ordered list of filters.
-    final LinkedList<Class<? extends HeaderFilter>> filterClasses = new LinkedList<>();
+    final List<Class<? extends HeaderFilter>> filterClasses = new ArrayList<>(3);
 
     public void addFilter(Class<? extends HeaderFilter> type) {
         filterClasses.add(type);
     }
 
-    LinkedList<HeaderFilter> getFilterChain() {
-        LinkedList<HeaderFilter> l = new LinkedList<>();
+    List<HeaderFilter> getFilterChain() {
+        List<HeaderFilter> l = new ArrayList<>(filterClasses.size());
         for (Class<? extends HeaderFilter> clazz : filterClasses) {
             try {
                 // Requires a public no arg constructor.

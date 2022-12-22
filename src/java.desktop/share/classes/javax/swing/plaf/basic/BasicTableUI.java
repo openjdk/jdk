@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,11 @@ package javax.swing.plaf.basic;
 
 import java.awt.*;
 import java.awt.datatransfer.*;
-import java.awt.dnd.*;
 import java.awt.event.*;
 import java.util.Enumeration;
-import java.util.EventObject;
-import java.util.Hashtable;
-import java.util.TooManyListenersException;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.swing.text.*;
 import javax.swing.table.*;
 import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
 import sun.swing.SwingUtilities2;
@@ -221,8 +216,8 @@ public class BasicTableUI extends TableUI
                 this.inSelection = true;
 
                 // look at the sign of dx and dy only
-                dx = sign(dx);
-                dy = sign(dy);
+                dx = Integer.signum(dx);
+                dy = Integer.signum(dy);
 
                 // make sure one is zero, but not both
                 assert (dx == 0 || dy == 0) && !(dx == 0 && dy == 0);
@@ -248,10 +243,6 @@ public class BasicTableUI extends TableUI
         private void moveWithinTableRange(JTable table, int dx, int dy) {
             leadRow = clipToRange(leadRow+dy, 0, table.getRowCount());
             leadColumn = clipToRange(leadColumn+dx, 0, table.getColumnCount());
-        }
-
-        private static int sign(int num) {
-            return (num < 0) ? -1 : ((num == 0) ? 0 : 1);
         }
 
         /**
@@ -305,7 +296,7 @@ public class BasicTableUI extends TableUI
             } else {
                 totalCount = 0;
                 // A bogus assignment to stop javac from complaining
-                // about unitialized values. In this case, these
+                // about uninitialized values. In this case, these
                 // won't even be used.
                 minX = maxX = minY = maxY = 0;
             }
@@ -626,6 +617,9 @@ public class BasicTableUI extends TableUI
                 }
                 */
             } else if (key == CANCEL_EDITING) {
+                if (table.isEditing()) {
+                    table.getCellEditor().cancelCellEditing();
+                }
                 table.removeEditor();
             } else if (key == SELECT_ALL) {
                 table.selectAll();
@@ -933,24 +927,21 @@ public class BasicTableUI extends TableUI
             // the table, seems to have no effect.
 
             Component editorComp = table.getEditorComponent();
-            if (table.isEditing() && editorComp != null) {
-                if (editorComp instanceof JComponent) {
-                    JComponent component = (JComponent)editorComp;
-                    map = component.getInputMap(JComponent.WHEN_FOCUSED);
-                    Object binding = (map != null) ? map.get(keyStroke) : null;
-                    if (binding == null) {
-                        map = component.getInputMap(JComponent.
-                                         WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-                        binding = (map != null) ? map.get(keyStroke) : null;
-                    }
-                    if (binding != null) {
-                        ActionMap am = component.getActionMap();
-                        Action action = (am != null) ? am.get(binding) : null;
-                        if (action != null && SwingUtilities.
+            if (table.isEditing() && editorComp instanceof JComponent component) {
+                map = component.getInputMap(JComponent.WHEN_FOCUSED);
+                Object binding = (map != null) ? map.get(keyStroke) : null;
+                if (binding == null) {
+                    map = component.getInputMap(JComponent.
+                            WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+                    binding = (map != null) ? map.get(keyStroke) : null;
+                }
+                if (binding != null) {
+                    ActionMap am = component.getActionMap();
+                    Action action = (am != null) ? am.get(binding) : null;
+                    if (action != null && SwingUtilities.
                             notifyAction(action, keyStroke, e, component,
-                                         e.getModifiers())) {
-                            e.consume();
-                        }
+                                    e.getModifiers())) {
+                        e.consume();
                     }
                 }
             }
@@ -1456,9 +1447,9 @@ public class BasicTableUI extends TableUI
         // JTable's original row height is 16.  To correctly display the
         // contents on Linux we should have set it to 18, Windows 19 and
         // Solaris 20.  As these values vary so much it's too hard to
-        // be backward compatable and try to update the row height, we're
-        // therefor NOT going to adjust the row height based on font.  If the
-        // developer changes the font, it's there responsability to update
+        // be backward compatible and try to update the row height, we're
+        // therefore NOT going to adjust the row height based on font.  If the
+        // developer changes the font, it's their responsibility to update
         // the row height.
 
         LookAndFeel.installProperty(table, "opaque", Boolean.TRUE);
@@ -1485,8 +1476,8 @@ public class BasicTableUI extends TableUI
         Container parent = SwingUtilities.getUnwrappedParent(table);  // should be viewport
         if (parent != null) {
             parent = parent.getParent();  // should be the scrollpane
-            if (parent != null && parent instanceof JScrollPane) {
-                LookAndFeel.installBorder((JScrollPane)parent, "Table.scrollPaneBorder");
+            if (parent instanceof JScrollPane scrollPane) {
+                LookAndFeel.installBorder(scrollPane, "Table.scrollPaneBorder");
             }
         }
 
@@ -1884,23 +1875,6 @@ public class BasicTableUI extends TableUI
             comp = comp.getParent();
         }
 
-        if (comp != null && !(comp instanceof JViewport) && !(comp instanceof JScrollPane)) {
-            // We did rMax-1 to paint the same number of rows that are drawn on console
-            // otherwise 1 extra row is printed per page than that are displayed
-            // when there is no scrollPane and we do printing of table
-            // but not when rmax is already pointing to index of last row
-            // and if there is any selected rows
-            if (rMax != (table.getRowCount() - 1) &&
-                    (table.getSelectedRow() == -1)) {
-                // Do not decrement rMax if rMax becomes
-                // less than or equal to rMin
-                // else cells will not be painted
-                if (rMax - rMin > 1) {
-                    rMax = rMax - 1;
-                }
-            }
-        }
-
         // Paint the grid.
         paintGrid(g, rMin, rMax, cMin, cMax);
 
@@ -2236,10 +2210,10 @@ public class BasicTableUI extends TableUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent c) {

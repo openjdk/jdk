@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -83,7 +84,7 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
     }
 
     CheckAnnotationAdapter(final AnnotationVisitor annotationVisitor, final boolean useNamedValues) {
-        super(/* latest api = */ Opcodes.ASM8, annotationVisitor);
+        super(/* latest api = */ Opcodes.ASM9, annotationVisitor);
         this.useNamedValue = useNamedValues;
     }
 
@@ -164,3 +165,4 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
         }
     }
 }
+

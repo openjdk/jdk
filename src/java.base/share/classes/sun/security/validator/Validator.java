@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,10 @@ import java.security.cert.*;
  *
  * <p>There are two orthogonal parameters to select the Validator
  * implementation: type and variant. Type selects the validation algorithm.
- * Currently supported are TYPE_SIMPLE and TYPE_PKIX. See SimpleValidator and
+ * Currently, supported are TYPE_SIMPLE and TYPE_PKIX. See SimpleValidator and
  * PKIXValidator for details.
  * <p>
- * Variant controls additional extension checks. Currently supported are
+ * Variant controls additional extension checks. Currently, supported are
  * five variants:
  * <ul>
  * <li>VAR_GENERIC (no additional checks),
@@ -64,7 +64,6 @@ import java.security.cert.*;
  * <li>VAR_CODE_SIGNING (code signing specific checks).
  * <li>VAR_JCE_SIGNING (JCE code signing specific checks).
  * <li>VAR_TSA_SERVER (TSA server specific checks).
- * <li>VAR_PLUGIN_CODE_SIGNING (Plugin/WebStart code signing specific checks).
  * </ul>
  * See EndEntityChecker for more information.
  * <p>
@@ -84,7 +83,7 @@ import java.security.cert.*;
  *
  * @author Andreas Sterbenz
  */
-public abstract class Validator {
+public abstract sealed class Validator permits PKIXValidator, SimpleValidator {
 
     static final X509Certificate[] CHAIN0 = {};
 
@@ -136,13 +135,6 @@ public abstract class Validator {
      */
     public static final String VAR_TSA_SERVER = "tsa server";
 
-    /**
-     * Constant for a Code Signing variant of a validator for use by
-     * the J2SE Plugin/WebStart code.
-     * @see #getInstance
-     */
-    public static final String VAR_PLUGIN_CODE_SIGNING = "plugin code signing";
-
     private final String type;
     final EndEntityChecker endEntityChecker;
     final String variant;
@@ -191,7 +183,7 @@ public abstract class Validator {
      */
     public static Validator getInstance(String type, String variant,
             PKIXBuilderParameters params) {
-        if (type.equals(TYPE_PKIX) == false) {
+        if (!type.equals(TYPE_PKIX)) {
             throw new IllegalArgumentException
                 ("getInstance(PKIXBuilderParameters) can only be used "
                 + "with PKIX validator");
@@ -249,7 +241,7 @@ public abstract class Validator {
      *        processing
      * @param parameter an additional parameter object to pass specific data.
      *        This parameter object maybe one of the two below:
-     *        1) TLS_SERVER variant validators, where it must be non null and
+     *        1) TLS_SERVER variant validators, where it must be non-null and
      *        the name of the TLS key exchange algorithm being used
      *        (see JSSE X509TrustManager specification).
      *        2) {@code Timestamp} object from a signed JAR file.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
 
-class CallGenerator : public ResourceObj {
+class CallGenerator : public ArenaObj {
  private:
   ciMethod*             _method;                // The method being called.
 
@@ -74,7 +74,6 @@ class CallGenerator : public ResourceObj {
   virtual bool      is_late_inline() const         { return false; }
   // same but for method handle calls
   virtual bool      is_mh_late_inline() const      { return false; }
-  virtual bool      is_boxing_late_inline() const  { return false; }
   virtual bool      is_string_late_inline() const  { return false; }
   virtual bool      is_virtual_late_inline() const { return false; }
 
@@ -95,7 +94,7 @@ class CallGenerator : public ResourceObj {
   // Allocate CallGenerators only in Compile arena since some of them are referenced from CallNodes.
   void* operator new(size_t size) throw() {
     Compile* C = Compile::current();
-    return ResourceObj::operator new(size, C->comp_arena());
+    return ArenaObj::operator new(size, C->comp_arena());
   }
 
   // Utilities:

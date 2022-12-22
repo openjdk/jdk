@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -57,6 +58,7 @@
   f(InstanceClassLoaderKlass) \
   f(InstanceMirrorKlass) \
   f(InstanceRefKlass) \
+  f(InstanceStackChunkKlass) \
   f(Method) \
   f(ObjArrayKlass) \
   f(TypeArrayKlass)

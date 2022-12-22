@@ -51,9 +51,9 @@ class ChunkedOutputStream extends FilterOutputStream
 {
     private boolean closed = false;
     /* max. amount of user data per chunk */
-    final static int CHUNK_SIZE = 4096;
+    static final int CHUNK_SIZE = 4096;
     /* allow 4 bytes for chunk-size plus 4 for CRLFs */
-    final static int OFFSET = 6; /* initial <=4 bytes for len + CRLF */
+    static final int OFFSET = 6; /* initial <=4 bytes for len + CRLF */
     private int pos = OFFSET;
     private int count = 0;
     private byte[] buf = new byte [CHUNK_SIZE+OFFSET+2];

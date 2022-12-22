@@ -30,8 +30,8 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -52,9 +52,8 @@ MutableSpace::~MutableSpace() {
   delete _mangler;
 }
 
-void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
+void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
   if (!mr.is_empty()) {
-    size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
     HeapWord *start = align_up(mr.start(), page_size);
     HeapWord *end =   align_down(mr.end(), page_size);
     if (end > start) {
@@ -72,7 +71,7 @@ void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
                               bool setup_pages,
-                              WorkGang* pretouch_gang) {
+                              WorkerThreads* pretouch_workers) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -113,19 +112,19 @@ void MutableSpace::initialize(MemRegion mr,
     }
     assert(mr.contains(head) && mr.contains(tail), "Sanity");
 
+    size_t page_size = alignment();
+
     if (UseNUMA) {
-      numa_setup_pages(head, clear_space);
-      numa_setup_pages(tail, clear_space);
+      numa_setup_pages(head, page_size, clear_space);
+      numa_setup_pages(tail, page_size, clear_space);
     }
 
     if (AlwaysPreTouch) {
-      size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -217,7 +216,7 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
 
 // Only used by oldgen allocation.
 bool MutableSpace::needs_expand(size_t word_size) const {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   // Holding the lock means end is stable.  So while top may be advancing
   // via concurrent allocations, there is no need to order the reads of top
   // and end here, unlike in cas_allocate.
@@ -250,7 +249,7 @@ void MutableSpace::print_short_on( outputStream* st) const {
 void MutableSpace::print() const { print_on(tty); }
 void MutableSpace::print_on(outputStream* st) const {
   MutableSpace::print_short_on(st);
-  st->print_cr(" [" INTPTR_FORMAT "," INTPTR_FORMAT "," INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT "," PTR_FORMAT "," PTR_FORMAT ")",
                  p2i(bottom()), p2i(top()), p2i(end()));
 }
 

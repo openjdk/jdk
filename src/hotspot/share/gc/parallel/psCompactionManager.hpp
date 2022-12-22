@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 
 #include "gc/parallel/psParallelCompact.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "memory/allocation.hpp"
@@ -74,6 +75,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // type of TaskQueue.
   RegionTaskQueue              _region_stack;
 
+  GrowableArray<HeapWord*>*    _deferred_obj_array;
+
   static ParMarkBitMap* _mark_bitmap;
 
   // Contains currently free shadow regions. We use it in
@@ -88,12 +91,20 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   oop _last_query_obj;
   size_t _last_query_ret;
 
+  StringDedup::Requests _string_dedup_requests;
+
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
   static OopTaskQueueSet* oop_task_queues()  { return _oop_task_queues; }
 
   static void initialize(ParMarkBitMap* mbm);
 
+  void publish_and_drain_oop_tasks();
+  // Try to publish all contents from the objArray task queue overflow stack to
+  // the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise returns false and the task is invalid.
+  bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
@@ -119,10 +130,16 @@ class ParCompactionManager : public CHeapObj<mtGC> {
     return next_shadow_region();
   }
 
+  void push_deferred_object(HeapWord* addr);
+
   void reset_bitmap_query_cache() {
     _last_query_beg = NULL;
     _last_query_obj = NULL;
     _last_query_ret = 0;
+  }
+
+  void flush_string_dedup_requests() {
+    _string_dedup_requests.flush();
   }
 
   // Bitmap query support, cache last query and result
@@ -136,9 +153,13 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static void reset_all_bitmap_query_caches();
 
+  static void flush_all_string_dedup_requests();
+
   RegionTaskQueue* region_stack()                { return &_region_stack; }
 
-  static ParCompactionManager* get_vmthread_cm() { return _manager_array[ParallelGCThreads]; }
+  // Get the compaction manager when doing evacuation work from the VM thread.
+  // Simply use the first compaction manager here.
+  static ParCompactionManager* get_vmthread_cm() { return _manager_array[0]; }
 
   ParCompactionManager();
 
@@ -161,10 +182,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Check mark and maybe push on marking stack.
   template <typename T> inline void mark_and_push(T* p);
 
-  inline void follow_klass(Klass* klass);
-
-  void follow_class_loader(ClassLoaderData* klass);
-
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(uint index);
 
@@ -178,6 +195,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
+  void drain_deferred_objects();
 
   void follow_contents(oop obj);
   void follow_array(objArrayOop array, int index);

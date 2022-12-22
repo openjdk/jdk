@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,141 +25,129 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
-
-import javax.lang.model.element.TypeElement;
-
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+import jdk.javadoc.internal.doclets.toolkit.util.ClassTree.Hierarchy;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+
+import javax.lang.model.element.TypeElement;
+import java.util.Collection;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 
 /**
  * Abstract class to print the class hierarchy page for all the Classes. This
- * is sub-classed by {@link PackageTreeWriter} and {@link TreeWriter} to
+ * is subclassed by {@link PackageTreeWriter} and {@link TreeWriter} to
  * generate the Package Tree and global Tree(for all the classes and packages)
  * pages.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public abstract class AbstractTreeWriter extends HtmlDocletWriter {
 
     /**
      * The class and interface tree built by using {@link ClassTree}
      */
-    protected final ClassTree classtree;
+    protected final ClassTree classTree;
 
     /**
-     * Constructor initializes classtree variable. This constructor will be used
-     * while generating global tree file "overview-tree.html".
+     * Constructor. This constructor will be used while generating global tree file "overview-tree.html".
      *
      * @param configuration  The current configuration
      * @param filename   File to be generated.
-     * @param classtree  Tree built by {@link ClassTree}.
+     * @param classTree  Tree built by {@link ClassTree}.
      */
     protected AbstractTreeWriter(HtmlConfiguration configuration,
-                                 DocPath filename, ClassTree classtree) {
+                                 DocPath filename, ClassTree classTree) {
         super(configuration, filename);
-        this.classtree = classtree;
+        this.classTree = classTree;
     }
 
     /**
-     * Add each level of the class tree. For each sub-class or
-     * sub-interface indents the next level information.
-     * Recurses itself to add sub-classes info.
+     * Add each level of the class tree. For each subclass or
+     * subinterface indents the next level information.
+     * Recurses itself to add subclasses info.
      *
      * @param parent the superclass or superinterface of the sset
-     * @param collection  a collection of the sub-classes at this level
-     * @param isEnum true if we are generating a tree for enums
-     * @param contentTree the content tree to which the level information will be added
+     * @param collection  a collection of the subclasses at this level
+     * @param hierarchy the hierarchy for which we are generating a tree
+     * @param content the content to which the level information will be added
      */
     protected void addLevelInfo(TypeElement parent, Collection<TypeElement> collection,
-            boolean isEnum, Content contentTree) {
+                                Hierarchy hierarchy, Content content) {
         if (!collection.isEmpty()) {
-            Content ul = new HtmlTree(TagName.UL);
+            var ul = new HtmlTree(TagName.UL);
             for (TypeElement local : collection) {
-                HtmlTree li = new HtmlTree(TagName.LI);
+                var li = new HtmlTree(TagName.LI);
                 li.setStyle(HtmlStyle.circle);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);
-                addLevelInfo(local, classtree.directSubClasses(local, isEnum),
-                             isEnum, li);   // Recurse
+                addLevelInfo(local, hierarchy.subtypes(local), hierarchy, li);   // Recurse
                 ul.add(li);
             }
-            contentTree.add(ul);
+            content.add(ul);
         }
     }
 
     /**
-     * Add the heading for the tree depending upon tree type if it's a
-     * Class Tree or Interface tree.
+     * Adds a class or interface hierarchy with a given heading to given content.
      *
-     * @param sset classes which are at the most base level, all the
-     * other classes in this run will derive from these classes
-     * @param heading heading for the tree
-     * @param content the content tree to which the tree will be added
+     * @param hierarchy the hierarchy to add
+     * @param heading   the heading
+     * @param content   the content to which to add the hierarchy
      */
-    protected void addTree(SortedSet<TypeElement> sset, String heading, Content content) {
-        addTree(sset, heading, content, false);
-    }
-
-    protected void addTree(SortedSet<TypeElement> sset, String heading,
-                           Content content, boolean isEnums) {
-        if (!sset.isEmpty()) {
-            TypeElement firstTypeElement = sset.first();
+    protected void addTree(Hierarchy hierarchy, String heading, Content content) {
+        SortedSet<TypeElement> roots = hierarchy.roots();
+        if (!roots.isEmpty()) {
+            TypeElement firstTypeElement = roots.first();
             Content headingContent = contents.getContent(heading);
-            Content sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
+            var sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                     headingContent);
-            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
-            addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
-                    sset, isEnums, htmlTree);
-            content.add(htmlTree);
+            var section = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
+            addLevelInfo(!utils.isPlainInterface(firstTypeElement) ? firstTypeElement : null,
+                    roots, hierarchy, section);
+            content.add(section);
         }
     }
 
     /**
-     * Add information regarding the classes which this class extends or
-     * implements.
+     * Add information regarding the classes which this class extends or implements.
      *
      * @param parent the parent class of the class being documented
      * @param typeElement the TypeElement under consideration
-     * @param contentTree the content tree to which the information will be added
+     * @param content the content to which the information will be added
      */
     protected void addExtendsImplements(TypeElement parent,
                                         TypeElement typeElement,
-                                        Content contentTree)
+                                        Content content)
     {
         SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.makeGeneralPurposeComparator());
         typeElement.getInterfaces().forEach(t -> interfaces.add(utils.asTypeElement(t)));
-        if (interfaces.size() > (utils.isInterface(typeElement) ? 1 : 0)) {
+        if (interfaces.size() > (utils.isPlainInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;
             for (TypeElement intf : interfaces) {
                 if (parent != intf) {
                     if (utils.isPublic(intf) || utils.isLinkable(intf)) {
                         if (isFirst) {
                             isFirst = false;
-                            if (utils.isInterface(typeElement)) {
-                                contentTree.add(" (");
-                                contentTree.add(contents.also);
-                                contentTree.add(" extends ");
+                            if (utils.isPlainInterface(typeElement)) {
+                                content.add(" (");
+                                content.add(contents.also);
+                                content.add(" extends ");
                             } else {
-                                contentTree.add(" (implements ");
+                                content.add(" (implements ");
                             }
                         } else {
-                            contentTree.add(", ");
+                            content.add(", ");
                         }
-                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.TREE, intf, contentTree);
+                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.TREE, intf, content);
                     }
                 }
             }
             if (!isFirst) {
-                contentTree.add(")");
+                content.add(")");
             }
         }
     }
@@ -168,9 +156,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * Add information about the class kind, if it's a "class" or "interface".
      *
      * @param typeElement the class being documented
-     * @param contentTree the content tree to which the information will be added
+     * @param content the content to which the information will be added
      */
-    protected void addPartialInfo(TypeElement typeElement, Content contentTree) {
-        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.TREE, typeElement, contentTree);
+    protected void addPartialInfo(TypeElement typeElement, Content content) {
+        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.TREE, typeElement, content);
     }
 }

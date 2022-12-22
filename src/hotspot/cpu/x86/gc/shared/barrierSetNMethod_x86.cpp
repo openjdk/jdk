@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 class NativeNMethodCmpBarrier: public NativeInstruction {
 public:
@@ -62,7 +63,7 @@ public:
 
 #ifdef _LP64
 void NativeNMethodCmpBarrier::verify() const {
-  if (((uintptr_t) instruction_address()) & 0x7) {
+  if (((uintptr_t) instruction_address()) & 0x3) {
     fatal("Not properly aligned");
   }
 
@@ -132,7 +133,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
     ResourceMark mark;
     log_trace(nmethod, barrier)("deoptimize(nmethod: %p, return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
                                nm, (address *) return_address_ptr, nm->is_osr_method(), jth,
-                               jth->get_thread_name(), callers_rsp, nm->verified_entry_point());
+                               jth->name(), callers_rsp, nm->verified_entry_point());
   }
 
   assert(nm->frame_size() >= 3, "invariant");
@@ -156,10 +157,20 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // NativeNMethodCmpBarrier::verify() will immediately complain when it does
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
-static const int entry_barrier_offset = LP64_ONLY(-19) NOT_LP64(-18);
+static const int entry_barrier_offset(nmethod* nm) {
+#ifdef _LP64
+  if (nm->is_compiled_by_c2()) {
+    return -14;
+  } else {
+    return -15;
+  }
+#else
+  return -18;
+#endif
+}
 
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
   debug_only(barrier->verify());
   return barrier;
@@ -172,6 +183,15 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
 
   NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
   cmp->set_immediate(disarmed_value());
+}
+
+void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+
+  NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
+  cmp->set_immediate(arm_value);
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {

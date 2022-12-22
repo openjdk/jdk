@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class DESedeKeySpec implements java.security.spec.KeySpec {
      */
     public static final int DES_EDE_KEY_LEN = 24;
 
-    private byte[] key;
+    private final byte[] key;
 
     /**
      * Creates a DESedeKeySpec object using the first 24 bytes in
@@ -116,11 +116,8 @@ public class DESedeKeySpec implements java.security.spec.KeySpec {
             if (key.length - offset < 24) {
                 throw new InvalidKeyException("Wrong key size");
             }
-            if (DESKeySpec.isParityAdjusted(key, offset) == false
-                || DESKeySpec.isParityAdjusted(key, offset + 8) == false
-                || DESKeySpec.isParityAdjusted(key, offset + 16) == false) {
-                return false;
-            }
-            return true;
+        return DESKeySpec.isParityAdjusted(key, offset)
+                && DESKeySpec.isParityAdjusted(key, offset + 8)
+                && DESKeySpec.isParityAdjusted(key, offset + 16);
     }
 }

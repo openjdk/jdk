@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -81,8 +82,7 @@ public abstract class AudioFloatInputStream {
         public int read(float[] b, int off, int len) throws IOException {
             if (b == null)
                 throw new NullPointerException();
-            if (off < 0 || len < 0 || len > b.length - off)
-                throw new IndexOutOfBoundsException();
+            Objects.checkFromIndexSize(off, len, b.length);
             if (pos >= buffer_len)
                 return -1;
             if (len == 0)

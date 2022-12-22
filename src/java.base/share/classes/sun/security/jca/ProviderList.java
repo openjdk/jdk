@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public final class ProviderList {
     static final ProviderList EMPTY = new ProviderList(PC0, true);
 
     // list of all jdk.security.provider.preferred entries
-    static private PreferredList preferredPropList = null;
+    private static PreferredList preferredPropList = null;
 
     // dummy provider object to use during initialization
     // used to avoid explicit null checks in various places
@@ -126,7 +126,7 @@ public final class ProviderList {
         ProviderConfig[] configs = new ProviderConfig[providerList.size() - 1];
         int j = 0;
         for (ProviderConfig config : providerList.configs) {
-            if (config.getProvider().getName().equals(name) == false) {
+            if (!config.getProvider().getName().equals(name)) {
                 configs[j++] = config;
             }
         }
@@ -150,10 +150,11 @@ public final class ProviderList {
     private volatile boolean allLoaded;
 
     // List returned by providers()
-    private final List<Provider> userList = new AbstractList<Provider>() {
+    private final List<Provider> userList = new AbstractList<>() {
         public int size() {
             return configs.length;
         }
+
         public Provider get(int index) {
             return getProvider(index);
         }
@@ -178,8 +179,10 @@ public final class ProviderList {
         while ((entry = Security.getProperty("security.provider." + i)) != null) {
             entry = entry.trim();
             if (entry.isEmpty()) {
-                System.err.println("invalid entry for " +
+                if (debug != null) {
+                    debug.println("empty entry for " +
                                    "security.provider." + i);
+                }
                 break;
             }
             int k = entry.indexOf(' ');
@@ -193,7 +196,7 @@ public final class ProviderList {
             }
 
             // Get rid of duplicate providers.
-            if (configList.contains(config) == false) {
+            if (!configList.contains(config)) {
                 configList.add(config);
             }
             i++;
@@ -362,7 +365,7 @@ public final class ProviderList {
      * algorithm.
      */
     public Service getService(String type, String name) {
-        ArrayList<PreferredEntry> pList = null;
+        ArrayList<PreferredEntry> pList;
         int i;
 
         // Preferred provider list
@@ -467,7 +470,7 @@ public final class ProviderList {
                 firstService = s;
             } else {
                 if (services == null) {
-                    services = new ArrayList<Service>(4);
+                    services = new ArrayList<>(4);
                     services.add(firstService);
                 }
                 services.add(s);
@@ -560,7 +563,7 @@ public final class ProviderList {
         }
 
         public Iterator<Service> iterator() {
-            return new Iterator<Service>() {
+            return new Iterator<>() {
                 int index;
 
                 public boolean hasNext() {
@@ -585,7 +588,7 @@ public final class ProviderList {
 
     // Provider list defined by jdk.security.provider.preferred entry
     static final class PreferredList {
-        ArrayList<PreferredEntry> list = new ArrayList<PreferredEntry>();
+        ArrayList<PreferredEntry> list = new ArrayList<>();
 
         /*
          * Return a list of all preferred entries that match the passed
@@ -597,7 +600,7 @@ public final class ProviderList {
 
             }
 
-            ArrayList<PreferredEntry> l = new ArrayList<PreferredEntry>();
+            ArrayList<PreferredEntry> l = new ArrayList<>();
             for (ServiceId id : s.ids) {
                 implGetAll(l, id.type, id.algorithm);
             }
@@ -610,7 +613,7 @@ public final class ProviderList {
          * type and algorithm.
          */
         ArrayList<PreferredEntry> getAll(String type, String algorithm) {
-            ArrayList<PreferredEntry> l = new ArrayList<PreferredEntry>();
+            ArrayList<PreferredEntry> l = new ArrayList<>();
             implGetAll(l, type, algorithm);
             return l;
         }
@@ -653,27 +656,27 @@ public final class ProviderList {
     }
 
     /* Defined Groups for jdk.security.provider.preferred */
-    private static final String SHA2Group[] = { "SHA-224", "SHA-256",
+    private static final String[] SHA2_GROUP = { "SHA-224", "SHA-256",
             "SHA-384", "SHA-512", "SHA-512/224", "SHA-512/256" };
-    private static final String HmacSHA2Group[] = { "HmacSHA224",
+    private static final String[] HMACSHA2_GROUP = { "HmacSHA224",
             "HmacSHA256", "HmacSHA384", "HmacSHA512"};
-    private static final String SHA2RSAGroup[] = { "SHA224withRSA",
+    private static final String[] SHA2RSA_GROUP = { "SHA224withRSA",
             "SHA256withRSA", "SHA384withRSA", "SHA512withRSA"};
-    private static final String SHA2DSAGroup[] = { "SHA224withDSA",
+    private static final String[] SHA2DSA_GROUP = { "SHA224withDSA",
             "SHA256withDSA", "SHA384withDSA", "SHA512withDSA"};
-    private static final String SHA2ECDSAGroup[] = { "SHA224withECDSA",
+    private static final String[] SHA2ECDSA_GROUP = { "SHA224withECDSA",
             "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA"};
-    private static final String SHA3Group[] = { "SHA3-224", "SHA3-256",
+    private static final String[] SHA3_GROUP = { "SHA3-224", "SHA3-256",
             "SHA3-384", "SHA3-512" };
-    private static final String HmacSHA3Group[] = { "HmacSHA3-224",
+    private static final String[] HMACSHA3_GROUP = { "HmacSHA3-224",
             "HmacSHA3-256", "HmacSHA3-384", "HmacSHA3-512"};
 
     // Individual preferred property entry from jdk.security.provider.preferred
     private static class PreferredEntry {
-        private String type = null;
-        private String algorithm;
-        private String provider;
-        private String alternateNames[] = null;
+        private final String type;
+        private final String algorithm;
+        private final String provider;
+        private final String[] alternateNames;
         private boolean group = false;
 
         PreferredEntry(String t, String p) {
@@ -682,6 +685,7 @@ public final class ProviderList {
                 type = t.substring(0, i);
                 algorithm = t.substring(i + 1);
             } else {
+                type = null;
                 algorithm = t;
             }
 
@@ -690,19 +694,21 @@ public final class ProviderList {
             if (type != null && type.compareToIgnoreCase("Group") == 0) {
                 // Currently intrinsic algorithm groups
                 if (algorithm.compareToIgnoreCase("SHA2") == 0) {
-                    alternateNames = SHA2Group;
+                    alternateNames = SHA2_GROUP;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA2") == 0) {
-                    alternateNames = HmacSHA2Group;
+                    alternateNames = HMACSHA2_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2RSA") == 0) {
-                    alternateNames = SHA2RSAGroup;
+                    alternateNames = SHA2RSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2DSA") == 0) {
-                    alternateNames = SHA2DSAGroup;
+                    alternateNames = SHA2DSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA2ECDSA") == 0) {
-                    alternateNames = SHA2ECDSAGroup;
+                    alternateNames = SHA2ECDSA_GROUP;
                 } else if (algorithm.compareToIgnoreCase("SHA3") == 0) {
-                    alternateNames = SHA3Group;
+                    alternateNames = SHA3_GROUP;
                 } else if (algorithm.compareToIgnoreCase("HmacSHA3") == 0) {
-                    alternateNames = HmacSHA3Group;
+                    alternateNames = HMACSHA3_GROUP;
+                } else {
+                    alternateNames = null;
                 }
                 if (alternateNames != null) {
                     group = true;
@@ -713,6 +719,8 @@ public final class ProviderList {
                 alternateNames = new String[] { "SHA-1" };
             } else if (algorithm.compareToIgnoreCase("SHA-1") == 0) {
                 alternateNames = new String[] { "SHA1" };
+            } else {
+                alternateNames = null;
             }
         }
 

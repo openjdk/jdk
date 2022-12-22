@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
         Border    b = divider.getBorder();
 
-        if (b == null || !(b instanceof UIResource)) {
+        if (!(b instanceof UIResource)) {
             divider.setBorder(UIManager.getBorder("SplitPaneDivider.border"));
         }
 
@@ -1362,7 +1362,8 @@ public class BasicSplitPaneUI extends SplitPaneUI
      * LayoutManager for JSplitPanes that have an orientation of
      * HORIZONTAL_SPLIT.
      */
-    public class BasicHorizontalLayoutManager implements LayoutManager2
+    public sealed class BasicHorizontalLayoutManager implements LayoutManager2
+         permits BasicVerticalLayoutManager
     {
         /* left, right, divider. (in this exact order) */
         /**
@@ -1377,7 +1378,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
         private int             lastSplitPaneSize;
         /** True if resetToPreferredSizes has been invoked. */
         private boolean         doReset;
-        /** Axis, 0 for horizontal, or 1 for veritcal. */
+        /** Axis, 0 for horizontal, or 1 for vertical. */
         private int             axis;
 
 
@@ -2142,7 +2143,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
      * VERTICAL_SPLIT.
      *
      */
-    public class BasicVerticalLayoutManager extends
+    public non-sealed class BasicVerticalLayoutManager extends
             BasicHorizontalLayoutManager
     {
         /**
@@ -2359,8 +2360,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
         }
 
         private Component getFirstAvailableComponent(Component c) {
-            if (c!=null && c instanceof JSplitPane) {
-                JSplitPane sp = (JSplitPane)c;
+            if (c instanceof JSplitPane sp) {
                 Component left = getFirstAvailableComponent(sp.getLeftComponent());
                 if (left != null) {
                     c = left;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class ZPageTable extends VMObject {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZPageTable");
 
         mapFieldOffset = type.getAddressField("_map").getOffset();
@@ -51,7 +51,7 @@ public class ZPageTable extends VMObject {
     }
 
     private ZGranuleMapForPageTable map() {
-        return (ZGranuleMapForPageTable)VMObjectFactory.newObject(ZGranuleMapForPageTable.class, addr.addOffsetTo(mapFieldOffset));
+        return VMObjectFactory.newObject(ZGranuleMapForPageTable.class, addr.addOffsetTo(mapFieldOffset));
     }
 
     private ZPageTableEntry getEntry(Address o) {
@@ -59,7 +59,7 @@ public class ZPageTable extends VMObject {
     }
 
     ZPage get(Address o) {
-        return getEntry(o).page();
+        return VMObjectFactory.newObject(ZPage.class, map().get(VM.getVM().getDebugger().newAddress(ZAddress.offset(o))));
     }
 
     boolean is_relocating(Address o) {
@@ -169,7 +169,7 @@ public class ZPageTable extends VMObject {
     public Iterator<ZPage> activePagesIterator() {
         return new ZPagesFilteredIterator(new ZPageFilter() {
             public boolean accept(ZPage page) {
-                return page.is_active();
+                return page != null;
             }
         });
     }

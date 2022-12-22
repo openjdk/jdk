@@ -32,7 +32,7 @@ package gc.metaspace;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompressedClassSpaceSize=48m gc.metaspace.CompressedClassSpaceSizeInJmapHeap
+ * @run main/othervm -XX:CompressedClassSpaceSize=48m gc.metaspace.CompressedClassSpaceSizeInJmapHeap
  */
 
 import jdk.test.lib.JDKToolLauncher;

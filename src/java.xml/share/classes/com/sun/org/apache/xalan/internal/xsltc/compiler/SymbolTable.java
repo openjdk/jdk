@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import java.util.StringTokenizer;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
- * @LastModified: Oct 2017
+ * @LastModified: June 2021
  */
 final class SymbolTable {
 
@@ -94,14 +94,14 @@ final class SymbolTable {
 
     public Variable addVariable(Variable variable) {
         if (_variables == null) _variables = new HashMap<>();
-        final String name = variable.getName().getStringRep();
-        return (Variable)_variables.put(name, variable);
+        VariableBase v = _variables.put(variable.getName().getStringRep(), variable);
+        return v instanceof Variable ? (Variable)v : null;
     }
 
     public Param addParam(Param parameter) {
         if (_variables == null) _variables = new HashMap<>();
-        final String name = parameter.getName().getStringRep();
-        return (Param)_variables.put(name, parameter);
+        VariableBase v = _variables.put(parameter.getName().getStringRep(), parameter);
+        return v instanceof Param ? (Param)v : null;
     }
 
     public Variable lookupVariable(QName qname) {

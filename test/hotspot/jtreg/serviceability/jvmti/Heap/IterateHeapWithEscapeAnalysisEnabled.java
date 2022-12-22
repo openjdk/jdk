@@ -30,8 +30,8 @@
  *          need to be relocked.
  * @requires ((vm.compMode == "Xmixed") & vm.compiler2.enabled & vm.jvmti)
  * @library /test/lib /test/hotspot/jtreg
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile IterateHeapWithEscapeAnalysisEnabled.java
  *
  * @comment BLOCK BEGIN EXCLUSIVE TESTCASES {
@@ -110,7 +110,7 @@
  *                  -XX:+PrintInlining
  *                  -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  -Xbatch
- *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  IterateHeapWithEscapeAnalysisEnabled
  * @run main/othervm/native
  *                  -agentlib:IterateHeapWithEscapeAnalysisEnabled
@@ -121,7 +121,7 @@
  *                  -XX:+PrintInlining
  *                  -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  -Xbatch
- *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  IterateHeapWithEscapeAnalysisEnabled
  * @run main/othervm/native
  *                  -agentlib:IterateHeapWithEscapeAnalysisEnabled
@@ -132,7 +132,7 @@
  *                  -XX:+PrintInlining
  *                  -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                  -Xbatch
- *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  IterateHeapWithEscapeAnalysisEnabled
  *
  * @comment } BLOCK END NON EXCLUSIVE TESTCASES
@@ -140,7 +140,7 @@
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class IterateHeapWithEscapeAnalysisEnabled {
 
@@ -590,7 +590,7 @@ public class IterateHeapWithEscapeAnalysisEnabled {
             // The new instance is an ArgEscape instance and escapes to the JVMTI agent
             // while the target thread is in the call to dontinline_endlessLoop(). At this
             // location there is no local variable that references the ArgEscape.
-            ((ABBox) dontinline_endlessLoop(new ABBox(this))).synchronizedSlowInc();;
+            ((ABBox) dontinline_endlessLoop(new ABBox(this))).synchronizedSlowInc();
         }
     }
 

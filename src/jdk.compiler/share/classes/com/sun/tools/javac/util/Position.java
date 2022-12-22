@@ -29,6 +29,8 @@ import java.util.BitSet;
 
 import com.sun.tools.javac.util.DefinedBy.Api;
 
+import javax.tools.Diagnostic;
+
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** A class that defines source code positions as simple character
@@ -45,7 +47,7 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  *  deletion without notice.</b>
  */
 public class Position {
-    public static final int NOPOS        = -1;
+    public static final int NOPOS        = (int) Diagnostic.NOPOS;
 
     public static final int FIRSTPOS     = 0;
     public static final int FIRSTLINE    = 1;

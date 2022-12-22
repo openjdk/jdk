@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 
 AC_PREREQ([2.69])
-AC_INIT(OpenJDK, openjdk, build-dev@openjdk.java.net,,http://openjdk.java.net)
+AC_INIT(OpenJDK, openjdk, build-dev@openjdk.org,,https://openjdk.org)
 
 AC_CONFIG_AUX_DIR([$TOPDIR/make/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
@@ -133,6 +133,7 @@ BASIC_SETUP_DEFAULT_LOG
 ###############################################################################
 
 # We need build & target for this.
+JDKOPT_SETUP_JMOD_OPTIONS
 JDKOPT_SETUP_JLINK_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
@@ -152,6 +153,7 @@ BOOTJDK_SETUP_DOCS_REFERENCE_JDK
 #
 ###############################################################################
 
+JDKOPT_SETUP_REPRODUCIBLE_BUILD
 JDKOPT_SETUP_JDK_OPTIONS
 
 ###############################################################################
@@ -190,24 +192,20 @@ TOOLCHAIN_POST_DETECTION
 TOOLCHAIN_SETUP_BUILD_COMPILERS
 TOOLCHAIN_MISC_CHECKS
 
-# Setup the JTReg Regression Test Harness.
-TOOLCHAIN_SETUP_JTREG
-
-# Setup the Java Microbenchmark Harness (JMH)
-LIB_TESTS_SETUP_JMH
-
-# Setup Jib dependency tool
-TOOLCHAIN_SETUP_JIB
-
 # After toolchain setup, we need to process some flags to be able to continue.
 FLAGS_POST_TOOLCHAIN
+
+# Setup the tools needed to test the JDK (JTReg Regression Test Harness,
+# Java Microbenchmark Harness (JMH) and the Jib dependency tool).
+LIB_TESTS_SETUP_JTREG
+LIB_TESTS_SETUP_JMH
+LIB_TESTS_SETUP_JIB
 
 # Now we can test some aspects on the target using configure macros.
 PLATFORM_SETUP_OPENJDK_TARGET_BITS
 PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 
 # Configure flags for the tools. Need to know if we should build reproducible.
-JDKOPT_SETUP_REPRODUCIBLE_BUILD
 FLAGS_SETUP_FLAGS
 
 # Setup debug symbols (need objcopy from the toolchain for that)
@@ -243,12 +241,14 @@ HOTSPOT_SETUP_MISC
 #
 ###############################################################################
 
-JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER
+LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER
+
 JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS
 JDKOPT_ENABLE_DISABLE_MANPAGES
 JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE
 JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT
+JDKOPT_SETUP_MACOSX_SIGNING
 
 ###############################################################################
 #

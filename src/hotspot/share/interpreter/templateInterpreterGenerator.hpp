@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,9 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+  address generate_currentThread();
+#endif
 #ifdef IA32
   address generate_Float_intBitsToFloat_entry();
   address generate_Float_floatToRawIntBits_entry();
@@ -114,13 +117,17 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);
 #endif // AARCH64
 
+#ifdef ARM32
+  void generate_math_runtime_call(AbstractInterpreter::MethodKind kind);
+#endif // ARM32
+
 #ifdef PPC
   void lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded=false);
   void generate_fixed_frame(bool native_call, Register Rsize_of_parameters, Register Rsize_of_locals);
 #endif // PPC
 
  public:
-  TemplateInterpreterGenerator(StubQueue* _code);
+  TemplateInterpreterGenerator();
 };
 
 #endif // !ZERO

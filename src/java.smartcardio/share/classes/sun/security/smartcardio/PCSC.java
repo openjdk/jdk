@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,83 +93,83 @@ final class PCSC extends PlatformPCSC {
             throws PCSCException;
 
     // PCSC success/error/failure/warning codes
-    final static int SCARD_S_SUCCESS             = 0x00000000;
-    final static int SCARD_E_CANCELLED           = 0x80100002;
-    final static int SCARD_E_CANT_DISPOSE        = 0x8010000E;
-    final static int SCARD_E_INSUFFICIENT_BUFFER = 0x80100008;
-    final static int SCARD_E_INVALID_ATR         = 0x80100015;
-    final static int SCARD_E_INVALID_HANDLE      = 0x80100003;
-    final static int SCARD_E_INVALID_PARAMETER   = 0x80100004;
-    final static int SCARD_E_INVALID_TARGET      = 0x80100005;
-    final static int SCARD_E_INVALID_VALUE       = 0x80100011;
-    final static int SCARD_E_NO_MEMORY           = 0x80100006;
-    final static int SCARD_F_COMM_ERROR          = 0x80100013;
-    final static int SCARD_F_INTERNAL_ERROR      = 0x80100001;
-    final static int SCARD_F_UNKNOWN_ERROR       = 0x80100014;
-    final static int SCARD_F_WAITED_TOO_LONG     = 0x80100007;
-    final static int SCARD_E_UNKNOWN_READER      = 0x80100009;
-    final static int SCARD_E_TIMEOUT             = 0x8010000A;
-    final static int SCARD_E_SHARING_VIOLATION   = 0x8010000B;
-    final static int SCARD_E_NO_SMARTCARD        = 0x8010000C;
-    final static int SCARD_E_UNKNOWN_CARD        = 0x8010000D;
-    final static int SCARD_E_PROTO_MISMATCH      = 0x8010000F;
-    final static int SCARD_E_NOT_READY           = 0x80100010;
-    final static int SCARD_E_SYSTEM_CANCELLED    = 0x80100012;
-    final static int SCARD_E_NOT_TRANSACTED      = 0x80100016;
-    final static int SCARD_E_READER_UNAVAILABLE  = 0x80100017;
+    static final int SCARD_S_SUCCESS             = 0x00000000;
+    static final int SCARD_E_CANCELLED           = 0x80100002;
+    static final int SCARD_E_CANT_DISPOSE        = 0x8010000E;
+    static final int SCARD_E_INSUFFICIENT_BUFFER = 0x80100008;
+    static final int SCARD_E_INVALID_ATR         = 0x80100015;
+    static final int SCARD_E_INVALID_HANDLE      = 0x80100003;
+    static final int SCARD_E_INVALID_PARAMETER   = 0x80100004;
+    static final int SCARD_E_INVALID_TARGET      = 0x80100005;
+    static final int SCARD_E_INVALID_VALUE       = 0x80100011;
+    static final int SCARD_E_NO_MEMORY           = 0x80100006;
+    static final int SCARD_F_COMM_ERROR          = 0x80100013;
+    static final int SCARD_F_INTERNAL_ERROR      = 0x80100001;
+    static final int SCARD_F_UNKNOWN_ERROR       = 0x80100014;
+    static final int SCARD_F_WAITED_TOO_LONG     = 0x80100007;
+    static final int SCARD_E_UNKNOWN_READER      = 0x80100009;
+    static final int SCARD_E_TIMEOUT             = 0x8010000A;
+    static final int SCARD_E_SHARING_VIOLATION   = 0x8010000B;
+    static final int SCARD_E_NO_SMARTCARD        = 0x8010000C;
+    static final int SCARD_E_UNKNOWN_CARD        = 0x8010000D;
+    static final int SCARD_E_PROTO_MISMATCH      = 0x8010000F;
+    static final int SCARD_E_NOT_READY           = 0x80100010;
+    static final int SCARD_E_SYSTEM_CANCELLED    = 0x80100012;
+    static final int SCARD_E_NOT_TRANSACTED      = 0x80100016;
+    static final int SCARD_E_READER_UNAVAILABLE  = 0x80100017;
 
-    final static int SCARD_W_UNSUPPORTED_CARD    = 0x80100065;
-    final static int SCARD_W_UNRESPONSIVE_CARD   = 0x80100066;
-    final static int SCARD_W_UNPOWERED_CARD      = 0x80100067;
-    final static int SCARD_W_RESET_CARD          = 0x80100068;
-    final static int SCARD_W_REMOVED_CARD        = 0x80100069;
-    final static int SCARD_W_INSERTED_CARD       = 0x8010006A;
+    static final int SCARD_W_UNSUPPORTED_CARD    = 0x80100065;
+    static final int SCARD_W_UNRESPONSIVE_CARD   = 0x80100066;
+    static final int SCARD_W_UNPOWERED_CARD      = 0x80100067;
+    static final int SCARD_W_RESET_CARD          = 0x80100068;
+    static final int SCARD_W_REMOVED_CARD        = 0x80100069;
+    static final int SCARD_W_INSERTED_CARD       = 0x8010006A;
 
-    final static int SCARD_E_UNSUPPORTED_FEATURE = 0x8010001F;
-    final static int SCARD_E_PCI_TOO_SMALL       = 0x80100019;
-    final static int SCARD_E_READER_UNSUPPORTED  = 0x8010001A;
-    final static int SCARD_E_DUPLICATE_READER    = 0x8010001B;
-    final static int SCARD_E_CARD_UNSUPPORTED    = 0x8010001C;
-    final static int SCARD_E_NO_SERVICE          = 0x8010001D;
-    final static int SCARD_E_SERVICE_STOPPED     = 0x8010001E;
+    static final int SCARD_E_UNSUPPORTED_FEATURE = 0x8010001F;
+    static final int SCARD_E_PCI_TOO_SMALL       = 0x80100019;
+    static final int SCARD_E_READER_UNSUPPORTED  = 0x8010001A;
+    static final int SCARD_E_DUPLICATE_READER    = 0x8010001B;
+    static final int SCARD_E_CARD_UNSUPPORTED    = 0x8010001C;
+    static final int SCARD_E_NO_SERVICE          = 0x8010001D;
+    static final int SCARD_E_SERVICE_STOPPED     = 0x8010001E;
 
     // MS undocumented
-    final static int SCARD_E_NO_READERS_AVAILABLE = 0x8010002E;
+    static final int SCARD_E_NO_READERS_AVAILABLE = 0x8010002E;
     // std. Windows invalid handle return code, used instead of SCARD code
-    final static int WINDOWS_ERROR_INVALID_HANDLE = 6;
-    final static int WINDOWS_ERROR_INVALID_PARAMETER = 87;
+    static final int WINDOWS_ERROR_INVALID_HANDLE = 6;
+    static final int WINDOWS_ERROR_INVALID_PARAMETER = 87;
 
     //
-    final static int SCARD_SCOPE_USER      =  0x0000;
-    final static int SCARD_SCOPE_TERMINAL  =  0x0001;
-    final static int SCARD_SCOPE_SYSTEM    =  0x0002;
-    final static int SCARD_SCOPE_GLOBAL    =  0x0003;
+    static final int SCARD_SCOPE_USER      =  0x0000;
+    static final int SCARD_SCOPE_TERMINAL  =  0x0001;
+    static final int SCARD_SCOPE_SYSTEM    =  0x0002;
+    static final int SCARD_SCOPE_GLOBAL    =  0x0003;
 
-    final static int SCARD_SHARE_EXCLUSIVE =  0x0001;
-    final static int SCARD_SHARE_SHARED    =  0x0002;
-    final static int SCARD_SHARE_DIRECT    =  0x0003;
+    static final int SCARD_SHARE_EXCLUSIVE =  0x0001;
+    static final int SCARD_SHARE_SHARED    =  0x0002;
+    static final int SCARD_SHARE_DIRECT    =  0x0003;
 
-    final static int SCARD_LEAVE_CARD      =  0x0000;
-    final static int SCARD_RESET_CARD      =  0x0001;
-    final static int SCARD_UNPOWER_CARD    =  0x0002;
-    final static int SCARD_EJECT_CARD      =  0x0003;
+    static final int SCARD_LEAVE_CARD      =  0x0000;
+    static final int SCARD_RESET_CARD      =  0x0001;
+    static final int SCARD_UNPOWER_CARD    =  0x0002;
+    static final int SCARD_EJECT_CARD      =  0x0003;
 
-    final static int SCARD_STATE_UNAWARE     = 0x0000;
-    final static int SCARD_STATE_IGNORE      = 0x0001;
-    final static int SCARD_STATE_CHANGED     = 0x0002;
-    final static int SCARD_STATE_UNKNOWN     = 0x0004;
-    final static int SCARD_STATE_UNAVAILABLE = 0x0008;
-    final static int SCARD_STATE_EMPTY       = 0x0010;
-    final static int SCARD_STATE_PRESENT     = 0x0020;
-    final static int SCARD_STATE_ATRMATCH    = 0x0040;
-    final static int SCARD_STATE_EXCLUSIVE   = 0x0080;
-    final static int SCARD_STATE_INUSE       = 0x0100;
-    final static int SCARD_STATE_MUTE        = 0x0200;
-    final static int SCARD_STATE_UNPOWERED   = 0x0400;
+    static final int SCARD_STATE_UNAWARE     = 0x0000;
+    static final int SCARD_STATE_IGNORE      = 0x0001;
+    static final int SCARD_STATE_CHANGED     = 0x0002;
+    static final int SCARD_STATE_UNKNOWN     = 0x0004;
+    static final int SCARD_STATE_UNAVAILABLE = 0x0008;
+    static final int SCARD_STATE_EMPTY       = 0x0010;
+    static final int SCARD_STATE_PRESENT     = 0x0020;
+    static final int SCARD_STATE_ATRMATCH    = 0x0040;
+    static final int SCARD_STATE_EXCLUSIVE   = 0x0080;
+    static final int SCARD_STATE_INUSE       = 0x0100;
+    static final int SCARD_STATE_MUTE        = 0x0200;
+    static final int SCARD_STATE_UNPOWERED   = 0x0400;
 
-    final static int TIMEOUT_INFINITE = 0xffffffff;
+    static final int TIMEOUT_INFINITE = 0xffffffff;
 
-    private final static char[] hexDigits = "0123456789abcdef".toCharArray();
+    private static final char[] hexDigits = "0123456789abcdef".toCharArray();
 
     public static String toString(byte[] b) {
         StringBuilder sb = new StringBuilder(b.length * 3);

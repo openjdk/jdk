@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.ArrayList;
@@ -91,7 +92,7 @@ public class AnnotationNode extends AnnotationVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public AnnotationNode(final String descriptor) {
-        this(/* latest api = */ Opcodes.ASM8, descriptor);
+        this(/* latest api = */ Opcodes.ASM9, descriptor);
         if (getClass() != AnnotationNode.class) {
             throw new IllegalStateException();
         }
@@ -100,9 +101,8 @@ public class AnnotationNode extends AnnotationVisitor {
     /**
       * Constructs a new {@link AnnotationNode}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param descriptor the class descriptor of the annotation class.
       */
     public AnnotationNode(final int api, final String descriptor) {
@@ -116,7 +116,7 @@ public class AnnotationNode extends AnnotationVisitor {
       * @param values where the visited values must be stored.
       */
     AnnotationNode(final List<Object> values) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
         this.values = values;
     }
 
@@ -204,8 +204,8 @@ public class AnnotationNode extends AnnotationVisitor {
       * checks that this node, and all its children recursively, do not contain elements that were
       * introduced in more recent versions of the ASM API than the given version.
       *
-      * @param api an ASM API version. Must be one of {@link Opcodes#ASM4}, {@link Opcodes#ASM5},
-      *     {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link Opcodes#ASM8}.
+      * @param api an ASM API version. Must be one of the {@code ASM}<i>x</i> values in {@link
+      *     Opcodes}.
       */
     public void check(final int api) {
         // nothing to do
@@ -260,3 +260,4 @@ public class AnnotationNode extends AnnotationVisitor {
         }
     }
 }
+

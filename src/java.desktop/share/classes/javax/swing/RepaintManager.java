@@ -122,7 +122,7 @@ public class RepaintManager
     DoubleBufferInfo standardDoubleBuffer;
 
     /**
-     * Object responsible for hanlding core paint functionality.
+     * Object responsible for handling core paint functionality.
      */
     private PaintManager paintManager;
 
@@ -799,8 +799,7 @@ public class RepaintManager
 
         Set<Window> windows = new HashSet<Window>();
         Set<Component> dirtyComps = dirtyComponents.keySet();
-        for (Iterator<Component> it = dirtyComps.iterator(); it.hasNext();) {
-            Component dirty = it.next();
+        for (Component dirty : dirtyComps) {
             Window window = dirty instanceof Window ?
                 (Window)dirty :
                 SwingUtilities.getWindowAncestor(dirty);
@@ -929,7 +928,7 @@ public class RepaintManager
         for (int i = roots.size() - 1; i >= index; i--) {
             Component c = roots.get(i);
             for(;;) {
-                if (c == root || c == null || !(c instanceof JComponent)) {
+                if (c == root || !(c instanceof JComponent)) {
                     break;
                 }
                 c = c.getParent();
@@ -967,7 +966,7 @@ public class RepaintManager
         tmp.setBounds(dirtyComponents.get(dirtyComponent));
 
         // System.out.println("Collect dirty component for bound " + tmp +
-        //                                   "component bounds is " + cBounds);;
+        //                                   "component bounds is " + cBounds);
         SwingUtilities.computeIntersection(0,0,w,h,tmp);
 
         if (tmp.isEmpty()) {
@@ -1086,7 +1085,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
@@ -1813,7 +1812,7 @@ public class RepaintManager
         }
     }
 
-    private class DoubleBufferInfo {
+    private static class DoubleBufferInfo {
         public Image image;
         public Dimension size;
         public boolean needsReset = false;

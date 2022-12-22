@@ -27,7 +27,7 @@
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrStackTraceMark.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 JfrStackTraceMark::JfrStackTraceMark() : _t(Thread::current()), _previous_id(0), _previous_hash(0) {
   JfrThreadLocal* const tl = _t->jfr_thread_local();

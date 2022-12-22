@@ -30,8 +30,8 @@
  *          java.base/jdk.internal.misc
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *        -Xbootclasspath/a:.
  *        -XX:+UnlockDiagnosticVMOptions
@@ -84,7 +84,7 @@ package compiler.types;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -216,7 +216,7 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
      *       3: areturn
      *
      * The "test()" method calls the "getName()" function from I1 on the objects returned by "run()".
-     * This will epectedly fail with an "IncompatibleClassChangeError" because the objects returned
+     * This will expectedly fail with an "IncompatibleClassChangeError" because the objects returned
      * by "run()" (and by createI2Array()) are actually of type "I2C" and only implement "I2" but not "I1".
      *
      *

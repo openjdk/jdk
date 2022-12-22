@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
  * @test
  * @bug 8223174
  * @summary Pattern.compile() can throw confusing NegativeArraySizeException
- * @requires os.maxMemory >= 5g
- * @run main/othervm NegativeArraySize -Xms5G -Xmx5G
+ * @requires os.maxMemory >= 5g & vm.bits == 64
+ * @run testng/othervm -Xms5G -Xmx5G NegativeArraySize
  */
+
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertThrows;
 
 import java.util.regex.Pattern;
 
 public class NegativeArraySize {
-    public static void main(String[] args) {
-        try {
-            Pattern.compile("\\Q" + "a".repeat(42 + Integer.MAX_VALUE / 3));
-            throw new AssertionError("expected to throw");
-        } catch (OutOfMemoryError expected) {
-        }
+    @Test
+    public static void testNegativeArraySize() {
+        assertThrows(OutOfMemoryError.class, () -> Pattern.compile("\\Q" + "a".repeat(42 + Integer.MAX_VALUE / 3)));
     }
 }

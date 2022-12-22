@@ -52,7 +52,7 @@ public class TestPackageSummary extends JavadocTester {
         checkOutput("pkg/package-summary.html", true,
                 """
                     <div class="sub-nav">
-                    <div>
+                    <div id="navbar-sub-list">
                     <ul class="sub-nav-list">
                     <li>Package:&nbsp;</li>
                     <li>Description&nbsp;|&nbsp;</li>
@@ -63,7 +63,7 @@ public class TestPackageSummary extends JavadocTester {
         checkOutput("pkg1/package-summary.html", true,
                 """
                     <div class="sub-nav">
-                    <div>
+                    <div id="navbar-sub-list">
                     <ul class="sub-nav-list">
                     <li>Package:&nbsp;</li>
                     <li><a href="#package-description">Description</a>&nbsp;|&nbsp;</li>
@@ -74,7 +74,7 @@ public class TestPackageSummary extends JavadocTester {
         checkOutput("pkg1/sub/package-summary.html", true,
                 """
                     <div class="sub-nav">
-                    <div>
+                    <div id="navbar-sub-list">
                     <ul class="sub-nav-list">
                     <li>Package:&nbsp;</li>
                     <li>Description&nbsp;|&nbsp;</li>

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,6 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
 
   DEBUG_ONLY(size_t committed_words_before = c->committed_words();)
 
-  const chunklevel_t orig_level = c->level();
   c->vsnode()->split(target_level, c, &_chunks);
 
   // Splitting should never fail.
@@ -153,7 +152,7 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, min_committed_words);
   }
-  // if we did not get anything yet, there are no free chunks commmitted enough. Repeat search but look for uncommitted chunks too:
+  // if we did not get anything yet, there are no free chunks committed enough. Repeat search but look for uncommitted chunks too:
   // 4) Search best or smaller chunks, can be uncommitted:
   if (c == NULL) {
     c = _chunks.search_chunk_ascending(preferred_level, max_level, 0);
@@ -264,12 +263,6 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
     c = merged;
   }
 
-  if (Settings::uncommit_free_chunks() &&
-      c->word_size() >= Settings::commit_granule_words()) {
-    UL2(debug, "uncommitting free chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
-    c->uncommit_locked();
-  }
-
   return_chunk_simple_locked(c);
   DEBUG_ONLY(verify_locked();)
   SOMETIMES(c->vsnode()->verify_locked();)
@@ -316,24 +309,11 @@ void ChunkManager::purge() {
 
   const size_t reserved_before = _vslist->reserved_words();
   const size_t committed_before = _vslist->committed_words();
-  int num_nodes_purged = 0;
 
-  // We purge to return unused memory to the Operating System. We do this in
-  //  two independent steps.
-
-  // 1) We purge the virtual space list: any memory mappings which are
-  //   completely deserted can be potentially unmapped. We iterate over the list
-  //   of mappings (VirtualSpaceList::purge) and delete every node whose memory
-  //   only contains free chunks. Deleting that node includes unmapping its memory,
-  //   so all chunk vanish automatically.
-  //   Of course we need to remove the chunk headers of those vanished chunks from
-  //   the ChunkManager freelist.
-  num_nodes_purged = _vslist->purge(&_chunks);
-  InternalStats::inc_num_purges();
-
-  // 2) Since (1) is rather ineffective - it is rare that a whole node only contains
-  //   free chunks - we now iterate over all remaining free chunks and
-  //   and uncommit those which can be uncommitted (>= commit granule size).
+  // We return unused memory to the Operating System: we iterate over all
+  //  free chunks and uncommit the backing memory of those large enough to
+  //  contain one or multiple commit granules (chunks larger than a granule
+  //  always cover a whole number of granules and start at a granule boundary).
   if (Settings::uncommit_free_chunks()) {
     const chunklevel_t max_level =
         chunklevel::level_fitting_word_size(Settings::commit_granule_words());
@@ -365,7 +345,6 @@ void ChunkManager::purge() {
       ls.print("committed: ");
       print_word_size_delta(&ls, committed_before, committed_after);
       ls.cr();
-      ls.print_cr("full nodes purged: %d", num_nodes_purged);
     }
   }
   DEBUG_ONLY(_vslist->verify_locked());

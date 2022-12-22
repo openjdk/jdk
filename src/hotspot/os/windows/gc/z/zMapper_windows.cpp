@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ HANDLE ZMapper::create_paging_file_mapping(size_t size) {
   // Create mapping with SEC_RESERVE instead of SEC_COMMIT.
   //
   // We use MapViewOfFile3 for two different reasons:
-  //  1) When commiting memory for the created paging file
+  //  1) When committing memory for the created paging file
   //  2) When mapping a view of the memory created in (2)
   //
   // The non-platform code is only setup to deal with out-of-memory

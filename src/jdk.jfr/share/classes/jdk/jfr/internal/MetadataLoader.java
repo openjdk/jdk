@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ public final class MetadataLoader {
 
     // Caching to reduce allocation pressure and heap usage
     private final AnnotationElement RELATIONAL = new AnnotationElement(Relational.class);
-    private final AnnotationElement ENABLED = new AnnotationElement(Enabled.class, false);
+    private final AnnotationElement ENABLED = new AnnotationElement(Enabled.class, true);
+    private final AnnotationElement DISABLED = new AnnotationElement(Enabled.class, false);
     private final AnnotationElement THRESHOLD = new AnnotationElement(Threshold.class, "0 ns");
     private final AnnotationElement STACK_TRACE = new AnnotationElement(StackTrace.class, true);
     private final AnnotationElement TRANSITION_TO = new AnnotationElement(TransitionTo.class);
@@ -82,6 +83,7 @@ public final class MetadataLoader {
         private final boolean isEvent;
         private final boolean isRelation;
         private final boolean experimental;
+        private final boolean internal;
         private final long id;
 
         public TypeElement(DataInputStream dis) throws IOException {
@@ -101,6 +103,7 @@ public final class MetadataLoader {
             cutoff = dis.readBoolean();
             throttle = dis.readBoolean();
             experimental = dis.readBoolean();
+            internal = dis.readBoolean();
             id = dis.readLong();
             isEvent = dis.readBoolean();
             isRelation = dis.readBoolean();
@@ -108,7 +111,7 @@ public final class MetadataLoader {
     }
 
     // <Field>
-    private static class FieldElement {
+    private static final class FieldElement {
         private final String name;
         private final String label;
         private final String description;
@@ -137,7 +140,7 @@ public final class MetadataLoader {
     }
 
     private final List<TypeElement> types;
-    private final Map<String, List<AnnotationElement>> anotationElements = new HashMap<>(20);
+    private final Map<String, List<AnnotationElement>> anotationElements = HashMap.newHashMap(16);
     private final Map<String, AnnotationElement> categories = new HashMap<>();
 
     MetadataLoader(DataInputStream dis) throws IOException {
@@ -201,7 +204,7 @@ public final class MetadataLoader {
     }
 
     private Map<String, AnnotationElement> buildRelationMap(Map<String, Type> typeMap) {
-        Map<String, AnnotationElement> relationMap = new HashMap<>(20);
+        Map<String, AnnotationElement> relationMap = HashMap.newHashMap(10);
         for (TypeElement t : types) {
             if (t.isRelation) {
                 Type relationType = typeMap.get(t.name);
@@ -255,6 +258,9 @@ public final class MetadataLoader {
                 if ("to".equals(f.transition)) {
                     aes.add(TRANSITION_TO);
                 }
+                if (!"package".equals(f.name) && !"java.lang.Class".equals(te.name)) {
+                    Utils.ensureJavaIdentifier(f.name);
+                }
                 type.add(PrivateAccess.getInstance().newValueDescriptor(f.name, fieldType, aes, f.array ? 1 : 0, f.constantPool, null));
             }
         }
@@ -266,8 +272,8 @@ public final class MetadataLoader {
     }
 
     private Map<String, Type> buildTypeMap() {
-        Map<String, Type> typeMap = new HashMap<>(2 * types.size());
-        Map<String, Type> knownTypeMap = new HashMap<>(20);
+        Map<String, Type> typeMap = HashMap.newHashMap(types.size());
+        Map<String, Type> knownTypeMap = HashMap.newHashMap(16);
         for (Type kt : Type.getKnownTypes()) {
             typeMap.put(kt.getName(), kt);
             knownTypeMap.put(kt.getName(), kt);
@@ -312,7 +318,11 @@ public final class MetadataLoader {
             }
             Type type;
             if (t.isEvent) {
-                aes.add(ENABLED);
+                if (t.internal) {
+                    aes.add(ENABLED);
+                } else {
+                    aes.add(DISABLED);
+                }
                 type = new PlatformEventType(t.name, t.id, false, true);
             } else {
                 type = knownTypeMap.get(t.name);
@@ -323,6 +333,15 @@ public final class MetadataLoader {
                     } else {
                         type = new Type(t.name, null, t.id);
                     }
+                }
+            }
+            if (t.internal) {
+                type.setInternal(true);
+                // Internal types are hidden by default
+                type.setVisible(false);
+                // Internal events are enabled by default
+                if (type instanceof PlatformEventType pe) {
+                    pe.setEnabled(true);
                 }
             }
             type.setAnnotations(aes);

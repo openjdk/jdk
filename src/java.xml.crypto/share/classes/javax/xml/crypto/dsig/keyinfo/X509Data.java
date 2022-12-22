@@ -35,7 +35,7 @@ import java.util.List;
  * A representation of the XML <code>X509Data</code> element as defined in
  * the <a href="http://www.w3.org/TR/xmldsig-core/">
  * W3C Recommendation for XML-Signature Syntax and Processing</a>. An
- * <code>X509Data</code> object contains one or more identifers of keys
+ * <code>X509Data</code> object contains one or more identifiers of keys
  * or X.509 certificates (or certificates' identifiers or a revocation list).
  * The XML Schema Definition is defined as:
  *

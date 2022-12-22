@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
@@ -97,6 +98,11 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
     } else {
       method_name = vmSymbols::createMemoryManager_name();
       signature = vmSymbols::createMemoryManager_signature();
+    }
+
+    if (k == nullptr) {
+      fatal("Should have the ManagementFactoryHelper or GarbageCollectorExtImpl class");
+      return nullptr; // silence the compiler
     }
 
     InstanceKlass* ik = InstanceKlass::cast(k);
@@ -174,8 +180,7 @@ GCMemoryManager::GCMemoryManager(const char* name, const char* gc_end_message) :
   MemoryManager(name), _gc_end_message(gc_end_message) {
   _num_collections = 0;
   _last_gc_stat = NULL;
-  _last_gc_lock = new Mutex(Mutex::leaf, "_last_gc_lock", true,
-                            Mutex::_safepoint_check_never);
+  _last_gc_lock = new Mutex(Mutex::nosafepoint, "GCMemoryManager_lock");
   _current_gc_stat = NULL;
   _num_gc_threads = 1;
   _notification_enabled = false;
@@ -198,8 +203,8 @@ void GCMemoryManager::add_pool(MemoryPool* pool, bool always_affected_by_gc) {
 
 void GCMemoryManager::initialize_gc_stat_info() {
   assert(MemoryService::num_memory_pools() > 0, "should have one or more memory pools");
-  _last_gc_stat = new(ResourceObj::C_HEAP, mtGC) GCStatInfo(MemoryService::num_memory_pools());
-  _current_gc_stat = new(ResourceObj::C_HEAP, mtGC) GCStatInfo(MemoryService::num_memory_pools());
+  _last_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
+  _current_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
   // tracking concurrent collections we need two objects: one to update, and one to
   // hold the publicly available "last (completed) gc" information.
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
  * @requires os.family == "linux"
  * @requires vm.flagless
  * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI PlainRead
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class PlainRead {
 
@@ -50,7 +50,7 @@ public class PlainRead {
     static final String good_value = "(\\d+|-1|-2|Unlimited)";
     static final String bad_value = "(failed)";
 
-    static final String[] variables = {"Memory Limit is:", "CPU Shares is:", "CPU Quota is:", "CPU Period is:", "active_processor_count:"};
+    static final String[] variables = {"Memory Limit is:", "CPU Quota is:", "CPU Period is:", "active_processor_count:"};
 
     static public void isContainer(OutputAnalyzer oa) {
         for (String v: variables) {

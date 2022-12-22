@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
-
 
 /**
  * This processor raises errors or throws exceptions on different
@@ -83,12 +81,12 @@ public class TestReturnCode extends JavacTestingAbstractProcessor {
                               exceptionOnFirst,
                               exceptionOnLast);
             if (errorOnFirst)
-                messager.printMessage(ERROR, "Error on first round.");
+                messager.printError("Error on first round.");
             if (exceptionOnFirst)
                 throw new RuntimeException("Exception on first round.");
         } else {
             if (errorOnLast)
-                messager.printMessage(ERROR, "Error on last round.");
+                messager.printError("Error on last round.");
             if (exceptionOnLast)
                 throw new RuntimeException("Exception on last round.");
         }

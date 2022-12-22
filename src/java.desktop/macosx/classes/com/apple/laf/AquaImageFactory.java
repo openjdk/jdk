@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import sun.awt.image.MultiResolutionCachedImage;
 import sun.lwawt.macosx.CImage;
+import sun.swing.ImageIconUIResource;
 
 public class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
@@ -231,14 +232,28 @@ public class AquaImageFactory {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
+        private Icon disabledIcon;
         public InvertableImageIcon(final Image image) {
             super(image);
         }
 
         @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            if (!c.isEnabled()) {
+                if (disabledIcon == null) {
+                    disabledIcon = new ImageIcon(GrayFilter.
+                            createDisabledImage(((ImageIcon)this).getImage()));
+                }
+                disabledIcon.paintIcon(c, g, x, y);
+            } else {
+                super.paintIcon(c, g, x, y);
+            }
+        }
+
+        @Override
         public Icon getInvertedIcon() {
             if (invertedImage != null) return invertedImage;
-            return invertedImage = new IconUIResource(new ImageIcon(AquaUtils.generateLightenedImage(getImage(), 100)));
+            return invertedImage = new InvertableImageIcon(AquaUtils.generateLightenedImage(getImage(), 100));
         }
     }
 
@@ -313,7 +328,7 @@ public class AquaImageFactory {
 
     /*
      * A "paintable" which holds nine images, which represent a sliced up initial
-     * image that can be streched from its middles.
+     * image that can be stretched from its middles.
      */
     public static class SlicedImageControl {
         final BufferedImage NW, N, NE;
@@ -489,6 +504,10 @@ public class AquaImageFactory {
 
     public static Color getFocusRingColorUIResource() {
         return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
+    }
+
+    public static Color getCellHighlightColorUIResource() {
+        return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.CELL_HIGHLIGHT_COLOR));
     }
 
     public static Color getSelectionInactiveBackgroundColorUIResource() {

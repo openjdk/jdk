@@ -30,9 +30,10 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @compile RedefinePermittedSubclass.java
- * @run main/othervm RedefinePermittedSubclass buildagent
- * @run main/othervm/timeout=6000 RedefinePermittedSubclass runtest
+ * @run driver RedefinePermittedSubclass buildagent
+ * @run driver/timeout=6000 RedefinePermittedSubclass runtest
  */
 
 import java.io.FileNotFoundException;
@@ -128,6 +129,7 @@ public class RedefinePermittedSubclass {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotContain("processing of -javaagent failed");
+            output.shouldHaveExitValue(0);
         }
     }
 }

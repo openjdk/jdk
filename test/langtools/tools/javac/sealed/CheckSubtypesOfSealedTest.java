@@ -60,8 +60,7 @@ public class CheckSubtypesOfSealedTest extends TestBase {
     }
 
     void run() throws Exception {
-        InMemoryFileManager fileManager = compile(List.of("--enable-preview", "-source",
-                Integer.toString(Runtime.version().feature())), testSource);
+        InMemoryFileManager fileManager = compile(testSource);
         checkClassFile(readClassFile(fileManager.getClasses().get("SealedClasses$SAC2")), CheckFor.SEALED);
         checkClassFile(readClassFile(fileManager.getClasses().get("SealedClasses$SAC3")), CheckFor.FINAL);
         checkClassFile(readClassFile(fileManager.getClasses().get("SealedClasses$SAC4")), CheckFor.FINAL);

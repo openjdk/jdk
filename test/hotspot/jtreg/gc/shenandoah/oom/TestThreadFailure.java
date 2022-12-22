@@ -23,7 +23,7 @@
  */
 
 /**
- * @test TestThreadFailure
+ * @test
  * @summary Test OOME in separate thread is recoverable
  * @requires vm.gc.Shenandoah
  * @library /test/lib

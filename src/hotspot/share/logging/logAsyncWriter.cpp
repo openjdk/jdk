@@ -25,137 +25,159 @@
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logFileStreamOutput.hpp"
 #include "logging/logHandle.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.inline.hpp"
 
-Semaphore AsyncLogWriter::_sem(0);
-Semaphore AsyncLogWriter::_io_sem(1);
-
-class AsyncLogLocker : public StackObj {
- private:
-  static Semaphore _lock;
+class AsyncLogWriter::AsyncLogLocker : public StackObj {
  public:
   AsyncLogLocker() {
-    _lock.wait();
+    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
+    _instance->_lock.lock();
   }
 
   ~AsyncLogLocker() {
-    _lock.signal();
+    _instance->_lock.unlock();
   }
 };
 
-Semaphore AsyncLogLocker::_lock(1);
+// LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
+const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
+                                      LogDecorators::None);
 
-void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
-  if (_buffer.size() >= _buffer_max_size)  {
+bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
+  const size_t sz = Message::calc_size(strlen(msg));
+  const bool is_token = output == nullptr;
+  // Always leave headroom for the flush token. Pushing a token must succeed.
+  const size_t headroom = (!is_token) ? Message::calc_size(0) : 0;
+
+  if (_pos + sz <= (_capacity - headroom)) {
+    new(_buf + _pos) Message(output, decorations, msg);
+    _pos += sz;
+    return true;
+  }
+
+  return false;
+}
+
+void AsyncLogWriter::Buffer::push_flush_token() {
+  bool result = push_back(nullptr, AsyncLogWriter::None, "");
+  assert(result, "fail to enqueue the flush token.");
+}
+
+void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
+  // To save space and streamline execution, we just ignore null message.
+  // client should use "" instead.
+  assert(msg != nullptr, "enqueuing a null message!");
+
+  if (!_buffer->push_back(output, decorations, msg)) {
     bool p_created;
-    uint32_t* counter = _stats.add_if_absent(msg.output(), 0, &p_created);
+    uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);
     *counter = *counter + 1;
-    // drop the enqueueing message.
     return;
   }
 
-  assert(_buffer.size() < _buffer_max_size, "_buffer is over-sized.");
-  _buffer.push_back(msg);
-  _sem.signal();
+  _data_available = true;
+  _lock.notify();
 }
 
-void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg) {
-  AsyncLogMessage m(output, decorations, os::strdup(msg));
-
-  { // critical area
-    AsyncLogLocker lock;
-    enqueue_locked(m);
-  }
+void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+  AsyncLogLocker locker;
+  enqueue_locked(&output, decorations, msg);
 }
 
-// LogMessageBuffer consists of a multiple-part/multiple-line messsage.
+// LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogLocker lock;
+void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    AsyncLogMessage m(output, msg_iterator.decorations(), os::strdup(msg_iterator.message()));
-    enqueue_locked(m);
+    enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
   }
 }
 
 AsyncLogWriter::AsyncLogWriter()
-  : _initialized(false),
-    _stats(17 /*table_size*/) {
+  : _flush_sem(0), _lock(), _data_available(false),
+    _initialized(false),
+    _stats() {
+
+  size_t size = AsyncLogBufferSize / 2;
+  _buffer = new Buffer(size);
+  _buffer_staging = new Buffer(size);
+  log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
   } else {
     log_warning(logging, thread)("AsyncLogging failed to create thread. Falling back to synchronous logging.");
   }
-
-  log_info(logging)("The maximum entries of AsyncLogBuffer: " SIZE_FORMAT ", estimated memory use: " SIZE_FORMAT " bytes",
-                    _buffer_max_size, AsyncLogBufferSize);
 }
 
-class AsyncLogMapIterator {
-  AsyncLogBuffer& _logs;
-
- public:
-  AsyncLogMapIterator(AsyncLogBuffer& logs) :_logs(logs) {}
-  bool do_entry(LogFileOutput* output, uint32_t* counter) {
-    using none = LogTagSetMapping<LogTag::__NO_TAG>;
-
-    if (*counter > 0) {
-      LogDecorations decorations(LogLevel::Warning, none::tagset(), output->decorators());
-      stringStream ss;
-      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", *counter);
-      AsyncLogMessage msg(*output, decorations, ss.as_string(true /*c_heap*/));
-      _logs.push_back(msg);
-      *counter = 0;
-    }
-
-    return true;
-  }
-};
-
 void AsyncLogWriter::write() {
-  // Use kind of copy-and-swap idiom here.
-  // Empty 'logs' swaps the content with _buffer.
-  // Along with logs destruction, all processed messages are deleted.
-  //
-  // The operation 'pop_all()' is done in O(1). All I/O jobs are then performed without
+  ResourceMark rm;
+  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
+
   // lock protection. This guarantees I/O jobs don't block logsites.
-  AsyncLogBuffer logs;
-  bool own_io = false;
+  {
+    AsyncLogLocker locker;
 
-  { // critical region
-    AsyncLogLocker lock;
+    _buffer_staging->reset();
+    swap(_buffer, _buffer_staging);
 
-    _buffer.pop_all(&logs);
-    // append meta-messages of dropped counters
-    AsyncLogMapIterator dropped_counters_iter(logs);
-    _stats.iterate(&dropped_counters_iter);
-    own_io = _io_sem.trywait();
+    // move counters to snapshot and reset them.
+    _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
+      if (counter > 0) {
+        bool created = snapshot.put(output, counter);
+        assert(created == true, "sanity check");
+        counter = 0;
+      }
+      return true;
+    });
+    _data_available = false;
   }
 
-  LinkedListIterator<AsyncLogMessage> it(logs.head());
-  if (!own_io) {
-    _io_sem.wait();
-  }
+  int req = 0;
+  auto it = _buffer_staging->iterator();
+  while (it.hasNext()) {
+    const Message* e = it.next();
 
-  while (!it.is_empty()) {
-    AsyncLogMessage* e = it.next();
-    char* msg = e->message();
-
-    if (msg != nullptr) {
-      e->output()->write_blocking(e->decorations(), msg);
-      os::free(msg);
+    if (!e->is_token()){
+      e->output()->write_blocking(e->decorations(), e->message());
+    } else {
+      // This is a flush token. Record that we found it and then
+      // signal the flushing thread after the loop.
+      req++;
     }
   }
-  _io_sem.signal();
+
+  LogDecorations decorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
+                             LogDecorators::All);
+  snapshot.iterate([&](LogFileStreamOutput* output, uint32_t& counter) {
+    if (counter > 0) {
+      stringStream ss;
+      ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
+      output->write_blocking(decorations, ss.as_string(false));
+    }
+    return true;
+  });
+
+  if (req > 0) {
+    assert(req == 1, "Only one token is allowed in queue. AsyncLogWriter::flush() is NOT MT-safe!");
+    _flush_sem.signal(req);
+  }
 }
 
 void AsyncLogWriter::run() {
   while (true) {
-    // The value of a semphore cannot be negative. Therefore, the current thread falls asleep
-    // when its value is zero. It will be waken up when new messages are enqueued.
-    _sem.wait();
+    {
+      AsyncLogLocker locker;
+
+      while (!_data_available) {
+        _lock.wait(0/* no timeout */);
+      }
+    }
+
     write();
   }
 }
@@ -178,6 +200,8 @@ void AsyncLogWriter::initialize() {
     }
     os::start_thread(self);
     log_debug(logging, thread)("Async logging thread started.");
+  } else {
+    delete self;
   }
 }
 
@@ -185,10 +209,44 @@ AsyncLogWriter* AsyncLogWriter::instance() {
   return _instance;
 }
 
-// write() acquires and releases _io_sem even _buffer is empty.
-// This guarantees all logging I/O of dequeued messages are done when it returns.
+// Inserts a flush token into the async output buffer and waits until the AsyncLog thread
+// signals that it has seen it and completed all dequeued message processing.
+// This method is not MT-safe in itself, but is guarded by another lock in the usual
+// usecase - see the comments in the header file for more details.
 void AsyncLogWriter::flush() {
   if (_instance != nullptr) {
-    _instance->write();
+    {
+      AsyncLogLocker locker;
+      // Push directly in-case we are at logical max capacity, as this must not get dropped.
+      _instance->_buffer->push_flush_token();
+      _instance->_data_available = true;
+      _instance->_lock.notify();
+    }
+
+    _instance->_flush_sem.wait();
+  }
+}
+
+AsyncLogWriter::BufferUpdater::BufferUpdater(size_t newsize) {
+  AsyncLogLocker locker;
+  auto p = AsyncLogWriter::_instance;
+
+  _buf1 = p->_buffer;
+  _buf2 = p->_buffer_staging;
+  p->_buffer = new Buffer(newsize);
+  p->_buffer_staging = new Buffer(newsize);
+}
+
+AsyncLogWriter::BufferUpdater::~BufferUpdater() {
+  AsyncLogWriter::flush();
+  auto p = AsyncLogWriter::_instance;
+
+  {
+    AsyncLogLocker locker;
+
+    delete p->_buffer;
+    delete p->_buffer_staging;
+    p->_buffer = _buf1;
+    p->_buffer_staging = _buf2;
   }
 }

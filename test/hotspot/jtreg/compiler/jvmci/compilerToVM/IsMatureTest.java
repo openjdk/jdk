@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- *        sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *        jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -46,7 +46,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Executable;
 
@@ -78,10 +78,11 @@ public class IsMatureTest {
                 && compLevel != CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE) {
             Asserts.assertNE(methodData, 0L,
                     "Multiple times invoked method should have method data");
-            /* a method is not mature in Xcomp mode with tiered compilation disabled,
-               see NonTieredCompPolicy::is_mature */
-            Asserts.assertEQ(isMature, !(Platform.isComp() && !TIERED),
-                    "Unexpected isMature state for multiple times invoked method");
+            // The method may or may not be mature if it's compiled with limited profile.
+            if (compLevel != CompilerWhiteBoxTest.COMP_LEVEL_LIMITED_PROFILE) {
+               Asserts.assertEQ(isMature, !Platform.isComp(),
+                       "Unexpected isMature state for multiple times invoked method");
+            }
         }
     }
 }

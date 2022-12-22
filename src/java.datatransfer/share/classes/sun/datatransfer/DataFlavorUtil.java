@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,13 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class with different datatransfer helper functions.
@@ -115,12 +122,12 @@ public class DataFlavorUtil {
 
         private static SortedSet<String> load() {
             final SortedSet<String> tempSet = new TreeSet<>(getCharsetComparator().reversed());
-            tempSet.add("US-ASCII");
-            tempSet.add("ISO-8859-1");
-            tempSet.add("UTF-8");
-            tempSet.add("UTF-16BE");
-            tempSet.add("UTF-16LE");
-            tempSet.add("UTF-16");
+            tempSet.add(US_ASCII.name());
+            tempSet.add(ISO_8859_1.name());
+            tempSet.add(UTF_8.name());
+            tempSet.add(UTF_16BE.name());
+            tempSet.add(UTF_16LE.name());
+            tempSet.add(UTF_16.name());
             tempSet.add(Charset.defaultCharset().name());
             return Collections.unmodifiableSortedSet(tempSet);
         }
@@ -318,13 +325,13 @@ public class DataFlavorUtil {
             Map<String, Integer> charsetsMap = new HashMap<>(8, 1.0f);
 
             // we prefer Unicode charsets
-            charsetsMap.put(canonicalName("UTF-16LE"), 4);
-            charsetsMap.put(canonicalName("UTF-16BE"), 5);
-            charsetsMap.put(canonicalName("UTF-8"), 6);
-            charsetsMap.put(canonicalName("UTF-16"), 7);
+            charsetsMap.put(UTF_16LE.name(), 4);
+            charsetsMap.put(UTF_16BE.name(), 5);
+            charsetsMap.put(UTF_8.name(), 6);
+            charsetsMap.put(UTF_16.name(), 7);
 
             // US-ASCII is the worst charset supported
-            charsetsMap.put(canonicalName("US-ASCII"), WORST_CHARSET_INDEX);
+            charsetsMap.put(US_ASCII.name(), WORST_CHARSET_INDEX);
 
             charsetsMap.putIfAbsent(Charset.defaultCharset().name(), DEFAULT_CHARSET_INDEX);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -85,8 +85,8 @@ class NativeInstruction {
   // Bcrl is currently the only accepted instruction here.
   bool is_jump();
 
-  // We use an illtrap for marking a method as not_entrant or zombie.
-  bool is_sigill_zombie_not_entrant();
+  // We use an illtrap for marking a method as not_entrant.
+  bool is_sigill_not_entrant();
 
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?
@@ -652,6 +652,37 @@ class NativeGeneralJump: public NativeInstruction {
   static void replace_mt_safe(address instr_addr, address code_buffer);
 
   void verify() PRODUCT_RETURN;
+};
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { Unimplemented(); return false; }
+  int displacement() const { return 0; }
+  void patch(jint diff) { Unimplemented(); }
+  void make_deopt() { Unimplemented(); }
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  // Unimplemented();
+  return NULL;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+public:
+  address instruction_address() const       { Unimplemented(); return NULL; }
+  address next_instruction_address() const  { Unimplemented(); return NULL; }
+
+  void  verify() { Unimplemented(); }
+
+  static bool is_deopt_at(address instr) {
+    // Unimplemented();
+    return false;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos) {
+    Unimplemented();
+  }
 };
 
 #endif // CPU_S390_NATIVEINST_S390_HPP

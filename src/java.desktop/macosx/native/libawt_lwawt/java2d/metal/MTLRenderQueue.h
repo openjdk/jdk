@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,11 @@ enum {
   MTL_OP_SYNC,
   MTL_OP_SHAPE_CLIP_SPANS,
   MTL_OP_MASK_OP,
+  MTL_OP_FILL_PARALLELOGRAM,
+  MTL_OP_FILL_RECT,
+  MTL_OP_DRAW_LINE,
+  MTL_OP_DRAW_RECT,
+  MTL_OP_DRAW_PARALLELOGRAM,
   MTL_OP_OTHER
 };
 /*

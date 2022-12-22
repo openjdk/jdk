@@ -57,7 +57,7 @@ define ProcessMarkdown
   endif
 
   ifneq ($$($1_CSS), )
-    ifneq ($$(findstring http:/, $$($1_CSS)), )
+    ifneq ($$(findstring https:/, $$($1_CSS)), )
       $1_$2_CSS_OPTION := --css '$$($1_CSS)'
     else
       $1_$2_CSS := $$(strip $$(call RelativePath, $$($1_CSS), $$($1_$2_TARGET_DIR)))
@@ -103,7 +103,7 @@ define ProcessMarkdown
 	$$(call LogInfo, Post-processing markdown file $2)
 	$$(call MakeDir, $$(SUPPORT_OUTPUTDIR)/markdown $$($1_$2_TARGET_DIR))
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/markdown/$$($1_$2_MARKER)_post, \
-	    ( $$($1_POST_PROCESS) < $$($1_$2_PANDOC_OUTPUT) > $$($1_$2_OUTPUT_FILE) ) )
+	    ( $$($1_POST_PROCESS) $$($1_$2_PANDOC_OUTPUT) > $$($1_$2_OUTPUT_FILE) ) )
   endif
 
   $1 += $$($1_$2_OUTPUT_FILE)

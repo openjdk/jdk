@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -37,7 +37,7 @@ class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahNMethodTable;
 class ShenandoahNMethodTableSnapshot;
-class WorkGang;
+class WorkerThreads;
 
 class ShenandoahParallelCodeHeapIterator {
   friend class CodeCache;
@@ -95,8 +95,8 @@ public:
   }
 
   // Concurrent nmethod unloading support
-  static void unlink(WorkGang* workers, bool unloading_occurred);
-  static void purge(WorkGang* workers);
+  static void unlink(WorkerThreads* workers, bool unloading_occurred);
+  static void purge();
   static void arm_nmethods();
   static void disarm_nmethods();
   static int  disarmed_value()         { return _disarmed_value; }

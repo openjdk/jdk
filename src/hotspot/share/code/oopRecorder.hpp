@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class CodeBlob;
 template <class T> class ValueRecorder : public StackObj {
  public:
   // A two-way mapping from positive indexes to oop handles.
-  // The zero index is reserved for a constant (sharable) null.
+  // The zero index is reserved for a constant (shareable) null.
   // Indexes may not be negative.
 
   // Use the given arena to manage storage, if not NULL.
@@ -91,7 +91,7 @@ template <class T> class ValueRecorder : public StackObj {
   int maybe_find_index(T h);
 
   // leaky hash table of handle => index, to help detect duplicate insertion
-  template <class X> class IndexCache : public ResourceObj {
+  template <class X> class IndexCache : public ArenaObj {
     // This class is only used by the ValueRecorder class.
     friend class ValueRecorder;
     enum {
@@ -181,13 +181,7 @@ class OopRecorder : public ResourceObj {
   ValueRecorder<Metadata*>    _metadata;
   ObjectLookup*               _object_lookup;
  public:
-  OopRecorder(Arena* arena = NULL, bool deduplicate = false): _oops(arena), _metadata(arena) {
-    if (deduplicate) {
-      _object_lookup = new ObjectLookup();
-    } else {
-      _object_lookup = NULL;
-    }
-  }
+  OopRecorder(Arena* arena = NULL, bool deduplicate = false);
 
   int allocate_oop_index(jobject h) {
     return _oops.allocate_index(h);

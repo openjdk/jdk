@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class CurrencyFormat {
             Locale.JAPAN,
             Locale.GERMANY,
             Locale.ITALY,
-            new Locale("it", "IT", "EURO"),
+            Locale.of("it", "IT", "EURO"),
             Locale.forLanguageTag("de-AT"),
             Locale.forLanguageTag("fr-CH"),
         };

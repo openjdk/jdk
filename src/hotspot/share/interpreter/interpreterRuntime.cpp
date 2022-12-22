@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -34,10 +33,12 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/templateTable.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -55,7 +56,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -317,7 +318,7 @@ void InterpreterRuntime::note_trap_inner(JavaThread* current, int reason,
     if (trap_mdo == NULL) {
       ExceptionMark em(current);
       JavaThread* THREAD = current; // For exception macros.
-      Method::build_interpreter_method_data(trap_method, THREAD);
+      Method::build_profiling_method_data(trap_method, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         // Only metaspace OOM is expected. No Java code executed.
         assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())),
@@ -371,6 +372,9 @@ JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue bindings in case we got a StackOverflowError
+  // while we were trying to manipulate ScopedValue bindings.
+  current->clear_scopedValueBindings();
   THROW_HANDLE(exception);
 JRT_END
 
@@ -382,6 +386,9 @@ JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread*
           Universe::delayed_stack_overflow_error_message());
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue bindings in case we got a StackOverflowError
+  // while we were trying to manipulate ScopedValue bindings.
+  current->clear_scopedValueBindings();
   THROW_HANDLE(exception);
 JRT_END
 
@@ -408,7 +415,11 @@ JRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* current, 
   // lookup exception klass
   TempNewSymbol s = SymbolTable::new_symbol(name);
   if (ProfileTraps) {
-    note_trap(current, Deoptimization::Reason_class_check);
+    if (s == vmSymbols::java_lang_ArrayStoreException()) {
+      note_trap(current, Deoptimization::Reason_array_check);
+    } else {
+      note_trap(current, Deoptimization::Reason_class_check);
+    }
   }
   // create exception, with klass name as detail message
   Handle exception = Exceptions::new_exception(current, s, klass_name);
@@ -727,9 +738,6 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
-  if (PrintBiasedLockingStatistics) {
-    Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
-  }
   Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be NULL or an object");
@@ -775,11 +783,7 @@ JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(current, current->vm_result());
   assert(exception() != NULL, "vm result should be set");
   current->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(vmClasses::ThreadDeath_klass())) {
-    exception = get_preinitialized_exception(
-                       vmClasses::IllegalMonitorStateException_klass(),
-                       CATCH);
-  }
+  exception = get_preinitialized_exception(vmClasses::IllegalMonitorStateException_klass(), CATCH);
   current->set_vm_result(exception());
 JRT_END
 
@@ -829,7 +833,18 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
     JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  last_frame.get_index_u2_cpcache(bytecode), bytecode,
-                                 CHECK);
+                                 THREAD);
+
+    if (HAS_PENDING_EXCEPTION) {
+      if (ProfileTraps && PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_NullPointerException()) {
+        // Preserve the original exception across the call to note_trap()
+        PreserveExceptionMark pm(current);
+        // Recording the trap will help the compiler to potentially recognize this exception as "hot"
+        note_trap(current, Deoptimization::Reason_null_check);
+      }
+      return;
+    }
+
     if (JvmtiExport::can_hotswap_or_post_breakpoint() && info.resolved_method()->is_old()) {
       resolved_method = methodHandle(current, info.resolved_method()->get_new_method());
     } else {
@@ -1034,27 +1049,6 @@ JRT_ENTRY(nmethod*,
       osr_nm = NULL;
     }
   }
-
-  if (osr_nm != NULL) {
-    // We may need to do on-stack replacement which requires that no
-    // monitors in the activation are biased because their
-    // BasicObjectLocks will need to migrate during OSR. Force
-    // unbiasing of all monitors in the activation now (even though
-    // the OSR nmethod might be invalidated) because we don't have a
-    // safepoint opportunity later once the migration begins.
-    if (UseBiasedLocking) {
-      ResourceMark rm;
-      GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
-      for( BasicObjectLock *kptr = last_frame.monitor_end();
-           kptr < last_frame.monitor_begin();
-           kptr = last_frame.next_monitor(kptr) ) {
-        if( kptr->obj() != NULL ) {
-          objects_to_revoke->append(Handle(current, kptr->obj()));
-        }
-      }
-      BiasedLocking::revoke(objects_to_revoke, current);
-    }
-  }
   return osr_nm;
 JRT_END
 
@@ -1121,12 +1115,16 @@ JRT_END
 
 
 JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
-  // We used to need an explict preserve_arguments here for invoke bytecodes. However,
+  // We used to need an explicit preserve_arguments here for invoke bytecodes. However,
   // stack traversal automatically takes care of preserving arguments for invoke, so
   // this is no longer needed.
 
   // JRT_END does an implicit safepoint check, hence we are guaranteed to block
   // if this is called during a safepoint
+
+  if (java_lang_VirtualThread::notify_jvmti_events()) {
+    JvmtiExport::check_vthread_and_suspend_at_safepoint(current);
+  }
 
   if (JvmtiExport::should_post_single_step()) {
     // This function is called by the interpreter when single stepping. Such single
@@ -1143,6 +1141,7 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
 JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
+  assert(current == JavaThread::current(), "pre-condition");
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
@@ -1249,7 +1248,7 @@ JRT_END
 
 JRT_LEAF(int, InterpreterRuntime::interpreter_contains(address pc))
 {
-  return (Interpreter::contains(pc) ? 1 : 0);
+  return (Interpreter::contains(Continuation::get_top_return_pc_post_barrier(JavaThread::current(), pc)) ? 1 : 0);
 }
 JRT_END
 
@@ -1258,7 +1257,7 @@ JRT_END
 
 #ifndef SHARING_FAST_NATIVE_FINGERPRINTS
 // Dummy definition (else normalization method is defined in CPU
-// dependant code)
+// dependent code)
 uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerprint) {
   return fingerprint;
 }
@@ -1287,8 +1286,8 @@ void SignatureHandlerLibrary::initialize() {
                                       SignatureHandlerLibrary::buffer_size);
   _buffer = bb->code_begin();
 
-  _fingerprints = new(ResourceObj::C_HEAP, mtCode)GrowableArray<uint64_t>(32, mtCode);
-  _handlers     = new(ResourceObj::C_HEAP, mtCode)GrowableArray<address>(32, mtCode);
+  _fingerprints = new (mtCode) GrowableArray<uint64_t>(32, mtCode);
+  _handlers     = new (mtCode) GrowableArray<address>(32, mtCode);
 }
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
@@ -1319,7 +1318,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
       initialize();
       // lookup method signature's fingerprint
       uint64_t fingerprint = Fingerprinter(method).fingerprint();
-      // allow CPU dependant code to optimize the fingerprints for the fast handler
+      // allow CPU dependent code to optimize the fingerprints for the fast handler
       fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
       handler_index = _fingerprints->find(fingerprint);
       // create handler if necessary
@@ -1334,7 +1333,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         if (handler == NULL) {
           // use slow signature handler (without memorizing it in the fingerprints)
         } else {
-          // debugging suppport
+          // debugging support
           if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
             ttyLocker ttyl;
             tty->cr();
@@ -1345,7 +1344,8 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
                           fingerprint,
                           buffer.insts_size());
             if (buffer.insts_size() > 0) {
-              Disassembler::decode(handler, handler + buffer.insts_size());
+              Disassembler::decode(handler, handler + buffer.insts_size(), tty
+                                   NOT_PRODUCT(COMMA &buffer.asm_remarks()));
             }
 #ifndef PRODUCT
             address rh_begin = Interpreter::result_handler(method()->result_type());
@@ -1461,6 +1461,7 @@ JRT_END
 
 #if defined(IA32) || defined(AMD64) || defined(ARM)
 JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address))
+  assert(current == JavaThread::current(), "pre-condition");
   if (src_address == dest_address) {
     return;
   }
@@ -1514,10 +1515,11 @@ JRT_END
 // The generated code still uses call_VM because that will set up the frame pointer for
 // bcp and method.
 JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2))
+  assert(current == JavaThread::current(), "pre-condition");
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be an interpreted frame");
   methodHandle mh(current, last_frame.method());
-  BytecodeTracer::trace(mh, last_frame.bcp(), tos, tos2);
+  BytecodeTracer::trace_interpreter(mh, last_frame.bcp(), tos, tos2);
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT

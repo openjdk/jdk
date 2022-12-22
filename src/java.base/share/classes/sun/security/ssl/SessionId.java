@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.security.ssl;
 
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import javax.net.ssl.SSLProtocolException;
@@ -87,9 +88,8 @@ final class SessionId {
             return true;
         }
 
-        if (obj instanceof SessionId) {
-            SessionId that = (SessionId)obj;
-            return Arrays.equals(this.sessionId, that.sessionId);
+        if (obj instanceof SessionId that) {
+            return MessageDigest.isEqual(this.sessionId, that.sessionId);
         }
 
         return false;

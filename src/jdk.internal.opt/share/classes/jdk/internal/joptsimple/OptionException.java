@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import static jdk.internal.joptsimple.internal.Messages.*;
 public abstract class OptionException extends RuntimeException {
     private static final long serialVersionUID = -1L;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final List<String> options = new ArrayList<>();
 
     protected OptionException( List<String> options ) {

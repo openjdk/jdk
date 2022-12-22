@@ -207,7 +207,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @deprecated replaced by
      *     {@link #drawUnselectedText(Graphics2D, float, float, int, int)}
@@ -252,7 +252,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @since 9
      */
@@ -272,7 +272,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the location of the end of the range.
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @deprecated replaced by
      *     {@link #drawSelectedText(Graphics2D, float, float, int, int)}
@@ -320,7 +320,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the location of the end of the range.
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @since 9
      */
@@ -412,7 +412,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
             }
             replace(ec.getIndex(), removedElems.length, added);
 
-            // should damge a little more intelligently.
+            // should damage a little more intelligently.
             if (a != null) {
                 preferenceChanged(null, true, true);
                 getContainer().repaint();
@@ -655,10 +655,10 @@ public class WrappedPlainView extends BoxView implements TabExpander {
 
     /**
      * Simple view of a line that wraps if it doesn't
-     * fit withing the horizontal space allocated.
+     * fit within the horizontal space allocated.
      * This class tries to be lightweight by carrying little
-     * state of it's own and sharing the state of the outer class
-     * with it's sibblings.
+     * state of its own and sharing the state of the outer class
+     * with its siblings.
      */
     class WrappedLine extends View {
 
@@ -748,7 +748,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
          * @param pos the position to convert
          * @param a the allocated region to render into
          * @return the bounding box of the given position is returned
-         * @exception BadLocationException  if the given position does not represent a
+         * @throws BadLocationException  if the given position does not represent a
          *   valid location in the associated document
          * @see View#modelToView
          */

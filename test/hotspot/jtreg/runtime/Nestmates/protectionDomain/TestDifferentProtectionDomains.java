@@ -29,11 +29,12 @@
  *          perform a nestmate access check.
  * @comment We use WB to force-compile a constructor to recreate the original
  *          failure scenario, so only run when we have "normal" compiler flags.
- * @requires vm.compMode=="Xmixed" &
+ * @requires vm.compMode == "Xmixed" &
+ *           vm.compiler2.enabled &
  *           (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile Host.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xlog:class+nestmates=trace,protectiondomain=trace
@@ -49,7 +50,7 @@ import java.nio.file.Path;
 import java.security.ProtectionDomain;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestDifferentProtectionDomains {
 
@@ -110,7 +111,9 @@ public class TestDifferentProtectionDomains {
 
         // Force the constructor to compile, which then triggers the nestmate
         // access check in the compiler thread, which leads to the original bug.
-        wb.enqueueMethodForCompilation(cons,  CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+        if (!wb.enqueueMethodForCompilation(cons, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
+            throw new RuntimeException("Failed to queue constructor for compilation");
+        }
         while (!wb.isMethodCompiled(cons)) {
             Thread.sleep(100);
         }

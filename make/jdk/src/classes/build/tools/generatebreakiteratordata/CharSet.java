@@ -174,7 +174,7 @@ class CharSet {
                 }
 
                 // use charSetForCategory() to parse the text in the colons,
-                // and either add or substract the result from our running
+                // and either add or subtract the result from our running
                 // result depending on whether the :: expression was
                 // preceded by a ^
                 if (!haveTilde) {

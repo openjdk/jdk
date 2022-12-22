@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
  * are two groups, like -group "Lang" "java.lang" and -group "Core" "java.*",
  * will put the package java.lang in the group "Lang" and not in group "Core".
  * </p>
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Group {
 
@@ -120,7 +115,7 @@ public class Group {
      * @param moduleNameFormList List of the module name formats.
      */
     public boolean checkModuleGroups(String groupname, String moduleNameFormList) {
-        String[] mdlPatterns = moduleNameFormList.split(":");
+        String[] mdlPatterns = moduleNameFormList.split("[,:]");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);
@@ -147,7 +142,7 @@ public class Group {
                 elementNameGroupMap.put(mdlPattern, groupname);
             }
         }
-        Collections.sort(sortedRegExpList, new MapKeyComparator());
+        sortedRegExpList.sort(new MapKeyComparator());
         return true;
     }
 
@@ -166,7 +161,7 @@ public class Group {
      * @param pkgNameFormList List of the package name formats.
      */
     public boolean checkPackageGroups(String groupname, String pkgNameFormList) {
-        String[] pkgPatterns = pkgNameFormList.split(":");
+        String[] pkgPatterns = pkgNameFormList.split("[,:]");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);
@@ -193,7 +188,7 @@ public class Group {
                 elementNameGroupMap.put(pkgPattern, groupname);
             }
         }
-        Collections.sort(sortedRegExpList, new MapKeyComparator());
+        sortedRegExpList.sort(new MapKeyComparator());
         return true;
     }
 

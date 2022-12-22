@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/testHelpers.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -92,7 +93,7 @@ MetaspaceTestContext::~MetaspaceTestContext() {
 // Create an arena, feeding off this area.
 MetaspaceTestArena* MetaspaceTestContext::create_arena(Metaspace::MetaspaceType type) {
   const ArenaGrowthPolicy* growth_policy = ArenaGrowthPolicy::policy_for_space_type(type, false);
-  Mutex* lock = new Mutex(Monitor::native, "MetaspaceTestArea-lock", false, Monitor::_safepoint_check_never);
+  Mutex* lock = new Mutex(Monitor::nosafepoint, "MetaspaceTestArea_lock");
   MetaspaceArena* arena = NULL;
   {
     MutexLocker ml(lock,  Mutex::_no_safepoint_check_flag);

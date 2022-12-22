@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class OutputSizeTest {
         testOutLen(cc20, 5, 0);
         testOutLen(cc20, 16, 0);
         testOutLen(cc20, 5120, 5104);
-        // Perform an update, then test with a the length of a final chunk
+        // Perform an update, then test with the length of a final chunk
         // of data.
         cc20.update(input);
         testOutLen(cc20, 1024, 6128);
@@ -178,4 +178,3 @@ public class OutputSizeTest {
         return buf;
     }
 }
-

@@ -245,18 +245,18 @@ final class Ser implements Externalizable {
 
     private static Serializable readInternal(byte type, ObjectInput in)
             throws IOException, ClassNotFoundException {
-        switch (type) {
-            case CHRONO_TYPE: return (Serializable)AbstractChronology.readExternal(in);
-            case CHRONO_LOCAL_DATE_TIME_TYPE: return (Serializable)ChronoLocalDateTimeImpl.readExternal(in);
-            case CHRONO_ZONE_DATE_TIME_TYPE: return (Serializable)ChronoZonedDateTimeImpl.readExternal(in);
-            case JAPANESE_DATE_TYPE:  return JapaneseDate.readExternal(in);
-            case JAPANESE_ERA_TYPE: return JapaneseEra.readExternal(in);
-            case HIJRAH_DATE_TYPE: return HijrahDate.readExternal(in);
-            case MINGUO_DATE_TYPE: return MinguoDate.readExternal(in);
-            case THAIBUDDHIST_DATE_TYPE: return ThaiBuddhistDate.readExternal(in);
-            case CHRONO_PERIOD_TYPE: return ChronoPeriodImpl.readExternal(in);
-            default: throw new StreamCorruptedException("Unknown serialized type");
-        }
+        return switch (type) {
+            case CHRONO_TYPE                 -> (Serializable) AbstractChronology.readExternal(in);
+            case CHRONO_LOCAL_DATE_TIME_TYPE -> (Serializable) ChronoLocalDateTimeImpl.readExternal(in);
+            case CHRONO_ZONE_DATE_TIME_TYPE  -> (Serializable) ChronoZonedDateTimeImpl.readExternal(in);
+            case JAPANESE_DATE_TYPE          -> JapaneseDate.readExternal(in);
+            case JAPANESE_ERA_TYPE           -> JapaneseEra.readExternal(in);
+            case HIJRAH_DATE_TYPE            -> HijrahDate.readExternal(in);
+            case MINGUO_DATE_TYPE            -> MinguoDate.readExternal(in);
+            case THAIBUDDHIST_DATE_TYPE      -> ThaiBuddhistDate.readExternal(in);
+            case CHRONO_PERIOD_TYPE          -> ChronoPeriodImpl.readExternal(in);
+            default -> throw new StreamCorruptedException("Unknown serialized type");
+        };
     }
 
     /**

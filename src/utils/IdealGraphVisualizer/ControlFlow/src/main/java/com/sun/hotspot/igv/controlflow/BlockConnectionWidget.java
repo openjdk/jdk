@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.controlflow;
 
 import com.sun.hotspot.igv.data.InputBlockEdge;
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import java.awt.BasicStroke;
@@ -44,28 +45,22 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
     private static final Stroke DASHED_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
     private static final Stroke BOLD_DASHED_STROKE = new BasicStroke(2.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
 
-    private BlockWidget from;
-    private BlockWidget to;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final BlockWidget from;
+    private final BlockWidget to;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private List<Point> points;
-    private InputBlockEdge edge;
     private boolean isDashed = false;
     private boolean isBold = false;
 
     public BlockConnectionWidget(ControlFlowScene scene, InputBlockEdge edge) {
         super(scene);
 
-        this.edge = edge;
         this.from = (BlockWidget) scene.findWidget(edge.getFrom());
         this.to = (BlockWidget) scene.findWidget(edge.getTo());
         inputSlot = to.getInputSlot();
         outputSlot = from.getOutputSlot();
-        points = new ArrayList<Point>();
-    }
-
-    public InputBlockEdge getEdge() {
-        return edge;
+        points = new ArrayList<>();
     }
 
     public Port getTo() {
@@ -74,6 +69,14 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
 
     public Port getFrom() {
         return outputSlot;
+    }
+
+    public Cluster getFromCluster() {
+        return null;
+    }
+
+    public Cluster getToCluster() {
+        return null;
     }
 
     public void setBold(boolean bold) {

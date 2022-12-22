@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestSharedAccess
  */
 
-import jdk.incubator.foreign.*;
-import org.testng.annotations.*;
-
+import java.lang.foreign.*;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,18 +38,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.testng.annotations.*;
+
 import static org.testng.Assert.*;
 
 public class TestSharedAccess {
 
-    static final VarHandle intHandle = MemoryLayouts.JAVA_INT.varHandle(int.class);
+    static final VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
 
     @Test
     public void testShared() throws Throwable {
-        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_INT);
-        try (ResourceScope scope = ResourceScope.newSharedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(layout, scope);
-            for (int i = 0 ; i < layout.elementCount().getAsLong() ; i++) {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+        try (Arena arena = Arena.openShared()) {
+            MemorySegment s = MemorySegment.allocateNative(layout, arena.scope());;
+            for (int i = 0 ; i < layout.elementCount() ; i++) {
                 setInt(s.asSlice(i * 4), 42);
             }
             List<Thread> threads = new ArrayList<>();
@@ -93,12 +94,12 @@ public class TestSharedAccess {
 
     @Test
     public void testSharedUnsafe() throws Throwable {
-        try (ResourceScope scope = ResourceScope.newSharedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(4, 1, scope);
+        try (Arena arena = Arena.openShared()) {
+            MemorySegment s = MemorySegment.allocateNative(4, 1, arena.scope());;
             setInt(s, 42);
             assertEquals(getInt(s), 42);
             List<Thread> threads = new ArrayList<>();
-            MemorySegment sharedSegment = s.address().asSegment(s.byteSize(), scope);
+            MemorySegment sharedSegment = MemorySegment.ofAddress(s.address(), s.byteSize(), arena.scope());
             for (int i = 0 ; i < 1000 ; i++) {
                 threads.add(new Thread(() -> {
                     assertEquals(getInt(sharedSegment), 42);
@@ -120,13 +121,13 @@ public class TestSharedAccess {
         CountDownLatch a = new CountDownLatch(1);
         CountDownLatch b = new CountDownLatch(1);
         CompletableFuture<?> r;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(2, MemoryLayouts.JAVA_INT), scope);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT), arena.scope());;
             r = CompletableFuture.runAsync(() -> {
                 try {
                     ByteBuffer bb = s1.asByteBuffer();
 
-                    MemorySegment s2 = MemorySegment.ofByteBuffer(bb);
+                    MemorySegment s2 = MemorySegment.ofBuffer(bb);
                     a.countDown();
 
                     try {
@@ -136,7 +137,7 @@ public class TestSharedAccess {
 
                     setInt(s2.asSlice(4), -42);
                     fail();
-                } catch (IllegalStateException ex) {
+                } catch (WrongThreadException ex) {
                     assertTrue(ex.getMessage().contains("owning thread"));
                 }
             });

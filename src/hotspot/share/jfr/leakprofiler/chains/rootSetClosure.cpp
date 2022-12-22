@@ -35,8 +35,9 @@
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
 

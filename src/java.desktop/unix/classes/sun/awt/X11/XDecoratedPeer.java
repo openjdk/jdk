@@ -32,6 +32,7 @@ import java.awt.event.WindowEvent;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import sun.awt.IconInfo;
 import sun.util.logging.PlatformLogger;
@@ -340,7 +341,19 @@ abstract class XDecoratedPeer extends XWindowPeer {
             || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
         {
             if (XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
-                getWMSetInsets(XAtom.get(ev.get_atom()));
+                if (getMWMDecorTitleProperty().isPresent()) {
+                    // Insets might have changed "in-flight" if that property
+                    // is present, so we need to get the actual values of
+                    // insets from the WM and propagate them through all the
+                    // proper channels.
+                    wm_set_insets = null;
+                    Insets in = getWMSetInsets(XAtom.get(ev.get_atom()));
+                    if (in != null && !in.equals(dimensions.getInsets())) {
+                        handleCorrectInsets(in);
+                    }
+                } else {
+                    getWMSetInsets(XAtom.get(ev.get_atom()));
+                }
             } else {
                 if (!isReparented()) {
                     return;
@@ -703,7 +716,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         reshape(dims, operation, userReshape);
     }
 
-    // This method gets overriden in XFramePeer & XDialogPeer.
+    // This method gets overridden in XFramePeer & XDialogPeer.
     abstract boolean isTargetUndecorated();
 
     /**
@@ -1191,7 +1204,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     public boolean requestWindowFocus(long time, boolean timeProvided) {
         focusLog.fine("Request for decorated window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
-        // If this is Window and its owner Frame is active we can be sure request succedded.
+        // If this is Window and its owner Frame is active we can be sure request succeeded.
         Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
 
@@ -1207,7 +1220,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         }
         if (toFocus == null || !toFocus.focusAllowedFor()) {
             // This might change when WM will have property to determine focus policy.
-            // Right now, because policy is unknown we can't be sure we succedded
+            // Right now, because policy is unknown we can't be sure we succeeded
             return false;
         }
         if (this == toFocus) {
@@ -1274,7 +1287,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
              * The fix is based on the empiric fact consisting in that the component
              * receives native mouse event nearly at the same time the Frame receives
              * WM_TAKE_FOCUS (when FocusIn is generated via XSetInputFocus call) but
-             * definetely before the Frame gets FocusIn event (when this method is called).
+             * definitely before the Frame gets FocusIn event (when this method is called).
              */
             postEvent(new InvocationEvent(target, new Runnable() {
                 public void run() {
@@ -1304,5 +1317,25 @@ abstract class XDecoratedPeer extends XWindowPeer {
             }
         }
         super.handleWindowFocusOut(oppositeWindow, serial);
+    }
+
+    public static final String MWM_DECOR_TITLE_PROPERTY_NAME = "xawt.mwm_decor_title";
+
+    public final Optional<Boolean> getMWMDecorTitleProperty() {
+        Optional<Boolean> res = Optional.empty();
+
+        if (SunToolkit.isInstanceOf(target, "javax.swing.RootPaneContainer")) {
+            javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer) target).getRootPane();
+            Object prop = rootpane.getClientProperty(MWM_DECOR_TITLE_PROPERTY_NAME);
+            if (prop != null) {
+                res = Optional.of(Boolean.parseBoolean(prop.toString()));
+            }
+        }
+
+        return res;
+    }
+
+    public final boolean getWindowTitleVisible() {
+        return getMWMDecorTitleProperty().orElse(true);
     }
 }

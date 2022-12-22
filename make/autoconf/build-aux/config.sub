@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,13 @@ if echo $* | grep pc-msys >/dev/null ; then
     exit
 fi
 
+# Canonicalize for riscv which autoconf-config.sub doesn't handle
+if echo $* | grep '^riscv\(32\|64\)-linux' >/dev/null ; then
+    result=`echo $@ | sed 's/linux/unknown-linux/'`
+    echo $result
+    exit
+fi
+
 # Filter out everything that doesn't begin with "aarch64-"
 if ! echo $* | grep '^aarch64-' >/dev/null ; then
     . $DIR/autoconf-config.sub "$@"
@@ -78,4 +85,3 @@ result=`echo $result | sed "s/^arm-/aarch64-/"`
 
 echo $result
 exit $exitcode
-

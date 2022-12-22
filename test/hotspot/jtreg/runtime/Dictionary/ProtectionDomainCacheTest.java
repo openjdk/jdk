@@ -26,6 +26,7 @@
  * @bug 8151486 8218266
  * @summary Call Class.forName() on the system classloader from a class loaded
  *          from a custom classloader, using the current class's protection domain.
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.lib.Utils

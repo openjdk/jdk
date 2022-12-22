@@ -37,7 +37,7 @@ public:
   G1ParCopyClosure<G1BarrierCLD,  should_mark> _oops_in_cld;
   // We do not need (and actually should not) collect oops from nmethods into the
   // optional collection set as we already automatically collect the corresponding
-  // nmethods in the region's strong code roots set. So set G1BarrierNoOptRoots in
+  // nmethods in the region's code roots set. So set G1BarrierNoOptRoots in
   // this closure.
   // If these were present there would be opportunity for multiple threads to try
   // to change this oop* at the same time. Since embedded oops are not necessarily

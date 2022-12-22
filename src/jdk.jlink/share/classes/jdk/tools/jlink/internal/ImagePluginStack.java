@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public final class ImagePluginStack {
         }
     }
 
-    private final static class CheckOrderResourcePoolManager extends ResourcePoolManager {
+    private static final class CheckOrderResourcePoolManager extends ResourcePoolManager {
 
         private final List<ResourcePoolEntry> orderedList;
         private int currentIndex;
@@ -143,7 +143,7 @@ public final class ImagePluginStack {
         private List<String> getSortedStrings() {
             Stream<java.util.Map.Entry<String, Integer>> stream
                     = stringsUsage.entrySet().stream();
-            // Remove strings that have a single occurence
+            // Remove strings that have a single occurrence
             List<String> result = stream.sorted(Comparator.comparing(e -> e.getValue(),
                     Comparator.reverseOrder())).filter((e) -> {
                         return e.getValue() > 1;
@@ -181,7 +181,7 @@ public final class ImagePluginStack {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));
-        plugins.stream().forEach((p) -> {
+        plugins.forEach((p) -> {
             Objects.requireNonNull(p);
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
@@ -227,13 +227,13 @@ public final class ImagePluginStack {
                     resources.getStringTable()).resourcePool();
         }
         PreVisitStrings previsit = new PreVisitStrings();
-        resourcePrevisitors.stream().forEach((p) -> {
+        resourcePrevisitors.forEach((p) -> {
             p.previsit(resources.resourcePool(), previsit);
         });
 
         // Store the strings resulting from the previsit.
         List<String> sorted = previsit.getSortedStrings();
-        sorted.stream().forEach((s) -> {
+        sorted.forEach((s) -> {
             resources.getStringTable().addString(s);
         });
 
@@ -282,7 +282,7 @@ public final class ImagePluginStack {
      * This pool wrap the original pool and automatically uncompress ResourcePoolEntry
      * if needed.
      */
-    private class LastPoolManager extends ResourcePoolManager {
+    private static class LastPoolManager extends ResourcePoolManager {
         private class LastModule implements ResourcePoolModule {
 
             final ResourcePoolModule module;

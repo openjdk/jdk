@@ -41,7 +41,6 @@
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
-  nonstatic_field(HeapRegion, _compaction_top, HeapWord*)                     \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \
@@ -56,7 +55,7 @@
                                                                               \
   volatile_nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)      \
   nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager)    \
-  nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
+  nonstatic_field(G1CollectedHeap, _monitoring_support, G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _archive_set,        HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _humongous_set,      HeapRegionSetBase)    \

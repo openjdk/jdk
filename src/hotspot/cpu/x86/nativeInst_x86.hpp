@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ class NativeInstruction {
   oop  oop_at (int offset) const       { return *(oop*) addr_at(offset); }
 
 
-  void set_char_at(int offset, char c)        { *addr_at(offset) = (u_char)c; wrote(offset); }
+  void set_char_at(int offset, u_char c)        { *addr_at(offset) = c; wrote(offset); }
   void set_int_at(int offset, jint  i)        { *(jint*)addr_at(offset) = i;  wrote(offset); }
   void set_ptr_at (int offset, intptr_t  ptr) { *(intptr_t*) addr_at(offset) = ptr;  wrote(offset); }
   void set_oop_at (int offset, oop  o)        { *(oop*) addr_at(offset) = o;  wrote(offset); }
@@ -160,8 +160,6 @@ class NativeCall: public NativeInstruction {
     return_address_offset       =    5
   };
 
-  enum { cache_line_size = BytesPerWord };  // conservative estimate!
-
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(return_address_offset); }
   int   displacement() const                { return (jint) int_at(displacement_offset); }
@@ -175,9 +173,11 @@ class NativeCall: public NativeInstruction {
 #endif // AMD64
     set_int_at(displacement_offset, dest - return_address());
   }
+  // Returns whether the 4-byte displacement operand is 4-byte aligned.
+  bool  is_displacement_aligned();
   void  set_destination_mt_safe(address dest);
 
-  void  verify_alignment() { assert((intptr_t)addr_at(displacement_offset) % BytesPerInt == 0, "must be aligned"); }
+  void  verify_alignment() { assert(is_displacement_aligned(), "displacement of call is not aligned"); }
   void  verify();
   void  print();
 
@@ -724,5 +724,57 @@ inline bool NativeInstruction::is_mov_literal64() {
   return false;
 #endif // AMD64
 }
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  enum Intel_specific_constants {
+    instruction_code = 0x0f,
+    instruction_size = 8,
+    instruction_offset = 0,
+    displacement_offset = 4
+  };
+
+  bool check() const { return int_at(0) == 0x841f0f; }
+  int displacement() const { return (jint) int_at(displacement_offset); }
+  void patch(jint diff);
+  void make_deopt();
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
+  return NULL;
+}
+
+inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  assert(nop->check(), "");
+  return nop;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+ public:
+  enum Intel_specific_constants {
+    instruction_prefix          = 0x0F,
+    instruction_code            = 0xFF,
+    instruction_size            =    3,
+    instruction_offset          =    0,
+  };
+
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  void  verify();
+
+  static bool is_deopt_at(address instr) {
+    return ((*instr) & 0xFF) == NativeDeoptInstruction::instruction_prefix &&
+      ((*(instr+1)) & 0xFF) == NativeDeoptInstruction::instruction_code;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos, bool invalidate = true);
+};
 
 #endif // CPU_X86_NATIVEINST_X86_HPP

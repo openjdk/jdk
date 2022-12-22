@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class FormatterWithProvider {
         try {
             testFormatter(Locale.JAPANESE, formatString, number);
             testFormatter(Locale.FRENCH, formatString, number);
-            testFormatter(new Locale("hi", "IN"), formatString, number);
+            testFormatter(Locale.of("hi", "IN"), formatString, number);
 
         } catch (ClassCastException ex) {
             throw new RuntimeException("[FAILED: A ClassCastException is" +

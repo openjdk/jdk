@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 * Copyright (c) 2020, Datadog, Inc. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -131,7 +131,7 @@ void JfrAdaptiveSampler::reconfigure() {
   rotate(active_window());
 }
 
-// Call next_window_param() to report the expired window and to retreive params for the next window.
+// Call next_window_param() to report the expired window and to retrieve params for the next window.
 void JfrAdaptiveSampler::rotate(const JfrSamplerWindow* expired) {
   assert(expired == active_window(), "invariant");
   install(configure(next_window_params(expired), expired));

@@ -30,11 +30,11 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build LambdaProxyDuringShutdownApp sun.hotspot.WhiteBox LambdaVerification
+ * @build LambdaProxyDuringShutdownApp jdk.test.whitebox.WhiteBox LambdaVerification
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar lambda_proxy_shutdown.jar LambdaVerification
  *             LambdaProxyDuringShutdownApp MyShutdown Outer Outer$Inner
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaProxyDuringShutdown
  */
 
@@ -60,8 +60,8 @@ public class LambdaProxyDuringShutdown extends DynamicArchiveTestBase {
             use_whitebox_jar,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                // Nest host should be skipped since it is not in the linked state.
-                output.shouldContain("Skipping Outer: Not linked")
+                // Nest host should not be skipped although it is not in the linked state.
+                output.shouldNotContain("Skipping Outer: Not linked")
                 // Lambda proxy is loaded normally.
                       .shouldMatch("class.load.*Outer[$]Inner[$][$]Lambda[$].*0x.*source:.Outer")
                       .shouldContain(appOutput)
@@ -75,10 +75,10 @@ public class LambdaProxyDuringShutdown extends DynamicArchiveTestBase {
             "-Xlog:class+load=debug",
             "-cp", appJar, mainClass, "run")
             .assertNormalExit(output -> {
-                // Only the Inner class is loaded from the dynamic archive.
-                // The nest host (Outer) and its lambda proxy are not loaded
+                // Only the nest host (Outer) and the Inner class are loaded
                 // from the dynamic archive.
-                output.shouldMatch("class.load.*Outer.source:.*lambda_proxy_shutdown.jar")
+                // The lambda proxy is not loaded from the dynamic archive.
+                output.shouldMatch("class.load.*Outer.source:.*shared.*objects.*file.*(top)")
                       .shouldMatch("class.load.*Outer[$]Inner[$][$]Lambda[$].*0x.*source:.Outer")
                       .shouldMatch("class.load. Outer[$]Inner.source:.*shared.*objects.*file.*(top)")
                       .shouldContain(appOutput)

@@ -29,9 +29,10 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @compile RedefineSealedClass.java
- * @run main/othervm RedefineSealedClass buildagent
- * @run main/othervm/timeout=6000 RedefineSealedClass runtest
+ * @run driver RedefineSealedClass buildagent
+ * @run driver/timeout=6000 RedefineSealedClass runtest
  */
 
 import java.io.FileNotFoundException;
@@ -110,6 +111,7 @@ public class RedefineSealedClass {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotContain("processing of -javaagent failed");
+            output.shouldHaveExitValue(0);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciExceptionHandler;
   friend class ciMethod;
   friend class ciField;
+  friend class ciReplay;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
@@ -58,10 +59,9 @@ private:
   bool                   _has_nonstatic_concrete_methods;
   bool                   _is_hidden;
   bool                   _is_record;
+  bool                   _has_trusted_loader;
 
   ciFlags                _flags;
-  jint                   _nonstatic_field_size;
-  jint                   _nonstatic_oop_map_size;
 
   // Lazy fields get filled in only upon request.
   ciInstanceKlass*       _super;
@@ -108,6 +108,7 @@ protected:
   bool compute_shared_has_subklass();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
+  bool compute_has_trusted_loader();
 
   // Update the init_state for shared klasses
   void update_if_shared(InstanceKlass::ClassState expected) {
@@ -165,19 +166,16 @@ public:
     return compute_shared_has_subklass();
   }
 
+  jint                   layout_helper_size_in_bytes()  {
+    return Klass::layout_helper_size_in_bytes(layout_helper());
+  }
   jint                   size_helper()  {
     return (Klass::layout_helper_size_in_bytes(layout_helper())
             >> LogHeapWordSize);
   }
-  jint                   nonstatic_field_size()  {
-    assert(is_loaded(), "must be loaded");
-    return _nonstatic_field_size; }
   jint                   has_nonstatic_fields()  {
     assert(is_loaded(), "must be loaded");
     return _has_nonstatic_fields; }
-  jint                   nonstatic_oop_map_size()  {
-    assert(is_loaded(), "must be loaded");
-    return _nonstatic_oop_map_size; }
   ciInstanceKlass*       super();
   jint                   nof_implementors() {
     ciInstanceKlass* impl;
@@ -269,7 +267,6 @@ public:
   BasicType box_klass_type() const;
   bool is_box_klass() const;
   bool is_boxed_value_offset(int offset) const;
-  bool is_box_cache_valid() const;
 
   // Is this klass in the given package?
   bool is_in_package(const char* packagename) {
@@ -279,7 +276,6 @@ public:
 
   // What kind of ciObject is this?
   bool is_instance_klass() const { return true; }
-  bool is_java_klass() const     { return true; }
 
   virtual ciKlass* exact_klass() {
     if (is_loaded() && is_final() && !is_interface()) {
@@ -293,8 +289,20 @@ public:
     return !is_interface() && !is_abstract();
   }
 
+  bool has_trusted_loader() const {
+    return _has_trusted_loader;
+  }
+
+  // Replay support
+
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
+
+  static void dump_replay_instanceKlass(outputStream* out, InstanceKlass* ik);
+
+
+  // Return stable class name suitable for replay file.
+  const char *replay_name() const;
 
 #ifdef ASSERT
   bool debug_final_field_at(int offset);

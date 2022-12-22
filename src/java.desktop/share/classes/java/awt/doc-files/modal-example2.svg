@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<svg version="1.1"
+     width="100" height="155"
+     xmlns="http://www.w3.org/2000/svg"
+>
+    <style><![CDATA[
+        text {
+            font-size: 15px;
+            font-family: 'DejaVu Serif', serif;
+            fill: #000;
+        }
+        text.centered {
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        tspan {
+            font-style: italic;
+            font-size: smaller;
+        }
+        ellipse, path {
+            stroke: #000;
+            stroke-width: 1;
+        }
+        path {
+            fill: none;
+        }
+        path.dashed {
+            stroke-dasharray: 2;
+        }
+    ]]></style>
+
+    <path
+            d="M 50 25 L 50  75 L 50 125"
+    />
+
+    <ellipse
+            cx="50" cy="25"
+            rx="18" ry="14"
+            fill="#990066"
+    />
+    <text
+            x="50"
+            y="25"
+            style="fill: #fff"
+            class="centered"
+    >F</text>
+    <text
+            x="29"
+            y="36"
+            text-anchor="end"
+    >1</text>
+
+    <ellipse
+            cx="50" cy="75"
+            rx="18" ry="14"
+            fill="#00ccff"
+    />
+    <text
+            x="50"
+            y="75"
+            class="centered"
+    >D<tspan>i</tspan></text>
+    <text
+            x="29"
+            y="86"
+            text-anchor="end"
+    >2</text>
+    <text
+            x="67"
+            y="64"
+    >4</text>
+
+    <ellipse
+            cx="50" cy="125"
+            rx="18" ry="14"
+            fill="#00ccff"
+    />
+    <text
+            x="50"
+            y="125"
+            class="centered"
+    >D<tspan>ii</tspan></text>
+    <text
+            x="67"
+            y="114"
+    >3</text>
+
+    <path
+            d="M 50,5
+               C 35,5 2,20 2,75
+               S 30,150 50,150
+               S 98,135 98,75
+               S 65,5 50,5"
+            class="dashed"
+    />
+</svg>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
 
 package sun.security.jgss.spnego;
 
-import java.io.*;
-import java.util.*;
-import org.ietf.jgss.*;
-import sun.security.util.*;
-import sun.security.jgss.*;
+import org.ietf.jgss.GSSException;
+import sun.security.jgss.GSSToken;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.ObjectIdentifier;
+
+import java.io.IOException;
 
 /**
- * Astract class for SPNEGO tokens.
+ * Abstract class for SPNEGO tokens.
  * Implementation is based on RFC 2478
  *
  * NegotiationToken ::= CHOICE {
@@ -49,13 +51,13 @@ abstract class SpNegoToken extends GSSToken {
     static final int NEG_TOKEN_INIT_ID = 0x00;
     static final int NEG_TOKEN_TARG_ID = 0x01;
 
-    static enum NegoResult {
+    enum NegoResult {
         ACCEPT_COMPLETE,
         ACCEPT_INCOMPLETE,
         REJECT,
-    };
+    }
 
-    private int tokenType;
+    private final int tokenType;
 
     // property
     static final boolean DEBUG = SpNegoContext.DEBUG;
@@ -146,26 +148,6 @@ abstract class SpNegoToken extends GSSToken {
                 return "SPNEGO NegTokenTarg";
             default:
                 return "SPNEGO Mechanism Token";
-        }
-    }
-
-    /**
-     * Returns the enumerated type of the Negotiation result.
-     *
-     * @param result the negotiated result represented by integer
-     * @return the enumerated type of Negotiated result
-     */
-    static NegoResult getNegoResultType(int result) {
-        switch (result) {
-        case 0:
-                return NegoResult.ACCEPT_COMPLETE;
-        case 1:
-                return NegoResult.ACCEPT_INCOMPLETE;
-        case 2:
-                return NegoResult.REJECT;
-        default:
-                // unknown - return optimistic result
-                return NegoResult.ACCEPT_COMPLETE;
         }
     }
 

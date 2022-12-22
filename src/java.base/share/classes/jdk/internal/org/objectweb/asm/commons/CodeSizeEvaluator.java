@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
@@ -78,7 +79,7 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
     private int maxSize;
 
     public CodeSizeEvaluator(final MethodVisitor methodVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, methodVisitor);
+        this(/* latest api = */ Opcodes.ASM9, methodVisitor);
     }
 
     protected CodeSizeEvaluator(final int api, final MethodVisitor methodVisitor) {
@@ -113,18 +114,18 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
-        if (var < 4 && opcode != RET) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
+        if (varIndex < 4 && opcode != RET) {
             minSize += 1;
             maxSize += 1;
-        } else if (var >= 256) {
+        } else if (varIndex >= 256) {
             minSize += 4;
             maxSize += 4;
         } else {
             minSize += 2;
             maxSize += 2;
         }
-        super.visitVarInsn(opcode, var);
+        super.visitVarInsn(opcode, varIndex);
     }
 
     @Override
@@ -203,15 +204,15 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
-        if (var > 255 || increment > 127 || increment < -128) {
+    public void visitIincInsn(final int varIndex, final int increment) {
+        if (varIndex > 255 || increment > 127 || increment < -128) {
             minSize += 6;
             maxSize += 6;
         } else {
             minSize += 3;
             maxSize += 3;
         }
-        super.visitIincInsn(var, increment);
+        super.visitIincInsn(varIndex, increment);
     }
 
     @Override
@@ -236,3 +237,4 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
         super.visitMultiANewArrayInsn(descriptor, numDimensions);
     }
 }
+

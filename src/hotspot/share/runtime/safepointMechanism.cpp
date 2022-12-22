@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -76,9 +77,70 @@ void SafepointMechanism::default_initialize() {
   }
 }
 
-void SafepointMechanism::process(JavaThread *thread) {
+uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_watermark) {
+  if (armed) {
+    log_debug(stackbarrier)("Computed armed for tid %d", Thread::current()->osthread()->thread_id());
+    return _poll_word_armed_value;
+  }
+  if (stack_watermark == 0) {
+    log_debug(stackbarrier)("Computed disarmed for tid %d", Thread::current()->osthread()->thread_id());
+    return _poll_word_disarmed_value;
+  }
+  log_debug(stackbarrier)("Computed watermark for tid %d", Thread::current()->osthread()->thread_id());
+  return stack_watermark;
+}
+
+void SafepointMechanism::update_poll_values(JavaThread* thread) {
+  assert(thread == Thread::current(), "Must be");
+  assert(thread->thread_state() != _thread_blocked, "Must not be");
+  assert(thread->thread_state() != _thread_in_native, "Must not be");
+
+  for (;;) {
+    bool armed = global_poll() || thread->handshake_state()->has_operation();
+    uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);
+    uintptr_t poll_page = armed ? _poll_page_armed_value
+                                : _poll_page_disarmed_value;
+    uintptr_t poll_word = compute_poll_word(armed, stack_watermark);
+    uintptr_t prev_poll_word = thread->poll_data()->get_polling_word();
+
+    if (prev_poll_word != poll_word ||
+        prev_poll_word == _poll_word_armed_value) {
+      // While updating the poll value, we allow entering new nmethods
+      // through stack unwinding. The nmethods might have been processed in
+      // a concurrent thread by the GC. So we need to run a cross modify
+      // fence to ensure patching becomes visible. We may also wake up from
+      // a safepoint that has patched code. This cross modify fence will
+      // ensure such paths can observe patched code.
+      // Note that while other threads may arm the thread-local poll of
+      // a thread, only the thread itself has permission to disarm its own
+      // poll value, in any way making it less restrictive. Therefore, whenever
+      // the frontier of what the mutator allows itself to do is increased,
+      // we will catch that here, and ensure a cross modifying fence is used.
+      OrderAccess::cross_modify_fence();
+    }
+
+    thread->poll_data()->set_polling_page(poll_page);
+    thread->poll_data()->set_polling_word(poll_word);
+    OrderAccess::fence();
+    if (!armed && (global_poll() || thread->handshake_state()->has_operation())) {
+      // We disarmed an old safepoint, but a new one is synchronizing.
+      // We need to arm the poll for the subsequent safepoint poll.
+      continue;
+    }
+    break;
+  }
+}
+
+void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool check_async_exception) {
+  DEBUG_ONLY(intptr_t* sp_before = thread->last_Java_sp();)
+  // Read global poll and has_handshake after local poll
+  OrderAccess::loadload();
+
+  // local poll already checked, if used.
   bool need_rechecking;
   do {
+    JavaThreadState state = thread->thread_state();
+    guarantee(state == _thread_in_vm, "Illegal threadstate encountered: %d", state);
     if (global_poll()) {
       // Any load in ::block() must not pass the global poll load.
       // Otherwise we might load an old safepoint counter (for example).
@@ -94,53 +156,11 @@ void SafepointMechanism::process(JavaThread *thread) {
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
 
-    need_rechecking = thread->handshake_state()->should_process() && thread->handshake_state()->process_by_self();
-
+    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
   } while (need_rechecking);
-}
 
-uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_watermark) {
-  if (armed) {
-    log_debug(stackbarrier)("Computed armed for tid %d", Thread::current()->osthread()->thread_id());
-    return _poll_word_armed_value;
-  }
-  if (stack_watermark == 0) {
-    log_debug(stackbarrier)("Computed disarmed for tid %d", Thread::current()->osthread()->thread_id());
-    return _poll_word_disarmed_value;
-  }
-  log_debug(stackbarrier)("Computed watermark for tid %d", Thread::current()->osthread()->thread_id());
-  return stack_watermark;
-}
-
-void SafepointMechanism::update_poll_values(JavaThread* thread) {
-  assert(thread->thread_state() != _thread_blocked, "Must not be");
-  assert(thread->thread_state() != _thread_in_native, "Must not be");
-  for (;;) {
-    bool armed = global_poll() || thread->handshake_state()->has_operation();
-    uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);
-    uintptr_t poll_page = armed ? _poll_page_armed_value
-                                : _poll_page_disarmed_value;
-    uintptr_t poll_word = compute_poll_word(armed, stack_watermark);
-    thread->poll_data()->set_polling_page(poll_page);
-    thread->poll_data()->set_polling_word(poll_word);
-    OrderAccess::fence();
-    if (!armed && (global_poll() || thread->handshake_state()->has_operation())) {
-      // We disarmed an old safepoint, but a new one is synchronizing.
-      // We need to arm the poll for the subsequent safepoint poll.
-      continue;
-    }
-    break;
-  }
-}
-
-void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
-  // Read global poll and has_handshake after local poll
-  OrderAccess::loadload();
-
-  // local poll already checked, if used.
-  process(thread);
   update_poll_values(thread);
-  OrderAccess::cross_modify_fence();
+  assert(sp_before == thread->last_Java_sp(), "Anchor has changed");
 }
 
 void SafepointMechanism::initialize_header(JavaThread* thread) {

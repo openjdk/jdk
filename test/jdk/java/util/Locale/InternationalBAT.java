@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,26 +69,26 @@ public class InternationalBAT {
     // http://webwork.eng/j2se/1.4/docs/guide/intl/locale.doc.html#util-text
 
     private static Locale[] requiredLocales = {
-        new Locale("ar", "SA"),
-        new Locale("zh", "CN"),
-        new Locale("zh", "TW"),
-        new Locale("nl", "NL"),
-        new Locale("en", "AU"),
-        new Locale("en", "CA"),
-        new Locale("en", "GB"),
-        new Locale("en", "US"),
-        new Locale("fr", "CA"),
-        new Locale("fr", "FR"),
-        new Locale("de", "DE"),
-        new Locale("iw", "IL"),
-        new Locale("hi", "IN"),
-        new Locale("it", "IT"),
-        new Locale("ja", "JP"),
-        new Locale("ko", "KR"),
-        new Locale("pt", "BR"),
-        new Locale("es", "ES"),
-        new Locale("sv", "SE"),
-        new Locale("th", "TH"),
+        Locale.of("ar", "SA"),
+        Locale.CHINA,
+        Locale.TAIWAN,
+        Locale.of("nl", "NL"),
+        Locale.of("en", "AU"),
+        Locale.of("en", "CA"),
+        Locale.UK,
+        Locale.US,
+        Locale.of("fr", "CA"),
+        Locale.FRANCE,
+        Locale.GERMANY,
+        Locale.of("iw", "IL"),
+        Locale.of("hi", "IN"),
+        Locale.ITALY,
+        Locale.JAPAN,
+        Locale.KOREA,
+        Locale.of("pt", "BR"),
+        Locale.of("es", "ES"),
+        Locale.of("sv", "SE"),
+        Locale.of("th", "TH"),
     };
 
     // Date strings for May 10, 2001, for the required locales
@@ -181,26 +181,26 @@ public class InternationalBAT {
     // one sample locale each for the required encodings
 
     private static Locale[] sampleLocales = {
-        new Locale("ar", "SA"),
-        new Locale("zh", "CN"),
-        new Locale("zh", "TW"),
-        new Locale("iw", "IL"),
-        new Locale("ja", "JP"),
-        new Locale("ko", "KR"),
-        new Locale("it", "IT"),
-        new Locale("th", "TH"),
-        new Locale("ar", "SA"),
-        new Locale("zh", "CN"),
-        new Locale("zh", "CN"),
-        new Locale("zh", "CN"),
-        new Locale("zh", "TW"),
-        new Locale("iw", "IL"),
-        new Locale("ja", "JP"),
-        new Locale("ja", "JP"),
-        new Locale("ko", "KR"),
-        new Locale("it", "IT"),
-        new Locale("it", "IT"),
-        new Locale("th", "TH"),
+        Locale.of("ar", "SA"),
+        Locale.of("zh", "CN"),
+        Locale.of("zh", "TW"),
+        Locale.of("iw", "IL"),
+        Locale.of("ja", "JP"),
+        Locale.of("ko", "KR"),
+        Locale.of("it", "IT"),
+        Locale.of("th", "TH"),
+        Locale.of("ar", "SA"),
+        Locale.of("zh", "CN"),
+        Locale.of("zh", "CN"),
+        Locale.of("zh", "CN"),
+        Locale.of("zh", "TW"),
+        Locale.of("iw", "IL"),
+        Locale.of("ja", "JP"),
+        Locale.of("ja", "JP"),
+        Locale.of("ko", "KR"),
+        Locale.of("it", "IT"),
+        Locale.of("it", "IT"),
+        Locale.of("th", "TH"),
     };
 
     // expected conversion results for the date strings of the sample locales

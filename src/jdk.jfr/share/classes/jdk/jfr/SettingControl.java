@@ -37,30 +37,7 @@ import jdk.jfr.internal.settings.JDKSettingControl;
  * The following example shows a naive implementation of a setting control for
  * regular expressions:
  *
- * <pre>{@literal
- * final class RegExpControl extends SettingControl {
- *   private Pattern pattern = Pattern.compile(".*");
- *
- *   @Override
- *   public void setValue(String value) {
- *     this.pattern = Pattern.compile(value);
- *   }
- *
- *   @Override
- *   public String combine(Set<String> values) {
- *     return String.join("|", values);
- *   }
- *
- *   @Override
- *   public String getValue() {
- *     return pattern.toString();
- *   }
- *
- *   public boolean matches(String s) {
- *     return pattern.matcher(s).find();
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="SettingControlOverview1"}
  *
  * The {@code setValue(String)}, {@code getValue()} and
  * {@code combine(Set<String>)} methods are invoked when a setting value
@@ -85,55 +62,13 @@ import jdk.jfr.internal.settings.JDKSettingControl;
  * The following example shows how to create an event that uses the
  * regular expression filter defined above.
  *
- * <pre>{@literal
- * abstract class HTTPRequest extends Event {
- *   @Label("Request URI")
- *   protected String uri;
- *
- *   @Label("Servlet URI Filter")
- *   @SettingDefinition
- *   protected boolean uriFilter(RegExpControl regExp) {
- *     return regExp.matches(uri);
- *   }
- * }
- *
- * @Label("HTTP Get Request")
- * class HTTPGetRequest extends HTTPRequest {
- * }
- *
- * @Label("HTTP Post Request")
- * class HTTPPostRequest extends HTTPRequest {
- * }
- *
- * class ExampleServlet extends HttpServlet {
- *   protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
- *     HTTPGetRequest request = new HTTPGetRequest();
- *     request.begin();
- *     request.uri = req.getRequestURI();
- *     ...
- *     request.commit();
- *   }
- *
- *   protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
- *     HTTPPostRequest request = new HTTPPostRequest();
- *     request.begin();
- *     request.uri = req.getRequestURI();
- *     ...
- *     request.commit();
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="SettingControlOverview2"}
  *
  * <p>
  * The following example shows how an event can be filtered by assigning the
  * {@code "uriFilter"} setting with the specified regular expressions.
  *
- * <pre>{@literal
- * Recording r = new Recording();
- * r.enable("HTTPGetRequest").with("uriFilter", "https://www.example.com/list/.*");
- * r.enable("HTTPPostRequest").with("uriFilter", "https://www.example.com/login/.*");
- * r.start();
- * }</pre>
+ * {@snippet class="Snippets" region="SettingControlOverview3"}
  *
  * @see SettingDefinition
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Group;
 
 /**
  * Generate the package index page "index.html".
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class PackageIndexWriter extends AbstractOverviewIndexWriter {
 
@@ -82,15 +77,15 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
     /**
      * Adds the packages list to the documentation tree.
      *
-     * @param main the documentation tree to which the packages list will be added
+     * @param target the content to which the packages list will be added
      */
     @Override
-    protected void addIndex(Content main) {
+    protected void addIndex(Content target) {
         Map<String, SortedSet<PackageElement>> groupPackageMap
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            Table table =  new Table(HtmlStyle.summaryTable)
+            var table = new Table<PackageElement>(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_PACKAGES_TABLE)
@@ -105,21 +100,15 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
             }
 
             for (PackageElement pkg : configuration.packages) {
-                if (!pkg.isUnnamed()) {
-                    if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                        Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
-                        Content summaryContent = new ContentBuilder();
-                        addSummaryComment(pkg, summaryContent);
-                        table.addRow(pkg, packageLinkContent, summaryContent);
-                    }
+                if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
+                    Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
+                    Content summaryContent = new ContentBuilder();
+                    addSummaryComment(pkg, summaryContent);
+                    table.addRow(pkg, packageLinkContent, summaryContent);
                 }
             }
 
-            main.add(table);
-
-            if (table.needsScript()) {
-                getMainBodyScript().append(table.getScript());
-            }
+            target.add(table);
         }
     }
 }

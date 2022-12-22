@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 
 // Implementation of Heap
 
-CodeHeap::CodeHeap(const char* name, const int code_blob_type)
+CodeHeap::CodeHeap(const char* name, const CodeBlobType code_blob_type)
   : _code_blob_type(code_blob_type) {
   _name                         = name;
   _number_of_committed_segments = 0;
@@ -113,7 +113,7 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_joi
     //      are appended to the right.
     //  3 - Take full advantage of the segmap being almost correct with
     //      the two blocks combined. Lets assume the left block consists
-    //      of m segments. The the segmap looks like
+    //      of m segments. The segmap looks like
     //        ... (m-2) (m-1) (m) 0  1  2  3 ...
     //      By substituting the '0' by '1', we create a valid, but
     //      suboptimal, segmap range covering the two blocks combined.
@@ -288,8 +288,8 @@ void* CodeHeap::allocate(size_t instance_size) {
   if (block != NULL) {
     assert(!block->free(), "must not be marked free");
     guarantee((char*) block >= _memory.low_boundary() && (char*) block < _memory.high(),
-              "The newly allocated block " INTPTR_FORMAT " is not within the heap "
-              "starting with "  INTPTR_FORMAT " and ending with "  INTPTR_FORMAT,
+              "The newly allocated block " PTR_FORMAT " is not within the heap "
+              "starting with "  PTR_FORMAT " and ending with "  PTR_FORMAT,
               p2i(block), p2i(_memory.low_boundary()), p2i(_memory.high()));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     _blob_count++;
@@ -305,8 +305,8 @@ void* CodeHeap::allocate(size_t instance_size) {
     block->initialize(number_of_segments);
     _next_segment += number_of_segments;
     guarantee((char*) block >= _memory.low_boundary() && (char*) block < _memory.high(),
-              "The newly allocated block " INTPTR_FORMAT " is not within the heap "
-              "starting with "  INTPTR_FORMAT " and ending with " INTPTR_FORMAT,
+              "The newly allocated block " PTR_FORMAT " is not within the heap "
+              "starting with "  PTR_FORMAT " and ending with " PTR_FORMAT,
               p2i(block), p2i(_memory.low_boundary()), p2i(_memory.high()));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     _blob_count++;
@@ -367,15 +367,15 @@ void CodeHeap::deallocate(void* p) {
   HeapBlock* b = (((HeapBlock *)p) - 1);
   assert(b->allocated_space() == p, "sanity check");
   guarantee((char*) b >= _memory.low_boundary() && (char*) b < _memory.high(),
-            "The block to be deallocated " INTPTR_FORMAT " is not within the heap "
-            "starting with "  INTPTR_FORMAT " and ending with " INTPTR_FORMAT,
+            "The block to be deallocated " PTR_FORMAT " is not within the heap "
+            "starting with "  PTR_FORMAT " and ending with " PTR_FORMAT,
             p2i(b), p2i(_memory.low_boundary()), p2i(_memory.high()));
   add_to_freelist(b);
   NOT_PRODUCT(verify());
 }
 
 /**
- * The segment map is used to quickly find the the start (header) of a
+ * The segment map is used to quickly find the start (header) of a
  * code block (e.g. nmethod) when only a pointer to a location inside the
  * code block is known. This works as follows:
  *  - The storage reserved for the code heap is divided into 'segments'.
@@ -483,7 +483,7 @@ void* CodeHeap::find_start(void* p) const {
 
 // Find block which contains the passed pointer.
 // Same as find_start(p), but with additional safety net.
-CodeBlob* CodeHeap::find_blob_unsafe(void* start) const {
+CodeBlob* CodeHeap::find_blob(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
   return (result != NULL && result->blob_contains((address)start)) ? result : NULL;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,7 @@ class NTLM {
             md4 = sun.security.provider.MD4.getInstance();
             hmac = Mac.getInstance("HmacMD5");
             md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchPaddingException e) {
-            throw new AssertionError();
-        } catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
             throw new AssertionError();
         }
     }
@@ -151,7 +149,7 @@ class NTLM {
         int readShort(int offset) throws NTLMException {
             try {
                 return (internal[offset] & 0xff) +
-                        ((internal[offset+1] & 0xff << 8));
+                        (((internal[offset+1] & 0xff) << 8));
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw new NTLMException(NTLMException.PACKET_READ_ERROR,
                         "Input message incorrect size");
@@ -226,23 +224,27 @@ class NTLM {
             System.arraycopy(data, 0, internal, offset, data.length);
         }
 
-        void writeSecurityBuffer(int offset, byte[] data) {
+        void writeSecurityBuffer(int offset, byte[] data) throws NTLMException {
             if (data == null) {
-                writeShort(offset+4, current);
+                writeInt(offset+4, current);
             } else {
                 int len = data.length;
+                if (len > 65535) {
+                    throw new NTLMException(NTLMException.INVALID_INPUT,
+                            "Invalid data length " + len);
+                }
                 if (current + len > internal.length) {
                     internal = Arrays.copyOf(internal, current + len + 256);
                 }
                 writeShort(offset, len);
                 writeShort(offset+2, len);
-                writeShort(offset+4, current);
+                writeInt(offset+4, current);
                 System.arraycopy(data, 0, internal, current, len);
                 current += len;
             }
         }
 
-        void writeSecurityBuffer(int offset, String str, boolean unicode) {
+        void writeSecurityBuffer(int offset, String str, boolean unicode) throws NTLMException {
             writeSecurityBuffer(offset, str == null ? null : str.getBytes(
                     unicode ? StandardCharsets.UTF_16LE
                             : StandardCharsets.ISO_8859_1));
@@ -346,11 +348,7 @@ class NTLM {
             return result;
         } catch (IllegalBlockSizeException ex) {    // None will happen
             assert false;
-        } catch (BadPaddingException ex) {
-            assert false;
-        } catch (InvalidKeySpecException ex) {
-            assert false;
-        } catch (InvalidKeyException ex) {
+        } catch (BadPaddingException | InvalidKeyException | InvalidKeySpecException ex) {
             assert false;
         }
         return null;
@@ -364,9 +362,7 @@ class NTLM {
                     new SecretKeySpec(Arrays.copyOf(key, 16), "HmacMD5");
             hmac.init(skey);
             return hmac.doFinal(text);
-        } catch (InvalidKeyException ex) {
-            assert false;
-        } catch (RuntimeException e) {
+        } catch (InvalidKeyException | RuntimeException e) {
             assert false;
         }
         return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class NotificationFilterSupport implements NotificationFilter {
      *         The default value is an empty vector.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private List<String> enabledTypes = new Vector<String>();
+    private List<String> enabledTypes = new Vector<>();
 
 
     /**

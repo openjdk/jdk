@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,20 @@
 # questions.
 #
 
-include GensrcCommonLangtools.gmk
+include GensrcCommon.gmk
+include GensrcProperties.gmk
 
-$(eval $(call SetupVersionProperties,JAVAP_VERSION, \
+$(eval $(call SetupVersionProperties, JAVAP_VERSION, \
     com/sun/tools/javap/resources/version.properties))
 
-$(eval $(call SetupVersionProperties,JDEPS_VERSION,\
+$(eval $(call SetupVersionProperties, JDEPS_VERSION,\
     com/sun/tools/jdeps/resources/version.properties))
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES,\
-    $(JDEPS_VERSION) $(JAVAP_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JDEPS_VERSION) $(JAVAP_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)

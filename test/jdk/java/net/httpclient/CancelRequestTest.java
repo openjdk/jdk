@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245462 8229822
+ * @bug 8245462 8229822 8254786 8297075 8297149
  * @summary Tests cancelling the request.
  * @library /test/lib http2/server
  * @key randomness
@@ -42,9 +42,12 @@
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeMethod;
@@ -56,6 +59,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.Reference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -65,6 +69,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -77,6 +82,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -149,16 +155,34 @@ public class CancelRequestTest implements HttpServerAdapters {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
+    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
+    void checkSkip() {
+        var skip = skiptests.get();
+        if (skip != null) throw skip;
+    }
+    static String name(ITestResult result) {
+        var params = result.getParameters();
+        return result.getName()
+                + (params == null ? "()" : Arrays.toString(result.getParameters()));
+    }
+
     @BeforeMethod
     void beforeMethod(ITestContext context) {
         if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            throw new RuntimeException("some tests failed");
+            if (skiptests.get() == null) {
+                SkipException skip = new SkipException("some tests failed");
+                skip.setStackTrace(new StackTraceElement[0]);
+                skiptests.compareAndSet(null, skip);
+            }
         }
     }
 
     @AfterClass
-    static final void printFailedTests() {
+    static final void printFailedTests(ITestContext context) {
         out.println("\n=========================");
+        var failed = context.getFailedTests().getAllResults().stream()
+                .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
+        FAILURES.putAll(failed);
         try {
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
@@ -275,12 +299,14 @@ public class CancelRequestTest implements HttpServerAdapters {
     @Test(dataProvider = "asyncurls")
     public void testGetSendAsync(String uri, boolean sameClient, boolean mayInterruptIfRunning)
             throws Exception {
+        checkSkip();
         HttpClient client = null;
         uri = uri + "/get";
         out.printf("%n%s testGetSendAsync(%s, %b, %b)%n", now(), uri, sameClient, mayInterruptIfRunning);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            Tracker tracker = TRACKER.getTracker(client);
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
@@ -354,18 +380,27 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isDone(), true);
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
+
+            var error = TRACKER.check(tracker, 200,
+                    (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
+                    "subscribers for testGetSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    false);
+            Reference.reachabilityFence(client);
+            if (error != null) throw error;
         }
     }
 
     @Test(dataProvider = "asyncurls")
     public void testPostSendAsync(String uri, boolean sameClient, boolean mayInterruptIfRunning)
             throws Exception {
+        checkSkip();
         uri = uri + "/post";
         HttpClient client = null;
         out.printf("%n%s testPostSendAsync(%s, %b, %b)%n", now(), uri, sameClient, mayInterruptIfRunning);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            Tracker tracker = TRACKER.getTracker(client);
 
             CompletableFuture<CompletableFuture<?>> cancelFuture = new CompletableFuture<>();
 
@@ -457,17 +492,27 @@ public class CancelRequestTest implements HttpServerAdapters {
             assertEquals(cf2.isDone(), true);
             assertEquals(cf2.isCancelled(), false);
             assertEquals(latch.getCount(), 0);
+
+            var error = TRACKER.check(tracker, 200,
+                    (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
+                    "subscribers for testPostSendAsync(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    false);
+            Reference.reachabilityFence(client);
+            if (error != null) throw error;
         }
     }
 
     @Test(dataProvider = "urls")
     public void testPostInterrupt(String uri, boolean sameClient)
             throws Exception {
+        checkSkip();
         HttpClient client = null;
         out.printf("%n%s testPostInterrupt(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null)
                 client = newHttpClient(sameClient);
+            Tracker tracker = TRACKER.getTracker(client);
+
             Thread main = Thread.currentThread();
             CompletableFuture<Thread> interruptingThread = new CompletableFuture<>();
             Runnable interrupt = () -> {
@@ -511,6 +556,13 @@ public class CancelRequestTest implements HttpServerAdapters {
                 assertEquals(body, Stream.of(BODY.split("\\|")).collect(Collectors.joining()));
                 throw failed;
             }
+
+            var error = TRACKER.check(tracker, 200,
+                    (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
+                    "subscribers for testPostInterrupt(%s)\n\t step [%s]".formatted(req.uri(), i),
+                    false);
+            Reference.reachabilityFence(client);
+            if (error != null) throw error;
         }
     }
 

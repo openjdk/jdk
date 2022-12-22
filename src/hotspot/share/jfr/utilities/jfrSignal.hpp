@@ -34,14 +34,16 @@ class JfrSignal {
   JfrSignal() : _signaled(false) {}
 
   void signal() const {
-    if (!Atomic::load_acquire(&_signaled)) {
-      Atomic::release_store(&_signaled, true);
-    }
+    Atomic::release_store(&_signaled, true);
   }
 
   bool is_signaled() const {
-    if (Atomic::load_acquire(&_signaled)) {
-      Atomic::release_store(&_signaled, false); // auto-reset
+    return Atomic::load_acquire(&_signaled);
+  }
+
+  bool is_signaled_with_reset() const {
+    if (is_signaled()) {
+      Atomic::release_store(&_signaled, false);
       return true;
     }
     return false;

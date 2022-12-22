@@ -72,8 +72,12 @@ void CSpaceCounters::update_capacity() {
   _capacity->set_value(_space->capacity());
 }
 
+static volatile size_t last_used_in_bytes = 0;
+
 void CSpaceCounters::update_used() {
-  _used->set_value(_space->used());
+  size_t new_used = _space->used();
+  Atomic::store(&last_used_in_bytes, new_used);
+  _used->set_value(new_used);
 }
 
 void CSpaceCounters::update_all() {
@@ -82,5 +86,14 @@ void CSpaceCounters::update_all() {
 }
 
 jlong ContiguousSpaceUsedHelper::take_sample(){
-  return _space->used();
+  // Sampling may occur during GC, possibly while GC is updating the space.
+  // The space can be in an inconsistent state during such an update.  We
+  // don't want to block sampling for the duration of a GC.  Instead, skip
+  // sampling in that case, using the last recorded value.
+  assert(!Heap_lock->owned_by_self(), "precondition");
+  if (Heap_lock->try_lock()) {
+    Atomic::store(&last_used_in_bytes, _space->used());
+    Heap_lock->unlock();
+  }
+  return Atomic::load(&last_used_in_bytes);
 }

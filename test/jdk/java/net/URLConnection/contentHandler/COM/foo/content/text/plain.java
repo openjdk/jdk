@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * Plain text file handler
  *
- * This class provides an example of a a replacement content handler for
+ * This class provides an example of a replacement content handler for
  * the text/plain content type.  It reads the content of the URL, and prepends
  * an additional message at the beginning.
  *

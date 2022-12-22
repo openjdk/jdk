@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "utilities/growableArray.hpp"
@@ -118,14 +118,6 @@ void JfrOptionSet::set_stackdepth(u4 depth) {
   }
 }
 
-bool JfrOptionSet::sample_threads() {
-  return _sample_threads == JNI_TRUE;
-}
-
-void JfrOptionSet::set_sample_threads(jboolean sample) {
-  _sample_threads = sample;
-}
-
 bool JfrOptionSet::can_retransform() {
   return _retransform == JNI_TRUE;
 }
@@ -163,6 +155,7 @@ bool JfrOptionSet::allow_event_retransforms() {
 
 // default options for the dcmd parser
 const char* const default_repository = NULL;
+const char* const default_dumppath = NULL;
 const char* const default_global_buffer_size = "512k";
 const char* const default_num_global_buffers = "20";
 const char* const default_memory_size = "10m";
@@ -181,6 +174,13 @@ static DCmdArgument<char*> _dcmd_repository(
   "STRING",
   false,
   default_repository);
+
+static DCmdArgument<char*> _dcmd_dumppath(
+  "dumppath",
+  "Path to emergency dump",
+  "STRING",
+  false,
+  default_dumppath);
 
 static DCmdArgument<MemorySizeArgument> _dcmd_threadbuffersize(
   "threadbuffersize",
@@ -258,6 +258,7 @@ static DCmdParser _parser;
 
 static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_repository);
+  _parser.add_dcmd_option(&_dcmd_dumppath);
   _parser.add_dcmd_option(&_dcmd_threadbuffersize);
   _parser.add_dcmd_option(&_dcmd_memorysize);
   _parser.add_dcmd_option(&_dcmd_globalbuffersize);
@@ -306,7 +307,6 @@ jlong JfrOptionSet::_memory_size = 0;
 jlong JfrOptionSet::_num_global_buffers = 0;
 jlong JfrOptionSet::_old_object_queue_size = 0;
 u4 JfrOptionSet::_stack_depth = STACK_DEPTH_DEFAULT;
-jboolean JfrOptionSet::_sample_threads = JNI_TRUE;
 jboolean JfrOptionSet::_retransform = JNI_TRUE;
 #ifdef ASSERT
 jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
@@ -346,6 +346,18 @@ bool JfrOptionSet::configure(TRAPS) {
     configure._repository_path.set_value(repo_copy);
   }
 
+  configure._dump_path.set_is_set(_dcmd_dumppath.is_set());
+  char* dumppath = _dcmd_dumppath.value();
+  if (dumppath != NULL) {
+    const size_t len = strlen(dumppath);
+    char* dumppath_copy = JfrCHeapObj::new_array<char>(len + 1);
+    if (NULL == dumppath_copy) {
+      return false;
+    }
+    strncpy(dumppath_copy, dumppath, len + 1);
+    configure._dump_path.set_value(dumppath_copy);
+  }
+
   configure._stack_depth.set_is_set(_dcmd_stackdepth.is_set());
   configure._stack_depth.set_value(_dcmd_stackdepth.value());
 
@@ -373,6 +385,7 @@ bool JfrOptionSet::configure(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, tty);
     CLEAR_PENDING_EXCEPTION;
+    tty->cr(); // java_lang_Throwable::print will not print '\n'
     return false;
   }
   return true;
@@ -454,7 +467,7 @@ static void log_adjustments(MemoryArg& original_memory_size, julong new_memory_s
 
 // All "triangular" options are explicitly set
 // check that they are congruent and not causing
-// an ambiguous situtation
+// an ambiguous situation
 template <typename MemoryArg, typename NumberArg>
 static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer_size, NumberArg& num_global_buffers) {
   assert(memory_size.is_set(), "invariant");
@@ -475,7 +488,7 @@ static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer
       num_global_buffers.name(),
       memory_size.name());
     log_error(arguments) (
-      "Try to remove one of the involved options or make sure they are unambigous");
+      "Try to remove one of the involved options or make sure they are unambiguous");
     return false;
   }
   return true;
@@ -756,7 +769,7 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
   const size_t value_length = strlen(value);
 
   if (start_flight_recording_options_array == NULL) {
-    start_flight_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, mtTracing);
+    start_flight_recording_options_array = new (mtTracing) GrowableArray<const char*>(8, mtTracing);
   }
   assert(start_flight_recording_options_array != NULL, "invariant");
   char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);

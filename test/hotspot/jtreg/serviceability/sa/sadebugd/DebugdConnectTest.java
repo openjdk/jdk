@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @run main/othervm DebugdConnectTest
+ * @run driver DebugdConnectTest
  */
 
 import java.io.IOException;

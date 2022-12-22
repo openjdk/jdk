@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import static java.text.DateFormat.LONG;
 import static java.util.Calendar.JANUARY;
 
 public class Bug8074791 {
-    private static Locale FINNISH = new Locale("fi");
+    private static Locale FINNISH = Locale.of("fi");
     private static String JAN_FORMAT = "tammikuuta";
     private static String JAN_STANDALONE = "tammikuu";
 

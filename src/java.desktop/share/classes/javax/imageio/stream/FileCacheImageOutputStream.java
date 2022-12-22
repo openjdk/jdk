@@ -69,11 +69,11 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * cache file should be created, or {@code null} to use the
      * system directory.
      *
-     * @exception IllegalArgumentException if {@code stream}
+     * @throws IllegalArgumentException if {@code stream}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code cacheDir} is
+     * @throws IllegalArgumentException if {@code cacheDir} is
      * non-{@code null} but is not a directory.
-     * @exception IOException if a cache file cannot be created.
+     * @throws IOException if a cache file cannot be created.
      */
     public FileCacheImageOutputStream(OutputStream stream, File cacheDir)
         throws IOException {
@@ -159,9 +159,9 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * performed.  The file length will not be increased until a write
      * is performed.
      *
-     * @exception IndexOutOfBoundsException if {@code pos} is smaller
+     * @throws IndexOutOfBoundsException if {@code pos} is smaller
      * than the flushed position.
-     * @exception IOException if any other I/O error occurs.
+     * @throws IOException if any other I/O error occurs.
      */
     public void seek(long pos) throws IOException {
         checkClosed();
@@ -223,7 +223,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * is closed and removed.  The destination {@code OutputStream}
      * is not closed.
      *
-     * @exception IOException if an error occurs.
+     * @throws IOException if an error occurs.
      */
     public void close() throws IOException {
         maxStreamPos = cache.length();

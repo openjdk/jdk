@@ -164,11 +164,8 @@ public class FuncSystemProperty extends FunctionOneArg
     try
     {
       // Use SecuritySupport class to provide privileged access to property file
-      InputStream is = SecuritySupport.getResourceAsStream(XSLT_PROPERTIES);
-
-      // get a buffered version
-      try (BufferedInputStream bis = new BufferedInputStream(is)) {
-          target.load(bis);  // and load up the property bag from this
+      try (InputStream is = SecuritySupport.getResourceAsStream(XSLT_PROPERTIES)) {
+          target.load(is);  // and load up the property bag from this
       }
     }
     catch (Exception ex)

@@ -26,7 +26,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 
 MarkScope::MarkScope() {
   nmethod::oops_do_marking_prologue();

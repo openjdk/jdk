@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -57,7 +58,7 @@ int JavaAssertions::OptionList::count(OptionList* p) {
 void JavaAssertions::addOption(const char* name, bool enable) {
   assert(name != 0, "must have a name");
 
-  // Copy the name.  The storage needs to exist for the the lifetime of the vm;
+  // Copy the name.  The storage needs to exist for the lifetime of the vm;
   // it is never freed, so will be leaked (along with other option strings -
   // e.g., bootclasspath) if a process creates/destroys multiple VMs.
   int len = (int)strlen(name);
@@ -127,7 +128,8 @@ oop JavaAssertions::createAssertionStatusDirectives(TRAPS) {
 }
 
 void JavaAssertions::fillJavaArrays(const OptionList* p, int len,
-objArrayHandle names, typeArrayHandle enabled, TRAPS) {
+                                    objArrayHandle names,
+                                    typeArrayHandle enabled, TRAPS) {
   // Fill in the parallel names and enabled (boolean) arrays.  Start at the end
   // of the array and work backwards, so the order of items in the arrays
   // matches the order on the command line (the list is in reverse order, since
@@ -135,8 +137,8 @@ objArrayHandle names, typeArrayHandle enabled, TRAPS) {
   int index;
   for (index = len - 1; p != 0; p = p->next(), --index) {
     assert(index >= 0, "length does not match list");
-    Handle s = java_lang_String::create_from_str(p->name(), CHECK);
-    s = java_lang_String::char_converter(s, JVM_SIGNATURE_SLASH, JVM_SIGNATURE_DOT, CHECK);
+    TempNewSymbol name = SymbolTable::new_symbol(p->name());
+    Handle s = java_lang_String::externalize_classname(name, CHECK);
     names->obj_at_put(index, s());
     enabled->bool_at_put(index, p->enabled());
   }

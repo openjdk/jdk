@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,20 +57,43 @@ class NativeCallStack : public StackObj {
 private:
   address       _stack[NMT_TrackingStackDepth];
   static const NativeCallStack _empty_stack;
+
 public:
+
+  enum class FakeMarker { its_fake };
+#ifdef ASSERT
+  static constexpr uintptr_t _fake_address = -2; // 0xFF...FE
+  inline void assert_not_fake() const {
+    assert(_stack[0] != (address)_fake_address, "Must not be a fake stack");
+  }
+#endif
+
+  // This "fake" constructor is only used in the CALLER_PC and CURRENT_PC macros
+  // when NMT is off or in summary mode. In these cases, it does not need a
+  // callstack, and we can leave the constructed object uninitialized. That will
+  // cause the constructor call to be optimized away (see JDK-8296437).
+  explicit NativeCallStack(FakeMarker dummy) {
+#ifdef ASSERT
+    for (int i = 0; i < NMT_TrackingStackDepth; i++) {
+      _stack[i] = (address)_fake_address;
+    }
+#endif
+  }
+
   // Default ctor creates an empty stack.
   // (it may make sense to remove this altogether but its used in a few places).
   NativeCallStack() {
     memset(_stack, 0, sizeof(_stack));
   }
 
-  NativeCallStack(int toSkip);
-  NativeCallStack(address* pc, int frameCount);
+  explicit NativeCallStack(int toSkip);
+  explicit NativeCallStack(address* pc, int frameCount);
 
   static inline const NativeCallStack& empty_stack() { return _empty_stack; }
 
   // if it is an empty stack
   inline bool is_empty() const {
+    DEBUG_ONLY(assert_not_fake();)
     return _stack[0] == NULL;
   }
 
@@ -92,6 +115,7 @@ public:
 
   // Helper; calculates a hash value over the stack frames in this stack
   unsigned int calculate_hash() const {
+    DEBUG_ONLY(assert_not_fake();)
     uintptr_t hash = 0;
     for (int i = 0; i < NMT_TrackingStackDepth; i++) {
       hash += (uintptr_t)_stack[i];
@@ -102,5 +126,7 @@ public:
   void print_on(outputStream* out) const;
   void print_on(outputStream* out, int indent) const;
 };
+
+#define FAKE_CALLSTACK NativeCallStack(NativeCallStack::FakeMarker::its_fake)
 
 #endif // SHARE_UTILITIES_NATIVECALLSTACK_HPP

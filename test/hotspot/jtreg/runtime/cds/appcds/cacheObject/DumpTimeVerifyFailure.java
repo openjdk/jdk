@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary Dump time should not crash if any class with shared strings fails verification due to missing dependencies.
  * @bug 8186789
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile MyOuter.java MyException.java
  * @run driver DumpTimeVerifyFailure

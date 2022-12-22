@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ private:
   size_t                     _used_low;
   ssize_t                    _reclaimed;
   ZList<ZPageAllocation>     _stalled;
+  volatile uint64_t          _nstalled;
   ZList<ZPageAllocation>     _satisfied;
   ZUnmapper*                 _unmapper;
   ZUncommitter*              _uncommitter;
@@ -88,6 +89,8 @@ private:
   bool alloc_page_common(ZPageAllocation* allocation);
   bool alloc_page_stall(ZPageAllocation* allocation);
   bool alloc_page_or_stall(ZPageAllocation* allocation);
+  bool should_defragment(const ZPage* page) const;
+  bool is_alloc_satisfied(ZPageAllocation* allocation) const;
   ZPage* alloc_page_create(ZPageAllocation* allocation);
   ZPage* alloc_page_finalize(ZPageAllocation* allocation);
   void alloc_page_failed(ZPageAllocation* allocation);
@@ -127,7 +130,7 @@ public:
   void debug_map_page(const ZPage* page) const;
   void debug_unmap_page(const ZPage* page) const;
 
-  bool is_alloc_stalled() const;
+  bool has_alloc_stalled() const;
   void check_out_of_memory();
 
   void pages_do(ZPageClosure* cl) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,16 @@ final class ViewPanel extends javax.swing.JPanel {
         portSpinner = new javax.swing.JSpinner();
         jScrollPane1 = new javax.swing.JScrollPane();
         nodeTextArea = new javax.swing.JTextArea();
-        nodeWidthSpinner = new javax.swing.JSpinner();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         nodeShortTextField = new javax.swing.JTextField();
+        jLabel5 = new javax.swing.JLabel();
+        nodeTinyTextField = new javax.swing.JTextField();
+        defaultViewComboBox = new javax.swing.JComboBox<>();
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel1, "Node Text");
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, "Node Width");
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, "Default View");
 
         nodeTextArea.setColumns(20);
         nodeTextArea.setRows(5);
@@ -71,6 +73,14 @@ final class ViewPanel extends javax.swing.JPanel {
         nodeShortTextField.setBackground(new java.awt.Color(255, 255, 255));
         nodeShortTextField.setToolTipText("Single-line format string for nodes in edge tooltips, slot tooltips, and node search bar. Properties are specified with brackets  (example: \"[idx]\").");
 
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel5, "Tiny Node Text");
+
+        nodeTinyTextField.setBackground(new java.awt.Color(255, 255, 255));
+        nodeTinyTextField.setToolTipText("Single-line format string for node input lists. Properties are specified with brackets  (example: \"[idx]\").");
+
+        defaultViewComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Sea of nodes", "Clustered sea of nodes", "Control-flow graph" }));
+        defaultViewComboBox.setToolTipText("View shown by default when a graph is opened.");
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -81,16 +91,16 @@ final class ViewPanel extends javax.swing.JPanel {
                     .add(jLabel1)
                     .add(jLabel3)
                     .add(jLabel2)
-                    .add(jLabel4))
+                    .add(jLabel4)
+                    .add(jLabel5))
                 .add(39, 39, 39)
-                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                        .add(nodeShortTextField)
-                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 365, Short.MAX_VALUE))
-                    .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, nodeWidthSpinner, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, portSpinner)))
-                .addContainerGap(439, Short.MAX_VALUE))
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                    .add(nodeShortTextField)
+                    .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 470, Short.MAX_VALUE)
+                    .add(portSpinner)
+                    .add(nodeTinyTextField)
+                    .add(defaultViewComboBox, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -105,8 +115,12 @@ final class ViewPanel extends javax.swing.JPanel {
                     .add(nodeShortTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(nodeWidthSpinner, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel2))
+                    .add(jLabel5)
+                    .add(nodeTinyTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .add(27, 27, 27)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(jLabel2)
+                    .add(defaultViewComboBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(portSpinner, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -127,20 +141,22 @@ final class ViewPanel extends javax.swing.JPanel {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(153, Short.MAX_VALUE))
+                .addContainerGap(29, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
     void load() {
         nodeTextArea.setText(Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT));
         nodeShortTextField.setText(Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
-        nodeWidthSpinner.setValue(Integer.parseInt(Settings.get().get(Settings.NODE_WIDTH, Settings.NODE_WIDTH_DEFAULT)));
+        nodeTinyTextField.setText(Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
+        defaultViewComboBox.setSelectedIndex(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DefaultView.SEA_OF_NODES));
         portSpinner.setValue(Integer.parseInt(Settings.get().get(Settings.PORT, Settings.PORT_DEFAULT)));
     }
 
     void store() {
         Settings.get().put(Settings.NODE_TEXT, nodeTextArea.getText());
         Settings.get().put(Settings.NODE_SHORT_TEXT, nodeShortTextField.getText());
-        Settings.get().put(Settings.NODE_WIDTH, nodeWidthSpinner.getValue().toString());
+        Settings.get().put(Settings.NODE_TINY_TEXT, nodeTinyTextField.getText());
+        Settings.get().putInt(Settings.DEFAULT_VIEW, defaultViewComboBox.getSelectedIndex());
         Settings.get().put(Settings.PORT, portSpinner.getValue().toString());
     }
 
@@ -148,15 +164,17 @@ final class ViewPanel extends javax.swing.JPanel {
         return true;
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JComboBox<String> defaultViewComboBox;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField nodeShortTextField;
     private javax.swing.JTextArea nodeTextArea;
-    private javax.swing.JSpinner nodeWidthSpinner;
+    private javax.swing.JTextField nodeTinyTextField;
     private javax.swing.JSpinner portSpinner;
     // End of variables declaration//GEN-END:variables
 }

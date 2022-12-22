@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@ import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.PrivilegedAction;
 import java.security.Security;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The class contains common functionality for algorithm constraints classes.
@@ -48,7 +47,7 @@ public abstract class AbstractAlgorithmConstraints
     }
 
     // Get algorithm constraints from the specified security property.
-    static List<String> getAlgorithms(String propertyName) {
+    static Set<String> getAlgorithms(String propertyName) {
         @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
@@ -73,38 +72,30 @@ public abstract class AbstractAlgorithmConstraints
 
         // map the disabled algorithms
         if (algorithmsInProperty == null) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
-        return new ArrayList<>(Arrays.asList(algorithmsInProperty));
+        Set<String> algorithmsInPropertySet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        algorithmsInPropertySet.addAll(Arrays.asList(algorithmsInProperty));
+        return algorithmsInPropertySet;
     }
 
-    static boolean checkAlgorithm(List<String> algorithms, String algorithm,
+    static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        Set<String> elements = null;
-        for (String item : algorithms) {
-            if (item == null || item.isEmpty()) {
-                continue;
-            }
+        if (algorithms.contains(algorithm)) {
+            return false;
+        }
 
-            // check the full name
-            if (item.equalsIgnoreCase(algorithm)) {
+        // decompose the algorithm into sub-elements
+        Set<String> elements = decomposer.decompose(algorithm);
+
+        // check the element of the elements
+        for (String element : elements) {
+            if (algorithms.contains(element)) {
                 return false;
-            }
-
-            // decompose the algorithm into sub-elements
-            if (elements == null) {
-                elements = decomposer.decompose(algorithm);
-            }
-
-            // check the items of the algorithm
-            for (String element : elements) {
-                if (item.equalsIgnoreCase(element)) {
-                    return false;
-                }
             }
         }
 

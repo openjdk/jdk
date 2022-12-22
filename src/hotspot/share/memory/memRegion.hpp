@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// A very simple data structure representing a contigous region
+// A very simple data structure representing a contiguous region
 // region of address space.
 
 // Note that MemRegions are typically passed by value, not by reference.
@@ -109,14 +109,8 @@ public:
 
 class MemRegionClosureRO: public MemRegionClosure {
 public:
-  void* operator new(size_t size, ResourceObj::allocation_type type, MEMFLAGS flags) throw() {
-        return ResourceObj::operator new(size, type, flags);
-  }
-  void* operator new(size_t size, Arena *arena) throw() {
-        return ResourceObj::operator new(size, arena);
-  }
   void* operator new(size_t size) throw() {
-        return ResourceObj::operator new(size);
+    return resource_allocate_bytes(size);
   }
 
   void  operator delete(void* p) {} // nothing to do

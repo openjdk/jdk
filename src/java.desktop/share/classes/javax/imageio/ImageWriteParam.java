@@ -474,9 +474,9 @@ public class ImageWriteParam extends IIOParam {
      *
      * @param mode The mode to use for tiling.
      *
-     * @exception UnsupportedOperationException if
+     * @throws UnsupportedOperationException if
      * {@code canWriteTiles} returns {@code false}.
-     * @exception IllegalArgumentException if {@code mode} is not
+     * @throws IllegalArgumentException if {@code mode} is not
      * one of the modes listed above.
      *
      * @see #setTiling
@@ -501,7 +501,7 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the current tiling mode.
      *
-     * @exception UnsupportedOperationException if
+     * @throws UnsupportedOperationException if
      * {@code canWriteTiles} returns {@code false}.
      *
      * @see #setTilingMode
@@ -530,7 +530,7 @@ public class ImageWriteParam extends IIOParam {
      * <p> If no array is specified on the constructor, but tiling is
      * allowed, then this method returns {@code null}.
      *
-     * @exception UnsupportedOperationException if the plug-in does
+     * @throws UnsupportedOperationException if the plug-in does
      * not support tiling.
      *
      * @return an array of {@code Dimension}s with an even length
@@ -559,16 +559,16 @@ public class ImageWriteParam extends IIOParam {
      * @param tileGridXOffset the horizontal offset of the tile grid.
      * @param tileGridYOffset the vertical offset of the tile grid.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support tiling.
-     * @exception IllegalStateException if the tiling mode is not
+     * @throws IllegalStateException if the tiling mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support grid offsets, and the grid offsets are not both zero.
-     * @exception IllegalArgumentException if the tile size is not
+     * @throws IllegalArgumentException if the tile size is not
      * within one of the allowable ranges returned by
      * {@code getPreferredTileSizes}.
-     * @exception IllegalArgumentException if {@code tileWidth}
+     * @throws IllegalArgumentException if {@code tileWidth}
      * or {@code tileHeight} is less than or equal to 0.
      *
      * @see #canWriteTiles
@@ -630,9 +630,9 @@ public class ImageWriteParam extends IIOParam {
      * {@code tileGridXOffset}, and
      * {@code tileGridYOffset} to {@code 0}.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support tiling.
-     * @exception IllegalStateException if the tiling mode is not
+     * @throws IllegalStateException if the tiling mode is not
      * {@code MODE_EXPLICIT}.
      *
      * @see #setTiling(int, int, int, int)
@@ -658,11 +658,11 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the tile width to be used for encoding.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support tiling.
-     * @exception IllegalStateException if the tiling mode is not
+     * @throws IllegalStateException if the tiling mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the tiling parameters have
+     * @throws IllegalStateException if the tiling parameters have
      * not been set.
      *
      * @see #setTiling(int, int, int, int)
@@ -688,11 +688,11 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the tile height to be used for encoding.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support tiling.
-     * @exception IllegalStateException if the tiling mode is not
+     * @throws IllegalStateException if the tiling mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the tiling parameters have
+     * @throws IllegalStateException if the tiling parameters have
      * not been set.
      *
      * @see #setTiling(int, int, int, int)
@@ -718,11 +718,11 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the tile grid X offset to be used for encoding.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support tiling.
-     * @exception IllegalStateException if the tiling mode is not
+     * @throws IllegalStateException if the tiling mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the tiling parameters have
+     * @throws IllegalStateException if the tiling parameters have
      * not been set.
      *
      * @see #setTiling(int, int, int, int)
@@ -748,11 +748,11 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the tile grid Y offset to be used for encoding.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support tiling.
-     * @exception IllegalStateException if the tiling mode is not
+     * @throws IllegalStateException if the tiling mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the tiling parameters have
+     * @throws IllegalStateException if the tiling parameters have
      * not been set.
      *
      * @see #setTiling(int, int, int, int)
@@ -818,9 +818,9 @@ public class ImageWriteParam extends IIOParam {
      * @param mode The mode for setting progression in the output
      * stream.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support progressive encoding.
-     * @exception IllegalArgumentException if {@code mode} is not
+     * @throws IllegalArgumentException if {@code mode} is not
      * one of the modes listed above.
      *
      * @see #getProgressiveMode
@@ -846,7 +846,7 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the current mode for progressive encoding.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support progressive encoding.
      *
      * @see #setProgressiveMode
@@ -902,9 +902,9 @@ public class ImageWriteParam extends IIOParam {
      * @param mode The mode for setting compression in the output
      * stream.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression, or does not support the requested mode.
-     * @exception IllegalArgumentException if {@code mode} is not
+     * @throws IllegalArgumentException if {@code mode} is not
      * one of the modes listed above.
      *
      * @see #getCompressionMode
@@ -929,7 +929,7 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the current compression mode.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
      *
      * @see #setCompressionMode
@@ -965,7 +965,7 @@ public class ImageWriteParam extends IIOParam {
      * (non-localized) names of available compression types, or
      * {@code null}.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
      */
     public String[] getCompressionTypes() {
@@ -998,13 +998,13 @@ public class ImageWriteParam extends IIOParam {
      * by {@code getCompressionTypes}, or {@code null} to
      * remove any previous setting.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception UnsupportedOperationException if there are no
+     * @throws UnsupportedOperationException if there are no
      * settable compression types.
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code compressionType} is non-{@code null} but is not
      * one of the values returned by {@code getCompressionTypes}.
      *
@@ -1059,9 +1059,9 @@ public class ImageWriteParam extends IIOParam {
      * @return the current compression type as a {@code String},
      * or {@code null} if no type is set.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
      *
      * @see #setCompressionType
@@ -1086,9 +1086,9 @@ public class ImageWriteParam extends IIOParam {
      * instance variable {@code compressionQuality} to
      * {@code 1.0F}.
      *
-     * @exception UnsupportedOperationException if the plug-in does not
+     * @throws UnsupportedOperationException if the plug-in does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
      *
      * @see #setCompressionType
@@ -1122,11 +1122,11 @@ public class ImageWriteParam extends IIOParam {
      * @return a {@code String} containing a localized version of
      * the name of the current compression type.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if no compression type is set.
+     * @throws IllegalStateException if no compression type is set.
      */
     public String getLocalizedCompressionTypeName() {
         if (!canWriteCompressed()) {
@@ -1162,11 +1162,11 @@ public class ImageWriteParam extends IIOParam {
      * @return {@code true} if the current compression type is
      * lossless.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the set of legal
+     * @throws IllegalStateException if the set of legal
      * compression types is non-{@code null} and the current
      * compression type is {@code null}.
      */
@@ -1218,14 +1218,14 @@ public class ImageWriteParam extends IIOParam {
      * @param quality a {@code float} between {@code 0} and
      * {@code 1} indicating the desired quality level.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the set of legal
+     * @throws IllegalStateException if the set of legal
      * compression types is non-{@code null} and the current
      * compression type is {@code null}.
-     * @exception IllegalArgumentException if {@code quality} is
+     * @throws IllegalArgumentException if {@code quality} is
      * not between {@code 0} and {@code 1}, inclusive.
      *
      * @see #getCompressionQuality
@@ -1264,11 +1264,11 @@ public class ImageWriteParam extends IIOParam {
      *
      * @return the current compression quality setting.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the set of legal
+     * @throws IllegalStateException if the set of legal
      * compression types is non-{@code null} and the current
      * compression type is {@code null}.
      *
@@ -1317,14 +1317,14 @@ public class ImageWriteParam extends IIOParam {
      * @return an estimate of the compressed bit rate, or
      * {@code -1.0F} if no estimate is available.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the set of legal
+     * @throws IllegalStateException if the set of legal
      * compression types is non-{@code null} and the current
      * compression type is {@code null}.
-     * @exception IllegalArgumentException if {@code quality} is
+     * @throws IllegalArgumentException if {@code quality} is
      * not between {@code 0} and {@code 1}, inclusive.
      */
     public float getBitRate(float quality) {
@@ -1389,11 +1389,11 @@ public class ImageWriteParam extends IIOParam {
      * @return an array of {@code String}s containing localized
      * descriptions of the compression quality levels.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the set of legal
+     * @throws IllegalStateException if the set of legal
      * compression types is non-{@code null} and the current
      * compression type is {@code null}.
      *
@@ -1442,11 +1442,11 @@ public class ImageWriteParam extends IIOParam {
      * by the {@code String}s from
      * {@code getCompressionQualityDescriptions}.
      *
-     * @exception UnsupportedOperationException if the writer does not
+     * @throws UnsupportedOperationException if the writer does not
      * support compression.
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * {@code MODE_EXPLICIT}.
-     * @exception IllegalStateException if the set of legal
+     * @throws IllegalStateException if the set of legal
      * compression types is non-{@code null} and the current
      * compression type is {@code null}.
      *

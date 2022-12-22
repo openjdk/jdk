@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.FileObject;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
@@ -106,7 +107,7 @@ public class InMemoryJavaCompiler {
         }
     }
 
-    private static class FileManagerWrapper extends ForwardingJavaFileManager {
+    private static class FileManagerWrapper extends ForwardingJavaFileManager<JavaFileManager> {
         private static final Location PATCH_LOCATION = new Location() {
             @Override
             public String getName() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,7 +779,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @throws SQLException if a database access error occurs,
      * this method is called on a closed {@code Statement}, the SQL
-     * statement returns a {@code ResultSet} object,the second argument
+     * statement returns a {@code ResultSet} object, the second argument
      * supplied to this method is not an
      * {@code int} array whose elements are valid column indexes, the method is called on a
      * {@code PreparedStatement} or {@code CallableStatement}
@@ -960,7 +960,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *         object; {@code false} if it is an update count or there
      *         are no more results
      * @throws SQLException if a database access error occurs,
-     * this method is called on a closed {@code Statement},the
+     * this method is called on a closed {@code Statement}, the
      *          elements of the {@code String} array passed to this
      *          method are not valid column names, the method is called on a
      * {@code PreparedStatement} or {@code CallableStatement}

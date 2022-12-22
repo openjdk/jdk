@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ public class TestValidRelativeNames extends JavacTestingAbstractProcessor {
                     break;
             }
         } catch (Exception e) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "relative path: " + relative + ", kind: " + kind + ", unexpected exception: " + e);
+            messager.printError("relative path: " + relative + ", kind: " + kind +
+                                ", unexpected exception: " + e);
         }
     }
 
@@ -105,7 +105,7 @@ public class TestValidRelativeNames extends JavacTestingAbstractProcessor {
                         while ((n = reader.read(buf, 0, buf.length)) > 0)
                             sb.append(new String(buf, 0, n));
                         if (!sb.toString().equals(relative)) {
-                            messager.printMessage(Diagnostic.Kind.ERROR, "unexpected content: " + sb);
+                            messager.printError("unexpected content: " + sb);
                         }
                     }
                     break;
@@ -119,14 +119,14 @@ public class TestValidRelativeNames extends JavacTestingAbstractProcessor {
                         while ((n = in.read(buf, 0, buf.length)) > 0)
                             sb.append(new String(buf, 0, n));
                         if (!sb.toString().equals(relative)) {
-                            messager.printMessage(Diagnostic.Kind.ERROR, "unexpected content: " + sb);
+                            messager.printError("unexpected content: " + sb);
                         }
                     }
                     break;
             }
         } catch (Exception e) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "relative path: " + relative + ", kind: " + kind + ", unexpected exception: " + e);
+            messager.printError("relative path: " + relative + ", kind: " + kind +
+                                ", unexpected exception: " + e);
         }
     }
 

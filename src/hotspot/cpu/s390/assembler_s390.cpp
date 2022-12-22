@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,6 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -139,7 +138,7 @@ Assembler::branch_condition Assembler::inverse_float_condition(Assembler::branch
   return inverse_cc;
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void Assembler::print_dbg_msg(outputStream* out, unsigned long inst, const char* msg, int ilen) {
   out->flush();
   switch (ilen) {

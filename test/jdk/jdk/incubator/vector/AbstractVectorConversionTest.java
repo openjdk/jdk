@@ -24,7 +24,9 @@
 import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorShape;
+import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.VectorShuffle;
 import org.testng.Assert;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
@@ -241,6 +243,21 @@ abstract class AbstractVectorConversionTest {
         return args.toArray(Object[][]::new);
     }
 
+    static Object[][] fixedShapeXSegmentedCastSpeciesArgs(VectorShape srcShape, boolean legal) {
+        List<Object[]> args = new ArrayList<>();
+        for (Class<?> srcE : List.of(byte.class, short.class, int.class, long.class, float.class, double.class)) {
+            VectorSpecies<?> src = VectorSpecies.of(srcE, srcShape);
+            for (VectorShape dstShape : VectorShape.values()) {
+                for (Class<?> dstE : List.of(byte.class, short.class, int.class, long.class, float.class, double.class)) {
+                    VectorSpecies<?> dst = VectorSpecies.of(dstE, dstShape);
+                    if (legal == (dst.length() == src.length())) {
+                        args.add(new Object[]{src, dst});
+                    }
+                }
+            }
+        }
+        return args.toArray(Object[][]::new);
+    }
 
     public enum ConvAPI {CONVERT, CONVERTSHAPE, CASTSHAPE, REINTERPRETSHAPE}
 
@@ -487,5 +504,47 @@ abstract class AbstractVectorConversionTest {
         }
 
         Assert.assertEquals(actual, expected);
+    }
+
+    static <E,F> void legal_mask_cast_kernel(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        for(int i = 0; i < INVOC_COUNT; i++) {
+            VectorMask<E> mask = VectorMask.fromLong(src, i);
+            VectorMask<F> res = mask.cast(dst);
+            Assert.assertEquals(res.toLong(), mask.toLong());
+        }
+    }
+
+    static <E,F> void illegal_mask_cast_kernel(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        VectorMask<E> mask = VectorMask.fromLong(src, -1);
+        try {
+            mask.cast(dst);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    static <E,F> void legal_shuffle_cast_kernel(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        int [] arr = new int[src.length()*INVOC_COUNT];
+        for(int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+        }
+        for(int i = 0; i < INVOC_COUNT; i++) {
+            VectorShuffle<E> shuffle = VectorShuffle.fromArray(src, arr, i);
+            VectorShuffle<F> res = shuffle.cast(dst);
+            Assert.assertEquals(res.toArray(), shuffle.toArray());
+        }
+    }
+
+    static <E,F> void illegal_shuffle_cast_kernel(VectorSpecies<E> src, VectorSpecies<F> dst) {
+        int [] arr = new int[src.length()];
+        for(int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+        }
+        VectorShuffle<E> shuffle = VectorShuffle.fromArray(src, arr, 0);
+        try {
+            shuffle.cast(dst);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
  * Generic test case for SHA-related options targeted to any CPU except
- * AArch64, PPC, S390x, and X86.
+ * AArch64, RISCV64, PPC, S390x, and X86.
  */
 public class GenericTestCaseForOtherCPU extends
         DigestOptionsBase.TestCase {
@@ -44,13 +44,14 @@ public class GenericTestCaseForOtherCPU extends
     }
 
     public GenericTestCaseForOtherCPU(String optionName, boolean checkUseSHA) {
-        // Execute the test case on any CPU except AArch64, PPC, S390x, and X86.
+        // Execute the test case on any CPU except AArch64, RISCV64, PPC, S390x, and X86.
         super(optionName, new NotPredicate(
                               new OrPredicate(Platform::isAArch64,
+                              new OrPredicate(Platform::isRISCV64,
                               new OrPredicate(Platform::isS390x,
                               new OrPredicate(Platform::isPPC,
                               new OrPredicate(Platform::isX64,
-                                              Platform::isX86))))));
+                                              Platform::isX86)))))));
 
         this.checkUseSHA = checkUseSHA;
     }
@@ -59,7 +60,7 @@ public class GenericTestCaseForOtherCPU extends
     protected void verifyWarnings() throws Throwable {
         String shouldPassMessage = String.format("JVM should start with "
                 + "option '%s' without any warnings", optionName);
-        // Verify that on non-x86 and non-AArch64 CPU usage of SHA-related
+        // Verify that on non-x86, non-RISCV64 and non-AArch64 CPU usage of SHA-related
         // options will not cause any warnings.
         CommandLineOptionTest.verifySameJVMStartup(null,
                 new String[] { ".*" + optionName + ".*" }, shouldPassMessage,

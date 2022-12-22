@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6545058 6611182 8016209 8139986 8162746
+ * @bug 6545058 6611182 8016209 8139986 8162746 8278967
  * @summary validate and test -version, -fullversion, and internal, as well as
  *          sanity checks if a tool can be launched.
  * @modules jdk.compiler
@@ -61,7 +61,8 @@ public class VersionCheck extends TestHelper {
         "jmc.ini",
         "jweblauncher",
         "jpackage",
-        "ssvagent"
+        "ssvagent",
+        "jwebserver"
     };
 
     // tools that do not accept -version
@@ -125,9 +126,12 @@ public class VersionCheck extends TestHelper {
     static String getVersion0(boolean allLines, String... argv) {
         TestHelper.TestResult tr = doExec(argv);
         StringBuilder out = new StringBuilder();
-        // remove the HotSpot line
+        // remove the HotSpot line and security manager deprecation warnings
         for (String x : tr.testOutput) {
-            if (allLines || !x.matches(".*Client.*VM.*|.*Server.*VM.*")) {
+            if (allLines || !x.matches(".*Client.*VM.*|" +
+                                       ".*Server.*VM.*|" +
+                                       "WARNING:.*terminally.*deprecated.*|" +
+                                       "WARNING:.*System::setSecurityManager.*")) {
                 out = out.append(x + "\n");
             }
         }

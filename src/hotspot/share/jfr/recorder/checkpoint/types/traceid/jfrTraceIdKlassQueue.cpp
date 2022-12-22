@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ static const size_t ELEMENT_SIZE = sizeof(JfrEpochQueueKlassElement);
 static const size_t NARROW_ELEMENT_SIZE = sizeof(JfrEpochQueueNarrowKlassElement);
 static const size_t THRESHOLD_SHIFT = 30;
 
-// If the upshifted traceid value is less than this threshold (1 073 741 824),
+// If the traceid value is less than this threshold (1 073 741 824),
 // compress the element for more effective queue storage.
 static const traceid uncompressed_threshold = ((traceid)1) << THRESHOLD_SHIFT;
 
@@ -121,30 +121,36 @@ static traceid read_element(const u1* pos, const Klass** klass, bool compressed)
   return compressed ? read_compressed_element(pos, klass) : read_uncompressed_element(pos, klass);
 }
 
+template <typename T>
+static inline void store_traceid(T* element, traceid id, bool uncompressed) {
+#ifdef VM_LITTLE_ENDIAN
+  id <<= METADATA_SHIFT;
+#endif
+  element->id = uncompressed ? id | UNCOMPRESSED : id;
+}
+
 static void store_compressed_element(traceid id, const Klass* klass, u1* pos) {
+  assert(can_compress_element(id), "invariant");
   JfrEpochQueueNarrowKlassElement* const element = new (pos) JfrEpochQueueNarrowKlassElement();
-  element->id = id;
+  store_traceid(element, id, false);
   element->compressed_klass = encode(klass);
 }
 
 static void store_uncompressed_element(traceid id, const Klass* klass, u1* pos) {
   JfrEpochQueueKlassElement* const element = new (pos) JfrEpochQueueKlassElement();
-  element->id = id | UNCOMPRESSED;
+  store_traceid(element, id, true);
   element->klass = klass;
 }
 
 static void store_element(const Klass* klass, u1* pos) {
   assert(pos != NULL, "invariant");
   assert(klass != NULL, "invariant");
-  traceid id = JfrTraceId::load_raw(klass);
-#ifdef VM_LITTLE_ENDIAN
-  id <<= METADATA_SHIFT;
-#endif
+  const traceid id = JfrTraceId::load_raw(klass);
   if (can_compress_element(id)) {
     store_compressed_element(id, klass, pos);
-  } else {
-    store_uncompressed_element(id, klass, pos);
+    return;
   }
+  store_uncompressed_element(id, klass, pos);
 }
 
 static void set_unloaded(const u1* pos) {
@@ -239,6 +245,14 @@ void JfrTraceIdKlassQueue::clear() {
 void JfrTraceIdKlassQueue::enqueue(const Klass* klass) {
   assert(klass != NULL, "invariant");
   _queue->enqueue(klass);
+}
+
+JfrBuffer* JfrTraceIdKlassQueue::get_enqueue_buffer(Thread* thread) {
+  return _queue->thread_local_storage(thread);
+}
+
+JfrBuffer* JfrTraceIdKlassQueue::renew_enqueue_buffer(Thread* thread, size_t size /* 0 */) {
+  return _queue->renew(size, thread);
 }
 
 void JfrTraceIdKlassQueue::iterate(klass_callback callback, bool previous_epoch) {

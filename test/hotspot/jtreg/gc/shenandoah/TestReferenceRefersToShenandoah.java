@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 package gc.shenandoah;
 
-/* @test
+/* @test id=satb
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -35,11 +35,11 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test
+/* @test id=iu
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -47,12 +47,12 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test
+/* @test id=satb-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @modules java.base
- * @run main jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -60,12 +60,12 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test
+/* @test id=iu-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @modules java.base
- * @run main jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -77,7 +77,7 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestReferenceRefersToShenandoah {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();

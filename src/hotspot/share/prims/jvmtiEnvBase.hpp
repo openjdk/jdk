@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -81,6 +82,19 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static void entering_dying_thread_env_iteration() { ++_dying_thread_env_iteration_count; }
   static void leaving_dying_thread_env_iteration()  { --_dying_thread_env_iteration_count; }
   static bool is_inside_dying_thread_env_iteration(){ return _dying_thread_env_iteration_count > 0; }
+
+  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
+                                   int* need_safepoint_p);
+  static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
+  static jvmtiError check_thread_list(jint count, const jthread* list);
+  static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
+
+  // check if thread_oop represents a passive carrier thread
+  static bool is_passive_carrier_thread(JavaThread* java_thread, oop thread_oop) {
+    return java_thread != NULL && java_thread->jvmti_vthread() != NULL
+                               && java_thread->jvmti_vthread() != thread_oop
+                               && java_thread->threadObj() == thread_oop;
+  }
 
  private:
 
@@ -152,6 +166,52 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);
   };
+
+  // If (thread == NULL) then return current thread object.
+  // Otherwise return JNIHandles::resolve_external_guard(thread).
+  static oop current_thread_obj_or_resolve_external_guard(jthread thread);
+
+  // Return true if the thread identified with a pair <jt,thr_obj> is current.
+  // A passive carrier thread is not treated as current.
+  static bool is_JavaThread_current(JavaThread* jt, oop thr_obj) {
+    JavaThread* current = JavaThread::current();
+    // jt can be NULL in case of a virtual thread
+    if (jt == NULL || jt != current) {
+      return false;
+    }
+    oop cur_obj = current->jvmti_vthread();
+
+    // cur_obj == NULL is true for normal platform threads only
+    // otherwise it can be virtual or carrier thread.
+    return cur_obj == NULL || cur_obj == thr_obj;
+  }
+
+  static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
+    jvmtiError err = JVMTI_ERROR_NONE;
+    if (thread == NULL) {
+      *jt_pp = JavaThread::current();
+    } else {
+      err = JvmtiExport::cv_external_thread_to_JavaThread(tlist, thread, jt_pp, NULL);
+    }
+    return err;
+  }
+
+  // If there is a virtual thread mounted on the JavaThread* then
+  // return virtual thread oop. Otherwise, return thread oop.
+  static oop get_vthread_or_thread_oop(JavaThread* jt) {
+    oop result = jt->threadObj();
+    if (jt->jvmti_vthread() != NULL) {
+      result = jt->jvmti_vthread();
+    }
+    return result;
+  }
+
+  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
+                                                 JavaThread** jt_pp, oop* thread_oop_p);
+
+  // Return true if java thread is a carrier thread with a mounted virtual thread.
+  static bool is_cthread_with_mounted_vthread(JavaThread* jt);
+  static bool is_cthread_with_continuation(JavaThread* jt);
 
   static JvmtiEnv* JvmtiEnv_from_jvmti_env(jvmtiEnv *env) {
     return (JvmtiEnv*)((intptr_t)env - in_bytes(jvmti_external_offset()));
@@ -272,9 +332,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
  protected:
   // helper methods for creating arrays of global JNI Handles from local Handles
   // allocated into environment specific storage
-  jobject * new_jobjectArray(int length, Handle *handles);
   jthread * new_jthreadArray(int length, Handle *handles);
-  jthreadGroup * new_jthreadGroupArray(int length, Handle *handles);
+  jthreadGroup * new_jthreadGroupArray(int length, objArrayHandle groups);
 
   // convert to a jni jclass from a non-null Klass*
   jclass get_jni_class_non_null(Klass* k);
@@ -286,28 +345,69 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
                                    jint depth);
  public:
-  static vframe* vframeForNoProcess(JavaThread* java_thread, jint depth);
+  static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
 
   // get a field descriptor for the specified class and field
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
+  // check and skip frames hidden in mount/unmount transitions
+  static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf);
+  static javaVFrame* check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf);
+  static javaVFrame* check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf);
+
+  // check if virtual thread is not terminated (alive)
+  static bool is_vthread_alive(oop vt);
+
+  // return JavaThread if virtual thread is mounted, NULL otherwise
+  static JavaThread* get_JavaThread_or_null(oop vthread);
+
+  // get virtual thread last java vframe
+  static javaVFrame* get_vthread_jvf(oop vthread);
+
+  // get carrier thread last java vframe
+  static javaVFrame* get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map);
+
+  // get ordinary thread thread state
+  static jint get_thread_state(oop thread_oop, JavaThread* jt);
+
+  // get virtual thread thread state
+  static jint get_vthread_state(oop thread_oop, JavaThread* jt);
+
+  // enumerates the live threads in the given thread group
+  static jvmtiError get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p);
+
+  // enumerates the subgroups in the given thread group
+  static jvmtiError get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p);
+
   // JVMTI API helper functions which are called when target thread is suspended
   // or at safepoint / thread local handshake.
-  jvmtiError get_frame_count(JvmtiThreadState *state, jint *count_ptr);
+  static jint get_frame_count(javaVFrame* jvf);
+  jvmtiError get_frame_count(JavaThread* java_thread, jint *count_ptr);
+  jvmtiError get_frame_count(oop frame_oop, jint *count_ptr);
+  jvmtiError get_frame_location(javaVFrame* jvf, jint depth,
+                                jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError get_frame_location(JavaThread* java_thread, jint depth,
-                                              jmethodID* method_ptr, jlocation* location_ptr);
-  jvmtiError get_object_monitor_usage(JavaThread *calling_thread,
-                                                    jobject object, jvmtiMonitorUsage* info_ptr);
-  jvmtiError get_stack_trace(JavaThread *java_thread,
-                                           jint stack_depth, jint max_count,
-                                           jvmtiFrameInfo* frame_buffer, jint* count_ptr);
-  jvmtiError get_current_contended_monitor(JavaThread *calling_thread, JavaThread *java_thread,
-                                           jobject *monitor_ptr);
-  jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
+                                jmethodID* method_ptr, jlocation* location_ptr);
+  jvmtiError get_frame_location(oop vthread_oop, jint depth,
+                                jmethodID* method_ptr, jlocation* location_ptr);
+  jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
+  jvmtiError get_object_monitor_usage(JavaThread* calling_thread,
+                                      jobject object, jvmtiMonitorUsage* info_ptr);
+  jvmtiError get_stack_trace(javaVFrame* jvf,
+                             jint stack_depth, jint max_count,
+                             jvmtiFrameInfo* frame_buffer, jint* count_ptr);
+  jvmtiError get_stack_trace(JavaThread* java_thread,
+                             jint stack_depth, jint max_count,
+                             jvmtiFrameInfo* frame_buffer, jint* count_ptr);
+  jvmtiError get_current_contended_monitor(JavaThread* calling_thread, JavaThread* java_thread,
+                                           jobject* monitor_ptr, bool is_virtual);
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
+                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
-  jvmtiError force_early_return(JavaThread* java_thread, jvalue value, TosState tos);
+  jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);
 };
 
 // This class is the only safe means of iterating through environments.
@@ -386,7 +486,7 @@ private:
 
 public:
   SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
-    : JvmtiHandshakeClosure("SetFramePop"),
+    : JvmtiHandshakeClosure("SetFramePopClosure"),
       _env(env),
       _state(state),
       _depth(depth) {}
@@ -413,7 +513,6 @@ public:
   void do_thread(Thread *target);
 };
 
-
 // VM operation to get object monitor usage.
 class VM_GetObjectMonitorUsage : public VM_Operation {
 private:
@@ -438,19 +537,21 @@ public:
 
 };
 
-// HandshakeClosure to get current contended monitor.
+// HandshakeClosure to get current contended monitor. It is used for both platform and virtual threads.
 class GetCurrentContendedMonitorClosure : public JvmtiHandshakeClosure {
 private:
   JavaThread *_calling_thread;
   JvmtiEnv *_env;
   jobject *_owned_monitor_ptr;
+  bool _is_virtual;
 
 public:
-  GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr)
+  GetCurrentContendedMonitorClosure(JavaThread* calling_thread, JvmtiEnv *env, jobject *mon_ptr, bool is_virtual)
     : JvmtiHandshakeClosure("GetCurrentContendedMonitor"),
       _calling_thread(calling_thread),
       _env(env),
-      _owned_monitor_ptr(mon_ptr) {}
+      _owned_monitor_ptr(mon_ptr),
+      _is_virtual(is_virtual) {}
   void do_thread(Thread *target);
 };
 
@@ -475,12 +576,25 @@ public:
   void do_thread(Thread *target);
 };
 
-// forward declaration
+#ifdef ASSERT
+// HandshakeClosure to print stack trace in JvmtiVTMSTransitionDisabler error handling.
+class PrintStackTraceClosure : public HandshakeClosure {
+ public:
+  static void do_thread_impl(Thread *target);
+
+  PrintStackTraceClosure()
+      : HandshakeClosure("PrintStackTraceClosure") {}
+  void do_thread(Thread *target);
+};
+#endif
+
+// Forward declaration.
 struct StackInfoNode;
 
 // Get stack trace at safepoint or at direct handshake.
 class MultipleStackTracesCollector {
 private:
+  friend class VM_GetThreadListStackTraces;
   JvmtiEnv *_env;
   jint _max_frame_count;
   jvmtiStackInfo *_stack_info;
@@ -538,6 +652,8 @@ private:
   const jthread* _thread_list;
   MultipleStackTracesCollector _collector;
 
+  JvmtiEnvBase *env() { return _collector.env(); }
+
 public:
   VM_GetThreadListStackTraces(JvmtiEnv *env, jint thread_count, const jthread* thread_list, jint max_frame_count)
       : _thread_count(thread_count),
@@ -548,6 +664,54 @@ public:
   void doit();
   jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
   jvmtiError result()             { return _collector.result(); }
+};
+
+class VM_VirtualThreadGetStackTrace : public VM_Operation {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  jint _start_depth;
+  jint _max_count;
+  jvmtiFrameInfo* _frame_buffer;
+  jint* _count_ptr;
+  jvmtiError _result;
+
+public:
+  VM_VirtualThreadGetStackTrace(JvmtiEnv *env, Handle vthread_h,
+                                jint start_depth, jint max_count,
+                                jvmtiFrameInfo* frame_buffer, jint* count_ptr)
+    : _env(env),
+      _vthread_h(vthread_h),
+      _start_depth(start_depth),
+      _max_count(max_count),
+      _frame_buffer(frame_buffer),
+      _count_ptr(count_ptr),
+      _result(JVMTI_ERROR_NONE)
+  {}
+
+  VMOp_Type type() const { return VMOp_VirtualThreadGetStackTrace; }
+  void doit();
+  jvmtiError result() { return _result; }
+};
+
+class VM_VirtualThreadGetFrameCount : public VM_Operation {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  jint* _count_ptr;
+  jvmtiError _result;
+
+public:
+  VM_VirtualThreadGetFrameCount(JvmtiEnv *env, Handle vthread_h, jint* count_ptr)
+    : _env(env),
+      _vthread_h(vthread_h),
+      _count_ptr(count_ptr),
+      _result(JVMTI_ERROR_NONE)
+  {}
+
+  VMOp_Type type() const { return VMOp_VirtualThreadGetFrameCount; }
+  void doit();
+  jvmtiError result() { return _result; }
 };
 
 // HandshakeClosure to get single stack trace.
@@ -574,14 +738,12 @@ public:
 class GetFrameCountClosure : public JvmtiHandshakeClosure {
 private:
   JvmtiEnv *_env;
-  JvmtiThreadState *_state;
   jint *_count_ptr;
 
 public:
-  GetFrameCountClosure(JvmtiEnv *env, JvmtiThreadState *state, jint *count_ptr)
+  GetFrameCountClosure(JvmtiEnv *env, jint *count_ptr)
     : JvmtiHandshakeClosure("GetFrameCount"),
       _env(env),
-      _state(state),
       _count_ptr(count_ptr) {}
   void do_thread(Thread *target);
 };
@@ -603,6 +765,157 @@ public:
       _method_ptr(method_ptr),
       _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
+};
+
+// HandshakeClosure to get virtual thread monitor information with stack depth.
+class VirtualThreadGetOwnedMonitorInfoClosure : public HandshakeClosure {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
+  jvmtiError _result;
+
+public:
+  VirtualThreadGetOwnedMonitorInfoClosure(JvmtiEnv* env,
+                                          Handle vthread_h,
+                                          GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
+    : HandshakeClosure("VirtualThreadGetOwnedMonitorInfo"),
+      _env(env),
+      _vthread_h(vthread_h),
+      _owned_monitors_list(owned_monitors_list),
+      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
+
+  void do_thread(Thread *target);
+  jvmtiError result() { return _result; }
+};
+
+// HandshakeClosure to get virtual thread thread at safepoint.
+class VirtualThreadGetThreadClosure : public HandshakeClosure {
+private:
+  Handle _vthread_h;
+  jthread* _carrier_thread_ptr;
+  jvmtiError _result;
+
+public:
+  VirtualThreadGetThreadClosure(Handle vthread_h, jthread* carrier_thread_ptr)
+    : HandshakeClosure("VirtualThreadGetThread"),
+      _vthread_h(vthread_h),
+      _carrier_thread_ptr(carrier_thread_ptr),
+      _result(JVMTI_ERROR_NONE) {}
+
+  void do_thread(Thread *target);
+  jvmtiError result() { return _result; }
+};
+
+// HandshakeClosure to get virtual thread stack trace at safepoint.
+class VirtualThreadGetStackTraceClosure : public HandshakeClosure {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  jint _start_depth;
+  jint _max_count;
+  jvmtiFrameInfo *_frame_buffer;
+  jint *_count_ptr;
+  jvmtiError _result;
+
+public:
+  VirtualThreadGetStackTraceClosure(JvmtiEnv *env, Handle vthread_h,
+                                    jint start_depth, jint max_count,
+                                    jvmtiFrameInfo* frame_buffer, jint* count_ptr)
+    : HandshakeClosure("VirtualThreadGetStackTrace"),
+      _env(env),
+      _vthread_h(vthread_h),
+       _start_depth(start_depth),
+      _max_count(max_count),
+      _frame_buffer(frame_buffer),
+      _count_ptr(count_ptr),
+      _result(JVMTI_ERROR_NONE) {}
+
+  void do_thread(Thread *target);
+  jvmtiError result() { return _result; }
+};
+
+// HandshakeClosure to count virtual thread stack frames at safepoint.
+class VirtualThreadGetFrameCountClosure : public HandshakeClosure {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  jint *_count_ptr;
+  jvmtiError _result;
+
+public:
+  VirtualThreadGetFrameCountClosure(JvmtiEnv *env, Handle vthread_h, jint *count_ptr)
+    : HandshakeClosure("VirtualThreadGetFrameCount"),
+      _env(env), _vthread_h(vthread_h), _count_ptr(count_ptr),
+      _result(JVMTI_ERROR_NONE) {}
+
+  void do_thread(Thread *target);
+  jvmtiError result() { return _result; }
+};
+
+// HandshakeClosure get to virtual thread frame location at safepoint.
+class VirtualThreadGetFrameLocationClosure : public HandshakeClosure {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  jint _depth;
+  jmethodID* _method_ptr;
+  jlocation* _location_ptr;
+  jvmtiError _result;
+
+public:
+  VirtualThreadGetFrameLocationClosure(JvmtiEnv *env, Handle vthread_h, jint depth,
+                                       jmethodID* method_ptr, jlocation* location_ptr)
+    : HandshakeClosure("VirtualThreadGetFrameLocation"),
+      _env(env),
+      _vthread_h(vthread_h),
+      _depth(depth),
+      _method_ptr(method_ptr),
+      _location_ptr(location_ptr),
+      _result(JVMTI_ERROR_NONE) {}
+
+  void do_thread(Thread *target);
+  jvmtiError result() { return _result; }
+};
+
+// HandshakeClosure to get virtual thread state at safepoint.
+class VirtualThreadGetThreadStateClosure : public HandshakeClosure {
+private:
+  Handle _vthread_h;
+  jint *_state_ptr;
+  jvmtiError _result;
+
+public:
+  VirtualThreadGetThreadStateClosure(Handle vthread_h, jint *state_ptr)
+    : HandshakeClosure("VirtualThreadGetThreadState"),
+      _vthread_h(vthread_h),
+      _state_ptr(state_ptr),
+      _result(JVMTI_ERROR_NONE) {}
+
+  void do_thread(Thread *target);
+  jvmtiError result() { return _result; }
+};
+
+// HandshakeClosure to set frame pop for a virtual thread.
+class VirtualThreadSetFramePopClosure : public JvmtiHandshakeClosure {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  JvmtiThreadState* _state;
+  jint _depth;
+
+public:
+  VirtualThreadSetFramePopClosure(JvmtiEnv *env, Handle vthread_h, JvmtiThreadState* state, jint depth)
+    : JvmtiHandshakeClosure("VirtualThreadSetFramePopClosure"),
+      _env(env),
+      _vthread_h(vthread_h),
+      _state(state),
+      _depth(depth) {}
+
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
 };
 
 
@@ -639,17 +952,15 @@ class ResourceTracker : public StackObj {
 // Jvmti monitor closure to collect off stack monitors.
 class JvmtiMonitorClosure: public MonitorClosure {
  private:
-  JavaThread *_java_thread;
   JavaThread *_calling_thread;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
   jvmtiError _error;
   JvmtiEnvBase *_env;
 
  public:
-  JvmtiMonitorClosure(JavaThread* thread, JavaThread *calling_thread,
+  JvmtiMonitorClosure(JavaThread *calling_thread,
                       GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors,
                       JvmtiEnvBase *env) {
-    _java_thread = thread;
     _calling_thread = calling_thread;
     _owned_monitors_list = owned_monitors;
     _error = JVMTI_ERROR_NONE;

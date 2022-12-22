@@ -30,7 +30,7 @@
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1CommittedRegionMap::active(uint index) const {
-  return _active.at(index);
+  return _active.par_at(index);
 }
 
 inline bool G1CommittedRegionMap::inactive(uint index) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestJavaProcess {
         log("Waiting for the quit command from the test ...");
         String cmd = pipe.readln();
         int exitCode = PASSED;
-        if (cmd.equals("quit")) {
+        if ("quit".equals(cmd)) {
             log("'quit' received");
         } else {
             log("Invalid command received " + cmd);

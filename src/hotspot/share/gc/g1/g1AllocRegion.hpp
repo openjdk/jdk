@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,6 @@ private:
   // we allocated in it.
   size_t _used_bytes_before;
 
-  // When true, indicates that allocate calls should do BOT updates.
-  const bool _bot_updates;
-
   // Useful for debugging and tracing.
   const char* _name;
 
@@ -95,7 +92,7 @@ protected:
   // The memory node index this allocation region belongs to.
   uint _node_index;
 
-  // Reset the alloc region to point a the dummy region.
+  // Reset the alloc region to point the dummy region.
   void reset_alloc_region();
 
   // Perform a non-MT-safe allocation out of the given region.
@@ -115,7 +112,7 @@ protected:
                                 size_t* actual_word_size);
 
   // Ensure that the region passed as a parameter has been filled up
-  // so that noone else can allocate out of it any more.
+  // so that no one else can allocate out of it any more.
   // Returns the number of bytes that have been wasted by filled up
   // the space.
   size_t fill_up_remaining_space(HeapRegion* alloc_region);
@@ -164,20 +161,21 @@ public:
                                       size_t desired_word_size,
                                       size_t* actual_word_size);
 
-  // Second-level allocation: Should be called while holding a
-  // lock. It will try to first allocate lock-free out of the active
-  // region or, if it's unable to, it will try to replace the active
-  // alloc region with a new one. We require that the caller takes the
-  // appropriate lock before calling this so that it is easier to make
-  // it conform to its locking protocol.
   inline HeapWord* attempt_allocation_locked(size_t word_size);
-  // Same as attempt_allocation_locked(size_t, bool), but allowing specification
-  // of minimum word size of the block in min_word_size, and the maximum word
-  // size of the allocation in desired_word_size. The actual size of the block is
-  // returned in actual_word_size.
+  // Second-level allocation: Should be called while holding a
+  // lock. We require that the caller takes the appropriate lock
+  // before calling this so that it is easier to make it conform
+  // to the locking protocol. The min and desired word size allow
+  // specifying a minimum and maximum size of the allocation. The
+  // actual size of allocation is returned in actual_word_size.
   inline HeapWord* attempt_allocation_locked(size_t min_word_size,
                                              size_t desired_word_size,
                                              size_t* actual_word_size);
+
+  // Perform an allocation out of a new allocation region, retiring the current one.
+  inline HeapWord* attempt_allocation_using_new_region(size_t min_word_size,
+                                                       size_t desired_word_size,
+                                                       size_t* actual_word_size);
 
   // Should be called to allocate a new region even if the max of this
   // type of regions has been reached. Should only be called if other

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,12 +52,7 @@ class CodeHeapState : public CHeapObj<mtCode> {
     nMethod_inuse,          // executable. This is the "normal" state for a nmethod.
     nMethod_notused,        // assumed inactive, marked not entrant. Could be revived if necessary.
     nMethod_notentrant,     // no new activations allowed, marked for deoptimization. Old activations may still exist.
-                            // Will transition to "zombie" after all activations are gone.
-    nMethod_zombie,         // No more activations exist, ready for purge (remove from code cache).
-    nMethod_unloaded,       // No activations exist, should not be called. Transient state on the way to "zombie".
-    nMethod_alive = nMethod_notentrant, // Combined state: nmethod may have activations, thus can't be purged.
-    nMethod_dead  = nMethod_zombie,     // Combined state: nmethod does not have any activations.
-    runtimeStub   = nMethod_unloaded + 1,
+    runtimeStub,
     ricochetStub,
     deoptimizationStub,
     uncommonTrapStub,
@@ -204,7 +199,7 @@ struct SizeDistributionElement : public CHeapObj<mtCode> {
 //----------------
 //  Because we have to deal with multiple CodeHeaps, we need to
 //  collect "global" information in a segment-specific way as well.
-//  Thats what the CodeHeapStat and CodeHeapStatArray are used for.
+//  That's what the CodeHeapStat and CodeHeapStatArray are used for.
 //  Before a heap segment is processed, the contents of the CodeHeapStat
 //  element is copied to the global variables (get_HeapStatGlobals).
 //  When processing is done, the possibly modified global variables are

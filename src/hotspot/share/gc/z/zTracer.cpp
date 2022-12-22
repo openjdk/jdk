@@ -92,7 +92,7 @@ ZTracer::ZTracer() :
 
 void ZTracer::initialize() {
   assert(_tracer == NULL, "Already initialized");
-  _tracer = new (ResourceObj::C_HEAP, mtGC) ZTracer();
+  _tracer = new ZTracer();
   JFR_ONLY(register_jfr_type_serializers());
 }
 
@@ -123,6 +123,19 @@ void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Tick
   NoSafepointVerifier nsv;
 
   EventZThreadPhase e(UNTIMED);
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current_or_undefined());
+    e.set_name(name);
+    e.set_starttime(start);
+    e.set_endtime(end);
+    e.commit();
+  }
+}
+
+void ZTracer::send_thread_debug(const char* name, const Ticks& start, const Ticks& end) {
+  NoSafepointVerifier nsv;
+
+  EventZThreadDebug e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current_or_undefined());
     e.set_name(name);

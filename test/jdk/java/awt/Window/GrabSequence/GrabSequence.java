@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@ public class GrabSequence
 {
     private static void init()
     {
-        String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
-        if ( toolkit.equals("sun.awt.motif.MToolkit")){
-            System.out.println("This test is for XToolkit and WToolkit only. Now using " + toolkit + ". Automatically passed.");
-            return;
-        }
         Frame frame = new Frame("Frame");
         frame.setBackground(Color.green);
         frame.setForeground(Color.green);

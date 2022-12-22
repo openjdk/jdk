@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package java.nio;
 
-import jdk.internal.misc.Unsafe;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import jdk.internal.misc.Blocker;
+import jdk.internal.misc.Unsafe;
 
 /* package */ class MappedMemoryUtils {
 
@@ -96,10 +96,15 @@ import java.io.UncheckedIOException;
         } else {
             // force writeback via file descriptor
             long offset = mappingOffset(address, index);
+            long mappingAddress = mappingAddress(address, offset, index);
+            long mappingLength = mappingLength(offset, length);
+            long comp = Blocker.begin();
             try {
-                force0(fd, mappingAddress(address, offset, index), mappingLength(offset, length));
+                force0(fd, mappingAddress, mappingLength);
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
+            } finally {
+                Blocker.end(comp);
             }
         }
     }
@@ -138,7 +143,7 @@ import java.io.UncheckedIOException;
         return mappingAddress(address, mappingOffset, 0);
     }
 
-    // Given an offset previously otained from calling
+    // Given an offset previously obtained from calling
     // mappingOffset(index) returns the largest page aligned address
     // of the mapping less than or equal to the address of the buffer
     // element identified by index.
@@ -147,7 +152,7 @@ import java.io.UncheckedIOException;
         return indexAddress - mappingOffset;
     }
 
-    // given a mappingOffset previously otained from calling
+    // given a mappingOffset previously obtained from calling
     // mappingOffset(index) return that offset added to the supplied
     // length.
     private static long mappingLength(long mappingOffset, long length) {

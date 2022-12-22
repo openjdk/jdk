@@ -81,6 +81,15 @@ public class MessageEncoder {
     /* Was the previous frame TEXT or a CONTINUATION thereof? */
     private boolean previousText;
     private boolean closed;
+    private final boolean server;
+
+    MessageEncoder() {
+        this(false);
+    }
+
+    MessageEncoder(boolean isServer) {
+        this.server = isServer;
+    }
 
     /*
      * How many bytes of the current message have been already encoded.
@@ -369,12 +378,20 @@ public class MessageEncoder {
                       opcode, fin, payloadLen);
         }
         headerBuffer.clear();
-        int mask = maskingKeySource.nextInt();
-        headerWriter.fin(fin)
+        // for server setting mask to 0 disables masking (xor)
+        int mask = this.server ? 0 : maskingKeySource.nextInt();
+        if (mask == 0) {
+            headerWriter.fin(fin)
+                    .opcode(opcode)
+                    .payloadLen(payloadLen)
+                    .write(headerBuffer);
+        } else {
+            headerWriter.fin(fin)
                     .opcode(opcode)
                     .payloadLen(payloadLen)
                     .mask(mask)
                     .write(headerBuffer);
+        }
         headerBuffer.flip();
         payloadMasker.mask(mask);
     }

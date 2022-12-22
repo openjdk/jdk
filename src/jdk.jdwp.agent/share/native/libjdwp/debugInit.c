@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,6 +302,9 @@ DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     needed_capabilities.can_maintain_original_method_order      = 1;
     needed_capabilities.can_generate_monitor_events             = 1;
     needed_capabilities.can_tag_objects                         = 1;
+    if (gdata->vthreadsSupported) {
+        needed_capabilities.can_support_virtual_threads         = 1;
+    }
 
     /* And what potential ones that would be nice to have */
     needed_capabilities.can_force_early_return
@@ -792,7 +795,6 @@ debugInit_reset(JNIEnv *env)
     threadControl_reset();
     util_reset();
     commonRef_reset(env);
-    classTrack_reset();
 
     /*
      * If this is a server, we are now ready to accept another connection.
@@ -859,7 +861,8 @@ printUsage(void)
  "               Java Debugger JDWP Agent Library\n"
  "               --------------------------------\n"
  "\n"
- "  (see http://java.sun.com/products/jpda for more information)\n"
+ "  (See the \"VM Invocation Options\" section of the JPDA\n"
+ "   \"Connection and Invocation Details\" document for more information.)\n"
  "\n"
  "jdwp usage: java " AGENTLIB "=[help]|[<option>=<value>, ...]\n"
  "\n"
@@ -873,6 +876,9 @@ printUsage(void)
  "onthrow=<exception name>         debug on throw                    none\n"
  "onuncaught=y|n                   debug on any uncaught?            n\n"
  "timeout=<timeout value>          for listen/attach in milliseconds n\n"
+ "includevirtualthreads=y|n        List of all threads includes virtual threads as well as platform threads.\n"
+ "                                 Virtual threads are a preview feature of the Java platform.\n"
+ "                                                                   n\n"
  "mutf8=y|n                        output modified utf-8             n\n"
  "quiet=y|n                        control over terminal messages    n\n"));
 
@@ -1019,6 +1025,11 @@ parseOptions(char *options)
     gdata->assertFatal  = DEFAULT_ASSERT_FATAL;
     logfile             = DEFAULT_LOGFILE;
 
+    /* Set vthread debugging level. */
+    gdata->vthreadsSupported = JNI_TRUE;
+    gdata->includeVThreads = JNI_FALSE;
+    gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
+
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
         options = "";
@@ -1120,6 +1131,20 @@ parseOptions(char *options)
                 goto syntax_error;
             }
             currentTransport->timeout = atol(current);
+            current += strlen(current) + 1;
+        } else if (strcmp(buf, "includevirtualthreads") == 0) {
+            if (!get_tok(&str, current, (int)(end - current), ',')) {
+                goto syntax_error;
+            }
+            if (strcmp(current, "y") == 0) {
+                gdata->includeVThreads = JNI_TRUE;
+            } else if (strcmp(current, "n") == 0) {
+                gdata->includeVThreads = JNI_FALSE;
+            } else {
+                goto syntax_error;
+            }
+            // These two flags always set the same for now.
+            gdata->rememberVThreadsWhenDisconnected = gdata->includeVThreads;
             current += strlen(current) + 1;
         } else if (strcmp(buf, "launch") == 0) {
             /*LINTED*/
@@ -1352,7 +1377,7 @@ debugInit_exit(jvmtiError error, const char *msg)
         return;
     }
 
-    // No transport initilized.
+    // No transport initialized.
     // As we don't have any details here exiting with separate exit code
     if (error == AGENT_ERROR_TRANSPORT_INIT) {
         forceExit(EXIT_TRANSPORT_ERROR);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "jimage.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -39,6 +38,8 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jimage.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
@@ -48,13 +49,14 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
 volatile Thread* ClassListParser::_parsing_thread = NULL;
 ClassListParser* ClassListParser::_instance = NULL;
 
-ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TABLE_SIZE) {
+ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
+  log_info(cds)("Parsing %s%s", file,
+                (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
   _classlist_file = file;
   _file = NULL;
   // Use os::open() because neither fopen() nor os::fopen()
@@ -63,7 +65,7 @@ ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TAB
   if (fd != -1) {
     // Obtain a File* from the file descriptor so that fgets()
     // can be used in parse_one_line()
-    _file = os::open(fd, "r");
+    _file = os::fdopen(fd, "r");
   }
   if (_file == NULL) {
     char errmsg[JVM_MAXPATHLEN];
@@ -71,8 +73,9 @@ ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TAB
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
   _line_no = 0;
-  _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
-  _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
+  _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
+  _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
+  _parse_mode = parse_mode;
 
   // _instance should only be accessed by the thread that created _instance.
   assert(_instance == NULL, "must be singleton");
@@ -85,10 +88,12 @@ bool ClassListParser::is_parsing_thread() {
 }
 
 ClassListParser::~ClassListParser() {
-  if (_file) {
+  if (_file != NULL) {
     fclose(_file);
   }
   Atomic::store(&_parsing_thread, (Thread*)NULL);
+  delete _indy_items;
+  delete _interfaces;
   _instance = NULL;
 }
 
@@ -99,6 +104,10 @@ int ClassListParser::parse(TRAPS) {
     if (lambda_form_line()) {
       // The current line is "@lambda-form-invoker ...". It has been recorded in LambdaFormInvokers,
       // and will be processed later.
+      continue;
+    }
+
+    if (_parse_mode == _parse_lambda_forms_invokers_only) {
       continue;
     }
 
@@ -118,6 +127,13 @@ int ClassListParser::parse(TRAPS) {
         return 0; // THROW
       }
 
+      ResourceMark rm(THREAD);
+      char* ex_msg = (char*)"";
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+      if (message != NULL) {
+        ex_msg = java_lang_String::as_utf8_string(message);
+      }
+      log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
       // We might have an invalid class name or an bad class. Warn about it
       // and keep going to the next line.
       CLEAR_PENDING_EXCEPTION;
@@ -436,9 +452,9 @@ void ClassListParser::error(const char* msg, ...) {
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
-#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__)))
+#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__) || defined(_WINDOWS)))
   // The only supported platforms are: (1) Linux/64-bit and (2) Solaris/64-bit and
-  // (3) MacOSX/64-bit
+  // (3) MacOSX/64-bit and (4) Windowss/64-bit
   // This #if condition should be in sync with the areCustomLoadersSupportedForCDS
   // method in test/lib/jdk/test/lib/Platform.java.
   error("AppCDS custom class loaders not supported on this platform");
@@ -456,7 +472,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -464,15 +480,13 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
+  assert(k->is_shared_unregistered_class(), "must be");
+
   bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
   }
-
-  // This tells JVM_FindLoadedClass to not find this class.
-  k->set_shared_classpath_index(UNREGISTERED_INDEX);
-  k->clear_shared_class_loader_type();
 
   return k;
 }
@@ -505,7 +519,7 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
   }
 }
 
-bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS) {
+bool ClassListParser::is_matching_cp_entry(const constantPoolHandle &pool, int cp_index, TRAPS) {
   ResourceMark rm(THREAD);
   CDSIndyInfo cii;
   populate_cds_indy_info(pool, cp_index, &cii, CHECK_0);
@@ -612,9 +626,8 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     // delegate to the correct loader (boot, platform or app) depending on
     // the package name.
 
-    Handle s = java_lang_String::create_from_symbol(class_name_symbol, CHECK_NULL);
     // ClassLoader.loadClass() wants external class name format, i.e., convert '/' chars to '.'
-    Handle ext_class_name = java_lang_String::externalize_classname(s, CHECK_NULL);
+    Handle ext_class_name = java_lang_String::externalize_classname(class_name_symbol, CHECK_NULL);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
 
     JavaCalls::call_virtual(&result,
@@ -642,11 +655,14 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     int id = this->id();
     SystemDictionaryShared::update_shared_entry(ik, id);
-    InstanceKlass** old_ptr = table()->lookup(id);
-    if (old_ptr != NULL) {
+    bool created;
+    id2klass_table()->put_if_absent(id, ik, &created);
+    if (!created) {
       error("Duplicated ID %d for class %s", id, _class_name);
     }
-    table()->add(id, ik);
+    if (id2klass_table()->maybe_grow()) {
+      log_info(cds, hashtables)("Expanded id2klass_table() to %d", id2klass_table()->table_size());
+    }
   }
 
   return klass;
@@ -657,7 +673,7 @@ bool ClassListParser::is_loading_from_source() {
 }
 
 InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
-  InstanceKlass** klass_ptr = table()->lookup(id);
+  InstanceKlass** klass_ptr = id2klass_table()->get(id);
   if (klass_ptr == NULL) {
     error("Class ID %d has not been defined", id);
   }

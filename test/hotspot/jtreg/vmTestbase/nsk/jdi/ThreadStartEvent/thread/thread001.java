@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,8 @@ public class thread001 {
             if (checkedRequest != null) {
                 log.display("Disabling event request");
                 checkedRequest.disable();
+                // need to resume all threads in case a stray ThreadStartEvent arrived
+                vm.resume();
             }
 
             // force debuggee to quit
@@ -242,10 +244,21 @@ public class thread001 {
                         for (int i = 0; i < checkedThreads.length; i++) {
                              if (threadName.equals(checkedThreads[i][0])) {
                                   if (checkedThreads[i][1].equals("0")) {
-                                       checkedThreads[i][1] = "1";
+                                      checkedThreads[i][1] = "1";
                                   } else {
-                                       log.complain("FAILURE 5: ThreadStartEvent for " + threadName + " is received more that once");
-                                       testFailed = true;
+                                      // When using the jtreg wrapper, the main thread is renamed, and a new
+                                      // "main" vthread is created. However, the rename happens after the
+                                      // debug agent has already generated the THREAD_START event for the
+                                      // original "main", so we end up with two THREAD_START events for "main".
+                                      // We need to allow for this.
+                                      if ((System.getProperty("main.wrapper") != null) &&
+                                              checkedThreads[i][0].equals("main") &&
+                                              checkedThreads[i][1].equals("1")) {
+                                          checkedThreads[i][1] = "2";
+                                      } else {
+                                          log.complain("FAILURE 5: ThreadStartEvent for " + threadName + " is received more that once");
+                                          testFailed = true;
+                             }
                                   }
                              }
                         }

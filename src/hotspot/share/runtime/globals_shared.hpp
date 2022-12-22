@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@
 
 // Only materialize src code for range checking when required, ignore otherwise
 #define IGNORE_RANGE(a, b)
-// Only materialize src code for contraint checking when required, ignore otherwise
+// Only materialize src code for constraint checking when required, ignore otherwise
 #define IGNORE_CONSTRAINT(func,type)
 
 #define IGNORE_FLAG(...)

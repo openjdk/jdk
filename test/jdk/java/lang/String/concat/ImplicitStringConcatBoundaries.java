@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ public class ImplicitStringConcatBoundaries {
         test("foo-2147483648",              "foo" + INT_MIN_1);
         test("foo-2147483648",              "foo" + INT_MIN_2);
 
-        test("foo1.17549435E-38",           "foo" + FLOAT_MIN_NORM_1);
-        test("foo1.17549435E-38",           "foo" + FLOAT_MIN_NORM_2);
+        test("foo1.1754944E-38",            "foo" + FLOAT_MIN_NORM_1);
+        test("foo1.1754944E-38",            "foo" + FLOAT_MIN_NORM_2);
         test("foo-126.0",                   "foo" + FLOAT_MIN_EXP_1);
         test("foo-126.0",                   "foo" + FLOAT_MIN_EXP_2);
         test("foo1.4E-45",                  "foo" + FLOAT_MIN_1);

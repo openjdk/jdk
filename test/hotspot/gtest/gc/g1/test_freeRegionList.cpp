@@ -22,7 +22,15 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/heapRegionSet.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/virtualspace.hpp"
 #include "unittest.hpp"
 
 // @requires UseG1GC
@@ -48,7 +56,7 @@ TEST_VM(FreeRegionList, length) {
                                          bot_rs.size(),
                                          os::vm_page_size(),
                                          HeapRegion::GrainBytes,
-                                         BOTConstants::N_bytes,
+                                         BOTConstants::card_size(),
                                          mtGC);
   G1BlockOffsetTable bot(heap, bot_storage);
   bot_storage->commit_regions(0, num_regions_in_test);
@@ -60,11 +68,14 @@ TEST_VM(FreeRegionList, length) {
   MemRegion mr3(mr2.end(), HeapRegion::GrainWords);
   MemRegion mr4(mr3.end(), HeapRegion::GrainWords);
 
-  HeapRegion hr0(0, &bot, mr0);
-  HeapRegion hr1(1, &bot, mr1);
-  HeapRegion hr2(2, &bot, mr2);
-  HeapRegion hr3(3, &bot, mr3);
-  HeapRegion hr4(4, &bot, mr4);
+  G1CardSetConfiguration config;
+
+  HeapRegion hr0(0, &bot, mr0, &config);
+  HeapRegion hr1(1, &bot, mr1, &config);
+  HeapRegion hr2(2, &bot, mr2, &config);
+  HeapRegion hr3(3, &bot, mr3, &config);
+  HeapRegion hr4(4, &bot, mr4, &config);
+
   l.add_ordered(&hr1);
   l.add_ordered(&hr0);
   l.add_ordered(&hr3);

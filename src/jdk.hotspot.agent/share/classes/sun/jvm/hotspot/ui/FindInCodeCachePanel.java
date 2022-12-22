@@ -79,7 +79,7 @@ public class FindInCodeCachePanel extends SAPanel {
         }
         begin = begin.addOffsetTo(addressSize);
       }
-      iterated = end.minus(base);;
+      iterated = end.minus(base);
       updateProgressBar(null);
     }
 

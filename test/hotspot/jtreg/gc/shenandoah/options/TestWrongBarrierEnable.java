@@ -22,7 +22,7 @@
  *
  */
 
-/* @test TestWrongBarrierEnable
+/* @test
  * @summary Test that disabling wrong barriers fails early
  * @requires vm.gc.Shenandoah
  * @library /test/lib

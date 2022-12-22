@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -91,7 +91,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: May 2021
+ * @LastModified: Aug 2021
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -647,6 +647,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if (reader == null) {
             stream = xmlInputSource.getByteStream();
             if (stream == null) {
+                @SuppressWarnings("deprecation")
                 URL location = new URL(expandedSystemId);
                 URLConnection connect = location.openConnection();
                 if (!(connect instanceof HttpURLConnection)) {
@@ -1235,7 +1236,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             externalEntity = (Entity.ExternalEntity)entity;
             extLitSysId = (externalEntity.entityLocation != null ? externalEntity.entityLocation.getLiteralSystemId() : null);
             extBaseSysId = (externalEntity.entityLocation != null ? externalEntity.entityLocation.getBaseSystemId() : null);
-            expandedSystemId = expandSystemId(extLitSysId, extBaseSysId);
+            expandedSystemId = expandSystemId(extLitSysId, extBaseSysId, fStrictURI);
             boolean unparsed = entity.isUnparsed();
             boolean parameter = entityName.startsWith("%");
             boolean general = !parameter;
@@ -1312,15 +1313,13 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
              */
             xmlInputSource = staxInputSource.getXMLInputSource() ;
             if (!fISCreatedByResolver) {
-                //let the not-LoadExternalDTD or not-SupportDTD process to handle the situation
-                if (fLoadExternalDTD) {
-                    String accessError = SecuritySupport.checkAccess(expandedSystemId, fAccessExternalDTD, JdkConstants.ACCESS_EXTERNAL_ALL);
-                    if (accessError != null) {
-                        fErrorReporter.reportError(this.getEntityScanner(),XMLMessageFormatter.XML_DOMAIN,
-                                "AccessExternalEntity",
-                                new Object[] { SecuritySupport.sanitizePath(expandedSystemId), accessError },
-                                XMLErrorReporter.SEVERITY_FATAL_ERROR);
-                    }
+                String accessError = SecuritySupport.checkAccess(expandedSystemId,
+                        fAccessExternalDTD, JdkConstants.ACCESS_EXTERNAL_ALL);
+                if (accessError != null) {
+                    fErrorReporter.reportError(this.getEntityScanner(),XMLMessageFormatter.XML_DOMAIN,
+                            "AccessExternalEntity",
+                            new Object[] { SecuritySupport.sanitizePath(expandedSystemId), accessError },
+                            XMLErrorReporter.SEVERITY_FATAL_ERROR);
                 }
             }
         }
@@ -2039,6 +2038,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     public static OutputStream createOutputStream(String uri) throws IOException {
         // URI was specified. Handle relative URIs.
         final String expanded = XMLEntityManager.expandSystemId(uri, null, true);
+        @SuppressWarnings("deprecation")
         final URL url = new URL(expanded != null ? expanded : uri);
         OutputStream out = null;
         String protocol = url.getProtocol();

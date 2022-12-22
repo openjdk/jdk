@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @run driver JcmdWithNMTDisabled 1
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
@@ -47,10 +48,12 @@ public class JcmdWithNMTDisabled {
       OutputAnalyzer output;
       String testjdkPath = System.getProperty("test.jdk");
 
-      // First run without enabling NMT
-      pb = ProcessTools.createJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "JcmdWithNMTDisabled");
-      output = new OutputAnalyzer(pb.start());
-      output.shouldHaveExitValue(0);
+      // First run without enabling NMT (not in debug, where NMT is by default on)
+      if (!Platform.isDebugBuild()) {
+        pb = ProcessTools.createJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "JcmdWithNMTDisabled");
+        output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+      }
 
       // Then run with explicitly disabling NMT, should not be any difference
       pb = ProcessTools.createJavaProcessBuilder("-Dtest.jdk=" + testjdkPath, "-XX:NativeMemoryTracking=off", "JcmdWithNMTDisabled");
@@ -69,7 +72,6 @@ public class JcmdWithNMTDisabled {
     jcmdCommand("summary.diff");
     jcmdCommand("detail.diff");
     jcmdCommand("scale=GB");
-    jcmdCommand("shutdown");
   }
 
   // Helper method for invoking different jcmd calls, all should fail with the same message saying NMT is not enabled

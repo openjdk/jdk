@@ -89,10 +89,10 @@ public class ModuleGraphBuilder extends Graph.Builder<Module> {
         Graph.Builder<Module> builder = new Graph.Builder<>();
         Set<Module> visited = new HashSet<>();
         Deque<Module> deque = new LinkedList<>();
-        edges.entrySet().stream().forEach(e -> {
+        edges.entrySet().forEach(e -> {
             Module m = e.getKey();
             deque.add(m);
-            e.getValue().stream().forEach(v -> {
+            e.getValue().forEach(v -> {
                 deque.add(v);
                 builder.addEdge(m, v);
             });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ protected:
     return array->on_C_heap();
   }
   template <typename E>
-  static bool elements_on_stack(const GrowableArray<E>* array) {
-    return array->on_stack();
+  static bool elements_on_resource_area(const GrowableArray<E>* array) {
+    return array->on_resource_area();
   }
   template <typename E>
   static bool elements_on_arena(const GrowableArray<E>* array) {
@@ -122,6 +122,43 @@ protected:
 
     // Check count
     ASSERT_EQ(counter, 10);
+  }
+
+  template <typename ArrayClass>
+  static void test_capacity(ArrayClass* a) {
+    ASSERT_EQ(a->length(), 0);
+    a->reserve(50);
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 50);
+    for (int i = 0; i < 50; ++i) {
+      a->append(i);
+    }
+    ASSERT_EQ(a->length(), 50);
+    ASSERT_EQ(a->capacity(), 50);
+    a->append(50);
+    ASSERT_EQ(a->length(), 51);
+    int capacity = a->capacity();
+    ASSERT_GE(capacity, 51);
+    for (int i = 0; i < 30; ++i) {
+      a->pop();
+    }
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), capacity);
+    a->shrink_to_fit();
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), 21);
+
+    a->reserve(50);
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), 50);
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 50);
+
+    a->shrink_to_fit();
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 0);
   }
 
   template <typename ArrayClass>
@@ -200,7 +237,8 @@ protected:
   enum TestEnum {
     Append,
     Clear,
-    Iterator,
+    Capacity,
+    Iterator
   };
 
   template <typename ArrayClass>
@@ -212,6 +250,10 @@ protected:
 
       case Clear:
         test_clear(a);
+        break;
+
+      case Capacity:
+        test_capacity(a);
         break;
 
       case Iterator:
@@ -343,7 +385,7 @@ protected:
 
     // CHeap/CHeap allocated
     {
-      GrowableArray<int>* a = new (ResourceObj::C_HEAP, mtTest) GrowableArray<int>(max, mtTest);
+      GrowableArray<int>* a = new (mtTest) GrowableArray<int>(max, mtTest);
       modify_and_test(a, modify, test);
       delete a;
     }
@@ -402,6 +444,10 @@ TEST_VM_F(GrowableArrayTest, clear) {
   with_all_types_all_0(Clear);
 }
 
+TEST_VM_F(GrowableArrayTest, capacity) {
+  with_all_types_all_0(Capacity);
+}
+
 TEST_VM_F(GrowableArrayTest, iterator) {
   with_all_types_all_0(Iterator);
 }
@@ -425,7 +471,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     GrowableArray<int>* a = new GrowableArray<int>();
     ASSERT_TRUE(a->allocated_on_res_area());
-    ASSERT_TRUE(elements_on_stack(a));
+    ASSERT_TRUE(elements_on_resource_area(a));
   }
 
   // Resource/CHeap allocated
@@ -439,7 +485,7 @@ TEST_VM_F(GrowableArrayTest, where) {
 
   // CHeap/CHeap allocated
   {
-    GrowableArray<int>* a = new (ResourceObj::C_HEAP, mtTest) GrowableArray<int>(0, mtTest);
+    GrowableArray<int>* a = new (mtTest) GrowableArray<int>(0, mtTest);
     ASSERT_TRUE(a->allocated_on_C_heap());
     ASSERT_TRUE(elements_on_C_heap(a));
     delete a;
@@ -452,14 +498,14 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     ResourceMark rm;
     GrowableArray<int> a(0);
-    ASSERT_TRUE(a.allocated_on_stack());
-    ASSERT_TRUE(elements_on_stack(&a));
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
+    ASSERT_TRUE(elements_on_resource_area(&a));
   }
 
   // Stack/CHeap allocated
   {
     GrowableArray<int> a(0, mtTest);
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&a));
   }
 
@@ -467,7 +513,7 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     Arena arena(mtTest);
     GrowableArray<int> a(&arena, 0, 0, 0);
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_arena(&a));
   }
 
@@ -475,14 +521,14 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     ResourceMark rm;
     WithEmbeddedArray w(0);
-    ASSERT_TRUE(w._a.allocated_on_stack());
-    ASSERT_TRUE(elements_on_stack(&w._a));
+    ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
+    ASSERT_TRUE(elements_on_resource_area(&w._a));
   }
 
   // Embedded/CHeap allocated
   {
     WithEmbeddedArray w(0, mtTest);
-    ASSERT_TRUE(w._a.allocated_on_stack());
+    ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&w._a));
   }
 
@@ -490,7 +536,7 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     Arena arena(mtTest);
     WithEmbeddedArray w(&arena, 0);
-    ASSERT_TRUE(w._a.allocated_on_stack());
+    ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_arena(&w._a));
   }
 }
@@ -518,7 +564,7 @@ TEST(GrowableArrayCHeap, sanity) {
   {
     GrowableArrayCHeap<int, mtTest> a(0);
 #ifdef ASSERT
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
 #endif
     ASSERT_TRUE(a.is_empty());
 

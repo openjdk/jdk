@@ -63,10 +63,10 @@ import java.util.stream.Stream;
  *                 no real difference between BASICSERVER and BASIC - it should
  *                 be transparent on the client side.
  * @run main/othervm HTTPSetAuthenticatorTest NONE SERVER PROXY SERVER307 PROXY305
- * @run main/othervm HTTPSetAuthenticatorTest DIGEST SERVER
- * @run main/othervm HTTPSetAuthenticatorTest DIGEST PROXY
- * @run main/othervm HTTPSetAuthenticatorTest DIGEST PROXY305
- * @run main/othervm HTTPSetAuthenticatorTest DIGEST SERVER307
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST SERVER
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST PROXY
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST PROXY305
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPSetAuthenticatorTest DIGEST SERVER307
  * @run main/othervm HTTPSetAuthenticatorTest BASIC  SERVER
  * @run main/othervm HTTPSetAuthenticatorTest BASIC  PROXY
  * @run main/othervm HTTPSetAuthenticatorTest BASIC  PROXY305

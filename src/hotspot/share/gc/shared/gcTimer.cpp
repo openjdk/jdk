@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "utilities/growableArray.hpp"
 
 // the "time" parameter for most functions
@@ -113,7 +114,7 @@ GCPhase::PhaseType TimePartitions::current_phase_type() const {
 }
 
 TimePartitions::TimePartitions() {
-  _phases = new (ResourceObj::C_HEAP, mtGC) GrowableArray<GCPhase>(INITIAL_CAPACITY, mtGC);
+  _phases = new (mtGC) GrowableArray<GCPhase>(INITIAL_CAPACITY, mtGC);
   clear();
 }
 
@@ -130,7 +131,7 @@ void TimePartitions::clear() {
 }
 
 void TimePartitions::report_gc_phase_start(const char* name, const Ticks& time, GCPhase::PhaseType type) {
-  assert(_phases->length() <= 1000, "Too many recored phases?");
+  assert(UseZGC || _phases->length() <= 1000, "Too many recorded phases? (count: %d)", _phases->length());
 
   int level = _active_phases.count();
 

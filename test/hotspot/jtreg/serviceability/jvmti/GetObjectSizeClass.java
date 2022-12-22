@@ -39,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build GetObjectSizeClassAgent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeClassAgent
- * @run main GetObjectSizeClass
+ * @run driver GetObjectSizeClass
  */
 public class GetObjectSizeClass {
     public static void main(String[] args) throws Exception  {
@@ -53,6 +53,7 @@ public class GetObjectSizeClass {
 
         ProcessBuilder pt = ProcessTools.createTestJvm("-javaagent:agent.jar",  "GetObjectSizeClassAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
+        output.shouldHaveExitValue(0);
 
         output.stdoutShouldContain("GetObjectSizeClass passed");
     }

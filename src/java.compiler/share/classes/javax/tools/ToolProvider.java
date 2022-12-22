@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.ServiceLoader;
  * providers of compilers.  This class complements the
  * functionality of {@link java.util.ServiceLoader}.
  *
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class ToolProvider {

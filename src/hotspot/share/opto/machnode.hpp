@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,12 @@
 #include "opto/regmask.hpp"
 #include "utilities/growableArray.hpp"
 
-class BiasedLockingCounters;
 class BufferBlob;
 class CodeBuffer;
 class JVMState;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
-class MachCallNativeNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
@@ -65,7 +63,7 @@ public:
   // Allocate right next to the MachNodes in the same arena
   void *operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    return C->node_arena()->Amalloc_D(x);
+    return C->node_arena()->AmallocWords(x);
   }
 
   // Opcode
@@ -135,6 +133,14 @@ public:
   }
   VectorSRegister as_VectorSRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
     return ::as_VectorSRegister(reg(ra_, node, idx));
+  }
+#endif
+#if defined(AARCH64)
+  PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
+    return ::as_PRegister(reg(ra_, node));
+  }
+  PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node, int idx) const {
+    return ::as_PRegister(reg(ra_, node, idx));
   }
 #endif
 
@@ -261,10 +267,10 @@ public:
   virtual const RegMask *cisc_RegMask() const { return NULL; }
 
   // If this instruction is a 2-address instruction, then return the
-  // index of the input which must match the output.  Not nessecary
+  // index of the input which must match the output.  Not necessary
   // for instructions which bind the input and output register to the
-  // same singleton regiser (e.g., Intel IDIV which binds AX to be
-  // both an input and an output).  It is nessecary when the input and
+  // same singleton register (e.g., Intel IDIV which binds AX to be
+  // both an input and an output).  It is necessary when the input and
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
 
@@ -275,9 +281,9 @@ public:
   // more leafs.  Must be set by MachNode constructor to point to an
   // internal array of MachOpers.  The MachOper array is sized by
   // specific MachNodes described in the ADL.
-  uint _num_opnds;
+  uint16_t _num_opnds;
   MachOper **_opnds;
-  uint  num_opnds() const { return _num_opnds; }
+  uint16_t num_opnds() const { return _num_opnds; }
 
   // Emit bytes into cbuf
   virtual void  emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
@@ -353,7 +359,7 @@ public:
   virtual const class TypePtr *adr_type() const;
 
   // Apply peephole rule(s) to this instruction
-  virtual MachNode *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);
+  virtual int peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_);
 
   // Top-level ideal Opcode matched
   virtual int ideal_Opcode()     const { return Op_Node; }
@@ -373,6 +379,8 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+  void set_removed() { add_flag(Flag_is_removed_by_peephole); }
+  bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 
 #ifndef PRODUCT
   virtual const char *Name() const = 0; // Machine-specific name
@@ -795,7 +803,6 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  BiasedLockingCounters*        _counters;
   RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
   RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
@@ -910,8 +917,7 @@ public:
   virtual const RegMask &in_RegMask(uint) const;
   virtual int ret_addr_offset() { return 0; }
 
-  bool returns_long() const { return tf()->return_type() == T_LONG; }
-  bool return_value_is_used() const;
+  NOT_LP64(bool return_value_is_used() const;)
 
   // Similar to cousin class CallNode::returns_pointer
   bool returns_pointer() const;
@@ -1015,25 +1021,6 @@ public:
   MachCallLeafNode() : MachCallRuntimeNode() {
     init_class_id(Class_MachCallLeaf);
   }
-};
-
-class MachCallNativeNode: public MachCallNode {
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const;
-  void print_regs(const GrowableArray<VMReg>& regs, outputStream* st) const;
-public:
-  const char *_name;
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
-
-  MachCallNativeNode() : MachCallNode() {
-    init_class_id(Class_MachCallNative);
-  }
-
-  virtual int ret_addr_offset();
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-#endif
 };
 
 //------------------------------MachHaltNode-----------------------------------

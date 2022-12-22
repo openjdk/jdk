@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,40 @@ package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.ExportCookie;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
-import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
 import org.openide.util.*;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
+
 /**
- *
  * @author Thomas Wuerthinger
  */
+@ActionID(category = "File", id = "com.sun.hotspot.igv.view.actions.ExportAction")
+@ActionRegistration(displayName = "#CTL_ExportAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/File", position = 710),
+        @ActionReference(path = "Shortcuts", name = "D-E")
+})
+@Messages({
+        "CTL_ExportAction=Export current graph...",
+        "HINT_ExportAction=Export current graph as image file"
+})
 public final class ExportAction extends CallableSystemAction implements LookupListener {
 
-    private final Lookup lookup;
     private final Lookup.Result<ExportCookie> result;
 
     public ExportAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Export current graph as SVG file");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK));
-        lookup = Utilities.actionsGlobalContext();
+        putValue(Action.SHORT_DESCRIPTION, NbBundle.getMessage(ExportAction.class, "HINT_ExportAction"));
+        putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));
+        Lookup lookup = Utilities.actionsGlobalContext();
         result = lookup.lookup(new Lookup.Template<>(ExportCookie.class));
         result.addLookupListener(this);
         resultChanged(null);
@@ -60,27 +71,28 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
     @Override
     public void performAction() {
-
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(new FileFilter() {
 
             @Override
             public boolean accept(File f) {
-                return true;
+                String lcFileName = f.getName().toLowerCase();
+                return lcFileName.endsWith(".pdf") ||
+                       lcFileName.endsWith(".svg") ||
+                       f.isDirectory();
             }
 
             @Override
             public String getDescription() {
-                return "SVG files (*.svg)";
+                return "Image files (*.pdf, *.svg)";
             }
         });
         fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
 
-
         if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if (!file.getName().contains(".")) {
-                file = new File(file.getAbsolutePath() + ".svg");
+                file = new File(file.getAbsolutePath() + ".pdf");
             }
 
             File dir = file;
@@ -103,7 +115,7 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/export.png";
+        return "com/sun/hotspot/igv/view/images/export.png"; // NOI18N
     }
 
     @Override

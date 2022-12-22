@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.module.ModuleBootstrap;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /** Common utility routines used by both java.lang and
@@ -106,11 +109,13 @@ public class Reflection {
         }
     }
 
-    public static void ensureNativeAccess(Class<?> currentClass) {
-        Module module = currentClass.getModule();
-        if (!SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module)) {
-            throw new IllegalCallerException("Illegal native access from: " + module);
-        }
+    @ForceInline
+    public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
+        // if there is no caller class, act as if the call came from unnamed module of system class loader
+        Module module = currentClass != null ?
+                currentClass.getModule() :
+                ClassLoader.getSystemClassLoader().getUnnamedModule();
+        SharedSecrets.getJavaLangAccess().ensureNativeAccess(module, owner, methodName);
     }
 
     /**
@@ -377,11 +382,8 @@ public class Reflection {
 
         String msg = currentClass + currentSuffix + " cannot access ";
         if (m2.isExported(memberPackageName, m1)) {
-
             // module access okay so include the modifiers in the message
-            msg += "a member of " + memberClass + memberSuffix +
-                    " with modifiers \"" + Modifier.toString(modifiers) + "\"";
-
+            msg += "a member of " + memberClass + memberSuffix + msgSuffix(modifiers);
         } else {
             // module access failed
             msg += memberClass + memberSuffix+ " because "
@@ -408,11 +410,8 @@ public class Reflection {
 
         String msg = "JNI attached native thread (null caller frame) cannot access ";
         if (m2.isExported(memberPackageName)) {
-
             // module access okay so include the modifiers in the message
-            msg += "a member of " + memberClass + memberSuffix +
-                " with modifiers \"" + Modifier.toString(modifiers) + "\"";
-
+            msg += "a member of " + memberClass + memberSuffix + msgSuffix(modifiers);
         } else {
             // module access failed
             msg += memberClass + memberSuffix+ " because "
@@ -420,6 +419,16 @@ public class Reflection {
         }
 
         return new IllegalAccessException(msg);
+    }
+
+    private static String msgSuffix(int modifiers) {
+        boolean packageAccess =
+            ((Modifier.PRIVATE |
+              Modifier.PROTECTED |
+              Modifier.PUBLIC) & modifiers) == 0;
+        return packageAccess ?
+            " with package access" :
+            " with modifiers \"" + Modifier.toString(modifiers) + "\"";
     }
 
     /**

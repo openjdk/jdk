@@ -39,7 +39,6 @@
  */
 #define HB_OT_TAG_CPAL HB_TAG('C','P','A','L')
 
-
 namespace OT {
 
 
@@ -74,6 +73,45 @@ struct CPALV1Tail
   }
 
   public:
+  bool serialize (hb_serialize_context_t *c,
+                  unsigned palette_count,
+                  unsigned color_count,
+                  const void *base,
+                  const hb_map_t *color_index_map) const
+  {
+    TRACE_SERIALIZE (this);
+    auto *out = c->allocate_size<CPALV1Tail> (static_size);
+    if (unlikely (!out)) return_trace (false);
+
+    out->paletteFlagsZ = 0;
+    if (paletteFlagsZ)
+      out->paletteFlagsZ.serialize_copy (c, paletteFlagsZ, base, 0, hb_serialize_context_t::Head, palette_count);
+
+    out->paletteLabelsZ = 0;
+    if (paletteLabelsZ)
+      out->paletteLabelsZ.serialize_copy (c, paletteLabelsZ, base, 0, hb_serialize_context_t::Head, palette_count);
+
+    const hb_array_t<const NameID> colorLabels = (base+colorLabelsZ).as_array (color_count);
+    if (colorLabelsZ)
+    {
+      c->push ();
+      for (const auto _ : colorLabels)
+      {
+        const hb_codepoint_t *v;
+        if (!color_index_map->has (_, &v)) continue;
+        NameID new_color_idx;
+        new_color_idx = *v;
+        if (!c->copy<NameID> (new_color_idx))
+        {
+          c->pop_discard ();
+          return_trace (false);
+        }
+      }
+      c->add_link (out->colorLabelsZ, c->pop_pack ());
+    }
+    return_trace (true);
+  }
+
   bool sanitize (hb_sanitize_context_t *c,
                  const void *base,
                  unsigned int palette_count,
@@ -87,15 +125,17 @@ struct CPALV1Tail
   }
 
   protected:
-  LNNOffsetTo<UnsizedArrayOf<HBUINT32>>
+  // TODO(garretrieger): these offsets can hold nulls so we should not be using non-null offsets
+  //                     here. Currently they are needed since UnsizedArrayOf doesn't define null_size
+  NNOffset32To<UnsizedArrayOf<HBUINT32>>
                 paletteFlagsZ;          /* Offset from the beginning of CPAL table to
                                          * the Palette Type Array. Set to 0 if no array
                                          * is provided. */
-  LNNOffsetTo<UnsizedArrayOf<NameID>>
+  NNOffset32To<UnsizedArrayOf<NameID>>
                 paletteLabelsZ;         /* Offset from the beginning of CPAL table to
                                          * the palette labels array. Set to 0 if no
                                          * array is provided. */
-  LNNOffsetTo<UnsizedArrayOf<NameID>>
+  NNOffset32To<UnsizedArrayOf<NameID>>
                 colorLabelsZ;           /* Offset from the beginning of CPAL table to
                                          * the color labels array. Set to 0
                                          * if no array is provided. */
@@ -157,6 +197,98 @@ struct CPAL
   }
 
   public:
+  bool serialize (hb_serialize_context_t *c,
+                  const hb_array_t<const HBUINT16> &color_record_indices,
+                  const hb_array_t<const BGRAColor> &color_records,
+                  const hb_vector_t<unsigned>& first_color_index_for_layer,
+                  const hb_map_t& first_color_to_layer_index,
+                  const hb_set_t &retained_color_indices) const
+  {
+    TRACE_SERIALIZE (this);
+
+    // TODO(grieger): limit total final size.
+
+    for (const auto idx : color_record_indices)
+    {
+      hb_codepoint_t layer_index = first_color_to_layer_index[idx];
+
+      HBUINT16 new_idx;
+      new_idx = layer_index * retained_color_indices.get_population ();
+      if (!c->copy<HBUINT16> (new_idx)) return_trace (false);
+    }
+
+    c->push ();
+    for (unsigned first_color_index : first_color_index_for_layer)
+    {
+      for (hb_codepoint_t color_index : retained_color_indices)
+      {
+        if (!c->copy<BGRAColor> (color_records[first_color_index + color_index]))
+        {
+          c->pop_discard ();
+          return_trace (false);
+        }
+      }
+    }
+
+    c->add_link (colorRecordsZ, c->pop_pack ());
+    return_trace (true);
+  }
+
+  bool subset (hb_subset_context_t *c) const
+  {
+    TRACE_SUBSET (this);
+    if (!numPalettes) return_trace (false);
+
+    const hb_map_t *color_index_map = c->plan->colr_palettes;
+    if (color_index_map->is_empty ()) return_trace (false);
+
+    hb_set_t retained_color_indices;
+    for (const auto _ : color_index_map->keys ())
+    {
+      if (_ == 0xFFFF) continue;
+      retained_color_indices.add (_);
+    }
+    if (retained_color_indices.is_empty ()) return_trace (false);
+
+    auto *out = c->serializer->start_embed (*this);
+    if (unlikely (!c->serializer->extend_min (out))) return_trace (false);
+
+
+    out->version = version;
+    out->numColors = retained_color_indices.get_population ();
+    out->numPalettes = numPalettes;
+
+    hb_vector_t<unsigned> first_color_index_for_layer;
+    hb_map_t first_color_to_layer_index;
+
+    const hb_array_t<const HBUINT16> colorRecordIndices = colorRecordIndicesZ.as_array (numPalettes);
+    for (const auto first_color_record_idx : colorRecordIndices)
+    {
+      if (first_color_to_layer_index.has (first_color_record_idx)) continue;
+
+      first_color_index_for_layer.push (first_color_record_idx);
+      first_color_to_layer_index.set (first_color_record_idx,
+                                      first_color_index_for_layer.length - 1);
+    }
+
+    out->numColorRecords = first_color_index_for_layer.length
+                           * retained_color_indices.get_population ();
+
+    const hb_array_t<const BGRAColor> color_records = (this+colorRecordsZ).as_array (numColorRecords);
+    if (!out->serialize (c->serializer,
+                         colorRecordIndices,
+                         color_records,
+                         first_color_index_for_layer,
+                         first_color_to_layer_index,
+                         retained_color_indices))
+      return_trace (false);
+
+    if (version == 1)
+      return_trace (v1 ().serialize (c->serializer, numPalettes, numColors, this, color_index_map));
+
+    return_trace (true);
+  }
+
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -173,7 +305,7 @@ struct CPAL
   HBUINT16      numPalettes;            /* Number of palettes in the table. */
   HBUINT16      numColorRecords;        /* Total number of color records, combined for
                                          * all palettes. */
-  LNNOffsetTo<UnsizedArrayOf<BGRAColor>>
+  NNOffset32To<UnsizedArrayOf<BGRAColor>>
                 colorRecordsZ;          /* Offset from the beginning of CPAL table to
                                          * the first ColorRecord. */
   UnsizedArrayOf<HBUINT16>

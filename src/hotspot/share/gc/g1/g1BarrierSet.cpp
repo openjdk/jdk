@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
@@ -58,25 +58,21 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", G1SATBBufferSize),
   _dirty_card_queue_buffer_allocator("DC Buffer Allocator", G1UpdateBufferSize),
   _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator),
-  _dirty_card_queue_set(&_dirty_card_queue_buffer_allocator),
-  _shared_dirty_card_queue(&_dirty_card_queue_set)
+  _dirty_card_queue_set(&_dirty_card_queue_buffer_allocator)
 {}
-
-void G1BarrierSet::enqueue(oop pre_val) {
-  // Nulls should have been already filtered.
-  assert(oopDesc::is_oop(pre_val, true), "Error");
-  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
-  G1BarrierSet::satb_mark_queue_set().enqueue(queue, pre_val);
-}
 
 template <class T> void
 G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
-  if (!_satb_mark_queue_set.is_active()) return;
+  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
+  if (!queue_set.is_active()) return;
+
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
+
   T* elem_ptr = dst;
   for (size_t i = 0; i < count; i++, elem_ptr++) {
     T heap_oop = RawAccess<>::oop_load(elem_ptr);
     if (!CompressedOops::is_null(heap_oop)) {
-      enqueue(CompressedOops::decode_not_null(heap_oop));
+      queue_set.enqueue_known_active(queue, CompressedOops::decode_not_null(heap_oop));
     }
   }
 }
@@ -142,6 +138,7 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void G1BarrierSet::on_thread_attach(Thread* thread) {
+  BarrierSet::on_thread_attach(thread);
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
   assert(!queue.is_active(), "SATB queue should not be active");
   assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");

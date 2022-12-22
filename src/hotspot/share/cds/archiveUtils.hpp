@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -70,6 +71,11 @@ public:
 
   static CHeapBitMap* ptrmap() {
     return _ptrmap;
+  }
+
+  static void reset_map_and_vs() {
+    _ptrmap = nullptr;
+    _vs = nullptr;
   }
 };
 
@@ -142,7 +148,7 @@ public:
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes);
 
-  void append_intptr_t(intptr_t n, bool need_to_mark = false);
+  void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
 
   char* base()      const { return _base;        }
   char* top()       const { return _top;         }

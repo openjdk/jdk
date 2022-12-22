@@ -29,6 +29,15 @@
 
 IsUnloadingBehaviour* IsUnloadingBehaviour::_current = NULL;
 
+bool IsUnloadingBehaviour::is_unloading(CompiledMethod* cm) {
+  if (cm->method()->can_be_allocated_in_NonNMethod_space()) {
+    // When the nmethod is in NonNMethod space, we may reach here without IsUnloadingBehaviour.
+    // However, we only allow this for special methods which never get unloaded.
+    return false;
+  }
+  return _current->has_dead_oop(cm) || cm->as_nmethod()->is_cold();
+}
+
 class IsCompiledMethodUnloadingOopClosure: public OopClosure {
   BoolObjectClosure *_cl;
   bool _is_unloading;
@@ -61,7 +70,7 @@ public:
   }
 };
 
-bool ClosureIsUnloadingBehaviour::is_unloading(CompiledMethod* cm) const {
+bool ClosureIsUnloadingBehaviour::has_dead_oop(CompiledMethod* cm) const {
   if (cm->is_nmethod()) {
     IsCompiledMethodUnloadingOopClosure cl(_cl);
     static_cast<nmethod*>(cm)->oops_do(&cl, true /* allow_dead */);

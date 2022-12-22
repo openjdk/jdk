@@ -135,14 +135,11 @@ public enum MinguoEra implements Era {
      * @throws DateTimeException if the value is invalid
      */
     public static MinguoEra of(int minguoEra) {
-        switch (minguoEra) {
-            case 0:
-                return BEFORE_ROC;
-            case 1:
-                return ROC;
-            default:
-                throw new DateTimeException("Invalid era: " + minguoEra);
-        }
+        return switch (minguoEra) {
+            case 0  -> BEFORE_ROC;
+            case 1  -> ROC;
+            default -> throw new DateTimeException("Invalid era: " + minguoEra);
+        };
     }
 
     //-----------------------------------------------------------------------

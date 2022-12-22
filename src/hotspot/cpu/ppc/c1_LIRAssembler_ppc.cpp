@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,12 @@
 #include "oops/compressedOops.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
@@ -166,13 +168,6 @@ void LIR_Assembler::osr_entry() {
 
 
 int LIR_Assembler::emit_exception_handler() {
-  // If the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci => add a nop
-  // (was bug 5/14/1999 - gri).
-  __ nop();
-
   // Generate code for the exception handler.
   address handler_base = __ start_a_stub(exception_handler_size());
 
@@ -246,13 +241,6 @@ int LIR_Assembler::emit_unwind_handler() {
 
 
 int LIR_Assembler::emit_deopt_handler() {
-  // If the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci => add a nop
-  // (was bug 5/14/1999 - gri).
-  __ nop();
-
   // Generate code for deopt handler.
   address handler_base = __ start_a_stub(deopt_handler_size());
 
@@ -589,7 +577,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_f2i: {
       bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2i) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : NULL;
+      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CCR0, rsrc, rsrc);
@@ -613,7 +601,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_f2l: {
       bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2l) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : NULL;
+      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CCR0, rsrc, rsrc);
@@ -677,6 +665,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ code()->set_insts_mark();
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -704,6 +693,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // serves as dummy and the bl will be patched later.
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
@@ -714,7 +704,7 @@ void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
 
 
 // Attention: caller must encode oop if needed
-int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide, bool unaligned) {
+int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide) {
   int store_offset;
   if (!Assembler::is_simm16(offset)) {
     // For offsets larger than a simm16 we setup the offset.
@@ -794,7 +784,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
 }
 
 
-int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide, bool unaligned) {
+int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide) {
   int load_offset;
   if (!Assembler::is_simm16(offset)) {
     // For offsets larger than a simm16 we setup the offset.
@@ -812,12 +802,7 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
       case T_LONG  :   __ ld(to_reg->as_register_lo(), offset, base); break;
       case T_METADATA: __ ld(to_reg->as_register(), offset, base); break;
       case T_ADDRESS:
-        if (offset == oopDesc::klass_offset_in_bytes() && UseCompressedClassPointers) {
-          __ lwz(to_reg->as_register(), offset, base);
-          __ decode_klass_not_null(to_reg->as_register());
-        } else {
-          __ ld(to_reg->as_register(), offset, base);
-        }
+        __ ld(to_reg->as_register(), offset, base);
         break;
       case T_ARRAY : // fall through
       case T_OBJECT:
@@ -947,9 +932,10 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       tmp = FrameMap::R0_opr;
       if (UseCompressedOops && !wide && c->as_jobject() != NULL) {
         AddressLiteral oop_addr = __ constant_oop_address(c->as_jobject());
-        __ lis(R0, oop_addr.value() >> 16); // Don't care about sign extend (will use stw).
+        // Don't care about sign extend (will use stw).
+        __ lis(R0, 0); // Will get patched.
         __ relocate(oop_addr.rspec(), /*compressed format*/ 1);
-        __ ori(R0, R0, oop_addr.value() & 0xffff);
+        __ ori(R0, R0, 0); // Will get patched.
       } else {
         jobject2reg(c->as_jobject(), R0);
       }
@@ -965,7 +951,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
     offset = store(tmp, base, addr->index()->as_pointer_register(), type, wide);
   } else {
     assert(Assembler::is_simm16(addr->disp()), "can't handle larger addresses");
-    offset = store(tmp, base, addr->disp(), type, wide, false);
+    offset = store(tmp, base, addr->disp(), type, wide);
   }
 
   if (info != NULL) {
@@ -1120,7 +1106,7 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
 
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide, bool unaligned) {
+                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
 
   assert(type != T_METADATA, "load of metadata ptr not supported");
   LIR_Address* addr = src_opr->as_address_ptr();
@@ -1170,9 +1156,8 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type,
 
   if (disp_reg == noreg) {
     assert(Assembler::is_simm16(disp_value), "should have set this up");
-    offset = load(src, disp_value, to_reg, type, wide, unaligned);
+    offset = load(src, disp_value, to_reg, type, wide);
   } else {
-    assert(!unaligned, "unexpected");
     offset = load(src, disp_reg, to_reg, type, wide);
   }
 
@@ -1193,8 +1178,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     addr = frame_map()->address_for_double_slot(src->double_stack_ix());
   }
 
-  bool unaligned = addr.disp() % 8 != 0;
-  load(addr.base(), addr.disp(), dest, dest->type(), true /*wide*/, unaligned);
+  load(addr.base(), addr.disp(), dest, dest->type(), true /*wide*/);
 }
 
 
@@ -1205,8 +1189,8 @@ void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type, bo
   } else if (dest->is_double_word())  {
     addr = frame_map()->address_for_slot(dest->double_stack_ix());
   }
-  bool unaligned = addr.disp() % 8 != 0;
-  store(from_reg, addr.base(), addr.disp(), from_reg->type(), true /*wide*/, unaligned);
+
+  store(from_reg, addr.base(), addr.disp(), from_reg->type(), true /*wide*/);
 }
 
 
@@ -1242,7 +1226,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
-                            bool wide, bool unaligned) {
+                            bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest->as_address_ptr();
 
@@ -1299,9 +1283,8 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
   if (disp_reg == noreg) {
     assert(Assembler::is_simm16(disp_value), "should have set this up");
-    offset = store(from_reg, src, disp_value, type, wide, unaligned);
+    offset = store(from_reg, src, disp_value, type, wide);
   } else {
-    assert(!unaligned, "unexpected");
     offset = store(from_reg, src, disp_reg, type, wide);
   }
 
@@ -1554,8 +1537,10 @@ inline void load_to_reg(LIR_Assembler *lasm, LIR_Opr src, LIR_Opr dst) {
   }
 }
 
+void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
+                          LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
+  assert(cmp_opr1 == LIR_OprFact::illegalOpr && cmp_opr2 == LIR_OprFact::illegalOpr, "unnecessary cmp oprs on ppc");
 
-void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type) {
   if (opr1->is_equal(opr2) || opr1->is_same_register(opr2)) {
     load_to_reg(this, opr1, result); // Condition doesn't matter.
     return;
@@ -2697,7 +2682,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    if (UseFastLocking) {
+    if (!UseHeavyMonitors) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
       // Add debug info for NullPointerException only if one is possible.
       if (op->info() != NULL) {
@@ -2715,11 +2700,15 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
       //       simpler and requires less duplicated code - additionally, the
       //       slow locking code is the same in either case which simplifies
       //       debugging.
+      if (op->info() != NULL) {
+        add_debug_info_for_null_check_here(op->info());
+        __ null_check(obj);
+      }
       __ b(*op->stub()->entry());
     }
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    if (UseFastLocking) {
+    if (!UseHeavyMonitors) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
       __ unlock_object(hdr, obj, lock, *op->stub()->entry());
     } else {
@@ -2735,6 +2724,26 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   __ bind(*op->stub()->continuation());
 }
 
+void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
+  Register obj = op->obj()->as_pointer_register();
+  Register result = op->result_opr()->as_pointer_register();
+
+  CodeEmitInfo* info = op->info();
+  if (info != NULL) {
+    if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
+      explicit_null_check(obj, info);
+    } else {
+      add_debug_info_for_null_check_here(info);
+    }
+  }
+
+  if (UseCompressedClassPointers) {
+    __ lwz(result, oopDesc::klass_offset_in_bytes(), obj);
+    __ decode_klass_not_null(result);
+  } else {
+    __ ld(result, oopDesc::klass_offset_in_bytes(), obj);
+  }
+}
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
@@ -2869,6 +2878,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     __ bctrl();
     assert(info != NULL, "sanity");
     add_call_info_here(info);
+    __ post_call_nop();
     return;
   }
 
@@ -2876,6 +2886,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 
@@ -3081,7 +3092,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   } else {
     __ cmpdi(CCR0, obj, 0);
     __ bne(CCR0, Lupdate);
-    __ stop("unexpect null obj");
+    __ stop("unexpected null obj");
 #endif
   }
 

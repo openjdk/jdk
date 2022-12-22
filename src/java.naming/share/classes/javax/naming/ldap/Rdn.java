@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class represents a relative distinguished name, or RDN, which is a
@@ -643,11 +645,7 @@ public class Rdn implements Serializable, Comparable<Object> {
                         // Convert hex-encoded UTF-8 to 16-bit chars.
                         byte[] utf8 = getUtf8Octets(chars, i, end);
                         if (utf8.length > 0) {
-                            try {
-                                builder.append(new String(utf8, "UTF8"));
-                            } catch (java.io.UnsupportedEncodingException e) {
-                                // shouldn't happen
-                            }
+                            builder.append(new String(utf8, UTF_8));
                             i += utf8.length * 3 - 1;
                         } else { // no utf8 bytes available, invalid DN
 

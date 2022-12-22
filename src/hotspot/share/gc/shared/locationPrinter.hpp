@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_LOCATIONPRINTER_HPP
 #define SHARE_GC_SHARED_LOCATIONPRINTER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 

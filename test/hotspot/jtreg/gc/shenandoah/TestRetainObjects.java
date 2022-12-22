@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=passive
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -49,7 +49,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=aggressive
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -69,7 +69,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=adaptive
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -84,7 +84,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=static
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -94,7 +94,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=compact
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -104,7 +104,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=no-tlab
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -115,7 +115,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=iu-aggressive
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
@@ -135,7 +135,7 @@
  */
 
 /*
- * @test TestRetainObjects
+ * @test id=iu
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *

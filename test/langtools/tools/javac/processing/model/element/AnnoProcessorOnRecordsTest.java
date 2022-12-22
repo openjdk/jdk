@@ -32,8 +32,7 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} AnnoProcessorOnRecordsTest.java
- * @run main/othervm --enable-preview AnnoProcessorOnRecordsTest
+ * @run main/othervm AnnoProcessorOnRecordsTest
  */
 
 import java.io.*;
@@ -149,10 +148,7 @@ public class AnnoProcessorOnRecordsTest extends TestRunner {
 
         for (Mode mode : new Mode[] {Mode.API}) {
             new JavacTask(tb, mode)
-                    .options("-nowarn",
-                            "-processor", Processor.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()))
+                    .options("-nowarn", "-processor", Processor.class.getName())
                     .files(findJavaFiles(src))
                     .outdir(classes)
                     .run()

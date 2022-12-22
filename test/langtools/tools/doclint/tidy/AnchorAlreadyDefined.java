@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref AnchorAlreadyDefined.out AnchorAlreadyDefined.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref AnchorAlreadyDefined.out AnchorAlreadyDefined.java
  */
 
 // tidy: Warning: <.*> anchor ".*" already defined

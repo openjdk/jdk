@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Africa/Gaborone", CAT},
             {"Africa/Harare", CAT},
             {"Africa/Johannesburg", SAST},
-            {"Africa/Juba", EAT},
+            {"Africa/Juba", CAT},
             {"Africa/Kampala", EAT},
             {"Africa/Khartoum", CAT},
             {"Africa/Kigali", CAT},
@@ -378,7 +378,9 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Africa/Timbuktu", GMT},
             {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
-            {"Africa/Windhoek", CAT},
+            {"Africa/Windhoek", new String[] {"Central African Time", "CAT",
+                                              "Western African Time", "WAT",
+                                              "Central African Time", "CAT"}},
             {"America/Adak", HST},
             {"America/Anguilla", AST},
             {"America/Antigua", AST},
@@ -425,7 +427,8 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                               "\ud504\ub791\uc2a4\ub839 \uae30\uc544\ub098 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "GFST",
                                               "\uD504\uB791\uC2A4\uB839 \uAE30\uC544\uB098 \uD45C\uC900\uC2DC", "GFT"}},
             {"America/Cayman", EST},
-            {"America/Chihuahua", MST},
+            {"America/Chihuahua", CST},
+            {"America/Ciudad_Juarez", MST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},
@@ -514,7 +517,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"America/North_Dakota/Center", CST},
             {"America/North_Dakota/New_Salem", CST},
             {"America/Nuuk", WGT},
-            {"America/Ojinaga", MST},
+            {"America/Ojinaga", CST},
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"\uc218\ub9ac\ub0a8 \uc2dc\uac04", "SRT",
@@ -564,9 +567,9 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Antarctica/DumontDUrville", new String[] {"\ub4a4\ubabd \ub4a4\ub974\ube4c \uc2dc\uac04", "DDUT",
                                                         "\ub4a4\ubabd \ub4a4\ub974\ube4c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "DDUST",
                                                         "\uB450\uBAAC\uD2B8\uC6B0\uB974\uBE4C \uD45C\uC900\uC2DC", "DDUT"}},
-            {"Antarctica/Macquarie", new String[] {"\uB9E4\uCF70\uB9AC \uC12C \uD45C\uC900\uC2DC", "MIST",
-                                                   "\uB9E4\uCF70\uB9AC \uC12C \uC77C\uAD11 \uC808\uC57D \uC2DC\uAC04", "MIST",
-                                                   "\uB9E4\uCF70\uB9AC \uC12C \uD45C\uC900\uC2DC", "MIST"}},
+            {"Antarctica/Macquarie", new String[] {"Australian Eastern Standard Time (Macquarie)", "AEST",
+                                                   "Australian Eastern Daylight Time (Macquarie)", "AEDT",
+                                                   "Australian Eastern Time (Macquarie)", "AET"}},
             {"Antarctica/Mawson", new String[] {"\ubaa8\uc2a8 \uc2dc\uac04", "MAWT",
                                                 "\ubaa8\uc2a8 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MAWST",
                                                 "\uB9C8\uC2A8 \uD45C\uC900\uC2DC", "MAWT"}},

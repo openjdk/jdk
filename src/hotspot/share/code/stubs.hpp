@@ -28,6 +28,8 @@
 #include "asm/codeBuffer.hpp"
 #include "memory/allocation.hpp"
 
+class Mutex;
+
 // The classes in this file provide a simple framework for the
 // management of little pieces of machine code - or stubs -
 // created on the fly and frequently discarded. In this frame-
@@ -42,31 +44,28 @@
 // A concrete stub layout may look like this (both data
 // and code sections could be empty as well):
 //
-//                ________
-// stub       -->|        | <--+
+//
+// stub       -->|--------| <--+       <--- aligned by alignment()
+//               |        |    |
 //               |  data  |    |
-//               |________|    |
-// code_begin -->|        |    |
+//               |        |    |
+// code_begin -->|--------|    |       <--- aligned by CodeEntryAlignment
+//               |        |    |
 //               |        |    |
 //               |  code  |    | size
 //               |        |    |
-//               |________|    |
-// code_end   -->|        |    |
-//               |  data  |    |
-//               |________|    |
-//                          <--+
-
+//               |        |    |
+// code_end   -->|--------| <--+
+//
 
 class Stub {
  public:
   // Initialization/finalization
-  void    initialize(int size,
-                     CodeStrings& strings)       { ShouldNotCallThis(); }                // called to initialize/specify the stub's size
+  void    initialize(int size)                   { ShouldNotCallThis(); }                // called to initialize/specify the stub's size
   void    finalize()                             { ShouldNotCallThis(); }                // called before the stub is deallocated
 
   // General info/converters
   int     size() const                           { ShouldNotCallThis(); return 0; }      // must return the size provided by initialize
-  static  int code_size_to_size(int code_size)   { ShouldNotCallThis(); return 0; }      // computes the size given the code size
 
   // Code info
   address code_begin() const                     { ShouldNotCallThis(); return NULL; }   // points to the first byte of    the code
@@ -94,13 +93,12 @@ class Stub {
 class StubInterface: public CHeapObj<mtCode> {
  public:
   // Initialization/finalization
-  virtual void    initialize(Stub* self, int size,
-                             CodeStrings& strings)         = 0; // called after creation (called twice if allocated via (request, commit))
+  virtual void    initialize(Stub* self, int size)         = 0; // called after creation (called twice if allocated via (request, commit))
   virtual void    finalize(Stub* self)                     = 0; // called before deallocation
 
   // General info/converters
-  virtual int     size(Stub* self) const                   = 0; // the total size of the stub in bytes (must be a multiple of CodeEntryAlignment)
-  virtual int     code_size_to_size(int code_size) const   = 0; // computes the total stub size in bytes given the code size in bytes
+  virtual int     size(Stub* self) const                   = 0; // the total size of the stub in bytes (must be a multiple of HeapWordSize)
+  virtual int     alignment() const                        = 0; // computes the alignment
 
   // Code info
   virtual address code_begin(Stub* self) const             = 0; // points to the first code byte
@@ -123,13 +121,12 @@ class StubInterface: public CHeapObj<mtCode> {
                                                            \
    public:                                                 \
     /* Initialization/finalization */                      \
-    virtual void    initialize(Stub* self, int size,       \
-                               CodeStrings& strings)       { cast(self)->initialize(size, strings); } \
+    virtual void    initialize(Stub* self, int size)       { cast(self)->initialize(size); }       \
     virtual void    finalize(Stub* self)                   { cast(self)->finalize(); }             \
                                                            \
     /* General info */                                     \
     virtual int     size(Stub* self) const                 { return cast(self)->size(); }          \
-    virtual int     code_size_to_size(int code_size) const { return stub::code_size_to_size(code_size); } \
+    virtual int     alignment() const                      { return stub::alignment(); }           \
                                                            \
     /* Code info */                                        \
     virtual address code_begin(Stub* self) const           { return cast(self)->code_begin(); }    \
@@ -156,21 +153,24 @@ class StubQueue: public CHeapObj<mtCode> {
   int            _number_of_stubs;               // the number of buffered stubs
   Mutex* const   _mutex;                         // the lock used for a (request, commit) transaction
 
-  void  check_index(int i) const                 { assert(0 <= i && i < _buffer_limit && i % CodeEntryAlignment == 0, "illegal index"); }
+  void  check_index(int i) const                 { assert(0 <= i && i < _buffer_limit && i % stub_alignment() == 0, "illegal index"); }
   bool  is_contiguous() const                    { return _queue_begin <= _queue_end; }
   int   index_of(Stub* s) const                  { int i = (address)s - _stub_buffer; check_index(i); return i; }
   Stub* stub_at(int i) const                     { check_index(i); return (Stub*)(_stub_buffer + i); }
   Stub* current_stub() const                     { return stub_at(_queue_end); }
 
   // Stub functionality accessed via interface
-  void  stub_initialize(Stub* s, int size,
-                        CodeStrings& strings)    { assert(size % CodeEntryAlignment == 0, "size not aligned"); _stub_interface->initialize(s, size, strings); }
+  void  stub_initialize(Stub* s, int size)       { assert(size % stub_alignment() == 0, "size not aligned"); _stub_interface->initialize(s, size); }
   void  stub_finalize(Stub* s)                   { _stub_interface->finalize(s); }
   int   stub_size(Stub* s) const                 { return _stub_interface->size(s); }
   bool  stub_contains(Stub* s, address pc) const { return _stub_interface->code_begin(s) <= pc && pc < _stub_interface->code_end(s); }
-  int   stub_code_size_to_size(int code_size) const { return _stub_interface->code_size_to_size(code_size); }
+  int   stub_alignment()                   const { return _stub_interface->alignment(); }
+  address stub_code_begin(Stub* s)         const { return _stub_interface->code_begin(s); }
   void  stub_verify(Stub* s)                     { _stub_interface->verify(s); }
   void  stub_print(Stub* s)                      { _stub_interface->print(s); }
+
+  // Helpers
+  int compute_stub_size(Stub* stub, int code_size);
 
  public:
   StubQueue(StubInterface* stub_interface, int buffer_size, Mutex* lock,
@@ -191,8 +191,7 @@ class StubQueue: public CHeapObj<mtCode> {
   // Stub allocation (atomic transactions)
   Stub* request_committed(int code_size);        // request a stub that provides exactly code_size space for code
   Stub* request(int requested_code_size);        // request a stub with a (maximum) code space - locks the queue
-  void  commit (int committed_code_size,
-                CodeStrings& strings);           // commit the previously requested stub - unlocks the queue
+  void  commit (int committed_code_size);        // commit the previously requested stub - unlocks the queue
 
   // Stub deallocation
   void  remove_first();                          // remove the first stub in the queue

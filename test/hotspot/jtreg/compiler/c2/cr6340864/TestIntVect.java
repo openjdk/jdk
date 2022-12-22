@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,6 +456,14 @@ public class TestIntVect {
       test_srav_and(a0, a1, BIT_MASK);
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_srav_and: ", i, a0[i], (int)(((int)(ADD_INIT+i) & BIT_MASK)>>VALUE));
+      }
+      test_reverse_bytes(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_reverse_bytes: ", i, a0[i], Integer.reverseBytes(a1[i]));
+      }
+      test_reverse(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_reverse: ", i, a0[i], Integer.reverse(a1[i]));
       }
 
       test_pack2(p2, a1);
@@ -922,7 +930,20 @@ public class TestIntVect {
       test_srav_and(a0, a1, BIT_MASK);
     }
     end = System.currentTimeMillis();
-    System.out.println("test_srav_and: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_reverse_bytes(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_reverse_bytes: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_reverse(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_reverse: " + (end - start));
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
@@ -1268,6 +1289,18 @@ public class TestIntVect {
       long l = p2[i];
       a0[i*2+0] = (int)(l >> 32);
       a0[i*2+1] = (int)(l & 0xFFFFFFFFl);
+    }
+  }
+
+  static void test_reverse_bytes(int [] a0, int [] a1) {
+    for(int i = 0; i < a0.length; i++) {
+      a0[i] = Integer.reverseBytes(a1[i]);
+    }
+  }
+
+  static void test_reverse(int [] a0, int [] a1) {
+    for(int i = 0; i < a0.length; i++) {
+      a0[i] = Integer.reverse(a1[i]);
     }
   }
 

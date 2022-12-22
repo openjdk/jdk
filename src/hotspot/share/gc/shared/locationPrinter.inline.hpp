@@ -56,15 +56,15 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
     oop o = base_oop_or_null(addr);
     if (o != NULL) {
       if ((void*)o == addr) {
-        st->print(INTPTR_FORMAT " is an oop: ", p2i(addr));
+        st->print(PTR_FORMAT " is an oop: ", p2i(addr));
       } else {
-        st->print(INTPTR_FORMAT " is pointing into object: " , p2i(addr));
+        st->print(PTR_FORMAT " is pointing into object: " , p2i(addr));
       }
       o->print_on(st);
       return true;
     }
   } else if (CollectedHeapT::heap()->is_in_reserved(addr)) {
-    st->print_cr(INTPTR_FORMAT " is an unallocated location in the heap", p2i(addr));
+    st->print_cr(PTR_FORMAT " is an unallocated location in the heap", p2i(addr));
     return true;
   }
 

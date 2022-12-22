@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package com.sun.media.sound;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 import javax.sound.midi.Patch;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A tuning program container, for use with MIDI Tuning.
@@ -88,10 +89,21 @@ public final class SoftTuning {
      */
     public void load(byte[] data) {
         // Universal Non-Real-Time / Real-Time SysEx
+        if (data.length < 2) {
+            return;
+        }
+
         if ((data[1] & 0xFF) == 0x7E || (data[1] & 0xFF) == 0x7F) {
+            if (data.length < 4) {
+                return;
+            }
+
             int subid1 = data[3] & 0xFF;
             switch (subid1) {
             case 0x08: // MIDI Tuning Standard
+                if (data.length < 5) {
+                    break;
+                }
                 int subid2 = data[4] & 0xFF;
                 switch (subid2) {
                 case 0x01: // BULK TUNING DUMP (NON-REAL-TIME)
@@ -99,12 +111,11 @@ public final class SoftTuning {
                     // http://www.midi.org/about-midi/tuning.shtml
                     //if (!checksumOK2(data))
                     //    break;
-                    try {
-                        name = new String(data, 6, 16, "ascii");
-                    } catch (UnsupportedEncodingException e) {
-                        name = null;
-                    }
                     int r = 22;
+                    if (data.length < 128 * 3 + r) {
+                        break;
+                    }
+                    name = new String(data, 6, 16, US_ASCII);
                     for (int i = 0; i < 128; i++) {
                         int xx = data[r++] & 0xFF;
                         int yy = data[r++] & 0xFF;
@@ -118,8 +129,14 @@ public final class SoftTuning {
                 case 0x02: // SINGLE NOTE TUNING CHANGE (REAL-TIME)
                 {
                     // http://www.midi.org/about-midi/tuning.shtml
+                    if (data.length < 7) {
+                        break;
+                    }
                     int ll = data[6] & 0xFF;
                     int r = 7;
+                    if (data.length < ll * 4 + r) {
+                        break;
+                    }
                     for (int i = 0; i < ll; i++) {
                         int kk = data[r++] & 0xFF;
                         int xx = data[r++] & 0xFF;
@@ -135,11 +152,10 @@ public final class SoftTuning {
                     // http://www.midi.org/about-midi/tuning_extens.shtml
                     if (!checksumOK(data))
                         break;
-                    try {
-                        name = new String(data, 7, 16, "ascii");
-                    } catch (UnsupportedEncodingException e) {
-                        name = null;
+                    if (data.length < 407) {
+                        break;
                     }
+                    name = new String(data, 7, 16, US_ASCII);
                     int r = 23;
                     for (int i = 0; i < 128; i++) {
                         int xx = data[r++] & 0xFF;
@@ -156,11 +172,10 @@ public final class SoftTuning {
                     // http://www.midi.org/about-midi/tuning_extens.shtml
                     if (!checksumOK(data))
                         break;
-                    try {
-                        name = new String(data, 7, 16, "ascii");
-                    } catch (UnsupportedEncodingException e) {
-                        name = null;
+                    if (data.length < 35) {
+                        break;
                     }
+                    name = new String(data, 7, 16, US_ASCII);
                     int[] octave_tuning = new int[12];
                     for (int i = 0; i < 12; i++)
                         octave_tuning[i] = (data[i + 23] & 0xFF) - 64;
@@ -174,11 +189,10 @@ public final class SoftTuning {
                     // http://www.midi.org/about-midi/tuning_extens.shtml
                     if (!checksumOK(data))
                         break;
-                    try {
-                        name = new String(data, 7, 16, "ascii");
-                    } catch (UnsupportedEncodingException e) {
-                        name = null;
+                    if (data.length < 47) {
+                        break;
                     }
+                    name = new String(data, 7, 16, US_ASCII);
                     double[] octave_tuning = new double[12];
                     for (int i = 0; i < 12; i++) {
                         int v = (data[i * 2 + 23] & 0xFF) * 128
@@ -192,7 +206,13 @@ public final class SoftTuning {
                 case 0x07: // SINGLE NOTE TUNING CHANGE (NON
                            // REAL-TIME/REAL-TIME) (BANK)
                     // http://www.midi.org/about-midi/tuning_extens.shtml
+                    if (data.length < 8) {
+                        break;
+                    }
                     int ll = data[7] & 0xFF;
+                    if (data.length < ll * 4 + 8) {
+                        break;
+                    }
                     int r = 8;
                     for (int i = 0; i < ll; i++) {
                         int kk = data[r++] & 0xFF;
@@ -208,6 +228,9 @@ public final class SoftTuning {
                            // Real-Time/REAL-TIME)
                 {
                     // http://www.midi.org/about-midi/tuning-scale.shtml
+                    if (data.length < 20) {
+                        break;
+                    }
                     int[] octave_tuning = new int[12];
                     for (int i = 0; i < 12; i++)
                         octave_tuning[i] = (data[i + 8] & 0xFF) - 64;
@@ -219,6 +242,9 @@ public final class SoftTuning {
                            // Real-Time/REAL-TIME)
                 {
                     // http://www.midi.org/about-midi/tuning-scale.shtml
+                    if (data.length < 32) {
+                        break;
+                    }
                     double[] octave_tuning = new double[12];
                     for (int i = 0; i < 12; i++) {
                         int v = (data[i * 2 + 8] & 0xFF) * 128

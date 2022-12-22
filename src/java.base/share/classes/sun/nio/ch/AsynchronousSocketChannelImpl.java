@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Collections;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
@@ -308,8 +309,7 @@ abstract class AsynchronousSocketChannelImpl
     {
         if (handler == null)
             throw new NullPointerException("'handler' is null");
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(offset, length, dsts.length);
         ByteBuffer[] bufs = Util.subsequence(dsts, offset, length);
         for (int i=0; i<bufs.length; i++) {
             if (bufs[i].isReadOnly())
@@ -410,8 +410,7 @@ abstract class AsynchronousSocketChannelImpl
     {
         if (handler == null)
             throw new NullPointerException("'handler' is null");
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(offset, length, srcs.length);
         srcs = Util.subsequence(srcs, offset, length);
         write(true, null, srcs, timeout, unit, attachment, handler);
     }
@@ -504,7 +503,7 @@ abstract class AsynchronousSocketChannelImpl
         static final Set<SocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SocketOption<?>> defaultOptions() {
-            HashSet<SocketOption<?>> set = new HashSet<>(5);
+            HashSet<SocketOption<?>> set = HashSet.newHashSet(5);
             set.add(StandardSocketOptions.SO_SNDBUF);
             set.add(StandardSocketOptions.SO_RCVBUF);
             set.add(StandardSocketOptions.SO_KEEPALIVE);

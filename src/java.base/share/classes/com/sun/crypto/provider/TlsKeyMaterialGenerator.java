@@ -213,7 +213,7 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
                 if (protocolVersion >= 0x0302) {
                     // TLS 1.1+
                     throw new RuntimeException(
-                            "Internal Error:  TLS 1.1+ should not be negotiating" +
+                            "Internal Error:  TLS 1.1+ should not be negotiating " +
                                     "exportable ciphersuites");
                 } else if (protocolVersion == 0x0301) {
                     // TLS 1.0

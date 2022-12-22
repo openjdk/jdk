@@ -47,15 +47,6 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 
-  virtual void eden_allocate(MacroAssembler* masm,
-    Register           obj,              // result: pointer to object after successful allocation
-    Register           obj_end,          // result: pointer to end of object after successful allocation
-    Register           tmp1,             // temp register
-    Register           tmp2,             // temp register
-    RegisterOrConstant size_expression,  // size of object
-    Label&             slow_case         // continuation point if fast allocation fails
-  );
-
   virtual void tlab_allocate(MacroAssembler* masm,
     Register           obj,              // result: pointer to object after successful allocation
     Register           obj_end,          // result: pointer to end of object after successful allocation

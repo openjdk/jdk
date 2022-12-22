@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 #ifndef SHARE_COMPILER_COMPILEREVENT_HPP
 #define SHARE_COMPILER_COMPILEREVENT_HPP
 
-#include "jni.h"
 #include "compiler/compilerDefinitions.hpp"
-#include "memory/allocation.hpp"
+#include "jni.h"
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
 #if INCLUDE_JFR
 #include "jfr/utilities/jfrTime.hpp"
 #endif

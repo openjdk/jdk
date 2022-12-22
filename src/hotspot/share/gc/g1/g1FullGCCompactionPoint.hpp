@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,27 +29,28 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
 
+class G1FullCollector;
 class HeapRegion;
 
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
+  G1FullCollector* _collector;
   HeapRegion* _current_region;
-  HeapWord*   _threshold;
   HeapWord*   _compaction_top;
   GrowableArray<HeapRegion*>* _compaction_regions;
   GrowableArrayIterator<HeapRegion*> _compaction_region_iterator;
 
   bool object_will_fit(size_t size);
-  void initialize_values(bool init_threshold);
+  void initialize_values();
   void switch_region();
   HeapRegion* next_region();
 
 public:
-  G1FullGCCompactionPoint();
+  G1FullGCCompactionPoint(G1FullCollector* collector);
   ~G1FullGCCompactionPoint();
 
   bool has_regions();
   bool is_initialized();
-  void initialize(HeapRegion* hr, bool init_threshold);
+  void initialize(HeapRegion* hr);
   void update();
   void forward(oop object, size_t size);
   void add(HeapRegion* hr);

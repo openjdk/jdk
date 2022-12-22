@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class UseLocaleWithProvider {
 
         try {
             testScannerUseLocale("-123.4", Locale.US, -123.4);
-            testScannerUseLocale("-123,45", new Locale("fi", "FI"), -123.45);
+            testScannerUseLocale("-123,45", Locale.of("fi", "FI"), -123.45);
             testScannerUseLocale("334,65", Locale.FRENCH, 334.65);
             testScannerUseLocale("4.334,65", Locale.GERMAN, 4334.65);
         } catch (ClassCastException ex) {

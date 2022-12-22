@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ public class ObjectMonitor extends VMObject {
     ownerFieldOffset = f.getOffset();
     f = type.getField("_next_om");
     nextOMFieldOffset = f.getOffset();
-    contentionsField  = type.getJIntField("_contentions");
-    waitersField = type.getJIntField("_waiters");
-    recursionsField = type.getCIntegerField("_recursions");
+    contentionsField  = new CIntField(type.getCIntegerField("_contentions"), 0);
+    waitersField      = new CIntField(type.getCIntegerField("_waiters"), 0);
+    recursionsField   = type.getCIntegerField("_recursions");
   }
 
   public ObjectMonitor(Address addr) {
@@ -83,7 +83,7 @@ public class ObjectMonitor extends VMObject {
   // FIXME
   //  void      set_owner(void* owner);
 
-  public int    waiters() { return waitersField.getValue(addr); }
+  public int    waiters() { return (int)waitersField.getValue(this); }
 
   public Address nextOM() { return addr.getAddressAt(nextOMFieldOffset); }
   // FIXME
@@ -100,7 +100,7 @@ public class ObjectMonitor extends VMObject {
   }
 
   public int contentions() {
-      return contentionsField.getValue(addr);
+      return (int)contentionsField.getValue(this);
   }
 
   // The following four either aren't expressed as typed fields in
@@ -111,8 +111,8 @@ public class ObjectMonitor extends VMObject {
   private static long          objectFieldOffset;
   private static long          ownerFieldOffset;
   private static long          nextOMFieldOffset;
-  private static JIntField     contentionsField;
-  private static JIntField     waitersField;
+  private static CIntField     contentionsField;
+  private static CIntField     waitersField;
   private static CIntegerField recursionsField;
   // FIXME: expose platform-dependent stuff
 }

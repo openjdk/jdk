@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 4851625
  * @summary Tests for StrictMath.{sinh, cosh, tanh}
- * @author Joseph D. Darcy
  */
 
 /**
@@ -45,17 +44,17 @@ public class HyperbolicTests {
 
     static int testSinhCase(double input, double expected) {
         return Tests.test("StrictMath.sinh(double)", input,
-                          StrictMath.sinh(input), expected);
+                          StrictMath::sinh, expected);
     }
 
     static int testCoshCase(double input, double expected) {
         return Tests.test("StrictMath.cosh(double)", input,
-                          StrictMath.cosh(input), expected);
+                          StrictMath::cosh, expected);
     }
 
     static int testTanhCase(double input, double expected) {
         return Tests.test("StrictMath.tanh(double)", input,
-                          StrictMath.tanh(input), expected);
+                          StrictMath::tanh, expected);
     }
 
     static int testSinh() {

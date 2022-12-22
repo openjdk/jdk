@@ -32,6 +32,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Vector;
 
 import javax.imageio.IIOImage;
@@ -87,8 +88,7 @@ public class ImageReaderReadAll {
           throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 1 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 1);
             if (seekForwardOnly) {
                 if (imageIndex < minIndex)
                     throw new IndexOutOfBoundsException();
@@ -101,8 +101,7 @@ public class ImageReaderReadAll {
         public Iterator getImageTypes(int imageIndex) throws IOException {
             if (input == null)
                 throw new IllegalStateException();
-            if (imageIndex >= 1 || imageIndex < 0)
-                throw new IndexOutOfBoundsException();
+            Objects.checkIndex(imageIndex, 1);
 
             Vector imageTypes = new Vector();
             imageTypes.add(ImageTypeSpecifier.createFromBufferedImageType

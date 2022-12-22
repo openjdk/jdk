@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ class HostPortrange {
                     }
                     this.ipv4 = this.literal = ipv4;
                     if (ipv4) {
-                        byte[] ip = IPAddressUtil.textToNumericFormatV4(hoststr);
+                        byte[] ip = IPAddressUtil.validateNumericFormatV4(hoststr);
                         if (ip == null) {
                             throw new IllegalArgumentException("illegal IPv4 address");
                         }
@@ -186,7 +186,8 @@ class HostPortrange {
                 }
                 sb.append((char)(c - CASE_DIFF));
             } else {
-                throw new IllegalArgumentException("Invalid characters in hostname");
+                final String message = String.format("Invalid character \\u%04x in hostname", (int) c);
+                throw new IllegalArgumentException(message);
             }
         }
         return sb == null ? s : sb.toString();

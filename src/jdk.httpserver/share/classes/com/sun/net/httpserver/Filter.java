@@ -28,10 +28,13 @@ package com.sun.net.httpserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import sun.net.httpserver.DelegatingHttpExchange;
 
 /**
  * A filter used to pre- and post-process incoming requests. Pre-processing occurs
@@ -134,7 +137,6 @@ public abstract class Filter {
      */
     public abstract void doFilter (HttpExchange exchange, Chain chain)
         throws IOException;
-
     /**
      * Returns a short description of this {@code Filter}.
      *
@@ -245,6 +247,66 @@ public abstract class Filter {
             public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
                 chain.doFilter(exchange);
                 operation.accept(exchange);
+            }
+            @Override
+            public String description() {
+                return description;
+            }
+        };
+    }
+
+    /**
+     * Returns a
+     * {@linkplain Filter#beforeHandler(String, Consumer) pre-processing Filter}
+     * that inspects and possibly adapts the request state.
+     *
+     * The {@code Request} returned by the {@link UnaryOperator requestOperator}
+     * will be the effective request state of the exchange. It is executed for
+     * each {@code HttpExchange} before invoking either the next filter in the
+     * chain or the exchange handler (if this is the final filter in the chain).
+     * Exceptions thrown by the {@code requestOperator} are not handled by the
+     * filter.
+     *
+     * @apiNote
+     * When the returned filter is invoked, it first invokes the
+     * {@code requestOperator} with the given exchange, {@code ex}, in order to
+     * retrieve the <i>adapted request state</i>. It then invokes the next
+     * filter in the chain or the exchange handler, passing an exchange
+     * equivalent to {@code ex} with the <i>adapted request state</i> set as the
+     * effective request state.
+     *
+     * <p> Example of adding the {@code "Foo"} request header to all requests:
+     * <pre>{@code
+     *     var filter = Filter.adaptRequest("Add Foo header", r -> r.with("Foo", List.of("Bar")));
+     *     httpContext.getFilters().add(filter);
+     * }</pre>
+     *
+     * @param description the string to be returned from {@link #description()}
+     * @param requestOperator the request operator
+     * @return a filter that adapts the request state before the exchange is handled
+     * @throws NullPointerException if any argument is null
+     * @since 18
+     */
+    public static Filter adaptRequest(String description,
+                                      UnaryOperator<Request> requestOperator) {
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(requestOperator);
+
+        return new Filter() {
+            @Override
+            public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+                var request = requestOperator.apply(exchange);
+                var newExchange =  new DelegatingHttpExchange(exchange) {
+                    @Override
+                    public URI getRequestURI() { return request.getRequestURI(); }
+
+                    @Override
+                    public String getRequestMethod() { return request.getRequestMethod(); }
+
+                    @Override
+                    public Headers getRequestHeaders() { return request.getRequestHeaders(); }
+                };
+                chain.doFilter(newExchange);
             }
             @Override
             public String description() {

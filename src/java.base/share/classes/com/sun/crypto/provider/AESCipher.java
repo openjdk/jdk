@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.crypto.CipherSpi;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
-import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -50,7 +49,6 @@ import java.util.Arrays;
  *
  * @author Valerie Peng
  *
- *
  * @see AESCrypt
  * @see CipherBlockChaining
  * @see ElectronicCodeBook
@@ -58,13 +56,14 @@ import java.util.Arrays;
  * @see OutputFeedback
  */
 
-abstract class AESCipher extends CipherSpi {
+class AESCipher extends CipherSpi {
     public static final class General extends AESCipher {
         public General() {
             super(-1);
         }
     }
-    abstract static class OidImpl extends AESCipher {
+
+    static class OidImpl extends AESCipher {
         protected OidImpl(int keySize, String mode, String padding) {
             super(keySize);
             try {
@@ -72,12 +71,11 @@ abstract class AESCipher extends CipherSpi {
                 engineSetPadding(padding);
             } catch (GeneralSecurityException gse) {
                 // internal error; re-throw as provider exception
-                ProviderException pe =new ProviderException("Internal Error");
-                pe.initCause(gse);
-                throw pe;
+                throw new ProviderException("Internal Error", gse);
             }
         }
     }
+
     public static final class AES128_ECB_NoPadding extends OidImpl {
         public AES128_ECB_NoPadding() {
             super(16, "ECB", "NOPADDING");
@@ -138,24 +136,9 @@ abstract class AESCipher extends CipherSpi {
             super(32, "CFB", "NOPADDING");
         }
     }
-    public static final class AES128_GCM_NoPadding extends OidImpl {
-        public AES128_GCM_NoPadding() {
-            super(16, "GCM", "NOPADDING");
-        }
-    }
-    public static final class AES192_GCM_NoPadding extends OidImpl {
-        public AES192_GCM_NoPadding() {
-            super(24, "GCM", "NOPADDING");
-        }
-    }
-    public static final class AES256_GCM_NoPadding extends OidImpl {
-        public AES256_GCM_NoPadding() {
-            super(32, "GCM", "NOPADDING");
-        }
-    }
 
     // utility method used by AESCipher and AESWrapCipher
-    static final void checkKeySize(Key key, int fixedKeySize)
+    static void checkKeySize(Key key, int fixedKeySize)
         throws InvalidKeyException {
         if (fixedKeySize != -1) {
             if (key == null) {
@@ -177,7 +160,7 @@ abstract class AESCipher extends CipherSpi {
     /*
      * internal CipherCore object which does the real work.
      */
-    private CipherCore core = null;
+    private final CipherCore core;
 
     /*
      * needed to support AES oids which associates a fixed key size
@@ -185,10 +168,6 @@ abstract class AESCipher extends CipherSpi {
      */
     private final int fixedKeySize; // in bytes, -1 if no restriction
 
-    /*
-     * needed to enforce ISE thrown when updateAAD is called after update for GCM mode.
-     */
-    private boolean updateCalled;
 
     /**
      * Creates an instance of AES cipher with default ECB mode and
@@ -207,6 +186,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception NoSuchAlgorithmException if the requested cipher mode does
      * not exist
      */
+    @Override
     protected void engineSetMode(String mode)
         throws NoSuchAlgorithmException {
         core.setMode(mode);
@@ -220,6 +200,7 @@ abstract class AESCipher extends CipherSpi {
      * @exception NoSuchPaddingException if the requested padding mechanism
      * does not exist
      */
+    @Override
     protected void engineSetPadding(String paddingScheme)
         throws NoSuchPaddingException {
         core.setPadding(paddingScheme);
@@ -231,6 +212,7 @@ abstract class AESCipher extends CipherSpi {
      * @return the block size (in bytes), or 0 if the underlying algorithm is
      * not a block cipher
      */
+    @Override
     protected int engineGetBlockSize() {
         return AESConstants.AES_BLOCK_SIZE;
     }
@@ -252,6 +234,7 @@ abstract class AESCipher extends CipherSpi {
      *
      * @return the required output buffer size (in bytes)
      */
+    @Override
     protected int engineGetOutputSize(int inputLen) {
         return core.getOutputSize(inputLen);
     }
@@ -268,6 +251,7 @@ abstract class AESCipher extends CipherSpi {
      * underlying algorithm does not use an IV, or if the IV has not yet
      * been set.
      */
+    @Override
     protected byte[] engineGetIV() {
         return core.getIV();
     }
@@ -285,6 +269,7 @@ abstract class AESCipher extends CipherSpi {
      * @return the parameters used with this cipher, or null if this cipher
      * does not use any parameters.
      */
+    @Override
     protected AlgorithmParameters engineGetParameters() {
         return core.getParameters("AES");
     }
@@ -319,10 +304,10 @@ abstract class AESCipher extends CipherSpi {
      * @exception InvalidKeyException if the given key is inappropriate for
      * initializing this cipher
      */
+    @Override
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, random);
     }
 
@@ -350,21 +335,21 @@ abstract class AESCipher extends CipherSpi {
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this cipher
      */
+    @Override
     protected void engineInit(int opmode, Key key,
                               AlgorithmParameterSpec params,
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
+    @Override
     protected void engineInit(int opmode, Key key,
                               AlgorithmParameters params,
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
-        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -387,9 +372,9 @@ abstract class AESCipher extends CipherSpi {
      * @exception IllegalStateException if this cipher is in a wrong state
      * (e.g., has not been initialized)
      */
+    @Override
     protected byte[] engineUpdate(byte[] input, int inputOffset,
                                   int inputLen) {
-        updateCalled = true;
         return core.update(input, inputOffset, inputLen);
     }
 
@@ -416,10 +401,10 @@ abstract class AESCipher extends CipherSpi {
      * @exception ShortBufferException if the given output buffer is too small
      * to hold the result
      */
+    @Override
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
                                byte[] output, int outputOffset)
         throws ShortBufferException {
-        updateCalled = true;
         return core.update(input, inputOffset, inputLen, output,
                            outputOffset);
     }
@@ -455,11 +440,10 @@ abstract class AESCipher extends CipherSpi {
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
      */
+    @Override
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException {
-        byte[] out = core.doFinal(input, inputOffset, inputLen);
-        updateCalled = false;
-        return out;
+        return core.doFinal(input, inputOffset, inputLen);
     }
 
     /**
@@ -498,14 +482,13 @@ abstract class AESCipher extends CipherSpi {
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
      */
+    @Override
     protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
                                 byte[] output, int outputOffset)
         throws IllegalBlockSizeException, ShortBufferException,
                BadPaddingException {
-        int outLen = core.doFinal(input, inputOffset, inputLen, output,
+        return core.doFinal(input, inputOffset, inputLen, output,
                                   outputOffset);
-        updateCalled = false;
-        return outLen;
     }
 
     /**
@@ -517,6 +500,7 @@ abstract class AESCipher extends CipherSpi {
      *
      * @exception InvalidKeyException if <code>key</code> is invalid.
      */
+    @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encoded = key.getEncoded();
         Arrays.fill(encoded, (byte)0);
@@ -543,6 +527,7 @@ abstract class AESCipher extends CipherSpi {
      * wrap the key with this cipher (e.g., a hardware protected key is
      * being passed to a software only cipher).
      */
+    @Override
     protected byte[] engineWrap(Key key)
         throws IllegalBlockSizeException, InvalidKeyException {
         return core.wrap(key);
@@ -569,113 +554,12 @@ abstract class AESCipher extends CipherSpi {
      * represent a wrapped key of type <code>wrappedKeyType</code> for
      * the <code>wrappedKeyAlgorithm</code>.
      */
+    @Override
     protected Key engineUnwrap(byte[] wrappedKey,
                                      String wrappedKeyAlgorithm,
                                      int wrappedKeyType)
         throws InvalidKeyException, NoSuchAlgorithmException {
         return core.unwrap(wrappedKey, wrappedKeyAlgorithm,
                            wrappedKeyType);
-    }
-
-    /**
-     * Continues a multi-part update of the Additional Authentication
-     * Data (AAD), using a subset of the provided buffer.
-     * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update} and {@code
-     * doFinal} methods).
-     *
-     * @param src the buffer containing the AAD
-     * @param offset the offset in {@code src} where the AAD input starts
-     * @param len the number of AAD bytes
-     *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
-     * encryption/decryption operation
-     * @throws UnsupportedOperationException if this method
-     * has not been overridden by an implementation
-     *
-     * @since 1.8
-     */
-    @Override
-    protected void engineUpdateAAD(byte[] src, int offset, int len) {
-        if (core.getMode() == CipherCore.GCM_MODE && updateCalled) {
-            throw new IllegalStateException("AAD must be supplied before encryption/decryption starts");
-        }
-        core.updateAAD(src, offset, len);
-    }
-
-    /**
-     * Continues a multi-part update of the Additional Authentication
-     * Data (AAD).
-     * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update} and {@code
-     * doFinal} methods).
-     * <p>
-     * All {@code src.remaining()} bytes starting at
-     * {@code src.position()} are processed.
-     * Upon return, the input buffer's position will be equal
-     * to its limit; its limit will not have changed.
-     *
-     * @param src the buffer containing the AAD
-     *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
-     * encryption/decryption operation
-     * @throws UnsupportedOperationException if this method
-     * has not been overridden by an implementation
-     *
-     * @since 1.8
-     */
-    @Override
-    protected void engineUpdateAAD(ByteBuffer src) {
-        if (core.getMode() == CipherCore.GCM_MODE && updateCalled) {
-            throw new IllegalStateException("AAD must be supplied before encryption/decryption starts");
-        }
-        if (src != null) {
-            int aadLen = src.limit() - src.position();
-            if (aadLen > 0) {
-                if (src.hasArray()) {
-                    int aadOfs = Math.addExact(src.arrayOffset(), src.position());
-                    core.updateAAD(src.array(), aadOfs, aadLen);
-                    src.position(src.limit());
-                } else {
-                    byte[] aad = new byte[aadLen];
-                    src.get(aad);
-                    core.updateAAD(aad, 0, aadLen);
-                }
-            }
-        }
-    }
-
-    /**
-     * Finalize crypto operation with ByteBuffers
-     *
-     * @param input the input ByteBuffer
-     * @param output the output ByteBuffer
-     *
-     * @return output length
-     * @throws ShortBufferException
-     * @throws IllegalBlockSizeException
-     * @throws BadPaddingException
-     */
-    @Override
-    protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
-        throws ShortBufferException, IllegalBlockSizeException,
-        BadPaddingException {
-        if (core.getMode() == CipherCore.GCM_MODE && !input.hasArray()) {
-            return core.gcmDoFinal(input, output);
-        } else {
-            return super.engineDoFinal(input, output);
-        }
     }
 }

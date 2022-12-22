@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,22 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -183,10 +187,6 @@ inline ThreadsList* ThreadsSMRSupport::xchg_java_thread_list(ThreadsList* new_li
 //
 class ThreadScanHashtable : public CHeapObj<mtThread> {
  private:
-  static bool ptr_equals(void * const& s1, void * const& s2) {
-    return s1 == s2;
-  }
-
   static unsigned int ptr_hash(void * const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
@@ -194,16 +194,16 @@ class ThreadScanHashtable : public CHeapObj<mtThread> {
 
   // ResourceHashtable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void *, int, &ThreadScanHashtable::ptr_hash,
-                            &ThreadScanHashtable::ptr_equals, 1031,
-                            ResourceObj::C_HEAP, mtThread> PtrTable;
+  typedef ResourceHashtable<void *, int, 1031,
+                            AnyObj::C_HEAP, mtThread,
+                            &ThreadScanHashtable::ptr_hash> PtrTable;
   PtrTable * _ptrs;
 
  public:
   // ResourceHashtable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
-  ThreadScanHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()) {}
+  ThreadScanHashtable() : _ptrs(new (mtThread) PtrTable()) {}
 
   ~ThreadScanHashtable() { delete _ptrs; }
 
@@ -633,6 +633,29 @@ static JavaThread* const* make_threads_list_data(int entries) {
   return data;
 }
 
+#ifdef ASSERT
+
+ThreadsList::Iterator::Iterator() : _thread_ptr(nullptr), _list(nullptr) {}
+
+uint ThreadsList::Iterator::check_index(ThreadsList* list, uint i) {
+  assert(i <= list->length(), "invalid index %u", i);
+  return i;
+}
+
+void ThreadsList::Iterator::assert_not_singular() const {
+  assert(_list != nullptr, "singular iterator");
+}
+
+void ThreadsList::Iterator::assert_dereferenceable() const {
+  assert(_thread_ptr < (_list->threads() + _list->length()), "not dereferenceable");
+}
+
+void ThreadsList::Iterator::assert_same_list(Iterator i) const {
+  assert(_list == i._list, "iterators from different lists");
+}
+
+#endif // ASSERT
+
 ThreadsList::ThreadsList(int entries) :
   _magic(THREADS_LIST_MAGIC),
   _length(entries),
@@ -695,7 +718,7 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
       if (tobj != NULL && java_tid == java_lang_Thread::thread_id(tobj)) {
         MutexLocker ml(Threads_lock);
         // Must be inside the lock to ensure that we don't add a thread to the table
-        // that has just passed the removal point in ThreadsSMRSupport::remove_thread()
+        // that has just passed the removal point in Threads::remove().
         if (!thread->is_exiting()) {
           ThreadIdTable::add_thread(java_tid, thread);
           return thread;
@@ -979,12 +1002,6 @@ void ThreadsSMRSupport::release_stable_list_wake_up(bool is_nested) {
 }
 
 void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
-
-  if (ThreadIdTable::is_initialized()) {
-    jlong tid = SharedRuntime::get_java_tid(thread);
-    ThreadIdTable::remove_thread(tid);
-  }
-
   ThreadsList *new_list = ThreadsList::remove_thread(ThreadsSMRSupport::get_java_thread_list(), thread);
   if (EnableThreadSMRStatistics) {
     ThreadsSMRSupport::inc_java_thread_list_alloc_cnt();

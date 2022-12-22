@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,9 +328,9 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
             Window window = SwingUtilities.getWindowAncestor(f);
             if (window != null && !window.isOpaque()) {
                 dragMode = DEFAULT_DRAG_MODE;
-            } else if (mode != null && mode.equals("outline")) {
+            } else if ("outline".equals(mode)) {
                 dragMode = OUTLINE_DRAG_MODE;
-            } else if (mode != null && mode.equals("faster")
+            } else if ("faster".equals(mode)
                     && f instanceof JInternalFrame
                     && ((JInternalFrame)f).isOpaque() &&
                        (parent == null || parent.isOpaque())) {

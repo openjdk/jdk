@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public abstract interface SaslServer {
      * by sending a challenge to the client, or if the authentication has
      * succeeded but challenge data needs to be processed by the client.
      * {@code isComplete()} should be called
-     * after each call to {@code evaluateResponse()},to determine if any further
+     * after each call to {@code evaluateResponse()}, to determine if any further
      * response is needed from the client.
      *
      * @param response The non-null (but possibly empty) response sent

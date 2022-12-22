@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4990825
+ * @bug 4990825 8251155
  * @summary test that HostIdentifier objects get created as expected
  *
  * @modules java.xml

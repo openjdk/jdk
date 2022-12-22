@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ public class ImmutableOopMapSet extends VMObject {
     if (!VM.getVM().isCore()) {
       REG_COUNT = db.lookupIntConstant("REG_COUNT").intValue();
       if (VM.getVM().isServerCompiler()) {
-        SAVED_ON_ENTRY_REG_COUNT = (int) db.lookupIntConstant("SAVED_ON_ENTRY_REG_COUNT").intValue();
-        C_SAVED_ON_ENTRY_REG_COUNT = (int) db.lookupIntConstant("C_SAVED_ON_ENTRY_REG_COUNT").intValue();
+        SAVED_ON_ENTRY_REG_COUNT = db.lookupIntConstant("SAVED_ON_ENTRY_REG_COUNT").intValue();
+        C_SAVED_ON_ENTRY_REG_COUNT = db.lookupIntConstant("C_SAVED_ON_ENTRY_REG_COUNT").intValue();
       }
     }
   }
@@ -201,11 +201,14 @@ public class ImmutableOopMapSet extends VMObject {
     // changed before derived pointer offset has been collected)
     OopMapValue omv;
     {
-      for (OopMapStream oms = new OopMapStream(map, OopMapValue.OopTypes.DERIVED_OOP_VALUE); !oms.isDone(); oms.next()) {
+      for (OopMapStream oms = new OopMapStream(map); !oms.isDone(); oms.next()) {
+        omv = oms.getCurrent();
+        if (omv.getType() != OopMapValue.OopTypes.DERIVED_OOP_VALUE) {
+          continue;
+        }
         if (VM.getVM().isClientCompiler()) {
           Assert.that(false, "should not reach here");
         }
-        omv = oms.getCurrent();
         Address loc = fr.oopMapRegToLocation(omv.getReg(), regMap);
         if (loc != null) {
           Address baseLoc = fr.oopMapRegToLocation(omv.getContentReg(), regMap);
@@ -216,12 +219,8 @@ public class ImmutableOopMapSet extends VMObject {
     }
 
     // We want narow oop and oop oop_types
-    OopMapValue.OopTypes[] values = new OopMapValue.OopTypes[] {
-        OopMapValue.OopTypes.OOP_VALUE, OopMapValue.OopTypes.NARROWOOP_VALUE
-    };
-
     {
-      for (OopMapStream oms = new OopMapStream(map, values); !oms.isDone(); oms.next()) {
+      for (OopMapStream oms = new OopMapStream(map); !oms.isDone(); oms.next()) {
         omv = oms.getCurrent();
         Address loc = fr.oopMapRegToLocation(omv.getReg(), regMap);
         if (loc != null) {
@@ -278,8 +277,11 @@ public class ImmutableOopMapSet extends VMObject {
     }
 
     OopMapValue omv = null;
-    for (OopMapStream oms = new OopMapStream(map, OopMapValue.OopTypes.CALLEE_SAVED_VALUE); !oms.isDone(); oms.next()) {
+    for (OopMapStream oms = new OopMapStream(map); !oms.isDone(); oms.next()) {
       omv = oms.getCurrent();
+      if (omv.getType() != OopMapValue.OopTypes.CALLEE_SAVED_VALUE) {
+        continue;
+      }
       if (Assert.ASSERTS_ENABLED) {
         Assert.that(nofCallee < 2 * REG_COUNT, "overflow");
       }

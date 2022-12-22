@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 
 package sun.security.jgss.wrapper;
 
-import java.util.Hashtable;
-import org.ietf.jgss.Oid;
-import org.ietf.jgss.GSSName;
 import org.ietf.jgss.ChannelBinding;
-import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.GSSException;
-import sun.security.jgss.GSSUtil;
+import org.ietf.jgss.MessageProp;
+import org.ietf.jgss.Oid;
+
+import java.util.Hashtable;
 
 /**
  * This class is essentially a JNI calling stub for all wrapper classes.
@@ -42,7 +41,7 @@ import sun.security.jgss.GSSUtil;
 
 class GSSLibStub {
 
-    private Oid mech;
+    private final Oid mech;
     private long pMech; // Warning: used by NativeUtil.c
 
     /**
@@ -94,8 +93,8 @@ class GSSLibStub {
     native byte[] wrap(long pContext, byte[] msg, MessageProp prop);
     native byte[] unwrap(long pContext, byte[] msgToken, MessageProp prop);
 
-    private static Hashtable<Oid, GSSLibStub>
-        table = new Hashtable<Oid, GSSLibStub>(5);
+    private static final Hashtable<Oid, GSSLibStub>
+        table = new Hashtable<>(5);
 
     static GSSLibStub getInstance(Oid mech) throws GSSException {
         GSSLibStub s = table.get(mech);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 
 package java.lang.reflect;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
@@ -204,8 +205,24 @@ public abstract sealed class Executable extends AccessibleObject
     /**
      * {@return the Java language {@linkplain Modifier modifiers} for
      * the executable represented by this object}
+     * @see #accessFlags
      */
     public abstract int getModifiers();
+
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for the executable represented by this object,
+     * possibly empty}
+     *
+     * @see #getModifiers()
+     * @jvms 4.6 Methods
+     * @since 20
+     */
+    @Override
+    public Set<AccessFlag> accessFlags() {
+        return AccessFlag.maskToAccessFlags(getModifiers(),
+                                            AccessFlag.Location.METHOD);
+    }
 
     /**
      * Returns an array of {@code TypeVariable} objects that represent the
@@ -253,9 +270,7 @@ public abstract sealed class Executable extends AccessibleObject
      * @return The number of formal parameters for the executable this
      * object represents
      */
-    public int getParameterCount() {
-        throw new AbstractMethodError();
-    }
+    public abstract int getParameterCount();
 
     /**
      * Returns an array of {@code Type} objects that represent the
@@ -315,7 +330,7 @@ public abstract sealed class Executable extends AccessibleObject
         } else {
             final boolean realParamData = hasRealParameterData();
             final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getParameterTypes();
+            final Type[] nonGenericParamTypes = getSharedParameterTypes();
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
@@ -342,7 +357,7 @@ public abstract sealed class Executable extends AccessibleObject
                 // synthetic/mandated, thus, no way to match up the
                 // indexes.
                 return genericParamTypes.length == nonGenericParamTypes.length ?
-                    genericParamTypes : nonGenericParamTypes;
+                    genericParamTypes : getParameterTypes();
             }
         }
     }
@@ -367,7 +382,7 @@ public abstract sealed class Executable extends AccessibleObject
         // Need to copy the cached array to prevent users from messing
         // with it.  Since parameters are immutable, we can
         // shallow-copy.
-        return privateGetParameters().clone();
+        return parameterData().parameters.clone();
     }
 
     private Parameter[] synthesizeAllParams() {
@@ -406,46 +421,40 @@ public abstract sealed class Executable extends AccessibleObject
         }
     }
 
-    private Parameter[] privateGetParameters() {
-        // Use tmp to avoid multiple writes to a volatile.
-        Parameter[] tmp = parameters;
-
-        if (tmp == null) {
-
-            // Otherwise, go to the JVM to get them
-            try {
-                tmp = getParameters0();
-            } catch(IllegalArgumentException e) {
-                // Rethrow ClassFormatErrors
-                throw new MalformedParametersException("Invalid constant pool index");
-            }
-
-            // If we get back nothing, then synthesize parameters
-            if (tmp == null) {
-                hasRealParameterData = false;
-                tmp = synthesizeAllParams();
-            } else {
-                hasRealParameterData = true;
-                verifyParameters(tmp);
-            }
-
-            parameters = tmp;
-        }
-
-        return tmp;
-    }
 
     boolean hasRealParameterData() {
-        // If this somehow gets called before parameters gets
-        // initialized, force it into existence.
-        if (parameters == null) {
-            privateGetParameters();
-        }
-        return hasRealParameterData;
+        return parameterData().isReal;
     }
 
-    private transient volatile boolean hasRealParameterData;
-    private transient volatile Parameter[] parameters;
+    private ParameterData parameterData() {
+        ParameterData parameterData = this.parameterData;
+        if (parameterData != null) {
+            return parameterData;
+        }
+
+        Parameter[] tmp;
+        // Go to the JVM to get them
+        try {
+            tmp = getParameters0();
+        } catch (IllegalArgumentException e) {
+            // Rethrow ClassFormatErrors
+            throw new MalformedParametersException("Invalid constant pool index");
+        }
+
+        // If we get back nothing, then synthesize parameters
+        if (tmp == null) {
+            tmp = synthesizeAllParams();
+            parameterData = new ParameterData(tmp, false);
+        } else {
+            verifyParameters(tmp);
+            parameterData = new ParameterData(tmp, true);
+        }
+        return this.parameterData = parameterData;
+    }
+
+    private transient @Stable ParameterData parameterData;
+
+    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
 
     private native Parameter[] getParameters0();
     native byte[] getTypeAnnotationBytes0();

@@ -91,7 +91,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  Node* card_offset = __ URShiftX(cast, __ ConI(CardTable::card_shift));
+  Node* card_offset = __ URShiftX(cast, __ ConI(CardTable::card_shift()));
 
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);

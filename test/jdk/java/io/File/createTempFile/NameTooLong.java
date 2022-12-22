@@ -54,7 +54,7 @@ public class NameTooLong {
                 if (ps[1].startsWith(".")
                     && !s.contains(ps[1].substring(0, 4))) {
                     System.err.printf("%s did not contain %s%n", s,
-                        ps[1].substring(0, 4));;
+                        ps[1].substring(0, 4));
                     failures++;
                 }
             } catch (IOException e) {

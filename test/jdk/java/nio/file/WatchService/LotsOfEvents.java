@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6907760 6929532
+ * @bug 6907760 6929532 8174819
  * @summary Tests WatchService behavior when lots of events are pending (use -Dseed=X to set PRNG seed)
  * @library ..
  * @library /test/lib
@@ -37,6 +37,8 @@ import java.nio.file.*;
 import static java.nio.file.StandardWatchEventKinds.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import jdk.test.lib.RandomFactory;
 
 public class LotsOfEvents {
@@ -106,6 +108,7 @@ public class LotsOfEvents {
         boolean gotOverflow = false;
         while (key != null) {
             List<WatchEvent<?>> events = key.pollEvents();
+            System.out.println("Polling retrieved " + events.size() + " event(s)");
             for (WatchEvent<?> event: events) {
                 WatchEvent.Kind<?> kind = event.kind();
                 if (kind == expectedKind) {
@@ -123,7 +126,7 @@ public class LotsOfEvents {
             }
             if (!key.reset())
                 throw new RuntimeException("Key is no longer valid");
-            key = watcher.poll(2, TimeUnit.SECONDS);
+            key = watcher.poll(15, TimeUnit.SECONDS);
         }
 
         // check that all expected events were received or there was an overflow
@@ -131,6 +134,8 @@ public class LotsOfEvents {
             System.err.printf("Test directory %s contains %d files%n",
                 dir, Files.list(dir).count());
 
+            // the additional polling here is just for diagnostics and doesn't
+            // change the test result (which is a failed test)
             long timeBeforePoll = System.nanoTime();
             key = watcher.poll(15, TimeUnit.SECONDS);
             long timeAfterPoll = System.nanoTime();
@@ -140,6 +145,11 @@ public class LotsOfEvents {
                 List<WatchEvent<?>> events = key.pollEvents();
                 System.err.printf("Retrieved key with %d events after %d ns%n",
                     events.size(), timeAfterPoll - timeBeforePoll);
+                // count for each kind of event
+                Map<WatchEvent.Kind, Long> countPerEventType = events.stream()
+                        .collect(Collectors.groupingBy(WatchEvent::kind, Collectors.counting()));
+                countPerEventType.forEach((kind, num)
+                        -> System.err.println(num + " events of type " + kind));
             }
 
             throw new RuntimeException("Insufficient "

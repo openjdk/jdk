@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
 #include "logging/log.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 typedef JfrStorage::BufferPtr BufferPtr;
 
@@ -241,17 +241,6 @@ bool JfrStorage::flush_regular_buffer(BufferPtr buffer, Thread* thread) {
     return true;
   }
 
-  if (buffer->excluded()) {
-    const bool thread_is_excluded = thread->jfr_thread_local()->is_excluded();
-    buffer->reinitialize(thread_is_excluded);
-    assert(buffer->empty(), "invariant");
-    if (!thread_is_excluded) {
-      // state change from exclusion to inclusion requires a thread checkpoint
-      JfrCheckpointManager::write_thread_checkpoint(thread);
-    }
-    return true;
-  }
-
   BufferPtr const promotion_buffer = acquire_promotion_buffer(unflushed_size, _global_mspace, *this, promotion_retry, thread);
   if (promotion_buffer == NULL) {
     write_data_loss(buffer, thread);
@@ -307,7 +296,6 @@ void JfrStorage::release(BufferPtr buffer, Thread* thread) {
   }
   assert(buffer->empty(), "invariant");
   assert(buffer->identity() != NULL, "invariant");
-  buffer->clear_excluded();
   buffer->set_retired();
 }
 
@@ -384,7 +372,6 @@ static void assert_flush_large_precondition(ConstBufferPtr cur, const u1* const 
   assert(t != NULL, "invariant");
   assert(cur != NULL, "invariant");
   assert(cur->lease(), "invariant");
-  assert(!cur->excluded(), "invariant");
   assert(cur_pos != NULL, "invariant");
   assert(native ? t->jfr_thread_local()->native_buffer() == cur : t->jfr_thread_local()->java_buffer() == cur, "invariant");
   assert(t->jfr_thread_local()->shelved_buffer() != NULL, "invariant");
@@ -410,9 +397,6 @@ BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size
   // possible and valid to migrate data after the flush. This is however only
   // the case for stable thread local buffers; it is not the case for large buffers.
   flush_regular_buffer(cur, t);
-  if (cur->excluded()) {
-    return cur;
-  }
   if (cur->free_size() >= req) {
     // simplest case, no switching of buffers
     if (used > 0) {
@@ -502,23 +486,19 @@ typedef UnBufferedWriteToChunk<JfrBuffer> WriteOperation;
 typedef MutexedWriteOp<WriteOperation> MutexedWriteOperation;
 typedef ConcurrentWriteOp<WriteOperation> ConcurrentWriteOperation;
 
-typedef Excluded<JfrBuffer, true> NonExcluded;
-typedef PredicatedConcurrentWriteOp<WriteOperation, NonExcluded>  ConcurrentNonExcludedWriteOperation;
-
 typedef ScavengingReleaseOp<JfrThreadLocalMspace, JfrThreadLocalMspace::LiveList> ReleaseThreadLocalOperation;
-typedef CompositeOperation<ConcurrentNonExcludedWriteOperation, ReleaseThreadLocalOperation> ConcurrentWriteReleaseThreadLocalOperation;
+typedef CompositeOperation<ConcurrentWriteOperation, ReleaseThreadLocalOperation> ConcurrentWriteReleaseThreadLocalOperation;
 
 size_t JfrStorage::write() {
   const size_t full_elements = write_full();
   WriteOperation wo(_chunkwriter);
-  NonExcluded ne;
-  ConcurrentNonExcludedWriteOperation cnewo(wo, ne);
+  ConcurrentWriteOperation cwo(wo);
   ReleaseThreadLocalOperation rtlo(_thread_local_mspace, _thread_local_mspace->live_list());
-  ConcurrentWriteReleaseThreadLocalOperation tlop(&cnewo, &rtlo);
+  ConcurrentWriteReleaseThreadLocalOperation tlop(&cwo, &rtlo);
   process_live_list(tlop, _thread_local_mspace);
   assert(_global_mspace->free_list_is_empty(), "invariant");
   assert(_global_mspace->live_list_is_nonempty(), "invariant");
-  process_live_list(cnewo, _global_mspace);
+  process_live_list(cwo, _global_mspace);
   return full_elements + wo.elements();
 }
 
@@ -526,12 +506,11 @@ size_t JfrStorage::write_at_safepoint() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   const size_t full_elements = write_full();
   WriteOperation wo(_chunkwriter);
-  NonExcluded ne;
-  ConcurrentNonExcludedWriteOperation cnewo(wo, ne); // concurrent because of gc's
-  process_live_list(cnewo, _thread_local_mspace);
+  ConcurrentWriteOperation cwo(wo); // concurrent because of gc's
+  process_live_list(cwo, _thread_local_mspace);
   assert(_global_mspace->free_list_is_empty(), "invariant");
   assert(_global_mspace->live_list_is_nonempty(), "invariant");
-  process_live_list(cnewo, _global_mspace);
+  process_live_list(cwo, _global_mspace);
   return full_elements + wo.elements();
 }
 

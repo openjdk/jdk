@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #define SHARE_GC_Z_ZLOCK_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/os.hpp"
+#include "runtime/mutex.hpp"
 
 class ZLock {
 private:
-  os::PlatformMutex _lock;
+  PlatformMutex _lock;
 
 public:
   void lock();
@@ -54,7 +54,7 @@ public:
 
 class ZConditionLock {
 private:
-  os::PlatformMonitor _lock;
+  PlatformMonitor _lock;
 
 public:
   void lock();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         addKeyType("AES",      CKK_AES);
         addKeyType("Blowfish", CKK_BLOWFISH);
         addKeyType("ChaCha20", CKK_CHACHA20);
+        addKeyType("ChaCha20-Poly1305", CKK_CHACHA20);
 
         // we don't implement RC2 or IDEA, but we want to be able to generate
         // keys for those SSL/TLS ciphersuites.
@@ -88,7 +89,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     // returns the PKCS11 key type of the specified algorithm
-    // no psuedo KeyTypes
+    // no pseudo KeyTypes
     static long getPKCS11KeyType(String algorithm) {
         long kt = getKeyType(algorithm);
         if (kt == -1 || kt > PCKK_ANY) {
@@ -135,7 +136,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (key == null) {
             throw new InvalidKeyException("Key must not be null");
         }
-        if (key instanceof SecretKey == false) {
+        if (!(key instanceof SecretKey)) {
             throw new InvalidKeyException("Key must be a SecretKey");
         }
         long algoType;
@@ -154,8 +155,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                 }
             }
         }
-        if (key instanceof P11Key) {
-            P11Key p11Key = (P11Key)key;
+        if (key instanceof P11Key p11Key) {
             if (p11Key.token == token) {
                 if (extraAttrs != null) {
                     P11Key newP11Key = null;
@@ -184,7 +184,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (p11Key != null) {
             return p11Key;
         }
-        if ("RAW".equalsIgnoreCase(key.getFormat()) == false) {
+        if (!"RAW".equalsIgnoreCase(key.getFormat())) {
             throw new InvalidKeyException("Encoded format must be RAW");
         }
         byte[] encoded = key.getEncoded();
@@ -207,15 +207,15 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         int n = encoded.length << 3;
         int keyLength = n;
         try {
-            switch ((int)keyType) {
-                case (int)CKK_DES:
+            switch ((int) keyType) {
+                case (int) CKK_DES -> {
                     keyLength =
-                        P11KeyGenerator.checkKeySize(CKM_DES_KEY_GEN, n, token);
+                            P11KeyGenerator.checkKeySize(CKM_DES_KEY_GEN, n, token);
                     fixDESParity(encoded, 0);
-                    break;
-                case (int)CKK_DES3:
+                }
+                case (int) CKK_DES3 -> {
                     keyLength =
-                        P11KeyGenerator.checkKeySize(CKM_DES3_KEY_GEN, n, token);
+                            P11KeyGenerator.checkKeySize(CKM_DES3_KEY_GEN, n, token);
                     fixDESParity(encoded, 0);
                     fixDESParity(encoded, 8);
                     if (keyLength == 112) {
@@ -224,41 +224,27 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                         keyType = CKK_DES3;
                         fixDESParity(encoded, 16);
                     }
-                    break;
-                case (int)CKK_AES:
-                    keyLength =
+                }
+                case (int) CKK_AES -> keyLength =
                         P11KeyGenerator.checkKeySize(CKM_AES_KEY_GEN, n, token);
-                    break;
-                case (int)CKK_RC4:
-                    keyLength =
+                case (int) CKK_RC4 -> keyLength =
                         P11KeyGenerator.checkKeySize(CKM_RC4_KEY_GEN, n, token);
-                    break;
-                case (int)CKK_BLOWFISH:
-                    keyLength =
+                case (int) CKK_BLOWFISH -> keyLength =
                         P11KeyGenerator.checkKeySize(CKM_BLOWFISH_KEY_GEN, n,
-                        token);
-                    break;
-                case (int)CKK_CHACHA20:
-                    keyLength = P11KeyGenerator.checkKeySize(
+                                token);
+                case (int) CKK_CHACHA20 -> keyLength = P11KeyGenerator.checkKeySize(
                         CKM_CHACHA20_KEY_GEN, n, token);
-                    break;
-                case (int)CKK_GENERIC_SECRET:
-                case (int)PCKK_TLSPREMASTER:
-                case (int)PCKK_TLSRSAPREMASTER:
-                case (int)PCKK_TLSMASTER:
-                    keyType = CKK_GENERIC_SECRET;
-                    break;
-                case (int)PCKK_SSLMAC:
-                case (int)PCKK_HMAC:
+                case (int) CKK_GENERIC_SECRET, (int) PCKK_TLSPREMASTER, (int) PCKK_TLSRSAPREMASTER, (int) PCKK_TLSMASTER ->
+                        keyType = CKK_GENERIC_SECRET;
+                case (int) PCKK_SSLMAC, (int) PCKK_HMAC -> {
                     if (n == 0) {
                         throw new InvalidKeyException
                                 ("MAC keys must not be empty");
                     }
                     keyType = CKK_GENERIC_SECRET;
-                    break;
-                default:
-                    throw new InvalidKeyException("Unknown algorithm " +
-                            algorithm);
+                }
+                default -> throw new InvalidKeyException("Unknown algorithm " +
+                        algorithm);
             }
         } catch (InvalidAlgorithmParameterException iape) {
             throw new InvalidKeyException("Invalid key for " + algorithm,
@@ -327,7 +313,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     private byte[] getKeyBytes(SecretKey key) throws InvalidKeySpecException {
         try {
             key = engineTranslateKey(key);
-            if ("RAW".equalsIgnoreCase(key.getFormat()) == false) {
+            if (!"RAW".equalsIgnoreCase(key.getFormat())) {
                 throw new InvalidKeySpecException
                     ("Could not obtain key bytes");
             }

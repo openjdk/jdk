@@ -37,7 +37,7 @@ public interface MemoryAccessProvider {
      * @return the read value encapsulated in a {@link JavaConstant} object of {@link JavaKind} kind
      * @throws IllegalArgumentException if the read is out of bounds of the object or {@code kind}
      *             is {@link JavaKind#Void} or not {@linkplain JavaKind#isPrimitive() primitive}
-     *             kind or {@code bits} is not 8, 16, 32 or 64
+     *             kind or {@code bits} is not 8, 16, 32 or 64, or the read is unaligned
      */
     JavaConstant readPrimitiveConstant(JavaKind kind, Constant base, long displacement, int bits) throws IllegalArgumentException;
 

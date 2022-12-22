@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,64 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "utilities/debug.hpp"
 
-ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, Thread* thread) :
-    ObjArrayAllocator(klass, word_size, length, false /* do_zero */, thread) {}
+ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread) :
+    ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
 
-oop ZObjArrayAllocator::finish(HeapWord* mem) const {
-  // Initialize object header and length field
-  ObjArrayAllocator::finish(mem);
+void ZObjArrayAllocator::yield_for_safepoint() const {
+  ThreadBlockInVM tbivm(JavaThread::cast(_thread));
+}
 
-  // Keep the array alive across safepoints through an invisible
-  // root. Invisible roots are not visited by the heap itarator
-  // and the marking logic will not attempt to follow its elements.
-  ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);
+oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
+  // ZGC specializes the initialization by performing segmented clearing
+  // to allow shorter time-to-safepoints.
+
+  if (!_do_zero) {
+    // No need for ZGC specialization
+    return ObjArrayAllocator::initialize(mem);
+  }
 
   // A max segment size of 64K was chosen because microbenchmarking
   // suggested that it offered a good trade-off between allocation
   // time and time-to-safepoint
   const size_t segment_max = ZUtils::bytes_to_words(64 * K);
-  const size_t skip = arrayOopDesc::header_size(ArrayKlass::cast(_klass)->element_type());
-  size_t remaining = _word_size - skip;
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t header = arrayOopDesc::header_size(element_type);
+  const size_t payload_size = _word_size - header;
 
-  while (remaining > 0) {
+  if (payload_size <= segment_max) {
+    // To small to use segmented clearing
+    return ObjArrayAllocator::initialize(mem);
+  }
+
+  // Segmented clearing
+
+  // The array is going to be exposed before it has been completely
+  // cleared, therefore we can't expose the header at the end of this
+  // function. Instead explicitly initialize it according to our needs.
+  arrayOopDesc::set_mark(mem, markWord::prototype());
+  arrayOopDesc::release_set_klass(mem, _klass);
+  assert(_length >= 0, "length should be non-negative");
+  arrayOopDesc::set_length(mem, _length);
+
+  // Keep the array alive across safepoints through an invisible
+  // root. Invisible roots are not visited by the heap itarator
+  // and the marking logic will not attempt to follow its elements.
+  // Relocation knows how to dodge iterating over such objects.
+  ZThreadLocalData::set_invisible_root(_thread, (oop*)&mem);
+
+  for (size_t processed = 0; processed < payload_size; processed += segment_max) {
+    // Calculate segment
+    HeapWord* const start = (HeapWord*)(mem + header + processed);
+    const size_t remaining = payload_size - processed;
+    const size_t segment_size = MIN2(remaining, segment_max);
+
     // Clear segment
-    const size_t segment = MIN2(remaining, segment_max);
-    Copy::zero_to_words(mem + (_word_size - remaining), segment);
-    remaining -= segment;
+    Copy::zero_to_words(start, segment_size);
 
-    if (remaining > 0) {
-      // Safepoint
-      ThreadBlockInVM tbivm(_thread->as_Java_thread());
-    }
+    // Safepoint
+    yield_for_safepoint();
   }
 
   ZThreadLocalData::clear_invisible_root(_thread);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package jdk.internal.reflect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-/** Generator for sun.reflect.MethodAccessor and
-    sun.reflect.ConstructorAccessor objects using bytecodes to
+/** Generator for jdk.internal.reflect.MethodAccessor and
+    jdk.internal.reflect.ConstructorAccessor objects using bytecodes to
     implement reflection. A java.lang.reflect.Method or
     java.lang.reflect.Constructor object can delegate its invoke or
     newInstance method to an accessor using native code or to one
@@ -69,14 +69,12 @@ class MethodAccessorGenerator extends AccessorGenerator {
                                          String   name,
                                          Class<?>[] parameterTypes,
                                          Class<?>   returnType,
-                                         Class<?>[] checkedExceptions,
                                          int modifiers)
     {
         return (MethodAccessor) generate(declaringClass,
                                          name,
                                          parameterTypes,
                                          returnType,
-                                         checkedExceptions,
                                          modifiers,
                                          false,
                                          false,
@@ -86,14 +84,12 @@ class MethodAccessorGenerator extends AccessorGenerator {
     /** This routine is not thread-safe */
     public ConstructorAccessor generateConstructor(Class<?> declaringClass,
                                                    Class<?>[] parameterTypes,
-                                                   Class<?>[] checkedExceptions,
                                                    int modifiers)
     {
         return (ConstructorAccessor) generate(declaringClass,
                                               "<init>",
                                               parameterTypes,
                                               Void.TYPE,
-                                              checkedExceptions,
                                               modifiers,
                                               true,
                                               false,
@@ -104,7 +100,6 @@ class MethodAccessorGenerator extends AccessorGenerator {
     public SerializationConstructorAccessorImpl
     generateSerializationConstructor(Class<?> declaringClass,
                                      Class<?>[] parameterTypes,
-                                     Class<?>[] checkedExceptions,
                                      int modifiers,
                                      Class<?> targetConstructorClass)
     {
@@ -113,7 +108,6 @@ class MethodAccessorGenerator extends AccessorGenerator {
                      "<init>",
                      parameterTypes,
                      Void.TYPE,
-                     checkedExceptions,
                      modifiers,
                      true,
                      true,
@@ -126,7 +120,6 @@ class MethodAccessorGenerator extends AccessorGenerator {
                                        String name,
                                        Class<?>[] parameterTypes,
                                        Class<?>   returnType,
-                                       Class<?>[] checkedExceptions,
                                        int modifiers,
                                        boolean isConstructor,
                                        boolean forSerialization,

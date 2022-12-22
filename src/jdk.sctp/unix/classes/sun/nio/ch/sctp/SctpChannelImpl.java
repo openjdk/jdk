@@ -53,6 +53,8 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.net.util.IPAddressUtil;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.IOStatus;
@@ -71,10 +73,12 @@ import static sun.nio.ch.sctp.ResultContainer.SHUTDOWN;
 /**
  * An implementation of an SctpChannel
  */
-@SuppressWarnings("removal")
 public class SctpChannelImpl extends SctpChannel
     implements SelChImpl
 {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
     private final FileDescriptor fd;
 
     private final int fdVal;
@@ -188,6 +192,7 @@ public class SctpChannelImpl extends SctpChannel
                         SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null) {
                         sm.checkListen(isa.getPort());
@@ -358,6 +363,7 @@ public class SctpChannelImpl extends SctpChannel
             synchronized (sendLock) {
                 ensureOpenAndUnconnected();
                 InetSocketAddress isa = Net.checkAddress(endpoint);
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkConnect(isa.getAddress().getHostAddress(),
@@ -542,7 +548,8 @@ public class SctpChannelImpl extends SctpChannel
     @Override
     public void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            SctpNet.preClose(fdVal);
+            if (state != ChannelState.KILLED)
+                SctpNet.preClose(fdVal);
 
             if (receiverThread != 0)
                 NativeThread.signal(receiverThread);
@@ -640,6 +647,7 @@ public class SctpChannelImpl extends SctpChannel
                 return;
             if (state == ChannelState.UNINITIALIZED) {
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
                 return;
             }
             assert !isOpen() && !isRegistered();
@@ -647,8 +655,8 @@ public class SctpChannelImpl extends SctpChannel
             /* Postpone the kill if there is a waiting reader
              * or writer thread. */
             if (receiverThread == 0 && senderThread == 0) {
-                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
+                SctpNet.close(fdVal);
             } else {
                 state = ChannelState.KILLPENDING;
             }
@@ -836,11 +844,16 @@ public class SctpChannelImpl extends SctpChannel
                                         boolean peek)
         throws IOException
     {
-        int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
 
-        if (n > 0)
-            bb.position(pos + n);
-        return n;
+            if (n > 0)
+                bb.position(pos + n);
+            return n;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
     private InternalNotificationHandler internalNotificationHandler =
@@ -1025,11 +1038,16 @@ public class SctpChannelImpl extends SctpChannel
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
-                            port, -1 /*121*/, streamNumber, unordered, ppid);
-        if (written > 0)
-            bb.position(pos + written);
-        return written;
+        NIO_ACCESS.acquireSession(bb);
+        try {
+            int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+                    port, -1 /*121*/, streamNumber, unordered, ppid);
+            if (written > 0)
+                bb.position(pos + written);
+            return written;
+        } finally {
+            NIO_ACCESS.releaseSession(bb);
+        }
     }
 
     @Override
@@ -1089,6 +1107,11 @@ public class SctpChannelImpl extends SctpChannel
             boolean unordered, int ppid) throws IOException;
 
     static {
+        loadSctpLibrary();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadSctpLibrary() {
         IOUtil.load();   /* loads nio & net native libraries */
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

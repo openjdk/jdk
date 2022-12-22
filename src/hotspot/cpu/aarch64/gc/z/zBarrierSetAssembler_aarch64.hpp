@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@
 
 #ifdef COMPILER1
 class LIR_Assembler;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
+class LIR_Opr;
 class StubAssembler;
 class ZLoadBarrierStubC1;
 #endif // COMPILER1
@@ -51,7 +50,7 @@ public:
                        Register dst,
                        Address src,
                        Register tmp1,
-                       Register tmp_thread);
+                       Register tmp2);
 
 #ifdef ASSERT
   virtual void store_at(MacroAssembler* masm,
@@ -60,7 +59,8 @@ public:
                         Address dst,
                         Register val,
                         Register tmp1,
-                        Register tmp2);
+                        Register tmp2,
+                        Register tmp3);
 #endif // ASSERT
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
@@ -76,6 +76,8 @@ public:
                                              Register robj,
                                              Register tmp,
                                              Label& slowpath);
+
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
 
 #ifdef COMPILER1
   void generate_c1_load_barrier_test(LIR_Assembler* ce,

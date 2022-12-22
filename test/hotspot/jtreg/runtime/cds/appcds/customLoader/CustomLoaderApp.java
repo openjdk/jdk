@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,15 +63,18 @@ public class CustomLoaderApp {
         String loaderType = args[1];
         log("loaderType = " + loaderType);
 
-        String testClass = args[2];
-        log("testClass = " + testClass);
 
-        switch(loaderType) {
-        case "unregistered":
-            loadAndUseWithUnregisteredLoader(urls, testClass);
-            break;
-        default:
-            throw new IllegalArgumentException("loader type is wrong: " + loaderType);
+        for (int i = 2; i < args.length; i++) {
+            String testClass = args[i];
+            log("testClass = " + testClass);
+
+            switch(loaderType) {
+            case "unregistered":
+                loadAndUseWithUnregisteredLoader(urls, testClass);
+                break;
+            default:
+                throw new IllegalArgumentException("loader type is wrong: " + loaderType);
+            }
         }
     }
 
@@ -87,7 +90,7 @@ public class CustomLoaderApp {
     private static Class loadAndCheck(ClassLoader loader, String className)
         throws ClassNotFoundException {
         Class c = loader.loadClass(className);
-        log("class =" + c);
+        log("class  = " + c);
         log("loader = " + c.getClassLoader());
 
         // Check that c is defined by the correct loader

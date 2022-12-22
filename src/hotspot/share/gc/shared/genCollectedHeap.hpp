@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class GCPolicyCounters;
 class GenerationSpec;
 class StrongRootsScope;
 class SubTasksDone;
-class WorkGang;
+class WorkerThreads;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -48,7 +48,6 @@ class GenCollectedHeap : public CollectedHeap {
   friend class GenMarkSweep;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
-  friend class VM_GenCollectFullConcurrent;
   friend class VM_GC_HeapInspection;
   friend class VM_HeapDumper;
   friend class HeapInspection;
@@ -90,8 +89,7 @@ private:
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
-                          bool run_verification, bool clear_soft_refs,
-                          bool restore_marks_for_biased_locking);
+                          bool run_verification, bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
@@ -183,23 +181,10 @@ public:
 
   HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded);
 
-  // We may support a shared contiguous allocation area, if the youngest
-  // generation does.
-  bool supports_inline_contig_alloc() const;
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
-
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
   virtual void collect(GCCause::Cause cause);
-
-  // The same as above but assume that the caller holds the Heap_lock.
-  void collect_locked(GCCause::Cause cause);
-
-  // Perform a full collection of generations up to and including max_generation.
-  // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
-  void collect(GCCause::Cause cause, GenerationType max_generation);
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   // The methods is_in() and is_in_youngest() may be expensive to compute
@@ -207,10 +192,11 @@ public:
   // restrict their use to assertion checking or verification only.
   bool is_in(const void* p) const;
 
-  // Returns true if the reference is to an object in the reserved space
-  // for the young generation.
-  // Assumes the the young gen address range is less than that of the old gen.
-  bool is_in_young(oop p);
+  // Returns true if p points into the reserved space for the young generation.
+  // Assumes the young gen address range is less than that of the old gen.
+  bool is_in_young(const void* p) const;
+
+  virtual bool requires_barriers(stackChunkOop obj) const;
 
 #ifdef ASSERT
   bool is_in_partial_collection(const void* p);
@@ -220,7 +206,6 @@ public:
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
 
   void prune_scavengable_nmethods();
 
@@ -341,21 +326,16 @@ public:
   };
 
  protected:
+  virtual void gc_prologue(bool full);
+  virtual void gc_epilogue(bool full);
+
+ public:
+  // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
   void process_roots(ScanningOption so,
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);
-
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
- public:
-  void full_process_roots(bool is_adjust_phase,
-                          ScanningOption so,
-                          bool only_strong_roots,
-                          OopClosure* root_closure,
-                          CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.
   // These include JNI weak roots, string table,
@@ -394,15 +374,6 @@ public:
     _incremental_collection_failed = false;
   }
 
-  // Promotion of obj into gen failed.  Try to promote obj to higher
-  // gens in ascending order; return the new location of obj if successful.
-  // Otherwise, try expand-and-allocate for obj in both the young and old
-  // generation; return the new location of obj if successful.  Otherwise, return NULL.
-  oop handle_failed_promotion(Generation* old_gen,
-                              oop obj,
-                              size_t obj_size);
-
-
 private:
   // Return true if an allocation should be attempted in the older generation
   // if it fails in the younger generation.  Return false, otherwise.
@@ -421,11 +392,6 @@ private:
   // iterating over spaces.
   void prepare_for_compaction();
 #endif
-
-  // Perform a full collection of the generations up to and including max_generation.
-  // This is the low level interface used by the public versions of
-  // collect() and collect_locked(). Caller holds the Heap_lock on entry.
-  void collect_locked(GCCause::Cause cause, GenerationType max_generation);
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;

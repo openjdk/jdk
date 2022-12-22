@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 
 package jdk.internal.access;
 
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
-import jdk.internal.misc.ScopedMemoryAccess.Scope;
 import jdk.internal.misc.VM.BufferPool;
 
+import java.lang.foreign.MemorySegment;
 import java.io.FileDescriptor;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -48,7 +47,7 @@ public interface JavaNioAccess {
      * to the resulting buffer.
      * Used by {@code jdk.internal.foreignMemorySegmentImpl}.
      */
-    ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, MemorySegmentProxy segment);
+    ByteBuffer newDirectByteBuffer(long addr, int cap, Object obj, MemorySegment segment);
 
     /**
      * Constructs a mapped ByteBuffer referring to the block of memory starting
@@ -58,41 +57,55 @@ public interface JavaNioAccess {
      * buffer are derived from the {@code UnmapperProxy}.
      * Used by {@code jdk.internal.foreignMemorySegmentImpl}.
      */
-    ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long addr, int cap, Object obj, MemorySegmentProxy segment);
+    ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long addr, int cap, Object obj, MemorySegment segment);
 
     /**
      * Constructs an heap ByteBuffer with given backing array, offset, capacity and segment.
      * Used by {@code jdk.internal.foreignMemorySegmentImpl}.
      */
-    ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegmentProxy segment);
+    ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegment segment);
 
     /**
      * Used by {@code jdk.internal.foreign.Utils}.
      */
-    Object getBufferBase(ByteBuffer bb);
+    Object getBufferBase(Buffer bb);
 
     /**
      * Used by {@code jdk.internal.foreign.Utils}.
      */
-    long getBufferAddress(ByteBuffer bb);
+    long getBufferAddress(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.Utils}.
      */
-    UnmapperProxy unmapper(ByteBuffer bb);
+    UnmapperProxy unmapper(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.AbstractMemorySegmentImpl} and byte buffer var handle views.
      */
-    MemorySegmentProxy bufferSegment(Buffer buffer);
+    MemorySegment bufferSegment(Buffer buffer);
 
     /**
-     * Used by I/O operations to make a buffer's resource scope non-closeable
-     * (for the duration of the I/O operation) by acquiring a new resource
-     * scope handle. Null is returned if the buffer has no scope, or
-     * acquiring is not required to guarantee safety.
+     * Used by operations to make a buffer's session non-closeable
+     * (for the duration of the operation) by acquiring the session.
+     * {@snippet lang = java:
+     * acquireSession(buffer);
+     * try {
+     *     performOperation(buffer);
+     * } finally {
+     *     releaseSession(buffer);
+     * }
+     *}
+     *
+     * @see #releaseSession(Buffer)
      */
-    Scope.Handle acquireScope(Buffer buffer, boolean async);
+    void acquireSession(Buffer buffer);
+
+    void releaseSession(Buffer buffer);
+
+    boolean isThreadConfined(Buffer buffer);
+
+    boolean hasSession(Buffer buffer);
 
     /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.

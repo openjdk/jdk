@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -62,7 +63,7 @@ public final class TypeLibrary {
 
     private static TypeLibrary instance;
     private static boolean implicitFieldTypes;
-    private static final Map<Long, Type> types = new LinkedHashMap<>(100);
+    private static final Map<Long, Type> types = LinkedHashMap.newLinkedHashMap(350);
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
@@ -108,7 +109,7 @@ public final class TypeLibrary {
                 List<Type> jvmTypes;
                 try {
                     jvmTypes = MetadataLoader.createTypes();
-                    Collections.sort(jvmTypes, (a,b) -> Long.compare(a.getId(), b.getId()));
+                    jvmTypes.sort(Comparator.comparingLong(Type::getId));
                 } catch (IOException e) {
                     throw new Error("JFR: Could not read metadata");
                 }
@@ -118,8 +119,19 @@ public final class TypeLibrary {
         }
     }
 
-    public List<Type> getTypes() {
-        return new ArrayList<>(types.values());
+    public Collection<Type> getTypes() {
+        return types.values();
+    }
+
+    // Returned list should be mutable (for in-place sorting)
+    public List<Type> getVisibleTypes() {
+        List<Type> visible = new ArrayList<>(types.size());
+        types.values().forEach(t -> {
+            if (t.isVisible()) {
+                visible.add(t);
+            }
+        });
+        return visible;
     }
 
     public static Type createAnnotationType(Class<? extends Annotation> a) {
@@ -191,7 +203,10 @@ public final class TypeLibrary {
     private static Type defineType(Class<?> clazz, String superType, boolean eventType) {
         if (!isDefined(clazz)) {
             Name name = clazz.getAnnotation(Name.class);
-            String typeName = name != null ? name.value() : clazz.getName();
+            String typeName = clazz.getName();
+            if (name != null) {
+                typeName = Utils.validTypeName(name.value(), typeName);
+            }
             long id = Type.getTypeId(clazz);
             Type t;
             if (eventType) {
@@ -286,7 +301,7 @@ public final class TypeLibrary {
     }
 
     private static void addUserFields(Class<?> clazz, Type type, List<ValueDescriptor> dynamicFields) {
-        Map<String, ValueDescriptor> dynamicFieldSet = new HashMap<>();
+        Map<String, ValueDescriptor> dynamicFieldSet = HashMap.newHashMap(dynamicFields.size());
         for (ValueDescriptor dynamicField : dynamicFields) {
             dynamicFieldSet.put(dynamicField.getName(), dynamicField);
         }
@@ -317,7 +332,6 @@ public final class TypeLibrary {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);
             createAnnotationType(Label.class);
-            defineType(long.class, null, false);
             implicitFieldTypes = true;
         }
         addFields(type, requestable, hasDuration, hasThread, hasStackTrace, hasCutoff);
@@ -363,7 +377,7 @@ public final class TypeLibrary {
         Name name = field.getAnnotation(Name.class);
         String useName = fieldName;
         if (name != null) {
-            useName = name.value();
+            useName = Utils.validJavaIdentifier(name.value(), useName);
         }
         List<jdk.jfr.AnnotationElement> ans = new ArrayList<>();
         for (Annotation a : resolveRepeatedAnnotations(field.getAnnotations())) {
@@ -387,8 +401,8 @@ public final class TypeLibrary {
                     Class<?> ct = returnType.getComponentType();
                     if (Annotation.class.isAssignableFrom(ct) && ct.getAnnotation(Repeatable.class) != null) {
                         Object res = m.invoke(a, new Object[0]);
-                        if (res != null && Annotation[].class.isAssignableFrom(res.getClass())) {
-                            for (Annotation rep : (Annotation[]) m.invoke(a, new Object[0])) {
+                        if (res instanceof Annotation[] anns) {
+                            for (Annotation rep : anns) {
                                 annos.add(rep);
                             }
                             repeated = true;

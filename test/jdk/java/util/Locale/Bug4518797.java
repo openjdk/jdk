@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class Bug4518797 {
         if (args.length == 1) {
             duration = Math.max(5, Integer.parseInt(args[0]));
         }
-        final Locale loc = new Locale("ja", "US");
+        final Locale loc = Locale.of("ja", "US");
         final int hashcode = loc.hashCode();
 
         System.out.println("correct hash code: " + hashcode);

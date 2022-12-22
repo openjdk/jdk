@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,13 @@
 #define INVALID_CGROUPS_NO_MOUNT 5
 #define INVALID_CGROUPS_GENERIC  6
 
-// Four controllers: cpu, cpuset, cpuacct, memory
-#define CG_INFO_LENGTH 4
+// Five controllers: cpu, cpuset, cpuacct, memory, pids
+#define CG_INFO_LENGTH 5
 #define CPUSET_IDX     0
 #define CPU_IDX        1
 #define CPUACCT_IDX    2
 #define MEMORY_IDX     3
+#define PIDS_IDX       4
 
 typedef char * cptr;
 
@@ -107,7 +108,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   }
   strncat(file, filename, MAXPATHLEN-filelen);
   log_trace(os, container)("Path to %s is %s", filename, file);
-  fp = fopen(file, "r");
+  fp = os::fopen(file, "r");
   if (fp != NULL) {
     int err = 0;
     while ((p = fgets(buf, MAXPATHLEN, fp)) != NULL) {
@@ -156,8 +157,10 @@ PRAGMA_DIAG_POP
                                      NULL,                                \
                                      scan_fmt,                            \
                                      &variable);                          \
-  if (err != 0)                                                           \
+  if (err != 0) {                                                         \
+    log_trace(os, container)(logstring, (return_type) OSCONTAINER_ERROR); \
     return (return_type) OSCONTAINER_ERROR;                               \
+  }                                                                       \
                                                                           \
   log_trace(os, container)(logstring, variable);                          \
 }
@@ -238,20 +241,26 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
+    jlong limit_from_str(char* limit_str);
 
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
+    virtual jlong pids_max() = 0;
+    virtual jlong pids_current() = 0;
     virtual jlong memory_usage_in_bytes() = 0;
     virtual jlong memory_and_swap_limit_in_bytes() = 0;
     virtual jlong memory_soft_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
+
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
     virtual jlong read_memory_limit_in_bytes() = 0;
     virtual const char * container_type() = 0;
     virtual CachingCgroupController* memory_controller() = 0;
     virtual CachingCgroupController* cpu_controller() = 0;
+
+    virtual void print_version_specific_info(outputStream* st) = 0;
 };
 
 // Utility class for storing info retrieved from /proc/cgroups,
@@ -302,6 +311,11 @@ class CgroupSubsystemFactory: AllStatic {
     }
 #endif
 
+    static void set_controller_paths(CgroupInfo* cg_infos,
+                                     int controller,
+                                     const char* name,
+                                     char* mount_path,
+                                     char* root_path);
     // Determine the cgroup type (version 1 or version 2), given
     // relevant paths to files. Sets 'flags' accordingly.
     static bool determine_type(CgroupInfo* cg_infos,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,14 +170,6 @@ public class Pretty extends JCTree.Visitor {
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propagate IOException through visitXYZ methods */
-    private static class UncheckedIOException extends Error {
-        static final long serialVersionUID = -4032692679158424751L;
-        UncheckedIOException(IOException e) {
-            super(e.getMessage(), e);
-        }
-    }
-
     /** Visitor argument: the current precedence level.
      */
     int prec;
@@ -194,9 +186,7 @@ public class Pretty extends JCTree.Visitor {
                 tree.accept(this);
             }
         } catch (UncheckedIOException ex) {
-            IOException e = new IOException(ex.getMessage());
-            e.initCause(ex);
-            throw e;
+            throw ex.getCause();
         } finally {
             this.prec = prevPrec;
         }
@@ -811,7 +801,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.var);
+            printExpr(tree.varOrRecordPattern);
             print(" : ");
             printExpr(tree.expr);
             print(") ");
@@ -852,11 +842,11 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitCase(JCCase tree) {
         try {
-            if (tree.pats.isEmpty()) {
+            if (tree.labels.size() == 1 && tree.labels.get(0).hasTag(DEFAULTCASELABEL)) {
                 print("default");
             } else {
                 print("case ");
-                printExprs(tree.pats);
+                printExprs(tree.labels);
             }
             if (tree.caseKind == JCCase.STATEMENT) {
                 print(":");
@@ -867,7 +857,42 @@ public class Pretty extends JCTree.Visitor {
                 align();
             } else {
                 print(" -> ");
-                printStat(tree.stats.head);
+                if (tree.stats.size() == 1) {
+                    printStat(tree.stats.head);
+                } else {
+                    printBlock(tree.stats);
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitDefaultCaseLabel(JCTree.JCDefaultCaseLabel that) {
+        try {
+            print("default");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        try {
+            print(tree.expr);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        try {
+            print(tree.pat);
+            if (tree.guard != null) {
+                print(" when ");
+                print(tree.guard);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -897,6 +922,29 @@ public class Pretty extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
             printExpr(patt.var);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitParenthesizedPattern(JCParenthesizedPattern patt) {
+        try {
+            print("(");
+            printExpr(patt.pattern);
+            print(")");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitRecordPattern(JCRecordPattern tree) {
+        try {
+            printExpr(tree.deconstructor);
+            print("(");
+            printExprs(tree.nested);
+            print(")");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

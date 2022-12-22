@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ public class BytePackedRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      *
-     * @exception RasterFormatException if the parameters do not conform
+     * @throws RasterFormatException if the parameters do not conform
      * to requirements of this Raster type.
      */
     public BytePackedRaster(SampleModel sampleModel,
@@ -1258,7 +1258,7 @@ public class BytePackedRaster extends SunWritableRaster {
      * @param x0              Translated X origin of the subraster.
      * @param y0              Translated Y origin of the subraster.
      * @param bandList        Array of band indices.
-     * @exception RasterFormatException
+     * @throws RasterFormatException
      *            if the specified bounding box is outside of the parent raster.
      */
     public Raster createChild(int x, int y,
@@ -1286,7 +1286,7 @@ public class BytePackedRaster extends SunWritableRaster {
      * @param x0              Translated X origin of the subraster.
      * @param y0              Translated Y origin of the subraster.
      * @param bandList        Array of band indices.
-     * @exception RasterFormatException
+     * @throws RasterFormatException
      *            if the specified bounding box is outside of the parent Raster.
      */
     public WritableRaster createWritableChild(int x, int y,
@@ -1425,9 +1425,10 @@ public class BytePackedRaster extends SunWritableRaster {
     }
 
     public String toString() {
-        return new String ("BytePackedRaster: width = "+width+" height = "+height
-                           +" #channels "+numBands
-                           +" xOff = "+sampleModelTranslateX
-                           +" yOff = "+sampleModelTranslateY);
+        return "BytePackedRaster: width = " + width
+                + " height = " + height
+                + " #channels " + numBands
+                + " xOff = " + sampleModelTranslateX
+                + " yOff = " + sampleModelTranslateY;
     }
 }

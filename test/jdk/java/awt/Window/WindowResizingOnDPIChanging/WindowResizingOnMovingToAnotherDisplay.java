@@ -53,7 +53,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 /* @test
- * @bug 8147440 8147016
+ * @bug 8147440 8147016 8270874
  * @summary HiDPI (Windows): Swing components have incorrect sizes after
  *          changing display resolution
  * @run main/manual/othervm WindowResizingOnMovingToAnotherDisplay

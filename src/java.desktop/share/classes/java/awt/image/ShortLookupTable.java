@@ -111,7 +111,7 @@ public class ShortLookupTable extends LookupTable {
      *         same length as {@code src}.
      * @return the array {@code dst}, an {@code int} array of
      *         samples.
-     * @exception ArrayIndexOutOfBoundsException if {@code src} is
+     * @throws ArrayIndexOutOfBoundsException if {@code src} is
      *            longer than {@code dst} or if for any element
      *            {@code i} of {@code src},
      *            {@code (src[i]&0xffff)-offset} is either less than
@@ -162,7 +162,7 @@ public class ShortLookupTable extends LookupTable {
      *         same length as {@code src}.
      * @return the array {@code dst}, an {@code int} array of
      *         samples.
-     * @exception ArrayIndexOutOfBoundsException if {@code src} is
+     * @throws ArrayIndexOutOfBoundsException if {@code src} is
      *            longer than {@code dst} or if for any element
      *            {@code i} of {@code src},
      *            {@code (src[i]&0xffff)-offset} is either less than

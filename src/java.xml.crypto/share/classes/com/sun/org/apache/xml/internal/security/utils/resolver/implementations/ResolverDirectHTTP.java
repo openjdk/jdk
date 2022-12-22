@@ -219,7 +219,8 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
         LOG.debug("I was asked whether I can resolve {}", context.uriToResolve);
 
         if (context.uriToResolve.startsWith("http:") ||
-            context.baseUri != null && context.baseUri.startsWith("http:")) {
+            context.uriToResolve.startsWith("https:") ||
+            context.baseUri != null && (context.baseUri.startsWith("http:") || context.baseUri.startsWith("https:"))) {
             LOG.debug("I state that I can resolve {}", context.uriToResolve);
             return true;
         }
@@ -231,7 +232,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
 
     private static URI getNewURI(String uri, String baseURI) throws URISyntaxException {
         URI newUri = null;
-        if (baseURI == null || "".equals(baseURI)) {
+        if (baseURI == null || baseURI.length() == 0) {
             newUri = new URI(uri);
         } else {
             newUri = new URI(baseURI).resolve(uri);

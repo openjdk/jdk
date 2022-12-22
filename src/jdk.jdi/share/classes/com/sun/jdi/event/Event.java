@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public interface Event extends Mirror {
     /**
      * @return The {@link EventRequest} that requested this event.
      * Some events (eg. {@link VMDeathEvent}) may not have
-     * a cooresponding request and thus will return null.
+     * a corresponding request and thus will return null.
      */
     EventRequest request();
 }

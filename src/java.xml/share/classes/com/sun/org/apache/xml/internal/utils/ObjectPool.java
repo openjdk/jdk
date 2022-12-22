@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -43,6 +43,7 @@ public class ObjectPool implements java.io.Serializable
 
   /** Stack of given objects this points to.
    *  @serial          */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private final List<Object> freeStack;
 
   /**

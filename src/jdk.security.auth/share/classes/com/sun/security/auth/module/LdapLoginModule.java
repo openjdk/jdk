@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,8 +696,12 @@ public class LdapLoginModule implements LoginModule {
             throw new LoginException ("Subject is read-only");
         }
         Set<Principal> principals = subject.getPrincipals();
-        principals.remove(ldapPrincipal);
-        principals.remove(userPrincipal);
+        if (ldapPrincipal != null) {
+            principals.remove(ldapPrincipal);
+        }
+        if (userPrincipal != null) {
+            principals.remove(userPrincipal);
+        }
         if (authzIdentity != null) {
             principals.remove(authzPrincipal);
         }

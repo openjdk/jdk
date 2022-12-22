@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import sun.util.logging.PlatformLogger;
 
@@ -202,7 +203,6 @@ import sun.util.logging.PlatformLogger;
  *
  * @since 1.8
  */
-@SuppressWarnings("removal")
 public final class HijrahChronology extends AbstractChronology implements Serializable {
 
     /**
@@ -291,8 +291,10 @@ public final class HijrahChronology extends AbstractChronology implements Serial
         AbstractChronology.registerChrono(INSTANCE, "islamic");
 
         // custom config chronologies
-        CONF_PATH = Path.of(AccessController.doPrivileged((PrivilegedAction<String>)
-                () -> System.getProperty("java.home")), "conf", "chronology");
+        @SuppressWarnings("removal")
+        String javaHome = AccessController.doPrivileged((PrivilegedAction<String>)
+                        () -> System.getProperty("java.home"));
+        CONF_PATH = Path.of(javaHome, "conf", "chronology");
         registerCustomChrono();
     }
 
@@ -517,12 +519,10 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      */
     @Override
     public HijrahEra eraOf(int eraValue) {
-        switch (eraValue) {
-            case 1:
-                return HijrahEra.AH;
-            default:
-                throw new DateTimeException("invalid Hijrah era");
-        }
+        return switch (eraValue) {
+            case 1 -> HijrahEra.AH;
+            default -> throw new DateTimeException("invalid Hijrah era");
+        };
     }
 
     @Override
@@ -534,25 +534,14 @@ public final class HijrahChronology extends AbstractChronology implements Serial
     @Override
     public ValueRange range(ChronoField field) {
         checkCalendarInit();
-        if (field instanceof ChronoField) {
-            ChronoField f = field;
-            switch (f) {
-                case DAY_OF_MONTH:
-                    return ValueRange.of(1, 1, getMinimumMonthLength(), getMaximumMonthLength());
-                case DAY_OF_YEAR:
-                    return ValueRange.of(1, getMaximumDayOfYear());
-                case ALIGNED_WEEK_OF_MONTH:
-                    return ValueRange.of(1, 5);
-                case YEAR:
-                case YEAR_OF_ERA:
-                    return ValueRange.of(getMinimumYear(), getMaximumYear());
-                case ERA:
-                    return ValueRange.of(1, 1);
-                default:
-                    return field.range();
-            }
-        }
-        return field.range();
+        return switch (field) {
+            case DAY_OF_MONTH -> ValueRange.of(1, 1, getMinimumMonthLength(), getMaximumMonthLength());
+            case DAY_OF_YEAR -> ValueRange.of(1, getMaximumDayOfYear());
+            case ALIGNED_WEEK_OF_MONTH -> ValueRange.of(1, 5);
+            case YEAR, YEAR_OF_ERA -> ValueRange.of(getMinimumYear(), getMaximumYear());
+            case ERA -> ValueRange.of(1, 1);
+            default -> field.range();
+        };
     }
 
     //-----------------------------------------------------------------------
@@ -847,7 +836,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
             };
         FilePermission perm1 = new FilePermission("<<ALL FILES>>", "read");
         RuntimePermission perm2 = new RuntimePermission("accessSystemModules");
-        try (InputStream is = AccessController.doPrivileged(getResourceAction, null, perm1, perm2)) {
+        try (@SuppressWarnings("removal") InputStream is = AccessController.doPrivileged(getResourceAction, null, perm1, perm2)) {
             if (is == null) {
                 throw new RuntimeException("Hijrah calendar resource not found: " + resourceName);
             }
@@ -1042,13 +1031,13 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      * Look for Hijrah chronology variant properties files in
      * <JAVA_HOME>/conf/chronology directory. Then register its chronology, if any.
      */
+    @SuppressWarnings("removal")
     private static void registerCustomChrono() {
         AccessController.doPrivileged(
             (PrivilegedAction<Void>)() -> {
                 if (Files.isDirectory(CONF_PATH)) {
-                    try {
-                        Files.list(CONF_PATH)
-                            .map(p -> p.getFileName().toString())
+                    try (Stream<Path> stream = Files.list(CONF_PATH)) {
+                        stream.map(p -> p.getFileName().toString())
                             .filter(fn -> fn.matches("hijrah-config-[^\\.]+\\.properties"))
                             .map(fn -> fn.replaceAll("(hijrah-config-|\\.properties)", ""))
                             .forEach(idtype -> {

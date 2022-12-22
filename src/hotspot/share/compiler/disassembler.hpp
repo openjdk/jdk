@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ class Disassembler : public AbstractDisassembler {
   // No output at all if stream is NULL. Can be overridden
   // with -Verbose flag, in which case output goes to tty.
   static bool load_library(outputStream* st = NULL);
+  static void* dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st);
 
   // Check if the two addresses are on the same page.
   static bool is_same_page(address a1, address a2) {
@@ -99,11 +100,12 @@ class Disassembler : public AbstractDisassembler {
   }
 
   // Directly disassemble code blob.
-  static void decode(CodeBlob *cb,               outputStream* st = NULL);
+  static void decode(CodeBlob* cb,               outputStream* st = NULL);
   // Directly disassemble nmethod.
   static void decode(nmethod* nm,                outputStream* st = NULL);
   // Disassemble an arbitrary memory range.
-  static void decode(address start, address end, outputStream* st = NULL, const CodeStrings* = NULL);
+  static void decode(address start, address end, outputStream* st = NULL
+                     NOT_PRODUCT(COMMA const AsmRemarks* remarks = NULL COMMA ptrdiff_t disp = 0));
 
   static void _hook(const char* file, int line, class MacroAssembler* masm);
 

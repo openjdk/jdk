@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -80,10 +80,10 @@ SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files
 all: mkdirs J2DBench.jar J2DAnalyzer.jar
 
 run: mkdirs J2DBench.jar
-	java -jar J2DBench.jar
+	java -jar $(DIST)/J2DBench.jar
 
 analyze: mkdirs J2DAnalyzer.jar
-	java -jar J2DAnalyzer.jar
+	java -jar $(DIST)/J2DAnalyzer.jar
 
 J2DBench.jar: \
 	$(J2DBENCH_CLASSES) $(J2DBENCH_RESOURCES) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Tests how CDS works when critical library classes are replaced with JVMTI ClassFileLoadHook
  * @library /test/lib
  * @requires vm.cds
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/native ReplaceCriticalClasses
  */
 
@@ -38,7 +38,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class ReplaceCriticalClasses {
     public static void main(String args[]) throws Throwable {
@@ -100,7 +100,6 @@ public class ReplaceCriticalClasses {
             // classes even when CDS is enabled. Nothing bad should happen.
             "-notshared java/util/Locale",
             "-notshared sun/util/locale/BaseLocale",
-            "-notshared java/lang/Readable",
         };
         return tests;
     }
@@ -185,12 +184,12 @@ public class ReplaceCriticalClasses {
         final boolean expectShared = shared.equals("-shared");
         CDSTestUtils.run(opts).assertNormalExit(out -> {
                 if (expectDisable) {
-                    out.shouldContain("UseSharedSpaces: CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+                    out.shouldContain("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
                     System.out.println("CDS disabled as expected");
                 }
                 if (checkSubgraph) {
                     if (expectShared) {
-                        if (!out.getOutput().contains("UseSharedSpaces: Unable to map at required address in java heap")) {
+                        if (!out.getOutput().contains("Unable to map at required address in java heap")) {
                             out.shouldContain(subgraphInit);
                             // If the subgraph is successfully initialized, the specified shared class must not be rewritten.
                             out.shouldNotContain("Rewriting done.");

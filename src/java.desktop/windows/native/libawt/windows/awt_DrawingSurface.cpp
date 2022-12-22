@@ -275,7 +275,7 @@ extern "C" JNIEXPORT void JNICALL DSUnlockAWT(JNIEnv* env)
 
 // EmbeddedFrame support
 
-static char *const embeddedClassName = "sun/awt/windows/WEmbeddedFrame";
+static const char *const embeddedClassName = "sun/awt/windows/WEmbeddedFrame";
 
 JNIEXPORT jobject JNICALL awt_CreateEmbeddedFrame
 (JNIEnv* env, void* platformInfo)

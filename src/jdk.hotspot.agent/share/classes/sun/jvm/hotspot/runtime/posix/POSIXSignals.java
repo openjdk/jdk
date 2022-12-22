@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class POSIXSignals {
     "SIGPWR",     /* power-fail restart */
     "SIGWINCH",   /* window size change */
     "SIGURG",     /* urgent socket condition */
-    "SIGPOLL",    /* pollable event occured */
+    "SIGPOLL",    /* pollable event occurred */
     "SIGSTOP",    /* stop (cannot be caught or ignored) */
     "SIGTSTP",    /* user stop requested from tty */
     "SIGCONT",    /* stopped process has been continued */

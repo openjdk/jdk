@@ -26,7 +26,7 @@
  * @test
  * @summary Out of memory When dumping the CDS archive
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
  * @run driver ExceptionDuringDumpAtObjectsInitPhase
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
@@ -35,8 +36,9 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -88,17 +90,22 @@ static const jlong  OBJECT_FREE_BIT = (((jlong)1) << (JVMTI_EVENT_OBJECT_FREE - 
 static const jlong  RESOURCE_EXHAUSTED_BIT = (((jlong)1) << (JVMTI_EVENT_RESOURCE_EXHAUSTED - TOTAL_MIN_EVENT_TYPE_VAL));
 static const jlong  VM_OBJECT_ALLOC_BIT = (((jlong)1) << (JVMTI_EVENT_VM_OBJECT_ALLOC - TOTAL_MIN_EVENT_TYPE_VAL));
 static const jlong  SAMPLED_OBJECT_ALLOC_BIT = (((jlong)1) << (JVMTI_EVENT_SAMPLED_OBJECT_ALLOC - TOTAL_MIN_EVENT_TYPE_VAL));
+static const jlong  VTHREAD_START_BIT = (((jlong)1) << (JVMTI_EVENT_VIRTUAL_THREAD_START - TOTAL_MIN_EVENT_TYPE_VAL));
+static const jlong  VTHREAD_END_BIT = (((jlong)1) << (JVMTI_EVENT_VIRTUAL_THREAD_END - TOTAL_MIN_EVENT_TYPE_VAL));
 
 // bits for extension events
 static const jlong  CLASS_UNLOAD_BIT = (((jlong)1) << (EXT_EVENT_CLASS_UNLOAD - TOTAL_MIN_EVENT_TYPE_VAL));
+static const jlong  VTHREAD_MOUNT_BIT = (((jlong)1) << (EXT_EVENT_VIRTUAL_THREAD_MOUNT - TOTAL_MIN_EVENT_TYPE_VAL));
+static const jlong  VTHREAD_UNMOUNT_BIT = (((jlong)1) << (EXT_EVENT_VIRTUAL_THREAD_UNMOUNT - TOTAL_MIN_EVENT_TYPE_VAL));
 
 
+static const jlong  VTHREAD_BITS = VTHREAD_START_BIT | VTHREAD_END_BIT | VTHREAD_MOUNT_BIT | VTHREAD_UNMOUNT_BIT;
 static const jlong  MONITOR_BITS = MONITOR_CONTENDED_ENTER_BIT | MONITOR_CONTENDED_ENTERED_BIT |
                           MONITOR_WAIT_BIT | MONITOR_WAITED_BIT;
 static const jlong  EXCEPTION_BITS = EXCEPTION_THROW_BIT | EXCEPTION_CATCH_BIT;
 static const jlong  INTERP_EVENT_BITS =  SINGLE_STEP_BIT | METHOD_ENTRY_BIT | METHOD_EXIT_BIT |
                                 FRAME_POP_BIT | FIELD_ACCESS_BIT | FIELD_MODIFICATION_BIT;
-static const jlong  THREAD_FILTERED_EVENT_BITS = INTERP_EVENT_BITS | EXCEPTION_BITS | MONITOR_BITS |
+static const jlong  THREAD_FILTERED_EVENT_BITS = INTERP_EVENT_BITS | EXCEPTION_BITS | MONITOR_BITS | VTHREAD_BITS |
                                         BREAKPOINT_BIT | CLASS_LOAD_BIT | CLASS_PREPARE_BIT | THREAD_END_BIT |
                                         SAMPLED_OBJECT_ALLOC_BIT;
 static const jlong  NEED_THREAD_LIFE_EVENTS = THREAD_FILTERED_EVENT_BITS | THREAD_START_BIT;
@@ -201,13 +208,21 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
  public:
   EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode"), _completed(false) { }
   void do_thread(Thread* th) {
-    JavaThread* jt = th->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(th);
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
-    // Set up the current stack depth for later tracking
-    state->invalidate_cur_stack_depth();
+    assert(state != NULL, "sanity check");
+    assert(state->get_thread() == jt, "handshake unsafe conditions");
+    if (!state->is_pending_interp_only_mode()) {
+      _completed = true;
+      return;  // The pending flag has been already cleared, so bail out.
+    }
+    state->set_pending_interp_only_mode(false);  // Clear the pending flag.
 
+    // invalidate_cur_stack_depth is called in enter_interp_only_mode
     state->enter_interp_only_mode();
+
+    Continuation::set_cont_fastpath_thread_state(jt);
 
     if (jt->has_last_Java_frame()) {
       // If running in fullspeed mode, single stepping is implemented
@@ -279,8 +294,8 @@ public:
   static jlong recompute_thread_enabled(JvmtiThreadState *state);
   static void event_init();
 
-  static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread,
-                        jvmtiEvent event_type, bool enabled);
+  static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, Handle thread_oop_h,
+                               jvmtiEvent event_type, bool enabled);
   static void set_event_callbacks(JvmtiEnvBase *env,
                                   const jvmtiEventCallbacks* callbacks,
                                   jint size_of_callbacks);
@@ -339,13 +354,24 @@ void VM_ChangeSingleStep::doit() {
 
 void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state) {
   EC_TRACE(("[%s] # Entering interpreter only mode",
-            JvmtiTrace::safe_get_thread_name(state->get_thread())));
-  EnterInterpOnlyModeClosure hs;
+            JvmtiTrace::safe_get_thread_name(state->get_thread_or_saved())));
   JavaThread *target = state->get_thread();
   Thread *current = Thread::current();
+
+  assert(state != NULL, "sanity check");
+  if (state->is_pending_interp_only_mode()) {
+    return;  // An EnterInterpOnlyModeClosure handshake is already pending for execution.
+  }
+  // This flag will be cleared in EnterInterpOnlyModeClosure handshake.
+  state->set_pending_interp_only_mode(true);
+  if (target == NULL) { // an unmounted virtual thread
+    return;  // EnterInterpOnlyModeClosure will be executed right after mount.
+  }
+  EnterInterpOnlyModeClosure hs;
   if (target->is_handshake_safe_for(current)) {
     hs.do_thread(target);
   } else {
+    assert(state->get_thread() != NULL, "sanity check");
     Handshake::execute(&hs, target);
     guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
   }
@@ -355,7 +381,12 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
 void
 JvmtiEventControllerPrivate::leave_interp_only_mode(JvmtiThreadState *state) {
   EC_TRACE(("[%s] # Leaving interpreter only mode",
-            JvmtiTrace::safe_get_thread_name(state->get_thread())));
+            JvmtiTrace::safe_get_thread_name(state->get_thread_or_saved())));
+  if (state->is_pending_interp_only_mode()) {
+    state->set_pending_interp_only_mode(false);  // Just clear the pending flag.
+    assert(!state->is_interp_only_mode(), "sanity check");
+    return;
+  }
   state->leave_interp_only_mode();
 }
 
@@ -371,7 +402,7 @@ JvmtiEventControllerPrivate::trace_changed(JvmtiThreadState *state, jlong now_en
       if (changed & bit) {
         // it changed, print it
          log_trace(jvmti)("[%s] # %s event %s",
-                      JvmtiTrace::safe_get_thread_name(state->get_thread()),
+                      JvmtiTrace::safe_get_thread_name(state->get_thread_or_saved()),
                       (now_enabled & bit)? "Enabling" : "Disabling", JvmtiTrace::event_name((jvmtiEvent)ei));
       }
     }
@@ -528,7 +559,6 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     // associated JavaThread is exiting
     return (jlong)0;
   }
-
   julong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
   julong any_env_enabled = 0;
   // JVMTI_EVENT_FRAME_POP can be disabled (in the case FRAME_POP_BIT is not set),
@@ -551,11 +581,13 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     // mark if event is truly enabled on this thread in any environment
     state->thread_event_enable()->_event_enabled.set_bits(any_env_enabled);
 
-    // update the JavaThread cached value for thread-specific should_post_on_exceptions value
-    bool should_post_on_exceptions = (any_env_enabled & SHOULD_POST_ON_EXCEPTIONS_BITS) != 0;
-    state->set_should_post_on_exceptions(should_post_on_exceptions);
+    if (state->get_thread() != NULL) {
+      // The JavaThread for carrier or mounted virtual thread case.
+      // Update the cached value for thread-specific should_post_on_exceptions value.
+      bool should_post_on_exceptions = (any_env_enabled & SHOULD_POST_ON_EXCEPTIONS_BITS) != 0;
+      state->set_should_post_on_exceptions(should_post_on_exceptions);
+    }
   }
-
   // compute interp_only mode
   bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0 || has_frame_pops;
   bool is_now_interp = state->is_interp_only_mode();
@@ -567,7 +599,6 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
       leave_interp_only_mode(state);
     }
   }
-
   return any_env_enabled;
 }
 
@@ -597,7 +628,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
   EC_TRACE(("[-] # recompute enabled - before " JULONG_FORMAT_X, was_any_env_thread_enabled));
 
-  // compute non-thread-filters events.
+  // Compute non-thread-filtered events.
   // This must be done separately from thread-filtered events, since some
   // events can occur before any threads exist.
   JvmtiEnvIterator it;
@@ -610,14 +641,32 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   if (    (any_env_thread_enabled & THREAD_FILTERED_EVENT_BITS) != 0 &&
       (was_any_env_thread_enabled & THREAD_FILTERED_EVENT_BITS) == 0) {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *tp = jtiwh.next(); ) {
-      // state_for_while_locked() makes tp->is_exiting() check
-      JvmtiThreadState::state_for_while_locked(tp);  // create the thread state if missing
+      oop jt_oop = tp->threadObj();
+
+      // create the thread state if missing, state_for_while_locked() makes tp->is_exiting() check
+      JvmtiThreadState* state = JvmtiThreadState::state_for_while_locked(tp, jt_oop);
+
+      // create the thread state for mounted virtual thread if missing
+      oop vt_oop = tp->jvmti_vthread();
+      if (vt_oop != NULL && java_lang_VirtualThread::is_instance(vt_oop)) {
+        state = JvmtiThreadState::state_for_while_locked(tp, vt_oop);
+      }
     }
   }
 
   // compute and set thread-filtered events
-  for (JvmtiThreadState *state = JvmtiThreadState::first(); state != NULL; state = state->next()) {
-    any_env_thread_enabled |= recompute_thread_enabled(state);
+  JvmtiThreadState *state = JvmtiThreadState::first();
+  if (state != nullptr) {
+    // If we have a JvmtiThreadState, then we've reached the point where
+    // threads can exist so create a ThreadsListHandle to protect them.
+    // The held JvmtiThreadState_lock prevents exiting JavaThreads from
+    // being removed from the JvmtiThreadState list we're about to walk
+    // so this ThreadsListHandle exists just to satisfy the lower level sanity
+    // checks that the target JavaThreads are protected.
+    ThreadsListHandle tlh;
+    for (; state != nullptr; state = state->next()) {
+      any_env_thread_enabled |= recompute_thread_enabled(state);
+    }
   }
 
   // set universal state (across all envs and threads)
@@ -644,6 +693,10 @@ JvmtiEventControllerPrivate::recompute_enabled() {
     JvmtiExport::set_should_post_compiled_method_unload((any_env_thread_enabled & COMPILED_METHOD_UNLOAD_BIT) != 0);
     JvmtiExport::set_should_post_vm_object_alloc((any_env_thread_enabled & VM_OBJECT_ALLOC_BIT) != 0);
     JvmtiExport::set_should_post_sampled_object_alloc((any_env_thread_enabled & SAMPLED_OBJECT_ALLOC_BIT) != 0);
+    JvmtiExport::set_should_post_vthread_start((any_env_thread_enabled & VTHREAD_START_BIT) != 0);
+    JvmtiExport::set_should_post_vthread_end((any_env_thread_enabled & VTHREAD_END_BIT) != 0);
+    JvmtiExport::set_should_post_vthread_mount((any_env_thread_enabled & VTHREAD_MOUNT_BIT) != 0);
+    JvmtiExport::set_should_post_vthread_unmount((any_env_thread_enabled & VTHREAD_UNMOUNT_BIT) != 0);
 
     // need this if we want thread events or we need them to init data
     JvmtiExport::set_should_post_thread_life((any_env_thread_enabled & NEED_THREAD_LIFE_EVENTS) != 0);
@@ -719,11 +772,15 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
   flush_object_free_events(env);
 
   env->set_event_callbacks(callbacks, size_of_callbacks);
-  jlong enabled_bits = 0;
+
+  jlong enabled_bits = env->env_event_enable()->_event_callback_enabled.get_bits();
   for (int ei = JVMTI_MIN_EVENT_TYPE_VAL; ei <= JVMTI_MAX_EVENT_TYPE_VAL; ++ei) {
     jvmtiEvent evt_t = (jvmtiEvent)ei;
+    jlong bit_for = JvmtiEventEnabled::bit_for(evt_t);
     if (env->has_callback(evt_t)) {
-      enabled_bits |= JvmtiEventEnabled::bit_for(evt_t);
+      enabled_bits |= bit_for;
+    } else {
+      enabled_bits &= ~bit_for;
     }
   }
   env->env_event_enable()->_event_callback_enabled.set_bits(enabled_bits);
@@ -753,13 +810,18 @@ JvmtiEventControllerPrivate::set_extension_event_callback(JvmtiEnvBase *env,
   // environment check and before the lock is acquired.
   // We can safely do the is_valid check now, as JvmtiThreadState_lock is held.
   bool enabling = (callback != NULL) && (env->is_valid());
-  env->env_event_enable()->set_user_enabled(event_type, enabling);
 
   // update the callback
   jvmtiExtEventCallbacks* ext_callbacks = env->ext_callbacks();
   switch (extension_event_index) {
     case EXT_EVENT_CLASS_UNLOAD :
       ext_callbacks->ClassUnload = callback;
+      break;
+    case EXT_EVENT_VIRTUAL_THREAD_MOUNT :
+      ext_callbacks->VirtualThreadMount = callback;
+      break;
+    case EXT_EVENT_VIRTUAL_THREAD_UNMOUNT :
+      ext_callbacks->VirtualThreadUnmount = callback;
       break;
     default:
       ShouldNotReachHere();
@@ -822,7 +884,7 @@ JvmtiEventControllerPrivate::env_dispose(JvmtiEnvBase *env) {
 
 
 void
-JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread,
+JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, Handle thread_oop_h,
                                           jvmtiEvent event_type, bool enabled) {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
 
@@ -830,15 +892,14 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
             thread==NULL? "ALL": JvmtiTrace::safe_get_thread_name(thread),
             enabled? "enabled" : "disabled", JvmtiTrace::event_name(event_type)));
 
-  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
-    flush_object_free_events(env);
-  }
-
-  if (thread == NULL) {
+  if (thread == NULL && thread_oop_h() == NULL) {
+    // NULL thread and NULL thread_oop now indicate setting globally instead
+    // of setting thread specific since NULL thread by itself means an
+    // unmounted virtual thread.
     env->env_event_enable()->set_user_enabled(event_type, enabled);
   } else {
     // create the thread state (if it didn't exist before)
-    JvmtiThreadState *state = JvmtiThreadState::state_for_while_locked(thread);
+    JvmtiThreadState *state = JvmtiThreadState::state_for_while_locked(thread, thread_oop_h());
     if (state != NULL) {
       state->env_thread_state(env)->event_enable()->set_user_enabled(event_type, enabled);
     }
@@ -850,22 +911,22 @@ JvmtiEventControllerPrivate::set_user_enabled(JvmtiEnvBase *env, JavaThread *thr
 void
 JvmtiEventControllerPrivate::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
   EC_TRACE(("[%s] # set frame pop - frame=%d",
-            JvmtiTrace::safe_get_thread_name(ets->get_thread()),
+            JvmtiTrace::safe_get_thread_name(ets->get_thread_or_saved()),
             fpop.frame_number() ));
 
   ets->get_frame_pops()->set(fpop);
-  recompute_thread_enabled(ets->get_thread()->jvmti_thread_state());
+  recompute_thread_enabled(ets->jvmti_thread_state());
 }
 
 
 void
 JvmtiEventControllerPrivate::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
   EC_TRACE(("[%s] # clear frame pop - frame=%d",
-            JvmtiTrace::safe_get_thread_name(ets->get_thread()),
+            JvmtiTrace::safe_get_thread_name(ets->get_thread_or_saved()),
             fpop.frame_number() ));
 
   ets->get_frame_pops()->clear(fpop);
-  recompute_thread_enabled(ets->get_thread()->jvmti_thread_state());
+  recompute_thread_enabled(ets->jvmti_thread_state());
 }
 
 
@@ -874,12 +935,12 @@ JvmtiEventControllerPrivate::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiF
   int cleared_cnt = ets->get_frame_pops()->clear_to(fpop);
 
   EC_TRACE(("[%s] # clear to frame pop - frame=%d, count=%d",
-            JvmtiTrace::safe_get_thread_name(ets->get_thread()),
+            JvmtiTrace::safe_get_thread_name(ets->get_thread_or_saved()),
             fpop.frame_number(),
             cleared_cnt ));
 
   if (cleared_cnt > 0) {
-    recompute_thread_enabled(ets->get_thread()->jvmti_thread_state());
+    recompute_thread_enabled(ets->jvmti_thread_state());
   }
 }
 
@@ -981,14 +1042,22 @@ JvmtiEventController::is_global_event(jvmtiEvent event_type) {
 }
 
 void
-JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, jvmtiEvent event_type, bool enabled) {
+JvmtiEventController::set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
+                                       jvmtiEvent event_type, bool enabled) {
+  if (event_type == JVMTI_EVENT_OBJECT_FREE) {
+    JvmtiEventControllerPrivate::flush_object_free_events(env);
+  }
+
   if (Threads::number_of_threads() == 0) {
     // during early VM start-up locks don't exist, but we are safely single threaded,
     // call the functionality without holding the JvmtiThreadState_lock.
-    JvmtiEventControllerPrivate::set_user_enabled(env, thread, event_type, enabled);
+    JvmtiEventControllerPrivate::set_user_enabled(env, thread, Handle(), event_type, enabled);
   } else {
+    Thread* current = Thread::current();
+    HandleMark hmi(current);
+    Handle thread_oop_h = Handle(current, thread_oop);
     MutexLocker mu(JvmtiThreadState_lock);
-    JvmtiEventControllerPrivate::set_user_enabled(env, thread, event_type, enabled);
+    JvmtiEventControllerPrivate::set_user_enabled(env, thread, thread_oop_h, event_type, enabled);
   }
 }
 
@@ -1017,6 +1086,14 @@ JvmtiEventController::set_extension_event_callback(JvmtiEnvBase *env,
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::set_extension_event_callback(env, extension_event_index, callback);
   }
+}
+
+// Called by just mounted virtual thread if pending_interp_only_mode() is set.
+void
+JvmtiEventController::enter_interp_only_mode() {
+  Thread *current = Thread::current();
+  EnterInterpOnlyModeClosure hs;
+  hs.do_thread(current);
 }
 
 void

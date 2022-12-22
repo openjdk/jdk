@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
@@ -59,7 +59,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should be two abc (s1 and ss)";
   ASSERT_EQ(hij->refcount(), hijcount) << "should only have one hij now (s2)";
 
-  s1 = s1; // self assignment
+  s1 = *&s1; // self assignment
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should still be two abc (s1 and ss)";
 
   TempNewSymbol s3;
@@ -93,55 +93,28 @@ TEST_VM(SymbolTable, temp_new_symbol) {
 // TODO: Make two threads one decrementing the refcount and the other trying to increment.
 // try_increment_refcount should return false
 
-#define SYM_NAME_LENGTH 30
-static char symbol_name[SYM_NAME_LENGTH];
+TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
+  constexpr int symbol_name_length = 30;
+  char symbol_name[symbol_name_length];
+  // Find a symbol where there will probably be only one instance.
+  for (int i = 0; i < 100; i++) {
+    os::snprintf(symbol_name, symbol_name_length, "some_symbol%d", i);
+    TempNewSymbol ts = SymbolTable::new_symbol(symbol_name);
+    if (ts->refcount() == 1) {
+      EXPECT_TRUE(ts->refcount() == 1) << "Symbol is just created";
+      break;  // found a unique symbol
+    }
+  }
 
-class SymbolThread : public JavaTestThread {
-  public:
-  SymbolThread(Semaphore* post) : JavaTestThread(post) {}
-  virtual ~SymbolThread() {}
-  void main_run() {
+  constexpr int symTestThreadCount = 5;
+  auto symbolThread= [&](Thread* _current, int _id) {
     for (int i = 0; i < 1000; i++) {
       TempNewSymbol sym = SymbolTable::new_symbol(symbol_name);
       // Create and destroy new symbol
       EXPECT_TRUE(sym->refcount() != 0) << "Symbol refcount unexpectedly zeroed";
     }
-  }
-};
-
-#define SYM_TEST_THREAD_COUNT 5
-
-class DriverSymbolThread : public JavaTestThread {
-public:
-  Semaphore _done;
-  DriverSymbolThread(Semaphore* post) : JavaTestThread(post) { };
-  virtual ~DriverSymbolThread(){}
-
-  void main_run() {
-    Semaphore done(0);
-
-    // Find a symbol where there will probably be only one instance.
-    for (int i = 0; i < 100; i++) {
-       os::snprintf(symbol_name, SYM_NAME_LENGTH, "some_symbol%d", i);
-       TempNewSymbol ts = SymbolTable::new_symbol(symbol_name);
-       if (ts->refcount() == 1) {
-         EXPECT_TRUE(ts->refcount() == 1) << "Symbol is just created";
-         break;  // found a unique symbol
-       }
-    }
-
-    SymbolThread* st[SYM_TEST_THREAD_COUNT];
-    for (int i = 0; i < SYM_TEST_THREAD_COUNT; i++) {
-      st[i] = new SymbolThread(&done);
-      st[i]->doit();
-    }
-
-    for (int i = 0; i < SYM_TEST_THREAD_COUNT; i++) {
-      done.wait();
-    }
-  }
-};
-
-TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
-  mt_test_doer<DriverSymbolThread>();
+  };
+  TestThreadGroup<decltype(symbolThread)> ttg(symbolThread, symTestThreadCount);
+  ttg.doit();
+  ttg.join();
 }

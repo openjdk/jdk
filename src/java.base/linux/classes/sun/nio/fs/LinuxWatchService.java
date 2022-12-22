@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class LinuxWatchService
             socketpair(sp);
             configureBlocking(sp[0], false);
         } catch (UnixException x) {
-            UnixNativeDispatcher.close(ifd);
+            UnixNativeDispatcher.close(ifd, e -> null);
             throw new IOException(x.errorString());
         }
 
@@ -250,15 +250,10 @@ class LinuxWatchService
             }
 
             // register with inotify (replaces existing mask if already registered)
-            int wd = -1;
-            try {
-                NativeBuffer buffer =
-                    NativeBuffers.asNativeBuffer(dir.getByteArrayForSysCalls());
-                try {
-                    wd = inotifyAddWatch(ifd, buffer.address(), mask);
-                } finally {
-                    buffer.release();
-                }
+            int wd;
+            try (NativeBuffer buffer =
+                 NativeBuffers.asNativeBuffer(dir.getByteArrayForSysCalls())) {
+                wd = inotifyAddWatch(ifd, buffer.address(), mask);
             } catch (UnixException x) {
                 if (x.errno() == ENOSPC) {
                     return new IOException("User limit of inotify watches reached");
@@ -296,9 +291,9 @@ class LinuxWatchService
 
             // free resources
             unsafe.freeMemory(address);
-            UnixNativeDispatcher.close(socketpair[0]);
-            UnixNativeDispatcher.close(socketpair[1]);
-            UnixNativeDispatcher.close(ifd);
+            UnixNativeDispatcher.close(socketpair[0], e -> null);
+            UnixNativeDispatcher.close(socketpair[1], e -> null);
+            UnixNativeDispatcher.close(ifd, e -> null);
         }
 
         /**

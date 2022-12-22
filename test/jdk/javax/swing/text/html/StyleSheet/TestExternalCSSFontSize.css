@@ -1,0 +1,14 @@
+.base {
+  font: 16px sans-serif;
+  font-size: 16;
+}
+
+.bigger {
+  font-weight: bold;
+  font-size: 150%;
+}
+
+.smaller {
+  font-style: italic;
+  font-size: 75%;
+}

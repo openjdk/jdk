@@ -42,6 +42,8 @@ import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
+import static jdk.vm.ci.meta.MetaUtil.internalNameToJava;
+import static jdk.vm.ci.meta.MetaUtil.toInternalName;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,6 +89,17 @@ public class TestResolvedJavaType extends TypeUniverse {
     private static final Class<? extends Annotation> SIGNATURE_POLYMORPHIC_CLASS = findPolymorphicSignatureClass();
 
     public TestResolvedJavaType() {
+    }
+
+    @Test
+    public void equalsTest() {
+        for (ResolvedJavaType t : javaTypes) {
+            for (ResolvedJavaType that : javaTypes) {
+                boolean expect = t == that;
+                boolean actual = t.equals(that);
+                assertEquals(expect, actual);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -160,6 +173,18 @@ public class TestResolvedJavaType extends TypeUniverse {
             boolean actual = type.isArray();
             assertEquals(expected, actual);
         }
+    }
+
+    @Test
+    public void lambdaInternalNameTest() {
+        // Verify that the last dot in lambda types is properly handled when transitioning from internal name to java
+        // name and vice versa.
+        Supplier<Runnable> lambda = () -> () -> System.out.println("run");
+        ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
+        String typeName = lambdaType.getName();
+        String javaName = lambda.getClass().getName();
+        assertEquals(typeName, toInternalName(javaName));
+        assertEquals(javaName, internalNameToJava(typeName, true, true));
     }
 
     @Test

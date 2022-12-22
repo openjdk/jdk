@@ -35,7 +35,7 @@
 
 #ifndef COMPILER2 // avoid duplicated definitions, favoring C2 version
 define_pd_global(bool, BackgroundCompilation,        true );
-define_pd_global(bool, InlineIntrinsics,             false); // TODO: ARM
+define_pd_global(bool, InlineIntrinsics,             true );
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, UseOnStackReplacement,        true );

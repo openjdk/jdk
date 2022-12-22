@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ class JdepsTask {
             return this;
         }
         final String key;
+        @SuppressWarnings("serial") // Array component type is not Serializable
         final Object[] args;
         boolean showUsage;
 
@@ -105,7 +106,7 @@ class JdepsTask {
         }
     }
 
-    static abstract class Option {
+    abstract static class Option {
         Option(boolean hasArg, String... aliases) {
             this.hasArg = hasArg;
             this.aliases = aliases;
@@ -138,7 +139,7 @@ class JdepsTask {
         final String[] aliases;
     }
 
-    static abstract class HiddenOption extends Option {
+    abstract static class HiddenOption extends Option {
         HiddenOption(boolean hasArg, String... aliases) {
             super(hasArg, aliases);
         }
@@ -771,7 +772,7 @@ class JdepsTask {
             if (!options.nowarning) {
                 analyzer.archives()
                     .forEach(archive -> archive.reader()
-                        .skippedEntries().stream()
+                        .skippedEntries()
                         .forEach(name -> warning("warn.skipped.entry", name)));
             }
 
@@ -796,7 +797,7 @@ class JdepsTask {
                     log.format("%-40s %s%n",
                                internalApiTitle.replaceAll(".", "-"),
                                replacementApiTitle.replaceAll(".", "-"));
-                    jdkInternals.entrySet().stream()
+                    jdkInternals.entrySet()
                         .forEach(e -> {
                             String key = e.getKey();
                             String[] lines = e.getValue().split("\\n");
@@ -1111,7 +1112,7 @@ class JdepsTask {
 
         // --require
         if (!options.requires.isEmpty()) {
-            options.requires.stream()
+            options.requires
                 .forEach(mn -> {
                     Module m = config.findModule(mn).get();
                     builder.requires(mn, m.packages());

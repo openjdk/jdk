@@ -41,8 +41,8 @@ enum {
 
 // registers
 enum {
-  pd_nof_cpu_regs_frame_map = RegisterImpl::number_of_registers,       // number of registers used during code emission
-  pd_nof_fpu_regs_frame_map = FloatRegisterImpl::number_of_registers,  // number of registers used during code emission
+  pd_nof_cpu_regs_frame_map = Register::number_of_registers,       // number of GP registers used during code emission
+  pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of FP registers used during code emission
 
   pd_nof_caller_save_cpu_regs_frame_map = 19 - 2 /* rscratch1 and rscratch2 */ R18_RESERVED_ONLY(- 1),  // number of registers killed by calls
   pd_nof_caller_save_fpu_regs_frame_map = 32,  // number of registers killed by calls

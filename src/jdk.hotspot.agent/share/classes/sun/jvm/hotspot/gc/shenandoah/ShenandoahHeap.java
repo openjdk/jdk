@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,13 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 public class ShenandoahHeap extends CollectedHeap {
-    static private CIntegerField numRegions;
-    static private CIntegerField used;
-    static private CIntegerField committed;
-    static private AddressField  regions;
-    static private CIntegerField logMinObjAlignmentInBytes;
+    private static CIntegerField numRegions;
+    private static CIntegerField used;
+    private static CIntegerField committed;
+    private static AddressField  regions;
+    private static CIntegerField logMinObjAlignmentInBytes;
 
-    static private long regionPtrFieldSize;
+    private static long regionPtrFieldSize;
     static {
         VM.registerVMInitializedObserver(new Observer() {
             public void update(Observable o, Object data) {
@@ -57,7 +57,7 @@ public class ShenandoahHeap extends CollectedHeap {
         });
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ShenandoahHeap");
         numRegions = type.getCIntegerField("_num_regions");
         used = type.getCIntegerField("_used");

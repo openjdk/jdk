@@ -34,7 +34,6 @@
  */
 
 import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
@@ -55,15 +54,8 @@ public class OldClassWithJavaAgent {
             "-XX:+UnlockDiagnosticVMOptions", diagnosticOption,
             "-javaagent:" + agentJar + "=OldSuper");
 
-        boolean dynamicMode = CDSTestUtils.DYNAMIC_DUMP;
-
         // The java agent will load and link the class. We will skip old classes
-        // which have been linked during static CDS dump.
-        // Dynamic CDS dump doesn't support old class.
-        if (!dynamicMode) {
-            output.shouldContain("Skipping OldSuper: Old class has been linked");
-        } else {
-            output.shouldContain("Pre JDK 6 class not supported by CDS: 49.0 OldSuper");
-        }
+        // which have been linked during CDS dump.
+        output.shouldContain("Skipping OldSuper: Old class has been linked");
     }
 }

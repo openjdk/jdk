@@ -39,6 +39,14 @@ int LogBitsPerHeapOop  = 0;
 int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
 
+// Old CDS options
+bool DumpSharedSpaces;
+bool DynamicDumpSharedSpaces;
+bool RequireSharedSpaces;
+extern "C" {
+JNIEXPORT jboolean UseSharedSpaces = true;
+}
+
 // Object alignment, in units of HeapWords.
 // Defaults are -1 so things will break badly if incorrectly initialized.
 int MinObjAlignment            = -1;
@@ -228,6 +236,17 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "*narrowklass*",
   "*conflict*"
 };
+const char* type2name(BasicType t) {
+  if (t < ARRAY_SIZE(type2name_tab)) {
+    return type2name_tab[t];
+  } else if (t == T_ILLEGAL) {
+    return "*illegal*";
+  } else {
+    fatal("invalid type %d", t);
+    return "invalid type";
+  }
+}
+
 
 
 BasicType name2type(const char* name) {
@@ -315,7 +334,7 @@ int _type2aelembytes[T_CONFLICT+1] = {
 
 #ifdef ASSERT
 int type2aelembytes(BasicType t, bool allow_address) {
-  assert(allow_address || t != T_ADDRESS, " ");
+  assert((allow_address || t != T_ADDRESS) && t <= T_CONFLICT, "unexpected basic type");
   return _type2aelembytes[t];
 }
 #endif

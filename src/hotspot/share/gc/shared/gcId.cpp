@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/shared/gcId.hpp"
+#include "jvm.h"
+#include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 
 uint GCId::_next_id = 0;
 
@@ -67,14 +67,16 @@ size_t GCId::print_prefix(char* buf, size_t len) {
   return 0;
 }
 
-GCIdMark::GCIdMark() : _previous_gc_id(currentNamedthread()->gc_id()) {
+GCIdMark::GCIdMark() {
+  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
   currentNamedthread()->set_gc_id(GCId::create());
 }
 
-GCIdMark::GCIdMark(uint gc_id) : _previous_gc_id(currentNamedthread()->gc_id()) {
+GCIdMark::GCIdMark(uint gc_id) {
+  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
   currentNamedthread()->set_gc_id(gc_id);
 }
 
 GCIdMark::~GCIdMark() {
-  currentNamedthread()->set_gc_id(_previous_gc_id);
+  currentNamedthread()->set_gc_id(GCId::undefined());
 }

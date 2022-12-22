@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ public class DateFormatProviderImpl extends DateFormatProvider {
 
     static Locale[] avail = {
         Locale.JAPAN,
-        new Locale("ja", "JP", "osaka"),
-        new Locale("ja", "JP", "kyoto"),
-        new Locale("yy")};
+        Locale.of("ja", "JP", "osaka"),
+        Locale.of("ja", "JP", "kyoto"),
+        Locale.of("yy")};
 
     static String[] datePattern = {
         "yyyy'\u5e74'M'\u6708'd'\u65e5'", // full date pattern

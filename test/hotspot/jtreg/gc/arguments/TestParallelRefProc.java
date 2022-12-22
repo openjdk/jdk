@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package gc.arguments;
  * @summary Test defaults processing for -XX:+ParallelRefProcEnabled.
  * @library /test/lib
  * @library /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.arguments.TestParallelRefProc
  */
 
@@ -37,10 +37,9 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class TestParallelRefProc {
 
@@ -52,7 +51,9 @@ public class TestParallelRefProc {
         }
         if (GC.Parallel.isSupported()) {
             noneGCSupported = false;
-            testFlag(new String[] { "-XX:+UseParallelGC" }, false);
+            testFlag(new String[] { "-XX:+UseParallelGC", "-XX:ParallelGCThreads=1" }, false);
+            testFlag(new String[] { "-XX:+UseParallelGC", "-XX:ParallelGCThreads=2" }, true);
+            testFlag(new String[] { "-XX:+UseParallelGC", "-XX:-ParallelRefProcEnabled", "-XX:ParallelGCThreads=2" }, false);
         }
         if (GC.G1.isSupported()) {
             noneGCSupported = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,9 @@ public abstract class ImageOutputStreamImpl
         write(b, 0, len*2);
     }
 
+    /**
+     * @throws UTFDataFormatException {@inheritDoc}
+     */
     public void writeUTF(String s) throws IOException {
         int strlen = s.length();
         int utflen = 0;
@@ -484,7 +487,7 @@ public abstract class ImageOutputStreamImpl
      * beginning of the {@code write(int)} and
      * {@code write(byte[], int, int)} methods.
      *
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     protected final void flushBits() throws IOException {
         checkClosed();

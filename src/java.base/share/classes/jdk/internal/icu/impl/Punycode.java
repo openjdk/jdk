@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,6 @@ public final class Punycode {
     //  TODO: eliminate the 256 limitation
     private static final int MAX_CP_COUNT   = 256;
 
-    private static final int UINT_MAGIC     = 0x80000000;
-    private static final long ULONG_MAGIC   = 0x8000000000000000L;
-
     private static int adaptBias(int delta, int length, boolean firstTime){
         if(firstTime){
             delta /=DAMP;
@@ -96,34 +93,25 @@ public final class Punycode {
     }
 
     /**
-     * basicToDigit[] contains the numeric value of a basic code
-     * point (for use in representing integers) in the range 0 to
-     * BASE-1, or -1 if b is does not represent a value.
+     * @return the numeric value of a basic code point (for use in representing integers)
+     *         in the range 0 to BASE-1, or a negative value if cp is invalid.
      */
-    static final int[]    basicToDigit= new int[]{
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, -1,
-
-        -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
-
-        -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
-
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+    private static final int decodeDigit(int cp) {
+        if(cp<='Z') {
+            if(cp<='9') {
+                if(cp<'0') {
+                    return -1;
+                } else {
+                    return cp-'0'+26;  // 0..9 -> 26..35
+                }
+            } else {
+                return cp-'A';  // A-Z -> 0..25
+            }
+        } else if(cp<='z') {
+            return cp-'a';  // a..z -> 0..25
+        } else {
+            return -1;
+        }
     };
 
     private static char asciiCaseMap(char b, boolean uppercase) {
@@ -158,6 +146,12 @@ public final class Punycode {
             return (char)((ZERO-26)+digit);
         }
     }
+
+    // ICU-13727: Limit input length for n^2 algorithm
+    // where well-formed strings are at most 59 characters long.
+    private static final int ENCODE_MAX_CODE_UNITS = 1000;
+    private static final int DECODE_MAX_CHARS = 2000;
+
     /**
      * Converts Unicode to Punycode.
      * The input string must not contain single, unpaired surrogates.
@@ -174,6 +168,10 @@ public final class Punycode {
         int n, delta, handledCPCount, basicLength, destLength, bias, j, m, q, k, t, srcCPCount;
         char c, c2;
         int srcLength = src.length();
+        if (srcLength > ENCODE_MAX_CODE_UNITS) {
+            throw new RuntimeException(
+                    "input too long: " + srcLength + " UTF-16 code units");
+        }
         int destCapacity = MAX_CP_COUNT;
         char[] dest = new char[destCapacity];
         StringBuffer result = new StringBuffer();
@@ -251,7 +249,7 @@ public final class Punycode {
              * Increase delta enough to advance the decoder's
              * <n,i> state to <m,0>, but guard against overflow:
              */
-            if(m-n>(0x7fffffff-MAX_CP_COUNT-delta)/(handledCPCount+1)) {
+            if(m-n>(0x7fffffff-handledCPCount-delta)/(handledCPCount+1)) {
                 throw new RuntimeException("Internal program error");
             }
             delta+=(m-n)*(handledCPCount+1);
@@ -332,6 +330,9 @@ public final class Punycode {
     public static StringBuffer decode(StringBuffer src, boolean[] caseFlags)
                                throws ParseException{
         int srcLength = src.length();
+        if (srcLength > DECODE_MAX_CHARS) {
+            throw new RuntimeException("input too long: " + srcLength + " characters");
+        }
         StringBuffer result = new StringBuffer();
         int n, destLength, i, bias, basicLength, j, in, oldi, w, k, digit, t,
                 destCPCount, firstSupplementaryIndex, cpLength;
@@ -395,7 +396,7 @@ public final class Punycode {
                     throw new ParseException("Illegal char found", -1);
                 }
 
-                digit=basicToDigit[(byte)src.charAt(in++)];
+                digit=decodeDigit(src.charAt(in++));
                 if(digit<0) {
                     throw new ParseException("Invalid char found", -1);
                 }

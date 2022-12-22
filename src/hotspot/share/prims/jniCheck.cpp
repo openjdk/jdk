@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
@@ -40,14 +40,11 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/utf8.hpp"
-
-// Complain every extra number of unplanned local refs
-#define CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD 32
 
 // Heap objects are allowed to be directly referenced only in VM code,
 // not in native code.
@@ -59,7 +56,7 @@
 
 // Execute the given block of source code with the thread in VM state.
 // To do this, transition from the NATIVE state to the VM state, execute
-// the code, and transtition back.  The ThreadInVMfromNative constructor
+// the code, and transition back.  The ThreadInVMfromNative constructor
 // performs the transition to VM state, its destructor restores the
 // NATIVE state.
 
@@ -99,7 +96,7 @@ extern "C" {                                                             \
       tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                \
       os::abort(true);                                                   \
     }                                                                    \
-    JavaThread* thr = cur->as_Java_thread();                             \
+    JavaThread* thr = JavaThread::cast(cur);                             \
     JNIEnv* xenv = thr->jni_environment();                               \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
@@ -202,17 +199,6 @@ check_pending_exception(JavaThread* thr) {
   }
 }
 
-/**
- * Add to the planned number of handles. I.e. plus current live & warning threshold
- */
-static inline void
-add_planned_handle_capacity(JNIHandleBlock* handles, size_t capacity) {
-  handles->set_planned_capacity(capacity +
-                                handles->get_number_of_live_handles() +
-                                CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
-}
-
-
 static inline void
 functionEnterCritical(JavaThread* thr)
 {
@@ -244,18 +230,7 @@ functionEnterExceptionAllowed(JavaThread* thr)
 static inline void
 functionExit(JavaThread* thr)
 {
-  JNIHandleBlock* handles = thr->active_handles();
-  size_t planned_capacity = handles->get_planned_capacity();
-  size_t live_handles = handles->get_number_of_live_handles();
-  if (live_handles > planned_capacity) {
-    IN_VM(
-      tty->print_cr("WARNING: JNI local refs: " SIZE_FORMAT ", exceeds capacity: " SIZE_FORMAT,
-                    live_handles, planned_capacity);
-      thr->print_stack();
-    )
-    // Complain just the once, reset to current + warn threshold
-    add_planned_handle_capacity(handles, 0);
-  }
+  // No checks at this time
 }
 
 static inline void
@@ -746,9 +721,6 @@ JNI_ENTRY_CHECKED(jint,
     if (capacity < 0)
       NativeReportJNIFatalError(thr, "negative capacity");
     jint result = UNCHECKED()->PushLocalFrame(env, capacity);
-    if (result == JNI_OK) {
-      add_planned_handle_capacity(thr->active_handles(), capacity);
-    }
     functionExit(thr);
     return result;
 JNI_END
@@ -850,12 +822,6 @@ JNI_ENTRY_CHECKED(jint,
       NativeReportJNIFatalError(thr, "negative capacity");
     }
     jint result = UNCHECKED()->EnsureLocalCapacity(env, capacity);
-    if (result == JNI_OK) {
-      // increase local ref capacity if needed
-      if ((size_t)capacity > thr->active_handles()->get_planned_capacity()) {
-        add_planned_handle_capacity(thr->active_handles(), capacity);
-      }
-    }
     functionExit(thr);
     return result;
 JNI_END
@@ -2014,7 +1980,16 @@ JNI_ENTRY_CHECKED(jobject,
   checked_jni_GetModule(JNIEnv *env,
                         jclass clazz))
     functionEnter(thr);
-    jobject result = UNCHECKED()->GetModule(env,clazz);
+    jobject result = UNCHECKED()->GetModule(env, clazz);
+    functionExit(thr);
+    return result;
+JNI_END
+
+JNI_ENTRY_CHECKED(jboolean,
+  checked_jni_IsVirtualThread(JNIEnv *env,
+                              jobject obj))
+    functionEnter(thr);
+    jboolean result = UNCHECKED()->IsVirtualThread(env, obj);
     functionExit(thr);
     return result;
 JNI_END
@@ -2304,7 +2279,11 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // Module Features
 
-    checked_jni_GetModule
+    checked_jni_GetModule,
+
+    // Virtual threads
+
+    checked_jni_IsVirtualThread
 };
 
 

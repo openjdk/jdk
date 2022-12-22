@@ -1,3 +1,4 @@
+
     @Test(dataProvider = "$type$TernaryOpMaskProvider")
     static void [[TEST]]$vectorteststype$Masked(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
                                           IntFunction<$type$[]> fc, IntFunction<boolean[]> fm) {

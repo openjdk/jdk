@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ public class Events {
      * Creates a list of events from a recording.
      *
      * @param recording recording, not {@code null}
-     * @return an a list, not null
+     * @return a list, not null
      * @throws IOException if an event set could not be created due to I/O
      *         errors.
      */

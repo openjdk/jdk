@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/generation.hpp"
 #include "logging/log.hpp"
@@ -61,6 +62,8 @@ static size_t bound_minus_alignment(size_t desired_size,
 }
 
 void GenArguments::initialize_alignments() {
+  // Initialize card size before initializing alignments
+  CardTable::initialize_card_size();
   SpaceAlignment = GenAlignment = (size_t)Generation::GenGrain;
   HeapAlignment = compute_heap_alignment();
 }

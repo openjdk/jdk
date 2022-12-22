@@ -73,30 +73,39 @@ public class SystemIconTest {
     static void testSystemIcon(File file, boolean implComplete) {
         int[] sizes = new int[] {16, 32, 48, 64, 128};
         for (int size : sizes) {
-            ImageIcon icon = (ImageIcon) fsv.getSystemIcon(file, size, size);
+            Icon i = fsv.getSystemIcon(file, size, size);
 
+            if (i == null) {
+                throw new RuntimeException(file.getAbsolutePath() + " icon is null");
+            }
+
+            if (!(i instanceof ImageIcon)) {
+                // Default UI resource icon returned - it is not covered
+                // by new implementation so we can not test it
+                continue;
+            }
+
+            ImageIcon icon = (ImageIcon) i;
             //Enable below to see the icon
             //JLabel label = new JLabel(icon);
             //JOptionPane.showMessageDialog(null, label);
 
-            if (icon == null) {
-                throw new RuntimeException("icon is null!!!");
-            }
-
             if (implComplete && icon.getIconWidth() != size) {
                 throw new RuntimeException("Wrong icon size " +
-                        icon.getIconWidth() + " when requested " + size);
+                        icon.getIconWidth() + " when requested " + size +
+                         " for file " + file.getAbsolutePath());
             }
 
             if (icon.getImage() instanceof MultiResolutionImage) {
                 MultiResolutionImage mri = (MultiResolutionImage) icon.getImage();
                 if (mri.getResolutionVariant(size, size) == null) {
                     throw new RuntimeException("There is no suitable variant for the size "
-                            + size + " in the multi resolution icon");
+                            + size + " in the multi resolution icon " + file.getAbsolutePath());
                 }
             } else {
                 if (implComplete) {
-                    throw new RuntimeException("icon is supposed to be multi-resolution but it is not");
+                    throw new RuntimeException("icon is supposed to be" +
+                            " multi-resolution but it is not for " + file.getAbsolutePath());
                 }
             }
         }

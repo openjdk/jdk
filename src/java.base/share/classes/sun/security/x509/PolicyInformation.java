@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.PolicyQualifierInfo;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
+import sun.security.util.DerEncoder;
 import sun.security.util.DerValue;
 import sun.security.util.DerOutputStream;
 /**
@@ -60,7 +60,7 @@ import sun.security.util.DerOutputStream;
  * @author Anne Anderson
  * @since       1.4
  */
-public class PolicyInformation {
+public class PolicyInformation implements DerEncoder {
 
     // Attribute names
     public static final String NAME       = "PolicyInformation";
@@ -88,8 +88,8 @@ public class PolicyInformation {
             throw new NullPointerException("policyQualifiers is null");
         }
         this.policyQualifiers =
-            new LinkedHashSet<PolicyQualifierInfo>(policyQualifiers);
-        this.policyIdentifier = policyIdentifier;
+                new LinkedHashSet<>(policyQualifiers);
+        this.policyIdentifier = Objects.requireNonNull(policyIdentifier);
     }
 
     /**
@@ -105,7 +105,7 @@ public class PolicyInformation {
         }
         policyIdentifier = new CertificatePolicyId(val.data.getDerValue());
         if (val.data.available() != 0) {
-            policyQualifiers = new LinkedHashSet<PolicyQualifierInfo>();
+            policyQualifiers = new LinkedHashSet<>();
             DerValue opt = val.data.getDerValue();
             if (opt.tag != DerValue.tag_Sequence)
                 throw new IOException("Invalid encoding of PolicyInformation");
@@ -126,9 +126,8 @@ public class PolicyInformation {
      * @return true iff the PolicyInformation objects match
      */
     public boolean equals(Object other) {
-        if (!(other instanceof PolicyInformation))
+        if (!(other instanceof PolicyInformation piOther))
             return false;
-        PolicyInformation piOther = (PolicyInformation)other;
 
         if (!policyIdentifier.equals(piOther.getPolicyIdentifier()))
             return false;
@@ -170,91 +169,6 @@ public class PolicyInformation {
     }
 
     /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ID)) {
-            return policyIdentifier;
-        } else if (name.equalsIgnoreCase(QUALIFIERS)) {
-            return policyQualifiers;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation.");
-        }
-    }
-
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(ID)) {
-            if (obj instanceof CertificatePolicyId)
-                policyIdentifier = (CertificatePolicyId)obj;
-            else
-                throw new IOException("Attribute value must be instance " +
-                    "of CertificatePolicyId.");
-        } else if (name.equalsIgnoreCase(QUALIFIERS)) {
-            if (policyIdentifier == null) {
-                throw new IOException("Attribute must have a " +
-                    "CertificatePolicyIdentifier value before " +
-                    "PolicyQualifierInfo can be set.");
-            }
-            if (obj instanceof Set) {
-                Iterator<?> i = ((Set<?>)obj).iterator();
-                while (i.hasNext()) {
-                    Object obj1 = i.next();
-                    if (!(obj1 instanceof PolicyQualifierInfo)) {
-                        throw new IOException("Attribute value must be a" +
-                                    "Set of PolicyQualifierInfo objects.");
-                    }
-                }
-                policyQualifiers = (Set<PolicyQualifierInfo>) obj;
-            } else {
-                throw new IOException("Attribute value must be of type Set.");
-            }
-        } else {
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(QUALIFIERS)) {
-            policyQualifiers = Collections.emptySet();
-        } else if (name.equalsIgnoreCase(ID)) {
-            throw new IOException("Attribute ID may not be deleted from " +
-                "PolicyInformation.");
-        } else {
-            //ID may not be deleted
-            throw new IOException("Attribute name [" + name +
-                "] not recognized by PolicyInformation.");
-        }
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(ID);
-        elements.addElement(QUALIFIERS);
-
-        return elements.elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
-    public String getName() {
-        return NAME;
-    }
-
-    /**
      * Return a printable representation of the PolicyInformation.
      */
     public String toString() {
@@ -265,15 +179,15 @@ public class PolicyInformation {
      * Write the PolicyInformation to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
         policyIdentifier.encode(tmp);
         if (!policyQualifiers.isEmpty()) {
             DerOutputStream tmp2 = new DerOutputStream();
             for (PolicyQualifierInfo pq : policyQualifiers) {
-                tmp2.write(pq.getEncoded());
+                tmp2.writeBytes(pq.getEncoded());
             }
             tmp.write(DerValue.tag_Sequence, tmp2);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
+package gc.z;
+
 /**
  * @test TestGarbageCollectorMXBean
  * @requires vm.gc.Z
  * @summary Test ZGC garbage collector MXBean
  * @modules java.management
- * @run main/othervm -XX:+UseZGC -Xms256M -Xmx512M -Xlog:gc TestGarbageCollectorMXBean 256 512
- * @run main/othervm -XX:+UseZGC -Xms512M -Xmx512M -Xlog:gc TestGarbageCollectorMXBean 512 512
+ * @run main/othervm -XX:+UseZGC -Xms256M -Xmx512M -Xlog:gc gc.z.TestGarbageCollectorMXBean 256 512
+ * @run main/othervm -XX:+UseZGC -Xms512M -Xmx512M -Xlog:gc gc.z.TestGarbageCollectorMXBean 512 512
  */
 
 import java.lang.management.ManagementFactory;

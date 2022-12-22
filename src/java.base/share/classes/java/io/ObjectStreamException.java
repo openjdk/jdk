@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,31 @@ public abstract class ObjectStreamException extends IOException {
     }
 
     /**
+     * Create an ObjectStreamException with the specified message and
+     * cause.
+     *
+     * @param message the detailed message for the exception
+     * @param cause the cause
+     * @since 19
+     */
+    protected ObjectStreamException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    /**
      * Create an ObjectStreamException.
      */
     protected ObjectStreamException() {
         super();
+    }
+
+    /**
+     * Create an ObjectStreamException with the specified cause.
+     *
+     * @param cause the cause
+     * @since 19
+     */
+    protected ObjectStreamException(Throwable cause) {
+        super(cause);
     }
 }

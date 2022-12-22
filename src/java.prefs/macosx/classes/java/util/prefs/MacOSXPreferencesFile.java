@@ -76,10 +76,14 @@ import java.lang.ref.WeakReference;
   it's expensive and is usually not necessary.
 */
 
-@SuppressWarnings("removal")
 class MacOSXPreferencesFile {
 
     static {
+        loadPrefsLib();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadPrefsLib() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
@@ -89,15 +93,9 @@ class MacOSXPreferencesFile {
             });
     }
 
-    private class FlushTask extends TimerTask {
+    private static class FlushTask extends TimerTask {
         public void run() {
             MacOSXPreferencesFile.flushWorld();
-        }
-    }
-
-    private class SyncTask extends TimerTask {
-        public void run() {
-            MacOSXPreferencesFile.syncWorld();
         }
     }
 

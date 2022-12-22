@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ import sun.reflect.misc.ReflectUtil;
  *  @since 1.6
  */
 public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
-    static abstract class NonNullMXBeanMapping extends MXBeanMapping {
+    abstract static class NonNullMXBeanMapping extends MXBeanMapping {
         NonNullMXBeanMapping(Type javaType, OpenType<?> openType) {
             super(javaType, openType);
         }
@@ -177,8 +177,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     }
 
     private static synchronized void putMapping(Type type, MXBeanMapping mapping) {
-        WeakReference<MXBeanMapping> wr =
-            new WeakReference<MXBeanMapping>(mapping);
+        WeakReference<MXBeanMapping> wr = new WeakReference<>(mapping);
         mappings.put(type, wr);
     }
 
@@ -303,7 +302,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     private static <T extends Enum<T>> MXBeanMapping
             makeEnumMapping(Class<?> enumClass, Class<T> fake) {
         ReflectUtil.checkPackageAccess(enumClass);
-        return new EnumMapping<T>(Util.<Class<T>>cast(enumClass));
+        return new EnumMapping<>(Util.<Class<T>>cast(enumClass));
     }
 
     /* Make the converter for an array type, or a collection such as
@@ -806,7 +805,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         private final MXBeanMapping valueMapping;
     }
 
-    private final class CompositeMapping extends NonNullMXBeanMapping {
+    private static final class CompositeMapping extends NonNullMXBeanMapping {
         CompositeMapping(Class<?> targetClass,
                          CompositeType compositeType,
                          String[] itemNames,
@@ -936,7 +935,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
     }
 
     /** Converts from a CompositeData to an instance of the targetClass.  */
-    private static abstract class CompositeBuilder {
+    private abstract static class CompositeBuilder {
         CompositeBuilder(Class<?> targetClass, String[] itemNames) {
             this.targetClass = targetClass;
             this.itemNames = itemNames;
@@ -1286,7 +1285,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                         BitSet u = new BitSet();
                         u.or(a); u.or(b);
                         if (!getterIndexSets.contains(u)) {
-                            Set<String> names = new TreeSet<String>();
+                            Set<String> names = new TreeSet<>();
                             for (int i = u.nextSetBit(0); i >= 0;
                                  i = u.nextSetBit(i+1))
                                 names.add(itemNames[i]);

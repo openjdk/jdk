@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ void ObjectSample::reset() {
   set_stack_trace_id(0);
   set_stack_trace_hash(0);
   release_references();
+  _virtual_thread = false;
 }
 
 const oop ObjectSample::object() const {

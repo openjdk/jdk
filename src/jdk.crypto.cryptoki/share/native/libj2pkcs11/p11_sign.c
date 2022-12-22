@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -144,11 +144,22 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Sign
 
     TRACE1("DEBUG C_Sign: ret rv=0x%lX\n", rv);
 
+    if (rv == CKR_BUFFER_TOO_SMALL) {
+        bufP = (CK_BYTE_PTR) malloc(ckSignatureLength);
+        if (bufP == NULL) {
+            throwOutOfMemoryError(env, 0);
+            goto cleanup;
+        }
+        rv = (*ckpFunctions->C_Sign)(ckSessionHandle, ckpData, ckDataLength,
+            bufP, &ckSignatureLength);
+    }
+
     if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
         jSignature = ckByteArrayToJByteArray(env, bufP, ckSignatureLength);
         TRACE1("DEBUG C_Sign: signature length = %lu\n", ckSignatureLength);
     }
 
+cleanup:
     free(ckpData);
     if (bufP != BUF) { free(bufP); }
 

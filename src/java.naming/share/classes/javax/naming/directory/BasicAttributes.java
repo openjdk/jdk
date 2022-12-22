@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class BasicAttributes implements Attributes {
     private boolean ignoreCase = false;
 
     // The 'key' in attrs is stored in the 'right case'.
-    // If ignoreCase is true, key is aways lowercase.
+    // If ignoreCase is true, key is always lowercase.
     // If ignoreCase is false, key is stored as supplied by put().
     // %%% Not declared "private" due to bug 4064984.
     transient Hashtable<String,Attribute> attrs = new Hashtable<>(11);
@@ -225,8 +225,7 @@ public class BasicAttributes implements Attributes {
      * @see #hashCode
      */
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof Attributes)) {
-            Attributes target = (Attributes)obj;
+        if (obj instanceof Attributes target) {
 
             // Check case first
             if (ignoreCase != target.isCaseIgnored()) {
@@ -295,9 +294,8 @@ public class BasicAttributes implements Attributes {
         // Overridden to avoid exposing implementation details
         s.defaultWriteObject(); // write out the ignoreCase flag
         s.writeInt(attrs.size());
-        Enumeration<Attribute> attrEnum = attrs.elements();
-        while (attrEnum.hasMoreElements()) {
-            s.writeObject(attrEnum.nextElement());
+        for (Attribute attribute : attrs.values()) {
+            s.writeObject(attribute);
         }
     }
 

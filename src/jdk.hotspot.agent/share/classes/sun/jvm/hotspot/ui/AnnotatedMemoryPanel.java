@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public class AnnotatedMemoryPanel extends JPanel {
     BigInteger startVal  = scrollBar.getValueHP();
     BigInteger perLine = new BigInteger(Integer.toString((int) addressSize));
     // lineCount and maxLines are both 1 less than expected
-    BigInteger lineCount = new BigInteger(Integer.toString((int) (numLines - 1)));
+    BigInteger lineCount = new BigInteger(Integer.toString(numLines - 1));
     BigInteger maxLines = scrollBar.getMaximumHP().subtract(scrollBar.getMinimumHP()).divide(perLine);
     if (lineCount.compareTo(maxLines) > 0) {
       lineCount = maxLines;
@@ -214,7 +214,7 @@ public class AnnotatedMemoryPanel extends JPanel {
       ((Graphics2D) g).setStroke(stroke);
     }
 
-    Stack<AnnoX> drawStack = new Stack<>();
+    ArrayDeque<AnnoX> drawStack = new ArrayDeque<>();
 
     layoutAnnotations(va, g, curTextX, startAddr, lineHeight);
 
@@ -222,15 +222,15 @@ public class AnnotatedMemoryPanel extends JPanel {
       Annotation anno   = iter.next();
       Interval interval = anno.getInterval();
 
-      if (!drawStack.empty()) {
+      if (!drawStack.isEmpty()) {
         // See whether we can pop any items off the stack
         boolean shouldContinue = true;
         do {
-          AnnoX annoX = (AnnoX) drawStack.peek();
+          AnnoX annoX = drawStack.peek();
           if (annoX.highBound.lessThanOrEqual((Address) interval.getLowEndpoint())) {
             curLineX = annoX.lineX;
             drawStack.pop();
-            shouldContinue = !drawStack.empty();
+            shouldContinue = !drawStack.isEmpty();
           } else {
             shouldContinue = false;
           }
@@ -493,7 +493,7 @@ public class AnnotatedMemoryPanel extends JPanel {
     java.util.List<Annotation> newAnnos = new ArrayList<>();
 
     for (Iterator<IntervalNode> iter = va.iterator(); iter.hasNext(); ) {
-      Annotation anno = (Annotation) ((IntervalNode) iter.next()).getData();
+      Annotation anno = (Annotation) iter.next().getData();
 
       // Search forward for this one
       boolean found = false;
@@ -532,7 +532,7 @@ public class AnnotatedMemoryPanel extends JPanel {
     if (firstConstraintAnnotation != null) {
       // Go back and lay out deferred annotations
       for (int i = deferredIndex; i >= 0; i--) {
-        Annotation anno = (Annotation) newAnnos.get(i);
+        Annotation anno = newAnnos.get(i);
         layoutBefore(anno, firstConstraintAnnotation, g, x, startAddr, lineHeight);
         firstConstraintAnnotation = anno;
       }

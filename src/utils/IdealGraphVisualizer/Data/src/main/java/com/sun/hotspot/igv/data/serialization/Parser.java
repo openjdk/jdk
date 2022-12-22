@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import com.sun.hotspot.igv.data.serialization.XMLParser.HandoverElementHandler;
 import com.sun.hotspot.igv.data.serialization.XMLParser.TopElementHandler;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
@@ -39,9 +38,6 @@ import java.util.Map;
 import javax.swing.SwingUtilities;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.SchemaFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -95,12 +91,12 @@ public class Parser implements GraphParser {
     public static final String SUCCESSOR_ELEMENT = "successor";
     public static final String ASSEMBLY_ELEMENT = "assembly";
     public static final String DIFFERENCE_PROPERTY = "difference";
-    private TopElementHandler<GraphDocument> xmlDocument = new TopElementHandler<>();
-    private Map<Group, Boolean> differenceEncoding = new HashMap<>();
-    private Map<Group, InputGraph> lastParsedGraph = new HashMap<>();
-    private GroupCallback groupCallback;
-    private HashMap<String, Integer> idCache = new HashMap<>();
-    private ArrayList<Pair<String, String>> blockConnections = new ArrayList<>();
+    private final TopElementHandler<GraphDocument> xmlDocument = new TopElementHandler<>();
+    private final Map<Group, Boolean> differenceEncoding = new HashMap<>();
+    private final Map<Group, InputGraph> lastParsedGraph = new HashMap<>();
+    private final GroupCallback groupCallback;
+    private final HashMap<String, Integer> idCache = new HashMap<>();
+    private final ArrayList<Pair<String, String>> blockConnections = new ArrayList<>();
     private int maxId = 0;
     private GraphDocument graphDocument;
     private final ParseMonitor monitor;
@@ -118,7 +114,7 @@ public class Parser implements GraphParser {
             id = maxId++;
             idCache.put(i, id);
         }
-        return id.intValue();
+        return id;
     }
 
     // <graphDocument>
@@ -261,7 +257,7 @@ public class Parser implements GraphParser {
                     for (InputNode n : graph.getNodes()) {
                         if (graph.getBlock(n) == null) {
                             if (noBlock == null) {
-                                noBlock = graph.addBlock("(no block)");
+                                noBlock = graph.addArtificialBlock();
                             }
 
                             noBlock.addNode(n.getId());

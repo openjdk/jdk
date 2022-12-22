@@ -56,9 +56,9 @@ import java.util.concurrent.TimeUnit;
  * (cd $(git rev-parse --show-toplevel) && for size in 3 16 999 999999; do make test TEST='micro:java.lang.ArrayFiddle' MICRO="FORK=2;WARMUP_ITER=4;ITER=4;OPTIONS=-opi $size -p size=$size" |& perl -ne 'print if /^Benchmark/ .. /^Finished running test/'; done)
  */
 @BenchmarkMode(Mode.AverageTime)
-@Fork(2)
-@Warmup(iterations = 1)
-@Measurement(iterations = 4)
+@Warmup(iterations = 10, time = 1)
+@Measurement(iterations = 5, time = 2)
+@Fork(3)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
 public class ArrayFiddle {

@@ -105,7 +105,7 @@ public sealed interface DirectMethodHandleDesc
          * @throws IllegalArgumentException if there is no such member
          */
         public static Kind valueOf(int refKind) {
-            return valueOf(refKind, false);
+            return valueOf(refKind, refKind == REF_invokeInterface);
         }
 
         /**
@@ -134,16 +134,10 @@ public sealed interface DirectMethodHandleDesc
          */
         public static Kind valueOf(int refKind, boolean isInterface) {
             int i = tableIndex(refKind, isInterface);
-            if (i >= 0 && i < TABLE.length) {
-                Kind kind = TABLE[i];
-                if (kind == null) {
-                    throw new IllegalArgumentException(String.format("refKind=%d", refKind));
-                }
-                if (kind.refKind == refKind && kind.isInterface == isInterface) {
-                    return kind;
-                }
+            if (i >= 2 && i < TABLE.length) {
+                return TABLE[i];
             }
-            throw new IllegalArgumentException(String.format("refKind=%d", refKind));
+            throw new IllegalArgumentException(String.format("refKind=%d isInterface=%s", refKind, isInterface));
         }
 
         private static int tableIndex(int refKind, boolean isInterface) {
@@ -180,9 +174,7 @@ public sealed interface DirectMethodHandleDesc
                     // for either truth value of X.
                     int i = tableIndex(kind.refKind, true);
                     if (TABLE[i] == null) {
-                        // There is not a specific Kind for interfaces
-                        if (kind == VIRTUAL)  kind = INTERFACE_VIRTUAL;
-                        if (TABLE[i] == null)  TABLE[i] = kind;
+                        TABLE[i] = kind;
                     }
                 }
             }

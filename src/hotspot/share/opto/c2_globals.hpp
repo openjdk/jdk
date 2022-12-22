@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,15 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, ArrayCopyPartialInlineSize, -1, DIAGNOSTIC,                 \
-          "Partial inline size used for array copy acceleration.")          \
-          range(-1, 64)                                                     \
+  product(intx, SuperWordMaxVectorSize, 64, DIAGNOSTIC,                     \
+          "Vector size limit in bytes for superword, "                      \
+          "superword vector size limit in bytes")                           \
+          range(0, max_jint)                                                \
+                                                                            \
+  product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
+          "Partial inline size used for small array operations"             \
+          "(e.g. copy,cmp) acceleration.")                                  \
+          range(0, 256)                                                     \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -110,10 +116,6 @@
                                                                             \
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
-                                                                            \
-  notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
-          "A depth threshold of ideal graph. Indentation is disabled "      \
-          "when users attempt to dump an ideal graph deeper than it.")      \
                                                                             \
   notproduct(bool, PrintOpto, false,                                        \
           "Print compiler2 attempts")                                       \
@@ -164,7 +166,7 @@
           "Print New compiler peephole replacements")                       \
                                                                             \
   develop(bool, PrintCFGBlockFreq, false,                                   \
-          "Print CFG block freqencies")                                     \
+          "Print CFG block frequencies")                                    \
                                                                             \
   develop(bool, TraceOptoParse, false,                                      \
           "Trace bytecode parse and control-flow merge")                    \
@@ -286,13 +288,17 @@
   notproduct(bool, VerifyRegisterAllocator , false,                         \
           "Verify Register Allocator")                                      \
                                                                             \
-  develop_pd(intx, FLOATPRESSURE,                                           \
-          "Number of float LRG's that constitute high register pressure")   \
-          range(0, max_jint)                                                \
+  develop(intx, FLOATPRESSURE, -1,                                          \
+          "Number of float LRG's that constitute high register pressure."   \
+          "-1: means the threshold is determined by number of available "   \
+          "float register for allocation")                                  \
+          range(-1, max_jint)                                               \
                                                                             \
-  develop_pd(intx, INTPRESSURE,                                             \
-          "Number of integer LRG's that constitute high register pressure") \
-          range(0, max_jint)                                                \
+  develop(intx, INTPRESSURE, -1,                                            \
+          "Number of integer LRG's that constitute high register pressure." \
+          "-1: means the threshold is determined by number of available "   \
+          "integer register for allocation")                                \
+          range(-1, max_jint)                                               \
                                                                             \
   notproduct(bool, TraceOptoPipelining, false,                              \
           "Trace pipelining information")                                   \
@@ -329,7 +335,7 @@
           "Trace loop unswitching")                                         \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
-          "Globally supress vectorization set in VectorizeMethod")          \
+          "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
@@ -406,6 +412,9 @@
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
                                                                             \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
+          "Optimize UnstableIf traps")                                      \
+                                                                            \
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
@@ -446,10 +455,6 @@
                                                                             \
   notproduct(bool, PrintLockStatistics, false,                              \
           "Print precise statistics on the dynamic lock usage")             \
-                                                                            \
-  product(bool, PrintPreciseBiasedLockingStatistics, false, DIAGNOSTIC,     \
-          "(Deprecated) Print per-lock-site statistics of biased locking "  \
-          "in JVM")                                                         \
                                                                             \
   product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
           "Print per-lock-site statistics of rtm locking in JVM")           \
@@ -506,9 +511,6 @@
   notproduct(bool, VerifyConnectionGraph , true,                            \
           "Verify Connection Graph construction in Escape Analysis")        \
                                                                             \
-  product(bool, UseOptoBiasInlining, true,                                  \
-          "(Deprecated) Generate biased locking code in C2 ideal graph")    \
-                                                                            \
   product(bool, OptimizeStringConcat, true,                                 \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \
@@ -531,7 +533,7 @@
           "Use edge frequencies to drive block ordering")                   \
                                                                             \
   product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
-          "Miniumum %% of a successor (predecessor) for which block "       \
+          "Minimum %% of a successor (predecessor) for which block "        \
           "layout a will allow a fork (join) in a single chain")            \
           range(0, 100)                                                     \
                                                                             \
@@ -630,12 +632,6 @@
   develop(intx, FreqCountInvocations,  1,                                   \
           "Scaling factor for branch frequencies (deprecated)")             \
           range(1, max_intx)                                                \
-                                                                            \
-  product(intx, AliasLevel,     3,                                          \
-          "0 for no aliasing, 1 for oop/field/static/array split, "         \
-          "2 for class split, 3 for unique instances")                      \
-          range(0, 3)                                                       \
-          constraint(AliasLevelConstraintFunc,AfterErgo)                    \
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
@@ -766,6 +762,17 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, DuplicateBackedge, true, DIAGNOSTIC,                        \
+          "Transform loop with a merge point into 2 loops if inner loop is" \
+          "expected to optimize better")                                    \
+                                                                            \
+  develop(bool, StressDuplicateBackedge, false,                             \
+          "Run DuplicateBackedge whenever possible ignoring benefit"        \
+          "analysis")                                                       \
+                                                                            \
+  product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
+          "Verify receiver types at runtime")                               \
 
 // end of C2_FLAGS
 

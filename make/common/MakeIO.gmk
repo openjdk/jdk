@@ -37,7 +37,7 @@ endif
 
 ################################################################################
 # ListPathsSafely can be used to print command parameters to a file. This is
-# typically done if the command line lenght risk being too long for the
+# typically done if the command line length risk being too long for the
 # OS/shell. In later make versions, the file function can be used for this
 # purpose. For earlier versions, a more complex implementation is provided.
 #

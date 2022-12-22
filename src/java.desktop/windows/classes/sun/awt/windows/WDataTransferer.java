@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,15 @@
 
 package sun.awt.windows;
 
-import java.awt.Image;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Transparency;
-
 import java.awt.color.ColorSpace;
-
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorTable;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-
 import java.awt.geom.AffineTransform;
-
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -48,18 +44,16 @@ import java.awt.image.DirectColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.File;
-
 import java.net.URL;
-
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,13 +63,11 @@ import java.util.SortedMap;
 import sun.awt.Mutex;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
-
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
 
-import java.util.ArrayList;
-
-import java.io.ByteArrayOutputStream;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -202,10 +194,10 @@ final class WDataTransferer extends DataTransferer {
             } else if (contents.isDataFlavorSupported(DataFlavor.allHtmlFlavor)) {
                 // if we cannot get data represented by the
                 // DataFlavor.selectionHtmlFlavor format
-                // but the DataFlavor.allHtmlFlavor format is avialable
-                // we belive that the user knows how to represent
+                // but the DataFlavor.allHtmlFlavor format is available
+                // we believe that the user knows how to represent
                 // the data and how to mark up selection in a
-                // system specific manner. Therefor, we use this data
+                // system specific manner. Therefore, we use this data
                 bytes = super.translateTransferable(contents,
                         DataFlavor.allHtmlFlavor,
                         format);
@@ -249,7 +241,7 @@ final class WDataTransferer extends DataTransferer {
             if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            String st = new String(bytes, 0, bytes.length, "UTF-16LE");
+            String st = new String(bytes, UTF_16LE);
             String[] filenames = st.split("\0");
             if( 0 == filenames.length ){
                 return null;
@@ -275,11 +267,13 @@ final class WDataTransferer extends DataTransferer {
             {
                 try {
                     charset = new String((byte[])localeTransferable.
-                        getTransferData(javaTextEncodingFlavor), "UTF-8");
+                        getTransferData(javaTextEncodingFlavor), UTF_8);
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
-            return new URL(new String(bytes, charset));
+            @SuppressWarnings("deprecation")
+            var result = new URL(new String(bytes, charset));
+            return result;
         }
 
         return super.translateBytes(bytes , flavor, format,
@@ -548,8 +542,6 @@ enum EHTMLReadMode {
  * on encode: static convertToHTMLFormat is responsible for HTML clipboard header creation
  */
 class HTMLCodec extends InputStream {
-    //static section
-    public static final String ENCODING = "UTF-8";
 
     public static final String VERSION = "Version:";
     public static final String START_HTML = "StartHTML:";
@@ -595,7 +587,7 @@ class HTMLCodec extends InputStream {
      * EndFragment:000000694\r\n      -- shift in array before start  <!--EndFragment-->
      * StartSelection:000000398\r\n   -- shift in array of the first char in copied selection
      * EndSelection:000000692\r\n     -- shift in array of the last char in copied selection
-     * SourceURL:http://sun.com/\r\n  -- base URL for related referenses
+     * SourceURL:http://sun.com/\r\n  -- base URL for related references
      * <HTML>...<BODY>...<!--StartFragment-->.....................<!--EndFragment-->...</BODY><HTML>
      * ^                                     ^ ^                ^^                                 ^
      * \ StartHTML                           | \-StartSelection | \EndFragment              EndHTML/
@@ -616,10 +608,10 @@ class HTMLCodec extends InputStream {
             //to avoid HTML and BODY tags doubling
             String stContext = new String(bytes);
             String stUpContext = stContext.toUpperCase();
-            if( -1 == stUpContext.indexOf("<HTML") ) {
+            if (!stUpContext.contains("<HTML")) {
                 htmlPrefix = "<HTML>";
                 htmlSuffix = "</HTML>";
-                if( -1 == stUpContext.indexOf("<BODY") ) {
+                if (!stUpContext.contains("<BODY")) {
                     htmlPrefix = htmlPrefix +"<BODY>";
                     htmlSuffix = "</BODY>" + htmlSuffix;
                 };
@@ -671,13 +663,8 @@ class HTMLCodec extends InputStream {
         //HTML
         header.append(htmlPrefix);
 
-        byte[] headerBytes = null, trailerBytes = null;
-
-        try {
-            headerBytes = header.toString().getBytes(ENCODING);
-            trailerBytes = htmlSuffix.getBytes(ENCODING);
-        } catch (UnsupportedEncodingException cannotHappen) {
-        }
+        byte[] headerBytes = header.toString().getBytes(UTF_8);
+        byte[] trailerBytes = htmlSuffix.getBytes(UTF_8);
 
         byte[] retval = new byte[headerBytes.length + bytes.length +
                 trailerBytes.length];
@@ -719,7 +706,7 @@ class HTMLCodec extends InputStream {
             iFragEnd,  // EndFragment -- shift in array before start <!--EndFragment-->
             iSelStart, // StartSelection -- shift in array of the first char in copied selection
             iSelEnd;   // EndSelection -- shift in array of the last char in copied selection
-    private String stBaseURL; // SourceURL -- base URL for related referenses
+    private String stBaseURL; // SourceURL -- base URL for related references
     private String stVersion; // Version -- current supported version
 
     //Stream reader markers:
@@ -786,7 +773,7 @@ class HTMLCodec extends InputStream {
         BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader(
                         bufferedStream,
-                        ENCODING
+                        UTF_8
                 ),
                 CHAR_BUFFER_LEN
         );

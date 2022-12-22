@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc.
+ * Copyright (c) 2019, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,6 +287,16 @@ public class ReferralsTest {
      * on different realms.
      */
     private static void testImpersonation() throws Exception {
+        testImpersonationSingle();
+
+        // Try a second time to force the use of the Referrals Cache.
+        // During this execution, the referral ticket from RABBIT.HOLE
+        // to DEV.RABBIT.HOLE (upon the initial S4U2Self message) will
+        // be obtained from the Cache.
+        testImpersonationSingle();
+    }
+
+    private static void testImpersonationSingle() throws Exception {
         Context s = Context.fromUserPass(serviceKDC2Name, password, true);
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
         GSSName impName = s.impersonate(userKDC1Name).cred().getName();
@@ -306,6 +316,16 @@ public class ReferralsTest {
      * because the server and the backend are on different realms.
      */
     private static void testDelegationWithReferrals() throws Exception {
+        testDelegationWithReferralsSingle();
+
+        // Try a second time to force the use of the Referrals Cache.
+        // During this execution, the referral ticket from RABBIT.HOLE
+        // to DEV.RABBIT.HOLE (upon the initial S4U2Proxy message) will
+        // be obtained from the Cache.
+        testDelegationWithReferralsSingle();
+    }
+
+    private static void testDelegationWithReferralsSingle() throws Exception {
         Context c = Context.fromUserPass(userKDC1Name, password, false);
         c.startAsClient(serviceName, GSSUtil.GSS_KRB5_MECH_OID);
         Context s = Context.fromUserPass(serviceKDC2Name, password, true);

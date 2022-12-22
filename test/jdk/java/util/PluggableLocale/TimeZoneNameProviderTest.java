@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,9 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     }
 
     final String pattern = "z";
-    final Locale OSAKA = new Locale("ja", "JP", "osaka");
-    final Locale KYOTO = new Locale("ja", "JP", "kyoto");
-    final Locale GENERIC = new Locale("ja", "JP", "generic");
+    final Locale OSAKA = Locale.of("ja", "JP", "osaka");
+    final Locale KYOTO = Locale.of("ja", "JP", "kyoto");
+    final Locale GENERIC = Locale.of("ja", "JP", "generic");
 
     final String[] TIMEZONES = {
         "GMT", "America/Los_Angeles", "SystemV/PST8",

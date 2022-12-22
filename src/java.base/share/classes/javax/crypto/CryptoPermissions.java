@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package javax.crypto;
 
 import java.security.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.Serializable;
@@ -43,17 +43,17 @@ import java.io.IOException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * This class contains CryptoPermission objects, organized into
- * PermissionCollections according to algorithm names.
+ * This class contains {@code CryptoPermission} objects, organized into
+ * {@code PermissionCollection} objects according to algorithm names.
  *
- * <p>When the <code>add</code> method is called to add a
- * CryptoPermission, the CryptoPermission is stored in the
- * appropriate PermissionCollection. If no such
+ * <p>When the {@code add} method is called to add a
+ * {@code CryptoPermission}, the {@code CryptoPermission} is stored in the
+ * appropriate {@code PermissionCollection}. If no such
  * collection exists yet, the algorithm name associated with
- * the CryptoPermission object is
- * determined and the <code>newPermissionCollection</code> method
- * is called on the CryptoPermission or CryptoAllPermission class to
- * create the PermissionCollection and add it to the Permissions object.
+ * the {@code CryptoPermission} object is
+ * determined and the {@code newPermissionCollection} method
+ * is called on the {@code CryptoPermission} or {@code CryptoAllPermission} class to
+ * create the {@code PermissionCollection} and add it to the {@code Permissions} object.
  *
  * @see javax.crypto.CryptoPermission
  * @see java.security.PermissionCollection
@@ -82,8 +82,8 @@ implements Serializable {
     private transient ConcurrentHashMap<String,PermissionCollection> perms;
 
     /**
-     * Creates a new CryptoPermissions object containing
-     * no CryptoPermissionCollections.
+     * Creates a new {@code CryptoPermissions} object containing
+     * no {@code CryptoPermissionCollection} objects.
      */
     CryptoPermissions() {
         perms = new ConcurrentHashMap<>(7);
@@ -91,7 +91,7 @@ implements Serializable {
 
     /**
      * Populates the crypto policy from the specified
-     * InputStream into this CryptoPermissions object.
+     * {@code InputStream} into this {@code CryptoPermissions} object.
      *
      * @param in the InputStream to load from.
      *
@@ -110,29 +110,29 @@ implements Serializable {
     }
 
     /**
-     * Returns true if this CryptoPermissions object doesn't
-     * contain any CryptoPermission objects; otherwise, returns
-     * false.
+     * Returns {@code true} if this {@code CryptoPermissions} object doesn't
+     * contain any {@code CryptoPermission} objects; otherwise, returns
+     * {@code false}.
      */
     boolean isEmpty() {
         return perms.isEmpty();
     }
 
     /**
-     * Adds a permission object to the PermissionCollection for the
-     * algorithm returned by
-     * <code>(CryptoPermission)permission.getAlgorithm()</code>.
+     * Adds a permission object to the
+     * {@code PermissionCollection} for the algorithm returned by
+     * {@code (CryptoPermission)permission.getAlgorithm()}.
      *
      * This method creates
-     * a new PermissionCollection object (and adds the permission to it)
-     * if an appropriate collection does not yet exist. <p>
+     * a new {@code PermissionCollection} object (and adds the
+     * permission to it) if an appropriate collection does not yet exist.
      *
-     * @param permission the Permission object to add.
+     * @param permission the {@code Permission} object to add.
      *
-     * @exception SecurityException if this CryptoPermissions object is
-     * marked as readonly.
+     * @exception SecurityException if this {@code CryptoPermissions}
+     * object is marked as readonly.
      *
-     * @see isReadOnly
+     * @see PermissionCollection#isReadOnly
      */
     @Override
     public void add(Permission permission) {
@@ -143,11 +143,10 @@ implements Serializable {
                                         "object");
         }
 
-        if (!(permission instanceof CryptoPermission)) {
+        if (!(permission instanceof CryptoPermission cryptoPerm)) {
             return;
         }
 
-        CryptoPermission cryptoPerm = (CryptoPermission)permission;
         PermissionCollection pc =
                         getPermissionCollection(cryptoPerm);
         pc.add(cryptoPerm);
@@ -156,23 +155,21 @@ implements Serializable {
     }
 
     /**
-     * Checks if this object's PermissionCollection for permissons
+     * Checks if this object's {@code PermissionCollection} for permissions
      * of the specified permission's algorithm implies the specified
-     * permission. Returns true if the checking succeeded.
+     * permission. Returns {@code true} if the checking succeeded.
      *
-     * @param permission the Permission object to check.
+     * @param permission the {@code Permission} object to check.
      *
-     * @return true if "permission" is implied by the permissions
-     * in the PermissionCollection it belongs to, false if not.
+     * @return {@code true} if {@code permission} is implied by the permissions
+     * in the {@code PermissionCollection} it belongs to, {@code false} if not.
      *
      */
     @Override
     public boolean implies(Permission permission) {
-        if (!(permission instanceof CryptoPermission)) {
+        if (!(permission instanceof CryptoPermission cryptoPerm)) {
             return false;
         }
-
-        CryptoPermission cryptoPerm = (CryptoPermission)permission;
 
         PermissionCollection pc =
             getPermissionCollection(cryptoPerm.getAlgorithm());
@@ -186,10 +183,9 @@ implements Serializable {
     }
 
     /**
-     * Returns an enumeration of all the Permission objects in all the
-     * PermissionCollections in this CryptoPermissions object.
-     *
-     * @return an enumeration of all the Permissions.
+     * Returns an enumeration of all the {@code Permission} objects
+     * in this {@code CryptoPermissions} object.
+     * @return an enumeration of all the {@code Permission} objects.
      */
     @Override
     public Enumeration<Permission> elements() {
@@ -199,12 +195,12 @@ implements Serializable {
     }
 
     /**
-     * Returns a CryptoPermissions object which
+     * Returns a {@code CryptoPermissions} object which
      * represents the minimum of the specified
-     * CryptoPermissions object and this
-     * CryptoPermissions object.
+     * {@code CryptoPermissions} object and this
+     * {@code CryptoPermissions} object.
      *
-     * @param other the CryptoPermission
+     * @param other the {@code CryptoPermission}
      * object to compare with this object.
      */
     CryptoPermissions getMinimum(CryptoPermissions other) {
@@ -233,10 +229,7 @@ implements Serializable {
         // For each algorithm in this CryptoPermissions,
         // find out if there is anything we should add into
         // ret.
-        Enumeration<String> thisKeys = this.perms.keys();
-        while (thisKeys.hasMoreElements()) {
-            String alg = thisKeys.nextElement();
-
+        for (String alg : this.perms.keySet()) {
             PermissionCollection thisPc = this.perms.get(alg);
             PermissionCollection thatPc = other.perms.get(alg);
 
@@ -274,9 +267,7 @@ implements Serializable {
         maxKeySize =
             ((CryptoPermission)
                     thisWildcard.elements().nextElement()).getMaxKeySize();
-        Enumeration<String> thatKeys = other.perms.keys();
-        while (thatKeys.hasMoreElements()) {
-            String alg = thatKeys.nextElement();
+        for (String alg : other.perms.keySet()) {
 
             if (this.perms.containsKey(alg)) {
                 continue;
@@ -296,18 +287,18 @@ implements Serializable {
     }
 
     /**
-     * Get the minimum of the two given PermissionCollection
-     * <code>thisPc</code> and <code>thatPc</code>.
+     * Get the minimum of the two given {@code PermissionCollection}
+     * {@code thisPc} and {@code thatPc}.
      *
-     * @param thisPc the first given PermissionColloection
+     * @param thisPc the first given {@code PermissionCollection}
      * object.
      *
-     * @param thatPc the second given PermissionCollection
+     * @param thatPc the second given {@code PermissionCollection}
      * object.
      */
     private CryptoPermission[] getMinimum(PermissionCollection thisPc,
                                           PermissionCollection thatPc) {
-        Vector<CryptoPermission> permVector = new Vector<>(2);
+        ArrayList<CryptoPermission> permList = new ArrayList<>(2);
 
         Enumeration<Permission> thisPcPermissions = thisPc.elements();
 
@@ -334,36 +325,35 @@ implements Serializable {
                     (CryptoPermission)thatPcPermissions.nextElement();
 
                 if (thatCp.implies(thisCp)) {
-                    permVector.addElement(thisCp);
+                    permList.add(thisCp);
                     break;
                 }
                 if (thisCp.implies(thatCp)) {
-                    permVector.addElement(thatCp);
+                    permList.add(thatCp);
                 }
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[permVector.size()];
-        permVector.copyInto(ret);
-        return ret;
+        return permList.toArray(new CryptoPermission[0]);
     }
 
     /**
-     * Returns all the CryptoPermission objects in the given
-     * PermissionCollection object
-     * whose maximum keysize no greater than <code>maxKeySize</code>.
-     * For all CryptoPermission objects with a maximum keysize greater
-     * than <code>maxKeySize</code>, this method constructs a
-     * corresponding CryptoPermission object whose maximum keysize is
-     * set to <code>maxKeySize</code>, and includes that in the result.
+     * Returns all the {@code CryptoPermission} objects in the given
+     * {@code PermissionCollection} object
+     * whose maximum keysize no greater than {@code maxKeySize}.
+     * For all {@code CryptoPermission} objects with a maximum keysize
+     * greater than {@code maxKeySize}, this method constructs a
+     * corresponding {@code CryptoPermission} object whose maximum
+     * keysize is set to {@code maxKeySize}, and includes that in
+     * the result.
      *
      * @param maxKeySize the given maximum key size.
      *
-     * @param pc the given PermissionCollection object.
+     * @param pc the given {@code PermissionCollection} object.
      */
     private CryptoPermission[] getMinimum(int maxKeySize,
                                           PermissionCollection pc) {
-        Vector<CryptoPermission> permVector = new Vector<>(1);
+        ArrayList<CryptoPermission> permList = new ArrayList<>(1);
 
         Enumeration<Permission> enum_ = pc.elements();
 
@@ -371,16 +361,16 @@ implements Serializable {
             CryptoPermission cp =
                 (CryptoPermission)enum_.nextElement();
             if (cp.getMaxKeySize() <= maxKeySize) {
-                permVector.addElement(cp);
+                permList.add(cp);
             } else {
                 if (cp.getCheckParam()) {
-                    permVector.addElement(
+                    permList.add(
                            new CryptoPermission(cp.getAlgorithm(),
                                                 maxKeySize,
                                                 cp.getAlgorithmParameterSpec(),
                                                 cp.getExemptionMechanism()));
                 } else {
-                    permVector.addElement(
+                    permList.add(
                            new CryptoPermission(cp.getAlgorithm(),
                                                 maxKeySize,
                                                 cp.getExemptionMechanism()));
@@ -388,15 +378,13 @@ implements Serializable {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[permVector.size()];
-        permVector.copyInto(ret);
-        return ret;
+        return permList.toArray(new CryptoPermission[0]);
     }
 
     /**
-     * Returns the PermissionCollection for the
-     * specified algorithm. Returns null if there
-     * isn't such a PermissionCollection.
+     * Returns the {@code PermissionCollection} for the
+     * specified algorithm. Returns {@code null} if there
+     * isn't such a {@code PermissionCollection}.
      *
      * @param alg the algorithm name.
      */
@@ -419,13 +407,13 @@ implements Serializable {
     }
 
     /**
-     * Returns the PermissionCollection for the algorithm
-     * associated with the specified CryptoPermission
-     * object. Creates such a PermissionCollection
-     * if such a PermissionCollection does not
+     * Returns the {@code PermissionCollection} for the algorithm
+     * associated with the specified {@code CryptoPermission}
+     * object. Creates such a {@code PermissionCollection}
+     * if such a {@code PermissionCollection} does not
      * exist yet.
      *
-     * @param cryptoPerm the CryptoPermission object.
+     * @param cryptoPerm the {@code CryptoPermission} object.
      */
     private PermissionCollection getPermissionCollection(
                                           CryptoPermission cryptoPerm) {

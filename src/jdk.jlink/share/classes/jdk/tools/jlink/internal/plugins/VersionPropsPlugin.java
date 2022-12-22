@@ -96,9 +96,9 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     private boolean redefined = false;
 
-    private byte[] redefine(byte[] classFile) {
+    private byte[] redefine(String path, byte[] classFile) {
 
-        var cr = new ClassReader(classFile);
+        var cr = newClassReader(path, classFile);
         var cw = new ClassWriter(0);
 
         cr.accept(new ClassVisitor(Opcodes.ASM7, cw) {
@@ -189,7 +189,7 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
         in.transformAndCopy(res -> {
                 if (res.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     if (res.path().equals(VERSION_PROPS_CLASS)) {
-                        return res.copyWithContent(redefine(res.contentBytes()));
+                        return res.copyWithContent(redefine(res.path(), res.contentBytes()));
                     }
                 }
                 return res;

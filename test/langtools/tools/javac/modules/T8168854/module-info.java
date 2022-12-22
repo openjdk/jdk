@@ -1,7 +1,7 @@
 /*
  * @test
  * @bug 8168854
- * @summary javac erroneously reject a a service interface inner class in a provides clause
+ * @summary javac erroneously reject a service interface inner class in a provides clause
  * @compile module-info.java
  */
 module mod {

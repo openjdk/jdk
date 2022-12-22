@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public:
 // Given our scheme to use a large address space range this turns out to
 // use too much memory.
 //
-// 2) It requires memory locking privilages, even for small pages. This
+// 2) It requires memory locking privileges, even for small pages. This
 // has always been a requirement for large pages, and would be an extra
 // restriction for usage with small pages.
 //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public final class ParameterCache {
 
     /**
      * Return new DSA parameters for the given length combination of prime and
-     * sub prime. Do not lookup in cache and do not cache the newly generated
+     * sub-prime. Do not look up in cache and do not cache the newly generated
      * parameters. This method really only exists for the legacy method
      * DSAKeyPairGenerator.initialize(int, boolean, SecureRandom).
      */
@@ -157,13 +157,12 @@ public final class ParameterCache {
             gen.init(genParams, random);
         }
         AlgorithmParameters params = gen.generateParameters();
-        DSAParameterSpec spec = params.getParameterSpec(DSAParameterSpec.class);
-        return spec;
+        return params.getParameterSpec(DSAParameterSpec.class);
     }
 
     static {
-        dhCache = new ConcurrentHashMap<Integer,DHParameterSpec>();
-        dsaCache = new ConcurrentHashMap<Integer,DSAParameterSpec>();
+        dhCache = new ConcurrentHashMap<>();
+        dsaCache = new ConcurrentHashMap<>();
 
         /*
          * We support precomputed parameter for legacy 512, 768 bit moduli,
@@ -173,7 +172,7 @@ public final class ParameterCache {
          * for validation purposes. We also include the test vectors
          * from the DSA specification, FIPS 186, and the FIPS 186
          * Change No 1, which updates the test vector using SHA-1
-         * instead of SHA (for both the G function and the message
+         * instead of SHA for both the G function and the message
          * hash.
          */
 

@@ -68,7 +68,7 @@ public class DGCImplInsulation implements java.rmi.Remote {
                 new ProtectionDomain(
                     new CodeSource(null, (Certificate[]) null), perms) });
 
-        Remote impl = new DGCImplInsulation();;
+        Remote impl = new DGCImplInsulation();
 
         try {
             Remote stub = (Remote) java.security.AccessController.doPrivileged(

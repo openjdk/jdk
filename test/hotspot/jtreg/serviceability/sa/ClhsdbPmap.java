@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
- * @test
+ * @test id=process
  * @bug 8190198
  * @summary Test clhsdb pmap command on a live process
  * @requires vm.hasSA
@@ -40,7 +40,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=core
  * @bug 8190198
  * @summary Test clhsdb pmap command on a core file
  * @requires vm.hasSA
@@ -60,7 +60,7 @@ public class ClhsdbPmap {
             ClhsdbLauncher test = new ClhsdbLauncher();
             theApp = new LingeredApp();
             theApp.setForceCrash(withCore);
-            LingeredApp.startApp(theApp);
+            LingeredApp.startApp(theApp, CoreUtils.getAlwaysPretouchArg(withCore));
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             if (withCore) {

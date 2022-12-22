@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@ package sun.font;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
+
 import sun.awt.FontConfiguration;
-import sun.font.CompositeFontDescriptor;
-import sun.font.SunFontManager;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 class CFontConfiguration extends FontConfiguration {
 
@@ -50,7 +51,7 @@ class CFontConfiguration extends FontConfiguration {
 
     /*
      * On Mac OS X we essentially ignore the font.properties file, and do
-     * it all programatically.  The intention is end users will use things
+     * it all programmatically.  The intention is end users will use things
      * like the Font Book to manage fonts. Plus our fonts automatically do
      * unicode substitution, so a localized font is not required.
      *
@@ -79,7 +80,7 @@ class CFontConfiguration extends FontConfiguration {
 
     @Override
     protected Charset getDefaultFontCharset(String fontName) {
-        return Charset.forName("ISO8859_1");
+        return ISO_8859_1;
     }
 
     @Override

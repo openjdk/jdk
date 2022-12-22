@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class TestObjectMethods {
         }
     }
 
-    private static final Pattern annotationRegex = Pattern.compile("@TestObjectMethods\\$AnnotType\\((\\p{Digit})+\\)");
+    private static final Pattern annotationRegex = Pattern.compile("@TestObjectMethods\\.AnnotType\\((\\p{Digit})+\\)");
 
     static void testGetAnnotations(Class<?> clazz, boolean annotationsExpectedOnMethods) {
         System.err.println("Testing getAnnotations on methods of class " + clazz.getName());

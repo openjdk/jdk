@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,19 +79,6 @@ public class Symbol extends VMObject {
 
   public byte getByteAt(long index) {
     return addr.getJByteAt(baseOffset + index);
-  }
-
-  public long identityHash() {
-    long addr_value = getAddress().asLongValue();
-    long addr_bits =
-      (addr_value >> (VM.getVM().getLogMinObjAlignmentInBytes() + 3)) & 0xffffffffL;
-    int  length = (int)getLength();
-    int  byte0 = getByteAt(0);
-    int  byte1 = getByteAt(1);
-    long id_hash = (long)idHashAndRefcount.getValue(this.addr);
-    id_hash = (id_hash >> 16) & 0xffff;
-    return (id_hash |
-      ((addr_bits ^ (length << 8) ^ ((byte0 << 8) | byte1)) << 16)) & 0xffffffffL;
   }
 
   public boolean equals(byte[] modUTF8Chars) {

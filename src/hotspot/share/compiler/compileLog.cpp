@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "ci/ciMethod.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileLog.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -39,7 +39,7 @@ CompileLog* CompileLog::_first = NULL;
 CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
   : _context(_context_buffer, sizeof(_context_buffer))
 {
-  initialize(new(ResourceObj::C_HEAP, mtCompiler) fileStream(fp, true));
+  initialize(new(mtCompiler) fileStream(fp, true));
   _file_end = 0;
   _thread_id = thread_id;
 
@@ -225,7 +225,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
         if (to_read < (julong)buflen)
               nr = (size_t)to_read;
         else  nr = buflen;
-        bytes_read = read(partial_fd, buf, (int)nr);
+        bytes_read = ::read(partial_fd, buf, (int)nr);
         if (bytes_read <= 0) break;
         nr = bytes_read;
         to_read -= (julong)nr;
@@ -235,7 +235,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       // Copy any remaining data inside a quote:
       bool saw_slop = false;
       int end_cdata = 0;  // state machine [0..2] watching for too many "]]"
-      while ((bytes_read = read(partial_fd, buf, buflen-1)) > 0) {
+      while ((bytes_read = ::read(partial_fd, buf, buflen-1)) > 0) {
         nr = bytes_read;
         buf[buflen-1] = '\0';
         if (!saw_slop) {
@@ -285,7 +285,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
         file->print_raw_cr("</fragment>");
       }
       file->print_raw_cr("</compilation_log>");
-      close(partial_fd);
+      ::close(partial_fd);
     }
     CompileLog* next_log = log->_next;
     delete log; // Removes partial file

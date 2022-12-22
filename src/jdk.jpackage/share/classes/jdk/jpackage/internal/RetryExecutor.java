@@ -32,6 +32,7 @@ public final class RetryExecutor {
     public RetryExecutor() {
         setMaxAttemptsCount(5);
         setAttemptTimeoutMillis(2 * 1000);
+        setWriteOutputToFile(false);
     }
 
     public RetryExecutor setMaxAttemptsCount(int v) {
@@ -41,6 +42,11 @@ public final class RetryExecutor {
 
     public RetryExecutor setAttemptTimeoutMillis(int v) {
         timeoutMillis = v;
+        return this;
+    }
+
+    RetryExecutor setWriteOutputToFile(boolean v) {
+        writeOutputToFile = v;
         return this;
     }
 
@@ -69,11 +75,13 @@ public final class RetryExecutor {
     }
 
     public void execute(String cmdline[]) throws IOException {
-        executeLoop(() -> Executor.of(cmdline));
+        executeLoop(() ->
+                Executor.of(cmdline).setWriteOutputToFile(writeOutputToFile));
     }
 
     public void execute(ProcessBuilder pb) throws IOException {
-        executeLoop(() -> Executor.of(pb));
+        executeLoop(() ->
+                Executor.of(pb).setWriteOutputToFile(writeOutputToFile));
     }
 
     private void executeLoop(Supplier<Executor> execSupplier) throws IOException {
@@ -109,4 +117,5 @@ public final class RetryExecutor {
     private boolean aborted;
     private int attempts;
     private int timeoutMillis;
+    private boolean writeOutputToFile;
 }

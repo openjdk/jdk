@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.jfr.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import jdk.jfr.internal.EventControl.NamedControl;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
 
 final class SettingsManager {
 
@@ -80,7 +80,7 @@ final class SettingsManager {
         private void addToMap(Map<String, Set<String>> map, String attribute, String value) {
             Set<String> values = map.get(attribute);
             if (values == null) {
-                values = new HashSet<String>(5);
+                values = HashSet.newHashSet(4);
                 map.put(attribute, values);
             }
             values.add(value);
@@ -130,7 +130,7 @@ final class SettingsManager {
 
    private Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
 
-    void setSettings(List<Map<String, String>> activeSettings) {
+    void setSettings(List<Map<String, String>> activeSettings, boolean writeSettingEvents) {
         // store settings so they are available if a new event class is loaded
         availableSettings = createSettingsMap(activeSettings);
         List<EventControl> eventControls = MetadataRepository.getInstance().getEventControls();
@@ -140,10 +140,11 @@ final class SettingsManager {
             }
         } else {
             if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO)) {
-                Collections.sort(eventControls, (x,y) -> x.getEventType().getName().compareTo(y.getEventType().getName()));
+                eventControls.sort(Comparator.comparing(x -> x.getEventType().getName()));
             }
+            long timestamp = JVM.counterTime();
             for (EventControl ec : eventControls) {
-                setEventControl(ec);
+                setEventControl(ec, writeSettingEvents, timestamp);
             }
         }
         if (JVM.getJVM().getAllowedToDoEventRetransforms()) {
@@ -154,9 +155,9 @@ final class SettingsManager {
     public void updateRetransform(List<Class<? extends jdk.internal.event.Event>> eventClasses) {
         List<Class<?>> classes = new ArrayList<>();
         for(Class<? extends jdk.internal.event.Event> eventClass: eventClasses) {
-            EventHandler eh = Utils.getHandler(eventClass);
-            if (eh != null ) {
-                PlatformEventType eventType = eh.getPlatformEventType();
+            EventConfiguration ec = Utils.getConfiguration(eventClass);
+            if (ec != null ) {
+                PlatformEventType eventType = ec.getPlatformEventType();
                 if (eventType.isMarkedForInstrumentation()) {
                     classes.add(eventClass);
                     eventType.markForInstrumentation(false);
@@ -172,7 +173,7 @@ final class SettingsManager {
     }
 
     private Map<String, InternalSetting> createSettingsMap(List<Map<String,String>> activeSettings) {
-        Map<String, InternalSetting> map = new LinkedHashMap<>(activeSettings.size());
+        Map<String, InternalSetting> map = LinkedHashMap.newLinkedHashMap(activeSettings.size());
         for (Map<String, String> rec : activeSettings) {
             for (InternalSetting internal : makeInternalSettings(rec)) {
                 InternalSetting is = map.get(internal.getSettingsId());
@@ -187,7 +188,7 @@ final class SettingsManager {
     }
 
     private Collection<InternalSetting> makeInternalSettings(Map<String, String> rec) {
-        Map<String, InternalSetting> internals = new LinkedHashMap<>();
+        Map<String, InternalSetting> internals = LinkedHashMap.newLinkedHashMap(rec.size());
         for (Map.Entry<String, String> entry : rec.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -211,7 +212,7 @@ final class SettingsManager {
       return internals.values();
     }
 
-    void setEventControl(EventControl ec) {
+    void setEventControl(EventControl ec, boolean writeSettingEvents, long timestamp) {
         InternalSetting is = getInternalSetting(ec);
         boolean shouldLog = Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO);
         if (shouldLog) {
@@ -219,11 +220,11 @@ final class SettingsManager {
         }
         for (NamedControl nc: ec.getNamedControls()) {
             Set<String> values = null;
-            String settingName = nc.name;
+            String settingName = nc.name();
             if (is != null) {
                 values = is.getValues(settingName);
             }
-            Control control = nc.control;
+            Control control = nc.control();
             if (values != null) {
                 control.apply(values);
                 String after = control.getLastValue();
@@ -250,7 +251,9 @@ final class SettingsManager {
                 }
             }
         }
-        ec.writeActiveSettingEvent();
+        if (writeSettingEvents) {
+            ec.writeActiveSettingEvent(timestamp);
+        }
         if (shouldLog) {
             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "}");
         }

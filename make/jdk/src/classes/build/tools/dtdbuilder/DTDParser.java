@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -812,7 +812,7 @@ class DTDParser implements DTDConstants {
     }
 
     /**
-     * Parse a section of the input upto EOF or ']'.
+     * Parse a section of the input up to EOF or ']'.
      */
     @SuppressWarnings("fallthrough")
     void parseSection() throws IOException {
@@ -919,8 +919,6 @@ class DTDParser implements DTDConstants {
         } catch (Exception e) {
             error("exception", e.getClass().getName(), e.getMessage());
             e.printStackTrace();
-        } catch (ThreadDeath e) {
-            error("terminated");
         }
         return (nerrors > 0) ? null : dtd;
     }

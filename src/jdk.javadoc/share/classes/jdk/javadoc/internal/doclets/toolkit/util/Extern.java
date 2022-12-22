@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,6 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  * generates "package-list"(lists all the packages which are getting
  * documented) file in the current or the destination directory, while
  * generating the documentation.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Extern {
 
@@ -226,7 +221,7 @@ public class Extern {
 
     /**
      * Check whether links to platform documentation are configured. If not then configure
-     * links using the the documentation URL defined in {@code linkPlatformProperties} or the
+     * links using the documentation URL defined in {@code linkPlatformProperties} or the
      * default documentation URL if that parameter is {@code null}.
      *
      * @param linkPlatformProperties path or URL to properties file containing
@@ -514,7 +509,7 @@ public class Extern {
             DocPath elempath;
             String moduleName = null;
             DocPath basePath  = DocPath.create(path);
-            boolean issueWarning = true;
+            boolean showDiagnostic = true;
             while ((elemname = in.readLine()) != null) {
                 if (elemname.length() > 0) {
                     elempath = basePath;
@@ -534,14 +529,14 @@ public class Extern {
                         // For user provided libraries we check whether modularity matches the actual library.
                         // We trust modularity to be correct for platform library element lists.
                         if (platformVersion == 0) {
-                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, issueWarning);
+                            actualModuleName = checkLinkCompatibility(elemname, moduleName, path, showDiagnostic);
                         } else {
                             actualModuleName = moduleName == null ? DocletConstants.DEFAULT_ELEMENT_NAME : moduleName;
                         }
                         Item item = new Item(elemname, elempath, relative);
                         packageItems.computeIfAbsent(actualModuleName, k -> new TreeMap<>())
                             .putIfAbsent(elemname, item); // first-one-wins semantics
-                        issueWarning = false;
+                        showDiagnostic = false;
                     }
                 }
             }
@@ -556,25 +551,23 @@ public class Extern {
      * @param packageName the package name
      * @param moduleName the module name or null
      * @param path the documentation path
-     * @param issueWarning whether to print a warning in case of modularity mismatch
+     * @param showDiagnostic whether to print a diagnostic message in case of modularity mismatch
      * @return the module name to use according to actual modularity of the package
      */
-    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean issueWarning)  {
+    private String checkLinkCompatibility(String packageName, String moduleName, String path, boolean showDiagnostic)  {
         PackageElement pe = utils.elementUtils.getPackageElement(packageName);
         if (pe != null) {
             ModuleElement me = (ModuleElement)pe.getEnclosingElement();
             if (me == null || me.isUnnamed()) {
-                if (moduleName != null && issueWarning) {
-                    configuration.getReporter().print(Kind.WARNING,
-                            resources.getText("doclet.linkMismatch_PackagedLinkedtoModule", path));
+                if (moduleName != null && showDiagnostic) {
+                    printModularityMismatchDiagnostic("doclet.linkMismatch_PackagedLinkedtoModule", path);
                 }
                 // library is not modular, ignore module name even if documentation is modular
                 return DocletConstants.DEFAULT_ELEMENT_NAME;
             } else if (moduleName == null) {
-                // suppress the warning message in the case of automatic modules
-                if (!configuration.workArounds.isAutomaticModule(me) && issueWarning) {
-                    configuration.getReporter().print(Kind.WARNING,
-                            resources.getText("doclet.linkMismatch_ModuleLinkedtoPackage", path));
+                // suppress the diagnostic message in the case of automatic modules
+                if (!utils.elementUtils.isAutomaticModule(me) && showDiagnostic) {
+                    printModularityMismatchDiagnostic("doclet.linkMismatch_ModuleLinkedtoPackage", path);
                 }
                 // library is modular, use module name for lookup even though documentation is not
                 return utils.getModuleName(me);
@@ -585,7 +578,8 @@ public class Extern {
 
     public boolean isUrl (String urlCandidate) {
         try {
-            new URL(urlCandidate);
+            @SuppressWarnings("deprecation")
+            var _unused = new URL(urlCandidate);
             //No exception was thrown, so this must really be a URL.
             return true;
         } catch (MalformedURLException e) {
@@ -594,6 +588,7 @@ public class Extern {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private URL toURL(String url) throws Fault {
         try {
             return new URL(url);
@@ -639,7 +634,8 @@ public class Extern {
                         String loc = http.getHeaderField("Location");
                         URL target = null;
                         if (loc != null) {
-                            target = new URL(base, loc);
+                            @SuppressWarnings("deprecation")
+                            var _unused = target = new URL(base, loc);
                         }
                         http.disconnect();
                         if (target == null || redirects >= 5) {
@@ -658,5 +654,12 @@ public class Extern {
         }
 
         return in;
+    }
+
+    private void printModularityMismatchDiagnostic(String key, Object arg) {
+        switch (configuration.getOptions().linkModularityMismatch()) {
+            case INFO -> configuration.getMessages().notice(key, arg);
+            case WARN -> configuration.getMessages().warning(key, arg);
+        }
     }
 }

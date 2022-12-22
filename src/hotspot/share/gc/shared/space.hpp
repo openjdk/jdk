@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
@@ -35,6 +35,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_SERIALGC
+#include "gc/serial/serialBlockOffsetTable.hpp"
+#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific
@@ -43,13 +46,17 @@
 
 // Forward decls.
 class Space;
+class ContiguousSpace;
+#if INCLUDE_SERIALGC
 class BlockOffsetArray;
 class BlockOffsetArrayContigSpace;
+class BlockOffsetTable;
+#endif
 class Generation;
 class CompactibleSpace;
-class BlockOffsetTable;
 class CardTableRS;
 class DirtyCardToOopClosure;
+class FilteringClosure;
 
 // A Space describes a heap area. Class Space is an abstract
 // base class.
@@ -125,7 +132,6 @@ class Space: public CHeapObj<mtGC> {
 
   // Testers
   bool is_empty() const              { return used() == 0; }
-  bool not_empty() const             { return used() > 0; }
 
   // Returns true iff the given the space contains the
   // given address as part of an allocated object. For
@@ -251,7 +257,6 @@ protected:
                                 // alternatively, the lowest address that
                                 // shouldn't be done again.  NULL means infinity.)
   NOT_PRODUCT(HeapWord* _last_bottom;)
-  NOT_PRODUCT(HeapWord* _last_explicit_min_done;)
 
   // Get the actual top of the area on which the closure will
   // operate, given where the top is assumed to be (the end of the
@@ -276,20 +281,9 @@ public:
     _cl(cl), _sp(sp), _precision(precision), _boundary(boundary),
     _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
-    NOT_PRODUCT(_last_explicit_min_done = NULL);
   }
 
-  void do_MemRegion(MemRegion mr);
-
-  void set_min_done(HeapWord* min_done) {
-    _min_done = min_done;
-    NOT_PRODUCT(_last_explicit_min_done = _min_done);
-  }
-#ifndef PRODUCT
-  void set_last_bottom(HeapWord* last_bottom) {
-    _last_bottom = last_bottom;
-  }
-#endif
+  void do_MemRegion(MemRegion mr) override;
 };
 
 // A structure to represent a point at which objects are being copied
@@ -298,58 +292,20 @@ class CompactPoint : public StackObj {
 public:
   Generation* gen;
   CompactibleSpace* space;
-  HeapWord* threshold;
 
   CompactPoint(Generation* g = NULL) :
-    gen(g), space(NULL), threshold(0) {}
+    gen(g), space(NULL) {}
 };
 
 // A space that supports compaction operations.  This is usually, but not
 // necessarily, a space that is normally contiguous.  But, for example, a
 // free-list-based space whose normal collection is a mark-sweep without
 // compaction could still support compaction in full GC's.
-//
-// The compaction operations are implemented by the
-// scan_and_{adjust_pointers,compact,forward} function templates.
-// The following are, non-virtual, auxiliary functions used by these function templates:
-// - scan_limit()
-// - scanned_block_is_obj()
-// - scanned_block_size()
-// - adjust_obj_size()
-// - obj_size()
-// These functions are to be used exclusively by the scan_and_* function templates,
-// and must be defined for all (non-abstract) subclasses of CompactibleSpace.
-//
-// NOTE: Any subclasses to CompactibleSpace wanting to change/define the behavior
-// in any of the auxiliary functions must also override the corresponding
-// prepare_for_compaction/adjust_pointers/compact functions using them.
-// If not, such changes will not be used or have no effect on the compaction operations.
-//
-// This translates to the following dependencies:
-// Overrides/definitions of
-//  - scan_limit
-//  - scanned_block_is_obj
-//  - scanned_block_size
-// require override/definition of prepare_for_compaction().
-// Similar dependencies exist between
-//  - adjust_obj_size  and adjust_pointers()
-//  - obj_size         and compact().
-//
-// Additionally, this also means that changes to block_size() or block_is_obj() that
-// should be effective during the compaction operations must provide a corresponding
-// definition of scanned_block_size/scanned_block_is_obj respectively.
 class CompactibleSpace: public Space {
   friend class VMStructs;
 private:
   HeapWord* _compaction_top;
   CompactibleSpace* _next_compaction_space;
-
-  // Auxiliary functions for scan_and_{forward,adjust_pointers,compact} support.
-  inline size_t adjust_obj_size(size_t size) const {
-    return size;
-  }
-
-  inline size_t obj_size(const HeapWord* addr) const;
 
   template <class SpaceType>
   static inline void verify_up_to_first_dead(SpaceType* space) NOT_DEBUG_RETURN;
@@ -361,8 +317,8 @@ public:
   CompactibleSpace() :
    _compaction_top(NULL), _next_compaction_space(NULL) {}
 
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
-  virtual void clear(bool mangle_space);
+  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
+  void clear(bool mangle_space) override;
 
   // Used temporarily during a compaction phase to hold the value
   // top should have when compaction is complete.
@@ -403,7 +359,7 @@ public:
   // indicates when the next such action should be taken.
   virtual void prepare_for_compaction(CompactPoint* cp) = 0;
   // MarkSweep support phase3
-  virtual void adjust_pointers();
+  void adjust_pointers() override;
   // MarkSweep support phase4
   virtual void compact();
 #endif // INCLUDE_SERIALGC
@@ -414,10 +370,8 @@ public:
 
   // Some contiguous spaces may maintain some data structures that should
   // be updated whenever an allocation crosses a boundary.  This function
-  // returns the first such boundary.
-  // (The default implementation returns the end of the space, so the
-  // boundary is never crossed.)
-  virtual HeapWord* initialize_threshold() { return end(); }
+  // initializes these data structures for further updates.
+  virtual void initialize_threshold() { }
 
   // "q" is an object of the given "size" that should be forwarded;
   // "cp" names the generation ("gen") and containing "this" (which must
@@ -428,50 +382,18 @@ public:
   // be one, since compaction must succeed -- we go to the first space of
   // the previous generation if necessary, updating "cp"), reset compact_top
   // and then forward.  In either case, returns the new value of "compact_top".
-  // If the forwarding crosses "cp->threshold", invokes the "cross_threshold"
-  // function of the then-current compaction space, and updates "cp->threshold
-  // accordingly".
+  // Invokes the "alloc_block" function of the then-current compaction
+  // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
-
-  // Return a size with adjustments as required of the space.
-  virtual size_t adjust_object_size_v(size_t size) const { return size; }
-
-  void set_first_dead(HeapWord* value) { _first_dead = value; }
-  void set_end_of_live(HeapWord* value) { _end_of_live = value; }
-
 protected:
   // Used during compaction.
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
 
-  // This the function is invoked when an allocation of an object covering
-  // "start" to "end occurs crosses the threshold; returns the next
-  // threshold.  (The default implementation does nothing.)
-  virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* the_end) {
-    return end();
-  }
-
-  // Below are template functions for scan_and_* algorithms (avoiding virtual calls).
-  // The space argument should be a subclass of CompactibleSpace, implementing
-  // scan_limit(), scanned_block_is_obj(), and scanned_block_size(),
-  // and possibly also overriding obj_size(), and adjust_obj_size().
-  // These functions should avoid virtual calls whenever possible.
-
-#if INCLUDE_SERIALGC
-  // Frequently calls adjust_obj_size().
-  template <class SpaceType>
-  static inline void scan_and_adjust_pointers(SpaceType* space);
-#endif
-
-  // Frequently calls obj_size().
-  template <class SpaceType>
-  static inline void scan_and_compact(SpaceType* space);
-
-  // Frequently calls scanned_block_is_obj() and scanned_block_size().
-  // Requires the scan_limit() function.
-  template <class SpaceType>
-  static inline void scan_and_forward(SpaceType* space, CompactPoint* cp);
+  // This the function to invoke when an allocation of an object covering
+  // "start" to "end" occurs to update other internal data structures.
+  virtual void alloc_block(HeapWord* start, HeapWord* the_end) { }
 };
 
 class GenSpaceMangler;
@@ -480,22 +402,6 @@ class GenSpaceMangler;
 // faster allocation, and compaction.
 class ContiguousSpace: public CompactibleSpace {
   friend class VMStructs;
-  // Allow scan_and_forward function to call (private) overrides for auxiliary functions on this class
-  template <typename SpaceType>
-  friend void CompactibleSpace::scan_and_forward(SpaceType* space, CompactPoint* cp);
-
- private:
-  // Auxiliary functions for scan_and_forward support.
-  // See comments for CompactibleSpace for more information.
-  inline HeapWord* scan_limit() const {
-    return top();
-  }
-
-  inline bool scanned_block_is_obj(const HeapWord* addr) const {
-    return true; // Always true, since scan_limit is top
-  }
-
-  inline size_t scanned_block_size(const HeapWord* addr) const;
 
  protected:
   HeapWord* _top;
@@ -512,8 +418,8 @@ class ContiguousSpace: public CompactibleSpace {
   ContiguousSpace();
   ~ContiguousSpace();
 
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
-  virtual void clear(bool mangle_space);
+  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
+  void clear(bool mangle_space) override;
 
   // Accessors
   HeapWord* top() const            { return _top;    }
@@ -527,16 +433,16 @@ class ContiguousSpace: public CompactibleSpace {
   // In debug mode mangle (write it with a particular bit
   // pattern) the unused part of a space.
 
-  // Used to save the an address in a space for later use during mangling.
+  // Used to save the address in a space for later use during mangling.
   void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
 
   // Mangle regions in the space from the current top up to the
   // previously mangled part of the space.
-  void mangle_unused_area() PRODUCT_RETURN;
+  void mangle_unused_area() override PRODUCT_RETURN;
   // Mangle [top, end)
-  void mangle_unused_area_complete() PRODUCT_RETURN;
+  void mangle_unused_area_complete() override PRODUCT_RETURN;
 
   // Do some sparse checking on the area that should have been mangled.
   void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
@@ -545,26 +451,25 @@ class ContiguousSpace: public CompactibleSpace {
   void check_mangled_unused_area_complete() PRODUCT_RETURN;
 
   // Size computations: sizes in bytes.
-  size_t capacity() const        { return byte_size(bottom(), end()); }
-  size_t used() const            { return byte_size(bottom(), top()); }
-  size_t free() const            { return byte_size(top(),    end()); }
+  size_t used() const override   { return byte_size(bottom(), top()); }
+  size_t free() const override   { return byte_size(top(),    end()); }
 
-  virtual bool is_free_block(const HeapWord* p) const;
+  bool is_free_block(const HeapWord* p) const override;
 
   // In a contiguous space we have a more obvious bound on what parts
   // contain objects.
-  MemRegion used_region() const { return MemRegion(bottom(), top()); }
+  MemRegion used_region() const override { return MemRegion(bottom(), top()); }
 
   // Allocation (return NULL if full)
-  virtual HeapWord* allocate(size_t word_size);
-  virtual HeapWord* par_allocate(size_t word_size);
+  HeapWord* allocate(size_t word_size) override;
+  HeapWord* par_allocate(size_t word_size) override;
 
   // Iteration
-  void oop_iterate(OopIterateClosure* cl);
-  void object_iterate(ObjectClosure* blk);
+  void oop_iterate(OopIterateClosure* cl) override;
+  void object_iterate(ObjectClosure* blk) override;
 
   // Compaction support
-  virtual void reset_after_compaction() {
+  void reset_after_compaction() override {
     assert(compaction_top() >= bottom() && compaction_top() <= end(), "should point inside space");
     set_top(compaction_top());
   }
@@ -572,7 +477,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Override.
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
-                                     HeapWord* boundary);
+                                     HeapWord* boundary) override;
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
@@ -590,10 +495,10 @@ class ContiguousSpace: public CompactibleSpace {
   virtual void object_iterate_from(HeapWord* mark, ObjectClosure* blk);
 
   // Very inefficient implementation.
-  virtual HeapWord* block_start_const(const void* p) const;
-  size_t block_size(const HeapWord* p) const;
+  HeapWord* block_start_const(const void* p) const override;
+  size_t block_size(const HeapWord* p) const override;
   // If a block is in the allocated area, it is an object.
-  bool block_is_obj(const HeapWord* p) const { return p < top(); }
+  bool block_is_obj(const HeapWord* p) const override { return p < top(); }
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
@@ -601,32 +506,36 @@ class ContiguousSpace: public CompactibleSpace {
 
 #if INCLUDE_SERIALGC
   // Overrides for more efficient compaction support.
-  void prepare_for_compaction(CompactPoint* cp);
+  void prepare_for_compaction(CompactPoint* cp) override;
 #endif
 
-  virtual void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   // Checked dynamic downcasts.
-  virtual ContiguousSpace* toContiguousSpace() {
+  ContiguousSpace* toContiguousSpace() override {
     return this;
   }
 
   // Debugging
-  virtual void verify() const;
-
-  // Used to increase collection frequency.  "factor" of 0 means entire
-  // space.
-  void allocate_temporary_filler(int factor);
+  void verify() const override;
 };
 
-
-// A dirty card to oop closure that does filtering.
-// It knows how to filter out objects that are outside of the _boundary.
-class FilteringDCTOC : public DirtyCardToOopClosure {
-protected:
-  // Override.
+// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
+// sub-classes). It knows how to filter out objects that are outside of the
+// _boundary.
+//
+// Assumptions:
+// 1. That the actual top of any area in a memory region
+//    contained by the space is bounded by the end of the contiguous
+//    region of the space.
+// 2. That the space is really made up of objects and not just
+//    blocks.
+class ContiguousSpaceDCTOC : public DirtyCardToOopClosure {
+  // Overrides.
   void walk_mem_region(MemRegion mr,
-                       HeapWord* bottom, HeapWord* top);
+                       HeapWord* bottom, HeapWord* top) override;
+
+  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj) override;
 
   // Walk the given memory region, from bottom to top, applying
   // the given oop closure to (possibly) all objects found. The
@@ -635,47 +544,18 @@ protected:
   // be a filtering closure which makes use of the _boundary.
   // We offer two signatures, so the FilteringClosure static type is
   // apparent.
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       OopIterateClosure* cl) = 0;
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       FilteringClosure* cl) = 0;
-
-public:
-  FilteringDCTOC(Space* sp, OopIterateClosure* cl,
-                  CardTable::PrecisionStyle precision,
-                  HeapWord* boundary) :
-    DirtyCardToOopClosure(sp, cl, precision, boundary) {}
-};
-
-// A dirty card to oop closure for contiguous spaces
-// (ContiguousSpace and sub-classes).
-// It is a FilteringClosure, as defined above, and it knows:
-//
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-
-class ContiguousSpaceDCTOC : public FilteringDCTOC {
-protected:
-  // Overrides.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
-
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       OopIterateClosure* cl);
-  virtual void walk_mem_region_with_cl(MemRegion mr,
-                                       HeapWord* bottom, HeapWord* top,
-                                       FilteringClosure* cl);
+  void walk_mem_region_with_cl(MemRegion mr,
+                               HeapWord* bottom, HeapWord* top,
+                               OopIterateClosure* cl);
+  void walk_mem_region_with_cl(MemRegion mr,
+                               HeapWord* bottom, HeapWord* top,
+                               FilteringClosure* cl);
 
 public:
   ContiguousSpaceDCTOC(ContiguousSpace* sp, OopIterateClosure* cl,
                        CardTable::PrecisionStyle precision,
                        HeapWord* boundary) :
-    FilteringDCTOC(sp, cl, precision, boundary)
+    DirtyCardToOopClosure(sp, cl, precision, boundary)
   {}
 };
 
@@ -684,6 +564,7 @@ public:
 // other spaces.)  This is the abstract base class for old generation
 // (tenured) spaces.
 
+#if INCLUDE_SERIALGC
 class OffsetTableContigSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
@@ -695,25 +576,25 @@ class OffsetTableContigSpace: public ContiguousSpace {
   OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
                          MemRegion mr);
 
-  void set_bottom(HeapWord* value);
-  void set_end(HeapWord* value);
+  void set_bottom(HeapWord* value) override;
+  void set_end(HeapWord* value) override;
 
-  void clear(bool mangle_space);
+  void clear(bool mangle_space) override;
 
-  inline HeapWord* block_start_const(const void* p) const;
+  inline HeapWord* block_start_const(const void* p) const override;
 
   // Add offset table update.
-  virtual inline HeapWord* allocate(size_t word_size);
-  inline HeapWord* par_allocate(size_t word_size);
+  inline HeapWord* allocate(size_t word_size) override;
+  inline HeapWord* par_allocate(size_t word_size) override;
 
   // MarkSweep support phase3
-  virtual HeapWord* initialize_threshold();
-  virtual HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  void initialize_threshold() override;
+  void alloc_block(HeapWord* start, HeapWord* end) override;
 
-  virtual void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   // Debugging
-  void verify() const;
+  void verify() const override;
 };
 
 
@@ -723,11 +604,13 @@ class TenuredSpace: public OffsetTableContigSpace {
   friend class VMStructs;
  protected:
   // Mark sweep support
-  size_t allowed_dead_ratio() const;
+  size_t allowed_dead_ratio() const override;
  public:
   // Constructor
   TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
                MemRegion mr) :
     OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
+#endif //INCLUDE_SERIALGC
+
 #endif // SHARE_GC_SHARED_SPACE_HPP

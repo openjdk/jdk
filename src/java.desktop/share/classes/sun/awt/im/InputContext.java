@@ -47,8 +47,8 @@ import java.lang.Character.Subset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -81,7 +81,7 @@ public class InputContext extends java.awt.im.InputContext
     // holding bin for previously used input method instances, but not the current one
     private HashMap<InputMethodLocator, InputMethod> usedInputMethods;
 
-    // the current client component is kept until the user focusses on a different
+    // the current client component is kept until the user focuses on a different
     // client component served by the same input context. When that happens, we call
     // endComposition so that text doesn't jump from one component to another.
     private Component currentClientComponent;
@@ -133,7 +133,7 @@ public class InputContext extends java.awt.im.InputContext
 
     /**
      * @see java.awt.im.InputContext#selectInputMethod
-     * @exception NullPointerException when the locale is null.
+     * @throws NullPointerException when the locale is null.
      */
     public synchronized boolean selectInputMethod(Locale locale) {
         if (locale == null) {
@@ -206,7 +206,7 @@ public class InputContext extends java.awt.im.InputContext
     /**
      * @see java.awt.im.InputContext#reconvert
      * @since 1.3
-     * @exception UnsupportedOperationException when input method is null
+     * @throws UnsupportedOperationException when input method is null
      */
     public synchronized void reconvert() {
         InputMethod inputMethod = getInputMethod();
@@ -610,7 +610,7 @@ public class InputContext extends java.awt.im.InputContext
 
     /**
      * @see java.awt.im.InputContext#removeNotify
-     * @exception NullPointerException when the component is null.
+     * @throws NullPointerException when the component is null.
      */
     public synchronized void removeNotify(Component component) {
         if (component == null) {
@@ -662,7 +662,7 @@ public class InputContext extends java.awt.im.InputContext
 
     /**
      * @see java.awt.im.InputContext#dispose
-     * @exception IllegalStateException when the currentClientComponent is not null
+     * @throws IllegalStateException when the currentClientComponent is not null
      */
     public synchronized void dispose() {
         if (currentClientComponent != null) {
@@ -695,10 +695,10 @@ public class InputContext extends java.awt.im.InputContext
         }
         inputMethodLocator = null;
         if (usedInputMethods != null && !usedInputMethods.isEmpty()) {
-            Iterator<InputMethod> iterator = usedInputMethods.values().iterator();
+            Collection<InputMethod> methods = usedInputMethods.values();
             usedInputMethods = null;
-            while (iterator.hasNext()) {
-                iterator.next().dispose();
+            for (InputMethod method : methods) {
+                method.dispose();
             }
         }
 
@@ -723,7 +723,7 @@ public class InputContext extends java.awt.im.InputContext
 
     /**
      * @see java.awt.im.InputContext#setCompositionEnabled(boolean)
-     * @exception UnsupportedOperationException when input method is null
+     * @throws UnsupportedOperationException when input method is null
      */
     public void setCompositionEnabled(boolean enable) {
         InputMethod inputMethod = getInputMethod();
@@ -736,7 +736,7 @@ public class InputContext extends java.awt.im.InputContext
 
     /**
      * @see java.awt.im.InputContext#isCompositionEnabled
-     * @exception UnsupportedOperationException when input method is null
+     * @throws UnsupportedOperationException when input method is null
      */
     public boolean isCompositionEnabled() {
         InputMethod inputMethod = getInputMethod();
@@ -749,7 +749,7 @@ public class InputContext extends java.awt.im.InputContext
 
     /**
      * @return a string with information about the current input method.
-     * @exception UnsupportedOperationException when input method is null
+     * @throws UnsupportedOperationException when input method is null
      */
     public String getInputMethodInfo() {
         InputMethod inputMethod = getInputMethod();
@@ -782,16 +782,16 @@ public class InputContext extends java.awt.im.InputContext
     }
 
     /**
-     * Turns off the native IM. The native IM is diabled when
-     * the deactive method of InputMethod is called. It is
+     * Turns off the native IM. The native IM is disabled when
+     * the deactivate method of InputMethod is called. It is
      * delayed until the active method is called on a different
      * peer component. This method is provided to explicitly disable
      * the native IM.
      */
     public void disableNativeIM() {
         InputMethod inputMethod = getInputMethod();
-        if (inputMethod != null && inputMethod instanceof InputMethodAdapter) {
-            ((InputMethodAdapter)inputMethod).stopListening();
+        if (inputMethod instanceof InputMethodAdapter adapter) {
+            adapter.stopListening();
         }
     }
 

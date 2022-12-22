@@ -167,7 +167,7 @@ public class currentcm001a {
     }
 }
 /*
-class Threadcurrentcm001a extends Thread {
+class Threadcurrentcm001a extends JDITask {
 
     public Threadcurrentcm001a(String threadName) {
         super(threadName);

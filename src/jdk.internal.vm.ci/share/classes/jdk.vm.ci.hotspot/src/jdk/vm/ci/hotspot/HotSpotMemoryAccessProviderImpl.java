@@ -77,7 +77,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
                         throw new IllegalArgumentException(String.valueOf(bits));
                 }
             }
-            JavaConstant result = runtime().compilerToVm.readFieldValue((HotSpotObjectConstantImpl) baseConstant, null, initialDisplacement, true, readKind);
+            HotSpotObjectConstantImpl baseObject = (HotSpotObjectConstantImpl) baseConstant;
+            JavaConstant result = runtime().compilerToVm.readFieldValue(baseObject, null, initialDisplacement, readKind.getTypeChar());
             if (result != null && kind != readKind) {
                 return JavaConstant.forPrimitive(kind, result.asLong());
             }
@@ -108,7 +109,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
     @Override
     public JavaConstant readObjectConstant(Constant base, long displacement) {
         if (base instanceof HotSpotObjectConstantImpl) {
-            return runtime.getCompilerToVM().readFieldValue((HotSpotObjectConstantImpl) base, null, displacement, true, JavaKind.Object);
+            HotSpotObjectConstantImpl hsBase = (HotSpotObjectConstantImpl) base;
+            return runtime.getCompilerToVM().readFieldValue(hsBase, null, displacement, JavaKind.Object.getTypeChar());
         }
         if (base instanceof HotSpotMetaspaceConstant) {
             MetaspaceObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
@@ -130,7 +132,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
     public JavaConstant readNarrowOopConstant(Constant base, long displacement) {
         if (base instanceof HotSpotObjectConstantImpl) {
             assert runtime.getConfig().useCompressedOops;
-            JavaConstant res = runtime.getCompilerToVM().readFieldValue((HotSpotObjectConstantImpl) base, null, displacement, true, JavaKind.Object);
+            HotSpotObjectConstantImpl hsBase = (HotSpotObjectConstantImpl) base;
+            JavaConstant res = runtime.getCompilerToVM().readFieldValue(hsBase, null, displacement, JavaKind.Object.getTypeChar());
             if (res != null) {
                 return JavaConstant.NULL_POINTER.equals(res) ? HotSpotCompressedNullConstant.COMPRESSED_NULL : ((HotSpotObjectConstant) res).compress();
             }
@@ -146,7 +149,6 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             return runtime.getCompilerToVM().getResolvedJavaType(((HotSpotObjectConstantImpl) base), displacement, compressed);
         }
     }
-
 
     @Override
     public Constant readKlassPointerConstant(Constant base, long displacement) {

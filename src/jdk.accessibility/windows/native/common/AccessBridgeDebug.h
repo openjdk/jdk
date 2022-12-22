@@ -49,12 +49,12 @@
 extern "C" {
 #endif
 
-    char *printError(char *msg);
-    void PrintDebugString(char *msg, ...);
-    void PrintJavaDebugString(char *msg, ...);
-    void wPrintJavaDebugString(wchar_t *msg, ...);
-    void wPrintDebugString(wchar_t *msg, ...);
-    void initializeFileLogger(char * fileName);
+    char *printError(const char *msg);
+    void PrintDebugString(const char *msg, ...);
+    void PrintJavaDebugString(const char *msg, ...);
+    void wPrintJavaDebugString(const wchar_t *msg, ...);
+    void wPrintDebugString(const wchar_t *msg, ...);
+    void initializeFileLogger(const char * fileName);
     void finalizeFileLogger();
 
 #ifdef __cplusplus

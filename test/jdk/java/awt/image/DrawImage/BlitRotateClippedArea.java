@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import static java.awt.Transparency.TRANSLUCENT;
 
 /**
  * @test
- * @bug 8255722
+ * @bug 8255722 8255724
  * @key headful
  */
 public class BlitRotateClippedArea {
@@ -56,6 +56,7 @@ public class BlitRotateClippedArea {
         System.setProperty("sun.java2d.uiScale", "1");
         var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         var gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+        var className = gc.getClass().getSimpleName();
 
         var gold = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
         var dstVI2BI = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
@@ -94,19 +95,38 @@ public class BlitRotateClippedArea {
         } while (dstVI2VI.contentsLost() || dstBI2VI.contentsLost()
                 || srcVI.contentsLost());
 
-        validate(gold, snapshotVI2VI);
-        validate(gold, snapshotBI2VI);
-        validate(gold, dstVI2BI);
+        validate(gold, snapshotVI2VI, className);
+        validate(gold, snapshotBI2VI, className);
+        validate(gold, dstVI2BI, className);
     }
 
-    private static void validate(BufferedImage gold, BufferedImage img)
-            throws IOException {
-        for (int x = 0; x < gold.getWidth(); ++x) {
-            for (int y = 0; y < gold.getHeight(); ++y) {
-                if (gold.getRGB(x, y) != img.getRGB(x, y)) {
-                    ImageIO.write(gold, "png", new File("gold.png"));
-                    ImageIO.write(img, "png", new File("snapshot.png"));
-                    throw new RuntimeException("Test failed.");
+    private static void validate(BufferedImage gold, BufferedImage img,
+                                 String className) throws IOException {
+        if (!(className.equals("XRGraphicsConfig"))) {
+            for (int x = 0; x < gold.getWidth(); ++x) {
+                for (int y = 0; y < gold.getHeight(); ++y) {
+                    if (gold.getRGB(x, y) != img.getRGB(x, y)) {
+                        ImageIO.write(gold, "png", new File("gold.png"));
+                        ImageIO.write(img, "png", new File("snapshot.png"));
+                        throw new RuntimeException("Test failed.");
+                    }
+                }
+            }
+        } else {
+            // In Linux where we use XRender pipeline there is
+            // little deviation because of less arithmetic precision
+            for (int x = 0; x < gold.getWidth(); ++x) {
+                for (int y = 0; y < gold.getHeight(); ++y) {
+                    Color goldColor = new Color(gold.getRGB(x, y));
+                    Color actualColor = new Color(img.getRGB(x, y));
+                    if ((Math.abs(goldColor.getRed() - actualColor.getRed()) > 1) ||
+                        (Math.abs(goldColor.getGreen() - actualColor.getGreen()) > 1) ||
+                        (Math.abs(goldColor.getBlue() - actualColor.getBlue()) > 1)) {
+                        ImageIO.write(gold, "png", new File("gold.png"));
+                        ImageIO.write(img, "png", new File("snapshot.png"));
+                        throw new RuntimeException("Test failed for pixel :"
+                            + x + "/" + y);
+                    }
                 }
             }
         }
@@ -139,4 +159,3 @@ public class BlitRotateClippedArea {
         graphics.dispose();
     }
 }
-

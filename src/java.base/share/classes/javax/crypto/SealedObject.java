@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,17 @@ import java.util.Arrays;
  * This class enables a programmer to create an object and protect its
  * confidentiality with a cryptographic algorithm.
  *
- * <p> Given any Serializable object, one can create a SealedObject
- * that encapsulates the original object, in serialized
+ * <p> Given any {@code Serializable} object, one can create a
+ * {@code SealedObject} that encapsulates the original object, in serialized
  * format (i.e., a "deep copy"), and seals (encrypts) its serialized contents,
  * using a cryptographic algorithm such as AES, to protect its
  * confidentiality.  The encrypted content can later be decrypted (with
  * the corresponding algorithm using the correct decryption key) and
  * de-serialized, yielding the original object.
  *
- * <p> Note that the Cipher object must be fully initialized with the
- * correct algorithm, key, padding scheme, etc., before being applied
- * to a SealedObject.
+ * <p> Note that the {@code Cipher} object must be fully initialized with
+ * the correct algorithm, key, padding scheme, etc., before being applied
+ * to a {@code SealedObject}.
  *
  * <p> The original object that was sealed can be recovered in two different
  * ways:
@@ -58,9 +58,9 @@ import java.util.Arrays;
  * <ul>
  *
  * <li>by using the {@link #getObject(javax.crypto.Cipher) getObject}
- * method that takes a <code>Cipher</code> object.
+ * method that takes a {@code Cipher} object.
  *
- * <p> This method requires a fully initialized <code>Cipher</code> object,
+ * <p> This method requires a fully initialized {@code Cipher} object,
  * initialized with the
  * exact same algorithm, key, padding scheme, etc., that were used to seal the
  * object.
@@ -73,9 +73,9 @@ import java.util.Arrays;
  *
  * <li>by using one of the
  * {@link #getObject(java.security.Key) getObject} methods
- * that take a <code>Key</code> object.
+ * that take a {@code Key} object.
  *
- * <p> In this approach, the <code>getObject</code> method creates a cipher
+ * <p> In this approach, the {@code getObject} method creates a cipher
  * object for the appropriate decryption algorithm and initializes it with the
  * given decryption key and the algorithm parameters (if any) that were stored
  * in the sealed object.
@@ -109,7 +109,7 @@ public class SealedObject implements Serializable {
      *
      * @serial
      */
-    private String sealAlg = null;
+    private final String sealAlg;
 
     /**
      * The algorithm of the parameters used.
@@ -119,28 +119,29 @@ public class SealedObject implements Serializable {
     private String paramsAlg = null;
 
     /**
-     * The cryptographic parameters used by the sealing Cipher,
+     * The cryptographic parameters used by the sealing {@code Cipher} object,
      * encoded in the default format.
      * <p>
-     * That is, <code>cipher.getParameters().getEncoded()</code>.
+     * That is, {@code Cipher.getParameters().getEncoded()}.
      *
      * @serial
      */
     protected byte[] encodedParams = null;
 
     /**
-     * Constructs a SealedObject from any Serializable object.
+     * Constructs a {@code SealedObject} from any {@code Serializable} object.
      *
      * <p>The given object is serialized, and its serialized contents are
-     * encrypted using the given Cipher, which must be fully initialized.
+     * encrypted using the given {@code Cipher} object, which must be fully
+     * initialized.
      *
      * <p>Any algorithm parameters that may be used in the encryption
-     * operation are stored inside of the new <code>SealedObject</code>.
+     * operation are stored inside the new {@code SealedObject}.
      *
-     * @param object the object to be sealed; can be null.
+     * @param object the object to be sealed; can be {@code null}.
      * @param c the cipher used to seal the object.
      *
-     * @exception NullPointerException if the given cipher is null.
+     * @exception NullPointerException if the given cipher is {@code null}.
      * @exception IOException if an error occurs during serialization
      * @exception IllegalBlockSizeException if the given cipher is a block
      * cipher, no padding has been requested, and the total input length
@@ -190,10 +191,12 @@ public class SealedObject implements Serializable {
     }
 
     /**
-     * Constructs a SealedObject object from the passed-in SealedObject.
+     * Constructs a {@code SealedObject} object from the passed-in
+     * {@code SealedObject}.
      *
-     * @param so a SealedObject object
-     * @exception NullPointerException if the given sealed object is null.
+     * @param so a {@code SealedObject} object
+     * @exception NullPointerException if the given sealed object
+     * is {@code null}.
      */
     protected SealedObject(SealedObject so) {
         this.encryptedContent = so.encryptedContent.clone();
@@ -221,11 +224,13 @@ public class SealedObject implements Serializable {
      * <p>This method creates a cipher for the algorithm that had been used in
      * the sealing operation.
      * If the default provider package provides an implementation of that
-     * algorithm, an instance of Cipher containing that implementation is used.
+     * algorithm, a {@code Cipher} object containing that
+     * implementation is used.
      * If the algorithm is not available in the default package, other
      * packages are searched.
-     * The Cipher object is initialized for decryption, using the given
-     * <code>key</code> and the parameters (if any) that had been used in the
+     * The {@code Cipher} object is initialized for decryption,
+     * using the given
+     * {@code key} and the parameters (if any) that had been used in the
      * sealing operation.
      *
      * <p>The encapsulated object is unsealed and de-serialized, before it is
@@ -235,14 +240,14 @@ public class SealedObject implements Serializable {
      *
      * @return the original object.
      *
-     * @exception IOException if an error occurs during de-serialiazation.
+     * @exception IOException if an error occurs during de-serialization.
      * @exception ClassNotFoundException if an error occurs during
-     * de-serialiazation.
+     * de-serialization.
      * @exception NoSuchAlgorithmException if the algorithm to unseal the
      * object is not available.
      * @exception InvalidKeyException if the given key cannot be used to unseal
      * the object (e.g., it has the wrong algorithm).
-     * @exception NullPointerException if <code>key</code> is null.
+     * @exception NullPointerException if {@code key} is null.
      */
     public final Object getObject(Key key)
         throws IOException, ClassNotFoundException, NoSuchAlgorithmException,
@@ -259,28 +264,27 @@ public class SealedObject implements Serializable {
             // them into NoSuchAlgorithmException's with details about
             // the failing algorithm
             throw new NoSuchAlgorithmException("algorithm not found");
-        } catch (IllegalBlockSizeException ibse) {
-            throw new InvalidKeyException(ibse.getMessage());
-        } catch (BadPaddingException bpe) {
-            throw new InvalidKeyException(bpe.getMessage());
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            throw new InvalidKeyException(e.getMessage());
         }
     }
 
     /**
      * Retrieves the original (encapsulated) object.
      *
-     * <p>The encapsulated object is unsealed (using the given Cipher,
-     * assuming that the Cipher is already properly initialized) and
-     * de-serialized, before it is returned.
+     * <p>The encapsulated object is unsealed (using the given
+     * {@code Cipher} object,
+     * assuming that the {@code Cipher} object is already properly initialized)
+     * and de-serialized, before it is returned.
      *
      * @param c the cipher used to unseal the object
      *
      * @return the original object.
      *
-     * @exception NullPointerException if the given cipher is null.
-     * @exception IOException if an error occurs during de-serialiazation
+     * @exception NullPointerException if the given cipher is {@code null}.
+     * @exception IOException if an error occurs during de-serialization
      * @exception ClassNotFoundException if an error occurs during
-     * de-serialiazation
+     * de-serialization
      * @exception IllegalBlockSizeException if the given cipher is a block
      * cipher, no padding has been requested, and the total input length is
      * not a multiple of the cipher's block size
@@ -292,12 +296,8 @@ public class SealedObject implements Serializable {
         throws IOException, ClassNotFoundException, IllegalBlockSizeException,
             BadPaddingException
     {
-        ObjectInput a = getExtObjectInputStream(c);
-        try {
-            Object obj = a.readObject();
-            return obj;
-        } finally {
-            a.close();
+        try (ObjectInput a = getExtObjectInputStream(c)) {
+            return a.readObject();
         }
     }
 
@@ -306,9 +306,10 @@ public class SealedObject implements Serializable {
      *
      * <p>This method creates a cipher for the algorithm that had been used in
      * the sealing operation, using an implementation of that algorithm from
-     * the given <code>provider</code>.
-     * The Cipher object is initialized for decryption, using the given
-     * <code>key</code> and the parameters (if any) that had been used in the
+     * the given {@code provider}.
+     * The {@code Cipher} object is initialized for decryption,
+     * using the given
+     * {@code key} and the parameters (if any) that had been used in the
      * sealing operation.
      *
      * <p>The encapsulated object is unsealed and de-serialized, before it is
@@ -320,18 +321,18 @@ public class SealedObject implements Serializable {
      *
      * @return the original object.
      *
-     * @exception IllegalArgumentException if the given provider is null
+     * @exception IllegalArgumentException if the given provider is {@code null}
      * or empty.
-     * @exception IOException if an error occurs during de-serialiazation.
+     * @exception IOException if an error occurs during de-serialization.
      * @exception ClassNotFoundException if an error occurs during
-     * de-serialiazation.
+     * de-serialization.
      * @exception NoSuchAlgorithmException if the algorithm to unseal the
      * object is not available.
      * @exception NoSuchProviderException if the given provider is not
      * configured.
      * @exception InvalidKeyException if the given key cannot be used to unseal
      * the object (e.g., it has the wrong algorithm).
-     * @exception NullPointerException if <code>key</code> is null.
+     * @exception NullPointerException if {@code key} is null.
      */
     public final Object getObject(Key key, String provider)
         throws IOException, ClassNotFoundException, NoSuchAlgorithmException,
@@ -412,22 +413,18 @@ public class SealedObject implements Serializable {
             throw new RuntimeException(iape.getMessage());
         }
 
-        ObjectInput a = getExtObjectInputStream(c);
-        try {
-            Object obj = a.readObject();
-            return obj;
-        } finally {
-            a.close();
+        try (ObjectInput a = getExtObjectInputStream(c)) {
+            return a.readObject();
         }
     }
 
     /**
-     * Restores the state of the SealedObject from a stream.
+     * Restores the state of the {@code SealedObject} from a stream.
      *
      * @param s the object input stream.
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
-     * @throws NullPointerException if s is null
+     * @throws NullPointerException if s is {@code null}
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
@@ -450,7 +447,7 @@ public class SealedObject implements Serializable {
     }
 
     static {
-        SharedSecrets.setJavaxCryptoSealedObjectAccess((obj,c) -> obj.getExtObjectInputStream(c));
+        SharedSecrets.setJavaxCryptoSealedObjectAccess(SealedObject::getExtObjectInputStream);
     }
 }
 

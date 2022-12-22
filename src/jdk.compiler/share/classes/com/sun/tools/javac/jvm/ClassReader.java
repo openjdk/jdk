@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1446,6 +1446,9 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.previewFeatureInternalType.tsym.flatName()) {
                 sym.flags_field |= PREVIEW_API;
                 setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
+            } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
+                Assert.check(sym.kind == TYP);
+                sym.flags_field |= VALUE_BASED;
             } else {
                 if (proxy.type.tsym == syms.annotationTargetType.tsym) {
                     target = proxy;
@@ -1457,6 +1460,8 @@ public class ClassReader {
                 }  else if (proxy.type.tsym == syms.previewFeatureType.tsym) {
                     sym.flags_field |= PREVIEW_API;
                     setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
+                }  else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
+                    sym.flags_field |= VALUE_BASED;
                 }
                 proxies.append(proxy);
             }
@@ -2586,7 +2591,7 @@ public class ClassReader {
                     if (member.erasure_field != null)
                         ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
                 }
-                if (c == outer) {
+                if (c == outer && member.owner == c) {
                     member.flags_field = flags;
                     enterMember(c, member);
                 }

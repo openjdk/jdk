@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestStringDedup
+ * @test id=passive
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -44,12 +44,11 @@
  */
 
 /*
- * @test TestStringDedup
+ * @test id=default
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  *
@@ -67,12 +66,11 @@
  */
 
 /*
- * @test TestStringDedup
+ * @test id=iu
  * @summary Test Shenandoah string deduplication implementation
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
  *
@@ -89,11 +87,8 @@ import java.lang.reflect.*;
 import java.util.*;
 import jdk.test.lib.Utils;
 
-import sun.misc.*;
-
 public class TestStringDedup {
     private static Field valueField;
-    private static Unsafe unsafe;
 
     private static final int UniqueStrings = 20;
     // How many GC cycles are needed to complete deduplication.
@@ -101,10 +96,6 @@ public class TestStringDedup {
 
     static {
         try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            unsafe = (Unsafe) field.get(null);
-
             valueField = String.class.getDeclaredField("value");
             valueField.setAccessible(true);
         } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 #ifndef SHARE_GC_SHARED_PRETOUCH_HPP
 #define SHARE_GC_SHARED_PRETOUCH_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 
-class PretouchTask : public AbstractGangTask {
+class PretouchTask : public WorkerTask {
   char* volatile _cur_addr;
-  char* const _start_addr;
   char* const _end_addr;
   size_t _page_size;
   size_t _chunk_size;
@@ -42,7 +41,7 @@ public:
   static size_t chunk_size();
 
   static void pretouch(const char* task_name, char* start_address, char* end_address,
-                       size_t page_size, WorkGang* pretouch_gang);
+                       size_t page_size, WorkerThreads* pretouch_workers);
 
 };
 

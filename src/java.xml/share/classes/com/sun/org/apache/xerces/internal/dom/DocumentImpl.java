@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -507,6 +507,7 @@ public class DocumentImpl
 
         private static final long serialVersionUID = -8426757059492421631L;
         String type;
+        @SuppressWarnings("serial") // Type of field is not Serializable
         EventListener listener;
         boolean useCapture;
 

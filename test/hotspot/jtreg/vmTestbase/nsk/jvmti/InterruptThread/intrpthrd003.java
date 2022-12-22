@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,24 @@ package nsk.jvmti.InterruptThread;
 import java.io.PrintStream;
 
 public class intrpthrd003 {
+    private final static String AGENT_LIB = "intrpthrd003";
+    private final static int DEF_TIME_MAX = 30;  // default max # secs to test
 
     final static int THREADS_NUMBER = 32;
     final static int N_LATE_CALLS = 1000;
 
     static {
         try {
-            System.loadLibrary("intrpthrd003");
+            System.loadLibrary(AGENT_LIB);
         } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load intrpthrd003 library");
+            System.err.println("Could not load " + AGENT_LIB + " library");
             System.err.println("java.library.path:"
                 + System.getProperty("java.library.path"));
             throw ule;
         }
     }
 
-    native static int check(int ind, Thread thr);
+    native static int check(long ind, Thread thr);
     native static int getResult();
     native static boolean isThreadNotAliveError();
 
@@ -51,20 +53,34 @@ public class intrpthrd003 {
         System.exit(run(args, System.out) + 95/*STATUS_TEMP*/);
     }
 
-    public static int run(String argv[], PrintStream ref) {
-        intrpthrd003a runn[] = new intrpthrd003a[THREADS_NUMBER];
+    public static int run(String args[], PrintStream ref) {
+        int timeMax = 0;
+        if (args.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            try {
+                timeMax = Integer.parseUnsignedInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                System.err.println("'" + args[0] + "': invalid timeMax value.");
+                usage();
+            }
+        }
 
-        System.out.println("Case 1: JVM/TI InterruptThread()");
-        for (int i = 0; i < THREADS_NUMBER; i++ ) {
-            runn[i] = new intrpthrd003a();
-            int late_count = 1;
-            synchronized (runn[i].syncObject) {
-                runn[i].start();
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long count = 0;
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
+
+            intrpthrd003a thr = new intrpthrd003a();
+            synchronized (thr.syncObject) {
+                thr.start();
                 try {
-                    runn[i].syncObject.wait();
+                    thr.syncObject.wait();
 
-                    for (; late_count <= N_LATE_CALLS; late_count++) {
-                        if (check(i, runn[i]) == 2) break;
+                    while (true) {
+                        if (check(count, thr) == 2) break;
 
                         if (isThreadNotAliveError()) {
                             // Done with InterruptThread() calls since
@@ -77,75 +93,27 @@ public class intrpthrd003 {
                 }
             }
 
-            System.out.println("INFO: thread #" + i + ": made " + late_count +
-                               " late calls to JVM/TI InterruptThread()");
-            System.out.println("INFO: thread #" + i + ": N_LATE_CALLS==" +
-                               N_LATE_CALLS + " value is " +
-                               ((late_count >= N_LATE_CALLS) ? "NOT " : "") +
-                               "large enough to cause an InterruptThread() " +
-                               "call after thread exit.");
-
             try {
-                runn[i].join();
+                thr.join();
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             }
-            if (check(i, runn[i]) == 2) break;
-            if (!isThreadNotAliveError()) {
-                throw new Error("Expected JVMTI_ERROR_THREAD_NOT_ALIVE " +
-                                "after thread #" + i + " has been join()'ed");
-            }
+            if (check(count, thr) == 2) break;
         }
 
-        int res = getResult();
-        if (res != 0) {
-            return res;
-        }
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                           " seconds.");
 
-        System.out.println("Case 2: java.lang.Thread.interrupt()");
-        for (int i = 0; i < THREADS_NUMBER; i++ ) {
-            runn[i] = new intrpthrd003a();
-            int late_count = 1;
-            synchronized (runn[i].syncObject) {
-                runn[i].start();
-                try {
-                    runn[i].syncObject.wait();
+        return getResult();
+    }
 
-                    for (; late_count <= N_LATE_CALLS; late_count++) {
-                        runn[i].interrupt();
-
-                        if (!runn[i].isAlive()) {
-                            // Done with Thread.interrupt() calls since
-                            // thread is not alive.
-                            break;
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    throw new Error("Unexpected: " + e);
-                }
-            }
-
-            System.out.println("INFO: thread #" + i + ": made " + late_count +
-                               " late calls to java.lang.Thread.interrupt()");
-            System.out.println("INFO: thread #" + i + ": N_LATE_CALLS==" +
-                               N_LATE_CALLS + " value is " +
-                               ((late_count >= N_LATE_CALLS) ? "NOT " : "") +
-                               "large enough to cause a Thread.interrupt() " +
-                               "call after thread exit.");
-
-            try {
-                runn[i].join();
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected: " + e);
-            }
-            runn[i].interrupt();
-            if (runn[i].isAlive()) {
-                throw new Error("Expected !Thread.isAlive() after thread #" +
-                                i + " has been join()'ed");
-            }
-        }
-
-        return res;
+    public static void usage() {
+        System.err.println("Usage: " + AGENT_LIB + " [time_max]");
+        System.err.println("where:");
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
+                           " seconds)");
+        System.exit(1);
     }
 }
 

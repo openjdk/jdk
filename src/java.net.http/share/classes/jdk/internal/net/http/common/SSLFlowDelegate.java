@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -781,6 +781,7 @@ public class SSLFlowDelegate {
                                 + hsTriggered() + ", needWrap:" + needWrap());
 
                 while (Utils.synchronizedRemaining(writeList) > 0 || hsTriggered() || needWrap()) {
+                    if (scheduler.isStopped()) return;
                     ByteBuffer[] outbufs = writeList.toArray(Utils.EMPTY_BB_ARRAY);
                     EngineResult result = wrapBuffers(outbufs);
                     if (debugw.on())
@@ -938,7 +939,7 @@ public class SSLFlowDelegate {
         @Override
         public String toString() {
             return "WRITER: " + super.toString()
-                    + ", writeList size: " + Integer.toString(writeList.size())
+                    + ", writeList size: " + writeList.size()
                     + ", scheduler: " + (scheduler.isStopped() ? "stopped" : "running")
                     + ", status: " + lastWrappedStatus;
                     //" writeList: " + writeList.toString();
@@ -1113,7 +1114,7 @@ public class SSLFlowDelegate {
         exec.execute(() -> {
             try {
                 List<Runnable> nextTasks = tasks;
-                if (debug.on()) debug.log("#tasks to execute: " + Integer.toString(nextTasks.size()));
+                if (debug.on()) debug.log("#tasks to execute: " + nextTasks.size());
                 do {
                     nextTasks.forEach(Runnable::run);
                     if (engine.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {

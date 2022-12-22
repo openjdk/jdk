@@ -1,0 +1,222 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.internal.net.http.common;
+
+import java.net.http.HttpResponse.BodySubscriber;
+import java.nio.ByteBuffer;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+
+import jdk.internal.net.http.ResponseSubscribers.TrustedSubscriber;
+
+/**
+ * A class that wraps a user supplied {@link BodySubscriber}, but on
+ * which {@link #onError(Throwable)} can be invoked at any time,
+ * even before {@link #onSubscribe(Subscription)} has not been called
+ * yet.
+ * @param <T> the type of the response body
+ */
+public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
+
+    public static final Comparator<HttpBodySubscriberWrapper<?>> COMPARE_BY_ID
+            = Comparator.comparing(HttpBodySubscriberWrapper::id);
+
+
+    public static final Flow.Subscription NOP = new Flow.Subscription() {
+        @Override
+        public void request(long n) { }
+        public void cancel() { }
+    };
+
+    static final AtomicLong IDS = new AtomicLong();
+    final long id = IDS.incrementAndGet();
+    final BodySubscriber<T> userSubscriber;
+    final AtomicBoolean completed = new AtomicBoolean();
+    final AtomicBoolean subscribed = new AtomicBoolean();
+    final ReentrantLock subscriptionLock = new ReentrantLock();
+    volatile SubscriptionWrapper subscription;
+    volatile Throwable withError;
+    public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
+        this.userSubscriber = userSubscriber;
+    }
+
+    private class SubscriptionWrapper implements Subscription {
+        final Subscription subscription;
+        SubscriptionWrapper(Subscription s) {
+            this.subscription = Objects.requireNonNull(s);
+        }
+        @Override
+        public void request(long n) {
+            subscription.request(n);
+        }
+
+        @Override
+        public void cancel() {
+            try {
+                subscription.cancel();
+                onCancel();
+            } catch (Throwable t) {
+                onError(t);
+            }
+        }
+    }
+
+    final long id() { return id; }
+
+    @Override
+    public boolean needsExecutor() {
+        return TrustedSubscriber.needsExecutor(userSubscriber);
+    }
+
+    // propagate the error to the user subscriber, even if not
+    // subscribed yet.
+    private void propagateError(Throwable t) {
+        assert t != null;
+        assert completed.get();
+        try {
+            // if unsubscribed at this point, it will not
+            // get subscribed later - so do it now and
+            // propagate the error
+            // Race condition with onSubscribe: we need to wait until
+            // subscription is finished before calling onError;
+            subscriptionLock.lock();
+            try {
+                if (subscribed.compareAndSet(false, true)) {
+                    userSubscriber.onSubscribe(NOP);
+                }
+            } finally {
+                subscriptionLock.unlock();
+            }
+        } finally  {
+            // if onError throws then there is nothing to do
+            // here: let the caller deal with it by logging
+            // and closing the connection.
+            userSubscriber.onError(t);
+        }
+    }
+
+    /**
+     * Called when the subscriber cancels its subscription.
+     * @apiNote
+     * This method may be used by subclasses to perform cleanup
+     * actions after a subscription has been cancelled.
+     */
+    protected void onCancel() { }
+
+    /**
+     * Called right before the userSubscriber::onSubscribe is called.
+     * @apiNote
+     * This method may be used by subclasses to perform cleanup
+     * related actions after a subscription has been succesfully
+     * accepted.
+     */
+    protected void onSubscribed() { }
+
+    /**
+     * Complete the subscriber, either normally or exceptionally
+     * ensure that the subscriber is completed only once.
+     * @param t a throwable, or {@code null}
+     */
+    protected void complete(Throwable t) {
+        if (completed.compareAndSet(false, true)) {
+            t  = withError = Utils.getCompletionCause(t);
+            if (t == null) {
+                try {
+                    assert subscribed.get();
+                    userSubscriber.onComplete();
+                } catch (Throwable x) {
+                    // Simply propagate the error by calling
+                    // onError on the user subscriber, and let the
+                    // connection be reused since we should have received
+                    // and parsed all the bytes when we reach here.
+                    // If onError throws in turn, then we will simply
+                    // let that new exception flow up to the caller
+                    // and let it deal with it.
+                    // (i.e: log and close the connection)
+                    // Note that rethrowing here could introduce a
+                    // race that might cause the next send() operation to
+                    // fail as the connection has already been put back
+                    // into the cache when we reach here.
+                    propagateError(t = withError = Utils.getCompletionCause(x));
+                }
+            } else {
+                propagateError(t);
+            }
+        }
+    }
+
+    @Override
+    public CompletionStage<T> getBody() {
+        return userSubscriber.getBody();
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription subscription) {
+        // race condition with propagateError: we need to wait until
+        // subscription is finished before calling onError;
+        subscriptionLock.lock();
+        try {
+            if (subscribed.compareAndSet(false, true)) {
+                onSubscribed();
+                SubscriptionWrapper wrapped = new SubscriptionWrapper(subscription);
+                userSubscriber.onSubscribe(this.subscription = wrapped);
+            } else {
+                subscription.cancel();
+            }
+        } finally {
+            subscriptionLock.unlock();
+        }
+    }
+
+    @Override
+    public void onNext(List<ByteBuffer> item) {
+        assert subscribed.get();
+        if (completed.get()) {
+            SubscriptionWrapper subscription = this.subscription;
+            if (subscription != null) {
+                subscription.subscription.cancel();
+            }
+        } else {
+            userSubscriber.onNext(item);
+        }
+    }
+    @Override
+    public void onError(Throwable throwable) {
+        complete(throwable);
+    }
+    @Override
+    public void onComplete() {
+        complete(null);
+    }
+}

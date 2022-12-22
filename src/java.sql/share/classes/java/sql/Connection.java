@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,7 +634,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * custom mapping of SQL structured types and distinct types.
      * <p>
      * You must set the values for the {@code TypeMap} prior to
-     * callng {@code setMap} as a JDBC driver may create an internal copy
+     * calling {@code setMap} as a JDBC driver may create an internal copy
      * of the {@code TypeMap}:
      *
      * <pre>
@@ -1594,7 +1594,7 @@ throws SQLException;
     /**
      * Sets and validates the sharding keys for this connection. A {@code null}
      * value may be specified for the sharding Key. The validity
-     * of a {@code null} sharding key is vendor-specific. Consult your vendor&#39;s
+     * of a {@code null} sharding key is vendor-specific. Consult your vendor's
      * documentation for additional information.
      * @implSpec
      * The default implementation will throw a
@@ -1616,7 +1616,7 @@ throws SQLException;
      * and set on this connection; false if the sharding keys are not valid or
      * the timeout period expires before the operation completes.
      * @throws SQLException if an error occurs while performing this validation;
-     * a {@code superSharedingKey} is specified
+     * a {@code superShardingKey} is specified
      * without a {@code shardingKey};
      * this method is called on a closed {@code connection}; or
      * the {@code timeout} value is negative.
@@ -1634,7 +1634,7 @@ throws SQLException;
     /**
      * Sets and validates the sharding key for this connection. A {@code null}
      * value may be specified for the sharding Key. The validity
-     * of a {@code null} sharding key is vendor-specific. Consult your vendor&#39;s
+     * of a {@code null} sharding key is vendor-specific. Consult your vendor's
      * documentation for additional information.
      * @implSpec
      * The default implementation will throw a
@@ -1680,7 +1680,7 @@ throws SQLException;
      * The super sharding key may be {@code null}
      * @throws SQLException if an error  occurs setting the sharding keys;
      * this method is called on a closed {@code connection}; or
-     * a {@code superSharedingKey} is specified without a {@code shardingKey}
+     * a {@code superShardingKey} is specified without a {@code shardingKey}
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
      * @since 9
      * @see ShardingKey

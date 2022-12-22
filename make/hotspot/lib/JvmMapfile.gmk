@@ -53,7 +53,7 @@ endif
 # platform dependent.
 
 ifeq ($(call isTargetOs, linux), true)
-  DUMP_SYMBOLS_CMD := $(NM) --defined-only *.o
+  DUMP_SYMBOLS_CMD := $(NM) --defined-only *$(OBJ_SUFFIX)
   ifneq ($(FILTER_SYMBOLS_PATTERN), )
     FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
   endif
@@ -67,7 +67,7 @@ ifeq ($(call isTargetOs, linux), true)
 else ifeq ($(call isTargetOs, macosx), true)
   # nm on macosx prints out "warning: nm: no name list" to stderr for
   # files without symbols. Hide this, even at the expense of hiding real errors.
-  DUMP_SYMBOLS_CMD := $(NM) -Uj *.o 2> /dev/null
+  DUMP_SYMBOLS_CMD := $(NM) -Uj *$(OBJ_SUFFIX) 2> /dev/null
   ifneq ($(FILTER_SYMBOLS_PATTERN), )
     FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
   endif
@@ -78,7 +78,7 @@ else ifeq ($(call isTargetOs, macosx), true)
       }'
 
 # NOTE: The script is from the old build. It is broken and finds no symbols.
-# The script below might be what was intended, but it failes to link with tons
+# The script below might be what was intended, but it fails to link with tons
 # of 'cannot export hidden symbol vtable for X'.
 #  '{ if ($$1 ~ /^__ZTV/ || $$1 ~ /^_gHotSpotVM/) print substr($$1, 2) }'
 else ifeq ($(call isTargetOs, aix), true)
@@ -89,7 +89,7 @@ else ifeq ($(call isTargetOs, aix), true)
   # which may be installed under /opt/freeware/bin. So better use an absolute path here!
   # NM=/usr/bin/nm
 
-  DUMP_SYMBOLS_CMD := $(NM) -X64 -B -C *.o
+  DUMP_SYMBOLS_CMD := $(NM) -X64 -B -C *$(OBJ_SUFFIX)
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
         if (($$2="d" || $$2="D") && ($$3 ~ /^__vft/ || $$3 ~ /^gHotSpotVM/)) print $$3; \
@@ -98,10 +98,27 @@ else ifeq ($(call isTargetOs, aix), true)
        }'
 
 else ifeq ($(call isTargetOs, windows), true)
-  DUMP_SYMBOLS_CMD := $(DUMPBIN) -symbols *.obj
+  DUMP_SYMBOLS_CMD := $(DUMPBIN) -symbols *$(OBJ_SUFFIX)
+
+  # The following lines create a list of vftable symbols to be filtered out of
+  # the mapfile. Removing this line causes the linker to complain about too many
+  # (> 64K) symbols, so the _guess_ is that this line is here to keep down the
+  # number of exported symbols below that limit.
+  #
+  # Some usages of C++ lambdas require the vftable symbol of classes that use
+  # the lambda type as a template parameter. The usage of those classes won't
+  # link if their vftable symbols are removed. That's why there's an exception
+  # for vftable symbols containing the string 'lambda'.
+  #
+  # A very simple example of a lambda usage that fails if the lambda vftable
+  # symbols are missing in the mapfile:
+  #
+  # #include <functional>
+  # std::function<void()> f = [](){}
+
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
-        if ($$7 ~ /??_7.*@@6B@/ && $$7 !~ /type_info/) print $$7; \
+        if ($$7 ~ /??_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print $$7; \
       }'
 
 else

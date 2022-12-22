@@ -1337,7 +1337,7 @@ public class ScheduledExecutorTest extends JSR166TestCase {
     /**
      * A fixed delay task with overflowing period should not prevent a
      * one-shot task from executing.
-     * https://bugs.openjdk.java.net/browse/JDK-8051859
+     * https://bugs.openjdk.org/browse/JDK-8051859
      */
     @SuppressWarnings("FutureReturnValueIgnored")
     public void testScheduleWithFixedDelay_overflow() throws Exception {

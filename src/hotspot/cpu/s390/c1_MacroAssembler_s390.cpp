@@ -27,16 +27,18 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label ic_miss, ic_hit;
@@ -72,10 +74,13 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   generate_stack_overflow_check(bang_size_in_bytes);
   save_return_pc();
   push_frame(frame_size_in_bytes);
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this);
 }
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) z_illtrap(0xC1);
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry) z_illtrap(0xC1);
 }
 
 void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
@@ -97,10 +102,6 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
     z_btrue(slow_case);
   }
 
-  if (UseBiasedLocking) {
-    biased_locking_enter(obj, hdr, Z_R1_scratch, Z_R0_scratch, done, &slow_case);
-  }
-
   // and mark it as unlocked.
   z_oill(hdr, markWord::unlocked_value);
   // Save unlocked object header into the displaced header location on the stack.
@@ -110,13 +111,6 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   // object header instead.
   z_csg(hdr, disp_hdr, hdr_offset, obj);
   // If the object header was the same, we're done.
-  if (PrintBiasedLockingStatistics) {
-    Unimplemented();
-#if 0
-    cond_inc32(Assembler::equal,
-               ExternalAddress((address)BiasedLocking::fast_path_entry_count_addr()));
-#endif
-  }
   branch_optimized(Assembler::bcondEqual, done);
   // If the object header was not the same, it is now in the hdr register.
   // => Test if it is a stack pointer into the same stack (recursive locking), i.e.:
@@ -150,20 +144,12 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert_different_registers(hdr, obj, disp_hdr);
   NearLabel done;
 
-  if (UseBiasedLocking) {
-    // Load object.
-    z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-    biased_locking_exit(obj, hdr, done);
-  }
-
   // Load displaced header.
   z_ltg(hdr, Address(disp_hdr, (intptr_t)0));
   // If the loaded hdr is NULL we had recursive locking, and we are done.
   z_bre(done);
-  if (!UseBiasedLocking) {
-    // Load object.
-    z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
-  }
+  // Load object.
+  z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
   verify_oop(obj, FILE_AND_LINE);
   // Test if object header is pointing to the displaced header, and if so, restore
   // the displaced header in the object. If the object header is not pointing to
@@ -193,13 +179,8 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register Rzero, Register t1) {
   assert_different_registers(obj, klass, len, t1, Rzero);
-  if (UseBiasedLocking && !len->is_valid()) {
-    assert_different_registers(obj, klass, len, t1);
-    z_lg(t1, Address(klass, Klass::prototype_header_offset()));
-  } else {
-    // This assumes that all prototype bits fit in an int32_t.
-    load_const_optimized(t1, (intx)markWord::prototype().value());
-  }
+  // This assumes that all prototype bits fit in an int32_t.
+  load_const_optimized(t1, (intx)markWord::prototype().value());
   z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (len->is_valid()) {

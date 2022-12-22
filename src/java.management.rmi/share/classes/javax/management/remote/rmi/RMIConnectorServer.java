@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,8 +420,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 try {
                     mbsf = new MBeanServerFileAccessController(accessFile);
                 } catch (IOException e) {
-                    throw EnvHelp.initCause(
-                        new IllegalArgumentException(e.getMessage()), e);
+                    throw new IllegalArgumentException(e.getMessage(), e);
                 }
                 // Set the MBeanServerForwarder
                 //
@@ -434,9 +433,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
             defaultClassLoader = EnvHelp.resolveServerClassLoader(
                     attributes, getMBeanServer());
         } catch (InstanceNotFoundException infc) {
-            IllegalArgumentException x = new
-                IllegalArgumentException("ClassLoader not found: "+infc);
-            throw EnvHelp.initCause(x,infc);
+            throw new IllegalArgumentException("ClassLoader not found: " + infc, infc);
         }
 
         if (tracing) logger.trace("start", "setting RMIServer object");
@@ -831,8 +828,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      */
     private static IOException newIOException(String message,
                                               Throwable cause) {
-        final IOException x = new IOException(message);
-        return EnvHelp.initCause(x,cause);
+        return new IOException(message, cause);
     }
 
 

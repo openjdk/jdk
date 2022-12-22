@@ -59,7 +59,6 @@ import java.security.AccessController;
  * @see java.util.Comparator
  * @since 1.4
  */
-@SuppressWarnings("removal")
 public class SortingFocusTraversalPolicy
     extends InternalFrameFocusTraversalPolicy
 {
@@ -72,7 +71,7 @@ public class SortingFocusTraversalPolicy
      * Used by getComponentAfter and getComponentBefore for efficiency. In
      * order to maintain compliance with the specification of
      * FocusTraversalPolicy, if traversal wraps, we should invoke
-     * getFirstComponent or getLastComponent. These methods may be overriden in
+     * getFirstComponent or getLastComponent. These methods may be overridden in
      * subclasses to behave in a non-generic way. However, in the generic case,
      * these methods will simply return the first or last Components of the
      * sorted list, respectively. Since getComponentAfter and
@@ -96,12 +95,10 @@ public class SortingFocusTraversalPolicy
      * When false, the default (tim-sort) algo is used, which may lead to an exception.
      * See: JDK-8048887
      */
-    private static final boolean legacySortingFTPEnabled;
-
-    static {
-        legacySortingFTPEnabled = "true".equals(AccessController.doPrivileged(
-            new GetPropertyAction("swing.legacySortingFTPEnabled", "true")));
-    }
+    @SuppressWarnings("removal")
+    private static final boolean legacySortingFTPEnabled = "true".equals(
+            AccessController.doPrivileged(
+                    new GetPropertyAction("swing.legacySortingFTPEnabled", "true")));
 
     /**
      * Constructs a SortingFocusTraversalPolicy without a Comparator.
@@ -228,7 +225,7 @@ public class SortingFocusTraversalPolicy
                     retComp = cont.getFocusTraversalPolicy().getDefaultComponent(cont);
 
                     if (retComp != null && log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("### Transfered focus down-cycle to " + retComp +
+                        log.fine("### Transferred focus down-cycle to " + retComp +
                                  " in the focus cycle root " + cont);
                     }
                 } else {
@@ -240,7 +237,7 @@ public class SortingFocusTraversalPolicy
                            cont.getFocusTraversalPolicy().getLastComponent(cont));
 
                 if (retComp != null && log.isLoggable(PlatformLogger.Level.FINE)) {
-                    log.fine("### Transfered focus to " + retComp + " in the FTP provider " + cont);
+                    log.fine("### Transferred focus to " + retComp + " in the FTP provider " + cont);
                 }
             }
         }

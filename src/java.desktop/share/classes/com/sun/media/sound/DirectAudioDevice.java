@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,13 +361,13 @@ final class DirectAudioDevice extends AbstractMixer {
         protected final int deviceID;
         protected long id;
         protected int waitTime;
-        protected volatile boolean flushing = false;
+        protected volatile boolean flushing;
         protected final boolean isSource;         // true for SourceDataLine, false for TargetDataLine
         protected volatile long bytePosition;
-        protected volatile boolean doIO = false;     // true in between start() and stop() calls
-        protected volatile boolean stoppedWritten = false; // true if a write occurred in stopped state
-        protected volatile boolean drained = false; // set to true when drain function returns, set to false in write()
-        protected boolean monitoring = false;
+        protected volatile boolean doIO;     // true in between start() and stop() calls
+        protected volatile boolean stoppedWritten; // true if a write occurred in stopped state
+        protected volatile boolean drained; // set to true when drain function returns, set to false in write()
+        protected boolean monitoring;
 
         // if native needs to manually swap samples/convert sign, this
         // is set to the framesize
@@ -379,7 +379,7 @@ final class DirectAudioDevice extends AbstractMixer {
         private final Balance balanceControl = new Balance();
         private final Pan panControl = new Pan();
         private float leftGain, rightGain;
-        protected volatile boolean noService = false; // do not run the nService method
+        protected volatile boolean noService; // do not run the nService method
 
         // Guards all native calls.
         protected final Object lockNative = new Object();
@@ -975,7 +975,7 @@ final class DirectAudioDevice extends AbstractMixer {
             implements Clip, Runnable, AutoClosingClip {
 
         private volatile Thread thread;
-        private volatile byte[] audioData = null;
+        private volatile byte[] audioData;
         private volatile int frameSize;         // size of one frame in bytes
         private volatile int m_lengthInFrames;
         private volatile int loopCount;
@@ -1019,7 +1019,7 @@ final class DirectAudioDevice extends AbstractMixer {
             synchronized (mixer) {
                 if (isOpen()) {
                     throw new IllegalStateException("Clip is already open with format " + getFormat() +
-                                                    " and frame lengh of " + getFrameLength());
+                                                    " and frame length of " + getFrameLength());
                 } else {
                     // if the line is not currently open, try to open it with this format and buffer size
                     this.audioData = data;
@@ -1036,15 +1036,12 @@ final class DirectAudioDevice extends AbstractMixer {
                     try {
                         // use DirectDL's open method to open it
                         open(format, (int) Toolkit.millis2bytes(format, CLIP_BUFFER_TIME)); // one second buffer
-                    } catch (LineUnavailableException lue) {
+                    } catch (LineUnavailableException | IllegalArgumentException e) {
                         audioData = null;
-                        throw lue;
-                    } catch (IllegalArgumentException iae) {
-                        audioData = null;
-                        throw iae;
+                        throw e;
                     }
 
-                    // if we got this far, we can instanciate the thread
+                    // if we got this far, we can instantiate the thread
                     int priority = Thread.NORM_PRIORITY
                         + (Thread.MAX_PRIORITY - Thread.NORM_PRIORITY) / 3;
                     thread = JSSecurityManager.createThread(this,
@@ -1074,7 +1071,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
                 if (isOpen()) {
                     throw new IllegalStateException("Clip is already open with format " + getFormat() +
-                                                    " and frame lengh of " + getFrameLength());
+                                                    " and frame length of " + getFrameLength());
                 }
                 int lengthInFrames = (int)stream.getFrameLength();
                 int bytesRead = 0;
@@ -1192,7 +1189,7 @@ final class DirectAudioDevice extends AbstractMixer {
         }
 
         @Override
-        public synchronized void setMicrosecondPosition(long microseconds) {
+        public void setMicrosecondPosition(long microseconds) {
             long frames = Toolkit.micros2frames(getFormat(), microseconds);
             setFramePosition((int) frames);
         }
@@ -1215,7 +1212,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
             // if the end position is less than the start position, throw IllegalArgumentException
             if (end < start) {
-                throw new IllegalArgumentException("End position " + end + "  preceeds start position " + start);
+                throw new IllegalArgumentException("End position " + end + "  precedes start position " + start);
             }
 
             // slight race condition with the run() method, but not a big problem
@@ -1297,8 +1294,9 @@ final class DirectAudioDevice extends AbstractMixer {
                     }
                 }
                 while (doIO && thread == curThread) {
-                    if (newFramePosition >= 0) {
-                        clipBytePosition = newFramePosition * frameSize;
+                    int npf = newFramePosition; // copy into local variable
+                    if (npf >= 0) {
+                        clipBytePosition = npf * frameSize;
                         newFramePosition = -1;
                     }
                     int endFrame = getFrameLength() - 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.List;
  * @since 1.4
  */
 
-public abstract class ResolverConfiguration {
+public sealed abstract class ResolverConfiguration permits ResolverConfigurationImpl {
 
     private static final Object lock = new Object();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  *
  * @requires vm.opt.DeoptimizeALot != true
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
@@ -44,7 +44,7 @@
 package compiler.whitebox;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.util.EnumSet;
 
@@ -69,7 +69,7 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
         Asserts.assertLT(-1, 0, "message");
 
         checkNotCompiled();
-        guaranteedSweep();
+        WHITE_BOX.fullGC();
         int usage = getTotalUsage();
 
         compile();
@@ -78,13 +78,13 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
         Asserts.assertGT(afterCompilation, usage,
                 "compilation should increase usage");
 
-        guaranteedSweep();
+        WHITE_BOX.fullGC();
         int afterSweep = getTotalUsage();
         Asserts.assertLTE(afterSweep, afterCompilation,
                 "sweep shouldn't increase usage");
 
         deoptimize();
-        guaranteedSweep();
+        WHITE_BOX.fullGC();
         int afterDeoptAndSweep = getTotalUsage();
         Asserts.assertLT(afterDeoptAndSweep, afterSweep,
                 "sweep after deoptimization should decrease usage");
@@ -96,12 +96,5 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
            usage += type.getMemoryPool().getUsage().getUsed();
         }
         return usage;
-    }
-    private void guaranteedSweep() {
-        // not entrant -> ++stack_traversal_mark -> zombie -> flushed
-        for (int i = 0; i < 5; ++i) {
-            WHITE_BOX.fullGC();
-            WHITE_BOX.forceNMethodSweep();
-        }
     }
 }

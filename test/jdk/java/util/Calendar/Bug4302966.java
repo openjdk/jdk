@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Locale;
 public class Bug4302966 {
 
     public static void main(String[] args) {
-        Calendar czechCalendar = Calendar.getInstance(new Locale("cs", "CZ"));
+        Calendar czechCalendar = Calendar.getInstance(Locale.of("cs", "CZ"));
         int firstDayOfWeek = czechCalendar.getFirstDayOfWeek();
         if (firstDayOfWeek != Calendar.MONDAY) {
             throw new RuntimeException();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,9 @@ import java.awt.image.*;
 
 public class CopyAreaOOB extends Canvas {
 
-    private static boolean done;
+    private static Robot robot = null;
 
     public void paint(Graphics g) {
-        synchronized (this) {
-            if (done) {
-                return;
-            }
-        }
-
         int w = getWidth();
         int h = getHeight();
 
@@ -64,10 +58,23 @@ public class CopyAreaOOB extends Canvas {
 
         Toolkit.getDefaultToolkit().sync();
 
-        synchronized (this) {
-            done = true;
-            notifyAll();
+        BufferedImage capture = null;
+        try {
+            Thread.sleep(500);
+            if (robot == null) robot = new Robot();
+            Point pt1 = getLocationOnScreen();
+            Rectangle rect = new Rectangle(pt1.x, pt1.y, 400, 400);
+            capture = robot.createScreenCapture(rect);
+        } catch (Exception e) {
+            throw new RuntimeException("Problems handling Robot");
         }
+        // Test pixels
+        testRegion(capture, "green",          0,   0, 400,  10, 0xff00ff00);
+        testRegion(capture, "original red",   0,  10,  50, 400, 0xffff0000);
+        testRegion(capture, "background",    50,  10,  60, 400, 0xff000000);
+        testRegion(capture, "in-between",    60,  10, 110,  20, 0xff000000);
+        testRegion(capture, "copied red",    60,  20, 110, 400, 0xffff0000);
+        testRegion(capture, "background",   110,  10, 400, 400, 0xff000000);
     }
 
     public Dimension getPreferredSize() {
@@ -105,42 +112,11 @@ public class CopyAreaOOB extends Canvas {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        // Wait until the component's been painted
-        synchronized (test) {
-            while (!done) {
-                try {
-                    test.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed: Interrupted");
-                }
-            }
-        }
-
         try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
         } catch (InterruptedException ex) {}
-
-        // Grab the screen region
-        BufferedImage capture = null;
-        try {
-            Robot robot = new Robot();
-            Point pt1 = test.getLocationOnScreen();
-            Rectangle rect = new Rectangle(pt1.x, pt1.y, 400, 400);
-            capture = robot.createScreenCapture(rect);
-        } catch (Exception e) {
-            throw new RuntimeException("Problems creating Robot");
-        } finally {
-            if (!show) {
-                frame.dispose();
-            }
+        if (!show) {
+            frame.dispose();
         }
-
-        // Test pixels
-        testRegion(capture, "green",          0,   0, 400,  10, 0xff00ff00);
-        testRegion(capture, "original red",   0,  10,  50, 400, 0xffff0000);
-        testRegion(capture, "background",    50,  10,  60, 400, 0xff000000);
-        testRegion(capture, "in-between",    60,  10, 110,  20, 0xff000000);
-        testRegion(capture, "copied red",    60,  20, 110, 400, 0xffff0000);
-        testRegion(capture, "background",   110,  10, 400, 400, 0xff000000);
     }
 }

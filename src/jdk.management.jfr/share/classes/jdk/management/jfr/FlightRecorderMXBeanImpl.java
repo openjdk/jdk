@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,10 +215,10 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     }
 
     @Override
-    public void setRecordingSettings(long recording, Map<String, String> values) throws IllegalArgumentException {
-        Objects.requireNonNull(values);
+    public void setRecordingSettings(long recording, Map<String, String> settings) throws IllegalArgumentException {
+        Objects.requireNonNull(settings, "settings");
         MBeanUtils.checkControl();
-        getExistingRecording(recording).setSettings(values);
+        getExistingRecording(recording).setSettings(settings);
     }
 
     @SuppressWarnings("removal")
@@ -241,11 +241,11 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     }
 
     @Override
-    public void setConfiguration(long recording, String configuration) throws IllegalArgumentException {
-        Objects.requireNonNull(configuration);
+    public void setConfiguration(long recording, String contents) throws IllegalArgumentException {
+        Objects.requireNonNull(contents, "contents");
         MBeanUtils.checkControl();
         try {
-            Configuration c = Configuration.create(new StringReader(configuration));
+            Configuration c = Configuration.create(new StringReader(contents));
             getExistingRecording(recording).setSettings(c.getSettings());
         } catch (IOException | ParseException e) {
             throw new IllegalArgumentException("Could not parse configuration", e);
@@ -254,7 +254,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
 
     @Override
     public void setPredefinedConfiguration(long recording, String configurationName) throws IllegalArgumentException {
-        Objects.requireNonNull(configurationName);
+        Objects.requireNonNull(configurationName, "configurationName");
         MBeanUtils.checkControl();
         Recording r = getExistingRecording(recording);
         for (Configuration c : Configuration.getConfigurations()) {
@@ -267,15 +267,15 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     }
 
     @Override
-    public void copyTo(long recording, String path) throws IOException {
-        Objects.requireNonNull(path);
+    public void copyTo(long recording, String outputFile) throws IOException {
+        Objects.requireNonNull(outputFile, "outputFile");
         MBeanUtils.checkControl();
-        getExistingRecording(recording).dump(Paths.get(path));
+        getExistingRecording(recording).dump(Paths.get(outputFile));
     }
 
     @Override
     public void setRecordingOptions(long recording, Map<String, String> options) throws IllegalArgumentException {
-        Objects.requireNonNull(options);
+        Objects.requireNonNull(options, "options");
         MBeanUtils.checkControl();
         // Make local copy to prevent concurrent modification
         Map<String, String> ops = new HashMap<String, String>(options);
@@ -316,7 +316,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     public Map<String, String> getRecordingOptions(long recording) throws IllegalArgumentException {
         MBeanUtils.checkMonitor();
         Recording r = getExistingRecording(recording);
-        Map<String, String> options = new HashMap<>(10);
+        Map<String, String> options = HashMap.newHashMap(10);
         options.put(OPTION_DUMP_ON_EXIT, String.valueOf(r.getDumpOnExit()));
         options.put(OPTION_DISK, String.valueOf(r.isToDisk()));
         options.put(OPTION_NAME, String.valueOf(r.getName()));

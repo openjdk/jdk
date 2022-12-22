@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ import jdk.internal.misc.Unsafe;
  */
 
 class NativeBuffers {
-    private NativeBuffers() { }
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     private static final int TEMP_BUF_POOL_SIZE = 3;
-    private static ThreadLocal<NativeBuffer[]> threadLocal = new TerminatingThreadLocal<>() {
+    // per-carrier-thread cache of NativeBuffer(s)
+    private static final TerminatingThreadLocal<NativeBuffer[]> threadLocal = new TerminatingThreadLocal<>() {
         @Override
         protected void threadTerminated(NativeBuffer[] buffers) {
             // threadLocal may be initialized but with initialValue of null
@@ -53,6 +53,8 @@ class NativeBuffers {
             }
         }
     };
+
+    private NativeBuffers() { }
 
     /**
      * Allocates a native buffer, of at least the given size, from the heap.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Utils;
 
 /*
@@ -41,8 +41,8 @@ import jdk.test.lib.Utils;
  * @summary Stress G1 Remembered Set using multiple threads
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=1 -Xlog:gc
  *   -Xmx500m -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 10 4

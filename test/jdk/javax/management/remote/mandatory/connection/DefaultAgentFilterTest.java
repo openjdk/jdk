@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8159377
+ * @bug 8159377 8283093
  * @library /test/lib
  * @summary Tests ObjectFilter on default agent
  * @author Harsha Wardhana B
@@ -43,6 +43,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -110,17 +111,21 @@ public class DefaultAgentFilterTest {
                 try {
                     AtomicBoolean error = new AtomicBoolean(false);
                     AtomicBoolean bindError = new AtomicBoolean(false);
+                    // The predicate below tries to recognise failures.  On a port clash, it sees e.g.
+                    // Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 46481; nested exception is:
+                    // ...and will never see "main enter" from TestApp.
                     p = ProcessTools.startProcess(
                             TEST_APP_NAME + "{" + name + "}",
                             pb,
                             (line) -> {
-                                if (line.toLowerCase().contains("exception")
-                                || line.toLowerCase().contains("error")) {
+                                if (line.contains("Exception")) {
                                     error.set(true);
+                                    bindError.set(line.toLowerCase().contains("port already in use"));
+                                    return true; // On Exception, app will never start
                                 }
-                                bindError.set(line.toLowerCase().contains("bindexception"));
-                                return true;
-                            });
+                                return line.contains("main enter");
+                            },
+                            60, TimeUnit.SECONDS);
                     if (bindError.get()) {
                         throw new BindException("Process could not be started");
                     } else if (error.get()) {
@@ -164,22 +169,47 @@ public class DefaultAgentFilterTest {
     }
 
     private static final String TEST_APP_NAME = "TestApp";
+    private static final int FREE_PORT_ATTEMPTS = 10;
 
     private static void testDefaultAgent(String propertyFile) throws Exception {
-        int port = Utils.getFreePort();
-        String propFile = System.getProperty("test.src") + File.separator + propertyFile;
+        testDefaultAgent(propertyFile, null);
+    }
+
+    private static void testDefaultAgent(String propertyFile, String additionalArgument) throws Exception {
+        for (int i = 1; i <= FREE_PORT_ATTEMPTS; i++) {
+            int port = Utils.getFreePort();
+            System.out.println("Attempting testDefaultAgent(" +
+                               (propertyFile != null ? propertyFile : "no properties")
+                               + ") with port: " + port);
+            try {
+                testDefaultAgent(propertyFile, additionalArgument, port);
+                break;  // return succesfully
+            } catch (BindException b) {
+                // Retry with new port.  Throw if last iteration:
+                if (i == FREE_PORT_ATTEMPTS) {
+                    throw(b);
+                }
+            }
+        }
+    }
+
+    private static void testDefaultAgent(String propertyFile, String additionalArgument, int port) throws Exception {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
                 System.getProperty("test.class.path"),
                 "-XX:+UsePerfData"
         ));
-        String[] args = new String[]{
-            "-Dcom.sun.management.jmxremote.port=" + port,
-            "-Dcom.sun.management.jmxremote.authenticate=false",
-            "-Dcom.sun.management.jmxremote.ssl=false",
-            "-Dcom.sun.management.config.file=" + propFile
-        };
-        pbArgs.addAll(Arrays.asList(args));
+        // JMX config arguments, using propertyFile if non-null:
+        pbArgs.add("-Dcom.sun.management.jmxremote.port=" + port);
+        pbArgs.add("-Dcom.sun.management.jmxremote.authenticate=false");
+        pbArgs.add("-Dcom.sun.management.jmxremote.ssl=false");
+        if (propertyFile != null) {
+            String propFile = System.getProperty("test.src") + File.separator + propertyFile;
+            pbArgs.add("-Dcom.sun.management.config.file=" + propFile);
+        }
+        if (additionalArgument != null) {
+            pbArgs.add(additionalArgument);
+        }
         pbArgs.add(TEST_APP_NAME);
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -235,53 +265,56 @@ public class DefaultAgentFilterTest {
     public static void main(String[] args) throws Exception {
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: starting ...");
 
-        boolean retry = false;
-        do {
-            try {
-                // filter DefaultAgentFilterTest$MyTestObject
-                testDefaultAgent("mgmt1.properties");
-                System.out.println("----\tTest FAILED !!");
-                throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
-            } catch (Exception ex) {
-                if (ex instanceof InvocationTargetException) {
-                    if (ex.getCause() instanceof BindException
-                            || ex.getCause() instanceof java.rmi.ConnectException) {
-                        System.out.println("Failed to allocate ports. Retrying ...");
-                        retry = true;
-                    }
-                } else if (ex instanceof InvalidClassException) {
-                    System.out.println("----\tTest PASSED !!");
-                } else if (ex instanceof UnmarshalException
-                        && ((UnmarshalException) ex).getCause() instanceof InvalidClassException) {
-                    System.out.println("----\tTest PASSED !!");
-                } else {
-                    System.out.println(ex);
-                    System.out.println("----\tTest FAILED !!");
-                    throw ex;
-                }
-            }
-        } while (retry);
-        retry = false;
-        do {
-            try {
-                // filter non-existent class
-                testDefaultAgent("mgmt2.properties");
+        try {
+            // filter DefaultAgentFilterTest$MyTestObject
+            testDefaultAgent("mgmt1.properties");
+            System.out.println("----\tTest FAILED !!");
+            throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
+        } catch (Exception ex) {
+            if (ex instanceof InvalidClassException) {
                 System.out.println("----\tTest PASSED !!");
-            } catch (Exception ex) {
-                if (ex instanceof InvocationTargetException) {
-                    if (ex.getCause() instanceof BindException
-                            || ex.getCause() instanceof java.rmi.ConnectException) {
-                        System.out.println("Failed to allocate ports. Retrying ...");
-                        retry = true;
-                    }
-                } else {
-                    System.out.println(ex);
-                    System.out.println("----\tTest FAILED !!");
-                    throw ex;
-                }
+            } else if (ex instanceof UnmarshalException
+                    && ((UnmarshalException) ex).getCause() instanceof InvalidClassException) {
+                System.out.println("----\tTest PASSED !!");
+            } else {
+                System.out.println(ex);
+                System.out.println("----\tTest FAILED !!");
+                throw ex;
             }
-        } while (retry);
-
+        }
+        try {
+            // filter non-existent class
+            testDefaultAgent("mgmt2.properties");
+            System.out.println("----\tTest PASSED !!");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            System.out.println("----\tTest FAILED !!");
+            throw ex;
+        }
+        try {
+            // Use default filter, should fail with: java.io.InvalidClassException: filter status: REJECTED
+            testDefaultAgent(null /* no properties file */);
+            throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            if (ex instanceof InvalidClassException) {
+                System.out.println("----\tTest PASSED: expected InvalidClassException received.");
+            } else {
+                System.out.println("----\tTest FAILED: unexpected Exception");
+                throw ex;
+            }
+        }
+        try {
+            // Add custom filter on command-line.
+            testDefaultAgent(null, "-Dcom.sun.management.jmxremote.serial.filter.pattern=\"java.lang.*;java.math.BigInteger;"
+                             + "java.math.BigDecimal;java.util.*;javax.management.openmbean.*;javax.management.ObjectName;"
+                             + "java.rmi.MarshalledObject;javax.security.auth.Subject;DefaultAgentFilterTest$MyTestObject;!*\"");
+            System.out.println("----\tTest PASSED: with custom filter on command-line");
+        } catch (Exception ex) {
+            System.out.println(ex);
+            System.out.println("----\tTest FAILED: unexpected Exception");
+            throw ex;
+        }
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: finished ...");
     }
 

@@ -77,11 +77,12 @@ class LogDecorators {
     return 1 << decorator;
   }
 
-  LogDecorators(uint mask) : _decorators(mask) {
+  constexpr LogDecorators(uint mask) : _decorators(mask) {
   }
 
  public:
   static const LogDecorators None;
+  static const LogDecorators All;
 
   LogDecorators() : _decorators(DefaultDecoratorsMask) {
   }

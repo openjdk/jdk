@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import sun.jvm.hotspot.runtime.*;
  * <ul>
  * <li>Java byte, int, short, long - GXL int attribute
  * <li>Java float, double - GXL float attribute
- * <li>Java boolean - GXL bool atttribute
+ * <li>Java boolean - GXL bool attribute
  * <li>Java char - GXL string attribute
  * </ul>
  *
@@ -273,6 +273,11 @@ public class HeapGXLWriter extends AbstractHeapGraphWriter {
     protected void writeHeapFooter() throws IOException  {
         out.println("</graph>");
         out.println("</gxl>");
+    }
+
+    @Override
+    protected int calculateOopDumpRecordSize(Oop oop) throws IOException {
+        return 0;
     }
 
     //-- Internals only below this point

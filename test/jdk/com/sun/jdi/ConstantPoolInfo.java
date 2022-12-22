@@ -241,7 +241,7 @@ public class ConstantPoolInfo extends TestScaffold {
         if (magic != JAVA_MAGIC) {
             failure("fatal bad class file format");
         }
-        expectedMinorVersion = in.readShort();;
+        expectedMinorVersion = in.readShort();
         expectedMajorVersion = in.readShort();
         expectedCpoolCount = in.readUnsignedShort();
         in.close();

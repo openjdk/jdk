@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,23 +35,12 @@ import java.awt.Point;
  */
 public class ClusterInputSlotNode implements Vertex {
 
-    private final int SIZE = 0;
     private Point position;
-    private Port inputSlot;
-    private Port outputSlot;
-    private ClusterNode blockNode;
-    private InterClusterConnection interBlockConnection;
-    private Cluster cluster;
-    private ClusterIngoingConnection conn;
+    private final Port inputSlot;
+    private final Port outputSlot;
+    private final ClusterNode blockNode;
 
-    public void setIngoingConnection(ClusterIngoingConnection c) {
-        conn = c;
-    }
-
-    public ClusterIngoingConnection getIngoingConnection() {
-        return conn;
-    }
-    private String id;
+    private final String id;
 
     @Override
     public String toString() {
@@ -79,7 +68,7 @@ public class ClusterInputSlotNode implements Vertex {
 
             @Override
             public String toString() {
-                return "OutPort of " + thisNode.toString();
+                return "OutPort of " + thisNode;
             }
         };
 
@@ -87,7 +76,7 @@ public class ClusterInputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += ClusterNode.BORDER;
+                p.x += blockNode.getBorder();
                 p.y = 0;
                 return p;
             }
@@ -98,7 +87,7 @@ public class ClusterInputSlotNode implements Vertex {
 
             @Override
             public String toString() {
-                return "InPort of " + thisNode.toString();
+                return "InPort of " + thisNode;
             }
         };
     }
@@ -107,16 +96,12 @@ public class ClusterInputSlotNode implements Vertex {
         return inputSlot;
     }
 
-    public InterClusterConnection getInterBlockConnection() {
-        return interBlockConnection;
-    }
-
     public Port getOutputSlot() {
         return outputSlot;
     }
 
     public Dimension getSize() {
-        return new Dimension(SIZE, SIZE);
+        return new Dimension(0, 0);
     }
 
     public void setPosition(Point p) {
@@ -127,12 +112,8 @@ public class ClusterInputSlotNode implements Vertex {
         return position;
     }
 
-    public void setInterBlockConnection(InterClusterConnection interBlockConnection) {
-        this.interBlockConnection = interBlockConnection;
-    }
-
     public Cluster getCluster() {
-        return cluster;
+        return null;
     }
 
     public boolean isRoot() {
@@ -142,4 +123,5 @@ public class ClusterInputSlotNode implements Vertex {
     public int compareTo(Vertex o) {
         return toString().compareTo(o.toString());
     }
+
 }

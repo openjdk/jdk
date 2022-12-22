@@ -58,16 +58,16 @@ class PlatformPCSC {
 
     // PCSC constants defined differently under Windows and MUSCLE
     // Windows version
-    final static int SCARD_PROTOCOL_T0     =  0x0001;
-    final static int SCARD_PROTOCOL_T1     =  0x0002;
-    final static int SCARD_PROTOCOL_RAW    =  0x10000;
+    static final int SCARD_PROTOCOL_T0     =  0x0001;
+    static final int SCARD_PROTOCOL_T1     =  0x0002;
+    static final int SCARD_PROTOCOL_RAW    =  0x10000;
 
-    final static int SCARD_UNKNOWN         =  0x0000;
-    final static int SCARD_ABSENT          =  0x0001;
-    final static int SCARD_PRESENT         =  0x0002;
-    final static int SCARD_SWALLOWED       =  0x0003;
-    final static int SCARD_POWERED         =  0x0004;
-    final static int SCARD_NEGOTIABLE      =  0x0005;
-    final static int SCARD_SPECIFIC        =  0x0006;
+    static final int SCARD_UNKNOWN         =  0x0000;
+    static final int SCARD_ABSENT          =  0x0001;
+    static final int SCARD_PRESENT         =  0x0002;
+    static final int SCARD_SWALLOWED       =  0x0003;
+    static final int SCARD_POWERED         =  0x0004;
+    static final int SCARD_NEGOTIABLE      =  0x0005;
+    static final int SCARD_SPECIFIC        =  0x0006;
 
 }

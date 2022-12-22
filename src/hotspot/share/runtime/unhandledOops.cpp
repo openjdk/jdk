@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -35,7 +35,7 @@ const int free_list_size = 256;
 
 UnhandledOops::UnhandledOops(Thread* thread) {
   _thread = thread;
-  _oop_list = new (ResourceObj::C_HEAP, mtThread)
+  _oop_list = new (mtThread)
                     GrowableArray<UnhandledOopEntry>(free_list_size, mtThread);
   _level = 0;
 }

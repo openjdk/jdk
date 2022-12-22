@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,22 +47,44 @@
 // Note:
 //   cnt is signed int. Do not rely on high word!
 //       counts # characters, not bytes.
-// The result is the number of characters copied before the first incompatible character was found.
-// If precise is true, the processing stops exactly at this point. Otherwise, the result may be off
-// by a few bytes. The result always indicates the number of copied characters.
-// When used as a character index, the returned value points to the first incompatible character.
 //
-// Note: Does not behave exactly like package private StringUTF16 compress java implementation in case of failure:
-// - Different number of characters may have been written to dead array (if precise is false).
-// - Returns a number <cnt instead of 0. (Result gets compared with cnt.)
+// The result indicates success or failure of the operation.
+//   General compress operation (cut off high order byte which must be all zeroes).
+//    = len - all characters have been successfully compressed.
+//    = 0   - compress failed. At least one character was found with a non-zero high order byte.
+//            This is the failure return value which exactly corresponds to the Java implementation.
+//    0 <= result < len - compress failed. That many characters were compressed successfully
+//                        before the first non-compressable character was found. This is the
+//                        current, but not fully compatible, implementation. See below.
+//   Encode to ISO or 7-bit ASCII array.
+//    = len - all characters have been encoded successfully.
+//    < len - encode failed. That many characters were encoded successfully.
+//            When used as an index into the character array, the return value addresses the
+//            first not encodeable character.
+//
+// If precise is true, the processing stops exactly at the point where a failure is detected.
+// More characters than indicated by the return value may have been read from the src array.
+// Exactly the number of characters indicated by the return value have been written to dst.
+// If precise is false, a few characters more than indicated by the return value may have been
+// written to the dst array. In any failure case, The result value indexes the first invalid character.
 unsigned int C2_MacroAssembler::string_compress(Register result, Register src, Register dst, Register cnt,
-                                                Register tmp,    bool precise) {
+                                                Register tmp,    bool precise, bool toASCII) {
   assert_different_registers(Z_R0, Z_R1, result, src, dst, cnt, tmp);
 
+  unsigned short char_mask = 0xff00;  // all selected bits must be '0' for a char to be valid
+  unsigned int   mask_ix_l = 0;       // leftmost one bit pos in mask
+  unsigned int   mask_ix_r = 7;       // rightmost one bit pos in mask
   if (precise) {
-    BLOCK_COMMENT("encode_iso_array {");
+    if (toASCII) {
+      BLOCK_COMMENT("encode_ascii_array {");
+      char_mask = 0xff80;
+      mask_ix_r = 8;         // rightmost one bit pos in mask. ASCII only uses codes 0..127
+    } else {
+      BLOCK_COMMENT("encode_iso_array {");
+    }
   } else {
     BLOCK_COMMENT("string_compress {");
+    assert(!toASCII, "Can't compress strings to 7-bit ASCII");
   }
   int  block_start = offset();
 
@@ -72,13 +95,13 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   Register       Rmask = result;  // holds incompatibility check mask until result value is stored.
   Label          ScalarShortcut, AllDone;
 
-  z_iilf(Rmask, 0xFF00FF00);
-  z_iihf(Rmask, 0xFF00FF00);
+  z_iilf(Rmask, (unsigned int)char_mask<<16 | (unsigned int)char_mask);
+  z_iihf(Rmask, (unsigned int)char_mask<<16 | (unsigned int)char_mask);
 
 #if 0  // Sacrifice shortcuts for code compactness
   {
     //---<  shortcuts for short strings (very frequent)   >---
-    //   Strings with 4 and 8 characters were fond to occur very frequently.
+    //   Strings with 4 and 8 characters were found to occur very frequently.
     //   Therefore, we handle them right away with minimal overhead.
     Label     skipShortcut, skip4Shortcut, skip8Shortcut;
     Register  Rout = Z_R0;
@@ -133,7 +156,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   if (VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
-                                           // Must be multiple of 2*(vector register length in chars (8 HW = 128 bits)).
+                                           // Must correspond to # vector registers used by implementation,
+                                           // and must be a power of 2.
     const int  log_min_vcnt = exact_log2(min_vcnt);
     Label      VectorLoop, VectorDone, VectorBreak;
 
@@ -150,7 +174,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
     z_brz(VectorDone);                     // not enough data for vector loop
 
     z_vzero(Vzero);                        // all zeroes
-    z_vgmh(Vmask, 0, 7);                   // generate 0xff00 mask for all 2-byte elements
+    z_vgmh(Vmask, mask_ix_l, mask_ix_r);   // generate 0xff00/0xff80 mask for all 2-byte elements
     z_sllg(Z_R0, Rix, log_min_vcnt);       // remember #chars that will be processed by vector loop
 
     bind(VectorLoop);
@@ -162,7 +186,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       z_vo(Vtmp2, Z_V22, Z_V23);
       z_vo(Vtmp1, Vtmp1, Vtmp2);
       z_vn(Vtmp1, Vtmp1, Vmask);
-      z_vceqhs(Vtmp1, Vtmp1, Vzero);       // high half of all chars must be zero for successful compress.
+      z_vceqhs(Vtmp1, Vtmp1, Vzero);       // all bits selected by mask must be zero for successful compress.
       z_bvnt(VectorBreak);                 // break vector loop if not all vector elements compare eq -> incompatible character found.
                                            // re-process data from current iteration in break handler.
 
@@ -187,7 +211,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   {
     const int  min_cnt     =  8;           // Minimum #characters required to use unrolled loop.
                                            // Otherwise just do nothing in unrolled loop.
-                                           // Must be multiple of 8.
+                                           // Must correspond to # registers used by implementation,
+                                           // and must be a power of 2.
     const int  log_min_cnt = exact_log2(min_cnt);
     Label      UnrolledLoop, UnrolledDone, UnrolledBreak;
 
@@ -197,7 +222,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       z_lr(Rix, Rcnt);
       z_sr(Rix, Z_R0);
     }
-    z_sra(Rix, log_min_cnt);             // unrolled loop count
+    z_sra(Rix, log_min_cnt);               // unrolled loop count
     z_brz(UnrolledDone);
 
     bind(UnrolledLoop);
@@ -244,6 +269,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
     z_sll(Rix, log_min_cnt);               // # chars not yet processed in UnrolledLoop (due to break), broken iteration not included.
     z_sr(Z_R0, Rix);                       // fix # chars processed OK so far.
     if (!precise) {
+      // Because we don't need to be precise, we just return the # of characters which have been written.
+      // The first illegal character is in the index range [result-min_cnt/2, result+min_cnt/2).
       z_lgfr(result, Z_R0);
       z_sllg(Z_R1, Z_R0, 1);               // # src bytes already processed. Only lower 32 bits are valid!
                                            //   Z_R1 contents must be treated as unsigned operand! For huge strings,
@@ -274,7 +301,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       z_brh(ScalarDoit);
       z_llh(Z_R1,  0, Z_R0, Rsrc);
       z_bre(Scalar2Char);
-      z_tmll(Z_R1, 0xff00);
+      z_tmll(Z_R1, char_mask);
       z_lghi(result, 0);                   // cnt == 1, first char invalid, no chars successfully processed
       z_brnaz(AllDone);
       z_stc(Z_R1,  0, Z_R0, Rdst);
@@ -283,11 +310,11 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 
       bind(Scalar2Char);
       z_llh(Z_R0,  2, Z_R0, Rsrc);
-      z_tmll(Z_R1, 0xff00);
+      z_tmll(Z_R1, char_mask);
       z_lghi(result, 0);                   // cnt == 2, first char invalid, no chars successfully processed
       z_brnaz(AllDone);
       z_stc(Z_R1,  0, Z_R0, Rdst);
-      z_tmll(Z_R0, 0xff00);
+      z_tmll(Z_R0, char_mask);
       z_lghi(result, 1);                   // cnt == 2, second char invalid, one char successfully processed
       z_brnaz(AllDone);
       z_stc(Z_R0,  1, Z_R0, Rdst);
@@ -299,17 +326,17 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 #endif
 
     if (VM_Version::has_DistinctOpnds()) {
-      z_srk(Rix, Rcnt, Z_R0);              // remaining # chars to compress in unrolled loop
+      z_srk(Rix, Rcnt, Z_R0);              // remaining # chars to compress in scalar loop
     } else {
       z_lr(Rix, Rcnt);
       z_sr(Rix, Z_R0);
     }
-    z_lgfr(result, Rcnt);                  // # processed characters (if all runs ok).
-    z_brz(ScalarDone);                     // uses CC from Rix calculation
+    z_lgfr(result, Rcnt);                  // # processed characters (if all encodes ok).
+    z_brz(ScalarDone);                     // anything left to do? (uses CC from Rix calculation)
 
     bind(ScalarLoop);
       z_llh(Z_R1, 0, Z_R0, Rsrc);
-      z_tmll(Z_R1, 0xff00);
+      z_tmll(Z_R1, char_mask);
       z_brnaz(ScalarBreak);
       z_stc(Z_R1, 0, Z_R0, Rdst);
       add2reg(Rsrc, 2);
@@ -329,7 +356,11 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   bind(AllDone);
 
   if (precise) {
-    BLOCK_COMMENT("} encode_iso_array");
+    if (toASCII) {
+      BLOCK_COMMENT("} encode_ascii_array");
+    } else {
+      BLOCK_COMMENT("} encode_iso_array");
+    }
   } else {
     BLOCK_COMMENT("} string_compress");
   }
@@ -792,52 +823,64 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
   return offset() - block_start;
 }
 
-// Kills src.
-unsigned int C2_MacroAssembler::has_negatives(Register result, Register src, Register cnt,
-                                              Register odd_reg, Register even_reg, Register tmp) {
-  int block_start = offset();
-  Label Lloop1, Lloop2, Lslow, Lnotfound, Ldone;
-  const Register addr = src, mask = tmp;
+// Returns the number of non-negative bytes (aka US-ASCII characters) found
+// before the first negative byte is encountered.
+unsigned int C2_MacroAssembler::count_positives(Register result, Register src, Register cnt, Register tmp) {
+  const unsigned int block_start   = offset();
+  const unsigned int byte_mask     = 0x80;
+  const unsigned int twobyte_mask  = byte_mask<<8 | byte_mask;
+  const unsigned int unroll_factor = 16;
+  const unsigned int log_unroll_factor = exact_log2(unroll_factor);
+  Register pos  = src;     // current position in src array, restored at end
+  Register ctr  = result;  // loop counter, result value
+  Register mask = tmp;     // holds the sign detection mask
+  Label unrolledLoop, unrolledDone, byteLoop, allDone;
 
-  BLOCK_COMMENT("has_negatives {");
+  assert_different_registers(result, src, cnt, tmp);
 
-  z_llgfr(Z_R1, cnt);      // Number of bytes to read. (Must be a positive simm32.)
-  z_llilf(mask, 0x80808080);
-  z_lhi(result, 1);        // Assume true.
-  // Last possible addr for fast loop.
-  z_lay(odd_reg, -16, Z_R1, src);
-  z_chi(cnt, 16);
-  z_brl(Lslow);
+  BLOCK_COMMENT("count_positives {");
 
-  // ind1: index, even_reg: index increment, odd_reg: index limit
-  z_iihf(mask, 0x80808080);
-  z_lghi(even_reg, 16);
+  lgr_if_needed(pos, src);              // current position in src array
+  z_srak(ctr, cnt, log_unroll_factor);  // # iterations of unrolled loop
+  z_brnh(unrolledDone);                 // array too short for unrolled loop
 
-  bind(Lloop1); // 16 bytes per iteration.
-  z_lg(Z_R0, Address(addr));
-  z_lg(Z_R1, Address(addr, 8));
-  z_ogr(Z_R0, Z_R1);
-  z_ngr(Z_R0, mask);
-  z_brne(Ldone);           // If found return 1.
-  z_brxlg(addr, even_reg, Lloop1);
+  z_iilf(mask, twobyte_mask<<16 | twobyte_mask);
+  z_iihf(mask, twobyte_mask<<16 | twobyte_mask);
 
-  bind(Lslow);
-  z_aghi(odd_reg, 16-1);   // Last possible addr for slow loop.
-  z_lghi(even_reg, 1);
-  z_cgr(addr, odd_reg);
-  z_brh(Lnotfound);
+  bind(unrolledLoop);
+    z_lmg(Z_R0, Z_R1, 0, pos);
+    z_ogr(Z_R0, Z_R1);
+    z_ngr(Z_R0, mask);
+    z_brne(unrolledDone);               // There is a negative byte somewhere.
+                                        // ctr and pos are not updated yet ->
+                                        // delegate finding correct pos to byteLoop.
+    add2reg(pos, unroll_factor);
+    z_brct(ctr, unrolledLoop);
 
-  bind(Lloop2); // 1 byte per iteration.
-  z_cli(Address(addr), 0x80);
-  z_brnl(Ldone);           // If found return 1.
-  z_brxlg(addr, even_reg, Lloop2);
+  // Once we arrive here, we have to examine at most (unroll_factor - 1) bytes more.
+  // We then either have reached the end of the array or we hit a negative byte.
+  bind(unrolledDone);
+  z_sll(ctr, log_unroll_factor);        // calculate # bytes not processed by unrolled loop
+                                        // > 0 only if a negative byte was found
+  z_lr(Z_R0, cnt);                      // calculate remainder bytes
+  z_nilf(Z_R0, unroll_factor - 1);
+  z_ar(ctr, Z_R0);                      // remaining bytes
+  z_brnh(allDone);                      // shortcut if nothing left to do
 
-  bind(Lnotfound);
-  z_lhi(result, 0);
+  bind(byteLoop);
+    z_cli(0, pos, byte_mask);           // unsigned comparison! byte@pos must be smaller that byte_mask
+    z_brnl(allDone);                    // negative byte found.
 
-  bind(Ldone);
+    add2reg(pos, 1);
+    z_brct(ctr, byteLoop);
 
-  BLOCK_COMMENT("} has_negatives");
+  bind(allDone);
+
+  z_srk(ctr, cnt, ctr);                 // # bytes actually processed (= cnt or index of first negative byte)
+  z_sgfr(pos, ctr);                     // restore src
+  z_lgfr(result, ctr);                  // unnecessary. Only there to be sure the high word has a defined state.
+
+  BLOCK_COMMENT("} count_positives");
 
   return offset() - block_start;
 }

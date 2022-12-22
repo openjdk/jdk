@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,16 +395,10 @@ private:
   intx _arg_stack;    // bit set of stack-allocatable arguments
   intx _arg_returned; // bit set of returned arguments
 
-  int _creation_mileage; // method mileage at MDO creation
-
-  // Maturity of the oop when the snapshot is taken.
-  int _current_mileage;
-
   // These counters hold the age of MDO in tiered. In tiered we can have the same method
   // running at different compilation levels concurrently. So, in order to precisely measure
   // its maturity we need separate counters.
   int _invocation_counter;
-  int _backedge_counter;
 
   // Coherent snapshot of original header.
   MethodData::CompilerCounters _orig;
@@ -477,11 +471,7 @@ public:
   bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 
-  int creation_mileage() { return _creation_mileage; }
-  int current_mileage()  { return _current_mileage; }
-
   int invocation_count() { return _invocation_counter; }
-  int backedge_count()   { return _backedge_counter;   }
 
 #if INCLUDE_RTM_OPT
   // return cached value
@@ -498,7 +488,7 @@ public:
   // would_profile means we would like to profile this method,
   // meaning it's not trivial.
   void set_would_profile(bool p);
-  // Also set the numer of loops and blocks in the method.
+  // Also set the number of loops and blocks in the method.
   // Again, this is used to determine if a method is trivial.
   void set_compilation_stats(short loops, short blocks);
   // If the compiler finds a profiled type that is known statically
@@ -575,9 +565,7 @@ public:
   bool is_arg_returned(int i) const;
   uint arg_modified(int arg) const;
 
-  ciParametersTypeData* parameters_type_data() const {
-    return _parameters != NULL ? new ciParametersTypeData(_parameters) : NULL;
-  }
+  ciParametersTypeData* parameters_type_data() const;
 
   // Code generation helper
   ByteSize offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data);

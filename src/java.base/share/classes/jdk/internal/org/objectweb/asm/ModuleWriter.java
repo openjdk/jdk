@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm;
 
 /**
@@ -125,7 +126,7 @@ final class ModuleWriter extends ModuleVisitor {
     private int mainClassIndex;
 
     ModuleWriter(final SymbolTable symbolTable, final int name, final int access, final int version) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
         this.symbolTable = symbolTable;
         this.moduleNameIndex = name;
         this.moduleFlags = access;
@@ -282,3 +283,4 @@ final class ModuleWriter extends ModuleVisitor {
         }
     }
 }
+

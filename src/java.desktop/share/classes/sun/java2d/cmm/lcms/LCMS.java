@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,18 @@ package sun.java2d.cmm.lcms;
 
 import java.awt.color.CMMException;
 import java.awt.color.ICC_Profile;
+import java.util.concurrent.locks.StampedLock;
 
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
 
 final class LCMS implements PCMM {
+
+    /**
+     * Prevent changing profiles data during transform creation.
+     */
+    private static final StampedLock lock = new StampedLock();
 
     /* methods invoked from ICC_Profile */
     @Override
@@ -47,7 +53,7 @@ final class LCMS implements PCMM {
         return null;
     }
 
-    private static LCMSProfile getLcmsProfile(Profile p) {
+    static LCMSProfile getLcmsProfile(Profile p) {
         if (p instanceof LCMSProfile) {
             return (LCMSProfile)p;
         }
@@ -80,63 +86,60 @@ final class LCMS implements PCMM {
     }
 
     @Override
-    public synchronized void setTagData(Profile p, int tagSignature, byte[] data) {
-        getLcmsProfile(p).setTag(tagSignature, data);
+    public void setTagData(Profile p, int tagSignature, byte[] data) {
+        long stamp = lock.writeLock();
+        try {
+            getLcmsProfile(p).setTag(tagSignature, data);
+        } finally {
+            lock.unlockWrite(stamp);
+        }
     }
-
-    static synchronized native LCMSProfile getProfileID(ICC_Profile profile);
 
     /* Helper method used from LCMSColorTransfrom */
     static long createTransform(
-        LCMSProfile[] profiles, int renderType,
+        LCMSProfile[] profiles, int renderingIntent,
         int inFormatter, boolean isInIntPacked,
         int outFormatter, boolean isOutIntPacked,
         Object disposerRef)
     {
         long[] ptrs = new long[profiles.length];
+        long stamp = lock.readLock();
+        try {
+            for (int i = 0; i < profiles.length; i++) {
+                if (profiles[i] == null) {
+                    throw new CMMException("Unknown profile ID");
+                }
+                ptrs[i] = profiles[i].getLcmsPtr();
+            }
 
-        for (int i = 0; i < profiles.length; i++) {
-            if (profiles[i] == null) throw new CMMException("Unknown profile ID");
-
-            ptrs[i] = profiles[i].getLcmsPtr();
+            return createNativeTransform(ptrs, renderingIntent, inFormatter,
+                    isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
+        } finally {
+            lock.unlockRead(stamp);
         }
-
-        return createNativeTransform(ptrs, renderType, inFormatter,
-                isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
     }
 
     private static native long createNativeTransform(
-        long[] profileIDs, int renderType,
+        long[] profileIDs, int renderingIntent,
         int inFormatter, boolean isInIntPacked,
         int outFormatter, boolean isOutIntPacked,
         Object disposerRef);
 
-   /**
-     * Constructs ColorTransform object corresponding to an ICC_profile
-     */
-    public ColorTransform createTransform(ICC_Profile profile,
-                                                       int renderType,
-                                                       int transformType)
-    {
-        return new LCMSTransform(profile, renderType, renderType);
-    }
-
     /**
-     * Constructs an ColorTransform object from a list of ColorTransform
-     * objects
+     * Constructs ColorTransform object corresponding to the ICC_profiles.
      */
-    public synchronized ColorTransform createTransform(
-        ColorTransform[] transforms)
+    public ColorTransform createTransform(int renderingIntent,
+                                          ICC_Profile... profiles)
     {
-        return new LCMSTransform(transforms);
+        return new LCMSTransform(renderingIntent, profiles);
     }
 
     /* methods invoked from LCMSTransform */
-    public static native void colorConvert(LCMSTransform trans,
-                                           LCMSImageLayout src,
-                                           LCMSImageLayout dest);
-
-    public static native void initLCMS(Class<?> Trans, Class<?> IL, Class<?> Pf);
+    static native void colorConvert(long trans, int width, int height,
+                                    int srcOffset, int srcNextRowOffset,
+                                    int dstOffset, int dstNextRowOffset,
+                                    Object srcData, Object dstData,
+                                    int srcType, int dstType);
 
     private LCMS() {};
 
@@ -159,8 +162,6 @@ final class LCMS implements PCMM {
                         return null;
                     }
                 });
-
-        initLCMS(LCMSTransform.class, LCMSImageLayout.class, ICC_Profile.class);
 
         theLcms = new LCMS();
 

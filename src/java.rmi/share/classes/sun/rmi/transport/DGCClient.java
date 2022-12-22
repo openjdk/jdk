@@ -82,7 +82,6 @@ import java.security.ProtectionDomain;
  * @author  Ann Wollrath
  * @author  Peter Jones
  */
-@SuppressWarnings("removal")
 final class DGCClient {
 
     /** next sequence number for DGC calls (access synchronized on class) */
@@ -92,16 +91,19 @@ final class DGCClient {
     private static VMID vmid = new VMID();
 
     /** lease duration to request (usually ignored by server) */
+    @SuppressWarnings("removal")
     private static final long leaseValue =              // default 10 minutes
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("java.rmi.dgc.leaseValue", 600000));
 
     /** maximum interval between retries of failed clean calls */
+    @SuppressWarnings("removal")
     private static final long cleanInterval =           // default 3 minutes
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.dgc.cleanInterval", 180000));
 
     /** maximum interval between complete garbage collections of local heap */
+    @SuppressWarnings("removal")
     private static final long gcInterval =              // default 1 hour
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.dgc.client.gcInterval", 3600000));
@@ -122,12 +124,15 @@ final class DGCClient {
      * An AccessControlContext with only socket permissions,
      * suitable for an RMIClientSocketFactory.
      */
-    private static final AccessControlContext SOCKET_ACC;
-    static {
+    @SuppressWarnings("removal")
+    private static final AccessControlContext SOCKET_ACC = createSocketAcc();
+
+    @SuppressWarnings("removal")
+    private static AccessControlContext createSocketAcc() {
         Permissions perms = new Permissions();
         perms.add(new SocketPermission("*", "connect,resolve"));
         ProtectionDomain[] pd = { new ProtectionDomain(null, perms) };
-        SOCKET_ACC = new AccessControlContext(pd);
+        return new AccessControlContext(pd);
     }
 
     /*
@@ -251,6 +256,7 @@ final class DGCClient {
             }
         }
 
+        @SuppressWarnings("removal")
         private EndpointEntry(final Endpoint endpoint) {
             this.endpoint = endpoint;
             try {
@@ -490,6 +496,7 @@ final class DGCClient {
          *
          * This method must ONLY be called while synchronized on this entry.
          */
+        @SuppressWarnings("removal")
         private void setRenewTime(long newRenewTime) {
             assert Thread.holdsLock(this);
 
@@ -515,6 +522,7 @@ final class DGCClient {
          */
         private class RenewCleanThread implements Runnable {
 
+            @SuppressWarnings("removal")
             public void run() {
                 do {
                     long timeToWait;

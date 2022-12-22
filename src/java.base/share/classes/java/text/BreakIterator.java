@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * For example, an accented character might be stored as a base character
  * and a diacritical mark. What users consider to be a character can
  * differ between languages.
+ *
+ * @implSpec The default implementation of the character boundary analysis
+ * conforms to the Unicode Consortium's Extended Grapheme Cluster breaks.
+ * For more detail, refer to
+ * <a href="https://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries">
+ * Grapheme Cluster Boundaries</a> section in the Unicode Standard Annex #29.
  *
  * <p>
  * The {@code BreakIterator} instances returned by the factory methods
@@ -576,8 +582,9 @@ public abstract class BreakIterator implements Cloneable
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.BreakIteratorProvider BreakIteratorProvider} implementations.
-     * It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code BreakIterator} instances are available.

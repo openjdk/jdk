@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
      * or right).</p>
 
      * <p>A positive overlap indicates that tabs should overlap right/down,
-     * while a negative overlap indicates tha tabs should overlap left/up.</p>
+     * while a negative overlap indicates that tabs should overlap left/up.</p>
      *
      * <p>When tabOverlap is specified, it both changes the x position and width
      * of the tab if in TOP or BOTTOM placement, and changes the y position and
@@ -933,7 +933,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
      * {@code UIResource}.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class SynthScrollableTabButton extends SynthArrowButton implements
+    private static class SynthScrollableTabButton extends SynthArrowButton implements
             UIResource {
         public SynthScrollableTabButton(int direction) {
             super(direction);

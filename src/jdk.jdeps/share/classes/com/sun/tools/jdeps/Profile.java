@@ -111,7 +111,7 @@ enum Profile {
         return null;
     }
 
-    private final static Set<Module> JDK = new HashSet<>();
+    private static final Set<Module> JDK = new HashSet<>();
     static synchronized void init(Map<String, Module> systemModules) {
         Arrays.stream(Profile.values()).forEach(p ->
             // this includes platform-dependent module that may not exist

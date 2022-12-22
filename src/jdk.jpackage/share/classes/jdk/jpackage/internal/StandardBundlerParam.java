@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,9 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     params -> {
                         if (isRuntimeInstaller(params)) {
                             return null;
+                        } else if (hasPredefinedAppImage(params)) {
+                            return AppImageFile.extractMainClass(
+                                    getPredefinedAppImage(params));
                         }
                         return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
@@ -311,6 +314,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             true : Boolean.valueOf(s)
             );
 
+    static final StandardBundlerParam<Boolean> SHORTCUT_HINT  =
+            new StandardBundlerParam<>(
+                    "shortcut-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
+    static final StandardBundlerParam<Boolean> MENU_HINT  =
+            new StandardBundlerParam<>(
+                    "menu-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
     static final StandardBundlerParam<Path> RESOURCE_DIR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.RESOURCE_DIR.getId(),
@@ -326,6 +347,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                      params -> null,
                     (s, p) -> s
     );
+
+    static final StandardBundlerParam<Boolean> LAUNCHER_AS_SERVICE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.LAUNCHER_AS_SERVICE.getId(),
+                    Boolean.class,
+                    params -> false,
+                    // valueOf(null) is false, and we actually do want null
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
 
 
     @SuppressWarnings("unchecked")
@@ -384,6 +415,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     Path.class,
                     ICON::fetchFrom,
                     (s, p) -> Path.of(s)
+            );
+
+    @SuppressWarnings("unchecked")
+    static final BundlerParamInfo<List<String>> DMG_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.DMG_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p -> Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
+            );
+
+    @SuppressWarnings("unchecked")
+    static final StandardBundlerParam<List<String>> APP_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.APP_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p->Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
             );
 
     @SuppressWarnings("unchecked")
@@ -467,6 +516,31 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> new LinkedHashSet<>(Arrays.asList(s.split(",")))
             );
 
+    static final StandardBundlerParam<Boolean> SIGN_BUNDLE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_SIGN.getId(),
+                    Boolean.class,
+                    params -> false,
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
+    static final StandardBundlerParam<Boolean> APP_STORE =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_APP_STORE.getId(),
+            Boolean.class,
+            params -> {
+                if (hasPredefinedAppImage(params)) {
+                    return AppImageFile.load(getPredefinedAppImage(params))
+                            .isAppStore();
+                }
+                return false;
+            },
+            // valueOf(null) is false, we actually do want null in some cases
+            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||
                 params.containsKey(MAIN_JAR.getID()) ||
@@ -476,6 +550,10 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         // runtime installer requires --runtime-image, if this is false
         // here then we should have thrown error validating args.
         return params.containsKey(PREDEFINED_RUNTIME_IMAGE.getID());
+    }
+
+    static boolean hasPredefinedAppImage(Map<String, ? super Object> params) {
+        return params.containsKey(PREDEFINED_APP_IMAGE.getID());
     }
 
     static Path getPredefinedAppImage(Map<String, ? super Object> params) {

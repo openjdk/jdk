@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,9 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
+    // default polling interval in seconds
+    private static final int DEFAULT_POLLING_INTERVAL = 2;
+
     // map of registrations
     private final Map<Object, PollingWatchKey> map = new HashMap<>();
 
@@ -90,7 +93,7 @@ class PollingWatchService
          throws IOException
     {
         // check events - CCE will be thrown if there are invalid elements
-        final Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
+        final Set<WatchEvent.Kind<?>> eventSet = HashSet.newHashSet(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKinds.ENTRY_CREATE ||
@@ -115,7 +118,7 @@ class PollingWatchService
             throw new IllegalArgumentException("No events to register");
 
         // Extended modifiers may be used to specify the sensitivity level
-        int sensitivity = 10;
+        int sensitivity = DEFAULT_POLLING_INTERVAL;
         if (modifiers.length > 0) {
             for (WatchEvent.Modifier modifier: modifiers) {
                 if (modifier == null)
@@ -305,7 +308,7 @@ class PollingWatchService
                 // update the events
                 this.events = events;
 
-                // create the periodic task
+                // create the periodic task to poll directories
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
                     .scheduleAtFixedRate(thunk, period, period, TimeUnit.SECONDS);

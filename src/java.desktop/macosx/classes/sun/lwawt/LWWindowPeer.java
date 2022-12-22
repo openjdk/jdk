@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import java.awt.peer.KeyboardFocusManagerPeer;
 import java.awt.peer.WindowPeer;
 import java.util.List;
 
+import java.util.Objects;
 import javax.swing.JComponent;
 
 import sun.awt.AWTAccessor;
@@ -112,7 +113,7 @@ public class LWWindowPeer
     private volatile int windowState = Frame.NORMAL;
 
     // check that the mouse is over the window
-    private volatile boolean isMouseOver = false;
+    private volatile boolean isMouseOver;
 
     // A peer where the last mouse event came to. Used by cursor manager to
     // find the component under cursor
@@ -196,7 +197,6 @@ public class LWWindowPeer
         }
 
         platformWindow.initialize(target, this, ownerDelegate);
-
         // Init warning window(for applets)
         SecurityWarningWindow warn = null;
         if (target.getWarningString() != null) {
@@ -280,6 +280,16 @@ public class LWWindowPeer
 
         platformWindow.dispose();
         super.disposeImpl();
+    }
+
+    @Override
+    public void setBackground(final Color c) {
+        Color oldBg = getBackground();
+        if (Objects.equals(oldBg, c)) {
+            return;
+        }
+        super.setBackground(c);
+        updateOpaque();
     }
 
     @Override
@@ -407,7 +417,7 @@ public class LWWindowPeer
     /**
      * Overridden from LWContainerPeer to return the correct insets.
      * Insets are queried from the delegate and are kept up to date by
-     * requiering when needed (i.e. when the window geometry is changed).
+     * requerying when needed (i.e. when the window geometry is changed).
      */
     @Override
     public Insets getInsets() {
@@ -520,7 +530,10 @@ public class LWWindowPeer
     }
 
     public final void setTextured(final boolean isTextured) {
-        textured = isTextured;
+        if (textured != isTextured) {
+            textured = isTextured;
+            updateOpaque();
+        }
     }
 
     @Override
@@ -1354,7 +1367,7 @@ public class LWWindowPeer
      */
     protected void changeFocusedWindow(boolean becomesFocused, Window opposite) {
         if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
-            focusLog.fine((becomesFocused?"gaining":"loosing") + " focus window: " + this);
+            focusLog.fine((becomesFocused?"gaining":"losing") + " focus window: " + this);
         }
         if (skipNextFocusChange) {
             focusLog.fine("skipping focus change");
@@ -1392,7 +1405,7 @@ public class LWWindowPeer
         KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
 
         if (!becomesFocused && kfmPeer.getCurrentFocusedWindow() != getTarget()) {
-            // late window focus lost event - ingoring
+            // late window focus lost event - ignoring
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import compiler.codecache.cli.common.CodeCacheOptions;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 public class TestSegmentedCodeCacheOption {
     private static final String INT_MODE = "-Xint";
@@ -55,6 +55,9 @@ public class TestSegmentedCodeCacheOption {
             = THRESHOLD_CC_SIZE_VALUE - CodeCacheOptions.mB(1);
     private static final String[] UNEXPECTED_MESSAGES = new String[] {
             ".*" + SEGMENTED_CODE_CACHE + ".*"
+    };
+    private static final String[] XINT_EXPECTED_MESSAGE = new String[] {
+            "SegmentedCodeCache has no meaningful effect with -Xint"
     };
 
 
@@ -86,10 +89,11 @@ public class TestSegmentedCodeCacheOption {
                 // ... and even w/ Xint.
                 testCaseExitCodeMessage = "It should be possible to use "
                         + USE_SEGMENTED_CODE_CACHE + " in interpreted mode "
-                        + "without any errors.";
+                        + "but it produces a warning that it is ignored.";
 
                 CommandLineOptionTest.verifyJVMStartup(
-                        /* expected messages */ null, UNEXPECTED_MESSAGES,
+                        XINT_EXPECTED_MESSAGE,
+                        /* unexpected messages */ null,
                         testCaseExitCodeMessage, testCaseWarningMessage,
                         ExitCode.OK, false, INT_MODE, USE_SEGMENTED_CODE_CACHE);
             }
@@ -117,14 +121,6 @@ public class TestSegmentedCodeCacheOption {
                         CommandLineOptionTest.prepareNumericFlag(
                                 BlobType.All.sizeOptionName,
                                 BELOW_THRESHOLD_CC_SIZE));
-                // SCC could be explicitly enabled w/ Xint
-                errorMessage = String.format("It should be possible to "
-                                + "explicitly enable %s in interpreted mode.",
-                        SEGMENTED_CODE_CACHE);
-
-                CommandLineOptionTest.verifyOptionValue(SEGMENTED_CODE_CACHE,
-                        "true", errorMessage, false, INT_MODE,
-                        USE_SEGMENTED_CODE_CACHE);
                 // SCC could be explicitly enabled w/o TieredCompilation and w/
                 // small ReservedCodeCacheSize value
                 errorMessage = String.format("It should be possible to "

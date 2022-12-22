@@ -142,7 +142,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      * @param name  the name of the tool bar
      * @param orientation  the initial orientation -- it must be
      *          either <code>HORIZONTAL</code> or <code>VERTICAL</code>
-     * @exception IllegalArgumentException if orientation is neither
+     * @throws IllegalArgumentException if orientation is neither
      *          <code>HORIZONTAL</code> nor <code>VERTICAL</code>
      * @since 1.3
      */
@@ -406,7 +406,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      *
      * @param o  the new orientation -- either <code>HORIZONTAL</code> or
      *                  <code>VERTICAL</code>
-     * @exception IllegalArgumentException if orientation is neither
+     * @throws IllegalArgumentException if orientation is neither
      *          <code>HORIZONTAL</code> nor <code>VERTICAL</code>
      * @see #getOrientation
      */

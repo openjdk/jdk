@@ -37,7 +37,7 @@ import jdk.test.lib.Asserts;
 
 public class TestMisalignedUnsafeAccess {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();;
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     private static short onHeapStaticMemory; // For static field testing
     private static final Object onHeapStaticMemoryBase;

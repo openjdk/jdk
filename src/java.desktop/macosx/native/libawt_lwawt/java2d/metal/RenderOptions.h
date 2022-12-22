@@ -29,13 +29,12 @@
 #include <jni.h>
 #include "MTLSurfaceDataBase.h"
 
-// Utility struct to transfer rendering paramenters
+// Utility struct to transfer rendering parameters
 typedef struct {
     jboolean isTexture;
     jboolean isAA;
     int interpolation;
     SurfaceRasterFlags srcFlags;
-    SurfaceRasterFlags dstFlags;
     jboolean isText;
     jboolean isLCD;
     jboolean isAAShader;

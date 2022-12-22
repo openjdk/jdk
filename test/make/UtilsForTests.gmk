@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 # Assert two strings are equal
 # 1 - Tested value
-# 2 - Exepected value
+# 2 - Expected value
 # 3 - Error message
 AssertEquals = \
     $(if $(call equals, $(strip $1), $(strip $2)), , \
@@ -40,7 +40,7 @@ AssertEquals = \
 CreateFile = $(shell $(MKDIR) -p $(call ShellQuote, $(dir $1)) \
     && $(TOUCH) $(call ShellQuote, $1))
 
-# On macosx, file system timestamps only have 1 second resultion so must add
+# On macosx, file system timestamps only have 1 second resolution so must add
 # sleeps to properly test dependencies.
 ifeq ($(call isBuildOs, macosx), true)
   SLEEP_ON_MAC := sleep 1

@@ -2173,7 +2173,7 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
      *
      * @return a {@code BaselineTIFFTagSet} instance.
      */
-    public synchronized static BaselineTIFFTagSet getInstance() {
+    public static synchronized BaselineTIFFTagSet getInstance() {
         if (theInstance == null) {
             initTags();
             theInstance = new BaselineTIFFTagSet();

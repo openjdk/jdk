@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm;
 
 /**
@@ -96,6 +97,12 @@ public class ClassWriter extends ClassVisitor {
       */
     public static final int COMPUTE_FRAMES = 2;
 
+    /**
+      * The flags passed to the constructor. Must be zero or more of {@link #COMPUTE_MAXS} and {@link
+      * #COMPUTE_FRAMES}.
+      */
+    private final int flags;
+
     // Note: fields are ordered as in the ClassFile structure, and those related to attributes are
     // ordered as in Section 4.7 of the JVMS.
 
@@ -110,7 +117,7 @@ public class ClassWriter extends ClassVisitor {
 
     /**
       * The access_flags field of the JVMS ClassFile structure. This field can contain ASM specific
-      * access flags, such as {@link Opcodes#ACC_DEPRECATED} or {}@link Opcodes#ACC_RECORD}, which are
+      * access flags, such as {@link Opcodes#ACC_DEPRECATED} or {@link Opcodes#ACC_RECORD}, which are
       * removed when generating the ClassFile structure.
       */
     private int accessFlags;
@@ -209,10 +216,10 @@ public class ClassWriter extends ClassVisitor {
     private ByteVector nestMemberClasses;
 
     /** The number_of_classes field of the PermittedSubclasses attribute, or 0. */
-    private int numberOfPermittedSubclassClasses;
+    private int numberOfPermittedSubclasses;
 
     /** The 'classes' array of the PermittedSubclasses attribute, or {@literal null}. */
-    private ByteVector permittedSubclassClasses;
+    private ByteVector permittedSubclasses;
 
     /**
       * The record components of this class, stored in a linked list of {@link RecordComponentWriter}
@@ -279,21 +286,37 @@ public class ClassWriter extends ClassVisitor {
       * @param classReader the {@link ClassReader} used to read the original class. It will be used to
       *     copy the entire constant pool and bootstrap methods from the original class and also to
       *     copy other fragments of original bytecode where applicable.
-      * @param flags option flags that can be used to modify the default behavior of this class.Must be
-      *     zero or more of {@link #COMPUTE_MAXS} and {@link #COMPUTE_FRAMES}. <i>These option flags do
-      *     not affect methods that are copied as is in the new class. This means that neither the
+      * @param flags option flags that can be used to modify the default behavior of this class. Must
+      *     be zero or more of {@link #COMPUTE_MAXS} and {@link #COMPUTE_FRAMES}. <i>These option flags
+      *     do not affect methods that are copied as is in the new class. This means that neither the
       *     maximum stack size nor the stack frames will be computed for these methods</i>.
       */
     public ClassWriter(final ClassReader classReader, final int flags) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
+        this.flags = flags;
         symbolTable = classReader == null ? new SymbolTable(this) : new SymbolTable(this, classReader);
         if ((flags & COMPUTE_FRAMES) != 0) {
-            this.compute = MethodWriter.COMPUTE_ALL_FRAMES;
+            compute = MethodWriter.COMPUTE_ALL_FRAMES;
         } else if ((flags & COMPUTE_MAXS) != 0) {
-            this.compute = MethodWriter.COMPUTE_MAX_STACK_AND_LOCAL;
+            compute = MethodWriter.COMPUTE_MAX_STACK_AND_LOCAL;
         } else {
-            this.compute = MethodWriter.COMPUTE_NOTHING;
+            compute = MethodWriter.COMPUTE_NOTHING;
         }
+    }
+
+    // -----------------------------------------------------------------------------------------------
+    // Accessors
+    // -----------------------------------------------------------------------------------------------
+
+    /**
+      * Returns true if all the given flags were passed to the constructor.
+      *
+      * @param flags some option flags. Must be zero or more of {@link #COMPUTE_MAXS} and {@link
+      *     #COMPUTE_FRAMES}.
+      * @return true if all the given flags, or more, were passed to the constructor.
+      */
+    public boolean hasFlags(final int flags) {
+        return (this.flags & flags) == flags;
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -403,20 +426,13 @@ public class ClassWriter extends ClassVisitor {
         nestMemberClasses.putShort(symbolTable.addConstantClass(nestMember).index);
     }
 
-    /**
-      * <b>Experimental, use at your own risk.</b>
-      *
-      * @param permittedSubclass the internal name of a permitted subclass.
-      * @deprecated this API is experimental.
-      */
     @Override
-    @Deprecated
-    public final void visitPermittedSubclassExperimental(final String permittedSubclass) {
-        if (permittedSubclassClasses == null) {
-            permittedSubclassClasses = new ByteVector();
+    public final void visitPermittedSubclass(final String permittedSubclass) {
+        if (permittedSubclasses == null) {
+            permittedSubclasses = new ByteVector();
         }
-        ++numberOfPermittedSubclassClasses;
-        permittedSubclassClasses.putShort(symbolTable.addConstantClass(permittedSubclass).index);
+        ++numberOfPermittedSubclasses;
+        permittedSubclasses.putShort(symbolTable.addConstantClass(permittedSubclass).index);
     }
 
     @Override
@@ -607,9 +623,9 @@ public class ClassWriter extends ClassVisitor {
             size += 8 + nestMemberClasses.length;
             symbolTable.addConstantUtf8(Constants.NEST_MEMBERS);
         }
-        if (permittedSubclassClasses != null) {
+        if (permittedSubclasses != null) {
             ++attributesCount;
-            size += 8 + permittedSubclassClasses.length;
+            size += 8 + permittedSubclasses.length;
             symbolTable.addConstantUtf8(Constants.PERMITTED_SUBCLASSES);
         }
         int recordComponentCount = 0;
@@ -729,12 +745,12 @@ public class ClassWriter extends ClassVisitor {
                     .putShort(numberOfNestMemberClasses)
                     .putByteArray(nestMemberClasses.data, 0, nestMemberClasses.length);
         }
-        if (permittedSubclassClasses != null) {
+        if (permittedSubclasses != null) {
             result
                     .putShort(symbolTable.addConstantUtf8(Constants.PERMITTED_SUBCLASSES))
-                    .putInt(permittedSubclassClasses.length + 2)
-                    .putShort(numberOfPermittedSubclassClasses)
-                    .putByteArray(permittedSubclassClasses.data, 0, permittedSubclassClasses.length);
+                    .putInt(permittedSubclasses.length + 2)
+                    .putShort(numberOfPermittedSubclasses)
+                    .putByteArray(permittedSubclasses.data, 0, permittedSubclasses.length);
         }
         if ((accessFlags & Opcodes.ACC_RECORD) != 0 || firstRecordComponent != null) {
             result
@@ -783,8 +799,8 @@ public class ClassWriter extends ClassVisitor {
         nestHostClassIndex = 0;
         numberOfNestMemberClasses = 0;
         nestMemberClasses = null;
-        numberOfPermittedSubclassClasses = 0;
-        permittedSubclassClasses = null;
+        numberOfPermittedSubclasses = 0;
+        permittedSubclasses = null;
         firstRecordComponent = null;
         lastRecordComponent = null;
         firstAttribute = null;
@@ -1089,3 +1105,4 @@ public class ClassWriter extends ClassVisitor {
         return getClass().getClassLoader();
     }
 }
+

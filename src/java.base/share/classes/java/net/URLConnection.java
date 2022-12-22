@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,6 +589,14 @@ public abstract class URLConnection {
      * unmodifiable List of Strings that represents
      * the corresponding field values.
      *
+     * This method is overridden by the subclasses of {@code URLConnection}.
+     *
+     * In the implementation of these methods, if a given key has multiple
+     * corresponding values, they must be returned in the order they were added,
+     * preserving the insertion-order.
+     *
+     * @implSpec The default implementation of this method returns an empty map always.
+     *
      * @return a Map of header fields
      * @since 1.4
      */
@@ -611,10 +619,12 @@ public abstract class URLConnection {
      *          missing or malformed.
      */
     public int getHeaderFieldInt(String name, int Default) {
-        String value = getHeaderField(name);
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) { }
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) { }
+        }
         return Default;
     }
 
@@ -634,10 +644,12 @@ public abstract class URLConnection {
      * @since 1.7
      */
     public long getHeaderFieldLong(String name, long Default) {
-        String value = getHeaderField(name);
-        try {
-            return Long.parseLong(value);
-        } catch (Exception e) { }
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) { }
+        }
         return Default;
     }
 
@@ -659,10 +671,12 @@ public abstract class URLConnection {
      */
     @SuppressWarnings("deprecation")
     public long getHeaderFieldDate(String name, long Default) {
-        String value = getHeaderField(name);
-        try {
-            return Date.parse(value);
-        } catch (Exception e) { }
+        final String value = getHeaderField(name);
+        if (value != null) {
+            try {
+                return Date.parse(value);
+            } catch (Exception e) { }
+        }
         return Default;
     }
 
@@ -831,6 +845,12 @@ public abstract class URLConnection {
      * A SocketTimeoutException can be thrown when reading from the
      * returned input stream if the read timeout expires before data
      * is available for read.
+     *
+     * @apiNote The {@code InputStream} returned by this method can wrap an
+     * {@link java.util.zip.InflaterInputStream InflaterInputStream}, whose
+     * {@link java.util.zip.InflaterInputStream#read(byte[], int, int)
+     * read(byte[], int, int)} method can modify any element of the output
+     * buffer.
      *
      * @return     an input stream that reads from this open connection.
      * @throws     IOException              if an I/O error occurs while
@@ -1078,7 +1098,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static void setDefaultUseCaches(String protocol, boolean defaultVal) {
-        protocol = protocol.toLowerCase(Locale.US);
+        protocol = URL.lowerCaseProtocol(protocol);
         defaultCaching.put(protocol, defaultVal);
     }
 
@@ -1094,7 +1114,7 @@ public abstract class URLConnection {
      * @since 9
      */
     public static boolean getDefaultUseCaches(String protocol) {
-        Boolean protoDefault = defaultCaching.get(protocol.toLowerCase(Locale.US));
+        Boolean protoDefault = defaultCaching.get(URL.lowerCaseProtocol(protocol));
         if (protoDefault != null) {
             return protoDefault.booleanValue();
         } else {
@@ -1133,6 +1153,10 @@ public abstract class URLConnection {
      * Adds a general request property specified by a
      * key-value pair.  This method will not overwrite
      * existing values associated with the same key.
+     *
+     * This method could be a no-op if appending a value
+     * to the map is not supported by the protocol being
+     * used in a given subclass.
      *
      * @param   key     the keyword by which the request is known
      *                  (e.g., "{@code Accept}").
@@ -1180,6 +1204,16 @@ public abstract class URLConnection {
      * field names. Each Map value is a unmodifiable List
      * of Strings that represents the corresponding
      * field values.
+     *
+     * If multiple values for a given key are added via the
+     * {@link #addRequestProperty(String, String)} method,
+     * these values will be returned in the order they were
+     * added. This method must preserve the insertion order
+     * of such values.
+     *
+     * The default implementation of this method preserves the insertion order when
+     * multiple values are added for a given key. The values are returned in the order they
+     * were added.
      *
      * @return  a Map of the general request properties for this connection.
      * @throws IllegalStateException if already connected
@@ -1818,7 +1852,7 @@ public abstract class URLConnection {
      * Returns -1, If EOF is reached before len bytes are read, returns 0
      * otherwise
      */
-    private static int readBytes(int c[], int len, InputStream is)
+    private static int readBytes(int[] c, int len, InputStream is)
                 throws IOException {
 
         byte buf[] = new byte[len];

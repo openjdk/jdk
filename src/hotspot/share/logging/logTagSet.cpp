@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "logging/logTagSet.hpp"
 #include "logging/logTagSetDescriptions.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 LogTagSet*  LogTagSet::_list      = NULL;
@@ -50,9 +51,6 @@ LogTagSet::LogTagSet(PrefixWriter prefix_writer, LogTagType t0, LogTagType t1, L
   }
   _list = this;
   _ntagsets++;
-
-  // Set the default output to warning and error level for all new tagsets.
-  _output_list.set_output_level(&StdoutLog, LogLevel::Default);
 }
 
 void LogTagSet::update_decorators(const LogDecorators& decorator) {
@@ -73,15 +71,24 @@ bool LogTagSet::has_output(const LogOutput* output) {
 }
 
 void LogTagSet::log(LogLevelType level, const char* msg) {
+  // Increasing the atomic reader counter in iterator(level) must
+  // happen before the creation of LogDecorations instance so
+  // wait_until_no_readers() in LogConfiguration::configure_output()
+  // synchronizes _decorations as well. The order is guaranteed by
+  // the implied memory order of Atomic::add().
+  LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
-  for (LogOutputList::Iterator it = _output_list.iterator(level); it != _output_list.end(); it++) {
+
+  for (; it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
   }
 }
 
 void LogTagSet::log(const LogMessageBuffer& msg) {
+  LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level());
   LogDecorations decorations(LogLevel::Invalid, *this, _decorators);
-  for (LogOutputList::Iterator it = _output_list.iterator(msg.least_detailed_level()); it != _output_list.end(); it++) {
+
+  for (; it != _output_list.end(); it++) {
     (*it)->write(msg.iterator(it.level(), decorations));
   }
 }
@@ -141,7 +148,8 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
     log(level, buf);
   } else {
     // Buffer too small, allocate a large enough buffer using malloc/free to avoid circularity.
-    char* newbuf = (char*)::malloc(newbuf_len * sizeof(char));
+    // Since logging is a very basic function, conceivably used within NMT itself, avoid os::malloc/free
+    ALLOW_C_FUNCTION(::malloc, char* newbuf = (char*)::malloc(newbuf_len * sizeof(char));)
     if (newbuf != nullptr) {
       prefix_len = _write_prefix(newbuf, newbuf_len);
       ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
@@ -151,7 +159,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
       if (ret < 0) {
         log(level, "Log message newbuf issue");
       }
-      ::free(newbuf);
+      ALLOW_C_FUNCTION(::free, ::free(newbuf);)
     } else {
       // Native OOM, use buf to output the least message. At this moment buf is full of either
       // truncated prefix or truncated prefix + string. Put trunc_msg at the end of buf.

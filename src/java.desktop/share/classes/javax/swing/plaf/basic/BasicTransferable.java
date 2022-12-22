@@ -130,9 +130,9 @@ class BasicTransferable implements Transferable, UIResource {
      *
      * @param flavor the requested flavor for the data
      * @see DataFlavor#getRepresentationClass
-     * @exception IOException                if the data is no longer available
+     * @throws IOException                if the data is no longer available
      *              in the requested flavor.
-     * @exception UnsupportedFlavorException if the requested data flavor is
+     * @throws UnsupportedFlavorException if the requested data flavor is
      *              not supported.
      */
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {

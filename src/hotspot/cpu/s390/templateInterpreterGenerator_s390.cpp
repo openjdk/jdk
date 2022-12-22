@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,7 +49,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/debug.hpp"
-
+#include "utilities/macros.hpp"
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
@@ -342,7 +342,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ add2reg(arg_c, BytesPerWord);
   __ z_bru(loop_start);
 
-  // Method exit, all arguments proocessed.
+  // Method exit, all arguments processed.
   __ bind(loop_end);
   __ z_lmg(Z_R10, Z_R13, frame::z_abi_160_size, Z_SP); // restore registers before frame is popped.
   __ pop_frame();
@@ -1295,7 +1295,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Determine code generation flags.
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //
@@ -1652,7 +1652,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   address entry_point = __ pc();
 
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //

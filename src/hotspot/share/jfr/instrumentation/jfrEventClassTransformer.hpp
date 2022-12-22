@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
 #define SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
+class CallInfo;
 class ClassFileParser;
 class InstanceKlass;
 
@@ -38,6 +39,7 @@ class InstanceKlass;
 class JfrEventClassTransformer : AllStatic {
  public:
   static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
+  static bool is_instrumented(const InstanceKlass* ik);
   static void set_force_instrumentation(bool force_instrumentation);
   static bool is_force_instrumentation();
 };

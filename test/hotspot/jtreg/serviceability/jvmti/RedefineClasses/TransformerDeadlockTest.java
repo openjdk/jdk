@@ -27,6 +27,7 @@
  * @summary Test recursively retransforms the same class. The test hangs if
  *          a deadlock happens.
  * @requires vm.jvmti
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.instrument
  * @compile TransformerDeadlockTest.java

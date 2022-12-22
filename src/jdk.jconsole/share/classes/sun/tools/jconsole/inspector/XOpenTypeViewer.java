@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
     static interface XViewedArrayData extends Navigatable {
     }
 
-    static abstract class XOpenTypeData extends JTable {
+    abstract static class XOpenTypeData extends JTable {
         XOpenTypeData parent;
         protected int col1Width = -1;
         protected int col2Width = -1;
@@ -281,7 +281,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                 // Order tabular data elements using index names
                 List<CompositeData> data = new ArrayList<CompositeData>(
                         (Collection<CompositeData>) tabular.values());
-                Collections.sort(data, new TabularDataComparator(type));
+                data.sort(new TabularDataComparator(type));
                 elements = data.toArray();
                 loadCompositeData((CompositeData) elements[0]);
             } else {

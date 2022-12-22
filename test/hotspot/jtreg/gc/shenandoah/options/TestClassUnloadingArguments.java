@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestClassUnloadingArguments
+ * @test
  * @summary Test that loop mining arguments are sane
  * @requires vm.gc.Shenandoah
  * @library /test/lib

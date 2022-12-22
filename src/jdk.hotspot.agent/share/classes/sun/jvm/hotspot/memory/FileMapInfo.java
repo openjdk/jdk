@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,16 +70,16 @@ public class FileMapInfo {
     return field.getValue(instance);
   }
 
-  // C equivalent:   return &header->_space[index];
+  // C equivalent:   return &header->_regions[index];
   static Address get_CDSFileMapRegion(Type FileMapHeader_type, Address header, int index) {
-    AddressField spaceField = FileMapHeader_type.getAddressField("_space[0]");
+    AddressField regionsField = FileMapHeader_type.getAddressField("_regions[0]");
 
-    // size_t offset = offsetof(FileMapHeader, _space[0]);
-    // CDSFileMapRegion* space_0 = ((char*)header) + offset; // space_0 = &header->_space[index];
-    // return ((char*)space_0) + index * sizeof(CDSFileMapRegion);
-    long offset = spaceField.getOffset();
-    Address space_0 = header.addOffsetTo(offset);
-    return space_0.addOffsetTo(index * spaceField.getSize());
+    // size_t offset = offsetof(FileMapHeader, _regions[0]);
+    // CDSFileMapRegion* regions_0 = ((char*)header) + offset; // regions_0 = &header->_regions[index];
+    // return ((char*)regions_0) + index * sizeof(CDSFileMapRegion);
+    long offset = regionsField.getOffset();
+    Address regions_0 = header.addOffsetTo(offset);
+    return regions_0.addOffsetTo(index * regionsField.getSize());
   }
 
   private static void initialize(TypeDataBase db) {
@@ -91,7 +91,7 @@ public class FileMapInfo {
     // FileMapHeader* header = info->_header
     Address info = getStatic_AddressField(FileMapInfo_type, "_current_info");
     Address header = get_AddressField(FileMapInfo_type, info, "_header");
-    headerObj = (FileMapHeader) VMObjectFactory.newObject(FileMapInfo.FileMapHeader.class, header);
+    headerObj = VMObjectFactory.newObject(FileMapHeader.class, header);
 
     // char* mapped_base_address = header->_mapped_base_address
     // size_t cloned_vtable_offset = header->_cloned_vtable_offset
@@ -100,29 +100,30 @@ public class FileMapInfo {
     long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
     vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
 
-    // CDSFileMapRegion* rw_space = &header->_space[rw];
-    // char* rwRegionBaseAddress = rw_space->_mapped_base;
-    // size_t used = rw_space->_used;
+    // CDSFileMapRegion* rw_region = &header->_region[rw];
+    // char* rwRegionBaseAddress = rw_region->_mapped_base;
+    // size_t used = rw_region->_used;
     // char* rwRegionEndAddress = rwRegionBaseAddress + used;
-    Address rw_space = get_CDSFileMapRegion(FileMapHeader_type, header, 0);
-    rwRegionBaseAddress = get_AddressField(CDSFileMapRegion_type, rw_space, "_mapped_base");
-    long used = get_CIntegerField(CDSFileMapRegion_type, rw_space, "_used");
+    Address rw_region = get_CDSFileMapRegion(FileMapHeader_type, header, 0);
+    rwRegionBaseAddress = get_AddressField(CDSFileMapRegion_type, rw_region, "_mapped_base");
+    long used = get_CIntegerField(CDSFileMapRegion_type, rw_region, "_used");
     rwRegionEndAddress = rwRegionBaseAddress.addOffsetTo(used);
 
     populateMetadataTypeArray(db);
   }
 
   private static void populateMetadataTypeArray(TypeDataBase db) {
-    metadataTypeArray = new Type[8];
+    metadataTypeArray = new Type[9];
 
     metadataTypeArray[0] = db.lookupType("ConstantPool");
     metadataTypeArray[1] = db.lookupType("InstanceKlass");
     metadataTypeArray[2] = db.lookupType("InstanceClassLoaderKlass");
     metadataTypeArray[3] = db.lookupType("InstanceMirrorKlass");
     metadataTypeArray[4] = db.lookupType("InstanceRefKlass");
-    metadataTypeArray[5] = db.lookupType("Method");
-    metadataTypeArray[6] = db.lookupType("ObjArrayKlass");
-    metadataTypeArray[7] = db.lookupType("TypeArrayKlass");
+    metadataTypeArray[5] = db.lookupType("InstanceStackChunkKlass");
+    metadataTypeArray[6] = db.lookupType("Method");
+    metadataTypeArray[7] = db.lookupType("ObjArrayKlass");
+    metadataTypeArray[8] = db.lookupType("TypeArrayKlass");
   }
 
   public FileMapHeader getHeader() {

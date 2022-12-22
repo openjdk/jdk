@@ -694,7 +694,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 //        save_live_registers(sasm);
 //
 //        __ save_thread(L7_thread_cache);
-//        __ call(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc),
+//        __ call(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
 //                relocInfo::runtime_call_type);
 //        __ delayed()->mov(I0, O0);
 //        __ restore_thread(L7_thread_cache);

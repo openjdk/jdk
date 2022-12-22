@@ -1185,11 +1185,10 @@ public class ComponentSampleModel extends SampleModel
     }
 
     public boolean equals(Object o) {
-        if ((o == null) || !(o instanceof ComponentSampleModel)) {
+        if (!(o instanceof ComponentSampleModel that)) {
             return false;
         }
 
-        ComponentSampleModel that = (ComponentSampleModel)o;
         return this.width == that.width &&
             this.height == that.height &&
             this.numBands == that.numBands &&

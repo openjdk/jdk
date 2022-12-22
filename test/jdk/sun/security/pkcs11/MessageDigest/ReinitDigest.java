@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-/*
+ /*
  * @test
- * @bug 4856966 8242332
+ * @bug 4856966 8242332 8269276
  * @summary
  * @author Andreas Sterbenz
  * @library /test/lib ..
@@ -32,7 +32,6 @@
  * @run main/othervm ReinitDigest
  * @run main/othervm -Djava.security.manager=allow ReinitDigest sm
  */
-
 import java.security.MessageDigest;
 import java.security.Provider;
 import java.util.Arrays;
@@ -47,8 +46,7 @@ public class ReinitDigest extends PKCS11Test {
 
     @Override
     public void main(Provider p) throws Exception {
-        List<String> ALGS = getSupportedAlgorithms("MessageDigest",
-                "SHA", p);
+        List<String> ALGS = getSupportedAlgorithms("MessageDigest", "SHA", p);
         Random r = new Random();
         byte[] data1 = new byte[10 * 1024];
         byte[] data2 = new byte[10 * 1024];
@@ -75,23 +73,37 @@ public class ReinitDigest extends PKCS11Test {
     private void doTest(String alg, Provider p, byte[] data1, byte[] data2)
             throws Exception {
         System.out.println("Testing " + alg);
-        MessageDigest md = MessageDigest.getInstance(alg, "SUN");
-        byte[] d1 = md.digest(data1);
-        md = MessageDigest.getInstance(alg, p);
-        byte[] d2 = md.digest(data1);
+        MessageDigest md1 = MessageDigest.getInstance(alg, "SUN");
+        byte[] d1 = md1.digest(data1);
+        MessageDigest md2 = MessageDigest.getInstance(alg, p);
+        checkInstances(md1, md2);
+        byte[] d2 = md2.digest(data1);
         check(d1, d2);
-        byte[] d3 = md.digest(data1);
+        byte[] d3 = md2.digest(data1);
         check(d1, d3);
-        md.update(data2);
-        md.update((byte)0);
-        md.reset();
-        byte[] d4 = md.digest(data1);
+        md2.update(data2);
+        md2.update((byte) 0);
+        md2.reset();
+        byte[] d4 = md2.digest(data1);
         check(d1, d4);
     }
 
     private static void check(byte[] d1, byte[] d2) throws Exception {
         if (Arrays.equals(d1, d2) == false) {
             throw new RuntimeException("Digest mismatch");
+        }
+    }
+
+    private static void checkInstances(MessageDigest md1, MessageDigest md2)
+            throws Exception {
+        if (md1.equals(md2)) {
+            throw new RuntimeException("MD instances should be different");
+        }
+        if (!md1.getAlgorithm().equals(md2.getAlgorithm())) {
+            throw new RuntimeException("Algorithm name should equal");
+        }
+        if (md1.getProvider().getName().equals(md2.getProvider().getName())) {
+            throw new RuntimeException("Provider name should be different");
         }
     }
 }

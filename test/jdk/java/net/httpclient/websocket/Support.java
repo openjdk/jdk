@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,15 +136,63 @@ public class Support {
      */
     public static DummyWebSocketServer notReadingServer() {
         return new DummyWebSocketServer() {
+            volatile Thread reader;
             @Override
             protected void read(SocketChannel ch) throws IOException {
+                reader = Thread.currentThread();
                 try {
+                    System.out.println("Not reading server waiting");
                     Thread.sleep(Long.MAX_VALUE);
                 } catch (InterruptedException e) {
                     throw new IOException(e);
                 }
             }
+
+            @Override
+            protected void closeChannel(SocketChannel channel) {
+                try {
+                    long read = drain(channel);
+                    System.out.printf("Not reading server drained %s bytes%n", read);
+                } catch (IOException io) {
+                    System.out.println("Not reading server failed to drain channel: " + io);
+                }
+                super.closeChannel(channel);
+            }
+
+            @Override
+            public void close() {
+                super.close();
+                Thread thread = reader;
+                if (thread != null && thread.isAlive() && thread != Thread.currentThread()) {
+                    try {
+                        thread.join();
+                        System.out.println("Not reading server: closed");
+                    } catch (InterruptedException x) {
+                        System.out.println("Not reading server: close interrupted: " + x);
+                    }
+                }
+            }
         };
+    }
+
+    static long drain(SocketChannel channel) throws IOException {
+        System.out.println("Not reading server: draining socket");
+        var blocking = channel.isBlocking();
+        if (blocking) channel.configureBlocking(false);
+        long count = 0;
+        try {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(8 * 1024);
+            int read;
+            while ((read = channel.read(buffer)) > 0) {
+                count += read;
+                buffer.clear();
+            }
+            return count;
+        } finally {
+            if (blocking != channel.isBlocking()) {
+                channel.configureBlocking(blocking);
+            }
+        }
     }
 
     public static DummyWebSocketServer writingServer(int... data) {

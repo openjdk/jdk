@@ -31,6 +31,7 @@ import java.awt.event.ActionListener;
 
 /**
  * @test
+ * @key sound
  * @bug 4997635
  * @summary Win: SourceDataLine playback loops endlessly unless you manually
  *          stop()

@@ -26,11 +26,15 @@
         .globl aarch64_atomic_fetch_add_8_default_impl
         .align 5
 aarch64_atomic_fetch_add_8_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        ldaddal x1, x2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldaxr   x2, [x0]
         add     x8, x2, x1
         stlxr   w9, x8, [x0]
         cbnz    w9, 0b
+#endif
         dmb     ish
         mov     x0, x2
         ret
@@ -38,22 +42,60 @@ aarch64_atomic_fetch_add_8_default_impl:
         .globl aarch64_atomic_fetch_add_4_default_impl
         .align 5
 aarch64_atomic_fetch_add_4_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        ldaddal w1, w2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldaxr   w2, [x0]
         add     w8, w2, w1
         stlxr   w9, w8, [x0]
         cbnz    w9, 0b
+#endif
         dmb     ish
+        mov     w0, w2
+        ret
+
+        .global aarch64_atomic_fetch_add_8_relaxed_default_impl
+        .align 5
+aarch64_atomic_fetch_add_8_relaxed_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        ldadd x1, x2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxr    x2, [x0]
+        add     x8, x2, x1
+        stxr    w9, x8, [x0]
+        cbnz    w9, 0b
+#endif
+        mov     x0, x2
+        ret
+
+        .global aarch64_atomic_fetch_add_4_relaxed_default_impl
+        .align 5
+aarch64_atomic_fetch_add_4_relaxed_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        ldadd w1, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxr    w2, [x0]
+        add     w8, w2, w1
+        stxr    w9, w8, [x0]
+        cbnz    w9, 0b
+#endif
         mov     w0, w2
         ret
 
         .globl aarch64_atomic_xchg_4_default_impl
         .align 5
 aarch64_atomic_xchg_4_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        swpal   w1, w2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldaxr   w2, [x0]
         stlxr   w8, w1, [x0]
         cbnz    w8, 0b
+#endif
         dmb     ish
         mov     w0, w2
         ret
@@ -61,10 +103,14 @@ aarch64_atomic_xchg_4_default_impl:
         .globl aarch64_atomic_xchg_8_default_impl
         .align 5
 aarch64_atomic_xchg_8_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        swpal   x1, x2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldaxr   x2, [x0]
         stlxr   w8, x1, [x0]
         cbnz    w8, 0b
+#endif
         dmb     ish
         mov     x0, x2
         ret
@@ -72,6 +118,10 @@ aarch64_atomic_xchg_8_default_impl:
         .globl aarch64_atomic_cmpxchg_1_default_impl
         .align 5
 aarch64_atomic_cmpxchg_1_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casalb  w3, w2, [x0]
+#else
         dmb     ish
         prfm    pstl1strm, [x0]
 0:      ldxrb   w3, [x0]
@@ -80,13 +130,18 @@ aarch64_atomic_cmpxchg_1_default_impl:
         b.ne    1f
         stxrb   w8, w2, [x0]
         cbnz    w8, 0b
-1:      mov     w0, w3
-        dmb     ish
+#endif
+1:      dmb     ish
+        mov     w0, w3
         ret
 
         .globl aarch64_atomic_cmpxchg_4_default_impl
         .align 5
 aarch64_atomic_cmpxchg_4_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casal   w3, w2, [x0]
+#else
         dmb     ish
         prfm    pstl1strm, [x0]
 0:      ldxr    w3, [x0]
@@ -94,13 +149,18 @@ aarch64_atomic_cmpxchg_4_default_impl:
         b.ne    1f
         stxr    w8, w2, [x0]
         cbnz    w8, 0b
-1:      mov     w0, w3
-        dmb     ish
+#endif
+1:      dmb     ish
+        mov     w0, w3
         ret
 
         .globl aarch64_atomic_cmpxchg_8_default_impl
         .align 5
 aarch64_atomic_cmpxchg_8_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casal   x3, x2, [x0]
+#else
         dmb     ish
         prfm    pstl1strm, [x0]
 0:      ldxr    x3, [x0]
@@ -108,13 +168,86 @@ aarch64_atomic_cmpxchg_8_default_impl:
         b.ne    1f
         stxr    w8, x2, [x0]
         cbnz    w8, 0b
-1:      mov     x0, x3
-        dmb     ish
+#endif
+1:      dmb     ish
+        mov     x0, x3
         ret
 
-        .globl aarch64_atomic_cmpxchg_1_relaxed_default_impl
+        .globl aarch64_atomic_cmpxchg_4_release_default_impl
+        .align 5
+aarch64_atomic_cmpxchg_4_release_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casl    w3, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxr    w3, [x0]
+        cmp     w3, w1
+        b.ne    1f
+        stlxr   w8, w2, [x0]
+        cbnz    w8, 0b
+#endif
+1:      mov     w0, w3
+        ret
+
+        .globl aarch64_atomic_cmpxchg_8_release_default_impl
+        .align 5
+aarch64_atomic_cmpxchg_8_release_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casl    x3, x2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldxr    x3, [x0]
+        cmp     x3, x1
+        b.ne    1f
+        stlxr   w8, x2, [x0]
+        cbnz    w8, 0b
+#endif
+1:      mov     x0, x3
+        ret
+
+        .globl aarch64_atomic_cmpxchg_4_seq_cst_default_impl
+        .align 5
+aarch64_atomic_cmpxchg_4_seq_cst_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casal   w3, w2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldaxr   w3, [x0]
+        cmp     w3, w1
+        b.ne    1f
+        stlxr   w8, w2, [x0]
+        cbnz    w8, 0b
+#endif
+1:      mov     w0, w3
+        ret
+
+        .globl aarch64_atomic_cmpxchg_8_seq_cst_default_impl
+        .align 5
+aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casal   x3, x2, [x0]
+#else
+        prfm    pstl1strm, [x0]
+0:      ldaxr   x3, [x0]
+        cmp     x3, x1
+        b.ne    1f
+        stlxr   w8, x2, [x0]
+        cbnz    w8, 0b
+#endif
+1:      mov     x0, x3
+        ret
+
+.globl aarch64_atomic_cmpxchg_1_relaxed_default_impl
         .align 5
 aarch64_atomic_cmpxchg_1_relaxed_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        casb    w3, w2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldxrb   w3, [x0]
         eor     w8, w3, w1
@@ -122,29 +255,40 @@ aarch64_atomic_cmpxchg_1_relaxed_default_impl:
         b.ne    1f
         stxrb   w8, w2, [x0]
         cbnz    w8, 0b
+#endif
 1:      mov     w0, w3
         ret
 
         .globl aarch64_atomic_cmpxchg_4_relaxed_default_impl
         .align 5
 aarch64_atomic_cmpxchg_4_relaxed_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        cas     w3, w2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldxr    w3, [x0]
         cmp     w3, w1
         b.ne    1f
         stxr    w8, w2, [x0]
         cbnz    w8, 0b
+#endif
 1:      mov     w0, w3
         ret
 
         .globl aarch64_atomic_cmpxchg_8_relaxed_default_impl
         .align 5
 aarch64_atomic_cmpxchg_8_relaxed_default_impl:
+#ifdef __ARM_FEATURE_ATOMICS
+        mov     x3, x1
+        cas     x3, x2, [x0]
+#else
         prfm    pstl1strm, [x0]
 0:      ldxr    x3, [x0]
         cmp     x3, x1
         b.ne    1f
         stxr    w8, x2, [x0]
         cbnz    w8, 0b
+#endif
 1:      mov     x0, x3
         ret

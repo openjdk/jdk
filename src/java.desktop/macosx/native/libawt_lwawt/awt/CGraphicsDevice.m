@@ -36,7 +36,7 @@
 #define DEFAULT_DEVICE_DPI 72
 
 /*
- * Convert the mode string to the more convinient bits per pixel value
+ * Convert the mode string to the more convenient bits per pixel value
  */
 static int getBPPFromModeString(CFStringRef mode)
 {
@@ -259,6 +259,18 @@ JNI_COCOA_ENTER(env);
 JNI_COCOA_EXIT(env);
 
     return ret;
+}
+
+/*
+ * Class:     sun_awt_CGraphicsDevice
+ * Method:    nativeResetDisplayMode
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_CGraphicsDevice_nativeResetDisplayMode
+(JNIEnv *env, jclass class)
+{
+    CGRestorePermanentDisplayConfiguration();
 }
 
 /*

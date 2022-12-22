@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_JNICHECK_HPP
 #define SHARE_PRIMS_JNICHECK_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 extern "C" {
   // Report a JNI failure caught by -Xcheck:jni.  Perform a core dump.

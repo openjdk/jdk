@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -37,7 +38,9 @@
 class BytecodeStream;
 
 // The MethodData object collects counts and other profile information
-// during zeroth-tier (interpretive) and first-tier execution.
+// during zeroth-tier (interpreter) and third-tier (C1 with full profiling)
+// execution.
+//
 // The profile is used later by compilation heuristics.  Some heuristics
 // enable use of aggressive (or "heroic") optimizations.  An aggressive
 // optimization often has a down-side, a corner case that it handles
@@ -95,7 +98,7 @@ private:
   } _header;
 
   // The data layout has an arbitrary number of cells, each sized
-  // to accomodate a pointer or an integer.
+  // to accommodate a pointer or an integer.
   intptr_t _cells[1];
 
   // Some types of data layouts need a length field.
@@ -1603,7 +1606,7 @@ public:
 // A MultiBranchData is used to access profiling information for
 // a multi-way branch (*switch bytecodes).  It consists of a series
 // of (count, displacement) pairs, which count the number of times each
-// case was taken and specify the data displacment for each branch target.
+// case was taken and specify the data displacement for each branch target.
 class MultiBranchData : public ArrayData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -1877,7 +1880,7 @@ public:
 // During interpretation, if profiling in enabled, the interpreter
 // maintains a method data pointer (mdp), which points at the entry
 // in the array corresponding to the current bci.  In the course of
-// intepretation, when a bytecode is encountered that has profile data
+// interpretation, when a bytecode is encountered that has profile data
 // associated with it, the entry pointed to by mdp is updated, then the
 // mdp is adjusted to point to the next appropriate DataLayout.  If mdp
 // is NULL to begin with, the interpreter assumes that the current method
@@ -1965,7 +1968,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 25 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = Deoptimization::Reason_TRAP_HISTORY_LENGTH,
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
@@ -1980,6 +1983,7 @@ public:
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
     union {
       intptr_t _align;
+      // JVMCI separates trap history for OSR compilations from normal compilations
       u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
     } _trap_hist;
 
@@ -1996,14 +2000,14 @@ public:
 
     // Return (uint)-1 for overflow.
     uint trap_count(int reason) const {
-      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      assert((uint)reason < ARRAY_SIZE(_trap_hist._array), "oob");
       return (int)((_trap_hist._array[reason]+1) & _trap_hist_mask) - 1;
     }
 
     uint inc_trap_count(int reason) {
       // Count another trap, anywhere in this method.
       assert(reason >= 0, "must be single trap");
-      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      assert((uint)reason < ARRAY_SIZE(_trap_hist._array), "oob");
       uint cnt1 = 1 + _trap_hist._array[reason];
       if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
         _trap_hist._array[reason] = cnt1;

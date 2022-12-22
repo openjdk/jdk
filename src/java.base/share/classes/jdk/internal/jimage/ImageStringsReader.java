@@ -309,7 +309,7 @@ public class ImageStringsReader implements ImageStrings {
                 return -1;
             }
         }
-        return length;
+        return current - offset + length;
     }
 
     static int mutf8FromStringLength(String s) {

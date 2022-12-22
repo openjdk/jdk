@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@ class fieldDescriptor {
   inline ConstantPool* constants() const;
 
   AccessFlags access_flags()      const    { return _access_flags; }
-  oop loader()                    const;
-  // Offset (in words) of field from start of instanceOop / Klass*
+  // Offset (in bytes) of field from start of instanceOop / Klass*
   inline int offset()             const;
   Symbol* generic_signature()     const;
   int index()                     const    { return _index; }
@@ -83,16 +82,12 @@ class fieldDescriptor {
   inline BasicType field_type() const;
 
   // Access flags
-  bool is_public()                const    { return access_flags().is_public(); }
   bool is_private()               const    { return access_flags().is_private(); }
   bool is_protected()             const    { return access_flags().is_protected(); }
-  bool is_package_private()       const    { return !is_public() && !is_private() && !is_protected(); }
 
   bool is_static()                const    { return access_flags().is_static(); }
   bool is_final()                 const    { return access_flags().is_final(); }
   bool is_stable()                const    { return access_flags().is_stable(); }
-  bool is_volatile()              const    { return access_flags().is_volatile(); }
-  bool is_transient()             const    { return access_flags().is_transient(); }
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
 
@@ -113,8 +108,8 @@ class fieldDescriptor {
 
   // Print
   void print() const;
-  void print_on(outputStream* st) const         PRODUCT_RETURN;
-  void print_on_for(outputStream* st, oop obj)  PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
+  void print_on_for(outputStream* st, oop obj);
   void verify() const                           PRODUCT_RETURN;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_QUICKSORT_HPP
 #define SHARE_UTILITIES_QUICKSORT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
@@ -117,7 +117,7 @@ class QuickSort : AllStatic {
   // impact depends on the comparator.
   template<class T, class C>
   static void sort(T* array, size_t length, C comparator, bool idempotent) {
-    // Switch "idempotent" from function paramter to template parameter
+    // Switch "idempotent" from function parameter to template parameter
     if (idempotent) {
       inner_sort<true>(array, length, comparator);
     } else {

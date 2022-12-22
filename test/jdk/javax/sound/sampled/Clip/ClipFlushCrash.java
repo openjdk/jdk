@@ -33,6 +33,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4946945
  * @summary Crash in javasound while running TicTacToe demo applet tiger b26
  */

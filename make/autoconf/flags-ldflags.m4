@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
 
   # Setup the target toolchain
 
+  # The target dir matches the name of VM variant
+  TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
+
   # On some platforms (mac) the linker warns about non existing -L dirs.
-  # For any of the variants server, client or minimal, the dir matches the
-  # variant name. The "main" variant should be used for linking. For the
-  # rest, the dir is just server.
-  if HOTSPOT_CHECK_JVM_VARIANT(server) || HOTSPOT_CHECK_JVM_VARIANT(client) \
-      || HOTSPOT_CHECK_JVM_VARIANT(minimal); then
-    TARGET_JVM_VARIANT_PATH=$JVM_VARIANT_MAIN
-  else
-    TARGET_JVM_VARIANT_PATH=server
-  fi
   FLAGS_SETUP_LDFLAGS_CPU_DEP([TARGET])
 
   # Setup the build toolchain
@@ -83,7 +77,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
         -fPIC"
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    BASIC_LDFLAGS="-b64 -brtl -bnorwexec -bnolibpath -bexpall -bernotok -btextpsize:64K \
+    BASIC_LDFLAGS="-b64 -brtl -bnorwexec -bnolibpath -bnoexpall -bernotok -btextpsize:64K \
         -bdatapsize:64K -bstackpsize:64K"
     # libjvm.so has gotten too large for normal TOC size; compile with qpic=large and link with bigtoc
     BASIC_LDFLAGS_JVM_ONLY="-Wl,-lC_r -bbigtoc"
@@ -101,13 +95,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   fi
 
   # Setup OS-dependent LDFLAGS
-  if test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xgcc; then
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # Assume clang or gcc.
-      # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
-      OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
-      OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
-    fi
+  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$TOOLCHAIN_TYPE" = xclang; then
+    # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
+    OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
+    OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
   fi
 
   # Setup debug level-dependent LDFLAGS
@@ -137,10 +128,13 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
-  if test "x$ENABLE_REPRODUCIBLE_BUILD" = "xtrue"; then
-    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-      REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
-    fi
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
+    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$REPRODUCIBLE_LDFLAGS],
+        IF_FALSE: [
+            REPRODUCIBLE_LDFLAGS=
+        ]
+    )
   fi
 
   if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then

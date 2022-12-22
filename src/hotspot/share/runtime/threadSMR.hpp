@@ -26,9 +26,10 @@
 #define SHARE_RUNTIME_THREADSMR_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/debug.hpp"
 
 class JavaThread;
 class Monitor;
@@ -121,8 +122,6 @@ class ThreadsSMRSupport : AllStatic {
   static uint                  _to_delete_list_cnt;
   static uint                  _to_delete_list_max;
 
-  static ThreadsList *acquire_stable_list_fast_path(Thread *self);
-  static ThreadsList *acquire_stable_list_nested_path(Thread *self);
   static void add_deleted_thread_times(uint add_value);
   static void add_tlh_times(uint add_value);
   static void clear_delete_notify();
@@ -138,7 +137,6 @@ class ThreadsSMRSupport : AllStatic {
   static void update_deleted_thread_time_max(uint new_value);
   static void update_java_thread_list_max(uint new_value);
   static void update_tlh_time_max(uint new_value);
-  static void verify_hazard_ptr_scanned(Thread *self, ThreadsList *threads);
   static ThreadsList* xchg_java_thread_list(ThreadsList* new_list);
 
  public:
@@ -192,6 +190,10 @@ public:
   explicit ThreadsList(int entries);
   ~ThreadsList();
 
+  class Iterator;
+  inline Iterator begin();
+  inline Iterator end();
+
   template <class T>
   void threads_do(T *cl) const;
 
@@ -209,6 +211,29 @@ public:
 #ifdef ASSERT
   static bool is_valid(ThreadsList* list) { return list->_magic == THREADS_LIST_MAGIC; }
 #endif
+};
+
+class ThreadsList::Iterator {
+  JavaThread* const* _thread_ptr;
+  DEBUG_ONLY(ThreadsList* _list;)
+
+  static uint check_index(ThreadsList* list, uint i) NOT_DEBUG({ return i; });
+  void assert_not_singular() const NOT_DEBUG_RETURN;
+  void assert_dereferenceable() const NOT_DEBUG_RETURN;
+  void assert_same_list(Iterator i) const NOT_DEBUG_RETURN;
+
+public:
+  Iterator() NOT_DEBUG(= default); // Singular iterator.
+  inline Iterator(ThreadsList* list, uint i);
+
+  inline bool operator==(Iterator other) const;
+  inline bool operator!=(Iterator other) const;
+
+  inline JavaThread* operator*() const;
+  inline JavaThread* operator->() const;
+
+  inline Iterator& operator++();
+  inline Iterator operator++(int);
 };
 
 // An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr
@@ -244,17 +269,6 @@ public:
     if (acquire) {
       acquire_stable_list();
     }
-  }
-
-  // Constructor that transfers ownership of the pointer.
-  SafeThreadsListPtr(SafeThreadsListPtr& other) :
-    _previous(other._previous),
-    _thread(other._thread),
-    _list(other._list),
-    _has_ref_count(other._has_ref_count),
-    _needs_release(other._needs_release)
-  {
-    other._needs_release = false;
   }
 
   ~SafeThreadsListPtr() {
@@ -300,10 +314,9 @@ public:
     return _list_ptr.list();
   }
 
-  template <class T>
-  void threads_do(T *cl) const {
-    return list()->threads_do(cl);
-  }
+  using Iterator = ThreadsList::Iterator;
+  inline Iterator begin();
+  inline Iterator end();
 
   bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p);
 
@@ -344,10 +357,6 @@ public:
 
   uint length() const {
     return _list->length();
-  }
-
-  ThreadsList *list() const {
-    return _list;
   }
 
   JavaThread *next() {

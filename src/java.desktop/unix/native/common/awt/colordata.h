@@ -39,9 +39,9 @@ typedef struct _ColorData {
     unsigned char *awt_icmLUT2Colors;
     unsigned char *img_grays;
     unsigned char *img_clr_tbl;
-    char* img_oda_red;
-    char* img_oda_green;
-    char* img_oda_blue;
+    signed char* img_oda_red;
+    signed char* img_oda_green;
+    signed char* img_oda_blue;
     int *pGrayInverseLutData;
     int screendata;
     int representsPrimaries;

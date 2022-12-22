@@ -54,7 +54,7 @@ public class TestOverriddenMethodDocCopy extends JavadocTester {
 
         checkOutput("pkg1/SubClass.html", true,
                 """
-                    <span class="descfrm-type-label">Description copied from class:&nbsp;<code><a hr\
+                    <span class="description-from-type-label">Description copied from class:&nbsp;<code><a hr\
                     ef="BaseClass.html#overriddenMethodWithDocsToCopy()">BaseClass</a></code></span>""");
     }
 }

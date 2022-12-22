@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class PerfIntegerMonitor extends AbstractMonitor
     /**
      * Return the current value of the IntegerInstrument as an int.
      *
-     * @return int - a the current value of the IntegerInstrument.
+     * @return int - the current value of the IntegerInstrument.
      */
     public int intValue() {
         return ib.get(0);

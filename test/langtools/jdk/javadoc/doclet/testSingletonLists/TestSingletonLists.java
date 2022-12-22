@@ -206,7 +206,7 @@ public class TestSingletonLists extends JavadocTester {
         checking("Check lists");
         ListChecker c = new ListChecker(out, this::readFile);
         try {
-            c.checkDirectory(outputDir.toPath());
+            c.checkDirectory(outputDir);
             c.report();
             int errors = c.getErrorCount();
             if (errors == 0) {
@@ -270,7 +270,7 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
-                    if ("see-list".equals(attrs.get("class"))) {
+                    if ("tag-list".equals(attrs.get("class"))) {
                         inSeeList = true;
                     }
                     break;

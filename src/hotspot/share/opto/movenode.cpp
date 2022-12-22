@@ -75,21 +75,25 @@
 // Return a node which is more "ideal" than the current node.
 // Move constants to the right.
 Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if( in(0) && remove_dead_region(phase, can_reshape) ) return this;
+  if (in(0) != NULL && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if (in(0) != NULL && in(0)->is_top()) {
+    return NULL;
+  }
   assert(in(Condition) != this &&
-         in(IfFalse) != this &&
-         in(IfTrue) != this, "dead loop in CMoveNode::Ideal" );
-  if( phase->type(in(Condition)) == Type::TOP )
-  return NULL; // return NULL when Condition is dead
-
-  if( in(IfFalse)->is_Con() && !in(IfTrue)->is_Con() ) {
-    if( in(Condition)->is_Bool() ) {
-      BoolNode* b  = in(Condition)->as_Bool();
-      BoolNode* b2 = b->negate(phase);
-      return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
-    }
+         in(IfFalse)   != this &&
+         in(IfTrue)    != this, "dead loop in CMoveNode::Ideal");
+  if (phase->type(in(Condition)) == Type::TOP ||
+      phase->type(in(IfFalse))   == Type::TOP ||
+      phase->type(in(IfTrue))    == Type::TOP) {
+    return NULL;
+  }
+  // Canonicalize the node by moving constants to the right input.
+  if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
+    BoolNode* b = in(Condition)->as_Bool()->negate(phase);
+    return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
   return NULL;
 }
@@ -155,6 +159,9 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(Condition)) == Type::TOP) {
     return Type::TOP;
   }
+  if (phase->type(in(IfTrue)) == Type::TOP || phase->type(in(IfFalse)) == Type::TOP) {
+    return Type::TOP;
+  }
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }
@@ -188,14 +195,10 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If zero is on the left (false-case, no-move-case) it must mean another
   // constant is on the right (otherwise the shared CMove::Ideal code would
-  // have moved the constant to the right).  This situation is bad for Intel
-  // and a don't-care for Sparc.  It's bad for Intel because the zero has to
-  // be manifested in a register with a XOR which kills flags, which are live
-  // on input to the CMoveI, leading to a situation which causes excessive
-  // spilling on Intel.  For Sparc, if the zero in on the left the Sparc will
-  // zero a register via G0 and conditionally-move the other constant.  If the
-  // zero is on the right, the Sparc will load the first constant with a
-  // 13-bit set-lo and conditionally move G0.  See bug 4677505.
+  // have moved the constant to the right). This situation is bad for x86 because
+  // the zero has to be manifested in a register with a XOR which kills flags,
+  // which are live on input to the CMoveI, leading to a situation which causes
+  // excessive spilling. See bug 4677505.
   if( phase->type(in(IfFalse)) == TypeInt::ZERO && !(phase->type(in(IfTrue)) == TypeInt::ZERO) ) {
     if( in(Condition)->is_Bool() ) {
       BoolNode* b  = in(Condition)->as_Bool();
@@ -459,18 +462,3 @@ Node* MoveD2LNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
-
-#ifndef PRODUCT
-//----------------------------BinaryNode---------------------------------------
-// The set of related nodes for a BinaryNode is all data inputs and all outputs
-// till level 2 (i.e., one beyond the associated CMoveNode). In compact mode,
-// it's the inputs till level 1 and the outputs till level 2.
-void BinaryNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, true);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -2, false, false);
-}
-#endif

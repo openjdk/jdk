@@ -52,7 +52,6 @@ public class TestJcmdConfigure {
     private static final String GLOBAL_BUFFER_SIZE = "globalbuffersize";
     private static final String THREAD_BUFFER_SIZE = "thread_buffer_size";
     private static final String MAX_CHUNK_SIZE = "maxchunksize";
-    private static final String SAMPLE_THREADS = "samplethreads";
     private static final String UNSUPPORTED_OPTION = "unsupportedoption";
 
     private static final String REPOSITORYPATH_1 = "." + File.pathSeparator + "repo1";
@@ -80,8 +79,6 @@ public class TestJcmdConfigure {
         test(GLOBAL_BUFFER_SIZE, 6);
         test(THREAD_BUFFER_SIZE, 5);
         test(MAX_CHUNK_SIZE, 14 * 1000 * 1000);
-        test(SAMPLE_THREADS, false);
-        test(SAMPLE_THREADS, true);
         testNegative(UNSUPPORTED_OPTION, 100000);
         testNegative(MAX_CHUNK_SIZE, -500);
 
@@ -125,7 +122,6 @@ public class TestJcmdConfigure {
             case GLOBAL_BUFFER_SIZE: return Options.getGlobalBufferSize();
             case THREAD_BUFFER_SIZE: return Options.getThreadBufferSize();
             case MAX_CHUNK_SIZE: return Options.getMaxChunkSize();
-            case SAMPLE_THREADS: return Options.getSampleThreads();
             default: throw new RuntimeException("Unknown option " + name);
         }
     }

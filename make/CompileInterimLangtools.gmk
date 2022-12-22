@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,33 @@ $(BUILDTOOLS_OUTPUTDIR)/gensrc/%.interim/module-info.java: \
 TARGETS += $(patsubst %, $(BUILDTOOLS_OUTPUTDIR)/gensrc/%/module-info.java, \
     $(INTERIM_LANGTOOLS_MODULES))
 
+################################################################################
+# Generate interim versions of the ToolProvider.java files for the interim
+# langtools modules, which will allow to load javac from the interim
+# jdk.compiler.
+
+INTERIM_TOOL_PROVIDER_PATTERN := \
+    $(foreach m, $(INTERIM_LANGTOOLS_BASE_MODULES), -e 's/"$m"/"$m.interim"/g')
+
+$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java: \
+    $(TOPDIR)/src/java.compiler/share/classes/javax/tools/ToolProvider.java
+	$(call LogInfo, Generating ToolProvider.java for java.compiler.interim)
+	$(call MakeDir, $(@D))
+	$(SED) $(INTERIM_TOOL_PROVIDER_PATTERN) $< > $@
+
+java.compiler.interim_EXTRA_FILES := \
+     $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
+
+TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
+
+################################################################################
+# Use the up-to-date PreviewFeature.java and NoPreview.java from the current
+# sources, instead of the versions from the boot JDK, as javac may be referring
+# to constants from the up-to-date versions.
+
 $(eval $(call SetupCopyFiles, COPY_PREVIEW_FEATURES, \
-    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java, \
+    FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java \
+        $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/NoPreview.java, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/, \
 ))
 
@@ -70,11 +95,13 @@ define SetupInterimModule
       SRC := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim \
           $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$1) \
           $(TOPDIR)/src/$1/share/classes, \
-      EXCLUDES := sun, \
+      EXCLUDES := sun javax/tools/snippet-files, \
       EXCLUDE_FILES := $(TOPDIR)/src/$1/share/classes/module-info.java \
+          $(TOPDIR)/src/$1/share/classes/javax/tools/ToolProvider.java \
           Standard.java, \
-      EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java, \
-      COPY := .gif .png .xml .css .js .js.template .txt javax.tools.JavaCompilerTool, \
+      EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java \
+          $($1.interim_EXTRA_FILES), \
+      COPY := .gif .png .xml .css .svg .js .js.template .txt javax.tools.JavaCompilerTool, \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules/$1.interim, \
       DISABLED_WARNINGS := module options, \
       JAVAC_FLAGS := \
@@ -98,5 +125,20 @@ $(foreach m, $(INTERIM_LANGTOOLS_BASE_MODULES), \
 )
 
 ################################################################################
+# Setup the compilation of the javac server build tool. Technically, this is not
+# really "interim" langtools, but just like it, it is needed henceforth for all
+# java compilation using the interim compiler.
+$(eval $(call SetupJavaCompilation, BUILD_JAVAC_SERVER, \
+    COMPILER := bootjdk, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+    SRC := $(TOPDIR)/make/langtools/tools, \
+    INCLUDES := javacserver, \
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_javacserver_classes, \
+))
+
+TARGETS += $(BUILD_JAVAC_SERVER)
+
+################################################################################
+
 
 all: $(TARGETS)

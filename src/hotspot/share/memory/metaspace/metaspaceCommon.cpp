@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspace/allocationGuard.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
@@ -66,7 +65,7 @@ static const char* display_unit_for_scale(size_t scale) {
 // Print a human readable size.
 // byte_size: size, in bytes, to be printed.
 // scale: one of 1 (byte-wise printing), sizeof(word) (word-size printing), K, M, G (scaled by KB, MB, GB respectively,
-//         or 0, which means the best scale is choosen dynamically.
+//         or 0, which means the best scale is chosen dynamically.
 // width: printing width.
 void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale, int width)  {
   if (scale == 0) {
@@ -182,12 +181,6 @@ size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
   // Metaspace allocations are aligned to word size.
   byte_size = align_up(byte_size, AllocationAlignmentByteSize);
 
-  // If we guard allocations, we need additional space for a prefix.
-#ifdef ASSERT
-  if (Settings::use_allocation_guard()) {
-    byte_size += align_up(prefix_size(), AllocationAlignmentByteSize);
-  }
-#endif
   size_t raw_word_size = byte_size / BytesPerWord;
   assert(raw_word_size * BytesPerWord == byte_size, "Sanity");
   return raw_word_size;

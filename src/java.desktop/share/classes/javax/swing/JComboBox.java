@@ -638,7 +638,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @param anIndex an integer specifying the list item to select,
      *                  where 0 specifies the first item in the list and -1 indicates no selection
-     * @exception IllegalArgumentException if <code>anIndex</code> &lt; -1 or
+     * @throws IllegalArgumentException if <code>anIndex</code> &lt; -1 or
      *                  <code>anIndex</code> is greater than or equal to size
      */
     @BeanProperty(bound = false, preferred = true, description
@@ -815,7 +815,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     /**
      * Checks that the <code>dataModel</code> is an instance of
      * <code>MutableComboBoxModel</code>.  If not, it throws an exception.
-     * @exception RuntimeException if <code>dataModel</code> is not an
+     * @throws RuntimeException if <code>dataModel</code> is not an
      *          instance of <code>MutableComboBoxModel</code>.
      */
     void checkMutableComboBoxModel() {
@@ -1555,7 +1555,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         int selectionForKey(char aKey,ComboBoxModel<?> aModel);
     }
 
-    class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
+    static class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
         public int selectionForKey(char aKey,ComboBoxModel<?> aModel) {
             int i,c;
             int currentSelection = -1;
@@ -1721,7 +1721,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         }
 
         /*
-         * Sets the combo box editor's accessible name and descripton
+         * Sets the combo box editor's accessible name and description
          */
         private void setEditorNameAndDescription() {
             ComboBoxEditor editor = JComboBox.this.getEditor();
@@ -2000,11 +2000,10 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             // Get the popup
             Accessible a =
                 JComboBox.this.getUI().getAccessibleChild(JComboBox.this, 0);
-            if (a != null &&
-                a instanceof javax.swing.plaf.basic.ComboPopup) {
+            if (a instanceof javax.swing.plaf.basic.ComboPopup popup) {
 
                 // get the popup list
-                JList<?> list = ((javax.swing.plaf.basic.ComboPopup)a).getList();
+                JList<?> list = popup.getList();
 
                 // return the i-th selection in the popup list
                 AccessibleContext ac = list.getAccessibleContext();
@@ -2299,7 +2298,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
              * @return this component's locale.  If this component does not have
              * a locale, the locale of its parent is returned.
              *
-             * @exception IllegalComponentStateException
+             * @throws IllegalComponentStateException
              * If the Component does not have its own locale and has not yet been
              * added to a containment hierarchy such that the locale can be
              * determined from the containing parent.

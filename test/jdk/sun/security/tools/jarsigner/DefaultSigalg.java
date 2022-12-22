@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8057810
- * @summary New defaults for DSA keys in jarsigner and keytool
+ * @bug 8057810 8267319
+ * @summary New defaults for DSA, RSA, EC keys in jarsigner and keytool
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.tools.keytool
  *          java.base/sun.security.util
@@ -42,20 +42,22 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
-import java.util.jar.JarFile;
+import java.util.jar.*;
+import java.util.Enumeration;
 
 public class DefaultSigalg {
 
     public static void main(String[] args) throws Exception {
 
         // Three test cases
-        String[] keyalgs = {"DSA", "RSA", "EC"};
+        String[] keyalgs = {"DSA", "RSA", "EC", "RSASSA-PSS"};
         // Expected default keytool sigalg
-        String[] sigalgs = {"SHA256withDSA", "SHA256withRSA", "SHA256withECDSA"};
+        String[] sigalgs = {"SHA256withDSA", "SHA384withRSA",
+                "SHA384withECDSA", "RSASSA-PSS"};
         // Expected keysizes
-        int[] keysizes = {2048, 2048, 256};
+        int[] keysizes = {2048, 3072, 384, 3072};
         // Expected jarsigner digest alg used in signature
-        String[] digestalgs = {"SHA-256", "SHA-256", "SHA-256"};
+        String[] digestalgs = {"SHA-256", "SHA-384", "SHA-384", "SHA-384"};
 
         // Create a jar file
         sun.tools.jar.Main m =
@@ -96,7 +98,20 @@ public class DefaultSigalg {
                             "keytool keysize for " + keyalg + " is " + keysize);
                 }
                 // jarsigner
-                String bk = "META-INF/" + keyalg + "." + keyalg;
+                // truncated to the first 8 chars if alias name is longer
+                String jeName = (keyalg.equals("RSASSA-PSS")? "RSASSA-P.RSA" :
+                        keyalg + "." + keyalg);
+                String bk = "META-INF/" + jeName;
+                if (jf.getEntry(bk) == null) {
+                    System.out.println("JarFile entries:");
+                    Enumeration<JarEntry> entries = jf.entries();
+                    while (entries.hasMoreElements()) {
+                        System.out.println("je: " +
+                                entries.nextElement().getRealName());
+                    }
+                    throw new Exception("Expected jarfile entry name " +
+                            jeName + " not found");
+                }
                 try (InputStream is = jf.getInputStream(jf.getEntry(bk))) {
                     String digestalg = new PKCS7(is).getSignerInfos()[0]
                             .getDigestAlgorithmId().toString();

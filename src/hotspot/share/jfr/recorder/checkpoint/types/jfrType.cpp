@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,12 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
-
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
@@ -88,23 +87,28 @@ class JfrCheckpointThreadClosure : public ThreadClosure {
   void do_thread(Thread* t);
 };
 
+// Only static thread ids, virtual threads are handled dynamically.
 void JfrCheckpointThreadClosure::do_thread(Thread* t) {
   assert(t != NULL, "invariant");
   ++_count;
-  _writer.write_key(JfrThreadId::jfr_id(t));
-  const char* const name = JfrThreadName::name(t);
+  const traceid tid = JfrThreadId::jfr_id(t);
+  assert(tid != 0, "invariant");
+  _writer.write_key(tid);
+  int length = -1;
+  const char* const name = JfrThreadName::name(t, length);
   assert(name != NULL, "invariant");
   _writer.write(name);
   _writer.write<traceid>(JfrThreadId::os_id(t));
-  if (t->is_Java_thread()) {
+  if (!t->is_Java_thread()) {
+    _writer.write((const char*)nullptr); // java name
+    _writer.write((traceid)0); // java thread id
+    _writer.write((traceid)0); // java thread group
+  } else {
     _writer.write(name);
-    _writer.write(JfrThreadId::id(t));
-    _writer.write(JfrThreadGroup::thread_group_id(t->as_Java_thread(), _curthread));
-    return;
+    _writer.write(tid);
+    _writer.write(JfrThreadGroup::thread_group_id(JavaThread::cast(t), _curthread));
   }
-  _writer.write((const char*)NULL); // java name
-  _writer.write((traceid)0); // java thread id
-  _writer.write((traceid)0); // java thread group
+  _writer.write<bool>(false); // isVirtual
 }
 
 void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
@@ -214,7 +218,6 @@ void MetaspaceObjectTypeConstant::serialize(JfrCheckpointWriter& writer) {
 static const char* reference_type_to_string(ReferenceType rt) {
   switch (rt) {
     case REF_NONE: return "None reference";
-    case REF_OTHER: return "Other reference";
     case REF_SOFT: return "Soft reference";
     case REF_WEAK: return "Weak reference";
     case REF_FINAL: return "Final reference";
@@ -244,11 +247,11 @@ void NarrowOopModeConstant::serialize(JfrCheckpointWriter& writer) {
 }
 
 void CodeBlobTypeConstant::serialize(JfrCheckpointWriter& writer) {
-  static const u4 nof_entries = CodeBlobType::NumTypes;
+  static const u4 nof_entries = static_cast<u4>(CodeBlobType::NumTypes);
   writer.write_count(nof_entries);
   for (u4 i = 0; i < nof_entries; ++i) {
     writer.write_key(i);
-    writer.write(CodeCache::get_code_heap_name(i));
+    writer.write(CodeCache::get_code_heap_name(static_cast<CodeBlobType>(i)));
   }
 };
 
@@ -265,26 +268,40 @@ void ThreadStateConstant::serialize(JfrCheckpointWriter& writer) {
   JfrThreadState::serialize(writer);
 }
 
-void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
-  assert(_thread != NULL, "invariant");
-  assert(_thread == Thread::current(), "invariant");
-  writer.write_count(1);
-  writer.write_key(JfrThreadId::jfr_id(_thread));
-  const char* const name = JfrThreadName::name(_thread);
-  writer.write(name);
-  writer.write(JfrThreadId::os_id(_thread));
-  if (_thread->is_Java_thread()) {
-    writer.write(name);
-    writer.write(JfrThreadId::id(_thread));
-    JavaThread* const jt = _thread->as_Java_thread();
-    const traceid thread_group_id = JfrThreadGroup::thread_group_id(jt, jt);
-    writer.write(thread_group_id);
-    JfrThreadGroup::serialize(&writer, thread_group_id);
+void JfrThreadConstant::write_name(JfrCheckpointWriter& writer, const char* name, int length) {
+  if (length == 0) {
+    writer.write_empty_string();
     return;
   }
-  writer.write((const char*)NULL); // java name
-  writer.write((traceid)0); // java thread id
-  writer.write((traceid)0); // java thread group
+  writer.write(name);
+}
+
+void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
+  assert(_thread != NULL, "invariant");
+  const bool vthread = _vthread != nullptr;
+  writer.write_key(JfrThreadId::jfr_id(_thread, _tid));
+  int length = -1;
+  const char* const name = JfrThreadName::name(_thread, length, _vthread);
+  write_name(writer, name, length);
+  writer.write(_vthread != nullptr ? static_cast<traceid>(0) : JfrThreadId::os_id(_thread));
+  if (!_thread->is_Java_thread()) {
+    write_name(writer, nullptr, 0); // java name
+    writer.write<traceid>(0); // java thread id
+    writer.write<traceid>(0); // java thread group
+    writer.write<bool>(false); // isVirtual
+  } else {
+    write_name(writer, name, length);
+    writer.write(JfrThreadId::jfr_id(_thread, _tid));
+    // java thread group - VirtualThread threadgroup reserved id 1
+    const traceid thread_group_id = vthread ? 1 :
+      JfrThreadGroup::thread_group_id(JavaThread::cast(_thread), Thread::current());
+    writer.write(thread_group_id);
+    writer.write<bool>(vthread); // isVirtual
+    if (!vthread) {
+      JfrThreadGroup::serialize(&writer, thread_group_id);
+    }
+    // VirtualThread threadgroup already serialized invariant.
+  }
 }
 
 void BytecodeConstant::serialize(JfrCheckpointWriter& writer) {

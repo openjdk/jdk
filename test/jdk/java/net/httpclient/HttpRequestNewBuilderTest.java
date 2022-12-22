@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import static org.testng.Assert.fail;
 
 /**
 * @test
-* @bug 8252304
+* @bug 8252304 8276559
 * @summary HttpRequest.newBuilder(HttpRequest) API and behaviour checks
 * @run testng/othervm HttpRequestNewBuilderTest
 */
@@ -120,6 +120,7 @@ public class HttpRequestNewBuilderTest {
                         .headers("testName1", "y")
                         .headers("testName1", "z").build() },
                 // dedicated method
+                { HttpRequest.newBuilder(URI.create("https://method-0/")).HEAD().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-1/")).GET().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-2/")).DELETE().build() },
                 { HttpRequest.newBuilder(URI.create("https://method-3/")).POST(HttpRequest.BodyPublishers.ofString("testData")).build() },

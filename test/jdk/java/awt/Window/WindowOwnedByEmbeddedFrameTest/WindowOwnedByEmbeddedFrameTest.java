@@ -26,7 +26,7 @@
  * @bug 8130655
  * @summary Tests that window owned by EmbeddedFrame can receive keyboard input
  * @requires (os.family == "mac")
- * @modules java.desktop/sun.awt
+ * @modules java.desktop/sun.awt java.desktop/sun.lwawt.macosx:open
  * @library ../../regtesthelpers
  * @build Util
  * @run main WindowOwnedByEmbeddedFrameTest

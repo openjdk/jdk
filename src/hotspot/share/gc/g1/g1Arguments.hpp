@@ -34,6 +34,7 @@ class G1Arguments : public GCArguments {
   friend class G1HeapVerifierTest;
 
   static void initialize_mark_stack_size();
+  static void initialize_card_set_configuration();
   static void initialize_verification_types();
   static void parse_verification_type(const char* type);
 

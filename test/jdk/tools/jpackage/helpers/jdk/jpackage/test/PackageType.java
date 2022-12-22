@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,6 @@ public enum PackageType {
     private final static class Inner {
         private final static Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
                 TKit.tokenizeConfigProperty("disabledPackagers")).orElse(
-                TKit.isUbuntu() ? Set.of("rpm") : Collections.emptySet());
+                TKit.isLinuxAPT() ? Set.of("rpm") : Collections.emptySet());
     }
 }

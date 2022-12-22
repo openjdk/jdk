@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,13 @@ class RedefineFinalizer_B {
 
 public class RedefineFinalizer {
 
-    public static String newB =
-                "class RedefineFinalizer_B {" +
-                "   protected void finalize() { " +
-                "       System.out.println(\"Finalizer called\");" +
-                "   }" +
-                "}";
+    public static String newB = """
+                class RedefineFinalizer_B {
+                    protected void finalize() {
+                        System.out.println("Finalizer called");
+                    }
+                }
+                """;
 
     public static void main(String[] args) throws Exception {
         RedefineClassHelper.redefineClass(RedefineFinalizer_B.class, newB);

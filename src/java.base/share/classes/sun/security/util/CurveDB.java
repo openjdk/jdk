@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,13 @@ public class CurveDB {
     private static final int BD = 6; // binary curve, mark as default
 
     private static final Map<String,NamedCurve> oidMap =
-        new LinkedHashMap<String,NamedCurve>();
+            new LinkedHashMap<>();
     private static final Map<String,NamedCurve> nameMap =
-        new HashMap<String,NamedCurve>();
+            new HashMap<>();
     private static final Map<Integer,NamedCurve> lengthMap =
-        new HashMap<Integer,NamedCurve>();
+            new HashMap<>();
 
-    private static Collection<? extends NamedCurve> specCollection;
+    private static final Collection<? extends NamedCurve> specCollection;
 
     // Return a NamedCurve for the specified OID/name or null if unknown.
     public static NamedCurve lookup(String name) {
@@ -80,7 +80,7 @@ public class CurveDB {
             return (NamedCurve)params;
         }
 
-        // This is a hack to allow SunJSSE to work with 3rd party crypto
+        // This code allows SunJSSE to work with 3rd party crypto
         // providers for ECC and not just SunPKCS11.
         // This can go away once we decide how to expose curve names in the
         // public API.

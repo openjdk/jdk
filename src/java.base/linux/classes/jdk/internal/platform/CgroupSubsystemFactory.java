@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +52,7 @@ public class CgroupSubsystemFactory {
     private static final String CPUSET_CTRL = "cpuset";
     private static final String BLKIO_CTRL = "blkio";
     private static final String MEMORY_CTRL = "memory";
+    private static final String PIDS_CTRL = "pids";
 
     /*
      * From https://www.kernel.org/doc/Documentation/filesystems/proc.txt
@@ -81,12 +83,13 @@ public class CgroupSubsystemFactory {
         Optional<CgroupTypeResult> optResult = null;
         try {
             optResult = determineType("/proc/self/mountinfo", "/proc/cgroups", "/proc/self/cgroup");
-        } catch (IOException e) {
-            return null;
-        } catch (UncheckedIOException e) {
+        } catch (IOException | UncheckedIOException e) {
             return null;
         }
+        return create(optResult);
+    }
 
+    public static CgroupMetrics create(Optional<CgroupTypeResult> optResult) {
         if (optResult.isEmpty()) {
             return null;
         }
@@ -109,9 +112,9 @@ public class CgroupSubsystemFactory {
         Map<String, CgroupInfo> infos = result.getInfos();
         if (result.isCgroupV2()) {
             // For unified it doesn't matter which controller we pick.
-            CgroupInfo anyController = infos.get(MEMORY_CTRL);
-            CgroupSubsystem subsystem = CgroupV2Subsystem.getInstance(anyController);
-            return subsystem != null ? new CgroupMetrics(subsystem) : null;
+            CgroupInfo anyController = infos.values().iterator().next();
+            CgroupSubsystem subsystem = CgroupV2Subsystem.getInstance(Objects.requireNonNull(anyController));
+            return new CgroupMetrics(subsystem);
         } else {
             CgroupV1Subsystem subsystem = CgroupV1Subsystem.getInstance(infos);
             return subsystem != null ? new CgroupV1MetricsImpl(subsystem) : null;
@@ -144,11 +147,16 @@ public class CgroupSubsystemFactory {
             }
             CgroupInfo info = CgroupInfo.fromCgroupsLine(line);
             switch (info.getName()) {
+            // Only the following controllers are important to Java. All
+            // other controllers (such as freezer) are ignored and
+            // are not considered in the checks below for
+            // anyCgroupsV1Controller/anyCgroupsV2Controller.
             case CPU_CTRL:      infos.put(CPU_CTRL, info); break;
             case CPUACCT_CTRL:  infos.put(CPUACCT_CTRL, info); break;
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
             case MEMORY_CTRL:   infos.put(MEMORY_CTRL, info); break;
             case BLKIO_CTRL:    infos.put(BLKIO_CTRL, info); break;
+            case PIDS_CTRL:     infos.put(PIDS_CTRL, info); break;
             }
         }
 
@@ -194,9 +202,10 @@ public class CgroupSubsystemFactory {
             if (isCgroupsV2) {
                 action = (tokens -> setCgroupV2Path(infos, tokens));
             }
-            selfCgroupLines.map(line -> line.split(":"))
-                     .filter(tokens -> (tokens.length >= 3))
-                     .forEach(action);
+            // The limit value of 3 is because /proc/self/cgroup contains three
+            // colon-separated tokens per line. The last token, cgroup path, might
+            // contain a ':'.
+            selfCgroupLines.map(line -> line.split(":", 3)).forEach(action);
         }
 
         CgroupTypeResult result = new CgroupTypeResult(isCgroupsV2,
@@ -219,6 +228,12 @@ public class CgroupSubsystemFactory {
      */
     private static void setCgroupV2Path(Map<String, CgroupInfo> infos,
                                         String[] tokens) {
+        String name = tokens[1];
+        if (!name.equals("")) {
+            // This must be a v1 controller that we have ignored (e.g., freezer)
+            assert infos.get(name) == null;
+            return;
+        }
         int hierarchyId = Integer.parseInt(tokens[0]);
         String cgroupPath = tokens[2];
         for (CgroupInfo info: infos.values()) {
@@ -251,6 +266,7 @@ public class CgroupSubsystemFactory {
                     case CPUACCT_CTRL:
                     case CPU_CTRL:
                     case BLKIO_CTRL:
+                    case PIDS_CTRL:
                         CgroupInfo info = infos.get(cName);
                         info.setCgroupPath(cgroupPath);
                         break;
@@ -302,29 +318,11 @@ public class CgroupSubsystemFactory {
                         case MEMORY_CTRL: // fall-through
                         case CPU_CTRL:
                         case CPUACCT_CTRL:
+                        case CPUSET_CTRL:
+                        case PIDS_CTRL:
                         case BLKIO_CTRL: {
                             CgroupInfo info = infos.get(controllerName);
-                            assert info.getMountPoint() == null;
-                            assert info.getMountRoot() == null;
-                            info.setMountPoint(mountPath);
-                            info.setMountRoot(mountRoot);
-                            cgroupv1ControllerFound = true;
-                            break;
-                        }
-                        case CPUSET_CTRL: {
-                            CgroupInfo info = infos.get(controllerName);
-                            if (info.getMountPoint() != null) {
-                                // On some systems duplicate cpuset controllers get mounted in addition to
-                                // the main cgroup controllers most likely under /sys/fs/cgroup. In that
-                                // case pick the one under /sys/fs/cgroup and discard others.
-                                if (!info.getMountPoint().startsWith("/sys/fs/cgroup")) {
-                                    info.setMountPoint(mountPath);
-                                    info.setMountRoot(mountRoot);
-                                }
-                            } else {
-                                info.setMountPoint(mountPath);
-                                info.setMountRoot(mountRoot);
-                            }
+                            setMountPoints(info, mountPath, mountRoot);
                             cgroupv1ControllerFound = true;
                             break;
                         }
@@ -338,16 +336,29 @@ public class CgroupSubsystemFactory {
                     // All controllers have the same mount point and root mount
                     // for unified hierarchy.
                     for (CgroupInfo info: infos.values()) {
-                        assert info.getMountPoint() == null;
-                        assert info.getMountRoot() == null;
-                        info.setMountPoint(mountPath);
-                        info.setMountRoot(mountRoot);
+                        setMountPoints(info, mountPath, mountRoot);
                     }
                 }
                 cgroupv2ControllerFound = true;
             }
         }
         return cgroupv1ControllerFound || cgroupv2ControllerFound;
+    }
+
+    private static void setMountPoints(CgroupInfo info, String mountPath, String mountRoot) {
+        if (info.getMountPoint() != null) {
+            // On some systems duplicate controllers get mounted in addition to
+            // the main cgroup controllers (which are under /sys/fs/cgroup). In that
+            // case pick the main one and discard others as the limits
+            // are associated with the ones in /sys/fs/cgroup.
+            if (!info.getMountPoint().startsWith("/sys/fs/cgroup")) {
+                info.setMountPoint(mountPath);
+                info.setMountRoot(mountRoot);
+            }
+        } else {
+            info.setMountPoint(mountPath);
+            info.setMountRoot(mountRoot);
+        }
     }
 
     public static final class CgroupTypeResult {

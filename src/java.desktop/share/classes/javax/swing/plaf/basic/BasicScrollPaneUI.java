@@ -486,7 +486,7 @@ public class BasicScrollPaneUI
             JComponent c) {
         super.getBaselineResizeBehavior(c);
         // Baseline is either from the header, in which case it's always
-        // the same size and therefor can be created as CONSTANT_ASCENT.
+        // the same size and therefore can be created as CONSTANT_ASCENT.
         // If the header doesn't have a baseline than the baseline will only
         // be valid if it's BaselineResizeBehavior is
         // CONSTANT_ASCENT, so, return CONSTANT_ASCENT.
@@ -500,7 +500,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class ViewportChangeHandler implements ChangeListener
     {
         /**
@@ -534,7 +534,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class HSBChangeListener implements ChangeListener
     {
         /**
@@ -577,7 +577,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class VSBChangeListener implements ChangeListener
     {
         /**
@@ -786,7 +786,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         /**
@@ -1006,11 +1006,18 @@ public class BasicScrollPaneUI
                 // find which scrollbar to scroll, or return if none
                 if (toScroll == null || !toScroll.isVisible()
                         || e.isShiftDown()) {
-                    toScroll = scrollpane.getHorizontalScrollBar();
-                    if (toScroll == null || !toScroll.isVisible()) {
+                    JScrollBar hScroll = scrollpane.getHorizontalScrollBar();
+                    if (hScroll == null) {
                         return;
+                    } else if (hScroll.isVisible()) {
+                        toScroll = hScroll;
+                        orientation = SwingConstants.HORIZONTAL;
+                    } else if (!hScroll.isVisible()) {
+                        if (e.isShiftDown()) {
+                            return;
+                        }
+                        orientation = SwingConstants.VERTICAL;
                     }
-                    orientation = SwingConstants.HORIZONTAL;
                 }
 
                 e.consume();
@@ -1158,7 +1165,7 @@ public class BasicScrollPaneUI
         }
 
         //
-        // ChangeListener: This is added to the vieport, and hsb/vsb models.
+        // ChangeListener: This is added to the viewport, and hsb/vsb models.
         //
         public void stateChanged(ChangeEvent e) {
             JViewport viewport = scrollpane.getViewport();

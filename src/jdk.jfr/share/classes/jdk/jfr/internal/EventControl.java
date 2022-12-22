@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
-import jdk.jfr.internal.EventInstrumentation.SettingInfo;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
@@ -56,13 +55,7 @@ import jdk.jfr.internal.settings.ThrottleSetting;
 // holds SettingControl instances that need to be released
 // when a class is unloaded (to avoid memory leaks).
 public final class EventControl {
-    static final class NamedControl {
-        public final String name;
-        public final Control control;
-        NamedControl(String name, Control control) {
-            this.name = name;
-            this.control = control;
-        }
+    record NamedControl(String name, Control control) {
     }
     static final String FIELD_SETTING_PREFIX = "setting";
     private static final Type TYPE_ENABLED = TypeLibrary.createType(EnabledSetting.class);
@@ -72,7 +65,7 @@ public final class EventControl {
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
 
-    private final ArrayList<SettingInfo> settingInfos = new ArrayList<>();
+    private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
     private final PlatformEventType type;
     private final String idName;
@@ -150,7 +143,7 @@ public final class EventControl {
                             String name = m.getName();
                             Name n = m.getAnnotation(Name.class);
                             if (n != null) {
-                                name = n.value();
+                                name = Utils.validJavaIdentifier(n.value(), name);
                             }
 
                             if (!hasControl(name)) {
@@ -169,10 +162,8 @@ public final class EventControl {
         try {
             Module settingModule = settingsClass.getModule();
             Modules.addReads(settingModule, EventControl.class.getModule());
-            int index = settingInfos.size();
-            SettingInfo si = new SettingInfo(FIELD_SETTING_PREFIX + index, index);
-            si.settingControl = instantiateSettingControl(settingsClass);
-            Control c = new Control(si.settingControl, null);
+            SettingControl settingControl = instantiateSettingControl(settingsClass);
+            Control c = new Control(settingControl, null);
             c.setDefault();
             String defaultValue = c.getValue();
             if (defaultValue != null) {
@@ -187,7 +178,7 @@ public final class EventControl {
                 aes.trimToSize();
                 addControl(settingName, c);
                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
-                settingInfos.add(si);
+                settingControls.add(settingControl);
             }
         } catch (InstantiationException e) {
             // Programming error by user, fail fast
@@ -286,21 +277,19 @@ public final class EventControl {
         }
     }
 
-    void writeActiveSettingEvent() {
+    void writeActiveSettingEvent(long timestamp) {
         if (!type.isRegistered()) {
             return;
         }
-        ActiveSettingEvent event = ActiveSettingEvent.EVENT.get();
         for (NamedControl nc : namedControls) {
-            if (Utils.isSettingVisible(nc.control, type.hasEventHook())) {
+            if (Utils.isSettingVisible(nc.control, type.hasEventHook()) && type.isVisible()) {
                 String value = nc.control.getLastValue();
                 if (value == null) {
                     value = nc.control.getDefaultValue();
                 }
-                event.id = type.getId();
-                event.name = nc.name;
-                event.value = value;
-                event.commit();
+                if (ActiveSettingEvent.enabled()) {
+                    ActiveSettingEvent.commit(timestamp, 0L, type.getId(), nc.name(), value);
+                }
             }
         }
     }
@@ -317,7 +306,14 @@ public final class EventControl {
         return idName;
     }
 
-    public List<SettingInfo> getSettingInfos() {
-        return settingInfos;
+    /**
+     * A malicious user must never be able to run a callback in the wrong
+     * context. Methods on SettingControl must therefore never be invoked directly
+     * by JFR, instead use jdk.jfr.internal.Control.
+     *
+     * The returned list is only to be used inside EventConfiguration
+     */
+    public List<SettingControl> getSettingControls() {
+        return settingControls;
     }
 }

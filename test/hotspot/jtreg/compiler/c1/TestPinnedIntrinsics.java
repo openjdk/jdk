@@ -24,10 +24,9 @@
 /*
  * @test
  * @bug 8184271
- * @summary Test correct scheduling of System.nanoTime and System.currentTimeMillis C1 intrinsics.
+ * @summary Test correct scheduling of System.nanoTime C1 intrinsic.
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.c1.TestPinnedIntrinsics::checkNanoTime
- *                   -XX:CompileCommand=dontinline,compiler.c1.TestPinnedIntrinsics::checkCurrentTimeMillis
  *                   compiler.c1.TestPinnedIntrinsics
  */
 
@@ -47,22 +46,9 @@ public class TestPinnedIntrinsics {
         }
     }
 
-    private static void testCurrentTimeMillis() {
-        long start = System.currentTimeMillis();
-        long end = System.currentTimeMillis();
-        checkCurrentTimeMillis(end - start);
-    }
-
-    private static void checkCurrentTimeMillis(long diff) {
-        if (diff < 0) {
-            throw new RuntimeException("testCurrentTimeMillis failed with " + diff);
-        }
-    }
-
     public static void main(String[] args) {
         for (int i = 0; i < 100_000; ++i) {
             testNanoTime();
-            testCurrentTimeMillis();
         }
     }
 }

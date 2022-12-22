@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,16 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
@@ -233,26 +233,13 @@ OopStorage* ObjectMonitor::_oop_storage = NULL;
 // * See also http://blogs.sun.com/dave
 
 
-void* ObjectMonitor::operator new (size_t size) throw() {
-  return AllocateHeap(size, mtInternal);
-}
-void* ObjectMonitor::operator new[] (size_t size) throw() {
-  return operator new (size);
-}
-void ObjectMonitor::operator delete(void* p) {
-  FreeHeap(p);
-}
-void ObjectMonitor::operator delete[] (void *p) {
-  operator delete(p);
-}
-
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
 #ifdef ASSERT
   Thread* self = Thread::current();
   if (self->is_Java_thread()) {
     // Mostly called from JavaThreads so sanity check the thread state.
-    JavaThread* jt = self->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(self);
     switch (jt->thread_state()) {
     case _thread_in_vm:    // the usual case
     case _thread_in_Java:  // during deopt
@@ -430,7 +417,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     for (;;) {
       ExitOnSuspend eos(this);
       {
-        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos);
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
         EnterI(current);
         current->set_current_pending_monitor(NULL);
         // We can go to a safepoint at the end of this block. If we
@@ -485,7 +472,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     // just exited the monitor.
   }
   if (event.should_commit()) {
-    event.set_previousOwner((uintptr_t)_previous_owner_tid);
+    event.set_previousOwner(_previous_owner_tid);
     event.commit();
   }
   OM_PERFDATA_OP(ContendedLockAttempts, inc());
@@ -545,7 +532,7 @@ bool ObjectMonitor::deflate_monitor() {
     // Java threads. The GC already broke the association with the object.
     set_owner_from(NULL, DEFLATER_MARKER);
     assert(contentions() >= 0, "must be non-negative: contentions=%d", contentions());
-    _contentions = -max_jint;
+    _contentions = INT_MIN; // minimum negative int
   } else {
     // Attempt async deflation protocol.
 
@@ -572,7 +559,7 @@ bool ObjectMonitor::deflate_monitor() {
 
     // Make a zero contentions field negative to force any contending threads
     // to retry. This is the second part of the async deflation dance.
-    if (Atomic::cmpxchg(&_contentions, (jint)0, -max_jint) != 0) {
+    if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
       // ObjectMonitor is now busy. Restore owner to NULL if it is
       // still DEFLATER_MARKER:
@@ -681,7 +668,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   } else {
     // We report NULL instead of DEFLATER_MARKER here because is_busy()
     // ignores DEFLATER_MARKER values.
-    ss->print("owner=" INTPTR_FORMAT, NULL);
+    ss->print("owner=" INTPTR_FORMAT, NULL_WORD);
   }
   ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
             p2i(_EntryList));
@@ -975,7 +962,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
       {
         ClearSuccOnSuspend csos(this);
-        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos);
+        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
         current->_ParkEvent->park();
       }
     }
@@ -1429,14 +1416,24 @@ bool ObjectMonitor::check_owner(TRAPS) {
              "current thread is not owner", false);
 }
 
+static inline bool is_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jfr_chunk_rotation_monitor() == monitor_klass->name());
+}
+
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     ObjectMonitor* monitor,
-                                    jlong notifier_tid,
+                                    uint64_t notifier_tid,
                                     jlong timeout,
                                     bool timedout) {
   assert(event != NULL, "invariant");
   assert(monitor != NULL, "invariant");
-  event->set_monitorClass(monitor->object()->klass());
+  const Klass* monitor_klass = monitor->object()->klass();
+  if (is_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_timeout(timeout);
   // Set an address that is 'unique enough', such that events close in
   // time and with the same address are likely (but not guaranteed) to
@@ -1499,7 +1496,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
   // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
-  // by the the owner of the monitor *except* in the case where park()
+  // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
@@ -1536,7 +1533,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
     {
       ClearSuccOnSuspend csos(this);
-      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos);
+      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (node._notified == 0) {
@@ -1644,8 +1641,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   current->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save      // restore the old recursion count
-                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current); //  increased by the deferred relock count
+  int relock_count = JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current);
+  _recursions =   save          // restore the old recursion count
+                + relock_count; //  increased by the deferred relock count
+  current->inc_held_monitor_count(relock_count); // Deopt never entered these counts.
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions
@@ -1910,7 +1909,10 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointMechanism::should_process(current)) {
+      // Can't call SafepointMechanism::should_process() since that
+      // might update the poll values and we could be in a thread_blocked
+      // state here which is not allowed so just check the poll.
+      if (SafepointMechanism::local_poll_armed(current)) {
         goto Abort;           // abrupt spin egress
       }
       SpinPause();
@@ -2243,7 +2245,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
   st->print_cr("  }");
   st->print_cr("  _owner = " INTPTR_FORMAT, p2i(owner_raw()));
-  st->print_cr("  _previous_owner_tid = " JLONG_FORMAT, _previous_owner_tid);
+  st->print_cr("  _previous_owner_tid = " UINT64_FORMAT, _previous_owner_tid);
   st->print_cr("  _pad_buf1 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");

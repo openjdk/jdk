@@ -7,7 +7,7 @@ the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `git clone https://git.openjdk.java.net/jdk/`
+    `git clone https://git.openjdk.org/jdk/`
 
  2. [Run configure](#running-configure): \
     `bash configure`
@@ -40,14 +40,14 @@ reasonably powerful hardware.
 
 If you just want to use the JDK and not build it yourself, this document is not
 for you. See for instance [OpenJDK installation](
-http://openjdk.java.net/install) for some methods of installing a prebuilt
+http://openjdk.org/install) for some methods of installing a prebuilt
 JDK.
 
 ## Getting the Source Code
 
 Make sure you are getting the correct version. As of JDK 10, the source is no
 longer split into separate repositories so you only need to clone one single
-repository. At the [OpenJDK Git site](https://git.openjdk.java.net/) you
+repository. At the [OpenJDK Git site](https://git.openjdk.org/) you
 can see a list of all available repositories. If you want to build an older version,
 e.g. JDK 11, it is recommended that you get the `jdk11u` repo, which contains
 incremental updates, instead of the `jdk11` repo, which was frozen at JDK 11 GA.
@@ -96,7 +96,7 @@ on where and how to check out the source code.
           Cygwin paths (which are used throughout the JDK build system).
           However, it does not currently work well with the Skara CLI tooling.
           Please see the [Skara wiki on Git clients](
-          https://wiki.openjdk.java.net/display/SKARA/Skara#Skara-Git) for
+          https://wiki.openjdk.org/display/SKARA/Skara#Skara-Git) for
           up-to-date information about the Skara git client support.
 
         * The [Git for Windows](https://gitforwindows.org) client has issues
@@ -135,6 +135,14 @@ space is required.
 If you do not have access to sufficiently powerful hardware, it is also
 possible to use [cross-compiling](#cross-compiling).
 
+#### Branch Protection
+
+In order to use Branch Protection features in the VM, `--enable-branch-protection`
+must be used. This option requires C++ compiler support (GCC 9.1.0+ or Clang
+10+). The resulting build can be run on both machines with and without support
+for branch protection in hardware. Branch Protection is only supported for
+Linux targets.
+
 ### Building on 32-bit arm
 
 This is not recommended. Instead, see the section on [Cross-compiling](
@@ -165,7 +173,7 @@ used at Oracle, where header files and external libraries from an older version
 are used when building on a more modern version of the OS.
 
 The Build Group has a wiki page with [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms). From
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms). From
 time to time, this is updated by contributors to list successes or failures of
 building on different platforms.
 
@@ -179,10 +187,10 @@ On Windows, it is important that you pay attention to the instructions in the
 
 Windows is the only non-POSIX OS supported by the JDK, and as such, requires
 some extra care. A POSIX support layer is required to build on Windows.
-Currently, the only supported such layers are Cygwin and Windows Subsystem for
-Linux (WSL). (Msys is no longer supported due to a too old bash; msys2 would
-likely be possible to support in a future version but that would require effort
-to implement.)
+Currently, the only supported such layers are Cygwin, Windows Subsystem for
+Linux (WSL), and MSYS2. (MSYS is no longer supported due to an outdated bash;
+While OpenJDK can be built with MSYS2, support for it is still experimental, so
+build failures and unusual errors are not uncommon.)
 
 Internally in the build system, all paths are represented as Unix-style paths,
 e.g. `/cygdrive/c/git/jdk/Makefile` rather than `C:\git\jdk\Makefile`. This
@@ -236,8 +244,8 @@ It's possible to build both Windows and Linux binaries from WSL. To build
 Windows binaries, you must use a Windows boot JDK (located in a
 Windows-accessible directory). To build Linux binaries, you must use a Linux
 boot JDK. The default behavior is to build for Windows. To build for Linux, pass
-`--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu` to
-`configure`.
+`--build=x86_64-unknown-linux-gnu --openjdk-target=x86_64-unknown-linux-gnu`
+to `configure`.
 
 If building Windows binaries, the source code must be located in a Windows-
 accessible directory. This is because Windows executables (such as Visual Studio
@@ -295,7 +303,7 @@ sudo apk add build-base bash grep zip
 ### AIX
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of AIX are supported.
 
 ## Native Compiler (Toolchain) Requirements
@@ -303,14 +311,17 @@ Build Wiki page for details about which versions of AIX are supported.
 Large portions of the JDK consists of native code, that needs to be compiled to
 be able to run on the target platform. In theory, toolchain and operating
 system should be independent factors, but in practice there's more or less a
-one-to-one correlation between target operating system and toolchain.
+one-to-one correlation between target operating system and toolchain. There are
+ongoing efforts to loosen this strict coupling between compiler and operating
+system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
+will likely be a very long time before this goal can be realized.
 
- Operating system   Supported toolchain
- ------------------ -------------------------
- Linux              gcc, clang
- macOS              Apple Xcode (using clang)
- AIX                IBM XL C/C++
- Windows            Microsoft Visual Studio
+| Operating system   | Supported toolchain       |
+| ------------------ | ------------------------- |
+| Linux              | gcc, clang                |
+| macOS              | Apple Xcode (using clang) |
+| AIX                | IBM XL C/C++              |
+| Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
 recommendations. As a reference, these versions of the toolchains are used, at
@@ -319,11 +330,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
- Operating system   Toolchain version
- ------------------ -------------------------------------------------------
- Linux              gcc 10.2.0
- macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2019 update 16.7.2
+| Operating system   | Toolchain version                          |
+| ------------------ | ------------------------------------------ |
+| Linux              | gcc 11.2.0                                 |
+| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -335,7 +346,7 @@ features that it does support.
 The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 10.2 of
+The JDK is currently known to be able to compile with at least version 11.2 of
 gcc.
 
 In general, any version between these two should be usable.
@@ -351,20 +362,20 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 The oldest supported version of Xcode is 8.
 
-You will need the Xcode command lines developers tools to be able to build
-the JDK. (Actually, *only* the command lines tools are needed, not the IDE.)
+You will need the Xcode command line developer tools to be able to build
+the JDK. (Actually, *only* the command line tools are needed, not the IDE.)
 The simplest way to install these is to run:
 ```
 xcode-select --install
 ```
 
-It is advisable to keep an older version of Xcode for building the JDK when
-updating Xcode. This [blog page](
-http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html) has
-good suggestions on managing multiple Xcode versions. To use a specific version
-of Xcode, use `xcode-select -s` before running `configure`, or use
-`--with-toolchain-path` to point to the version of Xcode to use, e.g.
-`configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin`
+When updating Xcode, it is advisable to keep an older version for building the JDK.
+To use a specific version of Xcode you have multiple options:
+
+  * Use `xcode-select -s` before running `configure`, e.g. `xcode-select -s /Applications/Xcode13.1.app`. The drawback is that the setting
+    is system wide and you may have to revert it after an OpenJDK build.
+  * Use configure option `--with-xcode-path`, e.g. `configure --with-xcode-path=/Applications/Xcode13.1.app`
+    This allows using a specific Xcode version for an OpenJDK build, independently of the active Xcode version by `xcode-select`.
 
 If you have recently (inadvertently) updated your OS and/or Xcode version, and
 the JDK can no longer be built, please see the section on [Problems with the
@@ -374,13 +385,14 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-The minimum accepted version of Visual Studio is 2017. Older versions will not
-be accepted by `configure` and will not work. The maximum accepted
-version of Visual Studio is 2019.
+The minimum accepted version is Visual Studio 2019 version 16.8. (Note that this
+version is often presented as "MSVC 14.28", and reported by cl.exe as 19.28.)
+Older versions will not be accepted by `configure` and will not work. The
+maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2017`.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2022`.
 
 If you have Visual Studio installed but `configure` fails to detect it, it may
 be because of [spaces in path](#spaces-in-path).
@@ -388,7 +400,7 @@ be because of [spaces in path](#spaces-in-path).
 ### IBM XL C/C++
 
 Please consult the AIX section of the [Supported Build Platforms](
-https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms) OpenJDK
+https://wiki.openjdk.org/display/Build/Supported+Build+Platforms) OpenJDK
 Build Wiki page for details about which versions of XLC are supported.
 
 
@@ -818,7 +830,7 @@ configuration, as opposed to the "configure time" configuration.
 #### Test Make Control Variables
 
 These make control variables only make sense when running tests. Please see
-[Testing the JDK](testing.html) for details.
+**Testing the JDK** ([html](testing.html), [markdown](testing.md)) for details.
 
   * `TEST`
   * `TEST_JOBS`
@@ -839,16 +851,16 @@ Suggestions for Advanced Users](#hints-and-suggestions-for-advanced-users) and
 
 ## Running Tests
 
-Most of the JDK tests are using the [JTReg](http://openjdk.java.net/jtreg)
+Most of the JDK tests are using the [JTReg](http://openjdk.org/jtreg)
 test framework. Make sure that your configuration knows where to find your
 installation of JTReg. If this is not picked up automatically, use the
 `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
 Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc.
 
-The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
+The [Adoption Group](https://wiki.openjdk.org/display/Adoption) provides
 recent builds of jtreg [here](
-https://ci.adoptopenjdk.net/view/Dependencies/job/jtreg/lastSuccessfulBuild/artifact).
+https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtreg/).
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
@@ -865,8 +877,44 @@ To execute the most basic tests (tier 1), use:
 make run-test-tier1
 ```
 
-For more details on how to run tests, please see the [Testing
-the JDK](testing.html) document.
+For more details on how to run tests, please see **Testing the JDK**
+([html](testing.html), [markdown](testing.md)).
+
+## Signing
+
+### macOS
+
+Modern versions of macOS require applications to be signed and notarizied before
+distribution. See Apple's documentation for more background on what this means
+and how it works. To help support this, the JDK build can be configured to
+automatically sign all native binaries, and the JDK bundle, with all the options
+needed for successful notarization, as well as all the entitlements required by
+the JDK. To enable `hardened` signing, use configure parameter
+`--with-macosx-codesign=hardened` and configure the signing identity you wish to
+use with `--with-macosx-codesign-identity=<identity>`. The identity refers to a
+signing identity from Apple that needs to be preinstalled on the build host.
+
+When not signing for distribution with the hardened option, the JDK build will
+still attempt to perform `adhoc` signing to add the special entitlement
+`com.apple.security.get-task-allow` to each binary. This entitlement is required
+to be able to dump core files from a process. Note that adding this entitlement
+makes the build invalid for notarization, so it is only added when signing in
+`debug` mode. To explicitly enable this kind of adhoc signing, use configure
+parameter `--with-macosx-codesign=debug`. It will be enabled by default in most
+cases.
+
+It's also possible to completely disable any explicit codesign operations done
+by the JDK build using the configure parameter `--without-macosx-codesign`.
+The exact behavior then depends on the architecture. For macOS on x64, it (at
+least at the time of this writing) results in completely unsigned binaries that
+should still work fine for development and debugging purposes. On aarch64, the
+Xcode linker will apply a default "adhoc" signing, without any entitlements.
+Such a build does not allow dumping core files.
+
+The default mode "auto" will try for `hardened` signing if the debug level is
+`release` and either the default identity or the specified identity is valid.
+If hardened isn't possible, then `debug` signing is chosen if it works. If
+nothing works, the codesign build step is disabled.
 
 ## Cross-compiling
 
@@ -977,10 +1025,15 @@ You *must* specify the target platform when cross-compiling. Doing so will also
 automatically turn the build into a cross-compiling mode. The simplest way to
 do this is to use the `--openjdk-target` argument, e.g.
 `--openjdk-target=arm-linux-gnueabihf`. or `--openjdk-target=aarch64-oe-linux`.
-This will automatically set the `--build`, `--host` and `--target` options for
+This will automatically set the `--host` and `--target` options for
 autoconf, which can otherwise be confusing. (In autoconf terminology, the
 "target" is known as "host", and "target" is used for building a Canadian
 cross-compiler.)
+
+If `--build` has not been explicitly passed to configure, `--openjdk-target`
+will autodetect the build platform and internally set the flag automatically,
+otherwise the platform that was explicitly passed to `--build` will be used
+instead.
 
 ### Toolchain Considerations
 
@@ -1280,10 +1333,12 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using sjavac
+### Using the javac server
 
-To speed up Java compilation, especially incremental compilations, you can try
-the experimental sjavac compiler by using `--enable-sjavac`.
+To speed up compilation of Java code, especially during incremental
+compilations, the javac server is automatically enabled in the configuration
+step by default. To explicitly enable or disable the javac server, use either
+`--enable-javac-server` or `--disable-javac-server`.
 
 ### Building the Right Target
 
@@ -1496,12 +1551,102 @@ You can run `fsutil file setshortname` in `cmd` on certain directories, such as
 
 If none of the suggestions in this document helps you, or if you find what you
 believe is a bug in the build system, please contact the Build Group by sending
-a mail to [build-dev@openjdk.java.net](mailto:build-dev@openjdk.java.net).
+a mail to [build-dev@openjdk.org](mailto:build-dev@openjdk.org).
 Please include the relevant parts of the configure and/or build log.
 
 If you need general help or advice about developing for the JDK, you can also
 contact the Adoption Group. See the section on [Contributing to OpenJDK](
 #contributing-to-openjdk) for more information.
+
+## Reproducible Builds
+
+Build reproducibility is the property of getting exactly the same bits out when
+building, every time, independent on who builds the product, or where. This is
+for many reasons a harder goal than it initially appears, but it is an important
+goal, for security reasons and others. Please see [Reproducible Builds](
+https://reproducible-builds.org) for more information about the background and
+reasons for reproducible builds.
+
+Currently, it is not possible to build OpenJDK fully reproducibly, but getting
+there is an ongoing effort.
+
+An absolute prerequisite for building reproducible is to speficy a fixed build
+time, since time stamps are embedded in many file formats. This is done by
+setting the `SOURCE_DATE_EPOCH` environment variable, which is an [industry
+standard]( https://reproducible-builds.org/docs/source-date-epoch/), that many
+tools, such as gcc, recognize, and use in place of the current time when
+generating output.
+
+To generate reproducible builds, you must set `SOURCE_DATE_EPOCH` before running
+`configure`. The value in `SOURCE_DATE_EPOCH` will be stored in the
+configuration, and used by `make`. Setting `SOURCE_DATE_EPOCH` before running
+`make` will have no effect on the build.
+
+You must also make sure your build does not rely on `configure`'s default adhoc
+version strings. Default adhoc version strings `OPT` segment include user name
+and source directory. You can either override just the `OPT` segment using
+`--with-version-opt=<any fixed string>`, or you can specify the entire version
+string using `--with-version-string=<your version>`.
+
+This is a typical example of how to build the JDK in a reproducible way:
+
+```
+export SOURCE_DATE_EPOCH=946684800
+bash configure --with-version-opt=adhoc
+make
+```
+
+Note that regardless if you specify a source date for `configure` or not, the
+JDK build system will set `SOURCE_DATE_EPOCH` for all build tools when building.
+If `--with-source-date` has the value `current` (which is the default unless
+`SOURCE_DATE_EPOCH` is found by in the environment by `configure`), the source
+date value will be determined at configure time.
+
+There are several aspects of reproducible builds that can be individually
+adjusted by `configure` arguments. If any of these are given, they will override
+the value derived from `SOURCE_DATE_EPOCH`. These arguments are:
+
+ * `--with-source-date`
+
+    This option controls how the JDK build sets `SOURCE_DATE_EPOCH` when
+    building. It can be set to a value describing a date, either an epoch based
+    timestamp as an integer, or a valid ISO-8601 date.
+
+    It can also be set to one of the special values `current`, `updated` or
+    `version`. `current` means that the time of running `configure` will be
+    used. `version` will use the nominal release date for the current JDK
+    version. `updated`, which means that `SOURCE_DATE_EPOCH` will be set to the
+    current time each time you are running `make`. All choices, except for
+    `updated`, will set a fixed value for the source date timestamp.
+
+    When `SOURCE_DATE_EPOCH` is set, the default value for `--with-source-date`
+    will be the value given by `SOURCE_DATE_EPOCH`. Otherwise, the default value
+    is `current`.
+
+ * `--with-hotspot-build-time`
+
+    This option controls the build time string that will be included in the
+    hotspot library (`libjvm.so` or `jvm.dll`). When the source date is fixed
+    (e.g. by setting `SOURCE_DATE_EPOCH`), the default value for
+    `--with-hotspot-build-time` will be an ISO 8601 representation of that time
+    stamp. Otherwise the default value will be the current time when building
+    hotspot.
+
+ * `--with-copyright-year`
+
+    This option controls the copyright year in some generated text files. When
+    the source date is fixed (e.g. by setting `SOURCE_DATE_EPOCH`), the default
+    value for `--with-copyright-year` will be the year of that time stamp.
+    Otherwise the default is the current year at the time of running configure.
+    This can be overridden by `--with-copyright-year=<year>`.
+
+ * `--enable-reproducible-build`
+
+    This option controls some additional behavior needed to make the build
+    reproducible. When the source date is fixed (e.g. by setting
+    `SOURCE_DATE_EPOCH`), this flag will be turned on by default. Otherwise, the
+    value is determined by heuristics. If it is explicitly turned off, the build
+    might not be reproducible.
 
 ## Hints and Suggestions for Advanced Users
 
@@ -1816,7 +1961,7 @@ To analyze build performance, run with `LOG=trace` and check `$BUILD/build-trace
 Use `JOBS=1` to avoid parallelism.
 
 Please check that you adhere to the [Code Conventions for the Build System](
-http://openjdk.java.net/groups/build/doc/code-conventions.html) before
+http://openjdk.org/groups/build/doc/code-conventions.html) before
 submitting patches.
 
 ## Contributing to the JDK
@@ -1829,19 +1974,25 @@ However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
 The official place to start is the ['How to contribute' page](
-http://openjdk.java.net/contribute/). There is also an official (but somewhat
+http://openjdk.org/contribute/). There is also an official (but somewhat
 outdated and skimpy on details) [Developer's Guide](
-http://openjdk.java.net/guide/).
+http://openjdk.org/guide/).
 
 If this seems overwhelming to you, the Adoption Group is there to help you! A
 good place to start is their ['New Contributor' page](
-https://wiki.openjdk.java.net/display/Adoption/New+Contributor), or start
+https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
 reading the comprehensive [Getting Started Kit](
 https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
 Adoption Group will also happily answer any questions you have about
 contributing. Contact them by [mail](
-http://mail.openjdk.java.net/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.java.net/irc/).
+http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
+http://openjdk.org/irc/).
+
+## Editing this document
+
+If you want to contribute changes to this document, edit `doc/building.md` and
+then run `make update-build-docs` to generate the same changes in
+`doc/building.html`.
 
 ---
 # Override styles from the base CSS file that are not ideal for this document.

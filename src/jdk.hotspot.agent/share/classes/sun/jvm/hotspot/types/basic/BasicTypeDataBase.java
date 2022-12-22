@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class BasicTypeDataBase implements TypeDataBase {
   }
 
   public Type lookupType(String cTypeName, boolean throwException) {
-    Type type = (Type) nameToTypeMap.get(cTypeName);
+    Type type = nameToTypeMap.get(cTypeName);
     if (type == null && throwException) {
       throw new RuntimeException("No type named \"" + cTypeName + "\" in database");
     }
@@ -93,7 +93,7 @@ public class BasicTypeDataBase implements TypeDataBase {
   }
 
   public Integer lookupIntConstant(String constantName, boolean throwException) {
-    Integer i = (Integer) nameToIntConstantMap.get(constantName);
+    Integer i = nameToIntConstantMap.get(constantName);
     if (i == null) {
       if (throwException) {
         throw new RuntimeException("No integer constant named \"" + constantName + "\" present in type database");
@@ -107,7 +107,7 @@ public class BasicTypeDataBase implements TypeDataBase {
   }
 
   public Long lookupLongConstant(String constantName, boolean throwException) {
-    Long i = (Long) nameToLongConstantMap.get(constantName);
+    Long i = nameToLongConstantMap.get(constantName);
     if (i == null) {
       if (throwException) {
         throw new RuntimeException("No long constant named \"" + constantName + "\" present in type database");
@@ -175,7 +175,7 @@ public class BasicTypeDataBase implements TypeDataBase {
     }
 
     // This implementation should be suitably platform-independent; we
-    // search nearby memory for the vtbl value of the given type.
+    // search the first word for the vtbl value of the given type.
 
     Address vtblAddr = vtblForType(type);
 
@@ -188,70 +188,21 @@ public class BasicTypeDataBase implements TypeDataBase {
       return false;
     }
 
-    // The first implementation searched three locations for this vtbl
-    // value; scanning through the entire object was considered, but
-    // we thought we knew where we were looking, and looking only in
-    // these specific locations should reduce the probability of
-    // mistaking random bits as a pointer (although, realistically
-    // speaking, the likelihood of finding a match between the bit
-    // pattern of, for example, a double and the vtbl is vanishingly
-    // small.)
-    //    1. The first word of the object (should handle MSVC++ as
-    //    well as the solstudio compilers with compatibility set to
-    //    v5.0 or greater)
-    //    2. and 3. The last two Address-aligned words of the part of
-    //    the object defined by its topmost polymorphic superclass.
-    //    This should handle the solstudio compilers, v4.2 or
-    //    earlier, as well as any other compilers which place the vptr
-    //    at the end of the user-defined fields of the first base
-    //    class with virtual functions.
-    //
-    // Unfortunately this algorithm did not work properly for the
-    // specific case of the ThreadShadow/Thread inheritance situation,
-    // because the Solaris compiler seems to cleverly eliminate the
-    // vtbl for ThreadShadow since the only virtual is empty. (We
-    // should get rid of the ThreadShadow and fix the include
-    // databases, but need to postpone this for the present.) The
-    // current solution performs the three-location check for this
-    // class and all of its known superclasses rather than just the
-    // topmost polymorphic one.
-
-    Type curType = type;
-
+    // See if the vtable at the first address of the object matches the vtable of the
+    // specified type. Note this code used to be much more complex in order to support
+    // Solaris. It included looking at the last 2 words of the object and also trying
+    // to match on all supertypes of the specified type. This turned out to be buggy,
+    // and was removed since Solaris is no longer supported. See JDK-8269830.
     try {
-      while (curType != null) {
-        // Using the size information we have for this type, check the
-        // three locations described above.
-
-        // (1)
-        if (vtblAddr.equals(addr.getAddressAt(0))) {
-          return true;
+      if (vtblAddr.equals(addr.getAddressAt(0))) {
+        return true;
+      } else {
+        if (DEBUG) {
+          System.err.println("BasicTypeDataBase.addressTypeIsEqualToType: all vptr tests failed for type " +  type.getName());
         }
-
-        // (2)
-        long offset = curType.getSize();
-        // I don't think this should be misaligned under any
-        // circumstances, but I'm not sure (FIXME: also not sure which
-        // way to go here, up or down -- assuming down)
-        offset -= (offset % getAddressSize());
-        if (offset <= 0) {
-          return false;
-        }
-        if (vtblAddr.equals(addr.getAddressAt(offset))) {
-          return true;
-        }
-        offset -= getAddressSize();
-        if (offset <= 0) {
-          return false;
-        }
-        if (vtblAddr.equals(addr.getAddressAt(offset))) {
-          return true;
-        }
-
-        curType = curType.getSuperclass();
+        return false;
       }
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       // Any UnmappedAddressExceptions, etc. are a good indication
       // that the pointer is not of the specified type
       if (DEBUG) {
@@ -261,13 +212,6 @@ public class BasicTypeDataBase implements TypeDataBase {
 
       return false;
     }
-
-    if (DEBUG) {
-      System.err.println("BasicTypeDataBase.addressTypeIsEqualToType: all vptr tests failed for type " +
-                         type.getName());
-    }
-
-    return false;
   }
 
   public Type findDynamicTypeForAddress(Address addr, Type baseType) {
@@ -287,12 +231,9 @@ public class BasicTypeDataBase implements TypeDataBase {
     // switch to this logic but in the interests of stability it will
     // be separate for the moment.
 
-    // Assuming that the base type is truly the first polymorphic type
-    // then the vtbl for all subclasss should be at several defined
-    // locations so only those locations will be checked.  It's also
-    // required that the caller knows that the static type is at least
-    // baseType.  See the notes in guessTypeForAddress for the logic of
-    // the locations searched.
+    // Assuming that the base type is truly the first polymorphic type,
+    // then the vtbl for all subclassses should be in the first word of
+    // the object.
 
     Address loc1 = addr.getAddressAt(0);
 
@@ -304,50 +245,25 @@ public class BasicTypeDataBase implements TypeDataBase {
       }
     }
 
-    Address loc2 = null;
-    Address loc3 = null;
-    long offset2 = baseType.getSize();
-    // I don't think this should be misaligned under any
-    // circumstances, but I'm not sure (FIXME: also not sure which
-    // way to go here, up or down -- assuming down)
-    offset2 = offset2 - (offset2 % getAddressSize()) - getAddressSize();
-    if (offset2 > 0) {
-      loc2 = addr.getAddressAt(offset2);
-    }
-    long offset3 = offset2 - getAddressSize();
-    if (offset3 > 0) {
-      loc3 = addr.getAddressAt(offset3);
-    }
-
-    Type loc2Match = null;
-    Type loc3Match = null;
     for (Iterator iter = getTypes(); iter.hasNext(); ) {
       Type type = (Type) iter.next();
       Type superClass = type;
       while (superClass != baseType && superClass != null) {
         superClass = superClass.getSuperclass();
       }
-      if (superClass == null) continue;
+      if (superClass == null) continue;  // type is not a subclass of baseType
       Address vtblAddr = vtblForType(type);
       if (vtblAddr == null) {
-        // This occurs sometimes for intermediate types that are never
-        // instantiated.
+        // This occurs sometimes for intermediate types that are never instantiated.
         if (DEBUG) {
           System.err.println("null vtbl for " + type);
         }
         continue;
       }
-      // Prefer loc1 match
-      if (vtblAddr.equals(loc1)) return type;
-      if (loc2 != null && loc2Match == null && vtblAddr.equals(loc2)) {
-          loc2Match = type;
-      }
-      if (loc3 != null && loc3Match == null && vtblAddr.equals(loc3)) {
-          loc3Match = type;
+      if (vtblAddr.equals(loc1)) {
+        return type;
       }
     }
-    if (loc2Match != null) return loc2Match;
-    if (loc3Match != null) return loc3Match;
     return null;
   }
 
@@ -448,7 +364,7 @@ public class BasicTypeDataBase implements TypeDataBase {
       TypeDataBase. Throws a RuntimeException if this class was not
       present. */
   public void removeType(Type type) {
-    Type curType = (Type) nameToTypeMap.get(type.getName());
+    Type curType = nameToTypeMap.get(type.getName());
     if (curType == null) {
       throw new RuntimeException("type of name \"" + type.getName() + "\" not present");
     }
@@ -475,7 +391,7 @@ public class BasicTypeDataBase implements TypeDataBase {
       TypeDataBase. Throws a RuntimeException if an integer constant
       with this name was not present. */
   public void removeIntConstant(String name) {
-    Integer curConstant = (Integer) nameToIntConstantMap.get(name);
+    Integer curConstant = nameToIntConstantMap.get(name);
     if (curConstant == null) {
       throw new RuntimeException("int constant of name \"" + name + "\" not present");
     }
@@ -498,7 +414,7 @@ public class BasicTypeDataBase implements TypeDataBase {
       TypeDataBase. Throws a RuntimeException if a long constant with
       this name was not present. */
   public void removeLongConstant(String name) {
-    Long curConstant = (Long) nameToLongConstantMap.get(name);
+    Long curConstant = nameToLongConstantMap.get(name);
     if (curConstant == null) {
       throw new RuntimeException("long constant of name \"" + name + "\" not present");
     }

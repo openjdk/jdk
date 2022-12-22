@@ -76,7 +76,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document")
     public void test04(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("boolean(/Customers/Customer[@id=3])");
+        XPathExpression exp = xpath.compile("boolean(/Customers/Customer[@id=\"x3\"])");
         boolean result1 = exp.evaluateExpression(doc, Boolean.class);
         assertTrue(result1);
     }
@@ -99,7 +99,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document")
     public void test06(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("string(/Customers/Customer[@id=3]/Phone/text())");
+        XPathExpression exp = xpath.compile("string(/Customers/Customer[@id=\"x3\"]/Phone/text())");
         String result1 = exp.evaluateExpression(doc, String.class);
         assertTrue(result1.equals("3333333333"));
     }
@@ -122,7 +122,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document")
     public void test08(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("/Customers/Customer[@id=3]");
+        XPathExpression exp = xpath.compile("/Customers/Customer[@id=\"x3\"]");
         Node n = exp.evaluateExpression(doc, Node.class);
         assertEquals(n.getLocalName(), "Customer");
     }
@@ -132,7 +132,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document", expectedExceptions = IllegalArgumentException.class)
     public void test09(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("/Customers/Customer[@id=3]");
+        XPathExpression exp = xpath.compile("/Customers/Customer[@id=\"x3\"]");
         File n = exp.evaluateExpression(doc, File.class);
     }
 
@@ -141,7 +141,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document")
     public void test10(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("boolean(/Customers/Customer[@id=3])");
+        XPathExpression exp = xpath.compile("boolean(/Customers/Customer[@id=\"x3\"])");
         XPathEvaluationResult<?> result = exp.evaluateExpression(doc);
         verifyResult(result, true);
     }
@@ -161,7 +161,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document")
     public void test12(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("string(/Customers/Customer[@id=3]/Phone/text())");
+        XPathExpression exp = xpath.compile("string(/Customers/Customer[@id=\"x3\"]/Phone/text())");
         XPathEvaluationResult<?> result = exp.evaluateExpression(doc, XPathEvaluationResult.class);
         verifyResult(result, "3333333333");
     }
@@ -181,7 +181,7 @@ public class XPathExpAnyTypeTest extends XPathTestBase {
      */
     @Test(dataProvider = "document")
     public void test14(XPath xpath, Document doc) throws XPathExpressionException {
-        XPathExpression exp = xpath.compile("/Customers/Customer[@id=3]");
+        XPathExpression exp = xpath.compile("/Customers/Customer[@id=\"x3\"]");
         XPathEvaluationResult<?> result = exp.evaluateExpression(doc);
         verifyResult(result, "Customer");
     }

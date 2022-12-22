@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,17 @@ import java.util.List;
  */
 public interface Link {
 
-    public Port getFrom();
+    Port getFrom();
 
-    public Port getTo();
+    Cluster getFromCluster();
 
-    public boolean isVIP();
+    Port getTo();
 
-    public List<Point> getControlPoints();
+    Cluster getToCluster();
 
-    public void setControlPoints(List<Point> list);
+    boolean isVIP();
+
+    List<Point> getControlPoints();
+
+    void setControlPoints(List<Point> list);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @library /test/lib
  * @requires vm.flagless
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.codecache.CheckSegmentedCodeCache
@@ -40,7 +40,7 @@ package compiler.codecache;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class CheckSegmentedCodeCache {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -58,7 +58,7 @@ public class CheckSegmentedCodeCache {
                 out.shouldContain(NON_METHOD);
             } catch (RuntimeException e) {
                 // Check if TieredCompilation is disabled (in a client VM)
-                if (!out.getOutput().contains("-XX:+TieredCompilation not supported in this VM")) {
+                if (Platform.isTieredSupported()) {
                     // Code cache is not segmented
                     throw new RuntimeException("No code cache segmentation.");
                 }

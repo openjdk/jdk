@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class bug4358730 extends IntlTest {
 
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-            Locale.setDefault(new Locale("en", "US"));
+            Locale.setDefault(Locale.US);
             SimpleDateFormat sdf = new SimpleDateFormat();
 
             for (int i = 0; i < datasize; i++) {

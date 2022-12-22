@@ -70,7 +70,7 @@ public interface Highlighter {
      * @param p1 the end of the range &gt;= p0
      * @param p the painter to use for the actual highlighting
      * @return an object that refers to the highlight
-     * @exception BadLocationException for an invalid range specification
+     * @throws BadLocationException for an invalid range specification
      */
     public Object addHighlight(int p0, int p1, HighlightPainter p) throws BadLocationException;
 
@@ -95,7 +95,7 @@ public interface Highlighter {
      * @param tag  which highlight to change
      * @param p0 the beginning of the range &gt;= 0
      * @param p1 the end of the range &gt;= p0
-     * @exception BadLocationException for an invalid range specification
+     * @throws BadLocationException for an invalid range specification
      */
     public void changeHighlight(Object tag, int p0, int p1) throws BadLocationException;
 

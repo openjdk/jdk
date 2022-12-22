@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,12 @@
  */
 
 #include "precompiled.hpp"
-
-// Included early because the NMT flags don't include it.
-#include "utilities/macros.hpp"
-
-#if INCLUDE_NMT
-
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "unittest.hpp"
-
 
 class CommittedVirtualMemoryTest {
 public:
@@ -208,12 +202,18 @@ public:
 };
 
 TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
-  VirtualMemoryTracker::initialize(NMT_detail);
-  VirtualMemoryTracker::late_initialize(NMT_detail);
 
-  CommittedVirtualMemoryTest::test();
-  CommittedVirtualMemoryTest::test_committed_region();
-  CommittedVirtualMemoryTest::test_partial_region();
+  //  This tests the VM-global NMT facility. The test must *not* modify global state,
+  //  since that interferes with other tests!
+  // The gtestLauncher are called with and without -XX:NativeMemoryTracking during jtreg-controlled
+  //  gtests.
+
+  if (MemTracker::tracking_level() >= NMT_detail) {
+    CommittedVirtualMemoryTest::test();
+    CommittedVirtualMemoryTest::test_committed_region();
+    CommittedVirtualMemoryTest::test_partial_region();
+  } else {
+    tty->print_cr("skipped.");
+  }
+
 }
-
-#endif // INCLUDE_NMT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "iphlp_interface.hpp"
+#include "os_windows.hpp"
 #include "runtime/os.hpp"
 
 // IPHLP API
@@ -46,7 +47,7 @@ void IphlpDll::initialize(void) {
     return;
   }
 
-  // The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods
+  // The 'A' at the end means the ANSI (not the UNICODE) versions of the methods
   _GetIfTable2 = (GetIfTable2_Fn)::GetProcAddress(_hModule, "GetIfTable2");
   _FreeMibTable = (FreeMibTable_Fn)::GetProcAddress(_hModule, "FreeMibTable");
 

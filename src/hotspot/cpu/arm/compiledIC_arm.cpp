@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ int CompiledStaticCall::to_trampoline_stub_size() {
   return 0;
 }
 
-// size of C2 call stub, compiled java to interpretor
+// size of C2 call stub, compiled java to interpreter
 int CompiledStaticCall::to_interp_stub_size() {
   return 8 * NativeInstruction::instruction_size;
 }

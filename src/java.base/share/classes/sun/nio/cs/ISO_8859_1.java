@@ -35,6 +35,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public class ISO_8859_1
@@ -169,24 +170,11 @@ public class ISO_8859_1
                                                 byte[] da, int dp, int len) {
             Objects.requireNonNull(sa);
             Objects.requireNonNull(da);
+            Preconditions.checkIndex(sp, sa.length, Preconditions.AIOOBE_FORMATTER);
+            Preconditions.checkIndex(dp, da.length, Preconditions.AIOOBE_FORMATTER);
 
-            if (sp < 0 || sp >= sa.length) {
-                throw new ArrayIndexOutOfBoundsException(sp);
-            }
-
-            if (dp < 0 || dp >= da.length) {
-                throw new ArrayIndexOutOfBoundsException(dp);
-            }
-
-            int endIndexSP = sp + len - 1;
-            if (endIndexSP < 0 || endIndexSP >= sa.length) {
-                throw new ArrayIndexOutOfBoundsException(endIndexSP);
-            }
-
-            int endIndexDP = dp + len - 1;
-            if (endIndexDP < 0 || endIndexDP >= da.length) {
-                throw new ArrayIndexOutOfBoundsException(endIndexDP);
-            }
+            Preconditions.checkIndex(sp + len - 1, sa.length, Preconditions.AIOOBE_FORMATTER);
+            Preconditions.checkIndex(dp + len - 1, da.length, Preconditions.AIOOBE_FORMATTER);
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ package java.lang.invoke;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public class VolatileCallSite extends CallSite {
+public non-sealed class VolatileCallSite extends CallSite {
     /**
      * Creates a call site with a volatile binding to its target.
      * The initial target is set to a method handle

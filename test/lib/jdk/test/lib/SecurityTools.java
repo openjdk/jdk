@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.test.lib;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,9 +40,8 @@ import jdk.test.lib.process.ProcessTools;
 /**
  * Run security tools (including jarsigner and keytool) in a new process.
  * The en_US locale is always used so a test can always match output to
- * English text. {@code /dev/urandom} is used as entropy source so tool will
- * not block because of entropy scarcity. {@code -Jvm-options} is supported
- * as an argument.
+ * English text. An argument can be a normal string,
+ * {@code -Jvm-options}, or {@code $sysProp}.
  */
 public class SecurityTools {
 
@@ -57,15 +57,14 @@ public class SecurityTools {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
                 .addVMArg("-Duser.language=en")
                 .addVMArg("-Duser.country=US");
-        if (!Platform.isWindows()) {
-            launcher.addVMArg("-Djava.security.egd=file:/dev/./urandom");
-        }
         for (String arg : args) {
             if (arg.startsWith("-J")) {
                 launcher.addVMArg(arg.substring(2));
             } else if (Platform.isWindows() && arg.isEmpty()) {
                 // JDK-6518827: special handling for empty argument on Windows
                 launcher.addToolArg("\"\"");
+            } else if (arg.length() > 1 && arg.charAt(0) == '$') {
+                launcher.addToolArg(System.getProperty(arg.substring(1)));
             } else {
                 launcher.addToolArg(arg);
             }
@@ -223,6 +222,18 @@ public class SecurityTools {
     }
 
     /**
+     * Runs kinit.
+     *
+     * @param args arguments to kinit in a single string. The string is
+     *             converted to be List with makeList.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer kinit(String args) throws Exception {
+        return execute(getProcessBuilder("kinit", makeList(args)));
+    }
+
+    /**
      * Runs jar.
      *
      * @param args arguments to jar in a single string. The string is
@@ -274,6 +285,64 @@ public class SecurityTools {
             result.add(sb.toString());
         }
         return result;
+    }
+
+    // Create a temporary keychain in macOS and use it. The original
+    // keychains will be restored when the object is closed.
+    public static class TemporaryKeychain implements Closeable {
+        // name of new keychain
+        private final String newChain;
+        // names of the original keychains
+        private final List<String> oldChains;
+
+        public TemporaryKeychain(String name) {
+            Path p = Path.of(name + ".keychain-db");
+            newChain = p.toAbsolutePath().toString();
+            try {
+                oldChains = ProcessTools.executeProcess("security", "list-keychains")
+                        .shouldHaveExitValue(0)
+                        .getStdout()
+                        .lines()
+                        .map(String::trim)
+                        .map(x -> x.startsWith("\"") ? x.substring(1, x.length() - 1) : x)
+                        .collect(Collectors.toList());
+                if (!Files.exists(p)) {
+                    ProcessTools.executeProcess("security", "create-keychain", "-p", "changeit", newChain)
+                            .shouldHaveExitValue(0);
+                }
+                ProcessTools.executeProcess("security", "unlock-keychain", "-p", "changeit", newChain)
+                        .shouldHaveExitValue(0);
+                ProcessTools.executeProcess("security", "list-keychains", "-s", newChain)
+                        .shouldHaveExitValue(0);
+            } catch (Throwable t) {
+                if (t instanceof RuntimeException re) {
+                    throw re;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        }
+
+        public String chain() {
+            return newChain;
+        }
+
+        @Override
+        public void close() throws IOException {
+            List<String> cmds = new ArrayList<>();
+            cmds.addAll(List.of("security", "list-keychains", "-s"));
+            cmds.addAll(oldChains);
+            try {
+                ProcessTools.executeProcess(cmds.toArray(new String[0]))
+                        .shouldHaveExitValue(0);
+            } catch (Throwable t) {
+                if (t instanceof RuntimeException re) {
+                    throw re;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        }
     }
 }
 

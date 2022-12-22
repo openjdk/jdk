@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.swing.table.TableColumnModel;
 import com.sun.java.swing.ui.CommonUI;
 
 /**
- * A mouse adapater which is attached to the header of a JTable. It listens
+ * A mouse adapter which is attached to the header of a JTable. It listens
  * for mouse clicks on a column and sorts that column.
  */
 public class SortHeaderMouseAdapter extends MouseAdapter {

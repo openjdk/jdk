@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -33,6 +34,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileManager;
 
+import com.sun.source.tree.CaseTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
@@ -70,6 +72,13 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.TypeTag.WILDCARD;
 
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.ElementKindVisitor14;
 
 /** Type checking helper class for the attribution phase.
  *
@@ -118,9 +127,6 @@ public class Check {
         context.put(checkKey, this);
 
         names = Names.instance(context);
-        dfltTargetMeta = new Name[] { names.PACKAGE, names.TYPE,
-            names.FIELD, names.RECORD_COMPONENT, names.METHOD, names.CONSTRUCTOR,
-            names.ANNOTATION_TYPE, names.LOCAL_VARIABLE, names.PARAMETER, names.MODULE };
         log = Log.instance(context);
         rs = Resolve.instance(context);
         syms = Symtab.instance(context);
@@ -160,6 +166,7 @@ public class Check {
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
+        allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealed = Feature.SEALED_CLASSES.allowedInSource(source);
     }
@@ -192,6 +199,10 @@ public class Check {
     /** A handler for deferred lint warnings.
      */
     private DeferredLintHandler deferredLintHandler;
+
+    /** Are modules allowed
+     */
+    private final boolean allowModules;
 
     /** Are records allowed
      */
@@ -982,7 +993,7 @@ public class Check {
         }
 
         //upward project the initializer type
-        return types.upward(t, types.captures(t));
+        return types.upward(t, types.captures(t)).baseType();
     }
 
     Type checkMethod(final Type mtype,
@@ -1779,7 +1790,7 @@ public class Check {
             return;
         }
 
-        // Error if static method overrides instance method (JLS 8.4.6.2).
+        // Error if static method overrides instance method (JLS 8.4.8.2).
         if ((m.flags() & STATIC) != 0 &&
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
@@ -1789,7 +1800,7 @@ public class Check {
         }
 
         // Error if instance method overrides static or final
-        // method (JLS 8.4.6.1).
+        // method (JLS 8.4.8.1).
         if ((other.flags() & FINAL) != 0 ||
                  (m.flags() & STATIC) == 0 &&
                  (other.flags() & STATIC) != 0) {
@@ -1805,7 +1816,7 @@ public class Check {
             return;
         }
 
-        // Error if overriding method has weaker access (JLS 8.4.6.3).
+        // Error if overriding method has weaker access (JLS 8.4.8.3).
         if (protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       (other.flags() & AccessFlags) == 0 ?
@@ -1815,6 +1826,10 @@ public class Check {
                                                           asFlagSet(other.flags() & AccessFlags)));
             m.flags_field |= BAD_OVERRIDE;
             return;
+        }
+
+        if (shouldCheckPreview(m, other, origin)) {
+            checkPreview(tree.pos(), m, other);
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -1891,6 +1906,23 @@ public class Check {
         }
     }
     // where
+        private boolean shouldCheckPreview(MethodSymbol m, MethodSymbol other, ClassSymbol origin) {
+            if (m.owner != origin ||
+                //performance - only do the expensive checks when the overridden method is a Preview API:
+                (other.flags() & PREVIEW_API) == 0) {
+                return false;
+            }
+
+            for (Symbol s : types.membersClosure(origin.type, false).getSymbolsByName(m.name)) {
+                if (m != s && m.overrides(s, origin, types, false)) {
+                    //only produce preview warnings or errors if "m" immediatelly overrides "other"
+                    //without intermediate overriding methods:
+                    return s == other;
+                }
+            }
+
+            return false;
+        }
         private boolean isDeprecatedOverrideIgnorable(MethodSymbol m, ClassSymbol origin) {
             // If the method, m, is defined in an interface, then ignore the issue if the method
             // is only inherited via a supertype and also implemented in the supertype,
@@ -2056,8 +2088,13 @@ public class Check {
                          types.covariantReturnType(rt2, rt1, types.noWarnings)) ||
                          checkCommonOverriderIn(s1,s2,site);
                     if (!compat) {
-                        log.error(pos, Errors.TypesIncompatible(t1, t2,
-                                Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
+                        if (types.isSameType(t1, t2)) {
+                            log.error(pos, Errors.IncompatibleDiffRetSameType(t1,
+                                    s2.name, types.memberType(t2, s2).getParameterTypes()));
+                        } else {
+                            log.error(pos, Errors.TypesIncompatible(t1, t2,
+                                    Fragments.IncompatibleDiffRet(s2.name, types.memberType(t2, s2).getParameterTypes())));
+                        }
                         return s2;
                     }
                 } else if (checkNameClash((ClassSymbol)site.tsym, s1, s2) &&
@@ -2543,7 +2580,7 @@ public class Check {
                 if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, m2), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source)) &&
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2)) &&
                         types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
                     if (m1 == sym) {
@@ -2588,7 +2625,7 @@ public class Check {
         for (Symbol s : types.membersClosure(site, true).getSymbolsByName(sym.name, cf)) {
             //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
             //a member of 'site') and (ii) 'sym' has the same erasure as m1, issue an error
-            if (!types.isSubSignature(sym.type, types.memberType(site, s), Feature.STRICT_METHOD_CLASH_CHECK.allowedInSource(source))) {
+            if (!types.isSubSignature(sym.type, types.memberType(site, s))) {
                 if (types.hasSameArgs(s.erasure(types), sym.erasure(types))) {
                     log.error(pos,
                               Errors.NameClashSameErasureNoHide(sym, sym.location(), s, s.location()));
@@ -2692,7 +2729,6 @@ public class Check {
     void checkPotentiallyAmbiguousOverloads(DiagnosticPosition pos, Type site,
             MethodSymbol msym1, MethodSymbol msym2) {
         if (msym1 != msym2 &&
-                Feature.DEFAULT_METHODS.allowedInSource(source) &&
                 lint.isEnabled(LintCategory.OVERLOADS) &&
                 (msym1.flags() & POTENTIALLY_AMBIGUOUS) == 0 &&
                 (msym2.flags() & POTENTIALLY_AMBIGUOUS) == 0) {
@@ -2928,6 +2964,9 @@ public class Check {
     /** Check an annotation of a symbol.
      */
     private void validateAnnotation(JCAnnotation a, JCTree declarationTree, Symbol s) {
+        /** NOTE: if annotation processors are present, annotation processing rounds can happen after this method,
+         *  this can impact in particular records for which annotations are forcibly propagated.
+         */
         validateAnnotationTree(a);
         boolean isRecordMember = ((s.flags_field & RECORD) != 0 || s.enclClass() != null && s.enclClass().isRecord());
 
@@ -2966,9 +3005,25 @@ public class Check {
                     rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
                             Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
                     ).collect(List.collector()));
-                    rc.setTypeAttributes(s.getRawTypeAttributes());
-                    // to get all the type annotations applied to the type
-                    rc.type = s.type;
+
+                    JCVariableDecl fieldAST = (JCVariableDecl) declarationTree;
+                    for (JCAnnotation fieldAnnot : fieldAST.mods.annotations) {
+                        for (JCAnnotation rcAnnot : rc.declarationFor().mods.annotations) {
+                            if (rcAnnot.pos == fieldAnnot.pos) {
+                                rcAnnot.setType(fieldAnnot.type);
+                                break;
+                            }
+                        }
+                    }
+
+                    /* At this point, we used to carry over any type annotations from the VARDEF to the record component, but
+                     * that is problematic, since we get here only when *some* annotation is applied to the SE5 (declaration)
+                     * annotation location, inadvertently failing to carry over the type annotations when the VarDef has no
+                     * annotations in the SE5 annotation location.
+                     *
+                     * Now type annotations are assigned to record components in a method that would execute irrespective of
+                     * whether there are SE5 annotations on a VarDef viz com.sun.tools.javac.code.TypeAnnotations.TypeAnnotationPositions.visitVarDef
+                     */
                 }
             }
         }
@@ -3099,7 +3154,9 @@ public class Check {
         List<Pair<MethodSymbol,Attribute>> l = repeatable.values;
         if (!l.isEmpty()) {
             Assert.check(l.head.fst.name == names.value);
-            t = ((Attribute.Class)l.head.snd).getValue();
+            if (l.head.snd instanceof Attribute.Class) {
+                t = ((Attribute.Class)l.head.snd).getValue();
+            }
         }
 
         if (t == null) {
@@ -3214,20 +3271,7 @@ public class Check {
     /* get a set of names for the default target */
     private Set<Name> getDefaultTargetSet() {
         if (defaultTargets == null) {
-            Set<Name> targets = new HashSet<>();
-            targets.add(names.ANNOTATION_TYPE);
-            targets.add(names.CONSTRUCTOR);
-            targets.add(names.FIELD);
-            if (allowRecords) {
-                targets.add(names.RECORD_COMPONENT);
-            }
-            targets.add(names.LOCAL_VARIABLE);
-            targets.add(names.METHOD);
-            targets.add(names.PACKAGE);
-            targets.add(names.PARAMETER);
-            targets.add(names.TYPE);
-
-            defaultTargets = java.util.Collections.unmodifiableSet(targets);
+            defaultTargets = Set.of(defaultTargetMetaInfo());
         }
 
         return defaultTargets;
@@ -3337,14 +3381,13 @@ public class Check {
 
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
         Optional<Set<Name>> targets = getApplicableTargets(a, s);
-        /* the optional could be emtpy if the annotation is unknown in that case
+        /* the optional could be empty if the annotation is unknown in that case
          * we return that it is applicable and if it is erroneous that should imply
          * an error at the declaration site
          */
         return targets.isEmpty() || targets.isPresent() && !targets.get().isEmpty();
     }
 
-    @SuppressWarnings("preview")
     Optional<Set<Name>> getApplicableTargets(JCAnnotation a, Symbol s) {
         Attribute.Array arr = getAttributeTargetAttribute(a.annotationType.type.tsym);
         Name[] targets;
@@ -3428,8 +3471,26 @@ public class Check {
         return (atValue instanceof Attribute.Array attributeArray) ? attributeArray : null;
     }
 
-    public final Name[] dfltTargetMeta;
+    private Name[] dfltTargetMeta;
     private Name[] defaultTargetMetaInfo() {
+        if (dfltTargetMeta == null) {
+            ArrayList<Name> defaultTargets = new ArrayList<>();
+            defaultTargets.add(names.PACKAGE);
+            defaultTargets.add(names.TYPE);
+            defaultTargets.add(names.FIELD);
+            defaultTargets.add(names.METHOD);
+            defaultTargets.add(names.CONSTRUCTOR);
+            defaultTargets.add(names.ANNOTATION_TYPE);
+            defaultTargets.add(names.LOCAL_VARIABLE);
+            defaultTargets.add(names.PARAMETER);
+            if (allowRecords) {
+              defaultTargets.add(names.RECORD_COMPONENT);
+            }
+            if (allowModules) {
+              defaultTargets.add(names.MODULE);
+            }
+            dfltTargetMeta = defaultTargets.toArray(new Name[0]);
+        }
         return dfltTargetMeta;
     }
 
@@ -3562,7 +3623,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && s.packge().modle != other.packge().modle) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s)) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
@@ -3649,7 +3710,8 @@ public class Check {
      *  constructors.
      */
     void checkCyclicConstructors(JCClassDecl tree) {
-        Map<Symbol,Symbol> callMap = new HashMap<>();
+        // use LinkedHashMap so we generate errors deterministically
+        Map<Symbol,Symbol> callMap = new LinkedHashMap<>();
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
@@ -3678,7 +3740,7 @@ public class Check {
                                         Map<Symbol,Symbol> callMap) {
         if (ctor != null && (ctor.flags_field & ACYCLIC) == 0) {
             if ((ctor.flags_field & LOCKED) != 0) {
-                log.error(TreeInfo.diagnosticPositionFor(ctor, tree),
+                log.error(TreeInfo.diagnosticPositionFor(ctor, tree, false, t -> t.hasTag(IDENT)),
                           Errors.RecursiveCtorInvocation);
             } else {
                 ctor.flags_field |= LOCKED;
@@ -3708,6 +3770,22 @@ public class Check {
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
                 deferredLintHandler.report(() -> warnDivZero(pos));
             }
+        }
+    }
+
+    /**
+     *  Check for possible loss of precission
+     *  @param pos           Position for error reporting.
+     *  @param found    The computed type of the tree
+     *  @param req  The computed type of the tree
+     */
+    void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
+        if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
+            deferredLintHandler.report(() -> {
+                if (lint.isEnabled(LintCategory.LOSSY_CONVERSIONS))
+                    log.warning(LintCategory.LOSSY_CONVERSIONS,
+                            pos, Warnings.PossibleLossOfPrecision(found, req));
+            });
         }
     }
 
@@ -4269,6 +4347,881 @@ public class Check {
                 }
             });
         }
+    }
+
+    /**
+     * Verify the case labels conform to the constraints. Checks constraints related
+     * combinations of patterns and other labels.
+     *
+     * @param cases the cases that should be checked.
+     */
+    void checkSwitchCaseStructure(List<JCCase> cases) {
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            JCCase c = l.head;
+            if (c.labels.head instanceof JCConstantCaseLabel constLabel) {
+                if (TreeInfo.isNull(constLabel.expr)) {
+                    if (c.labels.tail.nonEmpty()) {
+                        if (c.labels.tail.head instanceof JCDefaultCaseLabel defLabel) {
+                            if (c.labels.tail.tail.nonEmpty()) {
+                                log.error(c.labels.tail.tail.head.pos(), Errors.InvalidCaseLabelCombination);
+                            }
+                        } else {
+                            log.error(c.labels.tail.head.pos(), Errors.InvalidCaseLabelCombination);
+                        }
+                    }
+                } else {
+                    for (JCCaseLabel label : c.labels.tail) {
+                        if (!(label instanceof JCConstantCaseLabel) || TreeInfo.isNullCaseLabel(label)) {
+                            log.error(label.pos(), Errors.InvalidCaseLabelCombination);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                if (c.labels.tail.nonEmpty()) {
+                    log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
+                }
+            }
+        }
+
+        boolean isCaseStatementGroup = cases.nonEmpty() &&
+                                       cases.head.caseKind == CaseTree.CaseKind.STATEMENT;
+
+        if (isCaseStatementGroup) {
+            boolean previousCompletessNormally = false;
+            for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+                JCCase c = l.head;
+                if (previousCompletessNormally &&
+                    c.stats.nonEmpty() &&
+                    c.labels.head instanceof JCPatternCaseLabel patternLabel &&
+                    hasBindings(patternLabel.pat)) {
+                    log.error(c.labels.head.pos(), Errors.FlowsThroughToPattern);
+                } else if (c.stats.isEmpty() &&
+                           c.labels.head instanceof JCPatternCaseLabel patternLabel &&
+                           hasBindings(patternLabel.pat) &&
+                           hasStatements(l.tail)) {
+                    log.error(c.labels.head.pos(), Errors.FlowsThroughFromPattern);
+                }
+                previousCompletessNormally = c.completesNormally;
+            }
+        }
+    }
+
+    boolean hasBindings(JCPattern p) {
+        boolean[] bindings = new boolean[1];
+
+        new TreeScanner() {
+            @Override
+            public void visitBindingPattern(JCBindingPattern tree) {
+                bindings[0] = true;
+                super.visitBindingPattern(tree);
+            }
+        }.scan(p);
+
+        return bindings[0];
+    }
+
+    boolean hasStatements(List<JCCase> cases) {
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            if (l.head.stats.nonEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    void checkSwitchCaseLabelDominated(List<JCCase> cases) {
+        List<JCCaseLabel> caseLabels = List.nil();
+        boolean seenDefault = false;
+        boolean seenDefaultLabel = false;
+        boolean warnDominatedByDefault = false;
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            JCCase c = l.head;
+            for (JCCaseLabel label : c.labels) {
+                if (label.hasTag(DEFAULTCASELABEL)) {
+                    seenDefault = true;
+                    seenDefaultLabel |=
+                            TreeInfo.isNullCaseLabel(c.labels.head);
+                    continue;
+                }
+                if (TreeInfo.isNullCaseLabel(label)) {
+                    if (seenDefault) {
+                        log.error(label.pos(), Errors.PatternDominated);
+                    }
+                    continue;
+                }
+                if (seenDefault && !warnDominatedByDefault) {
+                    if (label.hasTag(PATTERNCASELABEL) ||
+                        (label instanceof JCConstantCaseLabel && seenDefaultLabel)) {
+                        log.error(label.pos(), Errors.PatternDominated);
+                        warnDominatedByDefault = true;
+                    }
+                }
+                Type currentType = labelType(label);
+                for (JCCaseLabel testCaseLabel : caseLabels) {
+                    Type testType = labelType(testCaseLabel);
+                    if (types.isSubtype(currentType, testType) &&
+                        !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
+                        //the current label is potentially dominated by the existing (test) label, check:
+                        boolean dominated = false;
+                        if (label instanceof JCConstantCaseLabel) {
+                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
+                        } else if (label instanceof JCPatternCaseLabel patternCL &&
+                                   testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
+                                   TreeInfo.unguardedCaseLabel(testCaseLabel)) {
+                            dominated = patternDominated(testPatternCaseLabel.pat,
+                                                         patternCL.pat);
+                        }
+                        if (dominated) {
+                            log.error(label.pos(), Errors.PatternDominated);
+                        }
+                    }
+                }
+                caseLabels = caseLabels.prepend(label);
+            }
+        }
+    }
+        //where:
+        private Type labelType(JCCaseLabel label) {
+            return types.erasure(switch (label.getTag()) {
+                case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
+                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
+            });
+        }
+        private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
+            Type existingPatternType = types.erasure(existingPattern.type);
+            Type currentPatternType = types.erasure(currentPattern.type);
+            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+                return false;
+            }
+            if (existingPatternType.isPrimitive()) {
+                return types.isSameType(existingPatternType, currentPatternType);
+            } else {
+                if (!types.isSubtype(currentPatternType, existingPatternType)) {
+                    return false;
+                }
+            }
+            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
+                existingPattern = parenthesized.pattern;
+            }
+            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
+                currentPattern = parenthesized.pattern;
+            }
+            if (currentPattern instanceof JCBindingPattern) {
+                return existingPattern instanceof JCBindingPattern;
+            } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {
+                if (existingPattern instanceof JCBindingPattern) {
+                    return true;
+                } else if (existingPattern instanceof JCRecordPattern existingRecordPattern) {
+                    List<JCPattern> existingNested = existingRecordPattern.nested;
+                    List<JCPattern> currentNested = currentRecordPattern.nested;
+                    if (existingNested.size() != currentNested.size()) {
+                        return false;
+                    }
+                    while (existingNested.nonEmpty()) {
+                        if (!patternDominated(existingNested.head, currentNested.head)) {
+                            return false;
+                        }
+                        existingNested = existingNested.tail;
+                        currentNested = currentNested.tail;
+                    }
+                    return true;
+                } else {
+                    Assert.error("Unknown pattern: " + existingPattern.getTag());
+                }
+            } else {
+                Assert.error("Unknown pattern: " + currentPattern.getTag());
+            }
+            return false;
+        }
+
+    /** check if a type is a subtype of Externalizable, if that is available. */
+    boolean isExternalizable(Type t) {
+        try {
+            syms.externalizableType.complete();
+        }
+        catch (CompletionFailure e) {
+            return false;
+        }
+        return types.isSubtype(t, syms.externalizableType);
+    }
+
+    /**
+     * Check structure of serialization declarations.
+     */
+    public void checkSerialStructure(JCClassDecl tree, ClassSymbol c) {
+        (new SerialTypeVisitor()).visit(c, tree);
+    }
+
+    /**
+     * This visitor will warn if a serialization-related field or
+     * method is declared in a suspicious or incorrect way. In
+     * particular, it will warn for cases where the runtime
+     * serialization mechanism will silently ignore a mis-declared
+     * entity.
+     *
+     * Distinguished serialization-related fields and methods:
+     *
+     * Methods:
+     *
+     * private void writeObject(ObjectOutputStream stream) throws IOException
+     * ANY-ACCESS-MODIFIER Object writeReplace() throws ObjectStreamException
+     *
+     * private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException
+     * private void readObjectNoData() throws ObjectStreamException
+     * ANY-ACCESS-MODIFIER Object readResolve() throws ObjectStreamException
+     *
+     * Fields:
+     *
+     * private static final long serialVersionUID
+     * private static final ObjectStreamField[] serialPersistentFields
+     *
+     * Externalizable: methods defined on the interface
+     * public void writeExternal(ObjectOutput) throws IOException
+     * public void readExternal(ObjectInput) throws IOException
+     */
+    private class SerialTypeVisitor extends ElementKindVisitor14<Void, JCClassDecl> {
+        SerialTypeVisitor() {
+            this.lint = Check.this.lint;
+        }
+
+        private static final Set<String> serialMethodNames =
+            Set.of("writeObject", "writeReplace",
+                   "readObject",  "readObjectNoData",
+                   "readResolve");
+
+        private static final Set<String> serialFieldNames =
+            Set.of("serialVersionUID", "serialPersistentFields");
+
+        // Type of serialPersistentFields
+        private final Type OSF_TYPE = new Type.ArrayType(syms.objectStreamFieldType, syms.arrayClass);
+
+        Lint lint;
+
+        @Override
+        public Void defaultAction(Element e, JCClassDecl p) {
+            throw new IllegalArgumentException(Objects.requireNonNullElse(e.toString(), ""));
+        }
+
+        @Override
+        public Void visitType(TypeElement e, JCClassDecl p) {
+            runUnderLint(e, p, (symbol, param) -> super.visitType(symbol, param));
+            return null;
+        }
+
+        @Override
+        public Void visitTypeAsClass(TypeElement e,
+                                     JCClassDecl p) {
+            // Anonymous classes filtered out by caller.
+
+            ClassSymbol c = (ClassSymbol)e;
+
+            checkCtorAccess(p, c);
+
+            // Check for missing serialVersionUID; check *not* done
+            // for enums or records.
+            VarSymbol svuidSym = null;
+            for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
+                if (sym.kind == VAR) {
+                    svuidSym = (VarSymbol)sym;
+                    break;
+                }
+            }
+
+            if (svuidSym == null) {
+                log.warning(LintCategory.SERIAL, p.pos(), Warnings.MissingSVUID(c));
+            }
+
+            // Check for serialPersistentFields to gate checks for
+            // non-serializable non-transient instance fields
+            boolean serialPersistentFieldsPresent =
+                    c.members()
+                     .getSymbolsByName(names.serialPersistentFields, sym -> sym.kind == VAR)
+                     .iterator()
+                     .hasNext();
+
+            // Check declarations of serialization-related methods and
+            // fields
+            for(Symbol el : c.getEnclosedElements()) {
+                runUnderLint(el, p, (enclosed, tree) -> {
+                    String name = null;
+                    switch(enclosed.getKind()) {
+                    case FIELD -> {
+                        if (!serialPersistentFieldsPresent) {
+                            var flags = enclosed.flags();
+                            if ( ((flags & TRANSIENT) == 0) &&
+                                 ((flags & STATIC) == 0)) {
+                                Type varType = enclosed.asType();
+                                if (!canBeSerialized(varType)) {
+                                    // Note per JLS arrays are
+                                    // serializable even if the
+                                    // component type is not.
+                                    log.warning(LintCategory.SERIAL,
+                                                TreeInfo.diagnosticPositionFor(enclosed, tree),
+                                                Warnings.NonSerializableInstanceField);
+                                } else if (varType.hasTag(ARRAY)) {
+                                    ArrayType arrayType = (ArrayType)varType;
+                                    Type elementType = arrayType.elemtype;
+                                    while (elementType.hasTag(ARRAY)) {
+                                        arrayType = (ArrayType)elementType;
+                                        elementType = arrayType.elemtype;
+                                    }
+                                    if (!canBeSerialized(elementType)) {
+                                        log.warning(LintCategory.SERIAL,
+                                                    TreeInfo.diagnosticPositionFor(enclosed, tree),
+                                                    Warnings.NonSerializableInstanceFieldArray(elementType));
+                                    }
+                                }
+                            }
+                        }
+
+                        name = enclosed.getSimpleName().toString();
+                        if (serialFieldNames.contains(name)) {
+                            VarSymbol field = (VarSymbol)enclosed;
+                            switch (name) {
+                            case "serialVersionUID"       ->  checkSerialVersionUID(tree, e, field);
+                            case "serialPersistentFields" ->  checkSerialPersistentFields(tree, e, field);
+                            default -> throw new AssertionError();
+                            }
+                        }
+                    }
+
+                    // Correctly checking the serialization-related
+                    // methods is subtle. For the methods declared to be
+                    // private or directly declared in the class, the
+                    // enclosed elements of the class can be checked in
+                    // turn. However, writeReplace and readResolve can be
+                    // declared in a superclass and inherited. Note that
+                    // the runtime lookup walks the superclass chain
+                    // looking for writeReplace/readResolve via
+                    // Class.getDeclaredMethod. This differs from calling
+                    // Elements.getAllMembers(TypeElement) as the latter
+                    // will also pull in default methods from
+                    // superinterfaces. In other words, the runtime checks
+                    // (which long predate default methods on interfaces)
+                    // do not admit the possibility of inheriting methods
+                    // this way, a difference from general inheritance.
+
+                    // The current implementation just checks the enclosed
+                    // elements and does not directly check the inherited
+                    // methods. If all the types are being checked this is
+                    // less of a concern; however, there are cases that
+                    // could be missed. In particular, readResolve and
+                    // writeReplace could, in principle, by inherited from
+                    // a non-serializable superclass and thus not checked
+                    // even if compiled with a serializable child class.
+                    case METHOD -> {
+                        var method = (MethodSymbol)enclosed;
+                        name = method.getSimpleName().toString();
+                        if (serialMethodNames.contains(name)) {
+                            switch (name) {
+                            case "writeObject"      -> checkWriteObject(tree, e, method);
+                            case "writeReplace"     -> checkWriteReplace(tree,e, method);
+                            case "readObject"       -> checkReadObject(tree,e, method);
+                            case "readObjectNoData" -> checkReadObjectNoData(tree, e, method);
+                            case "readResolve"      -> checkReadResolve(tree, e, method);
+                            default ->  throw new AssertionError();
+                            }
+                        }
+                    }
+                    }
+                });
+            }
+
+            return null;
+        }
+
+        boolean canBeSerialized(Type type) {
+            return type.isPrimitive() || rs.isSerializable(type);
+        }
+
+        /**
+         * Check that Externalizable class needs a public no-arg
+         * constructor.
+         *
+         * Check that a Serializable class has access to the no-arg
+         * constructor of its first nonserializable superclass.
+         */
+        private void checkCtorAccess(JCClassDecl tree, ClassSymbol c) {
+            if (isExternalizable(c.type)) {
+                for(var sym : c.getEnclosedElements()) {
+                    if (sym.isConstructor() &&
+                        ((sym.flags() & PUBLIC) == PUBLIC)) {
+                        if (((MethodSymbol)sym).getParameters().isEmpty()) {
+                            return;
+                        }
+                    }
+                }
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.ExternalizableMissingPublicNoArgCtor);
+            } else {
+                // Approximate access to the no-arg constructor up in
+                // the superclass chain by checking that the
+                // constructor is not private. This may not handle
+                // some cross-package situations correctly.
+                Type superClass = c.getSuperclass();
+                // java.lang.Object is *not* Serializable so this loop
+                // should terminate.
+                while (rs.isSerializable(superClass) ) {
+                    try {
+                        superClass = (Type)((TypeElement)(((DeclaredType)superClass)).asElement()).getSuperclass();
+                    } catch(ClassCastException cce) {
+                        return ; // Don't try to recover
+                    }
+                }
+                // Non-Serializable superclass
+                try {
+                    ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
+                    for(var sym : supertype.getEnclosedElements()) {
+                        if (sym.isConstructor()) {
+                            MethodSymbol ctor = (MethodSymbol)sym;
+                            if (ctor.getParameters().isEmpty()) {
+                                if (((ctor.flags() & PRIVATE) == PRIVATE) ||
+                                    // Handle nested classes and implicit this$0
+                                    (supertype.getNestingKind() == NestingKind.MEMBER &&
+                                     ((supertype.flags() & STATIC) == 0)))
+                                    log.warning(LintCategory.SERIAL, tree.pos(),
+                                                Warnings.SerializableMissingAccessNoArgCtor(supertype.getQualifiedName()));
+                            }
+                        }
+                    }
+                } catch (ClassCastException cce) {
+                    return ; // Don't try to recover
+                }
+                return;
+            }
+        }
+
+        private void checkSerialVersionUID(JCClassDecl tree, Element e, VarSymbol svuid) {
+            // To be effective, serialVersionUID must be marked static
+            // and final, but private is recommended. But alas, in
+            // practice there are many non-private serialVersionUID
+            // fields.
+             if ((svuid.flags() & (STATIC | FINAL)) !=
+                 (STATIC | FINAL)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(svuid, tree),
+                             Warnings.ImproperSVUID((Symbol)e));
+             }
+
+             // check svuid has type long
+             if (!svuid.type.hasTag(LONG)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(svuid, tree),
+                             Warnings.LongSVUID((Symbol)e));
+             }
+
+             if (svuid.getConstValue() == null)
+                 log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(svuid, tree),
+                             Warnings.ConstantSVUID((Symbol)e));
+        }
+
+        private void checkSerialPersistentFields(JCClassDecl tree, Element e, VarSymbol spf) {
+            // To be effective, serialPersisentFields must be private, static, and final.
+             if ((spf.flags() & (PRIVATE | STATIC | FINAL)) !=
+                 (PRIVATE | STATIC | FINAL)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.ImproperSPF);
+             }
+
+             if (!types.isSameType(spf.type, OSF_TYPE)) {
+                 log.warning(LintCategory.SERIAL,
+                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.OSFArraySPF);
+             }
+
+            if (isExternalizable((Type)(e.asType()))) {
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.IneffectualSerialFieldExternalizable);
+            }
+
+            // Warn if serialPersistentFields is initialized to a
+            // literal null.
+            JCTree spfDecl = TreeInfo.declarationFor(spf, tree);
+            if (spfDecl != null && spfDecl.getTag() == VARDEF) {
+                JCVariableDecl variableDef = (JCVariableDecl) spfDecl;
+                JCExpression initExpr = variableDef.init;
+                 if (initExpr != null && TreeInfo.isNull(initExpr)) {
+                     log.warning(LintCategory.SERIAL, initExpr.pos(),
+                                 Warnings.SPFNullInit);
+                 }
+            }
+        }
+
+        private void checkWriteObject(JCClassDecl tree, Element e, MethodSymbol method) {
+            // The "synchronized" modifier is seen in the wild on
+            // readObject and writeObject methods and is generally
+            // innocuous.
+
+            // private void writeObject(ObjectOutputStream stream) throws IOException
+            checkPrivateNonStaticMethod(tree, method);
+            checkReturnType(tree, e, method, syms.voidType);
+            checkOneArg(tree, e, method, syms.objectOutputStreamType);
+            checkExceptions(tree, e, method, syms.ioExceptionType);
+            checkExternalizable(tree, e, method);
+        }
+
+        private void checkWriteReplace(JCClassDecl tree, Element e, MethodSymbol method) {
+            // ANY-ACCESS-MODIFIER Object writeReplace() throws
+            // ObjectStreamException
+
+            // Excluding abstract, could have a more complicated
+            // rule based on abstract-ness of the class
+            checkConcreteInstanceMethod(tree, e, method);
+            checkReturnType(tree, e, method, syms.objectType);
+            checkNoArgs(tree, e, method);
+            checkExceptions(tree, e, method, syms.objectStreamExceptionType);
+        }
+
+        private void checkReadObject(JCClassDecl tree, Element e, MethodSymbol method) {
+            // The "synchronized" modifier is seen in the wild on
+            // readObject and writeObject methods and is generally
+            // innocuous.
+
+            // private void readObject(ObjectInputStream stream)
+            //   throws IOException, ClassNotFoundException
+            checkPrivateNonStaticMethod(tree, method);
+            checkReturnType(tree, e, method, syms.voidType);
+            checkOneArg(tree, e, method, syms.objectInputStreamType);
+            checkExceptions(tree, e, method, syms.ioExceptionType, syms.classNotFoundExceptionType);
+            checkExternalizable(tree, e, method);
+        }
+
+        private void checkReadObjectNoData(JCClassDecl tree, Element e, MethodSymbol method) {
+            // private void readObjectNoData() throws ObjectStreamException
+            checkPrivateNonStaticMethod(tree, method);
+            checkReturnType(tree, e, method, syms.voidType);
+            checkNoArgs(tree, e, method);
+            checkExceptions(tree, e, method, syms.objectStreamExceptionType);
+            checkExternalizable(tree, e, method);
+        }
+
+        private void checkReadResolve(JCClassDecl tree, Element e, MethodSymbol method) {
+            // ANY-ACCESS-MODIFIER Object readResolve()
+            // throws ObjectStreamException
+
+            // Excluding abstract, could have a more complicated
+            // rule based on abstract-ness of the class
+            checkConcreteInstanceMethod(tree, e, method);
+            checkReturnType(tree,e, method, syms.objectType);
+            checkNoArgs(tree, e, method);
+            checkExceptions(tree, e, method, syms.objectStreamExceptionType);
+        }
+
+        void checkPrivateNonStaticMethod(JCClassDecl tree, MethodSymbol method) {
+            var flags = method.flags();
+            if ((flags & PRIVATE) == 0) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodNotPrivate(method.getSimpleName()));
+            }
+
+            if ((flags & STATIC) != 0) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodStatic(method.getSimpleName()));
+            }
+        }
+
+        /**
+         * Per section 1.12 "Serialization of Enum Constants" of
+         * the serialization specification, due to the special
+         * serialization handling of enums, any writeObject,
+         * readObject, writeReplace, and readResolve methods are
+         * ignored as are serialPersistentFields and
+         * serialVersionUID fields.
+         */
+        @Override
+        public Void visitTypeAsEnum(TypeElement e,
+                                    JCClassDecl p) {
+            for(Element el : e.getEnclosedElements()) {
+                runUnderLint(el, p, (enclosed, tree) -> {
+                    String name = enclosed.getSimpleName().toString();
+                    switch(enclosed.getKind()) {
+                    case FIELD -> {
+                        if (serialFieldNames.contains(name)) {
+                            log.warning(LintCategory.SERIAL, tree.pos(),
+                                        Warnings.IneffectualSerialFieldEnum(name));
+                        }
+                    }
+
+                    case METHOD -> {
+                        if (serialMethodNames.contains(name)) {
+                            log.warning(LintCategory.SERIAL, tree.pos(),
+                                        Warnings.IneffectualSerialMethodEnum(name));
+                        }
+                    }
+                    }
+                });
+            }
+            return null;
+        }
+
+        /**
+         * Most serialization-related fields and methods on interfaces
+         * are ineffectual or problematic.
+         */
+        @Override
+        public Void visitTypeAsInterface(TypeElement e,
+                                         JCClassDecl p) {
+            for(Element el : e.getEnclosedElements()) {
+                runUnderLint(el, p, (enclosed, tree) -> {
+                    String name = null;
+                    switch(enclosed.getKind()) {
+                    case FIELD -> {
+                        var field = (VarSymbol)enclosed;
+                        name = field.getSimpleName().toString();
+                        switch(name) {
+                        case "serialPersistentFields" -> {
+                            log.warning(LintCategory.SERIAL,
+                                        TreeInfo.diagnosticPositionFor(field, tree),
+                                        Warnings.IneffectualSerialFieldInterface);
+                        }
+
+                        case "serialVersionUID" -> {
+                            checkSerialVersionUID(tree, e, field);
+                        }
+                        }
+                    }
+
+                    case METHOD -> {
+                        var method = (MethodSymbol)enclosed;
+                        name = enclosed.getSimpleName().toString();
+                        if (serialMethodNames.contains(name)) {
+                            switch (name) {
+                            case
+                                "readObject",
+                                "readObjectNoData",
+                                "writeObject"      -> checkPrivateMethod(tree, e, method);
+
+                            case
+                                "writeReplace",
+                                "readResolve"      -> checkDefaultIneffective(tree, e, method);
+
+                            default ->  throw new AssertionError();
+                            }
+
+                        }
+                    }
+                    }
+                });
+            }
+
+            return null;
+        }
+
+        private void checkPrivateMethod(JCClassDecl tree,
+                                        Element e,
+                                        MethodSymbol method) {
+            if ((method.flags() & PRIVATE) == 0) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.NonPrivateMethodWeakerAccess);
+            }
+        }
+
+        private void checkDefaultIneffective(JCClassDecl tree,
+                                             Element e,
+                                             MethodSymbol method) {
+            if ((method.flags() & DEFAULT) == DEFAULT) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.DefaultIneffective);
+
+            }
+        }
+
+        @Override
+        public Void visitTypeAsAnnotationType(TypeElement e,
+                                              JCClassDecl p) {
+            // Per the JLS, annotation types are not serializeable
+            return null;
+        }
+
+        /**
+         * From the Java Object Serialization Specification, 1.13
+         * Serialization of Records:
+         *
+         * "The process by which record objects are serialized or
+         * externalized cannot be customized; any class-specific
+         * writeObject, readObject, readObjectNoData, writeExternal,
+         * and readExternal methods defined by record classes are
+         * ignored during serialization and deserialization. However,
+         * a substitute object to be serialized or a designate
+         * replacement may be specified, by the writeReplace and
+         * readResolve methods, respectively. Any
+         * serialPersistentFields field declaration is
+         * ignored. Documenting serializable fields and data for
+         * record classes is unnecessary, since there is no variation
+         * in the serial form, other than whether a substitute or
+         * replacement object is used. The serialVersionUID of a
+         * record class is 0L unless explicitly declared. The
+         * requirement for matching serialVersionUID values is waived
+         * for record classes."
+         */
+        @Override
+        public Void visitTypeAsRecord(TypeElement e,
+                                      JCClassDecl p) {
+            for(Element el : e.getEnclosedElements()) {
+                runUnderLint(el, p, (enclosed, tree) -> {
+                    String name = enclosed.getSimpleName().toString();
+                    switch(enclosed.getKind()) {
+                    case FIELD -> {
+                        switch(name) {
+                        case "serialPersistentFields" -> {
+                            log.warning(LintCategory.SERIAL, tree.pos(),
+                                        Warnings.IneffectualSerialFieldRecord);
+                        }
+
+                        case "serialVersionUID" -> {
+                            // Could generate additional warning that
+                            // svuid value is not checked to match for
+                            // records.
+                            checkSerialVersionUID(tree, e, (VarSymbol)enclosed);
+                        }
+
+                        }
+                    }
+
+                    case METHOD -> {
+                        var method = (MethodSymbol)enclosed;
+                        switch(name) {
+                        case "writeReplace" -> checkWriteReplace(tree, e, method);
+                        case "readResolve"  -> checkReadResolve(tree, e, method);
+                        default -> {
+                            if (serialMethodNames.contains(name)) {
+                                log.warning(LintCategory.SERIAL, tree.pos(),
+                                            Warnings.IneffectualSerialMethodRecord(name));
+                            }
+                        }
+                        }
+
+                    }
+                    }
+                });
+            }
+            return null;
+        }
+
+        void checkConcreteInstanceMethod(JCClassDecl tree,
+                                         Element enclosing,
+                                         MethodSymbol method) {
+            if ((method.flags() & (STATIC | ABSTRACT)) != 0) {
+                    log.warning(LintCategory.SERIAL,
+                                TreeInfo.diagnosticPositionFor(method, tree),
+                                Warnings.SerialConcreteInstanceMethod(method.getSimpleName()));
+            }
+        }
+
+        private void checkReturnType(JCClassDecl tree,
+                                     Element enclosing,
+                                     MethodSymbol method,
+                                     Type expectedReturnType) {
+            // Note: there may be complications checking writeReplace
+            // and readResolve since they return Object and could, in
+            // principle, have covariant overrides and any synthetic
+            // bridge method would not be represented here for
+            // checking.
+            Type rtype = method.getReturnType();
+            if (!types.isSameType(expectedReturnType, rtype)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodUnexpectedReturnType(method.getSimpleName(),
+                                                                      rtype, expectedReturnType));
+            }
+        }
+
+        private void checkOneArg(JCClassDecl tree,
+                                 Element enclosing,
+                                 MethodSymbol method,
+                                 Type expectedType) {
+            String name = method.getSimpleName().toString();
+
+            var parameters= method.getParameters();
+
+            if (parameters.size() != 1) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodOneArg(method.getSimpleName(), parameters.size()));
+                return;
+            }
+
+            Type parameterType = parameters.get(0).asType();
+            if (!types.isSameType(parameterType, expectedType)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.SerialMethodParameterType(method.getSimpleName(),
+                                                               expectedType,
+                                                               parameterType));
+            }
+        }
+
+        private void checkNoArgs(JCClassDecl tree, Element enclosing, MethodSymbol method) {
+            var parameters = method.getParameters();
+            if (!parameters.isEmpty()) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(parameters.get(0), tree),
+                            Warnings.SerialMethodNoArgs(method.getSimpleName()));
+            }
+        }
+
+        private void checkExternalizable(JCClassDecl tree, Element enclosing, MethodSymbol method) {
+            // If the enclosing class is externalizable, warn for the method
+            if (isExternalizable((Type)enclosing.asType())) {
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
+            }
+            return;
+        }
+
+        private void checkExceptions(JCClassDecl tree,
+                                     Element enclosing,
+                                     MethodSymbol method,
+                                     Type... declaredExceptions) {
+            for (Type thrownType: method.getThrownTypes()) {
+                // For each exception in the throws clause of the
+                // method, if not an Error and not a RuntimeException,
+                // check if the exception is a subtype of a declared
+                // exception from the throws clause of the
+                // serialization method in question.
+                if (types.isSubtype(thrownType, syms.runtimeExceptionType) ||
+                    types.isSubtype(thrownType, syms.errorType) ) {
+                    continue;
+                } else {
+                    boolean declared = false;
+                    for (Type declaredException : declaredExceptions) {
+                        if (types.isSubtype(thrownType, declaredException)) {
+                            declared = true;
+                            continue;
+                        }
+                    }
+                    if (!declared) {
+                        log.warning(LintCategory.SERIAL,
+                                    TreeInfo.diagnosticPositionFor(method, tree),
+                                    Warnings.SerialMethodUnexpectedException(method.getSimpleName(),
+                                                                             thrownType));
+                    }
+                }
+            }
+            return;
+        }
+
+        private <E extends Element> Void runUnderLint(E symbol, JCClassDecl p, BiConsumer<E, JCClassDecl> task) {
+            Lint prevLint = lint;
+            try {
+                lint = lint.augment((Symbol) symbol);
+
+                if (lint.isEnabled(LintCategory.SERIAL)) {
+                    task.accept(symbol, p);
+                }
+
+                return null;
+            } finally {
+                lint = prevLint;
+            }
+        }
+
     }
 
 }

@@ -345,7 +345,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      *
      * @param      element the component to insert
      * @param      index   where to insert the new component
-     * @exception  ArrayIndexOutOfBoundsException if the index was invalid
+     * @throws  ArrayIndexOutOfBoundsException if the index was invalid
      * @see #add(int,Object)
      * @see Vector#insertElementAt(Object,int)
      */

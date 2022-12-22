@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
@@ -39,6 +41,7 @@ class ContiguousSpace;
 class CSpaceCounters;
 class DefNewYoungerGenClosure;
 class DefNewScanClosure;
+class DefNewTracer;
 class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
@@ -139,6 +142,10 @@ protected:
 
   STWGCTimer* _gc_timer;
 
+  DefNewTracer* _gc_tracer;
+
+  StringDedup::Requests _string_dedup_requests;
+
   enum SomeProtectedConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -199,8 +206,6 @@ protected:
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
-  virtual void ref_processor_init();
-
   virtual Generation::Name kind() { return Generation::DefNew; }
 
   // Accessing spaces
@@ -221,10 +226,6 @@ protected:
 
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
-
-  bool supports_inline_contig_alloc() const { return true; }
-  HeapWord* volatile* top_addr() const;
-  HeapWord** end_addr() const;
 
   // Thread-local allocation buffers
   bool supports_tlab_allocation() const { return true; }
@@ -308,9 +309,8 @@ protected:
                        bool   clear_all_soft_refs,
                        size_t size,
                        bool   is_tlab);
-  HeapWord* expand_and_allocate(size_t size,
-                                bool is_tlab,
-                                bool parallel = false);
+
+  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }
@@ -330,6 +330,8 @@ protected:
     return _promo_failure_scan_stack.is_empty();
   }
 
+  DefNewTracer* gc_tracer() const { return _gc_tracer; }
+
  protected:
   // If clear_space is true, clear the survivor spaces.  Eden is
   // cleared if the minimum size of eden is 0.  If mangle_space
@@ -342,7 +344,10 @@ protected:
   // If any overflow happens, revert to previous new size.
   size_t adjust_for_thread_increase(size_t new_size_candidate,
                                     size_t new_size_before,
-                                    size_t alignment) const;
+                                    size_t alignment,
+                                    size_t thread_increase_size) const;
+
+  size_t calculate_thread_increase_size(int threads_count) const;
 
 
   // Scavenge support

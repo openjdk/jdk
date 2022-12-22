@@ -354,6 +354,26 @@ test add MONTH
 #	check date Heisei $max Aug 16
 #	check timeofday 23 59 59 999
 
+#	JDK-8273924
+	set date Reiwa 2 Mar 1
+	add month -10
+	check date Reiwa 1 May 1
+	set date Reiwa 2 Mar 1
+	add month -11
+	check date Heisei 31 Apr 1
+	set date Reiwa 2 Mar 1
+	add month -12
+	check date Heisei 31 Mar 1
+	set date Reiwa 2 Mar 1
+	add month -13
+	check date Heisei 31 Feb 1
+	set date Reiwa 2 Mar 1
+	add month -14
+	check date Heisei 31 Jan 1
+	set date Reiwa 2 Mar 1
+	add month -15
+	check date Heisei 30 Dec 1
+
 test add WEEK_OF_YEAR
     use jcal
 	clear all

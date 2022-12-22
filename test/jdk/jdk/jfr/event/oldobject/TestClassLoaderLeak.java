@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,9 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @key jfr
  * @requires vm.hasJFR
- * @requires vm.gc != "Serial"
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestClassLoaderLeak
+ * @run main/othervm -XX:TLABSize=2k -Xmx64m jdk.jfr.event.oldobject.TestClassLoaderLeak
  */
 public class TestClassLoaderLeak {
 
@@ -56,11 +55,14 @@ public class TestClassLoaderLeak {
             r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
             r.start();
             TestClassLoader testClassLoader = new TestClassLoader();
-            for (Class<?> clazz : testClassLoader.loadClasses(OldObjects.MIN_SIZE / 20)) {
+            for (Class<?> clazz : testClassLoader.loadClasses(OldObjects.MIN_SIZE / 200)) {
                 // Allocate array to trigger sampling code path for interpreter / c1
-                for (int i = 0; i < 20; i++) {
+                for (int i = 0; i < 200; i++) {
                     Object classArray = Array.newInstance(clazz, 20);
-                    Array.set(classArray, i, clazz.newInstance());
+                    // No need to fill whole array
+                    for (int j = 0; j < 5; j++) {
+                        Array.set(classArray, j, clazz.getConstructors()[0].newInstance());
+                    }
                     classObjects.add(classArray);
                 }
             }
@@ -68,6 +70,7 @@ public class TestClassLoaderLeak {
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
             for (RecordedEvent e : events) {
+                System.out.println(e);
                 RecordedObject object = e.getValue("object");
                 RecordedClass rc = object.getValue("type");
                 if (rc.getName().contains("TestClass")) {

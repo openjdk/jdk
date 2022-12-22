@@ -1473,7 +1473,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                 for (int controller : co_midi_nrpn_nrpn.keySet())
                     nrpnChange(controller, 0);
                 rpnChange(0, 2 << 7);   // Pitch Bend sensitivity
-                rpnChange(1, 64 << 7);  // Channel fine tunning
+                rpnChange(1, 64 << 7);  // Channel fine tuning
                 rpnChange(2, 64 << 7);  // Channel Coarse Tuning
                 rpnChange(5, 64);       // Modulation Depth, +/- 50 cent
 

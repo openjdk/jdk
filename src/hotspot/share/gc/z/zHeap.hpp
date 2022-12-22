@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,12 +90,10 @@ public:
   size_t unsafe_max_tlab_alloc() const;
 
   bool is_in(uintptr_t addr) const;
-  uint32_t hash_oop(uintptr_t addr) const;
 
   // Threads
-  uint nconcurrent_worker_threads() const;
-  uint nconcurrent_no_boost_worker_threads() const;
-  void set_boost_worker_threads(bool boost);
+  uint active_workers() const;
+  void set_active_workers(uint nworkers);
   void threads_do(ThreadClosure* tc) const;
 
   // Reference processing
@@ -116,7 +114,7 @@ public:
   uintptr_t alloc_object(size_t size);
   uintptr_t alloc_object_for_relocation(size_t size);
   void undo_alloc_object_for_relocation(uintptr_t addr, size_t size);
-  bool is_alloc_stalled() const;
+  bool has_alloc_stalled() const;
   void check_out_of_memory();
 
   // Marking
@@ -140,9 +138,12 @@ public:
   uintptr_t remap_object(uintptr_t addr);
   void relocate();
 
+  // Continuations
+  bool is_allocating(uintptr_t addr) const;
+
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
-  ParallelObjectIterator* parallel_object_iterator(uint nworkers, bool visit_weaks);
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers, bool visit_weaks);
   void pages_do(ZPageClosure* cl);
 
   // Serviceability

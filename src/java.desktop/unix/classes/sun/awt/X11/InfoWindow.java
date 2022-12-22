@@ -267,7 +267,7 @@ public abstract class InfoWindow extends Window {
     public static class Balloon extends InfoWindow {
 
         public interface LiveArguments extends InfoWindow.LiveArguments {
-            /** The action to be performed upon clicking the baloon. */
+            /** The action to be performed upon clicking the balloon. */
             String getActionCommand();
         }
 
@@ -389,7 +389,7 @@ public abstract class InfoWindow extends Window {
                     if (nLines == BALLOON_WORD_LINE_MAX_COUNT) {
                         if (end != BreakIterator.DONE) {
                             lineLabels[nLines - 1].setText(
-                                new String(lineLabels[nLines - 1].getText() + " ..."));
+                                lineLabels[nLines - 1].getText() + " ...");
                         }
                         break;
                     }

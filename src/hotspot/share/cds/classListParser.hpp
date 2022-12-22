@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.inline.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
 #define LAMBDA_FORM_TAG  "@lambda-form-invoker"
 
+class constantPoolHandle;
 class Thread;
 
 class CDSIndyInfo {
@@ -66,7 +67,16 @@ public:
 };
 
 class ClassListParser : public StackObj {
-  typedef KVHashtable<int, InstanceKlass*, mtInternal> ID2KlassTable;
+public:
+  enum ParseMode {
+    _parse_all,
+    _parse_lambda_forms_invokers_only,
+  };
+
+private:
+  // Must be C_HEAP allocated -- we don't want nested resource allocations.
+  typedef ResizeableResourceHashtable<int, InstanceKlass*,
+                                      AnyObj::C_HEAP, mtClassShared> ID2KlassTable;
 
   enum {
     _unspecified      = -999,
@@ -80,7 +90,9 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
-  static const int INITIAL_TABLE_SIZE = 1987;
+  // Use a small initial size in debug build to test resizing logic
+  static const int INITIAL_TABLE_SIZE = DEBUG_ONLY(17) NOT_DEBUG(1987);
+  static const int MAX_TABLE_SIZE = 61333;
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
@@ -102,26 +114,32 @@ class ClassListParser : public StackObj {
   bool                _interfaces_specified;
   const char*         _source;
   bool                _lambda_form_line;
+  ParseMode           _parse_mode;
 
   bool parse_int_option(const char* option_name, int* value);
   bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
-  ID2KlassTable* table() {
+  ID2KlassTable* id2klass_table() {
     return &_id2klass_table;
   }
   InstanceKlass* lookup_class_by_id(int id);
   void print_specified_interfaces();
   void print_actual_interfaces(InstanceKlass *ik);
-  bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
+  bool is_matching_cp_entry(const constantPoolHandle &pool, int cp_index, TRAPS);
 
   void resolve_indy(JavaThread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
   bool parse_one_line();
   Klass* load_current_class(Symbol* class_name_symbol, TRAPS);
 
-public:
-  ClassListParser(const char* file);
+  ClassListParser(const char* file, ParseMode _parse_mode);
   ~ClassListParser();
+
+public:
+  static int parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+    ClassListParser parser(classlist_path, parse_mode);
+    return parser.parse(THREAD); // returns the number of classes loaded.
+  }
 
   static bool is_parsing_thread();
   static ClassListParser* instance() {
@@ -161,7 +179,7 @@ public:
     return _super;
   }
   void check_already_loaded(const char* which, int id) {
-    if (_id2klass_table.lookup(id) == NULL) {
+    if (!id2klass_table()->contains(id)) {
       error("%s id %d is not yet loaded", which, id);
     }
   }

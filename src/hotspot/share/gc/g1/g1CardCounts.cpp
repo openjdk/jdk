@@ -126,7 +126,7 @@ void G1CardCounts::clear_range(MemRegion mr) {
     HeapWord* start_addr = _ct->addr_for(from_card_ptr);
     assert(start_addr == mr.start(), "MemRegion start must be aligned to a card.");
     HeapWord* last_addr = _ct->addr_for(last_card_ptr);
-    assert((last_addr + G1CardTable::card_size_in_words) == mr.end(), "MemRegion end must be aligned to a card.");
+    assert((last_addr + G1CardTable::card_size_in_words()) == mr.end(), "MemRegion end must be aligned to a card.");
 #endif // ASSERT
 
     // Clear the counts for the (exclusive) card range.

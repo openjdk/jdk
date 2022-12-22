@@ -154,10 +154,10 @@ public class SSLEngineExplorerMatchedSNI extends SSLEngineService {
         ssle.setSSLParameters(params);
 
         // handshaking
-        handshaking(ssle, sc, buffer);
+        ByteBuffer peerNetData = handshaking(ssle, sc, buffer);
 
         // receive application data
-        receive(ssle, sc);
+        receive(ssle, sc, peerNetData);
 
         // send out application data
         deliver(ssle, sc);
@@ -209,13 +209,13 @@ public class SSLEngineExplorerMatchedSNI extends SSLEngineService {
         ssle.setSSLParameters(params);
 
         // handshaking
-        handshaking(ssle, sc, null);
+        ByteBuffer peerNetData = handshaking(ssle, sc, null);
 
         // send out application data
         deliver(ssle, sc);
 
         // receive application data
-        receive(ssle, sc);
+        receive(ssle, sc, peerNetData);
 
         // check server name indication
         ExtendedSSLSession session = (ExtendedSSLSession)ssle.getSession();

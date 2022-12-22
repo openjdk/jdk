@@ -22,11 +22,29 @@
  */
 
 /**
- * @test
+ * @test id=with-dtrace
+ * @requires vm.debug
+ * @requires vm.hasDTrace
+ * @bug 8168712
+ *
+ * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.*
+ *                   -XX:CompileCommand=compileonly,*Object.*
+ *                   -XX:+DTraceMethodProbes
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:+DeoptimizeRandom
+ *                   compiler.runtime.Test8168712
+ */
+
+/**
+ * @test id=without-dtrace
  * @requires vm.debug
  * @bug 8168712
  *
- * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.* -XX:CompileCommand=compileonly,*Object.* -XX:+DTraceMethodProbes -XX:-UseOnStackReplacement -XX:+DeoptimizeRandom compiler.runtime.Test8168712
+ * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.*
+ *                   -XX:CompileCommand=compileonly,*Object.*
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:+DeoptimizeRandom
+ *                   compiler.runtime.Test8168712
  */
 package compiler.runtime;
 

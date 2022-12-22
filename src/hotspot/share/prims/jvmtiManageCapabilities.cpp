@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_always_capabilities() {
   jc.can_generate_object_free_events = 1;
   jc.can_generate_resource_exhaustion_heap_events = 1;
   jc.can_generate_resource_exhaustion_threads_events = 1;
+  jc.can_support_virtual_threads = 1;
   return jc;
 }
 
@@ -107,14 +108,6 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
 #ifndef ZERO
   jc.can_pop_frame = 1;
   jc.can_force_early_return = 1;
-  // Workaround for 8195635:
-  // disable pop_frame and force_early_return capabilities with Graal
-#if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    jc.can_pop_frame = 0;
-    jc.can_force_early_return = 0;
-  }
-#endif // INCLUDE_JVMCI
 #endif // !ZERO
   jc.can_get_source_debug_extension = 1;
   jc.can_access_local_variables = 1;
@@ -326,6 +319,12 @@ void JvmtiManageCapabilities::update() {
        || avail.can_generate_field_modification_events)
   {
     RewriteFrequentPairs = false;
+#ifdef ZERO
+    // The BytecodeInterpreter is specialized only with RewriteBytecodes
+    // for simplicity. If we want to disable RewriteFrequentPairs, we
+    // need to disable RewriteBytecodes as well.
+    RewriteBytecodes = false;
+#endif
   }
 
   // If can_redefine_classes is enabled in the onload phase then we know that the
@@ -364,8 +363,10 @@ void JvmtiManageCapabilities::update() {
   JvmtiExport::set_can_post_method_entry(avail.can_generate_method_entry_events);
   JvmtiExport::set_can_post_method_exit(avail.can_generate_method_exit_events ||
                                         avail.can_generate_frame_pop_events);
+  JvmtiExport::set_can_post_frame_pop(avail.can_generate_frame_pop_events);
   JvmtiExport::set_can_pop_frame(avail.can_pop_frame);
   JvmtiExport::set_can_force_early_return(avail.can_force_early_return);
+  JvmtiExport::set_can_support_virtual_threads(avail.can_support_virtual_threads);
   JvmtiExport::set_should_clean_up_heap_objects(avail.can_generate_breakpoint_events);
   JvmtiExport::set_can_get_owned_monitor_info(avail.can_get_owned_monitor_info ||
                                               avail.can_get_owned_monitor_stack_depth_info);
@@ -459,6 +460,8 @@ void JvmtiManageCapabilities:: print(const jvmtiCapabilities* cap) {
     log_trace(jvmti)("can_generate_early_vmstart");
   if (cap->can_generate_early_class_hook_events)
     log_trace(jvmti)("can_generate_early_class_hook_events");
+  if (cap->can_support_virtual_threads)
+    log_trace(jvmti)("can_support_virtual_threads");
 }
 
 #endif

@@ -24,6 +24,7 @@
 /*
  * @test ProtectionDomainVerificationTest
  * @bug 8149064
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver ProtectionDomainVerificationTest

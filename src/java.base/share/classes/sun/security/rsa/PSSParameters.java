@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
-import static java.security.spec.PSSParameterSpec.DEFAULT;
 
 /**
  * This class implements the PSS parameters used with the RSA
@@ -60,11 +59,10 @@ public final class PSSParameters extends AlgorithmParametersSpi {
     @Override
     protected void engineInit(AlgorithmParameterSpec paramSpec)
             throws InvalidParameterSpecException {
-        if (!(paramSpec instanceof PSSParameterSpec)) {
+        if (!(paramSpec instanceof PSSParameterSpec spec)) {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");
         }
-        PSSParameterSpec spec = (PSSParameterSpec) paramSpec;
 
         String mgfName = spec.getMGFAlgorithm();
         if (!spec.getMGFAlgorithm().equalsIgnoreCase("MGF1")) {
@@ -81,12 +79,12 @@ public final class PSSParameters extends AlgorithmParametersSpi {
 
     @Override
     protected void engineInit(byte[] encoded) throws IOException {
-        // first initialize with the DEFAULT values before
-        // retrieving from the encoding bytes
-        String mdName = DEFAULT.getDigestAlgorithm();
-        MGF1ParameterSpec mgfSpec = (MGF1ParameterSpec) DEFAULT.getMGFParameters();
-        int saltLength = DEFAULT.getSaltLength();
-        int trailerField = DEFAULT.getTrailerField();
+        // first initialize with the ASN.1 DEFAULT values defined in PKCS #1
+        // v2.2 since the encoding bytes may not define all fields
+        String mdName = "SHA-1";
+        MGF1ParameterSpec mgfSpec = MGF1ParameterSpec.SHA1;
+        int saltLength = 20;
+        int trailerField = PSSParameterSpec.TRAILER_FIELD_BC;
 
         DerInputStream der = new DerInputStream(encoded);
         DerValue[] datum = der.getSequence(4);
@@ -102,8 +100,13 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                 if (!val.getOID().equals(AlgorithmId.MGF1_oid)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
+
+                byte[] encodedParams = val.getEncodedParams();
+                if (encodedParams == null) {
+                    throw new IOException("Missing MGF1 parameters");
+                }
                 AlgorithmId params = AlgorithmId.parse(
-                        new DerValue(val.getEncodedParams()));
+                        new DerValue(encodedParams));
                 String mgfDigestName = params.getName();
                 switch (mgfDigestName) {
                 case "SHA-1":
@@ -180,7 +183,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
     protected <T extends AlgorithmParameterSpec>
             T engineGetParameterSpec(Class<T> paramSpec)
             throws InvalidParameterSpecException {
-        if (PSSParameterSpec.class.isAssignableFrom(paramSpec)) {
+        if (paramSpec.isAssignableFrom(PSSParameterSpec.class)) {
             return paramSpec.cast(spec);
         } else {
             throw new InvalidParameterSpecException
@@ -219,11 +222,9 @@ public final class PSSParameters extends AlgorithmParametersSpi {
     public static byte[] getEncoded(PSSParameterSpec spec) throws IOException {
 
         AlgorithmParameterSpec mgfSpec = spec.getMGFParameters();
-        if (!(mgfSpec instanceof MGF1ParameterSpec)) {
+        if (!(mgfSpec instanceof MGF1ParameterSpec mgf1Spec)) {
             throw new IOException("Cannot encode " + mgfSpec);
         }
-
-        MGF1ParameterSpec mgf1Spec = (MGF1ParameterSpec)mgfSpec;
 
         DerOutputStream tmp = new DerOutputStream();
         DerOutputStream tmp2, tmp3;
@@ -238,7 +239,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
         }
         if (!mdAlgId.getOID().equals(AlgorithmId.SHA_oid)) {
             tmp2 = new DerOutputStream();
-            mdAlgId.derEncode(tmp2);
+            mdAlgId.encode(tmp2);
             tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0),
                     tmp2);
         }

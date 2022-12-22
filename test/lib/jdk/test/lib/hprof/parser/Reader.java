@@ -84,28 +84,48 @@ public abstract class Reader {
             }
             heapFile = heapFile.substring(0, pos);
         }
-        GzipRandomAccess access = null;
-        try (PositionDataInputStream in = new PositionDataInputStream(
-                new BufferedInputStream(new FileInputStream(heapFile)))) {
+        try (FileInputStream fis = new FileInputStream(heapFile);
+             BufferedInputStream bis = new BufferedInputStream(fis);
+             PositionDataInputStream in = new PositionDataInputStream(bis)) {
             int i = in.readInt();
             if (i == HprofReader.MAGIC_NUMBER) {
                 Reader r
                     = new HprofReader(heapFile, in, dumpNumber,
                                       callStack, debugLevel);
                 return r.read();
-            } else if ((access = GzipRandomAccess.getAccess(heapFile, 16)) != null) {
+            } else if ((i >>> 8) == GZIP_HEADER_MAGIC) {
+                // Possible gziped file, try decompress it and get the stack trace.
                 in.close();
-                try (PositionDataInputStream in2 = new PositionDataInputStream(
-                        new BufferedInputStream(access.asStream(0)))) {
-                    i = in2.readInt();
+                String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
+                File out = new File(deCompressedFile);
+                // Decompress to get dump file.
+                try (FileInputStream heapFis = new FileInputStream(heapFile);
+                     GZIPInputStream gis = new GZIPInputStream(heapFis);
+                     FileOutputStream fos = new FileOutputStream(out)) {
+                    byte[] buffer = new byte[1024 * 1024];
+                    int len = 0;
+                    while ((len = gis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                } catch (Exception e) {
+                    out.delete();
+                    throw new IOException("Cannot decompress the compressed hprof file", e);
+                }
+                // Check dump data header and print stack trace.
+                try (FileInputStream outFis = new FileInputStream(out);
+                     BufferedInputStream outBis = new BufferedInputStream(outFis);
+                     PositionDataInputStream pdin = new PositionDataInputStream(outBis)) {
+                    i = pdin.readInt();
                     if (i == HprofReader.MAGIC_NUMBER) {
-                        Reader r
-                            = new HprofReader(access.asFileBuffer(), in2, dumpNumber,
-                                              callStack, debugLevel);
+                        HprofReader r
+                            = new HprofReader(deCompressedFile, pdin, dumpNumber,
+                                              true, debugLevel);
                         return r.read();
                     } else {
-                        throw new IOException("Wrong magic number in gzipped file: " + i);
+                        throw new IOException("Unrecognized magic number found in decompressed data: " + i);
                     }
+                } finally {
+                    out.delete();
                 }
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
@@ -136,8 +156,9 @@ public abstract class Reader {
             }
             heapFile = heapFile.substring(0, pos);
         }
-        try (PositionDataInputStream in = new PositionDataInputStream(
-                new BufferedInputStream(new FileInputStream(heapFile)))) {
+        try (FileInputStream fis= new FileInputStream(heapFile);
+             BufferedInputStream bis = new BufferedInputStream(fis);
+             PositionDataInputStream in = new PositionDataInputStream(bis)) {
             int i = in.readInt();
             if (i == HprofReader.MAGIC_NUMBER) {
                 HprofReader r
@@ -151,33 +172,38 @@ public abstract class Reader {
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
                 // Decompress to get dump file.
-                try {
-                    GZIPInputStream gis = new GZIPInputStream(new FileInputStream(heapFile));
-                    FileOutputStream fos = new FileOutputStream(out);
+                try (FileInputStream heapFis = new FileInputStream(heapFile);
+                     GZIPInputStream gis = new GZIPInputStream(heapFis);
+                     FileOutputStream fos = new FileOutputStream(out)) {
                     byte[] buffer = new byte[1024 * 1024];
                     int len = 0;
                     while ((len = gis.read(buffer)) > 0) {
                         fos.write(buffer, 0, len);
                     }
-                    // Check dump data header and print stack trace.
-                    PositionDataInputStream in2 = new PositionDataInputStream(
-                        new BufferedInputStream(new FileInputStream(out)));
-                    i = in2.readInt();
+                } catch (Exception e) {
+                    out.delete();
+                    throw new IOException("Cannot decompress the compressed hprof file", e);
+                }
+                // Check dump data header and print stack trace.
+                try (FileInputStream outFis = new FileInputStream(out);
+                     BufferedInputStream outBis = new BufferedInputStream(outFis);
+                     PositionDataInputStream pdin = new PositionDataInputStream(outBis)) {
+                    i = pdin.readInt();
                     if (i == HprofReader.MAGIC_NUMBER) {
                         HprofReader r
-                            = new HprofReader(deCompressedFile, in2, dumpNumber,
+                            = new HprofReader(deCompressedFile, pdin, dumpNumber,
                                               true, debugLevel);
                         r.read();
                         return r.printStackTraces();
+                    } else {
+                        throw new IOException("Unrecognized magic number found in decompressed data: " + i);
                     }
-                } catch (Exception e) {
-                    throw new IOException("Can not decompress the compressed hprof file", e);
+                } finally {
+                    out.delete();
                 }
-                out.delete();
             } else {
                 throw new IOException("Unrecognized magic number: " + i);
             }
         }
-        return null;
     }
 }

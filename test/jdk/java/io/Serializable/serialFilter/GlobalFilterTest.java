@@ -53,18 +53,6 @@ import org.testng.annotations.DataProvider;
  *
  * @summary Test Global Filters
  */
-
-/* @test
- * @bug 8261160
- * @summary Add a deserialization JFR event
- * @build GlobalFilterTest SerialFilterTest
- * @requires vm.hasJFR
- * @run testng/othervm/policy=security.policy
- *        -XX:StartFlightRecording:name=DeserializationEvent,dumponexit=true
- *        -Djava.security.properties=${test.src}/java.security-extra1
- *        -Djava.security.debug=properties GlobalFilterTest
- */
-
 @Test
 public class GlobalFilterTest {
     private static final String serialPropName = "jdk.serialFilter";
@@ -142,6 +130,7 @@ public class GlobalFilterTest {
      * If there is no security manager then setting it should work.
      */
     @Test()
+    @SuppressWarnings("removal")
     static void setGlobalFilter() {
         SecurityManager sm = System.getSecurityManager();
         ObjectInputFilter filter = new SerialFilterTest.Validator();

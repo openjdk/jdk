@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 #include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
-#include "jfr/support/jfrThreadId.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
@@ -107,8 +106,7 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
 
 void JfrThreadCPULoadEvent::send_events() {
   Thread* periodic_thread = Thread::current();
-  JfrThreadLocal* const periodic_thread_tl = periodic_thread->jfr_thread_local();
-  traceid periodic_thread_id = periodic_thread_tl->thread_id();
+  traceid periodic_thread_id = JfrThreadLocal::thread_id(periodic_thread);
   const int processor_count = JfrThreadCPULoadEvent::get_processor_count();
   JfrTicks event_time = JfrTicks::now();
   jlong cur_wallclock_time = JfrThreadCPULoadEvent::get_wallclock_time();
@@ -122,19 +120,19 @@ void JfrThreadCPULoadEvent::send_events() {
     EventThreadCPULoad event(UNTIMED);
     if (JfrThreadCPULoadEvent::update_event(event, jt, cur_wallclock_time, processor_count)) {
       event.set_starttime(event_time);
+      event.set_endtime(event_time);
       if (jt != periodic_thread) {
         // Commit reads the thread id from this thread's trace data, so put it there temporarily
-        periodic_thread_tl->set_thread_id(JFR_THREAD_ID(jt));
+        JfrThreadLocal::impersonate(periodic_thread, JFR_JVM_THREAD_ID(jt));
       } else {
-        periodic_thread_tl->set_thread_id(periodic_thread_id);
+        JfrThreadLocal::impersonate(periodic_thread, periodic_thread_id);
       }
       event.commit();
     }
   }
   log_trace(jfr)("Measured CPU usage for %d threads in %.3f milliseconds", number_of_threads,
     (double)(JfrTicks::now() - event_time).milliseconds());
-  // Restore this thread's thread id
-  periodic_thread_tl->set_thread_id(periodic_thread_id);
+  JfrThreadLocal::stop_impersonating(periodic_thread);
 }
 
 void JfrThreadCPULoadEvent::send_event_for_thread(JavaThread* jt) {

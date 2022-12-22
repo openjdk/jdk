@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_COMPILER_COMPILERORACLE_HPP
 #define SHARE_COMPILER_COMPILERORACLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class methodHandle;
@@ -58,6 +58,7 @@ class methodHandle;
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
   option(PrintAssembly, "PrintAssembly", Bool) \
+  option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
   option(PrintNMethods, "PrintNMethods", Bool)   \
@@ -79,8 +80,10 @@ class methodHandle;
   option(TraceOptoPipelining, "TraceOptoPipelining", Bool) \
   option(TraceOptoOutput, "TraceOptoOutput", Bool) \
   option(TraceSpilling, "TraceSpilling", Bool) \
-  option(PrintIdeal, "PrintIdeal", Bool) \
-  option(IGVPrintLevel, "IGVPrintLevel", Intx) \
+NOT_PRODUCT(option(TraceEscapeAnalysis, "TraceEscapeAnalysis", Bool)) \
+NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
+NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
+NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
   option(Vectorize, "Vectorize", Bool) \
   option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
@@ -132,6 +135,9 @@ class CompilerOracle : AllStatic {
 
   // Tells whether we want to disallow inlining of this method
   static bool should_not_inline(const methodHandle& method);
+
+  // Tells whether this method changes Thread.currentThread()
+  static bool changes_current_thread(const methodHandle& method);
 
   // Tells whether we should print the assembly for this method
   static bool should_print(const methodHandle& method);

@@ -82,9 +82,7 @@ public class DumpStackTest {
                 new CallFrame(DumpStackTest.class, "test"),
                 new CallFrame(DumpStackTest.class, "main"),
                 // if invoked from jtreg
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke0"), // non-public class
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke"),
-                new CallFrame("jdk.internal.reflect.DelegatingMethodAccessorImpl", "invoke"),
+                new CallFrame("jdk.internal.reflect.DirectMethodHandleAccessor", "invoke"), // non-public class
                 new CallFrame(Method.class, "invoke"),
                 new CallFrame(Thread.class, "run"),
         };
@@ -138,9 +136,7 @@ public class DumpStackTest {
                 new CallFrame(DumpStackTest.class, "testLambda"),
                 new CallFrame(DumpStackTest.class, "main"),
                 // if invoked from jtreg
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke0"),
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke"),
-                new CallFrame("jdk.internal.reflect.DelegatingMethodAccessorImpl", "invoke"),
+                new CallFrame("jdk.internal.reflect.DirectMethodHandleAccessor", "invoke"),
                 new CallFrame(Method.class, "invoke"),
                 new CallFrame(Thread.class, "run")
         };
@@ -161,16 +157,12 @@ public class DumpStackTest {
         CallFrame[] callStack = new CallFrame[] {
                 new CallFrame(Thread.class, "getStackTrace"),
                 new CallFrame(DumpStackTest.class, "methodInvoke"),
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke0"),
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke"),
-                new CallFrame("jdk.internal.reflect.DelegatingMethodAccessorImpl", "invoke"),
+                new CallFrame("jdk.internal.reflect.DirectMethodHandleAccessor", "invoke"),
                 new CallFrame(Method.class, "invoke"),
                 new CallFrame(DumpStackTest.class, "testMethodInvoke"),
                 new CallFrame(DumpStackTest.class, "main"),
                 // if invoked from jtreg
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke0"),
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke"),
-                new CallFrame("jdk.internal.reflect.DelegatingMethodAccessorImpl", "invoke"),
+                new CallFrame("jdk.internal.reflect.DirectMethodHandleAccessor", "invoke"),
                 new CallFrame(Method.class, "invoke"),
                 new CallFrame(Thread.class, "run")
         };
@@ -196,9 +188,7 @@ public class DumpStackTest {
                 new CallFrame(DumpStackTest.class, "testMethodHandle"),
                 new CallFrame(DumpStackTest.class, "main"),
                 // if invoked from jtreg
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke0"),
-                new CallFrame("jdk.internal.reflect.NativeMethodAccessorImpl", "invoke"),
-                new CallFrame("jdk.internal.reflect.DelegatingMethodAccessorImpl", "invoke"),
+                new CallFrame("jdk.internal.reflect.DirectMethodHandleAccessor", "invoke"),
                 new CallFrame(Method.class, "invoke"),
                 new CallFrame(Thread.class, "run")
         };

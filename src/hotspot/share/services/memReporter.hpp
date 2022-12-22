@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_MEMREPORTER_HPP
 #define SHARE_SERVICES_MEMREPORTER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/metaspace.hpp"
 #include "oops/instanceKlass.hpp"
 #include "services/memBaseline.hpp"
@@ -50,6 +48,11 @@ class MemReporterBase : public StackObj {
   MemReporterBase(outputStream* out, size_t scale = default_scale) :
     _scale(scale), _output(out)
   {}
+
+  // Helper functions
+  // Calculate total reserved and committed amount
+  static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
+  static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
 
  protected:
   inline outputStream* output() const {
@@ -75,19 +78,14 @@ class MemReporterBase : public StackObj {
     return amount / scale;
   }
 
-  // Helper functions
-  // Calculate total reserved and committed amount
-  size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-  size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;
-  void print_malloc(size_t amount, size_t count, MEMFLAGS flag = mtNone) const;
+  void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed) const;
 
-  void print_malloc_line(size_t amount, size_t count) const;
+  void print_malloc_line(const MemoryCounter* c) const;
   void print_virtual_memory_line(size_t reserved, size_t committed) const;
-  void print_arena_line(size_t amount, size_t count) const;
+  void print_arena_line(const MemoryCounter* c) const;
 
   void print_virtual_memory_region(const char* type, address base, size_t size) const;
 };
@@ -215,7 +213,7 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
 
   // Malloc allocation site comparison
   void diff_malloc_sites() const;
-  // Virutal memory reservation site comparison
+  // Virtual memory reservation site comparison
   void diff_virtual_memory_sites() const;
 
   // New malloc allocation site in recent baseline
@@ -238,7 +236,5 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMREPORTER_HPP

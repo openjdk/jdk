@@ -120,7 +120,7 @@ public class DataLayout {
       return VM.getVM().isLP64() ? 1 : 2;
   }
 
-  static public int computeSizeInBytes(int cellCount) {
+  public static int computeSizeInBytes(int cellCount) {
     return headerSizeInBytes() + cellCount * MethodData.cellSize;
   }
 

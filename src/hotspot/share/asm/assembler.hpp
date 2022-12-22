@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ class Label {
   int _patch_index;
   GrowableArray<int>* _patch_overflow;
 
-  Label(const Label&) { ShouldNotReachHere(); }
+  NONCOPYABLE(Label);
  protected:
 
   // The label will be bound to a location near its users.
@@ -120,7 +120,7 @@ class Label {
 #endif // PRODUCT
 
   /**
-   * Returns the position of the the Label in the code buffer
+   * Returns the position of the Label in the code buffer
    * The position is a 'locator', which encodes both offset and section.
    */
   int loc() const {
@@ -282,21 +282,21 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   int8_t x1)                                  { code_section()->emit_int8(x1); }
+  void emit_int8(   uint8_t x1)                                     { code_section()->emit_int8(x1); }
 
-  void emit_int16(  int16_t x)                                  { code_section()->emit_int16(x); }
-  void emit_int16(  int8_t x1, int8_t x2)                       { code_section()->emit_int16(x1, x2); }
+  void emit_int16(  uint16_t x)                                     { code_section()->emit_int16(x); }
+  void emit_int16(  uint8_t x1, uint8_t x2)                         { code_section()->emit_int16(x1, x2); }
 
-  void emit_int24(  int8_t x1, int8_t x2, int8_t x3)            { code_section()->emit_int24(x1, x2, x3); }
+  void emit_int24(  uint8_t x1, uint8_t x2, uint8_t x3)             { code_section()->emit_int24(x1, x2, x3); }
 
-  void emit_int32(  int32_t x)                                  { code_section()->emit_int32(x); }
-  void emit_int32(  int8_t x1, int8_t x2, int8_t x3, int8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
+  void emit_int32(  uint32_t x)                                     { code_section()->emit_int32(x); }
+  void emit_int32(  uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
 
-  void emit_int64(  int64_t x)                                  { code_section()->emit_int64(x); }
+  void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 
-  void emit_float(  jfloat  x)                                  { code_section()->emit_float(x); }
-  void emit_double( jdouble x)                                  { code_section()->emit_double(x); }
-  void emit_address(address x)                                  { code_section()->emit_address(x); }
+  void emit_float(  jfloat  x)                                      { code_section()->emit_float(x); }
+  void emit_double( jdouble x)                                      { code_section()->emit_double(x); }
+  void emit_address(address x)                                      { code_section()->emit_address(x); }
 
   enum { min_simm10 = -512 };
 
@@ -425,6 +425,31 @@ class AbstractAssembler : public ResourceObj  {
     if (ptr != NULL) {
       relocate(rspec);
       emit_address(c);
+      end_a_const(c1);
+    }
+    return ptr;
+  }
+  address array_constant(BasicType bt, GrowableArray<jvalue>* c, int alignment) {
+    CodeSection* c1 = _code_section;
+    int len = c->length();
+    int size = type2aelembytes(bt) * len;
+    address ptr = start_a_const(size, alignment);
+    if (ptr != NULL) {
+      for (int i = 0; i < len; i++) {
+        jvalue e = c->at(i);
+        switch(bt) {
+          case T_BOOLEAN: emit_int8(e.z);   break;
+          case T_BYTE:    emit_int8(e.b);   break;
+          case T_CHAR:    emit_int16(e.c);  break;
+          case T_SHORT:   emit_int16(e.s);  break;
+          case T_INT:     emit_int32(e.i);  break;
+          case T_LONG:    emit_int64(e.j);  break;
+          case T_FLOAT:   emit_float(e.f);  break;
+          case T_DOUBLE:  emit_double(e.d); break;
+          default:
+            ShouldNotReachHere();
+        }
+      }
       end_a_const(c1);
     }
     return ptr;

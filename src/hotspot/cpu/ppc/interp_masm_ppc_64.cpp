@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler.
@@ -893,6 +894,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
   mtlr(R0);
+  pop_cont_fastpath();
   BLOCK_COMMENT("} remove_activation");
 }
 
@@ -926,7 +928,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     const Register current_header   = R9_ARG7;
     const Register tmp              = R10_ARG8;
 
-    Label done;
+    Label count_locking, done;
     Label cas_failed, slow_case;
 
     assert_different_registers(displaced_header, object_mark_addr, current_header, tmp);
@@ -941,10 +943,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
       lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
       testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
       bne(CCR0, slow_case);
-    }
-
-    if (UseBiasedLocking) {
-      biased_locking_enter(CCR0, object, displaced_header, tmp, current_header, done, &slow_case);
     }
 
     // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
@@ -975,7 +973,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // If the compare-and-exchange succeeded, then we found an unlocked
     // object and we have now locked it.
-    b(done);
+    b(count_locking);
     bind(cas_failed);
 
     // } else if (THREAD->is_lock_owned((address)displaced_header))
@@ -997,7 +995,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     bne(CCR0, slow_case);
     std(R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
         BasicLock::displaced_header_offset_in_bytes(), monitor);
-    b(done);
+    b(count_locking);
 
     // } else {
     //   // Slow path.
@@ -1007,8 +1005,11 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // slow case of monitor enter.
     bind(slow_case);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    b(done);
     // }
     align(32, 12);
+    bind(count_locking);
+    inc_held_monitor_count(current_header /*tmp*/);
     bind(done);
   }
 }
@@ -1048,13 +1049,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     assert_different_registers(object, displaced_header, object_mark_addr, current_header);
 
-    if (UseBiasedLocking) {
-      // The object address from the monitor is in object.
-      ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-      biased_locking_exit(CCR0, object, displaced_header, free_slot);
-    }
-
     // Test first if we are in the fast recursive case.
     ld(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
            BasicLock::displaced_header_offset_in_bytes(), monitor);
@@ -1070,7 +1064,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     // If we still have a lightweight lock, unlock the object and be done.
 
     // The object address from the monitor is in object.
-    if (!UseBiasedLocking) { ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor); }
+    ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
     addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
     // We have the displaced header in displaced_header. If the lock is still
@@ -1105,6 +1099,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     bind(free_slot);
     li(R0, 0);
     std(R0, BasicObjectLock::obj_offset_in_bytes(), monitor);
+    dec_held_monitor_count(current_header /*tmp*/);
     bind(done);
   }
 }
@@ -1779,7 +1774,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee,
     if (MethodData::profile_arguments()) {
       Label done;
       int off_to_args = in_bytes(TypeEntriesAtCall::args_data_offset());
-      add(R28_mdx, off_to_args, R28_mdx);
+      addi(R28_mdx, R28_mdx, off_to_args);
 
       for (int i = 0; i < TypeProfileArgsLimit; i++) {
         if (i > 0 || MethodData::profile_return()) {
@@ -1848,7 +1843,7 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
     if (MethodData::profile_return_jsr292_only()) {
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length.
       lbz(tmp1, 0, R14_bcp);
@@ -2174,8 +2169,17 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
   // Other entries should be unchanged.
 }
 
-void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only) {
+void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only, bool restore_top_frame_sp) {
   ld(scratch, 0, R1_SP);
+  if (restore_top_frame_sp) {
+    // After thawing the top frame of a continuation we reach here with frame::abi_minframe.
+    // therefore we have to restore top_frame_sp before the assertion below.
+    assert(!bcp_and_mdx_only, "chose other registers");
+    Register tfsp = R18_locals;
+    Register scratch2 = R26_monitor;
+    ld(tfsp, _ijava_state_neg(top_frame_sp), scratch);
+    resize_frame_absolute(tfsp, scratch2, R0);
+  }
   ld(R14_bcp, _ijava_state_neg(bcp), scratch); // Changed by VM code (exception).
   if (ProfileInterpreter) { ld(R28_mdx, _ijava_state_neg(mdx), scratch); } // Changed by VM code.
   if (!bcp_and_mdx_only) {
@@ -2220,7 +2224,7 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters,
                                                              Register iv_be_count,
                                                              Register Rtmp_r0) {
-  assert(UseCompiler || LogTouchedMethods, "incrementing must be useful");
+  assert(UseCompiler, "incrementing must be useful");
   Register invocation_count = iv_be_count;
   Register backedge_count   = Rtmp_r0;
   int delta = InvocationCounter::count_increment;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
 
     /** An abstraction for the hash table used to create unique Name instances.
      */
-    public static abstract class Table {
+    public abstract static class Table {
         /** Standard name table.
          */
         public final Names names;

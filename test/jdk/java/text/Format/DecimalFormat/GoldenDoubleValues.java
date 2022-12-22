@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,12 @@ class GoldenDoubleValues {
 
     // TestLocale is the testing locale used by RoundingAndPropertyTest test,
     // when testing the golden double values
-    static final Locale TestLocale = new Locale("en", "US");
+    static final Locale TestLocale = Locale.US;
 
 
     // FullTestLocale is the testing locale used by RoundingAndPropertyTest test,
     // when testing full localization of double values.
-    static final Locale FullLocalizationTestLocale = new Locale("hi", "IN");
+    static final Locale FullLocalizationTestLocale = Locale.of("hi", "IN");
 
 
     /* Below are the two double values used for exercising the changes of

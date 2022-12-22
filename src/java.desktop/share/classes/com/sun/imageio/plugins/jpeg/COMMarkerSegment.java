@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 
 package com.sun.imageio.plugins.jpeg;
 
+import java.io.IOException;
+
+import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
-import javax.imageio.metadata.IIOInvalidTreeException;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * A Comment marker segment.  Retains an array of bytes representing the
@@ -45,7 +46,6 @@ import org.w3c.dom.Node;
  * byte array, again assuming the default local encoding.
  */
 class COMMarkerSegment extends MarkerSegment {
-    private static final String ENCODING = "ISO-8859-1";
 
     /**
      * Constructs a marker segment from the given buffer, which contains
@@ -96,10 +96,7 @@ class COMMarkerSegment extends MarkerSegment {
      * consulted directly.
      */
     String getComment() {
-        try {
-            return new String (data, ENCODING);
-        } catch (UnsupportedEncodingException e) {}  // Won't happen
-        return null;
+        return new String(data, ISO_8859_1);
     }
 
     /**

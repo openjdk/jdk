@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,6 +277,10 @@ public abstract class BaseCalendar extends AbstractCalendar {
             long xm = 1L - month;
             year -= (int)((xm / 12) + 1);
             month = 13 - (xm % 12);
+            if (month == 13) {
+                year++;
+                month = 1;
+            }
             bdate.setNormalizedYear(year);
             bdate.setMonth((int) month);
         } else if (month > DECEMBER) {
@@ -490,7 +494,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
      */
     final int getGregorianYearFromFixedDate(long fixedDate) {
         long d0;
-        int  d1, d2, d3, d4;
+        int  d1, d2, d3;
         int  n400, n100, n4, n1;
         int  year;
 
@@ -503,7 +507,6 @@ public abstract class BaseCalendar extends AbstractCalendar {
             n4 = d2 / 1461;
             d3 = d2 % 1461;
             n1 = d3 / 365;
-            d4 = (d3 % 365) + 1;
         } else {
             d0 = fixedDate - 1;
             n400 = (int)CalendarUtils.floorDivide(d0, 146097L);
@@ -513,7 +516,6 @@ public abstract class BaseCalendar extends AbstractCalendar {
             n4 = CalendarUtils.floorDivide(d2, 1461);
             d3 = CalendarUtils.mod(d2, 1461);
             n1 = CalendarUtils.floorDivide(d3, 365);
-            d4 = CalendarUtils.mod(d3, 365) + 1;
         }
         year = 400 * n400 + 100 * n100 + 4 * n4 + n1;
         if (!(n100 == 4 || n1 == 4)) {

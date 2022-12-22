@@ -33,7 +33,7 @@ class JavaThread;
 class Symbol;
 
 // Execute code before all handles are released and thread is killed; prologue to vm_exit
-extern void before_exit(JavaThread * thread);
+extern void before_exit(JavaThread * thread, bool halt = false);
 
 // Forced VM exit (i.e, internal error or JVM_Exit)
 extern void vm_exit(int code);
@@ -125,15 +125,6 @@ class JDK_Version {
 
   // Performs a full ordering comparison using all fields (patch, build, etc.)
   int compare(const JDK_Version& other) const;
-
-  /**
-   * Performs comparison using only the major version, returning negative
-   * if the major version of 'this' is less than the parameter, 0 if it is
-   * equal, and a positive value if it is greater.
-   */
-  int compare_major(int version) const {
-      return major_version() - version;
-  }
 
   void to_string(char* buffer, size_t buflen) const;
 

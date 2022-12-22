@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class PointerFinder {
         JavaThread t = threads.getJavaThreadAt(i);
         Address stackBase = t.getStackBase();
         if (stackBase != null) {
-            Long stackSize = t.getStackSize();
+            long stackSize = t.getStackSize();
             Address stackEnd = stackBase.addOffsetTo(-stackSize);
             if (a.lessThanOrEqual(stackBase) && a.greaterThan(stackEnd)) {
                 loc.stackThread = t;
@@ -87,6 +87,7 @@ public class PointerFinder {
     if (heap instanceof GenCollectedHeap) {
       GenCollectedHeap genheap = (GenCollectedHeap) heap;
       if (genheap.isIn(a)) {
+        loc.heap = heap;
         for (int i = 0; i < genheap.nGens(); i++) {
           Generation g = genheap.getGen(i);
           if (g.isIn(a)) {
@@ -135,9 +136,17 @@ public class PointerFinder {
       CodeCache c = VM.getVM().getCodeCache();
       if (c.contains(a)) {
         loc.inCodeCache = true;
-        loc.blob = c.findBlobUnsafe(a);
-        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(loc.blob != null, "Should have found CodeBlob");
+        try {
+            loc.blob = c.findBlobUnsafe(a);
+        } catch (Exception e) {
+            // Since we potentially have a random address in the codecache and therefore could
+            // be dealing with a freed or partially initialized blob, exceptions are possible.
+        }
+        if (loc.blob == null) {
+            // It's possible that there is no CodeBlob for this address. Let
+            // PointerLocation deal with it.
+            loc.inBlobUnknownLocation = true;
+            return loc;
         }
         loc.inBlobCode = loc.blob.codeContains(a);
         loc.inBlobData = loc.blob.dataContains(a);

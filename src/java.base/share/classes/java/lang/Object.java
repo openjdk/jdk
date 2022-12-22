@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import jdk.internal.misc.Blocker;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -79,11 +80,11 @@ public class Object {
      *     This integer need not remain consistent from one execution of an
      *     application to another execution of the same application.
      * <li>If two objects are equal according to the {@link
-     *     equals(Object) equals} method, then calling the {@code
+     *     #equals(Object) equals} method, then calling the {@code
      *     hashCode} method on each of the two objects must produce the
      *     same integer result.
      * <li>It is <em>not</em> required that if two objects are unequal
-     *     according to the {@link equals(Object) equals} method, then
+     *     according to the {@link #equals(Object) equals} method, then
      *     calling the {@code hashCode} method on each of the two objects
      *     must produce distinct integer results.  However, the programmer
      *     should be aware that producing distinct integer results for
@@ -148,7 +149,7 @@ public class Object {
      * relation, each equivalence class only has a single element.
      *
      * @apiNote
-     * It is generally necessary to override the {@link hashCode hashCode}
+     * It is generally necessary to override the {@link #hashCode() hashCode}
      * method whenever this method is overridden, so as to maintain the
      * general contract for the {@code hashCode} method, which states
      * that equal objects must have equal hash codes.
@@ -278,7 +279,7 @@ public class Object {
      * <li>By executing the body of a {@code synchronized} statement
      *     that synchronizes on the object.
      * <li>For objects of type {@code Class,} by executing a
-     *     synchronized static method of that class.
+     *     static synchronized method of that class.
      * </ul>
      * <p>
      * Only one thread at a time can own an object's monitor.
@@ -359,7 +360,22 @@ public class Object {
      * @see    #wait()
      * @see    #wait(long, int)
      */
-    public final native void wait(long timeoutMillis) throws InterruptedException;
+    public final void wait(long timeoutMillis) throws InterruptedException {
+        long comp = Blocker.begin();
+        try {
+            wait0(timeoutMillis);
+        } catch (InterruptedException e) {
+            Thread thread = Thread.currentThread();
+            if (thread.isVirtual())
+                thread.getAndClearInterrupt();
+            throw e;
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    // final modifier so method not in vtable
+    private final native void wait0(long timeoutMillis) throws InterruptedException;
 
     /**
      * Causes the current thread to wait until it is awakened, typically
@@ -413,10 +429,10 @@ public class Object {
      * is not satisfied. See the example below.
      * <p>
      * For more information on this topic, see section 14.2,
-     * "Condition Queues," in Brian Goetz and others' <em>Java Concurrency
-     * in Practice</em> (Addison-Wesley, 2006) or Item 69 in Joshua
-     * Bloch's <em>Effective Java, Second Edition</em> (Addison-Wesley,
-     * 2008).
+     * "Condition Queues," in Brian Goetz and others' <cite>Java Concurrency
+     * in Practice</cite> (Addison-Wesley, 2006) or Item 81 in Joshua
+     * Bloch's <cite>Effective Java, Third Edition</cite> (Addison-Wesley,
+     * 2018).
      * <p>
      * If the current thread is {@linkplain java.lang.Thread#interrupt() interrupted}
      * by any thread before or while it is waiting, then an {@code InterruptedException}
@@ -477,6 +493,12 @@ public class Object {
      * determines that there are no more references to the object.
      * A subclass overrides the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
+     * <p>
+     * <b>When running in a Java virtual machine in which finalization has been
+     * disabled or removed, the garbage collector will never call
+     * {@code finalize()}. In a Java virtual machine in which finalization is
+     * enabled, the garbage collector might call {@code finalize} only after an
+     * indefinite delay.</b>
      * <p>
      * The general contract of {@code finalize} is that it is invoked
      * if and when the Java virtual
@@ -543,27 +565,29 @@ public class Object {
      *     }
      * }</pre>
      *
-     * @deprecated The finalization mechanism is inherently problematic.
-     * Finalization can lead to performance issues, deadlocks, and hangs.
-     * Errors in finalizers can lead to resource leaks; there is no way to cancel
-     * finalization if it is no longer necessary; and no ordering is specified
-     * among calls to {@code finalize} methods of different objects.
-     * Furthermore, there are no guarantees regarding the timing of finalization.
-     * The {@code finalize} method might be called on a finalizable object
-     * only after an indefinite delay, if at all.
-     *
-     * Classes whose instances hold non-heap resources should provide a method
-     * to enable explicit release of those resources, and they should also
-     * implement {@link AutoCloseable} if appropriate.
-     * The {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
-     * provide more flexible and efficient ways to release resources when an object
-     * becomes unreachable.
+     * @deprecated Finalization is deprecated and subject to removal in a future
+     * release. The use of finalization can lead to problems with security,
+     * performance, and reliability.
+     * See <a href="https://openjdk.org/jeps/421">JEP 421</a> for
+     * discussion and alternatives.
+     * <p>
+     * Subclasses that override {@code finalize} to perform cleanup should use
+     * alternative cleanup mechanisms and remove the {@code finalize} method.
+     * Use {@link java.lang.ref.Cleaner} and
+     * {@link java.lang.ref.PhantomReference} as safer ways to release resources
+     * when an object becomes unreachable. Alternatively, add a {@code close}
+     * method to explicitly release resources, and implement
+     * {@code AutoCloseable} to enable use of the {@code try}-with-resources
+     * statement.
+     * <p>
+     * This method will remain in place until finalizers have been removed from
+     * most existing code.
      *
      * @throws Throwable the {@code Exception} raised by this method
      * @see java.lang.ref.WeakReference
      * @see java.lang.ref.PhantomReference
      * @jls 12.6 Finalization of Class Instances
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
     protected void finalize() throws Throwable { }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class hashcode001a {
         log = new Log(System.err, argHandler);
         pipe = argHandler.createDebugeeIOPipe(log);
         try {
-            Thread thread1 = new hashcode001aThread("thread1");
+            Thread thread1 = JDIThreadFactory.newThread(new hashcode001aThread("thread1"));
 
             synchronized (lock) {
                  synchronized(wait) {
@@ -108,7 +108,7 @@ public class hashcode001a {
 
 //--------------------------------------------------------- test specific classes
 
-class hashcode001aThread extends Thread {
+class hashcode001aThread extends NamedTask {
 
     String name;
 
@@ -126,7 +126,7 @@ class hashcode001aThread extends Thread {
 
         foo();
 
-        hashcode001aThread1 thread2 = new hashcode001aThread1();
+        Thread thread2 = JDIThreadFactory.newThread(new hashcode001aThread1());
         thread2.start();
 
         try {
@@ -147,7 +147,7 @@ class hashcode001aThread extends Thread {
     }
 }
 
-class hashcode001aThread1 extends Thread {
+class hashcode001aThread1 implements Runnable {
     public void run() {
     }
 }

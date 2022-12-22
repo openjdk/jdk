@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ class AccessibleHTML implements Accessible {
 
     /**
      * If possible acquires a lock on the Document.  If a lock has been
-     * obtained a key will be retured that should be passed to
+     * obtained a key will be returned that should be passed to
      * <code>unlock</code>.
      */
     private Object lock() {
@@ -317,14 +317,12 @@ class AccessibleHTML implements Accessible {
          */
         public AccessibleStateSet getAccessibleStateSet() {
             AccessibleStateSet states = new AccessibleStateSet();
-            Component comp = getTextComponent();
+            JTextComponent comp = getTextComponent();
 
             if (comp.isEnabled()) {
                 states.add(AccessibleState.ENABLED);
             }
-            if (comp instanceof JTextComponent &&
-                ((JTextComponent)comp).isEditable()) {
-
+            if (comp.isEditable()) {
                 states.add(AccessibleState.EDITABLE);
                 states.add(AccessibleState.FOCUSABLE);
             }
@@ -372,8 +370,8 @@ class AccessibleHTML implements Accessible {
          */
         public Accessible getAccessibleChild(int i) {
             ElementInfo childInfo = elementInfo.getChild(i);
-            if (childInfo != null && childInfo instanceof Accessible) {
-                return (Accessible)childInfo;
+            if (childInfo instanceof Accessible accessibleChild) {
+                return accessibleChild;
             } else {
                 return null;
             }
@@ -386,7 +384,7 @@ class AccessibleHTML implements Accessible {
          * @return this component's locale.  If this component does not have
          * a locale, the locale of its parent is returned.
          *
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet been
          * added to a containment hierarchy such that the locale can be
          * determined from the containing parent.
@@ -466,7 +464,7 @@ class AccessibleHTML implements Accessible {
         /**
          * Gets the Font of this object.
          *
-         * @return the Font,if supported, for the object; otherwise, null
+         * @return the Font, if supported, for the object; otherwise, null
          * @see #setFont
          */
         public Font getFont() {
@@ -742,11 +740,9 @@ class AccessibleHTML implements Accessible {
          * @see AccessibleStateSet
          */
         public boolean isFocusTraversable() {
-            Component comp = getTextComponent();
-            if (comp instanceof JTextComponent) {
-                if (((JTextComponent)comp).isEditable()) {
-                    return true;
-                }
+            JTextComponent comp = getTextComponent();
+            if (comp != null && comp.isEditable()) {
+                return true;
             }
             return false;
         }
@@ -763,8 +759,8 @@ class AccessibleHTML implements Accessible {
                 return;
             }
 
-            Component comp = getTextComponent();
-            if (comp instanceof JTextComponent) {
+            JTextComponent comp = getTextComponent();
+            if (comp != null) {
 
                 comp.requestFocusInWindow();
 
@@ -772,7 +768,7 @@ class AccessibleHTML implements Accessible {
                     if (elementInfo.validateIfNecessary()) {
                         // set the caret position to the start of this component
                         Element elem = elementInfo.getElement();
-                        ((JTextComponent)comp).setCaretPosition(elem.getStartOffset());
+                        comp.setCaretPosition(elem.getStartOffset());
 
                         // fire a AccessibleState.FOCUSED property change event
                         AccessibleContext ac = editor.getAccessibleContext();
@@ -946,7 +942,7 @@ class AccessibleHTML implements Accessible {
             }
 
             /**
-             * Return the number of characters (valid indicies)
+             * Return the number of characters (valid indices)
              *
              * @return the number of characters
              */
@@ -1216,9 +1212,8 @@ class AccessibleHTML implements Accessible {
             private String getText(int offset, int length)
                 throws BadLocationException {
 
-                if (model != null && model instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)model;
-                    return model.getText(offset, length);
+                if (model instanceof StyledDocument doc) {
+                    return doc.getText(offset, length);
                 } else {
                     return null;
                 }
@@ -1431,7 +1426,7 @@ class AccessibleHTML implements Accessible {
         }
 
         /**
-         * Overriden to update the grid when validating.
+         * Overridden to update the grid when validating.
          */
         protected void validate() {
             super.validate();
@@ -1439,7 +1434,7 @@ class AccessibleHTML implements Accessible {
         }
 
         /**
-         * Overriden to only alloc instances of TableRowElementInfos.
+         * Overridden to only alloc instances of TableRowElementInfos.
          */
         protected void loadChildren(Element e) {
 
@@ -1968,16 +1963,16 @@ class AccessibleHTML implements Accessible {
             public int [] getSelectedAccessibleRows() {
                 if (validateIfNecessary()) {
                     int nRows = getAccessibleRowCount();
-                    Vector<Integer> vec = new Vector<Integer>();
+                    ArrayList<Integer> vec = new ArrayList<Integer>();
 
                     for (int i = 0; i < nRows; i++) {
                         if (isAccessibleRowSelected(i)) {
-                            vec.addElement(Integer.valueOf(i));
+                            vec.add(Integer.valueOf(i));
                         }
                     }
                     int[] retval = new int[vec.size()];
                     for (int i = 0; i < retval.length; i++) {
-                        retval[i] = vec.elementAt(i).intValue();
+                        retval[i] = vec.get(i).intValue();
                     }
                     return retval;
                 }
@@ -1993,16 +1988,16 @@ class AccessibleHTML implements Accessible {
             public int [] getSelectedAccessibleColumns() {
                 if (validateIfNecessary()) {
                     int nColumns = getAccessibleRowCount();
-                    Vector<Integer> vec = new Vector<Integer>();
+                    ArrayList<Integer> vec = new ArrayList<Integer>();
 
                     for (int i = 0; i < nColumns; i++) {
                         if (isAccessibleColumnSelected(i)) {
-                            vec.addElement(Integer.valueOf(i));
+                            vec.add(Integer.valueOf(i));
                         }
                     }
                     int[] retval = new int[vec.size()];
                     for (int i = 0; i < retval.length; i++) {
-                        retval[i] = vec.elementAt(i).intValue();
+                        retval[i] = vec.get(i).intValue();
                     }
                     return retval;
                 }
@@ -2476,7 +2471,7 @@ class AccessibleHTML implements Accessible {
             }
 
             /**
-             * Overriden to invalidate the table as well as
+             * Overridden to invalidate the table as well as
              * TableRowElementInfo.
              */
             protected void invalidate(boolean first) {
@@ -2618,7 +2613,7 @@ class AccessibleHTML implements Accessible {
             }
 
             /**
-             * Overriden to invalidate the TableRowElementInfo as well as
+             * Overridden to invalidate the TableRowElementInfo as well as
              * the TableCellElementInfo.
              */
             protected void invalidate(boolean first) {
@@ -2684,7 +2679,7 @@ class AccessibleHTML implements Accessible {
 
         /**
          * Validates the receiver. This recreates the children as well. This
-         * will be invoked within a <code>readLock</code>. If this is overriden
+         * will be invoked within a <code>readLock</code>. If this is overridden
          * it MUST invoke supers implementation first!
          */
         protected void validate() {
@@ -2992,7 +2987,7 @@ class AccessibleHTML implements Accessible {
                     pos >= elem.getEndOffset()) {
                     // Event beyond our offsets. We may have represented this,
                     // that is the remove may have removed one of our child
-                    // Elements that represented this, so, we should foward
+                    // Elements that represented this, so, we should forward
                     // to last element.
                     index0 = getChildCount() - 1;
                 }

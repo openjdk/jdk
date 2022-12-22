@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,32 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
+//------------------------------UDivINode---------------------------------------
+// Unsigned integer division
+class UDivINode : public Node {
+public:
+  UDivINode( Node *c, Node *dividend, Node *divisor ) : Node(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------UDivLNode---------------------------------------
+// Unsigned long division
+class UDivLNode : public Node {
+public:
+  UDivLNode( Node *c, Node *dividend, Node *divisor ) : Node(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------ModINode---------------------------------------
 // Integer modulus
 class ModINode : public Node {
@@ -134,6 +160,28 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+//------------------------------UModINode---------------------------------------
+// Unsigned integer modulus
+class UModINode : public Node {
+public:
+  UModINode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------UModLNode---------------------------------------
+// Unsigned long modulus
+class UModLNode : public Node {
+public:
+  UModLNode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------DivModNode---------------------------------------
@@ -182,6 +230,33 @@ public:
 
   // Make a divmod and associated projections from a div or mod.
   static DivModLNode* make(Node* div_or_mod);
+};
+
+
+//------------------------------UDivModINode---------------------------------------
+// Unsigend integer division with remainder result.
+class UDivModINode : public DivModNode {
+public:
+  UDivModINode( Node *c, Node *dividend, Node *divisor ) : DivModNode(c, dividend, divisor) {}
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeTuple::INT_PAIR; }
+  virtual Node *match( const ProjNode *proj, const Matcher *m );
+
+  // Make a divmod and associated projections from a div or mod.
+  static UDivModINode* make(Node* div_or_mod);
+};
+
+//------------------------------UDivModLNode---------------------------------------
+// Unsigned long division with remainder result.
+class UDivModLNode : public DivModNode {
+public:
+  UDivModLNode( Node *c, Node *dividend, Node *divisor ) : DivModNode(c, dividend, divisor) {}
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeTuple::LONG_PAIR; }
+  virtual Node *match( const ProjNode *proj, const Matcher *m );
+
+  // Make a divmod and associated projections from a div or mod.
+  static UDivModLNode* make(Node* div_or_mod);
 };
 
 #endif // SHARE_OPTO_DIVNODE_HPP

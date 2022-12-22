@@ -26,11 +26,11 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -164,7 +164,7 @@ StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t
     _next(NULL),
     _jt(jt),
     _iterator(NULL),
-    _lock(Mutex::tty - 1, "stack_watermark_lock", true, Mutex::_safepoint_check_never),
+    _lock(Mutex::stackwatermark, "StackWatermark_lock"),
     _kind(kind),
     _linked_watermark(NULL) {
 }

@@ -36,6 +36,7 @@ public class XMLSchemaException extends Exception {
 
     // store a datatype error: error code plus the arguments
     String key;
+    @SuppressWarnings("serial") // Array component type is not Serializable
     Object[] args;
 
     // report an error

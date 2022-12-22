@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,46 @@
 #ifndef SHARE_SERVICES_NMTCOMMON_HPP
 #define SHARE_SERVICES_NMTCOMMON_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allocation.hpp" // for MEMFLAGS only
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up(sizeof(obj), sizeof(type))/sizeof(type))
 
 // Native memory tracking level
+//
+// The meaning of the different states:
+//
+// "unknown": pre-init phase (before parsing NMT arguments)
+//
+// "off":     after initialization - NMT confirmed off.
+//             - nothing is tracked
+//             - no malloc headers are used
+//
+// "summary": after initialization with NativeMemoryTracking=summary - NMT in summary mode
+//             - category summaries per tag are tracked
+//             - thread stacks are tracked
+//             - malloc headers are used
+//             - malloc call site table is allocated and used
+//
+// "detail":  after initialization with NativeMemoryTracking=detail - NMT in detail mode
+//             - category summaries per tag are tracked
+//             - malloc details per call site are tracked
+//             - virtual memory mapping info is tracked
+//             - thread stacks are tracked
+//             - malloc headers are used
+//             - malloc call site table is allocated and used
+//
+
+
+// Please keep relation of numerical values!
+// unknown < off < summary < detail
+//
 enum NMT_TrackingLevel {
-  NMT_unknown = 0xFF,
-  NMT_off     = 0x00,
-  NMT_minimal = 0x01,
-  NMT_summary = 0x02,
-  NMT_detail  = 0x03
+  NMT_unknown,
+  NMT_off,
+  NMT_summary,
+  NMT_detail
 };
 
 // Number of stack frames to capture. This is a
@@ -60,18 +87,18 @@ class NMTUtil : AllStatic {
 
   // Map memory type to index
   static inline int flag_to_index(MEMFLAGS flag) {
-    assert(flag_is_valid(flag), "Invalid flag");
+    assert(flag_is_valid(flag), "Invalid flag (%u)", (unsigned)flag);
     return static_cast<int>(flag);
   }
 
   // Map memory type to human readable name
   static const char* flag_to_name(MEMFLAGS flag) {
-    return _memory_type_names[flag_to_index(flag)];
+    return _strings[flag_to_index(flag)].human_readable;
   }
 
   // Map an index to memory type
   static MEMFLAGS index_to_flag(int index) {
-    assert(flag_index_is_valid(index), "Invalid flag");
+    assert(flag_index_is_valid(index), "Invalid flag index (%d)", index);
     return static_cast<MEMFLAGS>(index);
   }
 
@@ -83,8 +110,25 @@ class NMTUtil : AllStatic {
   static size_t amount_in_scale(size_t amount, size_t scale) {
     return (amount + scale / 2) / scale;
   }
+
+  // Parses the tracking level from a string. Returns NMT_unknown if
+  // string is not a valid level.
+  static NMT_TrackingLevel parse_tracking_level(const char* s);
+
+  // Given a string, return associated flag. mtNone if name is invalid.
+  // String can be either the human readable name or the
+  // stringified enum (with or without leading "mt". In all cases, case is ignored.
+  static MEMFLAGS string_to_flag(const char* name);
+
+  // Returns textual representation of a tracking level.
+  static const char* tracking_level_to_string(NMT_TrackingLevel level);
+
  private:
-  static const char* _memory_type_names[mt_number_of_types];
+  struct S {
+    const char* enum_s; // e.g. "mtNMT"
+    const char* human_readable; // e.g. "Native Memory Tracking"
+  };
+  static S _strings[mt_number_of_types];
 };
 
 

@@ -36,15 +36,15 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 
 typedef JfrStringPool::BufferPtr BufferPtr;
 
 static JfrSignal _new_string;
 
 bool JfrStringPool::is_modified() {
-  return _new_string.is_signaled();
+  return _new_string.is_signaled_with_reset();
 }
 
 static JfrStringPool* _instance = NULL;

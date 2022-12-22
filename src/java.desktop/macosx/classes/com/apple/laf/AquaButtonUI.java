@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,15 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         // performs icon and text rect calculations
-        final String text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
+        final String text;
+        final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
+        if (v != null) {
+            // use zero insets for view since layout only handles text calculations
+            text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
+                    viewRect, iconRect, textRect);
+        } else {
+            text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
+        }
 
         // Paint the Icon
         if (b.getIcon() != null) {
@@ -317,13 +325,41 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         if (text != null && !text.isEmpty()) {
-            final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
             } else {
                 paintText(g, b, textRect, text);
             }
         }
+    }
+
+    protected void paintFocus(Graphics g, AbstractButton b,
+                              Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
+        Graphics2D g2d = null;
+        Stroke oldStroke = null;
+        Object oldAntialiasingHint = null;
+        Color oldColor = g.getColor();
+        if (g instanceof Graphics2D) {
+            g2d = (Graphics2D)g;
+            oldStroke = g2d.getStroke();
+            oldAntialiasingHint = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+            g2d.setStroke(new BasicStroke(3));
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+
+        }
+        Color ringColor = UIManager.getColor("Focus.color");
+        g.setColor(ringColor);
+        g.drawRoundRect(5, 3, b.getWidth() - 10, b.getHeight() - 7, 15, 15);
+        if (g2d != null) {
+            // Restore old state of Java2D renderer
+            g2d.setStroke(oldStroke);
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    oldAntialiasingHint);
+        }
+        g.setColor(oldColor);
     }
 
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {
@@ -364,10 +400,23 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
         if (icon == null) return;
 
+        Icon selectedIcon = null;
+
+        // the fallback icon should be based on the selected state
+        if (model.isSelected()) {
+            selectedIcon = b.getSelectedIcon();
+            if (selectedIcon != null) {
+                icon = selectedIcon;
+            }
+        }
         if (!model.isEnabled()) {
             if (model.isSelected()) {
                 tmpIcon = b.getDisabledSelectedIcon();
-            } else {
+               if (tmpIcon == null) {
+                   tmpIcon = selectedIcon;
+               }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getDisabledIcon();
             }
         } else if (model.isPressed() && model.isArmed()) {
@@ -380,7 +429,11 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 tmpIcon = b.getRolloverSelectedIcon();
-            } else {
+                if (tmpIcon == null) {
+                    tmpIcon = selectedIcon;
+                }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getRolloverIcon();
             }
         } else if (model.isSelected()) {
@@ -404,7 +457,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     /**
-     * As of Java 2 platform v 1.4 this method should not be used or overriden.
+     * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      */
     protected void paintText(final Graphics g, final JComponent c, final Rectangle localTextRect, final String text) {
@@ -496,8 +549,8 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     static class AquaHierarchyButtonListener implements HierarchyListener {
-        // Everytime a hierarchy is change we need to check if the button if moved on or from
-        // a toolbar. If that is the case, we need to re-set the border of the button.
+        // Every time a hierarchy is changed we need to check if the button is moved on or from
+        // the toolbar. If that is the case, we need to re-set the border of the button.
         public void hierarchyChanged(final HierarchyEvent e) {
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) == 0) return;
 

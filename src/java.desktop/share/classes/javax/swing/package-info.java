@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,15 +132,12 @@
  * For overviews, tutorials, examples, guides, and other documentation,
  * please see:
  * <ul>
- *     <li><a href="http://www.oracle.com/technetwork/java/javase/tech/articles-jsp-139072.html"
- *     target="_top">The Swing Connection</a></li>
+ *     <li><a href="https://www.oracle.com/java/technologies/a-swing-architecture.html"
+ *     target="_top">A Swing Architecture Overview</a></li>
  *     <li><a href="https://docs.oracle.com/javase/tutorial/"
  *     target="_top">The Java Tutorial</a></li>
- *     <li><a href="http://www.oracle.com/technetwork/java/javase/training/index.html"
- *     target="_top">Online Training</a>
- *     at the Java Developer Connection <sup>SM</sup></li>
- *     <li><a href="http://www.oracle.com/technetwork/java/javase/tech/index-jsp-142216.html"
- *     target="_top">Java Foundation Classes (JFC)</a> home page</li>
+ *     <li><a href="https://www.oracle.com/java/technologies/javase/training-support.html"
+ *     target="_top">Java SE Training and Certification</a></li>
  * </ul>
  *
  * @serial exclude

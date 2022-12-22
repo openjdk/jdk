@@ -132,10 +132,9 @@ public abstract class TextSyntax implements Serializable, Cloneable {
      *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
-        return(object != null &&
-               object instanceof TextSyntax &&
-               this.value.equals (((TextSyntax) object).value) &&
-               this.locale.equals (((TextSyntax) object).locale));
+        return object instanceof TextSyntax other &&
+                this.value.equals(other.value) &&
+                this.locale.equals(other.locale);
     }
 
     /**

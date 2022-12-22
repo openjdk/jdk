@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,13 @@
 #define SECURITY_WIN32
 #include <sspi.h>
 
-#pragma comment(lib, "secur32.lib")
-
 // Otherwise an exception will be thrown
 #define new new (std::nothrow)
 
 // A debugging macro
 #define PP(fmt, ...) \
         if (trace) { \
-            fprintf(stderr, "[SSPI:%ld] "fmt"\n", __LINE__, ##__VA_ARGS__); \
+            fprintf(stderr, "[SSPI:%ld] " fmt "\n", __LINE__, ##__VA_ARGS__); \
             fflush(stderr); \
         }
 #define SEC_SUCCESS(status) ((*minor_status = (status)), (status) >= SEC_E_OK)
@@ -139,7 +137,7 @@ seconds_until(int inputIsUTC, TimeStamp *time)
 }
 
 static void
-show_time(char* label, TimeStamp* ts)
+show_time(const char* label, TimeStamp* ts)
 {
     if (trace) {
         SYSTEMTIME stLocal;
@@ -286,7 +284,7 @@ get_full_name(WCHAR* input)
     }
 
     // Always use the default domain
-    WCHAR* realm = _wgetenv(L"USERDNSDOMAIN");
+    const WCHAR* realm = _wgetenv(L"USERDNSDOMAIN");
     if (realm == NULL) {
         realm = L"";
     }
@@ -653,7 +651,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
         }
         ss = AcquireCredentialsHandle(
                 NULL,
-                L"Kerberos",
+                (LPWSTR)L"Kerberos",
                 cred_usage == 0 ? SECPKG_CRED_BOTH :
                     (cred_usage == 1 ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND),
                 NULL,
@@ -683,7 +681,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
         auth.PackageListLength = 8;
         ss = AcquireCredentialsHandle(
                 NULL,
-                L"Negotiate",
+                (LPWSTR)L"Negotiate",
                 cred_usage == 0 ? SECPKG_CRED_BOTH :
                     (cred_usage == 1 ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND),
                 NULL,
@@ -736,8 +734,6 @@ gss_acquire_cred(OM_uint32 *minor_status,
             PP("Cannot get owner name of default creds");
             goto err;
         }
-        SEC_WCHAR* rnames = realname->name;
-        SEC_WCHAR* dnames = desired_name->name;
         int equals = 0;
         gss_compare_name(minor_status, realname, desired_name, &equals);
         gss_release_name(minor_status, &realname);
@@ -897,7 +893,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     gss_buffer_desc tn;
     gss_display_name(&minor, target_name, &tn, NULL);
     int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)tn.value, (int)tn.length,
-            outName, sizeof(outName) - 1);
+            outName, (sizeof(outName) / sizeof(outName[0])) - 1);
     if (len == 0) {
         goto err;
     }
@@ -945,7 +941,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
             auth.PackageListLength = 8;
             ss = AcquireCredentialsHandle(
                     NULL,
-                    isSPNEGO ? L"Negotiate" : L"Kerberos",
+                    (LPWSTR)(isSPNEGO ? L"Negotiate" : L"Kerberos"),
                     SECPKG_CRED_OUTBOUND,
                     NULL,
                     isSPNEGO ? &auth : NULL,
@@ -1043,6 +1039,10 @@ gss_accept_sec_context(OM_uint32 *minor_status,
 {
     PP(">>>> Calling UNIMPLEMENTED gss_accept_sec_context...");
     PP("gss_accept_sec_context is not supported in this initiator-only library");
+    if (output_token) {
+        output_token->length = 0;
+        output_token->value = NULL;
+    }
     return GSS_S_FAILURE;
 }
 

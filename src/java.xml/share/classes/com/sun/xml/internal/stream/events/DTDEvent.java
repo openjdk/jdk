@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ public class DTDEvent extends DummyEvent implements DTD {
 
     //xxx: we can change the signature if the implementation doesn't store the entities in List Datatype.
     //and then convert that DT to list format here. That way callee dont need to bother about conversion
-    public void setEntities(List<EntityDeclaration> entites) {
-        fEntities = entites;
+    public void setEntities(List<EntityDeclaration> entities) {
+        fEntities = entities;
     }
 
     @Override

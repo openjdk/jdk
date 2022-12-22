@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,19 @@ public class SerializedForm implements Serializable {
     /**
      * @serialField name String a test
      * @serialField longs Long[] the longs
+     * @serialField i int an int
+     * @serialField  m double[][] the doubles
+     * @serialField next SerializedForm a linked reference
      * @see TestSerializedForm
      */
     @Deprecated
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("i", int.class),
+        new ObjectStreamField("m", double[][].class),
         new ObjectStreamField("count", Integer.TYPE),
         new ObjectStreamField("name", String.class),
-        new ObjectStreamField("longs", Long[].class)
+        new ObjectStreamField("longs", Long[].class),
+        new ObjectStreamField("next", SerializedForm.class)
     };
 
     /**

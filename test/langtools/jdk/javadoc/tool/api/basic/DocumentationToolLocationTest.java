@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class DocumentationToolLocationTest extends APITest {
     @Test
     public void testEnumMethods() throws Exception {
         DocumentationTool.Location[] values = DocumentationTool.Location.values();
-        if (values.length != 3)
+        if (values.length != 4)
             throw new Exception("unexpected number of values returned");
 
         for (DocumentationTool.Location dl: values) {

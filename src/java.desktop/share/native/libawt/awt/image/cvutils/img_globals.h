@@ -137,7 +137,7 @@ typedef int ImgConvertFcn(void *colormodel,
  * The type of the error matrix used in the ordered dithering code.
  */
 typedef unsigned char uns_ordered_dither_array[8][8];
-typedef char sgn_ordered_dither_array[8][8];
+typedef signed char sgn_ordered_dither_array[8][8];
 
 /*
  * The function provided for constructing the ordered dithering error
@@ -148,7 +148,7 @@ typedef char sgn_ordered_dither_array[8][8];
 JNIEXPORT void JNICALL
 make_uns_ordered_dither_array(uns_ordered_dither_array oda,
                               int quantum);
-extern void make_sgn_ordered_dither_array(char* oda, int errmin, int errmax);
+extern void make_sgn_ordered_dither_array(signed char* oda, int errmin, int errmax);
 
 /*
  * The function provided for calculating the contents of the ImgCMData

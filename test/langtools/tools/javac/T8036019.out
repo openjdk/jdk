@@ -1,0 +1,10 @@
+T8036019.java:34:17: compiler.err.expected2: ')', ','
+T8036019.java:34:23: compiler.err.expected3: ',', '}', ';'
+T8036019.java:34:25: compiler.err.enum.constant.expected
+T8036019.java:40:24: compiler.err.expected2: >, ','
+T8036019.java:40:26: compiler.err.expected: token.identifier
+T8036019.java:40:32: compiler.err.expected: token.identifier
+T8036019.java:43:25: compiler.err.annotation.missing.element.value
+T8036019.java:43:27: compiler.err.expected4: class, interface, enum, record
+T8036019.java:46:1: compiler.err.expected4: class, interface, enum, record
+9 errors

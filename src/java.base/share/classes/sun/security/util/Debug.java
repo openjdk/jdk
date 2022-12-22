@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class Debug {
 
     /**
      * Get a Debug object corresponding to whether or not the given
-     * option is set. Set the prefix to be prefix.
+     * option is set. Set the prefix to prefix.
      */
     public static Debug getInstance(String option, String prefix)
     {
@@ -161,10 +161,10 @@ public class Debug {
         if (args == null)
             return false;
         else {
-            if (args.indexOf("all") != -1)
+            if (args.contains("all"))
                 return true;
             else
-                return (args.indexOf(option) != -1);
+                return (args.contains(option));
         }
     }
 
@@ -214,7 +214,7 @@ public class Debug {
     }
 
     /**
-     * PrintStream for debug methods. Currently only System.err is supported.
+     * PrintStream for debug methods. Currently, only System.err is supported.
      */
     public PrintStream getPrintStream() {
         return System.err;
@@ -262,7 +262,7 @@ public class Debug {
     private static String marshal(String args) {
         if (args != null) {
             StringBuilder target = new StringBuilder();
-            StringBuffer source = new StringBuffer(args);
+            StringBuilder source = new StringBuilder(args);
 
             // obtain the "permission=<classname>" options
             // the syntax of classname: IDENTIFIER.IDENTIFIER
@@ -274,7 +274,7 @@ public class Debug {
                 "[a-zA-Z_$][a-zA-Z0-9_$]*([.][a-zA-Z_$][a-zA-Z0-9_$]*)*";
             Pattern pattern = Pattern.compile(reg);
             Matcher matcher = pattern.matcher(source);
-            StringBuffer left = new StringBuffer();
+            StringBuilder left = new StringBuilder();
             while (matcher.find()) {
                 String matched = matcher.group();
                 target.append(matched.replaceFirst(keyReg, keyStr));
@@ -298,7 +298,7 @@ public class Debug {
             reg = keyReg + "[^, ;]*";
             pattern = Pattern.compile(reg);
             matcher = pattern.matcher(source);
-            left = new StringBuffer();
+            left = new StringBuilder();
             while (matcher.find()) {
                 String matched = matcher.group();
                 target.append(matched.replaceFirst(keyReg, keyStr));

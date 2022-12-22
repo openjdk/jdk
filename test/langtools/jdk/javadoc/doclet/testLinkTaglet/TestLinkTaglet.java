@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      4732864 6280605 7064544 8014636 8016328 8025633 8071982 8182765
+ *           8274781
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @library  ../../lib
@@ -70,7 +71,7 @@ public class TestLinkTaglet extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>Enclosing class:</dt>
-                    <dd><a href="C.html" title="class in pkg">C</a></dd>
+                    <dd><code><a href="C.html" title="class in pkg">C</a></code></dd>
                     </dl>""");
 
         checkOutput(Output.OUT, false,

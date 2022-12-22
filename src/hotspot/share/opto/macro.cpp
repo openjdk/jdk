@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,13 @@
 #include "opto/subtypenode.hpp"
 #include "opto/type.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif // INCLUDE_G1GC
-#if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#endif
 
 
 //
@@ -159,6 +157,11 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
 void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
   BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_gc_barrier(this, p2x);
+#ifndef PRODUCT
+  if (PrintOptoStatistics) {
+    Atomic::inc(&PhaseMacroExpand::_GC_barriers_removed_counter);
+  }
+#endif
 }
 
 // Search for a memory operation for the specified memory slice.
@@ -576,6 +579,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
   }
 
   if (can_eliminate && res != NULL) {
+    BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax);
                                j < jmax && can_eliminate; j++) {
       Node* use = res->fast_out(j);
@@ -585,20 +589,19 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         int offset = addp_type->offset();
 
         if (offset == Type::OffsetTop || offset == Type::OffsetBot) {
-          NOT_PRODUCT(fail_eliminate = "Undefined field referrence";)
+          NOT_PRODUCT(fail_eliminate = "Undefined field reference";)
           can_eliminate = false;
           break;
         }
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax);
                                    k < kmax && can_eliminate; k++) {
           Node* n = use->fast_out(k);
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X
-              SHENANDOAHGC_ONLY(&& (!UseShenandoahGC || !ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(n))) ) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n)) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
             } else {
-              NOT_PRODUCT(fail_eliminate = "Not store field referrence";)
+              NOT_PRODUCT(fail_eliminate = "Not store field reference";)
             }
             can_eliminate = false;
           }
@@ -677,13 +680,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
 bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
   GrowableArray <SafePointNode *> safepoints_done;
 
-  ciKlass* klass = NULL;
   ciInstanceKlass* iklass = NULL;
   int nfields = 0;
   int array_base = 0;
   int element_size = 0;
   BasicType basic_elem_type = T_ILLEGAL;
-  ciType* elem_type = NULL;
+  const Type* field_type = NULL;
 
   Node* res = alloc->result_cast();
   assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -693,20 +695,18 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   }
 
   if (res != NULL) {
-    klass = res_type->klass();
     if (res_type->isa_instptr()) {
       // find the fields of the class which will be needed for safepoint debug information
-      assert(klass->is_instance_klass(), "must be an instance klass.");
-      iklass = klass->as_instance_klass();
+      iklass = res_type->is_instptr()->instance_klass();
       nfields = iklass->nof_nonstatic_fields();
     } else {
       // find the array's elements which will be needed for safepoint debug information
       nfields = alloc->in(AllocateNode::ALength)->find_int_con(-1);
-      assert(klass->is_array_klass() && nfields >= 0, "must be an array klass.");
-      elem_type = klass->as_array_klass()->element_type();
-      basic_elem_type = elem_type->basic_type();
+      assert(nfields >= 0, "must be an array klass.");
+      basic_elem_type = res_type->is_aryptr()->elem()->array_element_basic_type();
       array_base = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
       element_size = type2aelembytes(basic_elem_type);
+      field_type = res_type->is_aryptr()->elem();
     }
   }
   //
@@ -736,33 +736,31 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       if (iklass != NULL) {
         field = iklass->nonstatic_field_at(j);
         offset = field->offset();
-        elem_type = field->type();
+        ciType* elem_type = field->type();
         basic_elem_type = field->layout_type();
+
+        // The next code is taken from Parse::do_get_xxx().
+        if (is_reference_type(basic_elem_type)) {
+          if (!elem_type->is_loaded()) {
+            field_type = TypeInstPtr::BOTTOM;
+          } else if (field != NULL && field->is_static_constant()) {
+            ciObject* con = field->constant_value().as_object();
+            // Do not "join" in the previous type; it doesn't add value,
+            // and may yield a vacuous result if the field is of interface type.
+            field_type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+            assert(field_type != NULL, "field singleton type must be consistent");
+          } else {
+            field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+          }
+          if (UseCompressedOops) {
+            field_type = field_type->make_narrowoop();
+            basic_elem_type = T_NARROWOOP;
+          }
+        } else {
+          field_type = Type::get_const_basic_type(basic_elem_type);
+        }
       } else {
         offset = array_base + j * (intptr_t)element_size;
-      }
-
-      const Type *field_type;
-      // The next code is taken from Parse::do_get_xxx().
-      if (is_reference_type(basic_elem_type)) {
-        if (!elem_type->is_loaded()) {
-          field_type = TypeInstPtr::BOTTOM;
-        } else if (field != NULL && field->is_static_constant()) {
-          // This can happen if the constant oop is non-perm.
-          ciObject* con = field->constant_value().as_object();
-          // Do not "join" in the previous type; it doesn't add value,
-          // and may yield a vacuous result if the field is of interface type.
-          field_type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
-          assert(field_type != NULL, "field singleton type must be consistent");
-        } else {
-          field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
-        }
-        if (UseCompressedOops) {
-          field_type = field_type->make_narrowoop();
-          basic_elem_type = T_NARROWOOP;
-        }
-      } else {
-        field_type = Type::get_const_basic_type(basic_elem_type);
       }
 
       const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
@@ -965,8 +963,9 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
         if (ctrl_proj != NULL) {
           _igvn.replace_node(ctrl_proj, init->in(TypeFunc::Control));
 #ifdef ASSERT
+          // If the InitializeNode has no memory out, it will die, and tmp will become NULL
           Node* tmp = init->in(TypeFunc::Control);
-          assert(tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
+          assert(tmp == NULL || tmp == _callprojs.fallthrough_catchproj, "allocation control projection");
 #endif
         }
         Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
@@ -1020,10 +1019,10 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
   // Eliminate boxing allocations which are not used
-  // regardless scalar replacable status.
+  // regardless scalar replaceable status.
   bool boxing_alloc = C->eliminate_boxing() &&
-                      tklass->klass()->is_instance_klass()  &&
-                      tklass->klass()->as_instance_klass()->is_box_klass();
+                      tklass->isa_instklassptr() &&
+                      tklass->is_instklassptr()->instance_klass()->is_box_klass();
   if (!alloc->_is_scalar_replaceable && (!boxing_alloc || (res != NULL))) {
     return false;
   }
@@ -1052,7 +1051,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   CompileLog* log = C->log();
   if (log != NULL) {
     log->head("eliminate_allocation type='%d'",
-              log->identify(tklass->klass()));
+              log->identify(tklass->exact_klass()));
     JVMState* p = alloc->jvms();
     while (p != NULL) {
       log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
@@ -1093,7 +1092,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   CompileLog* log = C->log();
   if (log != NULL) {
     log->head("eliminate_boxing type='%d'",
-              log->identify(t->klass()));
+              log->identify(t->instance_klass()));
     JVMState* p = boxing->jvms();
     while (p != NULL) {
       log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
@@ -1113,23 +1112,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 #endif
 
   return true;
-}
-
-//---------------------------set_eden_pointers-------------------------
-void PhaseMacroExpand::set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr) {
-  if (UseTLAB) {                // Private allocation: load from TLS
-    Node* thread = transform_later(new ThreadLocalNode());
-    int tlab_top_offset = in_bytes(JavaThread::tlab_top_offset());
-    int tlab_end_offset = in_bytes(JavaThread::tlab_end_offset());
-    eden_top_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_top_offset);
-    eden_end_adr = basic_plus_adr(top()/*not oop*/, thread, tlab_end_offset);
-  } else {                      // Shared allocation: load from globals
-    CollectedHeap* ch = Universe::heap();
-    address top_adr = (address)ch->top_addr();
-    address end_adr = (address)ch->end_addr();
-    eden_top_adr = makecon(TypeRawPtr::make(top_adr));
-    eden_end_adr = basic_plus_adr(eden_top_adr, end_adr - top_adr);
-  }
 }
 
 
@@ -1207,7 +1189,8 @@ void PhaseMacroExpand::expand_allocate_common(
             AllocateNode* alloc, // allocation node to be expanded
             Node* length,  // array length for an array allocation
             const TypeFunc* slow_call_type, // Type of slow call
-            address slow_call_address  // Address of slow call
+            address slow_call_address,  // Address of slow call
+            Node* valid_length_test // whether length is valid or not
     )
 {
   Node* ctrl = alloc->in(TypeFunc::Control);
@@ -1241,8 +1224,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (C->env()->dtrace_alloc_probes() ||
-      (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc())) {
+  if (!UseTLAB) {
     // Force slow-path allocation
     expand_fast_path = false;
     initial_slow_test = NULL;
@@ -1393,6 +1375,12 @@ void PhaseMacroExpand::expand_allocate_common(
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
   call->copy_call_debug_info(&_igvn, alloc);
+  // For array allocations, copy the valid length check to the call node so Compile::final_graph_reshaping() can verify
+  // that the call has the expected number of CatchProj nodes (in case the allocation always fails and the fallthrough
+  // path dies).
+  if (valid_length_test != NULL) {
+    call->add_req(valid_length_test);
+  }
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
@@ -1630,11 +1618,12 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
 
 void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
                                                 Node*& ctrl, Node*& rawmem) {
-  if (C->env()->dtrace_extended_probes()) {
+  if (C->env()->dtrace_alloc_probes()) {
     // Slow-path call
     int size = TypeFunc::Parms + 2;
     CallLeafNode *call = new CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
-                                          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc_base),
+                                          CAST_FROM_FN_PTR(address,
+                                          static_cast<int (*)(JavaThread*, oopDesc*)>(SharedRuntime::dtrace_object_alloc)),
                                           "dtrace_object_alloc",
                                           TypeRawPtr::BOTTOM);
 
@@ -1646,7 +1635,7 @@ void PhaseMacroExpand::expand_dtrace_alloc_probe(AllocateNode* alloc, Node* oop,
     call->init_req(TypeFunc::Parms + 1, oop);
     call->init_req(TypeFunc::Control, ctrl);
     call->init_req(TypeFunc::I_O    , top()); // does no i/o
-    call->init_req(TypeFunc::Memory , ctrl);
+    call->init_req(TypeFunc::Memory , rawmem);
     call->init_req(TypeFunc::ReturnAdr, alloc->in(TypeFunc::ReturnAdr));
     call->init_req(TypeFunc::FramePtr, alloc->in(TypeFunc::FramePtr));
     transform_later(call);
@@ -1680,9 +1669,13 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     rawmem = make_store(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
-    if (k->is_array_klass())    // we know the exact header size in most cases:
-      header_size = Klass::layout_helper_header_size(k->layout_helper());
+    if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
+      BasicType elem = _igvn.type(klass_node)->is_klassptr()->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
+      if (is_reference_type(elem, true)) {
+        elem = T_OBJECT;
+      }
+      header_size = Klass::layout_helper_header_size(Klass::array_layout_helper(elem));
+    }
   }
 
   // Clear the object body, if necessary.
@@ -1874,17 +1867,18 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
 void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
   expand_allocate_common(alloc, NULL,
                          OptoRuntime::new_instance_Type(),
-                         OptoRuntime::new_instance_Java());
+                         OptoRuntime::new_instance_Java(), NULL);
 }
 
 void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* length = alloc->in(AllocateNode::ALength);
+  Node* valid_length_test = alloc->in(AllocateNode::ValidLengthTest);
   InitializeNode* init = alloc->initialization();
   Node* klass_node = alloc->in(AllocateNode::KlassNode);
-  ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
+  const TypeAryKlassPtr* ary_klass_t = _igvn.type(klass_node)->isa_aryklassptr();
   address slow_call_address;  // Address of slow call
   if (init != NULL && init->is_complete_with_arraycopy() &&
-      k->is_type_array_klass()) {
+      ary_klass_t && ary_klass_t->elem()->isa_klassptr() == NULL) {
     // Don't zero type array during slow allocation in VM since
     // it will be initialized later by arraycopy in compiled code.
     slow_call_address = OptoRuntime::new_array_nozero_Java();
@@ -1893,7 +1887,7 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   }
   expand_allocate_common(alloc, length,
                          OptoRuntime::new_array_Type(),
-                         slow_call_address);
+                         slow_call_address, valid_length_test);
 }
 
 //-------------------mark_eliminated_box----------------------------------
@@ -1909,15 +1903,15 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
 void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->as_BoxLock()->is_eliminated())
+  if (oldbox->as_BoxLock()->is_eliminated()) {
     return; // This BoxLock node was processed already.
-
+  }
   // New implementation (EliminateNestedLocks) has separate BoxLock
   // node for each locked region so mark all associated locks/unlocks as
   // eliminated even if different objects are referenced in one locked region
   // (for example, OSR compilation of nested loop inside locked scope).
   if (EliminateNestedLocks ||
-      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
+      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj, NULL)) {
     // Box is used only in one lock region. Mark this box as eliminated.
     _igvn.hash_delete(oldbox);
     oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
@@ -2089,11 +2083,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
 
 #ifndef PRODUCT
   if (PrintEliminateLocks) {
-    if (alock->is_Lock()) {
-      tty->print_cr("++++ Eliminated: %d Lock", alock->_idx);
-    } else {
-      tty->print_cr("++++ Eliminated: %d Unlock", alock->_idx);
-    }
+    tty->print_cr("++++ Eliminated: %d %s '%s'", alock->_idx, (alock->is_Lock() ? "Lock" : "Unlock"), alock->kind_as_string());
   }
 #endif
 
@@ -2116,7 +2106,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   // The input to a Lock is merged memory, so extract its RawMem input
   // (unless the MergeMem has been optimized away.)
   if (alock->is_Lock()) {
-    // Seach for MemBarAcquireLock node and delete it also.
+    // Search for MemBarAcquireLock node and delete it also.
     MemBarNode* membar = fallthroughproj->unique_ctrl_out()->as_MemBar();
     assert(membar != NULL && membar->Opcode() == Op_MemBarAcquireLock, "");
     Node* ctrlproj = membar->proj_out(TypeFunc::Control);
@@ -2133,7 +2123,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     }
   }
 
-  // Seach for MemBarReleaseLock node and delete it also.
+  // Search for MemBarReleaseLock node and delete it also.
   if (alock->is_Unlock() && ctrl->is_Proj() && ctrl->in(0)->is_MemBar()) {
     MemBarNode* membar = ctrl->in(0)->as_MemBar();
     assert(membar->Opcode() == Op_MemBarReleaseLock &&
@@ -2168,196 +2158,13 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node *mem_phi;
   Node *slow_path;
 
-  if (UseOptoBiasInlining) {
-    /*
-     *  See the full description in MacroAssembler::biased_locking_enter().
-     *
-     *  if( (mark_word & biased_lock_mask) == biased_lock_pattern ) {
-     *    // The object is biased.
-     *    proto_node = klass->prototype_header;
-     *    o_node = thread | proto_node;
-     *    x_node = o_node ^ mark_word;
-     *    if( (x_node & ~age_mask) == 0 ) { // Biased to the current thread ?
-     *      // Done.
-     *    } else {
-     *      if( (x_node & biased_lock_mask) != 0 ) {
-     *        // The klass's prototype header is no longer biased.
-     *        cas(&mark_word, mark_word, proto_node)
-     *        goto cas_lock;
-     *      } else {
-     *        // The klass's prototype header is still biased.
-     *        if( (x_node & epoch_mask) != 0 ) { // Expired epoch?
-     *          old = mark_word;
-     *          new = o_node;
-     *        } else {
-     *          // Different thread or anonymous biased.
-     *          old = mark_word & (epoch_mask | age_mask | biased_lock_mask);
-     *          new = thread | old;
-     *        }
-     *        // Try to rebias.
-     *        if( cas(&mark_word, old, new) == 0 ) {
-     *          // Done.
-     *        } else {
-     *          goto slow_path; // Failed.
-     *        }
-     *      }
-     *    }
-     *  } else {
-     *    // The object is not biased.
-     *    cas_lock:
-     *    if( FastLock(obj) == 0 ) {
-     *      // Done.
-     *    } else {
-     *      slow_path:
-     *      OptoRuntime::complete_monitor_locking_Java(obj);
-     *    }
-     *  }
-     */
+  region  = new RegionNode(3);
+  // create a Phi for the memory state
+  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
-    region  = new RegionNode(5);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    Node* fast_lock_region  = new RegionNode(3);
-    Node* fast_lock_mem_phi = new PhiNode( fast_lock_region, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    // First, check mark word for the biased lock pattern.
-    Node* mark_node = make_load(ctrl, mem, obj, oopDesc::mark_offset_in_bytes(), TypeX_X, TypeX_X->basic_type());
-
-    // Get fast path - mark word has the biased lock pattern.
-    ctrl = opt_bits_test(ctrl, fast_lock_region, 1, mark_node,
-                         markWord::biased_lock_mask_in_place,
-                         markWord::biased_lock_pattern, true);
-    // fast_lock_region->in(1) is set to slow path.
-    fast_lock_mem_phi->init_req(1, mem);
-
-    // Now check that the lock is biased to the current thread and has
-    // the same epoch and bias as Klass::_prototype_header.
-
-    // Special-case a fresh allocation to avoid building nodes:
-    Node* klass_node = AllocateNode::Ideal_klass(obj, &_igvn);
-    if (klass_node == NULL) {
-      Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
-      klass_node = transform_later(LoadKlassNode::make(_igvn, NULL, mem, k_adr, _igvn.type(k_adr)->is_ptr()));
-#ifdef _LP64
-      if (UseCompressedClassPointers && klass_node->is_DecodeNKlass()) {
-        assert(klass_node->in(1)->Opcode() == Op_LoadNKlass, "sanity");
-        klass_node->in(1)->init_req(0, ctrl);
-      } else
-#endif
-      klass_node->init_req(0, ctrl);
-    }
-    Node *proto_node = make_load(ctrl, mem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeX_X, TypeX_X->basic_type());
-
-    Node* thread = transform_later(new ThreadLocalNode());
-    Node* cast_thread = transform_later(new CastP2XNode(ctrl, thread));
-    Node* o_node = transform_later(new OrXNode(cast_thread, proto_node));
-    Node* x_node = transform_later(new XorXNode(o_node, mark_node));
-
-    // Get slow path - mark word does NOT match the value.
-    STATIC_ASSERT(markWord::age_mask_in_place <= INT_MAX);
-    Node* not_biased_ctrl =  opt_bits_test(ctrl, region, 3, x_node,
-                                      (~(int)markWord::age_mask_in_place), 0);
-    // region->in(3) is set to fast path - the object is biased to the current thread.
-    mem_phi->init_req(3, mem);
-
-
-    // Mark word does NOT match the value (thread | Klass::_prototype_header).
-
-
-    // First, check biased pattern.
-    // Get fast path - _prototype_header has the same biased lock pattern.
-    ctrl =  opt_bits_test(not_biased_ctrl, fast_lock_region, 2, x_node,
-                          markWord::biased_lock_mask_in_place, 0, true);
-
-    not_biased_ctrl = fast_lock_region->in(2); // Slow path
-    // fast_lock_region->in(2) - the prototype header is no longer biased
-    // and we have to revoke the bias on this object.
-    // We are going to try to reset the mark of this object to the prototype
-    // value and fall through to the CAS-based locking scheme.
-    Node* adr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
-    Node* cas = new StoreXConditionalNode(not_biased_ctrl, mem, adr,
-                                          proto_node, mark_node);
-    transform_later(cas);
-    Node* proj = transform_later(new SCMemProjNode(cas));
-    fast_lock_mem_phi->init_req(2, proj);
-
-
-    // Second, check epoch bits.
-    Node* rebiased_region  = new RegionNode(3);
-    Node* old_phi = new PhiNode( rebiased_region, TypeX_X);
-    Node* new_phi = new PhiNode( rebiased_region, TypeX_X);
-
-    // Get slow path - mark word does NOT match epoch bits.
-    Node* epoch_ctrl =  opt_bits_test(ctrl, rebiased_region, 1, x_node,
-                                      markWord::epoch_mask_in_place, 0);
-    // The epoch of the current bias is not valid, attempt to rebias the object
-    // toward the current thread.
-    rebiased_region->init_req(2, epoch_ctrl);
-    old_phi->init_req(2, mark_node);
-    new_phi->init_req(2, o_node);
-
-    // rebiased_region->in(1) is set to fast path.
-    // The epoch of the current bias is still valid but we know
-    // nothing about the owner; it might be set or it might be clear.
-    Node* cmask   = MakeConX(markWord::biased_lock_mask_in_place |
-                             markWord::age_mask_in_place |
-                             markWord::epoch_mask_in_place);
-    Node* old = transform_later(new AndXNode(mark_node, cmask));
-    cast_thread = transform_later(new CastP2XNode(ctrl, thread));
-    Node* new_mark = transform_later(new OrXNode(cast_thread, old));
-    old_phi->init_req(1, old);
-    new_phi->init_req(1, new_mark);
-
-    transform_later(rebiased_region);
-    transform_later(old_phi);
-    transform_later(new_phi);
-
-    // Try to acquire the bias of the object using an atomic operation.
-    // If this fails we will go in to the runtime to revoke the object's bias.
-    cas = new StoreXConditionalNode(rebiased_region, mem, adr, new_phi, old_phi);
-    transform_later(cas);
-    proj = transform_later(new SCMemProjNode(cas));
-
-    // Get slow path - Failed to CAS.
-    not_biased_ctrl = opt_bits_test(rebiased_region, region, 4, cas, 0, 0);
-    mem_phi->init_req(4, proj);
-    // region->in(4) is set to fast path - the object is rebiased to the current thread.
-
-    // Failed to CAS.
-    slow_path  = new RegionNode(3);
-    Node *slow_mem = new PhiNode( slow_path, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    slow_path->init_req(1, not_biased_ctrl); // Capture slow-control
-    slow_mem->init_req(1, proj);
-
-    // Call CAS-based locking scheme (FastLock node).
-
-    transform_later(fast_lock_region);
-    transform_later(fast_lock_mem_phi);
-
-    // Get slow path - FastLock failed to lock the object.
-    ctrl = opt_bits_test(fast_lock_region, region, 2, flock, 0, 0);
-    mem_phi->init_req(2, fast_lock_mem_phi);
-    // region->in(2) is set to fast path - the object is locked to the current thread.
-
-    slow_path->init_req(2, ctrl); // Capture slow-control
-    slow_mem->init_req(2, fast_lock_mem_phi);
-
-    transform_later(slow_path);
-    transform_later(slow_mem);
-    // Reset lock's memory edge.
-    lock->set_req(TypeFunc::Memory, slow_mem);
-
-  } else {
-    region  = new RegionNode(3);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-
-    // Optimize test; set region slot 2
-    slow_path = opt_bits_test(ctrl, region, 2, flock, 0, 0);
-    mem_phi->init_req(2, mem);
-  }
+  // Optimize test; set region slot 2
+  slow_path = opt_bits_test(ctrl, region, 2, flock, 0, 0);
+  mem_phi->init_req(2, mem);
 
   // Make slow path call
   CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
@@ -2386,8 +2193,11 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   _igvn.replace_node(_callprojs.fallthrough_proj, region);
 
   Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
-  mem_phi->init_req(1, memproj );
+
+  mem_phi->init_req(1, memproj);
+
   transform_later(mem_phi);
+
   _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
@@ -2407,23 +2217,9 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node *region;
   Node *mem_phi;
 
-  if (UseOptoBiasInlining) {
-    // Check for biased locking unlock case, which is a no-op.
-    // See the full description in MacroAssembler::biased_locking_exit().
-    region  = new RegionNode(4);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-    mem_phi->init_req(3, mem);
-
-    Node* mark_node = make_load(ctrl, mem, obj, oopDesc::mark_offset_in_bytes(), TypeX_X, TypeX_X->basic_type());
-    ctrl = opt_bits_test(ctrl, region, 3, mark_node,
-                         markWord::biased_lock_mask_in_place,
-                         markWord::biased_lock_pattern);
-  } else {
-    region  = new RegionNode(3);
-    // create a Phi for the memory state
-    mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-  }
+  region  = new RegionNode(3);
+  // create a Phi for the memory state
+  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
 
   FastUnlockNode *funlock = new FastUnlockNode( ctrl, obj, box );
   funlock = transform_later( funlock )->as_FastUnlock();
@@ -2456,6 +2252,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   mem_phi->init_req(1, memproj );
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
+
   _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
 }
 
@@ -2501,17 +2298,23 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
+  NOT_PRODUCT(int membar_before = count_MemBar(C);)
 
-  // First, attempt to eliminate locks
+  // Before elimination may re-mark (change to Nested or NonEscObj)
+  // all associated (same box and obj) lock and unlock nodes.
   int cnt = C->macro_count();
   for (int i=0; i < cnt; i++) {
     Node *n = C->macro_node(i);
     if (n->is_AbstractLock()) { // Lock and Unlock nodes
-      // Before elimination mark all associated (same box and obj)
-      // lock and unlock nodes.
       mark_eliminated_locking_nodes(n->as_AbstractLock());
     }
   }
+  // Re-marking may break consistency of Coarsened locks.
+  if (!C->coarsened_locks_consistent()) {
+    return; // recompile without Coarsened locks if broken
+  }
+
+  // First, attempt to eliminate locks
   bool progress = true;
   while (progress) {
     progress = false;
@@ -2521,6 +2324,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
+#ifndef PRODUCT
+        if (success && PrintOptoStatistics) {
+          Atomic::inc(&PhaseMacroExpand::_monitor_objects_removed_counter);
+        }
+#endif
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2539,6 +2347,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
+#ifndef PRODUCT
+        if (success && PrintOptoStatistics) {
+          Atomic::inc(&PhaseMacroExpand::_objs_scalar_replaced_counter);
+        }
+#endif
         break;
       case Node::Class_CallStaticJava:
         success = eliminate_boxing_node(n->as_CallStaticJava());
@@ -2558,8 +2371,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque2   ||
                n->Opcode() == Op_Opaque3   ||
+               n->Opcode() == Op_Opaque4   ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
@@ -2567,6 +2380,12 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
+#ifndef PRODUCT
+  if (PrintOptoStatistics) {
+    int membar_after = count_MemBar(C);
+    Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);
+  }
+#endif
 }
 
 //------------------------------expand_macro_nodes----------------------
@@ -2574,6 +2393,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 bool PhaseMacroExpand::expand_macro_nodes() {
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
+  if (C->failing())  return true;
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
   bool progress = true;
@@ -2593,7 +2413,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         C->remove_macro_node(n);
         _igvn._worklist.push(n);
         success = true;
-      } else if (n->is_Opaque1() || n->Opcode() == Op_Opaque2) {
+      } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
 #if INCLUDE_RTM_OPT
@@ -2620,6 +2440,19 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, repl);
         success = true;
 #endif
+      } else if (n->Opcode() == Op_Opaque4) {
+        // With Opaque4 nodes, the expectation is that the test of input 1
+        // is always equal to the constant value of input 2. So we can
+        // remove the Opaque4 and replace it by input 2. In debug builds,
+        // leave the non constant test in instead to sanity check that it
+        // never fails (if it does, that subgraph was constructed so, at
+        // runtime, a Halt node is executed).
+#ifdef ASSERT
+        _igvn.replace_node(n, n->in(1));
+#else
+        _igvn.replace_node(n, n->in(2));
+#endif
+        success = true;
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
@@ -2741,3 +2574,38 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   return false;
 }
+
+#ifndef PRODUCT
+int PhaseMacroExpand::_objs_scalar_replaced_counter = 0;
+int PhaseMacroExpand::_monitor_objects_removed_counter = 0;
+int PhaseMacroExpand::_GC_barriers_removed_counter = 0;
+int PhaseMacroExpand::_memory_barriers_removed_counter = 0;
+
+void PhaseMacroExpand::print_statistics() {
+  tty->print("Objects scalar replaced = %d, ", Atomic::load(&_objs_scalar_replaced_counter));
+  tty->print("Monitor objects removed = %d, ", Atomic::load(&_monitor_objects_removed_counter));
+  tty->print("GC barriers removed = %d, ", Atomic::load(&_GC_barriers_removed_counter));
+  tty->print_cr("Memory barriers removed = %d", Atomic::load(&_memory_barriers_removed_counter));
+}
+
+int PhaseMacroExpand::count_MemBar(Compile *C) {
+  if (!PrintOptoStatistics) {
+    return 0;
+  }
+  Unique_Node_List ideal_nodes;
+  int total = 0;
+  ideal_nodes.map(C->live_nodes(), NULL);
+  ideal_nodes.push(C->root());
+  for (uint next = 0; next < ideal_nodes.size(); ++next) {
+    Node* n = ideal_nodes.at(next);
+    if (n->is_MemBar()) {
+      total++;
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* m = n->fast_out(i);
+      ideal_nodes.push(m);
+    }
+  }
+  return total;
+}
+#endif

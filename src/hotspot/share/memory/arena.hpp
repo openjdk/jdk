@@ -27,19 +27,15 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <new>
 
-// The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
-// Note: this value must be a power of 2
-
-#define ARENA_AMALLOC_ALIGNMENT (2*BytesPerWord)
-
-#define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
-#define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
-#define ARENA_ALIGN(x) ((((size_t)(x)) + ARENA_ALIGN_M1) & ARENA_ALIGN_MASK)
+// The byte alignment to be used by Arena::Amalloc.
+#define ARENA_AMALLOC_ALIGNMENT BytesPerLong
+#define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
@@ -56,11 +52,12 @@ class Chunk: CHeapObj<mtChunk> {
   enum {
     // default sizes; make them slightly smaller than 2**k to guard against
     // buddy-system style malloc implementations
+    // Note: please keep these constants 64-bit aligned.
 #ifdef _LP64
     slack      = 40,            // [RGV] Not sure if this is right, but make it
                                 //       a multiple of 8.
 #else
-    slack      = 20,            // suspected sizeof(Chunk) + internal malloc headers
+    slack      = 24,            // suspected sizeof(Chunk) + internal malloc headers
 #endif
 
     tiny_size  =  256  - slack, // Size of first chunk (tiny)
@@ -89,7 +86,7 @@ class Chunk: CHeapObj<mtChunk> {
 
 //------------------------------Arena------------------------------------------
 // Fast allocation of memory
-class Arena : public CHeapObj<mtNone> {
+class Arena : public CHeapObjBase {
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
@@ -104,21 +101,16 @@ protected:
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
-  debug_only(void* malloc(size_t size);)
-  debug_only(void* internal_malloc_4(size_t x);)
-
-  void signal_out_of_memory(size_t request, const char* whence) const;
-
-  bool check_for_overflow(size_t request, const char* whence,
-      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) const {
-    if (UINTPTR_MAX - request < (uintptr_t)_hwm) {
-      if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-        return false;
-      }
-      signal_out_of_memory(request, whence);
+  void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
+    assert(is_aligned(x, BytesPerWord), "misaligned size");
+    if (pointer_delta(_max, _hwm, 1) >= x) {
+      char *old = _hwm;
+      _hwm += x;
+      return old;
+    } else {
+      return grow(x, alloc_failmode);
     }
-    return true;
- }
+  }
 
  public:
   Arena(MEMFLAGS memflag);
@@ -127,59 +119,23 @@ protected:
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
 
-  // new operators
-  void* operator new (size_t size) throw();
-  void* operator new (size_t size, const std::nothrow_t& nothrow_constant) throw();
-
-  // dynamic memory type tagging
-  void* operator new(size_t size, MEMFLAGS flags) throw();
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw();
-  void  operator delete(void* p);
-
-  // Fast allocate in the arena.  Common case is: pointer test + increment.
+  // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
+  // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
   void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert(is_power_of_2(ARENA_AMALLOC_ALIGNMENT) , "should be a power of 2");
-    x = ARENA_ALIGN(x);
-    debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
-  }
-  // Further assume size is padded out to words
-  void *Amalloc_4(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
-    debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_4", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode);
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
+    x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
+    // Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
+    // allocation was AmallocWords. Only needed on 32-bit - on 64-bit Amalloc and AmallocWords are
+    // identical.
+    assert(is_aligned(_max, ARENA_AMALLOC_ALIGNMENT), "chunk end unaligned?");
+    NOT_LP64(_hwm = ARENA_ALIGN(_hwm));
+    return internal_amalloc(x, alloc_failmode);
   }
 
-  // Allocate with 'double' alignment. It is 8 bytes on sparc.
-  // In other cases Amalloc_D() should be the same as Amalloc_4().
-  void* Amalloc_D(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    assert( (x&(sizeof(char*)-1)) == 0, "misaligned size" );
-    debug_only(if (UseMallocOnly) return malloc(x);)
-    if (!check_for_overflow(x, "Arena::Amalloc_D", alloc_failmode))
-      return NULL;
-    if (_hwm + x > _max) {
-      return grow(x, alloc_failmode); // grow() returns a result aligned >= 8 bytes.
-    } else {
-      char *old = _hwm;
-      _hwm += x;
-      return old;
-    }
+  // Allocate in the arena, assuming the size has been aligned to size of pointer, which
+  // is 4 bytes on 32 bits, hence the name.
+  void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+    assert(is_aligned(x, BytesPerWord), "misaligned size");
+    return internal_amalloc(x, alloc_failmode);
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
@@ -189,7 +145,6 @@ protected:
     }
 #ifdef ASSERT
     if (ZapResourceArea) memset(ptr, badResourceValue, size); // zap freed memory
-    if (UseMallocOnly) return true;
 #endif
     if (((char*)ptr) + size == _hwm) {
       _hwm = (char*)ptr;
@@ -215,9 +170,6 @@ protected:
   // Total # of bytes used
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
-
-  static void free_malloced_objects(Chunk* chunk, char* hwm, char* max, char* hwm2)  PRODUCT_RETURN;
-  static void free_all(char** start, char** end)                                     PRODUCT_RETURN;
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary

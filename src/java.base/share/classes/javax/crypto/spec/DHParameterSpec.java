@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,13 @@ import java.security.spec.AlgorithmParameterSpec;
 public class DHParameterSpec implements AlgorithmParameterSpec {
 
     // The prime modulus
-    private BigInteger p;
+    private final BigInteger p;
 
     // The base generator
-    private BigInteger g;
+    private final BigInteger g;
 
     // The size in bits of the random exponent (private value) (optional)
-    private int l;
+    private final int l;
 
     /**
      * Constructs a parameter set for Diffie-Hellman, using a prime modulus
