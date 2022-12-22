@@ -1019,15 +1019,15 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
     code = method()->java_code_at_bci(bci() + 1);
   }
 
-  BasicType rtype = T_ILLEGAL;
-  int       rsize = 0;
-
   if (code != Bytecodes::_illegal) {
     depth = Bytecodes::depth(code); // checkcast=0, athrow=-1
-    rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
-    if (rtype < T_CONFLICT)
-      rsize = type2size[rtype];
   }
+
+  auto rsize = [&]() {
+    assert(code != Bytecodes::_illegal, "code is illegal!");
+    BasicType rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
+    return (rtype < T_CONFLICT) ? type2size[rtype] : 0;
+  };
 
   switch (code) {
   case Bytecodes::_illegal:
@@ -1089,8 +1089,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
       iter.reset_to_bci(bci());
       iter.next();
       inputs = iter.get_dimensions();
-      assert(rsize == 1, "");
-      depth = rsize - inputs;
+      assert(rsize() == 1, "");
+      depth = 1 - inputs;
     }
     break;
 
@@ -1099,8 +1099,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_freturn:
   case Bytecodes::_dreturn:
   case Bytecodes::_areturn:
-    assert(rsize == -depth, "");
-    inputs = rsize;
+    assert(rsize() == -depth, "");
+    inputs = -depth;
     break;
 
   case Bytecodes::_jsr:
@@ -1111,7 +1111,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 
   default:
     // bytecode produces a typed result
-    inputs = rsize - depth;
+    inputs = rsize() - depth;
     assert(inputs >= 0, "");
     break;
   }
