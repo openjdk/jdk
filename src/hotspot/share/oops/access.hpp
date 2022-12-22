@@ -271,22 +271,22 @@ public:
 };
 
 // Helper for performing raw accesses (knows only of memory ordering
-// atomicity decorators as well as compressed oops)
+// atomicity decorators as well as compressed oops).
 template <DecoratorSet decorators = DECORATORS_NONE>
 class RawAccess: public Access<AS_RAW | decorators> {};
 
 // Helper for performing normal accesses on the heap. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class HeapAccess: public Access<IN_HEAP | decorators> {};
 
 // Helper for performing normal accesses in roots. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class NativeAccess: public Access<IN_NATIVE | decorators> {};
 
 // Helper for performing accesses in nmethods. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class NMethodAccess: public Access<IN_NMETHOD | decorators> {};
 
