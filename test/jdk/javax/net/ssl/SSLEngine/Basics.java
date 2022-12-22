@@ -26,11 +26,12 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
- *
  * This is intended to test many of the basic API calls to the SSLEngine
  * interface.  This doesn't really exercise much of the SSL code.
  *
+ * @library /test/lib
  * @author Brad Wetmore
+ * @run main Basics
  */
 
 import java.security.*;
@@ -39,6 +40,8 @@ import java.nio.*;
 import java.util.Arrays;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class Basics {
 
@@ -57,7 +60,18 @@ public class Basics {
     private static final String TLS13_CIPHER_SUITE = "TLS_AES_256_GCM_SHA384";
     private static final String TLS13_PROTOCOL = "TLSv1.3";
 
+    private static final String TLS12_PROTOCOL = "TLSv1.2";
+
     public static void main(String args[]) throws Exception {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+
+        runTest("TLSv1.3", "TLS_AES_256_GCM_SHA384");
+        runTest("TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384");
+        runTest("TLSv1.1", "TLS_DHE_DSS_WITH_AES_128_CBC_SHA");
+    }
+
+    private static void runTest(String protocol, String cipherSuite) throws Exception {
+        System.out.printf("Testing %s with %s%n", protocol, cipherSuite);
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
@@ -83,20 +97,20 @@ public class Basics {
         String [] suites = ssle.getSupportedCipherSuites();
         // sanity check that the ciphersuite we want to use is still supported
         Arrays.stream(suites)
-                .filter(s -> s.equals(TLS13_CIPHER_SUITE))
+                .filter(s -> s.equals(cipherSuite))
                 .findFirst()
                 .orElseThrow((() ->
-                        new RuntimeException(TLS13_CIPHER_SUITE +
+                        new RuntimeException(cipherSuite +
                                 " is not a supported ciphersuite.")));
 
         printStrings("Supported Ciphersuites", suites);
         printStrings("Enabled Ciphersuites", ssle.getEnabledCipherSuites());
-        ssle.setEnabledCipherSuites(new String [] { TLS13_CIPHER_SUITE });
+        ssle.setEnabledCipherSuites(new String [] { cipherSuite });
         printStrings("Set Ciphersuites", ssle.getEnabledCipherSuites());
 
         suites = ssle.getEnabledCipherSuites();
         if ((ssle.getEnabledCipherSuites().length != 1) ||
-                !(suites[0].equals(TLS13_CIPHER_SUITE))) {
+                !(suites[0].equals(cipherSuite))) {
             throw new Exception("set ciphers not what was expected");
         }
 
@@ -105,20 +119,20 @@ public class Basics {
         String [] protocols = ssle.getSupportedProtocols();
         // sanity check that the protocol we want is still supported
         Arrays.stream(protocols)
-                .filter(p -> p.equals(TLS13_PROTOCOL))
+                .filter(p -> p.equals(protocol))
                 .findFirst()
                 .orElseThrow(() ->
-                        new RuntimeException(TLS13_PROTOCOL +
+                        new RuntimeException(protocol +
                                 " is not a supported TLS protocol."));
 
         printStrings("Supported Protocols", protocols);
         printStrings("Enabled Protocols", ssle.getEnabledProtocols());
-        ssle.setEnabledProtocols(new String[]{ TLS13_PROTOCOL });
+        ssle.setEnabledProtocols(new String[]{ protocol });
         printStrings("Set Protocols", ssle.getEnabledProtocols());
 
         protocols = ssle.getEnabledProtocols();
         if ((ssle.getEnabledProtocols().length != 1) ||
-                !(protocols[0].equals(TLS13_PROTOCOL))) {
+                !(protocols[0].equals(protocol))) {
             throw new Exception("set protocols not what was expected");
         }
 
