@@ -2,7 +2,8 @@
 super public class FieldName
 	version 65:0
 {
-  public static Field x:"[I";
+  public static Field x:I;
+  public static Field y:"[C";
 
   public Method "<init>":"()V"
 	stack 1 locals 1

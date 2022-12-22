@@ -30,14 +30,7 @@
  * @run main NoSuchFieldOutputTest
  * @compile FieldName2.jasm
  * @run main NoSuchFieldOutputTest
- * @compile NoSuchFieldOutputTest.java FieldName3.java
- * @compile FieldName2.jasm
- * @run main NoSuchFieldOutputTest
- * @compile NoSuchFieldOutputTest.java FieldName4.java
- * @compile FieldName2.jasm
- * @run main NoSuchFieldOutputTest
- * @compile NoSuchFieldOutputTest.java FieldName5.java
- * @compile FieldName2.jasm
+ * @compile FieldName3.jasm
  * @run main NoSuchFieldOutputTest
  */
 
@@ -45,33 +38,44 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NoSuchFieldOutputTest {
+
   public static void main(java.lang.String[] unused) throws Exception {
-      try {
-          FieldName fm = new FieldName();
-          Object x = FieldName.x;
-          String s = "x = " + x;
-          throwTestException("Non error output does not match", s);
-      } catch (NoSuchFieldError nsfe) {
-          Pattern noSuchFieldPattern = Pattern.compile("Class (?<classname>[\\w\\d]+) does not have field '(?<signature>[\\w\\d]+) (?<varname>[\\w\\d]+)'");
-          String output = nsfe.getMessage();
-          Matcher noSuchFieldMatcher = noSuchFieldPattern.matcher(output);
-          if (noSuchFieldMatcher.matches()) {
-            String classname = noSuchFieldMatcher.group("classname");
-            String signature = noSuchFieldMatcher.group("signature");
-            String varname   = noSuchFieldMatcher.group("varname");
-            if (!classname.equals("FieldName")) {
-              throwTestException("Failed to match class name", output);
-            }
-            if (!signature.equals("int")) {
-              throwTestException("Failed to match type signature", output);
-            }
-            if (!varname.equals("x")) {
-              throwTestException("Failed to match field name", output);
-            }
-          } else {
-            throwTestException("Output does not match", output);
-          }
+    try {
+      FieldName fm = new FieldName();
+      String s = "";
+      Object x = FieldName.x;
+      s = s + "\nx = " + x;
+      Object y = FieldName.y;
+      s = s + "\ny = " + y;
+      Object z = FieldName.z;
+      s = s + "\nz = " + z;
+      throwTestException("Did not throw NoSuchFieldError", s);
+    } catch (NoSuchFieldError nsfe) {
+      testNoSuchFieldOutput(nsfe);
+    }
+  }
+
+  private static void testNoSuchFieldOutput(NoSuchFieldError nsfe) throws Exception {
+    Pattern noSuchFieldPattern = Pattern.compile("Class (?<classname>[\\w\\d]+) does not have field '(?<signature>[\\S]+) (?<varname>[\\w\\d]+)'");
+    String output = nsfe.getMessage();
+    Matcher noSuchFieldMatcher = noSuchFieldPattern.matcher(output);
+    if (noSuchFieldMatcher.matches()) {
+      String classname = noSuchFieldMatcher.group("classname");
+      String signature = noSuchFieldMatcher.group("signature");
+      String varname   = noSuchFieldMatcher.group("varname");
+      if (!classname.equals("FieldName")) {
+        throwTestException("Failed to match class name", output);
       }
+      if (!signature.equals("int") && !signature.equals("char[]") && !signature.equals("TestClass")) {
+        throwTestException("Failed to match type signature", output);
+      }
+      if (!varname.equals("x") && !varname.equals("y") && !varname.equals("z")) {
+        throwTestException("Failed to match field name", output);
+      }
+    } else {
+      throwTestException("Output format does not match", output);
+    }
+    System.out.println(output);
   }
   private static void throwTestException(String reason, String output) throws Exception {
       throw new Exception(reason + " . Stdout is :\n" + output);

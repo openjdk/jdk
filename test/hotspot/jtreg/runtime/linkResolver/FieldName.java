@@ -27,5 +27,7 @@
 }*/
 
 public class FieldName {
-  public static char[][] x;
+  public static int x;
+  public static char[] y;
+  public static TestClass z;
 }
