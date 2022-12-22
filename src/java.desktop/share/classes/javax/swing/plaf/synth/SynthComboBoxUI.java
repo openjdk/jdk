@@ -371,7 +371,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         //adjust the size based on the button width
         size.height += insets.top + insets.bottom + arrowInsets.top
                         + arrowInsets.bottom;
-        size.width +=  insets.left + insets.right +arrowInsets.left
+        size.width  += insets.left + insets.right + arrowInsets.left
                         + arrowInsets.right + buttonWidth;
 
         cachedMinimumSize.setSize( size.width, size.height );
