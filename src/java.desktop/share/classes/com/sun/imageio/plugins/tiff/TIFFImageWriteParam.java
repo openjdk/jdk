@@ -78,7 +78,7 @@ import javax.imageio.ImageWriteParam;
  * <tr>
  * <td>Exif JPEG</td>
  * <td>Exif-specific JPEG compression (see note following this table)</td>
- * <td><a href="http://www.exif.org/Exif2-2.PDF">Exif 2.2 Specification</a>
+ * <td><a href="https://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf">Exif 2.2 Specification</a>
  * (PDF), section 4.5.5, "Basic Structure of Thumbnail Data"</td>
  * </table>
  *
