@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
-import java.util.Collections;
 import java.util.*;
 
 import sun.security.util.DerOutputStream;
@@ -65,24 +63,11 @@ import sun.security.util.DerValue;
  * </pre>
  *
  * @see Extension
- * @see CertAttrSet
  */
 
-public class SubjectInfoAccessExtension extends Extension
-        implements CertAttrSet<String> {
+public class SubjectInfoAccessExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.SubjectInfoAccess";
-
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "SubjectInfoAccess";
-    public static final String DESCRIPTIONS = "descriptions";
 
     /**
      * The List of AccessDescription objects.
@@ -93,11 +78,15 @@ public class SubjectInfoAccessExtension extends Extension
      * Create an SubjectInfoAccessExtension from a List of
      * AccessDescription; the criticality is set to false.
      *
-     * @param accessDescriptions the List of AccessDescription
-     * @throws IOException on error
+     * @param accessDescriptions the List of AccessDescription,
+     *                           cannot be null or empty.
      */
     public SubjectInfoAccessExtension(
-            List<AccessDescription> accessDescriptions) throws IOException {
+            List<AccessDescription> accessDescriptions) {
+        if (accessDescriptions == null || accessDescriptions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "accessDescriptions cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
         this.critical = false;
         this.accessDescriptions = accessDescriptions;
@@ -126,7 +115,7 @@ public class SubjectInfoAccessExtension extends Extension
             throw new IOException("Invalid encoding for " +
                                   "SubjectInfoAccessExtension.");
         }
-        accessDescriptions = new ArrayList<AccessDescription>();
+        accessDescriptions = new ArrayList<>();
         while (val.data.available() != 0) {
             DerValue seq = val.data.getDerValue();
             AccessDescription accessDescription = new AccessDescription(seq);
@@ -142,8 +131,9 @@ public class SubjectInfoAccessExtension extends Extension
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
+    @Override
     public String getName() {
         return NAME;
     }
@@ -152,77 +142,19 @@ public class SubjectInfoAccessExtension extends Extension
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
-        DerOutputStream tmp = new DerOutputStream();
+    @Override
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.SubjectInfoAccess_Id;
             this.critical = false;
             encodeThis();
         }
-        super.encode(tmp);
-        out.write(tmp.toByteArray());
+        super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            accessDescriptions = (List<AccessDescription>)obj;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public List<AccessDescription> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            return accessDescriptions;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            accessDescriptions =
-                Collections.<AccessDescription>emptyList();
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:SubjectInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        AttributeNameEnumeration elements = new AttributeNameEnumeration();
-        elements.addElement(DESCRIPTIONS);
-        return elements.elements();
-    }
-
-     // Encode this extension value
-    private void encodeThis() throws IOException {
+    // Encode this extension value
+    private void encodeThis() {
         if (accessDescriptions.isEmpty()) {
             this.extensionValue = null;
         } else {
@@ -243,5 +175,4 @@ public class SubjectInfoAccessExtension extends Extension
         return super.toString() +
             "SubjectInfoAccess [\n  " + accessDescriptions + "\n]\n";
     }
-
 }

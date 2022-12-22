@@ -79,11 +79,16 @@
  * <ul>
  *     <li>{@systemProperty com.sun.jndi.ldap.object.trustSerialData}:
  *          <br>The value of this system property is the string representation of a boolean value
- *          which allows to control the deserialization of java objects from the 'javaSerializedData'
- *          LDAP attribute. To prevent the deserialization of java objects from the 'javaSerializedData'
- *          attribute, the system property value can be set to 'false'.
- *          <br>If the property is not specified then the deserialization of java objects
- *          from the 'javaSerializedData' attribute is allowed.
+ *          that controls the deserialization of java objects from the {@code javaSerializedData} LDAP
+ *          attribute, reconstruction of RMI references from the {@code javaRemoteLocation} LDAP attribute, and
+ *          reconstruction of {@linkplain javax.naming.BinaryRefAddr binary reference addresses} from
+ *          the {@code javaReferenceAddress} LDAP attribute.
+ *          To allow the deserialization or reconstruction of java objects from {@code javaSerializedData},
+ *          {@code javaRemoteLocation} or {@code javaReferenceAddress} attributes, the system property value
+ *          can be set to {@code true} (case insensitive).
+ *          <br>If the property is not specified the deserialization of java objects
+ *          from the {@code javaSerializedData}, the {@code javaRemoteLocation}, or {@code javaReferenceAddress}
+ *          attributes is not allowed.
  *     </li>
  *     <li>{@systemProperty jdk.jndi.object.factoriesFilter}:
  *          <br>The value of this system property defines a filter used by
@@ -91,12 +96,30 @@
  *          be allowed to instantiate objects from object references returned by naming/directory systems.
  *          The factory class named by the reference instance will be matched against this filter.
  *          The filter property supports pattern-based filter syntax with the same format as
- *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}.
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}. Limit patterns
+ *          specified in the filter property are unused.
  *          This property can also be specified as a {@linkplain java.security.Security security property}.
  *          This property is also supported by the <a href="{@docRoot}/jdk.naming.rmi/module-summary.html">default JNDI
  *          RMI Provider</a>.
  *          <br>The default value allows any object factory class specified by the reference
  *          instance to recreate the referenced object.
+ *     </li>
+ *     <li>{@systemProperty jdk.jndi.ldap.object.factoriesFilter}:
+ *          <br>The value of this system property defines a filter used by
+ *          the JDK LDAP provider implementation to further restrict the set of object factory classes which will
+ *          be allowed to instantiate objects from object references returned by LDAP systems.
+ *          The factory class named by the {@linkplain javax.naming.Reference reference instance} first will be
+ *          matched against this specific filter and then against the global filter. The factory class is rejected
+ *          if any of these two filters reject it, or if none of them allow it.
+ *          The filter property supports pattern-based filter syntax with the same format as
+ *          {@link java.io.ObjectInputFilter.Config#createFilter(String) jdk.serialFilter}. Limit patterns
+ *          specified in the filter property are unused.
+ *          <br>The default value allows any object factory class provided by the JDK LDAP provider
+ *          implementation.
+ *         <br>This system property will be used to filter LDAP specific object factories only if
+ *         global {@link javax.naming.spi.ObjectFactoryBuilder} is {@linkplain
+ *         javax.naming.spi.NamingManager#setObjectFactoryBuilder(javax.naming.spi.ObjectFactoryBuilder)
+ *         not set}.
  *     </li>
  * </ul>
  * <p>Other providers may define additional properties in their module description:
@@ -128,6 +151,8 @@ module java.naming {
     exports com.sun.jndi.toolkit.url to
         jdk.naming.dns,
         jdk.naming.rmi;
+    exports com.sun.naming.internal to
+         jdk.naming.rmi;
 
     uses javax.naming.ldap.StartTlsResponse;
     uses javax.naming.spi.InitialContextFactory;

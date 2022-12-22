@@ -819,9 +819,9 @@ enum {
   movl(h, Address(CTX, 4*7));
 
   pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
-  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +0)); //[PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-  vmovdqu(SHUF_00BA, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));     //[_SHUF_00BA wrt rip]
-  vmovdqu(SHUF_DC00, ExternalAddress(pshuffle_byte_flip_mask_addr + 64));     //[_SHUF_DC00 wrt rip]
+  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+  vmovdqu(SHUF_00BA,      ExternalAddress(pshuffle_byte_flip_mask_addr + 32)); // [_SHUF_00BA wrt rip]
+  vmovdqu(SHUF_DC00,      ExternalAddress(pshuffle_byte_flip_mask_addr + 64)); // [_SHUF_DC00 wrt rip]
 
   movl(g, Address(CTX, 4*6));
 
@@ -982,9 +982,9 @@ bind(only_one_block);
 
 
   pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
-  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //[PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-  vmovdqu(SHUF_00BA, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));     //[_SHUF_00BA wrt rip]
-  vmovdqu(SHUF_DC00, ExternalAddress(pshuffle_byte_flip_mask_addr + 64));     //[_SHUF_DC00 wrt rip]
+  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+  vmovdqu(SHUF_00BA,      ExternalAddress(pshuffle_byte_flip_mask_addr + 32)); // [_SHUF_00BA wrt rip]
+  vmovdqu(SHUF_DC00,      ExternalAddress(pshuffle_byte_flip_mask_addr + 64)); // [_SHUF_DC00 wrt rip]
 
   movl(g, Address(CTX, 4*6));   // 0x1f83d9ab
 
@@ -1374,8 +1374,8 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     movq(h, Address(CTX, 8 * 7));
 
     pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask_sha512;
-    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr + 0)); //PSHUFFLE_BYTE_FLIP_MASK wrt rip
-    vmovdqu(YMM_MASK_LO, ExternalAddress(pshuffle_byte_flip_mask_addr + 32));
+    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // PSHUFFLE_BYTE_FLIP_MASK wrt rip
+    vmovdqu(YMM_MASK_LO,    ExternalAddress(pshuffle_byte_flip_mask_addr + 32));
 
     movq(g, Address(CTX, 8 * 6));
 

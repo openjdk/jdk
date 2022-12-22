@@ -22,9 +22,8 @@
  *
  */
 
-
-#include "jvm.h"
 #include "classfile/classLoader.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -138,7 +137,7 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
         success = false;
         break;
       default:
-        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " kB). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / 1024);
+        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
         success = true;
         break;
     }
@@ -479,14 +478,14 @@ static void print_rlimit(outputStream* st, const char* msg,
     // soft limit
     if (rlim.rlim_cur == RLIM_INFINITY) { st->print("infinity"); }
     else {
-      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / 1024); }
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_cur) / K); }
       else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_cur)); }
     }
     // hard limit
     st->print("/");
     if (rlim.rlim_max == RLIM_INFINITY) { st->print("infinity"); }
     else {
-      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / 1024); }
+      if (output_k) { st->print(UINT64_FORMAT "k", uint64_t(rlim.rlim_max) / K); }
       else { st->print(UINT64_FORMAT, uint64_t(rlim.rlim_max)); }
     }
   }
@@ -717,9 +716,20 @@ void* os::dll_lookup(void* handle, const char* name) {
 }
 
 void os::dll_unload(void *lib) {
-  const char* l_path = LINUX_ONLY(os::Linux::dll_path(lib))
-                       NOT_LINUX("<not available>");
-  if (l_path == NULL) l_path = "<not available>";
+  // os::Linux::dll_path returns a pointer to a string that is owned by the dynamic loader. Upon
+  // calling dlclose the dynamic loader may free the memory containing the string, thus we need to
+  // copy the string to be able to reference it after dlclose.
+  const char* l_path = NULL;
+#ifdef LINUX
+  char* l_pathdup = NULL;
+  l_path = os::Linux::dll_path(lib);
+  if (l_path != NULL) {
+    l_path = l_pathdup = os::strdup(l_path);
+  }
+#endif  // LINUX
+  if (l_path == NULL) {
+    l_path = "<not available>";
+  }
   int res = ::dlclose(lib);
 
   if (res == 0) {
@@ -737,6 +747,7 @@ void os::dll_unload(void *lib) {
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
   }
+  LINUX_ONLY(os::free(l_pathdup));
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
@@ -897,7 +908,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   LINUX_ONLY(stack_size -= guard_size);
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
-    stack_size / 1024, guard_size / 1024,
+    stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
 }
@@ -2006,7 +2017,7 @@ void os::die() {
   if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
     // For TimeoutInErrorHandlingTest.java, we just kill the VM
     // and don't take the time to generate a core file.
-    os::signal_raise(SIGKILL);
+    ::raise(SIGKILL);
   } else {
     ::abort();
   }
@@ -2015,4 +2026,3 @@ void os::die() {
 const char* os::file_separator() { return "/"; }
 const char* os::line_separator() { return "\n"; }
 const char* os::path_separator() { return ":"; }
-

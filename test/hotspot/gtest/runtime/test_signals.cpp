@@ -34,7 +34,7 @@
 #include <string.h>
 
 extern "C" {
-  static void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
+  static void sig_handler(int sig) {
     printf( " HANDLER (1) " );
   }
 }
@@ -44,7 +44,7 @@ class PosixSignalTest : public ::testing::Test {
 
   static void check_handlers() {
     struct sigaction act, old_SIGFPE_act, old_SIGILL_act;
-    act.sa_handler = (void (*)(int))sig_handler;
+    act.sa_handler = sig_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     ASSERT_NE(sigaction(SIGFPE, &act, &old_SIGFPE_act), -1) << "Setting SIGFPE handler failed: " << os::strerror(errno) << " (" << errno << ")";

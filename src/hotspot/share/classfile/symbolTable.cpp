@@ -161,12 +161,6 @@ public:
   }
 };
 
-static size_t ceil_log2(size_t value) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < value; ++ret);
-  return ret;
-}
-
 void SymbolTable::create_table ()  {
   size_t start_size_log_2 = ceil_log2(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
@@ -635,7 +629,7 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
   ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
   for (int i = 0; i < len; i++) {
-    Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));
+    Symbol* sym = ArchiveBuilder::get_buffered_symbol(symbols->at(i));
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
@@ -882,8 +876,7 @@ void SymbolTable::print_histogram() {
   _local_table->do_scan(Thread::current(), hi);
   tty->print_cr("Symbol Table Histogram:");
   tty->print_cr("  Total number of symbols  " SIZE_FORMAT_W(7), hi.total_count);
-  tty->print_cr("  Total size in memory     " SIZE_FORMAT_W(7) "K",
-          (hi.total_size * wordSize) / 1024);
+  tty->print_cr("  Total size in memory     " SIZE_FORMAT_W(7) "K", (hi.total_size * wordSize) / K);
   tty->print_cr("  Total counted            " SIZE_FORMAT_W(7), _symbols_counted);
   tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
   if (_symbols_counted > 0) {
@@ -891,8 +884,8 @@ void SymbolTable::print_histogram() {
           ((float)_symbols_removed / _symbols_counted) * 100);
   }
   tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
-  tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / 1024);
-  tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / 1024);
+  tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / K);
+  tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / K);
   tty->print_cr("  Total symbol length      " SIZE_FORMAT_W(7), hi.total_length);
   tty->print_cr("  Maximum symbol length    " SIZE_FORMAT_W(7), hi.max_length);
   tty->print_cr("  Average symbol length    %7.2f", ((float)hi.total_length / hi.total_count));
@@ -901,11 +894,11 @@ void SymbolTable::print_histogram() {
   for (size_t i = 0; i < hi.results_length; i++) {
     if (hi.counts[i] > 0) {
       tty->print_cr("    " SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K",
-                    i, hi.counts[i], (hi.sizes[i] * wordSize) / 1024);
+                    i, hi.counts[i], (hi.sizes[i] * wordSize) / K);
     }
   }
   tty->print_cr("  >=" SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K\n",
-                hi.results_length, hi.out_of_range_count, (hi.out_of_range_size*wordSize) / 1024);
+                hi.results_length, hi.out_of_range_count, (hi.out_of_range_size*wordSize) / K);
 }
 #endif // PRODUCT
 

@@ -138,13 +138,6 @@ void ParmNode::dump_compact_spec(outputStream *st) const {
     bottom_type()->dump_on(st);
   }
 }
-
-// For a ParmNode, all immediate inputs and outputs are considered relevant
-// both in compact and standard representation.
-void ParmNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
 #endif
 
 uint ParmNode::ideal_reg() const {
@@ -1373,19 +1366,6 @@ void SafePointNode::dump_spec(outputStream *st) const {
   st->print(" SafePoint ");
   _replaced_nodes.dump(st);
 }
-
-// The related nodes of a SafepointNode are all data inputs, excluding the
-// control boundary, as well as all outputs till level 2 (to include projection
-// nodes and targets). In compact mode, just include inputs till level 1 and
-// outputs as before.
-void SafePointNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, false);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -2, false, false);
-}
 #endif
 
 const RegMask &SafePointNode::in_RegMask(uint idx) const {
@@ -1474,7 +1454,7 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   assert(Opcode() == Op_SafePoint, "only value for safepoint in loops");
   int nb = igvn->C->root()->find_prec_edge(this);
   if (nb != -1) {
-    igvn->C->root()->rm_prec(nb);
+    igvn->delete_precedence_of(igvn->C->root(), nb);
   }
 }
 
@@ -1571,6 +1551,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   init_req( KlassNode          , klass_node);
   init_req( InitialTest        , initial_test);
   init_req( ALength            , topnode);
+  init_req( ValidLengthTest    , topnode);
   C->add_macro_node(this);
 }
 
@@ -1595,54 +1576,6 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
   // For now only enable fast locking for non-array types
   mark_node = phase->MakeConX(markWord::prototype().value());
   return mark_node;
-}
-
-//=============================================================================
-Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
-  // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
-
-  const Type* type = phase->type(Ideal_length());
-  if (type->isa_int() && type->is_int()->_hi < 0) {
-    if (can_reshape) {
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      // Unreachable fall through path (negative array length),
-      // the allocation can only throw so disconnect it.
-      Node* proj = proj_out_or_null(TypeFunc::Control);
-      Node* catchproj = NULL;
-      if (proj != NULL) {
-        for (DUIterator_Fast imax, i = proj->fast_outs(imax); i < imax; i++) {
-          Node *cn = proj->fast_out(i);
-          if (cn->is_Catch()) {
-            catchproj = cn->as_Multi()->proj_out_or_null(CatchProjNode::fall_through_index);
-            break;
-          }
-        }
-      }
-      if (catchproj != NULL && catchproj->outcnt() > 0 &&
-          (catchproj->outcnt() > 1 ||
-           catchproj->unique_out()->Opcode() != Op_Halt)) {
-        assert(catchproj->is_CatchProj(), "must be a CatchProjNode");
-        Node* nproj = catchproj->clone();
-        igvn->register_new_node_with_optimizer(nproj);
-
-        Node *frame = new ParmNode( phase->C->start(), TypeFunc::FramePtr );
-        frame = phase->transform(frame);
-        // Halt & Catch Fire
-        Node* halt = new HaltNode(nproj, frame, "unexpected negative array length");
-        phase->C->root()->add_req(halt);
-        phase->transform(halt);
-
-        igvn->replace_node(catchproj, phase->C->top());
-        return this;
-      }
-    } else {
-      // Can't correct it during regular GVN so register for IGVN
-      phase->C->record_for_igvn(this);
-    }
-  }
-  return NULL;
 }
 
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a
@@ -2004,16 +1937,6 @@ void AbstractLockNode::dump_spec(outputStream* st) const {
 
 void AbstractLockNode::dump_compact_spec(outputStream* st) const {
   st->print("%s", _kind_names[_kind]);
-}
-
-// The related set of lock nodes includes the control boundary.
-void AbstractLockNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-      this->collect_nodes(in_rel, 1, false, false);
-    } else {
-      this->collect_nodes_in_all_data(in_rel, true);
-    }
-    this->collect_nodes(out_rel, -2, false, false);
 }
 #endif
 

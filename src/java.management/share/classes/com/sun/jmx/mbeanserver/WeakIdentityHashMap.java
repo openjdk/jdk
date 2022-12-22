@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class WeakIdentityHashMap<K, V> {
     private WeakIdentityHashMap() {}
 
     static <K, V> WeakIdentityHashMap<K, V> make() {
-        return new WeakIdentityHashMap<K, V>();
+        return new WeakIdentityHashMap<>();
     }
 
     V get(K key) {
@@ -90,11 +90,11 @@ class WeakIdentityHashMap<K, V> {
     }
 
     private WeakReference<K> makeReference(K referent) {
-        return new IdentityWeakReference<K>(referent);
+        return new IdentityWeakReference<>(referent);
     }
 
     private WeakReference<K> makeReference(K referent, ReferenceQueue<K> q) {
-        return new IdentityWeakReference<K>(referent, q);
+        return new IdentityWeakReference<>(referent, q);
     }
 
     /**
@@ -134,5 +134,5 @@ class WeakIdentityHashMap<K, V> {
     }
 
     private Map<WeakReference<K>, V> map = newMap();
-    private ReferenceQueue<K> refQueue = new ReferenceQueue<K>();
+    private ReferenceQueue<K> refQueue = new ReferenceQueue<>();
 }

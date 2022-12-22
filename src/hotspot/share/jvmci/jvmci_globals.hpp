@@ -58,9 +58,10 @@ class fileStream;
           "Use JVMCI as the default compiler. Defaults to true if "         \
           "EnableJVMCIProduct is true.")                                    \
                                                                             \
-  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 0, EXPERIMENTAL,       \
+  product(uint, JVMCIThreadsPerNativeLibraryRuntime, 1, EXPERIMENTAL,       \
           "Max number of threads per JVMCI native runtime. "                \
-          "Specify 0 to force use of a single JVMCI native runtime. ")      \
+          "Specify 0 to force use of a single JVMCI native runtime. "       \
+          "Specify 1 to force a single JVMCI native runtime per thread. ")  \
           range(0, max_jint)                                                \
                                                                             \
   product(uint, JVMCICompilerIdleDelay, DEFAULT_COMPILER_IDLE_DELAY, EXPERIMENTAL, \
@@ -136,10 +137,15 @@ class fileStream;
           "and methods the JVMCI shared library must provide")              \
                                                                             \
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
-          "Execute JVMCI Java code from a shared library "                  \
+          "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
           "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
           "true and a JVMCI native library is available.")                  \
+                                                                            \
+  product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
+          "The fraction of compiler threads used by libjvmci. "             \
+          "The remaining compiler threads are used by C1.")                 \
+          range(0.0, 1.0)                                                   \
                                                                             \
   product(ccstr, JVMCINativeLibraryErrorFile, NULL, EXPERIMENTAL,           \
           "If an error in the JVMCI native library occurs, save the "       \

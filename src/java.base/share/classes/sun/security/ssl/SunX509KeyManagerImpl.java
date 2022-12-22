@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,9 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
             throws KeyStoreException,
             NoSuchAlgorithmException, UnrecoverableKeyException {
 
-        credentialsMap = new HashMap<String,X509Credentials>();
+        credentialsMap = new HashMap<>();
         serverAliasCache = Collections.synchronizedMap(
-                            new HashMap<String,String[]>());
+                new HashMap<>());
         if (ks == null) {
             return;
         }
@@ -325,7 +325,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
      * socket given the public key type and the list of
      * certificate issuer authorities recognized by the peer (if any).
      *
-     * Issuers comes to us in the form of X500Principal[].
+     * Issuers come to us in the form of X500Principal[].
      */
     private String[] getAliases(String keyType, Principal[] issuers) {
         if (keyType == null) {

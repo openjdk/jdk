@@ -35,7 +35,7 @@
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
 
-class CallGenerator : public ResourceObj {
+class CallGenerator : public ArenaObj {
  private:
   ciMethod*             _method;                // The method being called.
 
@@ -94,7 +94,7 @@ class CallGenerator : public ResourceObj {
   // Allocate CallGenerators only in Compile arena since some of them are referenced from CallNodes.
   void* operator new(size_t size) throw() {
     Compile* C = Compile::current();
-    return ResourceObj::operator new(size, C->comp_arena());
+    return ArenaObj::operator new(size, C->comp_arena());
   }
 
   // Utilities:

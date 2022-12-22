@@ -75,7 +75,7 @@ public interface BeanContext extends BeanContextChild, Collection, DesignMode, V
     Object instantiateChild(String beanName) throws IOException, ClassNotFoundException;
 
     /**
-     * Analagous to {@code java.lang.ClassLoader.getResourceAsStream()},
+     * Analogous to {@code java.lang.ClassLoader.getResourceAsStream()},
      * this method allows a {@code BeanContext} implementation
      * to interpose behavior between the child {@code Component}
      * and underlying {@code ClassLoader}.
@@ -91,7 +91,7 @@ public interface BeanContext extends BeanContextChild, Collection, DesignMode, V
     InputStream getResourceAsStream(String name, BeanContextChild bcc) throws IllegalArgumentException;
 
     /**
-     * Analagous to {@code java.lang.ClassLoader.getResource()}, this
+     * Analogous to {@code java.lang.ClassLoader.getResource()}, this
      * method allows a {@code BeanContext} implementation to interpose
      * behavior between the child {@code Component}
      * and underlying {@code ClassLoader}.

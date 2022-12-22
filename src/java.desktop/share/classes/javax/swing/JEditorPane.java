@@ -795,9 +795,11 @@ public class JEditorPane extends JTextComponent {
             if (redirect) {
                 String loc = conn.getHeaderField("Location");
                 if (loc.startsWith("http", 0)) {
-                    page = new URL(loc);
+                    @SuppressWarnings("deprecation")
+                    var _unused = page = new URL(loc);
                 } else {
-                    page = new URL(page, loc);
+                    @SuppressWarnings("deprecation")
+                    var _unused = page = new URL(page, loc);
                 }
                 return getStream(page);
             }
@@ -926,6 +928,7 @@ public class JEditorPane extends JTextComponent {
         if (url == null) {
             throw new IOException("invalid url");
         }
+        @SuppressWarnings("deprecation")
         URL page = new URL(url);
         setPage(page);
     }
@@ -1948,7 +1951,8 @@ public class JEditorPane extends JTextComponent {
                     if (href != null) {
                         URL u;
                         try {
-                            u = new URL(JEditorPane.this.getPage(), href);
+                            @SuppressWarnings("deprecation")
+                            var _unused = u = new URL(JEditorPane.this.getPage(), href);
                         } catch (MalformedURLException m) {
                             u = null;
                         }
@@ -1963,7 +1967,7 @@ public class JEditorPane extends JTextComponent {
              * as appropriate for that link.
              * <p>
              * E.g. from HTML:
-             *   &lt;a href="http://openjdk.java.net"&gt;OpenJDK&lt;/a&gt;
+             *   &lt;a href="https://openjdk.org"&gt;OpenJDK&lt;/a&gt;
              * this method would return a String containing the text:
              * 'OpenJDK'.
              * <p>

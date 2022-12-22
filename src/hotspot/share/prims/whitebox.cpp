@@ -23,13 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include <new>
 #include "cds.h"
+#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
@@ -82,7 +83,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -112,7 +112,6 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
@@ -208,7 +207,9 @@ public:
 
 WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) return false;
+  if (h_name == NULL) {
+    return 0;
+  }
   Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
@@ -221,7 +222,9 @@ WB_END
 
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) return false;
+  if (h_name == NULL) {
+    return 0;
+  }
   Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
   return (jint)sym->refcount();
@@ -809,7 +812,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   if (code == NULL) {
     return JNI_FALSE;
   }
-  return (code->is_alive() && !code->is_marked_for_deoptimization());
+  return !code->is_marked_for_deoptimization();
 WB_END
 
 static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
@@ -1420,11 +1423,6 @@ WB_ENTRY(void, WB_UnlockCompilation(JNIEnv* env, jobject o))
   mo.notify_all();
 WB_END
 
-WB_ENTRY(void, WB_ForceNMethodSweep(JNIEnv* env, jobject o))
-  // Force a code cache sweep and block until it finished
-  NMethodSweeper::force_sweep();
-WB_END
-
 WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
   ResourceMark rm(THREAD);
   int len;
@@ -1826,6 +1824,12 @@ WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_op);
 WB_END
 
+WB_ENTRY(void, WB_ForceClassLoaderStatsSafepoint(JNIEnv* env, jobject wb))
+  nullStream dev_null;
+  ClassLoaderStatsVMOperation force_op(&dev_null);
+  VMThread::execute(&force_op);
+WB_END
+
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   return (jlong) ik->constants();
@@ -1998,7 +2002,7 @@ WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
-  return HeapShared::closed_regions_mapped();
+  return ArchiveHeapLoader::closed_regions_mapped();
 WB_END
 
 WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz))
@@ -2023,7 +2027,7 @@ WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreOpenArchiveHeapObjectsMapped(JNIEnv* env))
-  return HeapShared::open_regions_mapped();
+  return ArchiveHeapLoader::open_regions_mapped();
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
@@ -2393,7 +2397,7 @@ WB_ENTRY(jlong, WB_ResolvedMethodItemsCount(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
-  return (jint) SystemDictionary::pd_cache_table()->removed_entries_count();
+  return (jint) ProtectionDomainCacheTable::removed_entries_count();
 WB_END
 
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
@@ -2468,7 +2472,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
   }
   if (log) {
     tty->print_cr("[WhiteBox::VerifyFrames] Walking Frames");
-    tty->print_raw(st.as_string());
+    tty->print_raw(st.freeze());
     tty->print_cr("[WhiteBox::VerifyFrames] Done");
   }
 WB_END
@@ -2659,7 +2663,6 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
-  {CC"forceNMethodSweep",  CC"()V",                   (void*)&WB_ForceNMethodSweep  },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
@@ -2683,6 +2686,7 @@ static JNINativeMethod methods[] = {
   {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
+  {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getConstantPoolCacheIndexTag0", CC"()I",  (void*)&WB_GetConstantPoolCacheIndexTag},
   {CC"getConstantPoolCacheLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_GetConstantPoolCacheLength},

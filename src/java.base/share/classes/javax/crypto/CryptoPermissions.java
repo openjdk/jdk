@@ -229,10 +229,7 @@ implements Serializable {
         // For each algorithm in this CryptoPermissions,
         // find out if there is anything we should add into
         // ret.
-        Enumeration<String> thisKeys = this.perms.keys();
-        while (thisKeys.hasMoreElements()) {
-            String alg = thisKeys.nextElement();
-
+        for (String alg : this.perms.keySet()) {
             PermissionCollection thisPc = this.perms.get(alg);
             PermissionCollection thatPc = other.perms.get(alg);
 
@@ -270,9 +267,7 @@ implements Serializable {
         maxKeySize =
             ((CryptoPermission)
                     thisWildcard.elements().nextElement()).getMaxKeySize();
-        Enumeration<String> thatKeys = other.perms.keys();
-        while (thatKeys.hasMoreElements()) {
-            String alg = thatKeys.nextElement();
+        for (String alg : other.perms.keySet()) {
 
             if (this.perms.containsKey(alg)) {
                 continue;

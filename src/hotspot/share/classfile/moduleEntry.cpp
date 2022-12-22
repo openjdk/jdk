@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/filemap.hpp"
@@ -32,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "jni.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -41,7 +41,6 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/resourceHash.hpp"
@@ -164,7 +163,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == NULL) {
       // Lazily create a module's reads list
-      _reads = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -356,7 +355,7 @@ ModuleEntryTable::ModuleEntryTable() { }
 ModuleEntryTable::~ModuleEntryTable() {
   class ModuleEntryTableDeleter : public StackObj {
    public:
-    bool do_entry(const Symbol*& name, ModuleEntry*& entry) {
+    bool do_entry(const SymbolHandle& name, ModuleEntry*& entry) {
       if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
         ResourceMark rm;
         const char* str = name->as_C_string();
@@ -384,7 +383,7 @@ typedef ResourceHashtable<
   const ModuleEntry*,
   ModuleEntry*,
   557, // prime number
-  ResourceObj::C_HEAP> ArchivedModuleEntries;
+  AnyObj::C_HEAP> ArchivedModuleEntries;
 static ArchivedModuleEntries* _archive_modules_entries = NULL;
 
 ModuleEntry* ModuleEntry::allocate_archived_entry() const {
@@ -393,7 +392,7 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
 
   if (_archive_modules_entries == NULL) {
-    _archive_modules_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedModuleEntries();
+    _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
   }
   assert(_archive_modules_entries->get(this) == NULL, "Each ModuleEntry must not be shared across ModuleEntryTables");
   _archive_modules_entries->put(this, archived_entry);
@@ -429,7 +428,7 @@ GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEnt
   GrowableArray<ModuleEntry*>* array = NULL;
   int length = (archived_array == NULL) ? 0 : archived_array->length();
   if (length > 0) {
-    array = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(length, mtModule);
+    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = archived_array->at(i);
       array->append(archived_entry);
@@ -451,15 +450,15 @@ void ModuleEntry::init_as_archived_entry() {
   _loader_data = NULL;  // re-init at runtime
   _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
   if (name() != NULL) {
-    _name = ArchiveBuilder::get_relocated_symbol(_name);
+    _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
   }
   _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
   if (_version != NULL) {
-    _version = ArchiveBuilder::get_relocated_symbol(_version);
+    _version = ArchiveBuilder::get_buffered_symbol(_version);
   }
   if (_location != NULL) {
-    _location = ArchiveBuilder::get_relocated_symbol(_location);
+    _location = ArchiveBuilder::get_buffered_symbol(_location);
   }
   JFR_ONLY(set_trace_id(0));// re-init at runtime
 
@@ -512,7 +511,7 @@ static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
 }
 
 void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const Symbol*& key, ModuleEntry*& m) {
+  auto syms = [&] (const SymbolHandle& key, ModuleEntry*& m) {
       m->iterate_symbols(closure);
   };
   _table.iterate_all(syms);
@@ -521,7 +520,7 @@ void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
 Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
   Array<ModuleEntry*>* archived_modules = ArchiveBuilder::new_rw_array<ModuleEntry*>(_table.number_of_entries());
   int n = 0;
-  auto grab = [&] (const Symbol*& key, ModuleEntry*& m) {
+  auto grab = [&] (const SymbolHandle& key, ModuleEntry*& m) {
     archived_modules->at_put(n++, m);
   };
   _table.iterate_all(grab);
@@ -604,7 +603,7 @@ ModuleEntry* ModuleEntryTable::lookup_only(Symbol* name) {
 // This should only occur at class unloading.
 void ModuleEntryTable::purge_all_module_reads() {
   assert_locked_or_safepoint(Module_lock);
-  auto purge = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto purge = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     entry->purge_reads();
   };
   _table.iterate_all(purge);
@@ -638,7 +637,7 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 // be set with the defining module.  During startup, prior to java.base's definition,
 // classes needing their module field set are added to the fixup_module_list.
 // Their module field is set once java.base's java.lang.Module is known to the VM.
-void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
+void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module_handle) {
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to "
           JAVA_BASE_NAME "'s definition, invalid java.lang.Module");
@@ -661,7 +660,18 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-    java_lang_Class::fixup_module_field(k, module_handle);
+#ifndef PRODUCT
+    if (HeapShared::is_a_test_class_in_unnamed_module(k)) {
+      // We allow -XX:ArchiveHeapTestClass to archive additional classes
+      // into the CDS heap, but these must be in the unnamed module.
+      ModuleEntry* unnamed_module = ClassLoaderData::the_null_class_loader_data()->unnamed_module();
+      Handle unnamed_module_handle(current, unnamed_module->module());
+      java_lang_Class::fixup_module_field(k, unnamed_module_handle);
+    } else
+#endif
+    {
+      java_lang_Class::fixup_module_field(k, module_handle);
+    }
     k->class_loader_data()->dec_keep_alive();
   }
 
@@ -671,7 +681,7 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
 
 void ModuleEntryTable::print(outputStream* st) {
   ResourceMark rm;
-  auto printer = [&] (const Symbol*& name, ModuleEntry*& entry) {
+  auto printer = [&] (const SymbolHandle& name, ModuleEntry*& entry) {
     entry->print(st);
   };
   st->print_cr("Module Entry Table (table_size=%d, entries=%d)",
@@ -681,16 +691,18 @@ void ModuleEntryTable::print(outputStream* st) {
 }
 
 void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
-  auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     f(entry);
   };
+  assert_lock_strong(Module_lock);
   _table.iterate_all(do_f);
 }
 
 void ModuleEntryTable::modules_do(ModuleClosure* closure) {
-  auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     closure->do_module(entry);
   };
+  assert_lock_strong(Module_lock);
   _table.iterate_all(do_f);
 }
 
@@ -706,7 +718,7 @@ void ModuleEntry::print(outputStream* st) {
 }
 
 void ModuleEntryTable::verify() {
-  auto do_f = [&] (const Symbol*& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
     entry->verify();
   };
   assert_locked_or_safepoint(Module_lock);

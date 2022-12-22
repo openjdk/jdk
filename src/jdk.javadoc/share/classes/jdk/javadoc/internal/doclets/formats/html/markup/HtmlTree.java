@@ -392,6 +392,15 @@ public class HtmlTree extends Content {
      *
      * @return the element
      */
+    public static HtmlTree DETAILS() {
+        return new HtmlTree(TagName.DETAILS);
+    }
+
+    /**
+     * Creates an HTML {@code DETAILS} element.
+     *
+     * @return the element
+     */
     public static HtmlTree DETAILS(HtmlStyle style) {
         return new HtmlTree(TagName.DETAILS)
                 .setStyle(style);

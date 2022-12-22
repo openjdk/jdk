@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -40,6 +39,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -157,14 +157,14 @@ void JavaThread::set_threadOopHandles(oop p) {
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
   _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _extentLocalCache = OopHandle(_thread_oop_storage, NULL);
+  _scopedValueCache = OopHandle(_thread_oop_storage, NULL);
 }
 
 oop JavaThread::threadObj() const {
-  Thread* current = Thread::current_or_null_safe();
-  assert(current != nullptr, "cannot be called by a detached thread");
-  guarantee(current != this || JavaThread::cast(current)->is_oop_safe(),
-            "current cannot touch oops after its GC barrier is detached.");
+  // Ideally we would verify the current thread is oop_safe when this is called, but as we can
+  // be called from a signal handler we would have to use Thread::current_or_null_safe(). That
+  // has overhead and also interacts poorly with GetLastError on Windows due to the use of TLS.
+  // Instead callers must verify oop safe access.
   return _threadObj.resolve();
 }
 
@@ -186,13 +186,26 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-oop JavaThread::extentLocalCache() const {
-  return _extentLocalCache.resolve();
+oop JavaThread::scopedValueCache() const {
+  return _scopedValueCache.resolve();
 }
 
-void JavaThread::set_extentLocalCache(oop p) {
-  assert(_thread_oop_storage != NULL, "not yet initialized");
-  _extentLocalCache.replace(p);
+void JavaThread::set_scopedValueCache(oop p) {
+  if (_scopedValueCache.ptr_raw() != NULL) { // i.e. if the OopHandle has been allocated
+    _scopedValueCache.replace(p);
+  } else {
+    assert(p == NULL, "not yet initialized");
+  }
+}
+
+void JavaThread::clear_scopedValueBindings() {
+  set_scopedValueCache(NULL);
+  oop vthread_oop = vthread();
+  // vthread may be null here if we get a VM error during startup,
+  // before the java.lang.Thread instance has been created.
+  if (vthread_oop != NULL) {
+    java_lang_Thread::clear_scopedValueBindings(vthread_oop);
+  }
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
@@ -383,7 +396,6 @@ void JavaThread::check_for_valid_safepoint_state() {
 JavaThread::JavaThread() :
   // Initialize fields
 
-  _in_asgct(false),
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
@@ -421,6 +433,7 @@ JavaThread::JavaThread() :
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
+  _is_in_tmp_VTMS_transition(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -598,10 +611,8 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread
 
 JavaThread::~JavaThread() {
 
-  // Ask ServiceThread to release the threadObj OopHandle
-  ServiceThread::add_oop_handle_release(_threadObj);
-  ServiceThread::add_oop_handle_release(_vthread);
-  ServiceThread::add_oop_handle_release(_jvmti_vthread);
+  // Enqueue OopHandles for release by the service thread.
+  add_oop_handles_for_release();
 
   // Return the sleep event to the free list
   ParkEvent::Release(_SleepEvent);
@@ -687,11 +698,9 @@ void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
   assert(_threadObj.peek() != NULL, "just checking");
 
-  // Execute thread entry point unless this thread has a pending exception
-  // or has been stopped before starting.
-  // Note: Due to JVM_StopThread we can have pending exceptions already!
-  if (!this->has_pending_exception() &&
-      !java_lang_Thread::is_stillborn(this->threadObj())) {
+  // Execute thread entry point unless this thread has a pending exception.
+  // Note: Due to JVMTI StopThread we can have pending exceptions already!
+  if (!this->has_pending_exception()) {
     {
       ResourceMark rm(this);
       this->set_native_thread_name(this->name());
@@ -719,15 +728,13 @@ static void ensure_join(JavaThread* thread) {
   Handle threadObj(thread, thread->threadObj());
   assert(threadObj.not_null(), "java thread object must exist");
   ObjectLocker lock(threadObj, thread);
-  // Ignore pending exception (ThreadDeath), since we are exiting anyway
-  thread->clear_pending_exception();
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below
   java_lang_Thread::set_thread(threadObj(), NULL);
   lock.notify_all(thread);
-  // Ignore pending exception (ThreadDeath), since we are exiting anyway
+  // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
 }
 
@@ -986,30 +993,6 @@ bool JavaThread::is_lock_owned(address adr) const {
   return false;
 }
 
-bool JavaThread::is_lock_owned_current(address adr) const {
-  address stack_end = _stack_base - _stack_size;
-  const ContinuationEntry* ce = vthread_continuation();
-  address stack_base = ce != nullptr ? (address)ce->entry_sp() : _stack_base;
-  if (stack_base > adr && adr >= stack_end) {
-    return true;
-  }
-
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
-    if (chunk->contains(adr)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool JavaThread::is_lock_owned_carrier(address adr) const {
-  assert(is_vthread_mounted(), "");
-  address stack_end = _stack_base - _stack_size;
-  address stack_base = (address)vthread_continuation()->entry_sp();
-  return stack_base > adr && adr >= stack_end;
-}
-
 oop JavaThread::exception_oop() const {
   return Atomic::load(&_exception_oop);
 }
@@ -1067,29 +1050,21 @@ void JavaThread::handle_async_exception(oop java_throwable) {
     }
   }
 
-  // Only overwrite an already pending exception if it is not a ThreadDeath.
-  if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
+  // We cannot call Exceptions::_throw(...) here because we cannot block
+  set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-    // We cannot call Exceptions::_throw(...) here because we cannot block
-    set_pending_exception(java_throwable, __FILE__, __LINE__);
+  clear_scopedValueBindings();
 
-    // Clear any extent-local bindings on ThreadDeath
-    set_extentLocalCache(NULL);
-    oop threadOop = threadObj();
-    assert(threadOop != NULL, "must be");
-    java_lang_Thread::clear_extentLocalBindings(threadOop);
-
-    LogTarget(Info, exceptions) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm;
-      LogStream ls(lt);
-      ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
-      if (has_last_Java_frame()) {
-        frame f = last_frame();
-        ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
-      }
-      ls.print_cr(" of type: %s", java_throwable->klass()->external_name());
+  LogTarget(Info, exceptions) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
+    if (has_last_Java_frame()) {
+      frame f = last_frame();
+      ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
     }
+    ls.print_cr(" of type: %s", java_throwable->klass()->external_name());
   }
 }
 
@@ -1097,16 +1072,6 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
-    delete aeh;
-    return;
-  }
-
-  // Don't install a new pending async exception if there is already
-  // a pending ThreadDeath one. Just interrupt thread from potential
-  // wait()/sleep()/park() and return.
-  if (has_async_exception_condition(true /* ThreadDeath_only */)) {
-    java_lang_Thread::set_interrupted(threadObj(), true);
-    this->interrupt();
     delete aeh;
     return;
   }
@@ -1401,6 +1366,17 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   if (jvmti_thread_state() != NULL) {
     jvmti_thread_state()->oops_do(f, cf);
   }
+
+  // The continuation oops are really on the stack. But there is typically at most
+  // one of those per thread, so we handle them here in the oops_do_no_frames part
+  // so that we don't have to sprinkle as many stack watermark checks where these
+  // oops are used. We just need to make sure the thread has started processing.
+  ContinuationEntry* entry = _cont_entry;
+  while (entry != nullptr) {
+    f->do_oop((oop*)entry->cont_addr());
+    f->do_oop((oop*)entry->chunk_addr());
+    entry = entry->parent();
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
@@ -1477,10 +1453,6 @@ const char* _get_thread_state_name(JavaThreadState _thread_state) {
 
 void JavaThread::print_thread_state_on(outputStream *st) const {
   st->print_cr("   JavaThread state: %s", _get_thread_state_name(_thread_state));
-}
-
-const char* JavaThread::thread_state_name() const {
-  return _get_thread_state_name(_thread_state);
 }
 
 // Called by Threads::print() for VM_PrintThreads operation
@@ -1701,6 +1673,16 @@ oop JavaThread::current_park_blocker() {
   return NULL;
 }
 
+// Print stack trace for checked JNI warnings and JNI fatal errors.
+// This is the external format from above, but selecting the platform
+// or vthread as applicable.
+void JavaThread::print_jni_stack() {
+  if (is_vthread_mounted()) {
+    print_vthread_stack_on(tty);
+  } else {
+    print_stack_on(tty);
+  }
+}
 
 void JavaThread::print_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
@@ -1731,6 +1713,56 @@ void JavaThread::print_stack_on(outputStream* st) {
     // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
     count++;
     if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
+  }
+}
+
+void JavaThread::print_vthread_stack_on(outputStream* st) {
+  assert(is_vthread_mounted(), "Caller should have checked this");
+  assert(has_last_Java_frame(), "must be");
+
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
+  ContinuationEntry* cont_entry = last_continuation();
+  vframe* start_vf = last_java_vframe(&reg_map);
+  int count = 0;
+  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
+    // Watch for end of vthread stack
+    if (Continuation::is_continuation_enterSpecial(f->fr())) {
+      assert(cont_entry == Continuation::get_continuation_entry_for_entry_frame(this, f->fr()), "");
+      if (cont_entry->is_virtual_thread()) {
+        break;
+      }
+      cont_entry = cont_entry->parent();
+    }
+    if (f->is_java_frame()) {
+      javaVFrame* jvf = javaVFrame::cast(f);
+      java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
+
+      // Print out lock information
+      if (JavaMonitorsInStackTrace) {
+        jvf->print_lock_info_on(st, count);
+      }
+    } else {
+      // Ignore non-Java frames
+    }
+
+    // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
+    count++;
+    if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
+  }
+}
+
+void JavaThread::print_active_stack_on(outputStream* st) {
+  if (is_vthread_mounted()) {
+    print_vthread_stack_on(st);
+  } else {
+    print_stack_on(st);
   }
 }
 
@@ -1917,11 +1949,6 @@ javaVFrame* JavaThread::last_java_vframe(const frame f, RegisterMap *reg_map) {
   return NULL;
 }
 
-oop JavaThread::get_continuation() const {
-  assert(threadObj() != nullptr, "must be set");
-  return java_lang_Thread::continuation(threadObj());
-}
-
 Klass* JavaThread::security_get_caller_class(int depth) {
   ResetNoHandleMark rnhm;
   HandleMark hm(Thread::current());
@@ -2088,4 +2115,58 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
   }
+}
+
+// Deferred OopHandle release support.
+
+class OopHandleList : public CHeapObj<mtInternal> {
+  static const int _count = 4;
+  OopHandle _handles[_count];
+  OopHandleList* _next;
+  int _index;
+ public:
+  OopHandleList(OopHandleList* next) : _next(next), _index(0) {}
+  void add(OopHandle h) {
+    assert(_index < _count, "too many additions");
+    _handles[_index++] = h;
+  }
+  ~OopHandleList() {
+    assert(_index == _count, "usage error");
+    for (int i = 0; i < _index; i++) {
+      _handles[i].release(JavaThread::thread_oop_storage());
+    }
+  }
+  OopHandleList* next() const { return _next; }
+};
+
+OopHandleList* JavaThread::_oop_handle_list = nullptr;
+
+// Called by the ServiceThread to do the work of releasing
+// the OopHandles.
+void JavaThread::release_oop_handles() {
+  OopHandleList* list;
+  {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    list = _oop_handle_list;
+    _oop_handle_list = nullptr;
+  }
+  assert(!SafepointSynchronize::is_at_safepoint(), "cannot be called at a safepoint");
+
+  while (list != nullptr) {
+    OopHandleList* l = list;
+    list = l->next();
+    delete l;
+  }
+}
+
+// Add our OopHandles for later release.
+void JavaThread::add_oop_handles_for_release() {
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  OopHandleList* new_head = new OopHandleList(_oop_handle_list);
+  new_head->add(_threadObj);
+  new_head->add(_vthread);
+  new_head->add(_jvmti_vthread);
+  new_head->add(_scopedValueCache);
+  _oop_handle_list = new_head;
+  Service_lock->notify_all();
 }

@@ -171,7 +171,7 @@ public class ContinuousCallSiteTargetChange {
             WhiteBox whiteBox = WhiteBox.getWhiteBox();
             for (int i = 0; i < iterations; i++) {
                 iteration();
-                whiteBox.forceNMethodSweep();
+                whiteBox.fullGC();
             }
         }
     }

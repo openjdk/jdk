@@ -107,7 +107,7 @@ class OopIterateClosure : public OopClosure {
 
   // Class redefinition needs to get notified about methods from stackChunkOops
   virtual void do_method(Method* m) = 0;
-  // The code cache sweeper needs to get notified about methods from stackChunkOops
+  // The code cache unloading needs to get notified about methods from stackChunkOops
   virtual void do_nmethod(nmethod* nm) = 0;
 };
 
@@ -121,6 +121,12 @@ public:
   virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
   virtual void do_method(Method* m) { ShouldNotReachHere(); }
   virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
+};
+
+// Interface for applying an OopClosure to a set of oops.
+class OopIterator {
+public:
+  virtual void oops_do(OopClosure* cl) = 0;
 };
 
 enum class derived_pointer : intptr_t;
@@ -232,13 +238,6 @@ class SpaceClosure : public StackObj {
   // Called for each space
   virtual void do_space(Space* s) = 0;
 };
-
-class CompactibleSpaceClosure : public StackObj {
- public:
-  // Called for each compactible space
-  virtual void do_space(CompactibleSpace* s) = 0;
-};
-
 
 // CodeBlobClosure is used for iterating through code blobs
 // in the code cache or on thread stacks

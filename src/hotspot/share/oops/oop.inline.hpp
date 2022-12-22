@@ -207,6 +207,8 @@ inline oop  oopDesc::obj_field_access(int offset) const             { return Hea
 inline oop  oopDesc::obj_field(int offset) const                    { return HeapAccess<>::oop_load_at(as_oop(), offset);  }
 
 inline void oopDesc::obj_field_put(int offset, oop value)           { HeapAccess<>::oop_store_at(as_oop(), offset, value); }
+template <DecoratorSet decorators>
+inline void oopDesc::obj_field_put_access(int offset, oop value)    { HeapAccess<decorators>::oop_store_at(as_oop(), offset, value); }
 
 inline jbyte oopDesc::byte_field(int offset) const                  { return *field_addr<jbyte>(offset);  }
 inline void  oopDesc::byte_field_put(int offset, jbyte value)       { *field_addr<jbyte>(offset) = value; }
@@ -352,6 +354,14 @@ intptr_t oopDesc::identity_hash() {
   } else {
     return slow_identity_hash();
   }
+}
+
+// This checks fast simple case of whether the oop has_no_hash,
+// to optimize JVMTI table lookup.
+bool oopDesc::fast_no_hash_check() {
+  markWord mrk = mark_acquire();
+  assert(!mrk.is_marked(), "should never be marked");
+  return mrk.is_unlocked() && mrk.has_no_hash();
 }
 
 bool oopDesc::has_displaced_mark() const {

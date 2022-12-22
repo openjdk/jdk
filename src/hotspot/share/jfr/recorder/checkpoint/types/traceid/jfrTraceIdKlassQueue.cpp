@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ JfrBuffer* JfrTraceIdKlassQueue::get_enqueue_buffer(Thread* thread) {
   return _queue->thread_local_storage(thread);
 }
 
-JfrBuffer* JfrTraceIdKlassQueue::renew_enqueue_buffer(size_t size, Thread* thread) {
+JfrBuffer* JfrTraceIdKlassQueue::renew_enqueue_buffer(Thread* thread, size_t size /* 0 */) {
   return _queue->renew(size, thread);
 }
 

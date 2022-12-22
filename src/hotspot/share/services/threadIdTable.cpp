@@ -80,12 +80,6 @@ class ThreadIdTableConfig : public AllStatic {
     }
 };
 
-static size_t ceil_log2(size_t val) {
-  size_t ret;
-  for (ret = 1; ((size_t)1 << ret) < val; ++ret);
-  return ret;
-}
-
 // Lazily creates the table and populates it with the given
 // thread list
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {

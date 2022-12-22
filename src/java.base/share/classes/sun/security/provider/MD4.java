@@ -26,7 +26,6 @@
 package sun.security.provider;
 
 import java.security.*;
-import java.util.Arrays;
 
 import static sun.security.provider.ByteArrayAccess.*;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
@@ -34,7 +33,7 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
 /**
  * The MD4 class is used to compute an MD4 message digest over a given
  * buffer of bytes. It is an implementation of the RSA Data Security Inc
- * MD4 algorithim as described in internet RFC 1320.
+ * MD4 algorithm as described in internet RFC 1320.
  *
  * <p>The MD4 algorithm is very weak and should not be used unless it is
  * unavoidable. Therefore, it is not registered in our standard providers. To

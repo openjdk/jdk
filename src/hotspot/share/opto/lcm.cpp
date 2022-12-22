@@ -944,7 +944,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       tty->print_cr("# --- schedule_local B%d, before: ---", block->_pre_order);
       for (uint i = 0;i < block->number_of_nodes(); i++) {
         tty->print("# ");
-        block->get_node(i)->fast_dump();
+        block->get_node(i)->dump();
       }
       tty->print_cr("#");
     }
@@ -1212,7 +1212,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     tty->print_cr("# after schedule_local");
     for (uint i = 0;i < block->number_of_nodes();i++) {
       tty->print("# ");
-      block->get_node(i)->fast_dump();
+      block->get_node(i)->dump();
     }
     tty->print_cr("# ");
 

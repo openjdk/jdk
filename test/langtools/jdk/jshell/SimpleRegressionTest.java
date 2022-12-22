@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8130450 8158906 8154374 8166400 8171892 8173807 8173848
+ * @test 8130450 8158906 8154374 8166400 8171892 8173807 8173848 8282434
  * @summary simple regression test
  * @build KullaTesting TestingInputStream
  * @run testng SimpleRegressionTest
@@ -44,9 +44,16 @@ import static org.testng.Assert.assertTrue;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.Status.VALID;
+import org.testng.annotations.BeforeMethod;
 
 @Test
 public class SimpleRegressionTest extends KullaTesting {
+
+    @BeforeMethod
+    @Override
+    public void setUp() {
+        setUp(builder -> builder.executionEngine("local"));
+    }
 
     public void testSnippetMemberAssignment() {
         assertEval("class C { int y; }");
@@ -207,6 +214,10 @@ public class SimpleRegressionTest extends KullaTesting {
                    "\"\"");
         assertEval("(String)null",
                    "null");
+        assertEval("\"\\u032Ea\"",
+                   "\"\\u032Ea\"");
+        assertEval("\"a\\u032Ea\"",
+                   "\"a\u032Ea\"");
     }
 
     public void testCharRepresentation() {
@@ -222,5 +233,7 @@ public class SimpleRegressionTest extends KullaTesting {
                 "'\\035'");
         assertEval("\"a\\bb\\tc\\nd\\fe\\rf\\\"g'\\\\h\".charAt(1)",
                 "'\\b'");
+        assertEval("\"\\u032E\".charAt(0)",
+                "'\\u032E'");
     }
 }

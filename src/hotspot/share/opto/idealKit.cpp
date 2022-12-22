@@ -352,13 +352,14 @@ Node* IdealKit::load(Node* ctl,
                      BasicType bt,
                      int adr_idx,
                      bool require_atomic_access,
-                     MemNode::MemOrd mo) {
+                     MemNode::MemOrd mo,
+                     LoadNode::ControlDependency control_dependency) {
 
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = NULL; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
-  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, LoadNode::DependsOnlyOnTest, require_atomic_access);
+  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access);
   return transform(ld);
 }
 

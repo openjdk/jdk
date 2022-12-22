@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -38,8 +37,6 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 
 import javax.tools.JavaFileObject;
-import java.util.Locale;
-import java.util.Queue;
 
 /**
  *  A utility class to parse a string in a doc comment containing a
@@ -51,6 +48,18 @@ import java.util.Queue;
  *  deletion without notice.</b>
  */
 public class ReferenceParser {
+
+    /**
+     * Context dependent parsing mode which either disallows, allows or requires
+     * a member reference. The <code>MEMBER_OPTIONAL</code> value also allows
+     * arbitrary URI fragments using a double hash mark.
+     */
+    public enum Mode {
+        MEMBER_DISALLOWED,
+        MEMBER_OPTIONAL,
+        MEMBER_REQUIRED
+    }
+
     /**
      * An object to contain the result of parsing a reference to an API element.
      * Any, but not all, of the member fields may be null.
@@ -98,10 +107,11 @@ public class ReferenceParser {
     /**
      * Parse a reference to an API element as may be found in doc comment.
      * @param sig the signature to be parsed
+     * @param mode the parsing mode
      * @return a {@code Reference} object containing the result of parsing the signature
      * @throws ParseException if there is an error while parsing the signature
      */
-    public Reference parse(String sig) throws ParseException {
+    public Reference parse(String sig, Mode mode) throws ParseException {
 
         // Break sig apart into moduleName qualifiedExpr member paramTypes.
         JCTree.JCExpression moduleName;
@@ -129,16 +139,28 @@ public class ReferenceParser {
                 qualExpr = null;
                 member = null;
             } else if (hash == -1) {
-                if (lparen == -1) {
+                if (lparen == -1 && mode != Mode.MEMBER_REQUIRED) {
                     qualExpr = parseType(sig, afterSlash, sig.length(), dh);
                     member = null;
                 } else {
+                    if (mode == Mode.MEMBER_DISALLOWED) {
+                        throw new ParseException(hash, "dc.ref.unexpected.input");
+                    }
                     qualExpr = null;
-                    member = parseMember(sig, afterSlash, lparen, dh);
+                    member = parseMember(sig, afterSlash, lparen > -1 ? lparen : sig.length(), dh);
                 }
             } else {
+                if (mode == Mode.MEMBER_DISALLOWED) {
+                    throw new ParseException(hash, "dc.ref.unexpected.input");
+                }
                 qualExpr = (hash == afterSlash) ? null : parseType(sig, afterSlash, hash, dh);
-                if (lparen == -1) {
+                if (sig.indexOf("#", afterHash) == afterHash) {
+                    // A hash symbol followed by another hash indicates a literal URL fragment.
+                    if (mode != Mode.MEMBER_OPTIONAL) {
+                        throw new ParseException(afterHash, "dc.ref.unexpected.input");
+                    }
+                    member = null;
+                } else if (lparen == -1) {
                     member = parseMember(sig, afterHash, sig.length(), dh);
                 } else {
                     member = parseMember(sig, afterHash, lparen, dh);

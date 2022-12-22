@@ -74,7 +74,7 @@ typedef struct _XRadialGradient {
       TRANSFORM.matrix[2][2] = 1<<16;                                                          \
     }
 
-/* The xrender pipleine requires libXrender.so version 0.9.3 or later. */
+/* The xrender pipeline requires libXrender.so version 0.9.3 or later. */
 #define REQUIRED_XRENDER_VER1 0
 #define REQUIRED_XRENDER_VER2 9
 #define REQUIRED_XRENDER_VER3 3
@@ -177,7 +177,7 @@ static jboolean IsXRenderAvailable(jboolean verbose, jboolean ignoreLinuxVersion
                 numProcessed = sscanf(version, "%d.%d.%d", &v1, &v2, &v3);
 
                 if (numProcessed == numNeeded) {
-                  // we successfuly read the library version
+                  // we successfully read the library version
                   versionInfoIsFound = JNI_TRUE;
 
                   if (REQUIRED_XRENDER_VER1 == v1 &&

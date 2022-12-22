@@ -27,6 +27,7 @@
 #include "opto/callnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/opaquenode.hpp"
 
 
 //------------------------------split_thru_region------------------------------
@@ -128,8 +129,8 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
               }
             } else {
               // We might see an Opaque1 from a loop limit check here
-              assert(use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque1, "unexpected node type");
-              Node *use_c = use->is_If() ? use->in(0) : get_ctrl(use);
+              assert(use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque1 || use->is_AllocateArray(), "unexpected node type");
+              Node *use_c = (use->is_If() || use->is_AllocateArray()) ? use->in(0) : get_ctrl(use);
               if (use_c == blk1 || use_c == blk2) {
                 assert(use->is_CMove(), "unexpected node type");
                 continue;
@@ -166,14 +167,15 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
                 --j;
               } else {
                 // We might see an Opaque1 from a loop limit check here
-                assert(u->is_If() || u->is_CMove() || u->Opcode() == Op_Opaque1, "unexpected node type");
-                assert(u->in(1) == bol, "");
+                assert(u->is_If() || u->is_CMove() || u->Opcode() == Op_Opaque1 || u->is_AllocateArray(), "unexpected node type");
+                assert(u->is_AllocateArray() || u->in(1) == bol, "");
+                assert(!u->is_AllocateArray() || u->in(AllocateNode::ValidLengthTest) == bol, "wrong input to AllocateArray");
                 // Get control block of either the CMove or the If input
-                Node *u_ctrl = u->is_If() ? u->in(0) : get_ctrl(u);
+                Node *u_ctrl = (u->is_If() || u->is_AllocateArray()) ? u->in(0) : get_ctrl(u);
                 assert((u_ctrl != blk1 && u_ctrl != blk2) || u->is_CMove(), "won't converge");
                 Node *x = bol->clone();
                 register_new_node(x, u_ctrl);
-                _igvn.replace_input_of(u, 1, x);
+                _igvn.replace_input_of(u, u->is_AllocateArray() ? AllocateNode::ValidLengthTest : 1, x);
                 --j;
               }
             }
@@ -200,7 +202,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
       return true;
     }
   }
-  if (n->Opcode() == Op_OpaqueLoopStride || n->Opcode() == Op_OpaqueLoopInit) {
+  if (subgraph_has_opaque(n)) {
     Unique_Node_List wq;
     wq.push(n);
     for (uint i = 0; i < wq.size(); i++) {
@@ -217,6 +219,24 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
         }
       }
     }
+  }
+
+  if (n->Opcode() == Op_OpaqueZeroTripGuard) {
+    // If this Opaque1 is part of the zero trip guard for a loop:
+    // 1- it can't be shared
+    // 2- the zero trip guard can't be the if that's being split
+    // As a consequence, this node could be assigned control anywhere between its current control and the zero trip guard.
+    // Move it down to get it out of the way of split if and avoid breaking the zero trip guard shape.
+    Node* cmp = n->unique_out();
+    assert(cmp->Opcode() == Op_CmpI, "bad zero trip guard shape");
+    Node* bol = cmp->unique_out();
+    assert(bol->Opcode() == Op_Bool, "bad zero trip guard shape");
+    Node* iff = bol->unique_out();
+    assert(iff->Opcode() == Op_If, "bad zero trip guard shape");
+    set_ctrl(n, iff->in(0));
+    set_ctrl(cmp, iff->in(0));
+    set_ctrl(bol, iff->in(0));
+    return true;
   }
 
   // See if splitting-up a Store.  Any anti-dep loads must go up as

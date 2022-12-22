@@ -65,20 +65,16 @@ public final class SecurityProviderConstants {
                 value.add(oid.value());
                 String[] knownAliases = oid.aliases();
                 if (knownAliases != null) {
-                    for (String ka : knownAliases) {
-                        value.add(ka);
-                    }
+                    value.addAll(Arrays.asList(knownAliases));
                 }
             }
-            for (String ea : extraAliases) {
-                value.add(ea);
-            }
+            value.addAll(Arrays.asList(extraAliases));
         }
         aliasesMap.put(stdName, value);
         return value;
     }
 
-    // Return an aliases List for the specified algorithm name o
+    // Return an aliases List for the specified algorithm name o.
     // NOTE: exception is thrown if no aliases nor oid found, so
     // only call this method if aliases are expected
     public static List<String> getAliases(String o) {
@@ -88,9 +84,7 @@ public final class SecurityProviderConstants {
             if (e != null) {
                 return store(o, e);
             }
-            ProviderException pe =
-                    new ProviderException("Cannot find aliases for " + o);
-            throw pe;
+            throw new ProviderException("Cannot find aliases for " + o);
         }
         return res;
     }
@@ -170,7 +164,7 @@ public final class SecurityProviderConstants {
                     }
                     String algoName =
                             algoAndValue[0].trim().toUpperCase(Locale.ENGLISH);
-                    int value = -1;
+                    int value;
                     try {
                         value = Integer.parseInt(algoAndValue[1].trim());
                     } catch (NumberFormatException nfe) {
@@ -255,7 +249,7 @@ public final class SecurityProviderConstants {
         store("NONEwithDSA", null, "RawDSA");
         store("DESede", null, "TripleDES");
         store("ARCFOUR", KnownOIDs.ARCFOUR);
-        // For backward compatility, refer to PKCS1 mapping for RSA
+        // For backward compatibility, refer to PKCS1 mapping for RSA
         // KeyPairGenerator and KeyFactory
         store("PKCS1", KnownOIDs.PKCS1, KnownOIDs.RSA.value());
 

@@ -21,15 +21,13 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.util;
+package com.sun.hotspot.igv.view.actions;
 
-import org.netbeans.api.visual.widget.Widget;
-import org.netbeans.api.visual.action.WidgetAction;
-import org.netbeans.api.visual.action.SelectProvider;
-
+import java.awt.Point;
 import java.awt.event.MouseEvent;
-import java.awt.event.KeyEvent;
-import java.awt.*;
+import org.netbeans.api.visual.action.SelectProvider;
+import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.widget.Widget;
 
 /**
  *

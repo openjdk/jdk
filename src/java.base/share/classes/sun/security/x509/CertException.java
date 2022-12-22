@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ public class CertException extends SecurityException {
     public static final int err_ENCODING = 12;
 
     // Private data members
-    private int         verfCode;
-    private String      moreData;
+    private final int         verfCode;
+    private final String      moreData;
 
 
     /**
@@ -104,6 +104,7 @@ public class CertException extends SecurityException {
     public CertException(int code)
     {
         verfCode = code;
+        moreData = null;;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.awt.image.BufferedImage;
  */
 public class ModalityTest {
 
-    private static boolean isOEL7;
+    private static boolean isOel7orLater;
     TrayIcon icon;
     ExtendedRobot robot;
     Dialog d;
@@ -85,7 +85,7 @@ public class ModalityTest {
                         "\"Always show all icons and notifications on the taskbar\" true " +
                         "to avoid this problem. Or change behavior only for Java SE tray " +
                         "icon and rerun test.");
-            isOEL7 = SystemTrayIconHelper.isOel7();
+            isOel7orLater = SystemTrayIconHelper.isOel7orLater();
             new ModalityTest().doTest();
         }
     }
@@ -230,7 +230,7 @@ public class ModalityTest {
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");
-        if (isOEL7) {
+        if (isOel7orLater) {
             // close tray
             robot.mouseMove(100,100);
             robot.click(InputEvent.BUTTON1_MASK);
@@ -243,7 +243,7 @@ public class ModalityTest {
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle(2000);
 
-        if(!isOEL7) {
+        if(!isOel7orLater) {
             SystemTrayIconHelper.doubleClick(robot);
 
             if (!actionPerformed) {
@@ -260,7 +260,7 @@ public class ModalityTest {
 
         for (int i = 0; i < buttonTypes.length; i++) {
             mousePressed = false;
-            if(isOEL7) {
+            if(isOel7orLater) {
                 SystemTrayIconHelper.openTrayIfNeeded(robot);
                 robot.mouseMove(iconPosition.x, iconPosition.y);
                 robot.click(buttonTypes[i]);
@@ -283,7 +283,7 @@ public class ModalityTest {
 
             mouseReleased = false;
             mouseClicked = false;
-            if(isOEL7) {
+            if(isOel7orLater) {
                 SystemTrayIconHelper.openTrayIfNeeded(robot);
                 robot.mouseMove(iconPosition.x, iconPosition.y);
                 robot.click(buttonTypes[i]);
@@ -315,7 +315,7 @@ public class ModalityTest {
                 throw new RuntimeException("FAIL: mouseClicked not triggered when " +
                         buttonNames[i] + " pressed & released");
         }
-        if (!isOEL7) {
+        if (!isOel7orLater) {
             mouseMoved = false;
             robot.mouseMove(iconPosition.x, iconPosition.y);
             robot.glide(iconPosition.x + 100, iconPosition.y);

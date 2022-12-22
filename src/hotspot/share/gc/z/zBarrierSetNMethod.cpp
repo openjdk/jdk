@@ -59,8 +59,8 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZNMethod::nmethod_oops_barrier(nm);
 
 
-  // CodeCache sweeper support
-  nm->mark_as_maybe_on_continuation();
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
 
   // Disarm
   disarm(nm);

@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_constants.h"
-#include "jvm_io.h"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -77,7 +77,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
-  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -127,8 +127,8 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -238,6 +238,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_countPositives:
     case vmIntrinsics::_Reference_get:
     case vmIntrinsics::_Continuation_doYield:
+    case vmIntrinsics::_Continuation_enterSpecial:
       break;
     default:
       return true;
@@ -264,8 +265,8 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!InlineThreadNatives) return true;
     break;
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
@@ -419,6 +420,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_compareAndExchangeReference:
   case vmIntrinsics::_compareAndExchangeReferenceAcquire:
   case vmIntrinsics::_compareAndExchangeReferenceRelease:
+  case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps) return true;
     break;
   case vmIntrinsics::_getShortUnaligned:
@@ -429,7 +431,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_putCharUnaligned:
   case vmIntrinsics::_putIntUnaligned:
   case vmIntrinsics::_putLongUnaligned:
-  case vmIntrinsics::_allocateInstance:
     if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
     break;
   case vmIntrinsics::_hashCode:
@@ -474,9 +475,15 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
+  case vmIntrinsics::_chacha20Block:
+    if (!UseChaCha20Intrinsics) return true;
+    break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
     if (!UseBASE64Intrinsics) return true;
+    break;
+  case vmIntrinsics::_poly1305_processBlocks:
+    if (!UsePoly1305Intrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:

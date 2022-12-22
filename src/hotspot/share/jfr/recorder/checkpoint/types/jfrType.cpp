@@ -53,7 +53,6 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vmOperations.hpp"
-
 #ifdef COMPILER2
 #include "opto/compile.hpp"
 #include "opto/node.hpp"

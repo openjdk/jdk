@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "ci/ciCallSite.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
+#include "ci/ciKlass.hpp"
+#include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -189,6 +190,21 @@ ciKlass* ciBytecodeStream::get_klass(bool& will_link) {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
   return CURRENT_ENV->get_klass_by_index(cpool, get_klass_index(), will_link, _holder);
+}
+
+// ciBytecodeStream::get_klass
+//
+// If this bytecode is a new, newarray, multianewarray, instanceof,
+// or checkcast, get the referenced klass. Retuns an unloaded ciKlass
+// if the referenced klass is not accessible.
+ciKlass* ciBytecodeStream::get_klass() {
+  bool will_link;
+  ciKlass* klass = get_klass(will_link);
+  if (!will_link && klass->is_loaded()) { // klass not accessible
+    VM_ENTRY_MARK;
+    klass = CURRENT_ENV->get_unloaded_klass(_holder, klass->name());
+  }
+  return klass;
 }
 
 // ------------------------------------------------------------------

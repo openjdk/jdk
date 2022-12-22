@@ -282,21 +282,21 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   int8_t x1)                                  { code_section()->emit_int8(x1); }
+  void emit_int8(   uint8_t x1)                                     { code_section()->emit_int8(x1); }
 
-  void emit_int16(  int16_t x)                                  { code_section()->emit_int16(x); }
-  void emit_int16(  int8_t x1, int8_t x2)                       { code_section()->emit_int16(x1, x2); }
+  void emit_int16(  uint16_t x)                                     { code_section()->emit_int16(x); }
+  void emit_int16(  uint8_t x1, uint8_t x2)                         { code_section()->emit_int16(x1, x2); }
 
-  void emit_int24(  int8_t x1, int8_t x2, int8_t x3)            { code_section()->emit_int24(x1, x2, x3); }
+  void emit_int24(  uint8_t x1, uint8_t x2, uint8_t x3)             { code_section()->emit_int24(x1, x2, x3); }
 
-  void emit_int32(  int32_t x)                                  { code_section()->emit_int32(x); }
-  void emit_int32(  int8_t x1, int8_t x2, int8_t x3, int8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
+  void emit_int32(  uint32_t x)                                     { code_section()->emit_int32(x); }
+  void emit_int32(  uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
 
-  void emit_int64(  int64_t x)                                  { code_section()->emit_int64(x); }
+  void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 
-  void emit_float(  jfloat  x)                                  { code_section()->emit_float(x); }
-  void emit_double( jdouble x)                                  { code_section()->emit_double(x); }
-  void emit_address(address x)                                  { code_section()->emit_address(x); }
+  void emit_float(  jfloat  x)                                      { code_section()->emit_float(x); }
+  void emit_double( jdouble x)                                      { code_section()->emit_double(x); }
+  void emit_address(address x)                                      { code_section()->emit_address(x); }
 
   enum { min_simm10 = -512 };
 

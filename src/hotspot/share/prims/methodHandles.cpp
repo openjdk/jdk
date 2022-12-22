@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -35,6 +34,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1053,14 +1053,6 @@ void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   // is changed (both on addition and removal). Though memory reclamation is delayed,
   // it avoids indefinite memory usage growth.
   deps.add_dependent_nmethod(nm);
-}
-
-void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site);
-  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-  deps.remove_dependent_nmethod(nm);
 }
 
 void MethodHandles::clean_dependency_context(oop call_site) {

@@ -86,7 +86,6 @@ public:
   ModulePatchPath(const char* module_name, const char* path);
   ~ModulePatchPath();
 
-  inline void set_path(const char* path) { _path->set_value(path); }
   inline const char* module_name() const { return _module_name; }
   inline char* path_string() const { return _path->value(); }
 };
@@ -174,7 +173,6 @@ public:
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
-  void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path,
@@ -479,6 +477,10 @@ class Arguments : AllStatic {
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
+  // Helpers for parse_malloc_limits
+  static bool parse_malloc_limit_size(const char* s, size_t* out);
+  static void parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]);
+
  public:
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
@@ -588,8 +590,6 @@ class Arguments : AllStatic {
   static const char* PropertyList_get_readable_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
   static int  PropertyList_readable_count(SystemProperty* pl);
-  static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
-  static char* PropertyList_get_value_at(SystemProperty* pl,int index);
 
   static bool is_internal_module_property(const char* option);
 
@@ -614,12 +614,10 @@ class Arguments : AllStatic {
 
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
   static char* get_boot_class_path() { return _boot_class_path->value(); }
-  static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
   static bool has_jimage() { return _has_jimage; }
 
   static char* get_java_home()    { return _java_home->value(); }
   static char* get_dll_dir()      { return _sun_boot_library_path->value(); }
-  static char* get_ext_dirs()     { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
@@ -652,6 +650,16 @@ class Arguments : AllStatic {
   static void assert_is_dumping_archive() {
     assert(Arguments::is_dumping_archive(), "dump time only");
   }
+
+  // Parse diagnostic NMT switch "MallocLimit" and return the found limits.
+  // 1) If option is not given, it will set all limits to 0 (aka "no limit").
+  // 2) If option is given in the global form (-XX:MallocLimit=<size>), it
+  //    will return the size in *total_limit.
+  // 3) If option is given in its per-NMT-category form (-XX:MallocLimit=<category>:<size>[,<category>:<size>]),
+  //    it will return all found limits in the limits array.
+  // 4) If option is malformed, it will exit the VM.
+  // For (2) and (3), limits not affected by the switch will be set to 0.
+  static void parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]);
 
   DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };

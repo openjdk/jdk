@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,11 +272,11 @@ public class JMXConnectorFactory {
     }
 
     private static <K,V> Map<K,V> newHashMap() {
-        return new HashMap<K,V>();
+        return new HashMap<>();
     }
 
     private static <K> Map<K,Object> newHashMap(Map<K,?> map) {
-        return new HashMap<K,Object>(map);
+        return new HashMap<>(map);
     }
 
     /**
@@ -449,7 +449,7 @@ public class JMXConnectorFactory {
 
     @SuppressWarnings("removal")
     private static ClassLoader wrap(final ClassLoader parent) {
-        return parent != null ? AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        return parent != null ? AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public ClassLoader run() {
                 return new ClassLoader(parent) {

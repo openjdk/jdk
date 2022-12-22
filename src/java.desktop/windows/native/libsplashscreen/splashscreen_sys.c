@@ -442,7 +442,7 @@ SplashInitPlatform(Splash * splash)
     splash->isLayered = FALSE;
     hdc = GetDC(NULL);
     paletteMode = (GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) != 0;
-    if (UpdateLayeredWindow && !paletteMode) {
+    if (!paletteMode) {
         splash->isLayered = TRUE;
     }
     splash->byteAlignment = 4;
@@ -531,7 +531,7 @@ SplashScreenThread(LPVOID param)
     splash->hWnd = SplashCreateWindow(splash);
     if (splash->hWnd) {
         SplashRedrawWindow(splash);
-        //map the splash co-ordinates as per system scale
+        //map the splash coordinates as per system scale
         splash->x /= splash->scaleFactor;
         splash->y /= splash->scaleFactor;
         SplashUnlock(splash);

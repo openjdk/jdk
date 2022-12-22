@@ -73,13 +73,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (real_mul && in1->is_Sub() && in2->is_Sub()) {
     if (phase->type(in1->in(1))->is_zero_type() &&
         phase->type(in2->in(1))->is_zero_type()) {
-      set_req(1, in1->in(2));
-      set_req(2, in2->in(2));
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      set_req_X(1, in1->in(2), phase);
+      set_req_X(2, in2->in(2), phase);
       in1 = in(1);
       in2 = in(2);
       progress = this;
@@ -97,13 +92,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     if ((in11 == in21 && in12 == in22) ||
         (in11 == in22 && in12 == in21)) {
-      set_req(1, in11);
-      set_req(2, in12);
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn) {
-        igvn->_worklist.push(in1);
-        igvn->_worklist.push(in2);
-      }
+      set_req_X(1, in11, phase);
+      set_req_X(2, in12, phase);
       in1 = in(1);
       in2 = in(2);
       progress = this;
@@ -239,18 +229,18 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jint con;
-  if ((con = in(1)->find_int_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_int_con(0)) == 0) {
+  const jint con = in(2)->find_int_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == 0) return NULL;   // By zero is handled by Value call
-  if (con == 1) return NULL;   // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -262,7 +252,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
+  unsigned int bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -334,18 +324,18 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
 //------------------------------Ideal------------------------------------------
 // Check for power-of-2 multiply, then try the regular MulNode::Ideal
 Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Swap constant to right
-  jlong con;
-  if ((con = in(1)->find_long_con(0)) != 0) {
-    swap_edges(1, 2);
-    // Finish rest of method to use info in 'con'
-  } else if ((con = in(2)->find_long_con(0)) == 0) {
+  const jlong con = in(2)->find_long_con(0);
+  if (con == 0) {
+    // If in(2) is not a constant, call Ideal() of the parent class to
+    // try to move constant to the right side.
     return MulNode::Ideal(phase, can_reshape);
   }
 
-  // Now we have a constant Node on the right and the constant in con
-  if (con == CONST64(0)) return NULL;  // By zero is handled by Value call
-  if (con == CONST64(1)) return NULL;  // By one  is handled by Identity call
+  // Now we have a constant Node on the right and the constant in con.
+  if (con == 1) {
+    // By one is handled by Identity call
+    return NULL;
+  }
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -356,7 +346,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
+  julong bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -433,6 +423,20 @@ const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
   return TypeF::make( t0->getf() * t1->getf() );
 }
 
+//------------------------------Ideal---------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeF *t2 = phase->type(in(2))->isa_float_constant();
+
+  // x * 2 -> x + x
+  if (t2 != NULL && t2->getf() == 2) {
+    Node* base = in(1);
+    return new AddFNode(base, base);
+  }
+
+  return MulNode::Ideal(phase, can_reshape);
+}
+
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
@@ -440,6 +444,20 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::DOUBLE || t1 == Type::DOUBLE ) return Type::DOUBLE;
   // We must be multiplying 2 double constants.
   return TypeD::make( t0->getd() * t1->getd() );
+}
+
+//------------------------------Ideal---------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeD *t2 = phase->type(in(2))->isa_double_constant();
+
+  // x * 2 -> x + x
+  if (t2 != NULL && t2->getd() == 2) {
+    Node* base = in(1);
+    return new AddDNode(base, base);
+  }
+
+  return MulNode::Ideal(phase, can_reshape);
 }
 
 //=============================================================================

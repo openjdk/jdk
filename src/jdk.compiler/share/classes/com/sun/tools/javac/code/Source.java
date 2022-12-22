@@ -105,29 +105,34 @@ public enum Source {
     JDK15("15"),
 
     /**
-      * 16, tbd
+      * 16, records and pattern matching for instanceof
       */
     JDK16("16"),
 
     /**
-      * 17, tbd
+      * 17, sealed classes, restoration of always-strict floating-point
       */
     JDK17("17"),
 
     /**
-      * 18, tbd
+      * 18, no major changes
       */
     JDK18("18"),
 
     /**
-      * 19, tbd
+      * 19, no major changes
       */
     JDK19("19"),
 
     /**
-      * 20, tbd
+      * 20, no major changes
       */
-    JDK20("20");
+    JDK20("20"),
+
+    /**
+      * 21, tbd
+      */
+    JDK21("21");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -163,7 +168,7 @@ public enum Source {
         this.name = name;
     }
 
-    public static final Source MIN = Source.JDK7;
+    public static final Source MIN = Source.JDK8;
 
     private static final Source MAX = values()[values().length - 1];
 
@@ -179,6 +184,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK21  -> Target.JDK1_21;
         case JDK20  -> Target.JDK1_20;
         case JDK19  -> Target.JDK1_19;
         case JDK18  -> Target.JDK1_18;
@@ -207,26 +213,9 @@ public enum Source {
      */
     public enum Feature {
 
-        DIAMOND(JDK7, Fragments.FeatureDiamond, DiagKind.NORMAL),
         MODULES(JDK9, Fragments.FeatureModules, DiagKind.PLURAL),
         EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES(JDK9, Fragments.FeatureVarInTryWithResources, DiagKind.PLURAL),
         DEPRECATION_ON_IMPORT(MIN, JDK8),
-        POLY(JDK8),
-        LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
-        METHOD_REFERENCES(JDK8, Fragments.FeatureMethodReferences, DiagKind.PLURAL),
-        DEFAULT_METHODS(JDK8, Fragments.FeatureDefaultMethods, DiagKind.PLURAL),
-        STATIC_INTERFACE_METHODS(JDK8, Fragments.FeatureStaticIntfMethods, DiagKind.PLURAL),
-        STATIC_INTERFACE_METHODS_INVOKE(JDK8, Fragments.FeatureStaticIntfMethodInvoke, DiagKind.PLURAL),
-        STRICT_METHOD_CLASH_CHECK(JDK8),
-        EFFECTIVELY_FINAL_IN_INNER_CLASSES(JDK8),
-        TYPE_ANNOTATIONS(JDK8, Fragments.FeatureTypeAnnotations, DiagKind.PLURAL),
-        ANNOTATIONS_AFTER_TYPE_PARAMS(JDK8, Fragments.FeatureAnnotationsAfterTypeParams, DiagKind.PLURAL),
-        REPEATED_ANNOTATIONS(JDK8, Fragments.FeatureRepeatableAnnotations, DiagKind.PLURAL),
-        INTERSECTION_TYPES_IN_CAST(JDK8, Fragments.FeatureIntersectionTypesInCast, DiagKind.PLURAL),
-        GRAPH_INFERENCE(JDK8),
-        FUNCTIONAL_INTERFACE_MOST_SPECIFIC(JDK8),
-        POST_APPLICABILITY_VARARGS_ACCESS_CHECK(JDK8),
-        MAP_CAPTURES_TO_BOUNDS(MIN, JDK7),
         PRIVATE_SAFE_VARARGS(JDK9),
         DIAMOND_WITH_ANONYMOUS_CLASS_CREATION(JDK9, Fragments.FeatureDiamondAndAnonClass, DiagKind.NORMAL),
         UNDERSCORE_IDENTIFIER(MIN, JDK8),
@@ -329,6 +318,7 @@ public enum Source {
         case JDK18  -> RELEASE_18;
         case JDK19  -> RELEASE_19;
         case JDK20  -> RELEASE_20;
+        case JDK21  -> RELEASE_21;
         default     -> null;
         };
     }

@@ -50,7 +50,7 @@ public:
                        Register dst,
                        Address src,
                        Register tmp1,
-                       Register tmp_thread);
+                       Register tmp2);
 
 #ifdef ASSERT
   virtual void store_at(MacroAssembler* masm,
@@ -59,7 +59,8 @@ public:
                         Address dst,
                         Register val,
                         Register tmp1,
-                        Register tmp2);
+                        Register tmp2,
+                        Register tmp3);
 #endif // ASSERT
 
   virtual void arraycopy_prologue(MacroAssembler* masm,

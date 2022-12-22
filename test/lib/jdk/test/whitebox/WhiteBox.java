@@ -121,6 +121,8 @@ public class WhiteBox {
 
   public native void forceSafepoint();
 
+  public native void forceClassLoaderStatsSafepoint();
+
   private native long getConstantPool0(Class<?> aClass);
   public         long getConstantPool(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -401,7 +403,6 @@ public class WhiteBox {
       return allocateCodeBlob( intSize, type);
   }
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   private native long getMethodData0(Executable method);

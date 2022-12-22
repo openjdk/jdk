@@ -123,6 +123,7 @@ public class LoadLibraryTest {
             "-XX:+WhiteBoxAPI", "-Xmn8m", "-Xlog:library=info",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-Xlog:class+loader+constraints",
             "LoadLibraryTest$LoadLibrary", System.getProperty("test.classes"));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

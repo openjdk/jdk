@@ -69,7 +69,6 @@ public:
   }
 
   virtual jint initialize();
-  virtual void post_initialize();
   virtual void initialize_serviceability();
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();
@@ -124,7 +123,6 @@ public:
   // No nmethod handling
   virtual void register_nmethod(nmethod* nm) {}
   virtual void unregister_nmethod(nmethod* nm) {}
-  virtual void flush_nmethod(nmethod* nm) {}
   virtual void verify_nmethod(nmethod* nm) {}
 
   // No heap verification

@@ -266,17 +266,8 @@ JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, job
 JNIEXPORT void JNICALL
 JVM_StartThread(JNIEnv *env, jobject thread);
 
-JNIEXPORT void JNICALL
-JVM_StopThread(JNIEnv *env, jobject thread, jobject exception);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsThreadAlive(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_SuspendThread(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_ResumeThread(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
 JVM_SetThreadPriority(JNIEnv *env, jobject thread, jint prio);
@@ -319,10 +310,13 @@ JNIEXPORT jobjectArray JNICALL
 JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobjectArray threads);
 
 JNIEXPORT jobject JNICALL
-JVM_ExtentLocalCache(JNIEnv *env, jclass threadClass);
+JVM_ScopedValueCache(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT void JNICALL
-JVM_SetExtentLocalCache(JNIEnv *env, jclass threadClass, jobject theCache);
+JVM_SetScopedValueCache(JNIEnv *env, jclass threadClass, jobject theCache);
+
+JNIEXPORT jobject JNICALL
+JVM_FindScopedValueBindings(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT jlong JNICALL
 JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
@@ -751,6 +745,8 @@ JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
 #define JVM_EnsureMaterializedForStackWalk(env, value) \
     do {} while(0) // Nothing to do.  The fact that the value escaped
                    // through a native method is enough.
+JNIEXPORT void JNICALL
+JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value);
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls);
@@ -1158,6 +1154,9 @@ JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmoun
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
 
 /*
  * Core reflection support.

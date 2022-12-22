@@ -268,7 +268,7 @@ public final class SSLSocketImpl
      * role of an SSL client. It may be useful in cases which start
      * using SSL after some initial data transfers, for example in some
      * SSL tunneling applications or as part of some kinds of application
-     * protocols which negotiate use of a SSL based security.
+     * protocols which negotiate use of an SSL based security.
      */
     SSLSocketImpl(SSLContextImpl sslContext, Socket sock,
             String peerHost, int port, boolean autoClose) throws IOException {
@@ -438,7 +438,7 @@ public final class SSLSocketImpl
 
         handshakeLock.lock();
         try {
-            // double check the context status
+            // double-check the context status
             if (conContext.isBroken || conContext.isInboundClosed() ||
                     conContext.isOutboundClosed()) {
                 throw new SocketException("Socket has been closed or broken");
@@ -565,7 +565,7 @@ public final class SSLSocketImpl
         return tlsIsClosed;
     }
 
-    // Please don't synchronized this method.  Otherwise, the read and close
+    // Please don't synchronize this method.  Otherwise, the read and close
     // locks may be deadlocked.
     @Override
     public void close() throws IOException {
@@ -670,8 +670,7 @@ public final class SSLSocketImpl
         // close_notify alert can be delivered together.
         int linger = getSoLinger();
         if (linger >= 0) {
-            // don't wait more than SO_LINGER for obtaining the
-            // the lock.
+            // don't wait more than SO_LINGER for obtaining the lock.
             //
             // keep and clear the current thread interruption status.
             boolean interrupted = Thread.interrupted();
@@ -770,11 +769,9 @@ public final class SSLSocketImpl
      * but the inbound is still open.
      */
     private void duplexCloseInput() throws IOException {
-        boolean hasCloseReceipt = false;
-        if (conContext.isNegotiated &&
-                !conContext.protocolVersion.useTLS13PlusSpec()) {
-            hasCloseReceipt = true;
-        }   // No close receipt if handshake has no completed.
+        boolean hasCloseReceipt = conContext.isNegotiated &&
+                !conContext.protocolVersion.useTLS13PlusSpec();
+        // No close receipt if handshake has not completed.
 
         bruteForceCloseInput(hasCloseReceipt);
     }
@@ -818,7 +815,7 @@ public final class SSLSocketImpl
         }
     }
 
-    // Please don't synchronized this method.  Otherwise, the read and close
+    // Please don't synchronize this method.  Otherwise, the read and close
     // locks may be deadlocked.
     @Override
     public void shutdownInput() throws IOException {
@@ -861,7 +858,7 @@ public final class SSLSocketImpl
                 (!autoClose && isLayered() || super.isInputShutdown());
     }
 
-    // Please don't synchronized this method.  Otherwise, the read and close
+    // Please don't synchronize this method.  Otherwise, the read and close
     // locks may be deadlocked.
     @Override
     public void shutdownOutput() throws IOException {
@@ -915,7 +912,7 @@ public final class SSLSocketImpl
 
         handshakeLock.lock();
         try {
-            // double check the context status
+            // double-check the context status
             if (conContext.isNegotiated || conContext.isBroken ||
                     conContext.isInboundClosed() ||
                     conContext.isOutboundClosed()) {
@@ -960,7 +957,7 @@ public final class SSLSocketImpl
          */
         @Override
         public int available() throws IOException {
-            // Currently not synchronized.
+            // Currently, not synchronized.
             if ((!appDataIsAvailable) || checkEOF()) {
                 return 0;
             }
@@ -1090,7 +1087,7 @@ public final class SSLSocketImpl
             } finally {
                 // Check if the input stream is closing.
                 //
-                // If the deplete() did not hold the lock, clean up the
+                // If deplete() did not hold the lock, clean up the
                 // input stream here.
                 try {
                     if (isClosing) {
@@ -1180,7 +1177,7 @@ public final class SSLSocketImpl
         }
 
         /**
-         * Try the best to use up the input records so as to close the
+         * Try to use up input records to close the
          * socket gracefully, without impact the performance too much.
          */
         private void deplete() {
@@ -1210,12 +1207,11 @@ public final class SSLSocketImpl
                 return;
             }
 
-            if (!(conContext.inputRecord instanceof SSLSocketInputRecord)) {
+            if (!(conContext.inputRecord instanceof SSLSocketInputRecord
+                    socketInputRecord)) {
                 return;
             }
 
-            SSLSocketInputRecord socketInputRecord =
-                    (SSLSocketInputRecord)conContext.inputRecord;
             try {
                 socketInputRecord.deplete(
                     conContext.isNegotiated && (getSoTimeout() > 0));
@@ -1442,7 +1438,7 @@ public final class SSLSocketImpl
 
     /**
      * Read application data record. Used by AppInputStream only, but defined
-     * here so as to use the socket level synchronization.
+     * here to use the socket level synchronization.
      *
      * Note that the connection guarantees that handshake, alert, and change
      * cipher spec data streams are handled as they arrive, so we never see

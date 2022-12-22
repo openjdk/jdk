@@ -59,8 +59,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   jmpb(next);
 
   bind(update);
-  Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  load_klass(obj, obj, tmp_load_klass);
+  load_klass(obj, obj, rscratch1);
 
   xorptr(obj, mdo_addr);
   testptr(obj, TypeEntries::type_klass_mask);
@@ -880,13 +879,13 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
     jccb(Assembler::zero, no_safepoint);
     ArrayAddress dispatch_addr(ExternalAddress((address)safepoint_table), index);
-    jump(dispatch_addr);
+    jump(dispatch_addr, noreg);
     bind(no_safepoint);
   }
 
   {
     ArrayAddress dispatch_addr(ExternalAddress((address)table), index);
-    jump(dispatch_addr);
+    jump(dispatch_addr, noreg);
   }
 #endif // _LP64
 }
@@ -1003,7 +1002,7 @@ void InterpreterMacroAssembler::remove_activation(
   jmp(fast_path);
   bind(slow_path);
   push(state);
-  set_last_Java_frame(rthread, noreg, rbp, (address)pc());
+  set_last_Java_frame(rthread, noreg, rbp, (address)pc(), rscratch1);
   super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
   NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   reset_last_Java_frame(rthread, true);
@@ -1207,7 +1206,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
     const Register tmp_reg = rbx;
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
-    const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+    const Register rklass_decode_tmp = rscratch1;
 
     const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
     const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
@@ -2012,7 +2011,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
   }
 
   {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -2057,7 +2056,7 @@ void InterpreterMacroAssembler::notify_method_exit(
   }
 
   {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
     push(state);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ extern "C" {
   // When in VM state:
   static inline void ReportJNIFatalError(JavaThread* thr, const char *msg) {
     tty->print_cr("FATAL ERROR in native method: %s", msg);
-    thr->print_stack();
+    thr->print_jni_stack();
     os::abort(true);
   }
 }

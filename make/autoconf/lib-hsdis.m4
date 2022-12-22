@@ -134,6 +134,8 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
   BINUTILS_SRC="$with_binutils_src"
   UTIL_FIXUP_PATH(BINUTILS_SRC)
 
+  BINUTILS_DIR="$CONFIGURESUPPORT_OUTPUTDIR/binutils"
+
   if ! test -d $BINUTILS_SRC; then
     AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
   fi
@@ -141,10 +143,14 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     AC_MSG_ERROR([--with-binutils-src does not look like a binutils source directory])
   fi
 
-  if test -e $BINUTILS_SRC/bfd/libbfd.a && \
-      test -e $BINUTILS_SRC/opcodes/libopcodes.a && \
-      test -e $BINUTILS_SRC/libiberty/libiberty.a && \
-      test -e $BINUTILS_SRC/zlib/libz.a; then
+  if ! test -d $BINUTILS_DIR; then
+    $MKDIR -p $BINUTILS_DIR
+  fi
+
+  if test -e $BINUTILS_DIR/bfd/libbfd.a && \
+      test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
+      test -e $BINUTILS_DIR/libiberty/libiberty.a && \
+      test -e $BINUTILS_DIR/zlib/libz.a; then
     AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
   else
     # On Windows, we cannot build with the normal Microsoft CL, but must instead use
@@ -175,16 +181,20 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
       fi
     else
       binutils_cc="$CC $SYSROOT_CFLAGS"
-      binutils_target=""
+      if test "x$COMPILE_TYPE" = xcross; then
+        binutils_target="--host=$OPENJDK_TARGET_AUTOCONF_NAME"
+      else
+        binutils_target=""
+      fi
     fi
     binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
-    AC_MSG_NOTICE([configure command line: ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target])
+    AC_MSG_NOTICE([configure command line: cd $BINUTILS_DIR && $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target])
     saved_dir=`pwd`
-    cd "$BINUTILS_SRC"
-    ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target
-    if test $? -ne 0 || ! test -e $BINUTILS_SRC/Makefile; then
+    cd "$BINUTILS_DIR"
+    $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target
+    if test $? -ne 0 || ! test -e $BINUTILS_DIR/Makefile; then
       AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
     fi
@@ -197,8 +207,6 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     cd $saved_dir
     AC_MSG_NOTICE([Building of binutils done])
   fi
-
-  BINUTILS_DIR="$BINUTILS_SRC"
 ])
 
 ################################################################################
@@ -234,8 +242,14 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   elif test "x$BINUTILS_DIR" != x; then
     if test -e $BINUTILS_DIR/bfd/libbfd.a && \
         test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
-        test -e $BINUTILS_DIR/libiberty/libiberty.a; then
-      HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+        test -e $BINUTILS_DIR/libiberty/libiberty.a && \
+        test -e $BINUTILS_DIR/zlib/libz.a; then
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+      if test -n "$BINUTILS_SRC"; then
+        HSDIS_CFLAGS="$HSDIS_CFLAGS -I$BINUTILS_SRC/include -I$BINUTILS_DIR/bfd"
+      else
+        HSDIS_CFLAGS="$HSDIS_CFLAGS -I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd"
+      fi
       HSDIS_LDFLAGS=""
       HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
     fi

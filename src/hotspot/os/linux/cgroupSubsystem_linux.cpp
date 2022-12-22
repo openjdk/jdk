@@ -123,6 +123,32 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
   return new CgroupV1Subsystem(cpuset, cpu, cpuacct, pids, memory);
 }
 
+void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
+                                                  int controller,
+                                                  const char* name,
+                                                  char* mount_path,
+                                                  char* root_path) {
+  if (cg_infos[controller]._mount_path != NULL) {
+    // On some systems duplicate controllers get mounted in addition to
+    // the main cgroup controllers most likely under /sys/fs/cgroup. In that
+    // case pick the one under /sys/fs/cgroup and discard others.
+    if (strstr(cg_infos[controller]._mount_path, "/sys/fs/cgroup") != cg_infos[controller]._mount_path) {
+      log_debug(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
+                               name, mount_path, cg_infos[controller]._mount_path);
+      os::free(cg_infos[controller]._mount_path);
+      os::free(cg_infos[controller]._root_mount_path);
+      cg_infos[controller]._mount_path = os::strdup(mount_path);
+      cg_infos[controller]._root_mount_path = os::strdup(root_path);
+    } else {
+      log_debug(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
+                               name, cg_infos[controller]._mount_path, mount_path);
+    }
+  } else {
+    cg_infos[controller]._mount_path = os::strdup(mount_path);
+    cg_infos[controller]._root_mount_path = os::strdup(root_path);
+  }
+}
+
 bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
                                             const char* proc_cgroups,
                                             const char* proc_self_cgroup,
@@ -288,7 +314,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   bool cgroupv2_mount_point_found = false;
   bool any_cgroup_mounts_found = false;
   while ((p = fgets(buf, MAXPATHLEN, mntinfo)) != NULL) {
-    char tmp_mount_point[MAXPATHLEN+1];
     char tmp_fs_type[MAXPATHLEN+1];
     char tmproot[MAXPATHLEN+1];
     char tmpmount[MAXPATHLEN+1];
@@ -299,15 +324,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     // Cgroup v2 relevant info. We only look for the _mount_path iff is_cgroupsV2 so
     // as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
     // block in the hybrid case.
-    //
-    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s %*s %*s", tmp_mount_point, tmp_fs_type) == 2) {
+    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s %*s %*s", tmproot, tmpmount, tmp_fs_type) == 3) {
       // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
-      if (!cgroupv2_mount_point_found && strcmp("cgroup2", tmp_fs_type) == 0) {
+      if (strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
         any_cgroup_mounts_found = true;
         for (int i = 0; i < CG_INFO_LENGTH; i++) {
-          assert(cg_infos[i]._mount_path == NULL, "_mount_path memory stomping");
-          cg_infos[i]._mount_path = os::strdup(tmp_mount_point);
+          set_controller_paths(cg_infos, i, "(cg2, unified)", tmpmount, tmproot);
         }
       }
     }
@@ -332,47 +355,23 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       while ((token = strsep(&cptr, ",")) != NULL) {
         if (strcmp(token, "memory") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[MEMORY_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[MEMORY_IDX]._mount_path = os::strdup(tmpmount);
-          cg_infos[MEMORY_IDX]._root_mount_path = os::strdup(tmproot);
+          set_controller_paths(cg_infos, MEMORY_IDX, token, tmpmount, tmproot);
           cg_infos[MEMORY_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuset") == 0) {
           any_cgroup_mounts_found = true;
-          if (cg_infos[CPUSET_IDX]._mount_path != NULL) {
-            // On some systems duplicate cpuset controllers get mounted in addition to
-            // the main cgroup controllers most likely under /sys/fs/cgroup. In that
-            // case pick the one under /sys/fs/cgroup and discard others.
-            if (strstr(cg_infos[CPUSET_IDX]._mount_path, "/sys/fs/cgroup") != cg_infos[CPUSET_IDX]._mount_path) {
-              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
-                                         tmpmount, cg_infos[CPUSET_IDX]._mount_path);
-              os::free(cg_infos[CPUSET_IDX]._mount_path);
-              cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
-            } else {
-              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
-                                         cg_infos[CPUSET_IDX]._mount_path, tmpmount);
-            }
-          } else {
-            cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
-          }
-          cg_infos[CPUSET_IDX]._root_mount_path = os::strdup(tmproot);
+          set_controller_paths(cg_infos, CPUSET_IDX, token, tmpmount, tmproot);
           cg_infos[CPUSET_IDX]._data_complete = true;
         } else if (strcmp(token, "cpu") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[CPU_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[CPU_IDX]._mount_path = os::strdup(tmpmount);
-          cg_infos[CPU_IDX]._root_mount_path = os::strdup(tmproot);
+          set_controller_paths(cg_infos, CPU_IDX, token, tmpmount, tmproot);
           cg_infos[CPU_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuacct") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[CPUACCT_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[CPUACCT_IDX]._mount_path = os::strdup(tmpmount);
-          cg_infos[CPUACCT_IDX]._root_mount_path = os::strdup(tmproot);
+          set_controller_paths(cg_infos, CPUACCT_IDX, token, tmpmount, tmproot);
           cg_infos[CPUACCT_IDX]._data_complete = true;
         } else if (strcmp(token, "pids") == 0) {
           any_cgroup_mounts_found = true;
-          assert(cg_infos[PIDS_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[PIDS_IDX]._mount_path = os::strdup(tmpmount);
-          cg_infos[PIDS_IDX]._root_mount_path = os::strdup(tmproot);
+          set_controller_paths(cg_infos, PIDS_IDX, token, tmpmount, tmproot);
           cg_infos[PIDS_IDX]._data_complete = true;
         }
       }
@@ -463,28 +462,19 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * If user specified a quota (quota != -1), calculate the number of
  * required CPUs by dividing quota by period.
  *
- * If shares are in effect (shares != -1), calculate the number
- * of CPUs required for the shares by dividing the share value
- * by PER_CPU_SHARES.
- *
  * All results of division are rounded up to the next whole number.
  *
- * If neither shares or quotas have been specified, return the
+ * If quotas have not been specified, return the
  * number of active processors in the system.
  *
- * If both shares and quotas have been specified, the results are
- * based on the flag PreferContainerQuotaForCPUCount.  If true,
- * return the quota value.  If false return the smallest value
- * between shares or quotas.
- *
- * If shares and/or quotas have been specified, the resulting number
+ * If quotas have been specified, the resulting number
  * returned will never exceed the number of active processors.
  *
  * return:
  *    number of CPUs
  */
 int CgroupSubsystem::active_processor_count() {
-  int quota_count = 0, share_count = 0;
+  int quota_count = 0;
   int cpu_count, limit_count;
   int result;
 
@@ -503,35 +493,14 @@ int CgroupSubsystem::active_processor_count() {
   int quota  = cpu_quota();
   int period = cpu_period();
 
-  // It's not a good idea to use cpu_shares() to limit the number
-  // of CPUs used by the JVM. See JDK-8281181.
-  // UseContainerCpuShares and PreferContainerQuotaForCPUCount are
-  // deprecated and will be removed in the next JDK release.
-  int share  = UseContainerCpuShares ? cpu_shares() : -1;
-
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);
     log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
   }
-  if (share > -1) {
-    share_count = ceilf((float)share / (float)PER_CPU_SHARES);
-    log_trace(os, container)("CPU Share count based on shares: %d", share_count);
-  }
 
-  // If both shares and quotas are setup results depend
-  // on flag PreferContainerQuotaForCPUCount.
-  // If true, limit CPU count to quota
-  // If false, use minimum of shares and quotas
-  if (quota_count !=0 && share_count != 0) {
-    if (PreferContainerQuotaForCPUCount) {
-      limit_count = quota_count;
-    } else {
-      limit_count = MIN2(quota_count, share_count);
-    }
-  } else if (quota_count != 0) {
+  // Use quotas
+  if (quota_count != 0) {
     limit_count = quota_count;
-  } else if (share_count != 0) {
-    limit_count = share_count;
   }
 
   result = MIN2(cpu_count, limit_count);
@@ -558,7 +527,30 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
   }
+  jlong phys_mem = os::Linux::physical_memory();
+  log_trace(os, container)("total physical memory: " JLONG_FORMAT, phys_mem);
   jlong mem_limit = read_memory_limit_in_bytes();
+
+  if (mem_limit <= 0 || mem_limit >= phys_mem) {
+    jlong read_mem_limit = mem_limit;
+    const char *reason;
+    if (mem_limit >= phys_mem) {
+      // Exceeding physical memory is treated as unlimited. Cg v1's implementation
+      // of read_memory_limit_in_bytes() caps this at phys_mem since Cg v1 has no
+      // value to represent 'max'. Cg v2 may return a value >= phys_mem if e.g. the
+      // container engine was started with a memory flag exceeding it.
+      reason = "ignored";
+      mem_limit = -1;
+    } else if (OSCONTAINER_ERROR == mem_limit) {
+      reason = "failed";
+    } else {
+      assert(mem_limit == -1, "Expected unlimited");
+      reason = "unlimited";
+    }
+    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
+                             reason, read_mem_limit, phys_mem);
+  }
+
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
   return mem_limit;

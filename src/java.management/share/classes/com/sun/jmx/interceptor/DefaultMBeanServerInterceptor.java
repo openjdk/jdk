@@ -129,9 +129,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     /* See the comment before addNotificationListener below.  */
     private final transient
         WeakHashMap<ListenerWrapper, WeakReference<ListenerWrapper>>
-            listenerWrappers =
-                new WeakHashMap<ListenerWrapper,
-                                WeakReference<ListenerWrapper>>();
+            listenerWrappers = new WeakHashMap<>();
 
     /** The default domain of the object names */
     private final String domain;
@@ -340,8 +338,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             return mbeanToRegister.getClass().getName();
     }
 
-    private final Set<ObjectName> beingUnregistered =
-        new HashSet<ObjectName>();
+    private final Set<ObjectName> beingUnregistered = new HashSet<>();
 
     public void unregisterMBean(ObjectName name)
             throws InstanceNotFoundException, MBeanRegistrationException  {
@@ -476,8 +473,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             // Check if the caller has the right to invoke 'queryMBeans'
             // on each specific classname/objectname in the list.
             //
-            Set<ObjectInstance> allowedList =
-                new HashSet<ObjectInstance>(list.size());
+            Set<ObjectInstance> allowedList = new HashSet<>(list.size());
             for (ObjectInstance oi : list) {
                 try {
                     checkMBeanPermission(oi.getClassName(), null,
@@ -523,8 +519,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             // Check if the caller has the right to invoke 'queryNames'
             // on each specific classname/objectname in the list.
             //
-            Set<ObjectInstance> allowedList =
-                new HashSet<ObjectInstance>(list.size());
+            Set<ObjectInstance> allowedList = new HashSet<>(list.size());
             for (ObjectInstance oi : list) {
                 try {
                     checkMBeanPermission(oi.getClassName(), null,
@@ -539,7 +534,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             //
             Set<ObjectInstance> queryObjectInstanceList =
                 filterListOfObjectInstances(allowedList, query);
-            queryList = new HashSet<ObjectName>(queryObjectInstanceList.size());
+            queryList = new HashSet<>(queryObjectInstanceList.size());
             for (ObjectInstance oi : queryObjectInstanceList) {
                 queryList.add(oi.getObjectName());
             }
@@ -589,7 +584,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             // Check if the caller has the right to invoke 'getDomains'
             // on each specific domain in the list.
             //
-            List<String> result = new ArrayList<String>(domains.length);
+            List<String> result = new ArrayList<>(domains.length);
             for (int i = 0; i < domains.length; i++) {
                 try {
                     ObjectName dom = Util.newObjectName(domains[i] + ":x=x");
@@ -684,8 +679,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             // Check if the caller has the right to invoke 'getAttribute'
             // on each specific attribute
             //
-            List<String> allowedList =
-                new ArrayList<String>(attributes.length);
+            List<String> allowedList = new ArrayList<>(attributes.length);
             for (String attr : attributes) {
                 try {
                     checkMBeanPermission(classname, attr, name, "getAttribute");
@@ -1473,7 +1467,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     private Set<ObjectName>
         objectNamesFromFilteredNamedObjects(Set<NamedObject> list,
                                             QueryExp query) {
-        Set<ObjectName> result = new HashSet<ObjectName>();
+        Set<ObjectName> result = new HashSet<>();
         // No query ...
         if (query == null) {
             for (NamedObject no : list) {
@@ -1517,7 +1511,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     private Set<ObjectInstance>
         objectInstancesFromFilteredNamedObjects(Set<NamedObject> list,
                                                 QueryExp query) {
-        Set<ObjectInstance> result = new HashSet<ObjectInstance>();
+        Set<ObjectInstance> result = new HashSet<>();
         // No query ...
         if (query == null) {
             for (NamedObject no : list) {
@@ -1582,7 +1576,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         if (query == null) {
             return list;
         } else {
-            Set<ObjectInstance> result = new HashSet<ObjectInstance>();
+            Set<ObjectInstance> result = new HashSet<>();
             // Access the filter.
             //
             for (ObjectInstance oi : list) {
@@ -1643,7 +1637,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                     return existing;
             }
             if (create) {
-                ref = new WeakReference<ListenerWrapper>(wrapper);
+                ref = new WeakReference<>(wrapper);
                 listenerWrappers.put(wrapper, ref);
                 return wrapper;
             } else
@@ -1791,7 +1785,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         if (sm != null) {
             Permission perm = new MBeanTrustPermission("register");
             PrivilegedAction<ProtectionDomain> act =
-                new PrivilegedAction<ProtectionDomain>() {
+                new PrivilegedAction<>() {
                     public ProtectionDomain run() {
                         return theClass.getProtectionDomain();
                     }
@@ -2014,7 +2008,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
     @SuppressWarnings("removal")
     private ModifiableClassLoaderRepository getInstantiatorCLR() {
-        return AccessController.doPrivileged(new PrivilegedAction<ModifiableClassLoaderRepository>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public ModifiableClassLoaderRepository run() {
                 return instantiator != null ? instantiator.getClassLoaderRepository() : null;

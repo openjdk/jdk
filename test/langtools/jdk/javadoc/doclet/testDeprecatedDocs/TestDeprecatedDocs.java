@@ -266,17 +266,17 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("deprecated-list.html", true,
                 """
-                    <ul>
-                    <li><a href="#for-removal">Terminally Deprecated</a></li>
-                    <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum-class">Enum Classes</a></li>
-                    <li><a href="#exception-class">Exception Classes</a></li>
-                    <li><a href="#annotation-interface">Annotation Interfaces</a></li>
-                    <li><a href="#field">Fields</a></li>
-                    <li><a href="#method">Methods</a></li>
-                    <li><a href="#constructor">Constructors</a></li>
-                    <li><a href="#enum-constant">Enum Constants</a></li>
-                    <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                    <li id="contents-class"><a href="#class">Classes</a></li>
+                    <li id="contents-enum-class"><a href="#enum-class">Enum Classes</a></li>
+                    <li id="contents-exception-class"><a href="#exception-class">Exception Classes</a></li>
+                    <li id="contents-annotation-interface"><a href="#annotation-interface">Annotation Interfaces</a></li>
+                    <li id="contents-field"><a href="#field">Fields</a></li>
+                    <li id="contents-method"><a href="#method">Methods</a></li>
+                    <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                    <li id="contents-enum-constant"><a href="#enum-constant">Enum Constants</a></li>
+                    <li id="contents-annotation-interface-member"><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                     </ul>""",
                 """
                     <div id="for-removal">

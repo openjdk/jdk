@@ -40,11 +40,11 @@ public final class EventConfiguration {
     private final SettingControl[] settings;
 
     // Private constructor so user code can't instantiate
-    private EventConfiguration(EventType eventType, EventControl eventControl, SettingControl[] settings) {
+    private EventConfiguration(EventType eventType, EventControl eventControl) {
         this.eventType = eventType;
         this.platformEventType = PrivateAccess.getInstance().getPlatformEventType(eventType);
         this.eventControl = eventControl;
-        this.settings = settings;
+        this.settings = eventControl.getSettingControls().toArray(new SettingControl[0]);
     }
 
     // Class jdk.jfr.internal.PlatformEventType is not

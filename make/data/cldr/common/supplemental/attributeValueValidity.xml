@@ -9,13 +9,14 @@
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
 			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
 			<!-- and is maintained manually by the CLDR TC -->
+			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
 			<variable id='$language' type='choice'>
-				ab af agq ak am ar as asa ast az
-				bas be bem bez bg bm bn bo br brx bs
-				ca ccp ce cgg chr ckb cs cu cy
+				af agq ak am ann ar as asa ast az
+				bas be bem bez bg bgc bho bm bn bo br brx bs
+				ca ccp ce ceb cgg chr ckb cs cu cv cy
 				da dav de dje doi dsb dua dyo dz
 				ebu ee el en eo es et eu ewo
-				fa ff fi fil fo fr fur fy
+				fa ff fi fil fo fr frr fur fy
 				ga gd gl gsw gu guz gv
 				ha haw he hi hr hsb hu hy
 				ia id ig ii is it
@@ -23,59 +24,59 @@
 				ka kab kam kde kea kgp khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh ku kw ky
 				lag lb lg lij lkt ln lo lrc lt lu luo luy lv
 				mai mas mer mfe mg mgh mgo mi mk ml mn mni mr ms mt mua my mzn
-				naq nb nd nds ne nl nmg nn nnh no nus nv nyn
+				naq nb nd nds ne nl nmg nn nnh no nus nyn
 				om or os
-				pa pcm pl prg ps pt
+				pa pcm pis pl prg ps pt
 				qu
-				rhg rm rn ro rof
+				raj rm rn ro rof
 				und
 				ru rw rwk
-				sa sah saq sat sbp sc sd se seh ses sg shi si sk sl smn sn so sq sr su sv sw
-				ta te teo tg th ti tk to tr tt twq tzm
+				sa sah saq sat sbp sc sd se seh ses sg shi si sk sl smn sms sn so sq sr su sv sw
+				ta te teo tg th ti tk to tok tr tt twq tzm
 				ug uk ur uz
-				vai vi vo vun
+				vai vec vi vo vun
 				wae wo
 				xh xog
 				yav yi yo yrl yue
 				zgh zh zu
 			</variable>
 			<variable id='$languageExceptions' type='choice'>
-				ceb co
-				hmn ht
-				la
-				mul
-				ny
-				root
-				sa sm st
-				zxx
-			</variable>
-			<variable id='$oldLanguages' type='choice'>
-				aa ace ada ady ain ale alt an anp arn arp ars av awa ay
-				ba ban bho bi bin bla bug byn
-				ch chk chm cho chy crs cv
+				mul root zxx
+				ab ace ada ady ain ale alt an anp arn arp ars atj av awa ay
+				ba ban bi bin bla bug byn
+				cay ch chk chm cho chp chy clc co crg crj crk crl crm crr csw
 				dak dar dgr dv dzg
 				efi eka
-				fj fon
-				gaa gan gez gil gn gor gwi
-				hak hil hsn hup hz
-				iba ibb ilo inh io iu
+				fj fon frc
+				gaa gez gil gn gor gwi
+				hai hax hil hmn ht hup hur hz
+				iba ibb ikt ilo inh io iu
 				jbo
-				kac kaj kbd kcg kfo kha kj kmb kpe kr krc krl kru kum kv
-				lad lez li loz lua lun lus
-				mad mag mai mak mdf men mh mic min mni moh mos mus mwl myv
-				na nan nap new ng nia niu nog nqo nr nso nv
-				oc
-				pag pam pap pau pcm
-				quc
-				rap rar rup
-				sad sat sba sc scn sco shn sma smj sms snk srn ss ssy suk swb syr
-				tem tet tig tlh tn tpi trv ts tum tvl ty tyv
+				kac kaj kbd kcg kfo kha kj kmb kpe kr krc krl kru kum kv kwk
+				la lad lez li lil lou loz lsm lua lun lus
+				mad mag mak mdf men mh mic min moe moh mos mus mwl myv
+				na nap new ng nia niu nog nqo nr nso nv ny
+				oc ojb ojc ojs ojw oka
+				pag pam pap pau pqm
+				rap rar rhg rup
+				sad sba scn sco shn slh sm snk srn ss st str suk swb syr
+				tce tem tet tgx tht tig tlh tli tn tpi trv ts ttm tum tvl ty tyv
 				udm umb
 				ve
 				wa wal war wuu
 				xal
 				ybb
 				zun zza
+			</variable>
+			<!-- The following are not in modern coverage: -->
+			<variable id='$oldLanguages' type='choice'>
+				aa
+				crs
+				gan
+				hak hsn
+				nan
+				quc
+				sma smj sms ssy
 			</variable>
 			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kpel Latf Latg Loma Maya Moon
 				Nkgb Phlv Roro Sara Syre Syrj Syrn Teng Visp Wole
@@ -199,7 +200,7 @@
 			<attributeValues dtds='ldml' elements='monthPatternWidth' attributes='type' type='choice'>abbreviated narrow wide all</attributeValues>
 			<attributeValues dtds='ldml' elements='monthWidth quarterWidth cyclicNameWidth' attributes='type' order='given'>abbreviated narrow wide</attributeValues>
 			<attributeValues dtds='ldml' elements='pattern' attributes='type' type='choice'>standard atLeast range 1000 10000 100000 1000000 10000000
-				10000000 100000000 1000000000 10000000000 100000000000 1000000000000 10000000000000 100000000000000</attributeValues>
+				100000000 1000000000 10000000000 100000000000 1000000000000 10000000000000 100000000000000</attributeValues>
 			<attributeValues dtds='ldml' elements='preferenceOrdering' attributes='type' type='list'>$_bcp47_timezone</attributeValues>
 			<attributeValues dtds='ldml' elements='quarter' attributes='type' type='choice'>1 2 3 4</attributeValues> <!-- move to DTD? -->
 			<attributeValues dtds='ldml' elements='reference' attributes='type'>$reference</attributeValues>
@@ -266,18 +267,18 @@
 			<attributeValues dtds='supplementalData' elements='approvalRequirement' attributes='locales' type='list'>$locale|$coverageSpecial</attributeValues>
 			<attributeValues dtds='supplementalData' elements='approvalRequirement' attributes='paths' type='TODO'/>
 			<attributeValues dtds='supplementalData' elements='approvalRequirement' attributes='votes' type='choice'>20 4 8</attributeValues>
-			<attributeValues dtds='supplementalData' elements='attributeValues' attributes='attributes' type='choice'>_q aliases allowed alt before
-				before from to contains type count date day digits hex id iso3166 iso4217 key multizone number numberSystem path preferred regions registry
-				replacement replacement type request rounding scripts source territories territory time type uri validSubLocales value variants version</attributeValues>
+			<attributeValues dtds='supplementalData' elements='attributeValues' attributes='attributes' type='choice'>_q aliases allowed alt before contains
+				count date day digits from hex id iso3166 iso4217 key multizone number numberSystem path preferred regions registry replacement request
+				rounding scripts source territories territory time to type uri validSubLocales value variants version</attributeValues>
 			<attributeValues dtds='supplementalData' elements='attributeValues' attributes='dtds' type='choice'>supplementalData</attributeValues>
 			<attributeValues dtds='supplementalData' elements='attributeValues' attributes='elements' type='choice'>alias appendItem calendar character
-				collation collations contextTransform contextTransformUsage cp currency currencyFormat currencyFormats decimalFormats percentFormats
-				scientificFormats cyclicName cyclicNameContext cyclicNameSet dateFormat dateTimeFormat decimalFormat percentFormat scientificFormat timeFormat
-				dateFormatLength timeFormatLength dateTimeFormatLength decimalFormatLength scientificFormatLength percentFormatLength currencyFormatLength day
-				dayWidth default era field firstDay weekendEnd weekendStart generation group hours info key language languageAlias mapTimezones mapZone mapping
-				minDays month monthPattern monthPatternContext monthPatternWidth monthWidth quarterWidth cyclicNameWidth numberingSystem pattern
-				preferenceOrdering quarter reference region relative relativeTime reset rule script scriptAlias segmentation supplementalData symbols territory
-				territoryAlias type unit variable variant variantAlias version weekendEnd weekendStart zone zoneFormatting zoneItem</attributeValues>
+				collation collations contextTransform contextTransformUsage cp currency currencyFormat currencyFormatLength currencyFormats cyclicName
+				cyclicNameContext cyclicNameSet cyclicNameWidth dateFormat dateFormatLength dateTimeFormat dateTimeFormatLength day dayWidth decimalFormat
+				decimalFormatLength decimalFormats default era field firstDay generation group hours info key language languageAlias mapping mapTimezone
+				mapZone minDays month monthPattern monthPatternContext monthPatternWidth monthWidth numberingSystem pattern percentFormat percentFormatLength
+				percentFormats preferenceOrdering quarter quarterWidth reference region relative relativeTime reset rule scientificFormat
+				scientificFormatLength scientificFormats script scriptAlias segmentation supplementalData symbols territory territoryAlias timeFormat
+				timeFormatLength type unit variable variant variantAlias version weekendEnd weekendStart zone zoneFormatting zoneItem</attributeValues>
 			<attributeValues dtds='supplementalData' elements='attributeValues' attributes='order' type='choice'>given</attributeValues>
 			<attributeValues dtds='supplementalData' elements='attributeValues' attributes='type' type='choice'>bcp47 choice list locale path regex</attributeValues>
 			<attributeValues dtds='supplementalData' elements='attributes' attributes='attribute' type='choice'>_q characters lines time type version</attributeValues>
@@ -286,7 +287,7 @@
 			<attributeValues dtds='supplementalData' elements='attributes' attributes='element' type='choice'>collation currency dateFormat
 				dateTimeFormat decimalFormat ldml orientation pattern percentFormat scientificFormat timeFormat weekendEnd weekendStart</attributeValues>
 			<attributeValues dtds='supplementalData' elements='blockingItems' attributes='elements' type='list'>identity supplementalData cldrTest
-				collation transform identity supplementalData cldrTest collation transform</attributeValues>
+				collation transform</attributeValues>
 			<attributeValues dtds='supplementalData' elements='calendar' attributes='type' type='regex'>$_bcp47_calendar</attributeValues>
 			<attributeValues dtds='supplementalData' elements='calendarPreference' attributes='ordering' type='list'>$_bcp47_calendar</attributeValues>
 			<attributeValues dtds='supplementalData' elements='calendarPreference' attributes='territories' type='list'>$_region</attributeValues>

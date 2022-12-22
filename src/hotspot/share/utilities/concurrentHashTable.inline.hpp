@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1150,7 +1150,27 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // Here we skip protection,
   // thus no other thread may use this table at the same time.
   InternalTable* table = get_table();
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
+  do_scan_for_range(scan_f, 0, table->_size, table);
+
+  // If there is a paused resize we also need to visit the already resized items.
+  table = get_new_table();
+  if (table == NULL) {
+    return;
+  }
+  DEBUG_ONLY(if (table == POISON_PTR) { return; })
+
+  do_scan_for_range(scan_f, 0, table->_size, table);
+}
+
+template <typename CONFIG, MEMFLAGS F>
+template <typename FUNC>
+inline bool ConcurrentHashTable<CONFIG, F>::
+  do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
+{
+  assert(start_idx < stop_idx, "Must be");
+  assert(stop_idx <= table->_size, "Must be");
+
+  for (size_t bucket_it = start_idx; bucket_it < stop_idx; ++bucket_it) {
     Bucket* bucket = table->get_bucket(bucket_it);
     // If bucket have a redirect the items will be in the new table.
     // We must visit them there since the new table will contain any
@@ -1158,25 +1178,13 @@ inline void ConcurrentHashTable<CONFIG, F>::
     // If the bucket don't have redirect flag all items is in this table.
     if (!bucket->have_redirect()) {
       if(!visit_nodes(bucket, scan_f)) {
-        return;
+        return false;
       }
     } else {
       assert(bucket->is_locked(), "Bucket must be locked.");
     }
   }
-  // If there is a paused resize we also need to visit the already resized items.
-  table = get_new_table();
-  if (table == NULL) {
-    return;
-  }
-  DEBUG_ONLY(if (table == POISON_PTR) { return; })
-  for (size_t bucket_it = 0; bucket_it < table->_size; bucket_it++) {
-    Bucket* bucket = table->get_bucket(bucket_it);
-    assert(!bucket->is_locked(), "Bucket must be unlocked.");
-    if (!visit_nodes(bucket, scan_f)) {
-      return;
-    }
-  }
+  return true;
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1229,7 +1237,11 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
     summary.add((double)count);
   }
 
-  return TableStatistics(*_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  if (_stats_rate == nullptr) {
+    return TableStatistics(summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  } else {
+    return TableStatistics(*_stats_rate, summary, literal_bytes, sizeof(Bucket), sizeof(Node));
+  }
 }
 
 template <typename CONFIG, MEMFLAGS F>

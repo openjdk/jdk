@@ -242,7 +242,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new HtmlLinkInfo(configuration,
                         HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)));
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -268,7 +268,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 getLink(new HtmlLinkInfo(configuration,
                         HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)));
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -309,7 +309,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param pkg the package that uses the given class
      * @param table the table to which the package use information will be added
      */
-    protected void addPackageUse(PackageElement pkg, Table table) {
+    protected void addPackageUse(PackageElement pkg, Table<?> table) {
         Content pkgLink =
                 links.createLink(htmlIds.forPackage(pkg), getLocalizedPackageName(pkg));
         Content summary = new ContentBuilder();
