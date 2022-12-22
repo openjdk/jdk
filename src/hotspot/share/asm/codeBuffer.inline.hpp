@@ -30,6 +30,7 @@
 #include "code/compiledIC.hpp"
 
 #define __ masm.
+
 template <typename MacroAssembler, int relocate_format = 0>
 bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* shared_stub_to_interp_requests) {
   if (shared_stub_to_interp_requests == NULL) {
@@ -64,6 +65,7 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
   }
   return true;
 }
+
 #undef __
 
 #endif // SHARE_ASM_CODEBUFFER_INLINE_HPP

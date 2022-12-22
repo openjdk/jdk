@@ -44,6 +44,7 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
 }
 
 #define __ masm.
+
 static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampolineRequests* requests) {
   if (requests == nullptr) {
     return true;
@@ -77,6 +78,7 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
   requests->iterate(emit);
   return true;
 }
+
 #undef __
 
 bool CodeBuffer::pd_finalize_stubs() {
