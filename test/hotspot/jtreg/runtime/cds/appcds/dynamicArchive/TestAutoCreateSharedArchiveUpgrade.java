@@ -57,7 +57,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // "make test TEST=test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java",
     // the test.boot.jdk property is normally passed by make/RunTests.gmk
     // now it is pulled by the artifactory
-    private static final String BOOT_JDK = fetchBootJDK(getOsId());
+    private static String BOOT_JDK;
 
     private static final String USER_DIR = System.getProperty("user.dir", ".");
     private static final String FS = System.getProperty("file.separator", "/");
@@ -69,8 +69,13 @@ public class TestAutoCreateSharedArchiveUpgrade {
     private static String newJVM;
 
     public static void main(String[] args) throws Throwable {
-        setupJVMs();
-        doTest();
+        // Earliest testable version is 19
+        int n = java.lang.Runtime.version().major() - 1;
+        for (int i = 19; i < n; i++) {
+            BOOT_JDK = fetchBootJDK(getOsId(), i);
+            setupJVMs();
+            doTest();
+        }
     }
 
     static void setupJVMs() throws Throwable {
@@ -150,23 +155,20 @@ public class TestAutoCreateSharedArchiveUpgrade {
         output.shouldContain("Mapped dynamic region #0");
     }
 
-    // Earliest testable version is 19
-    int n = java.lang.Runtime.version().major() - 1;
-
     // Fetch JDK artifact depending on platform
-    private static String fetchBootJDK(String osID) {
+    private static String fetchBootJDK(String osID, int version) {
         switch (osID) {
         case "Windows-x86-32":
-            return fetchBootJDK(WINDOWS_X86.class);
+            return fetchBootJDK(WINDOWS_X86.class, version);
 
         case "Windows-amd64-64":
-            return fetchBootJDK(WINDOWS_X64.class);
+            return fetchBootJDK(WINDOWS_X64.class, version);
 
         case "MacOSX-x86_64-64":
-            return fetchBootJDK(MACOSX_X64.class);
+            return fetchBootJDK(MACOSX_X64.class, version);
 
         case "Linux-amd64-64":
-            return fetchBootJDK(LINUX_X64.class);
+            return fetchBootJDK(LINUX_X64.class, version);
 
         default:
             return null;
@@ -174,11 +176,11 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     // Fetch JDK version from artifactory
-    private static String fetchBootJDK(Class<?> clazz) {
+    private static String fetchBootJDK(Class<?> clazz, int version) {
         String path = null;
         try {
             path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + "/jdk-19/";
+                    .findAny().get().getValue() + "/jdk-" + version + "/";
             System.out.println("path: " + path);
         } catch (ArtifactResolverException e) {
             Throwable cause = e.getCause();
