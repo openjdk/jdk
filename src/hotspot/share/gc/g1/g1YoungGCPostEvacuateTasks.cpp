@@ -237,14 +237,6 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
-public:
-  ResetHotCardCacheTask() : G1AbstractSubTask(G1GCPhaseTimes::ResetHotCardCache) { }
-
-  double worker_cost() const override { return 0.5; }
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->reset_hot_card_cache(); }
-};
-
 #if COMPILER2_OR_JVMCI
 class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
 public:
@@ -706,7 +698,6 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
-  add_serial_task(new ResetHotCardCacheTask());
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
