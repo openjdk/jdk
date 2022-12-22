@@ -172,10 +172,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     @Artifact(
-            organization = "",
-            name = "",
-            revision = "",
-            extension = "tar.gz",
             server = "jpg",
             product = "jdk",
             version = "19",
@@ -184,17 +180,30 @@ public class TestAutoCreateSharedArchiveUpgrade {
             unpack = true)
     private static class LINUX_X64 { }
 
-    /*@Artifact(
-            organization = "jpg.tests.jdk.openssl",
-            name = "openssl-macosx_x64",
-            revision = "1.1.1g",
-            extension = "zip")
+    @Artifact(
+            server = "jpg",
+            product = "jdk",
+            version = "19",
+            build_number = "36",
+            file = "bundles/macosx-x64/jdk-19_macosx-x64_bin.tar.gz",
+            unpack = true)
     private static class MACOSX_X64 { }
 
     @Artifact(
-            organization = "jpg.tests.jdk.openssl",
-            name = "openssl-windows_x64",
-            revision = "1.1.1g",
-            extension = "zip")
-    private static class WINDOWS_X64 { }*/
+            server = "jpg",
+            product = "jdk",
+            version = "19",
+            build_number = "36",
+            file = "bundles/windows-x64/jdk-19_windows-x64_bin.tar.gz",
+            unpack = true)
+    private static class WINDOWS_X64 { }
+
+    @Artifact(
+            server = "jpg",
+            product = "jdk",
+            version = "19",
+            build_number = "36",
+            file = "bundles/windows-x86/jdk-19_windows-x86_bin.tar.gz",
+            unpack = true)
+    private static class WINDOWS_X86 { }
 }
