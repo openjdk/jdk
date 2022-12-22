@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
+import jdk.test.lib.thread.VThreadRunner;
 
 /**
  * This is a debuggee class creating several dummy user and
@@ -40,6 +41,13 @@ public class stepreq001t {
     }
 
     private int runThis(String args[]) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(stepreq001.THRDS_NUM + 1);
+        }
+
         argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         Thread  thrs[] = new Thread[stepreq001.THRDS_NUM];

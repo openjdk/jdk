@@ -57,6 +57,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @enablePreview
  * @build nsk.jdi.ObjectReference.waitingThreads.waitingthreads002
  *        nsk.jdi.ObjectReference.waitingThreads.waitingthreads002a
  * @run main/othervm
@@ -66,6 +67,6 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} --add-opens=java.base/java.lang=ALL-UNNAMED"
  */
 

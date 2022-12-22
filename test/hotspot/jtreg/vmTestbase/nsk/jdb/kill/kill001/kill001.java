@@ -46,6 +46,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @enablePreview
  * @build nsk.jdb.kill.kill001.kill001a
  * @run main/othervm
  *      nsk.jdb.kill.kill001.kill001
@@ -58,7 +59,7 @@
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
  *      -jdb.option="-trackallthreads"
- *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} --add-opens=java.base/java.lang=ALL-UNNAMED"
  */
 
 package nsk.jdb.kill.kill001;

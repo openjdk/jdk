@@ -26,6 +26,8 @@ package nsk.jdi.EventRequestManager.stepRequests;
 import nsk.share.*;
 import nsk.share.jdi.*;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 /**
  * This class is used as debuggee application for the stepreq002 JDI test.
  */
@@ -37,6 +39,7 @@ public class stepreq002a {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
+    static final int NUM_THREADS = 10;
 
     static ArgumentHandler argHandler;
     static Log log;
@@ -53,7 +56,7 @@ public class stepreq002a {
 
     //====================================================== test program
 
-    static Thread testField[] = new Thread[10];
+    static Thread testField[] = new Thread[NUM_THREADS];
 
     //------------------------------------------------------ common section
 
@@ -75,6 +78,12 @@ public class stepreq002a {
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(NUM_THREADS + 1);
+        }
 
         argHandler = new ArgumentHandler(argv);
         log = argHandler.createDebugeeLog();

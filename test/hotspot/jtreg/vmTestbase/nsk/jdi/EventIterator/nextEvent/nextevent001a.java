@@ -26,6 +26,8 @@ package nsk.jdi.EventIterator.nextEvent;
 import nsk.share.*;
 import nsk.share.jdi.*;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 /**
  * This class is used as debuggee application for the nextevent001 JDI test.
  */
@@ -85,6 +87,13 @@ public class nextevent001a {
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(threadsN + 2);
+        }
+
 
         argHandler = new ArgumentHandler(argv);
         log = argHandler.createDebugeeLog();

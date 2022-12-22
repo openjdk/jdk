@@ -27,6 +27,8 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 /**
  * The debugged applcation of the test.
  */
@@ -71,6 +73,12 @@ public class waitingthreads002a {
     //------------------------------------------------------ mutable common method
 
     public static void main (String argv[]) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(threadCount + 1);
+        }
 
         exitStatus = Consts.TEST_PASSED;
         argHandler = new ArgumentHandler(argv);

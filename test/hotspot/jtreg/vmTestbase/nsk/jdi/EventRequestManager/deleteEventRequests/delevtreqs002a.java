@@ -26,6 +26,8 @@ package nsk.jdi.EventRequestManager.deleteEventRequests;
 import nsk.share.*;
 import nsk.share.jdi.*;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 /**
  * This class is used as debuggee application for the delevtreqs002 JDI test.
  */
@@ -37,6 +39,7 @@ public class delevtreqs002a {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
+    static final int NUM_THREADS = 10;
 
     static ArgumentHandler argHandler;
     static Log log;
@@ -55,7 +58,7 @@ public class delevtreqs002a {
 
     static int                   testField1   = 0;
     static NullPointerException  testField2   = new NullPointerException("test");
-    static Thread testField3[] = new Thread[10];
+    static Thread testField3[] = new Thread[NUM_THREADS];
 
     //------------------------------------------------------ common section
 
@@ -77,6 +80,12 @@ public class delevtreqs002a {
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(NUM_THREADS + 1);
+        }
 
         argHandler = new ArgumentHandler(argv);
         log = argHandler.createDebugeeLog();
@@ -98,7 +107,7 @@ public class delevtreqs002a {
 
                     case 0:
                             synchronized (lockObj1) {
-                                for (int ii = 0; ii < 10; ii++) {
+                                for (int ii = 0; ii < NUM_THREADS; ii++) {
                                     testField3[ii] = JDIThreadFactory.newThread(new Thread1delevtreqs002a("thread" + ii));
                                     threadStart(testField3[ii]);
                                 }

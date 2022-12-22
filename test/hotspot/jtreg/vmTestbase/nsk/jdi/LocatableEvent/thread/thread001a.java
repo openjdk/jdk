@@ -26,6 +26,8 @@ package nsk.jdi.LocatableEvent.thread;
 import nsk.share.*;
 import nsk.share.jdi.*;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 /**
  * This class is used as debuggee application for the thread001 JDI test.
  */
@@ -84,6 +86,12 @@ public class thread001a {
     //----------------------------------------------------   main method
 
     public static void main (String argv[]) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(threadsN + 2);
+        }
 
         argHandler = new ArgumentHandler(argv);
         log = argHandler.createDebugeeLog();

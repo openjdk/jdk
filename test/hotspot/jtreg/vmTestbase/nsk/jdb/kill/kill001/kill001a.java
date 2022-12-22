@@ -27,6 +27,7 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
 import nsk.share.jdi.JDIThreadFactory;
+import jdk.test.lib.thread.VThreadRunner;
 
 import java.io.*;
 import java.util.*;
@@ -62,6 +63,11 @@ public class kill001a {
 
 
     public int runIt(String args[], PrintStream out) {
+        // Need at least 1 carrier thread per thread due to pinning, plus
+        // one extra for the main thread.
+        if (vthreadMode) {
+            VThreadRunner.ensureParallelism(numThreads + 1);
+        }
 
         argumentHandler = new JdbArgumentHandler(args);
         log = new Log(out, argumentHandler);
