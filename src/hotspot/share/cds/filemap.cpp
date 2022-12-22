@@ -2447,6 +2447,13 @@ void FileMapInfo::patch_heap_embedded_pointers() {
                                MetaspaceShared::first_open_heap_region);
 }
 
+narrowOop FileMapInfo::encoded_heap_region_dumptime_address(FileMapRegion* r) {
+  assert(UseSharedSpaces, "runtime only");
+  assert(UseCompressedOops, "sanity");
+  r->assert_is_heap_region();
+  return CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
+}
+
 void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                                int first_region_idx) {
   char* bitmap_base = map_bitmap_region();
@@ -2454,24 +2461,9 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
   for (int i=0; i<num_regions; i++) {
     int region_idx = i + first_region_idx;
     FileMapRegion* r = region_at(region_idx);
-    if (UseCompressedOops) {
-      // These are the encoded values for the bottom of this region at dump-time vs run-time:
-      narrowOop dt_encoded_bottom = CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
-      narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(regions[i].start()));
-      log_info(cds)("patching heap embedded pointers for %s: narrowOop 0x%8x -> 0x%8x",
-                    region_name(region_idx), (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
-      // TODO JDK-8269736: if we have the same narrow_oop_shift between dumptime and runtime,
-      // Each embedded pointer P can be updated by:
-      //     P += (rt_encoded_bottom - dt_encoded_bottom)
-      //
-      // TODO:
-      // if (dt_encoded_bottom == rt_encoded_bottom && narrow_oop_shift() == CompressedOops::shift()) {
-      //   //nothing to do
-      //   return;
-      // }
-    }
+
     ArchiveHeapLoader::patch_embedded_pointers(
-      regions[i],
+      this, r, regions[i],
       (address)(region_at(MetaspaceShared::bm)->mapped_base()) + r->oopmap_offset(),
       r->oopmap_size_in_bits());
   }
