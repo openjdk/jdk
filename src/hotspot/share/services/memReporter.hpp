@@ -79,9 +79,20 @@ class MemReporterBase : public StackObj {
     size_t amount = s1 - s2;
     assert(amount <= SIZE_MAX - _scale / 2, "size_t overflow");
     amount = (amount + _scale / 2) / _scale;
-    // We assume the valid range for deltas [INT64_MIN, INT64_MAX] to simplify the code.
-    assert((sizeof(size_t) < sizeof(int64_t)) || (sizeof(size_t) == sizeof(int64_t) && amount <= INT64_MAX), "cannot fit scaled diff into size_t");
-    return (is_negative) ? -(int64_t)amount : (int64_t)amount;
+
+    if (amount == 0) {
+      return 0;
+    }
+    // We assume the valid range for deltas [INT64_MIN, INT64_MAX].
+    if (!(sizeof(size_t) <= sizeof(int64_t) && amount - (int)is_negative <= INT64_MAX)) {
+      fprintf(stderr,"amount=%ld, amount-1= %ld, INT64_MAX=%ld\n", amount , amount - (int)is_negative, INT64_MAX);
+    }
+    assert((sizeof(size_t) <= sizeof(int64_t) && amount - (int)is_negative <= INT64_MAX), "cannot fit scaled diff into int64_t");
+    if (is_negative) {
+      return (sizeof(size_t) == sizeof(int64_t) && amount - 1 == INT64_MAX)? INT64_MIN : -(int64_t)amount;
+    } else {
+      return (int64_t)amount;
+    }
   }
 
   // Helper functions
