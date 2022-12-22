@@ -245,7 +245,8 @@ public class PEMFormat {
     /**
      * Decode encrypted PEM data
      */
-    private static byte[] decodeEncrypted(byte[] encodedBytes, char[] password) throws IOException {
+    private static byte[] decodeEncrypted(byte[] encodedBytes, char[] password,
+        Provider p) throws IOException {
 
         // Find the PEM between the header and footer
         int endHeader = find(encodedBytes, STARTHEADER.length);
@@ -270,7 +271,7 @@ public class PEMFormat {
             throw new IOException("Unknown binary formatted.");
         }
 
-        encodedBytes = p8Decrypt(encodedBytes, password);
+        encodedBytes = p8Decrypt(encodedBytes, password, p);
         return encodedBytes;
     }
 
@@ -576,7 +577,11 @@ public class PEMFormat {
      * @throws IOException the io exception
      */
     public PEMFormat decrypt(char[] password) throws IOException {
-        return new PEMFormat(decodeEncrypted(pemData.data(), password), KeyType.PRIVATE);
+        return decrypt(password, null);
+    }
+
+    public PEMFormat decrypt(char[] password, Provider p) throws IOException {
+        return new PEMFormat(decodeEncrypted(pemData.data(), password, p), KeyType.PRIVATE);
     }
 
     /**
@@ -604,23 +609,27 @@ public class PEMFormat {
      * @throws IOException the io exception
      */
     public PEMFormat encrypt(char[] password, String pbeAlgo,
-        AlgorithmParameterSpec aps) throws IOException {
+        AlgorithmParameterSpec aps, Provider p) throws IOException {
         if (pemData.keyType() != KeyType.PRIVATE) {
             throw new IOException("Encryption can only happen on Private Keys");
         }
-        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password, pbeAlgo, aps);
+        byte[] encoded = EncryptedPrivateKeyInfo.encryptKey(pemData.data(), password, pbeAlgo, aps, p);
         return new PEMFormat(encoded, KeyType.ENCRYPTED_PRIVATE);
     }
 
-    private static byte[] p8Decrypt(byte[] data, char[] password) throws IOException {
+    private static byte[] p8Decrypt(byte[] data, char[] password, Provider p) throws IOException {
         try {
             EncryptedPrivateKeyInfo epki = new EncryptedPrivateKeyInfo(data);
-            //var ap = epki.getAlgParameters();
-            //Base64.getMimeDecoder().decode(data));
             PBEKeySpec pks = new PBEKeySpec(password);
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(epki.getAlgName());
-            SecretKey sk = skf.generateSecret(pks);
-            PKCS8EncodedKeySpec keySpec = epki.getKeySpec(sk);
+            SecretKeyFactory skf;
+            PKCS8EncodedKeySpec keySpec;
+            if (p == null) {
+                skf = SecretKeyFactory.getInstance(epki.getAlgName());
+                keySpec = epki.getKeySpec(skf.generateSecret(pks));
+            } else {
+                skf = SecretKeyFactory.getInstance(epki.getAlgName(), p);
+                keySpec = epki.getKeySpec(skf.generateSecret(pks), p);
+            }
             return keySpec.getEncoded();
         } catch (Exception e) {
             throw new IOException(e);

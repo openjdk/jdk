@@ -99,7 +99,7 @@ public class EncryptedPrivateKeyInfo {
     private final byte[] encoded;
 
     //
-    private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
+    public static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
 
     /**
      * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
@@ -339,21 +339,6 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
-     * Encrypted private key info encoded key spec.
-     *
-     * @param algorithm the algorithm
-     * @param password  the password
-     * @param aps        the ap
-     * @return the encoded key spec
-     * @throws IOException the io exception
-     */
-    private static byte[] encryptKey(PrivateKey key, char[] password,
-        String algorithm, AlgorithmParameterSpec aps) throws IOException {
-        return encryptKey(key.getEncoded(), password,
-            algorithm, aps);
-    }
-
-    /**
      * Encrypt key byte [].
      *
      * @param encodedBytes the encoded bytes
@@ -364,7 +349,7 @@ public class EncryptedPrivateKeyInfo {
      * @throws IOException the io exception
      */
     public static byte[] encryptKey(byte[] encodedBytes, char[] password,
-        String pbeAlgo, AlgorithmParameterSpec aps) throws IOException {
+        String pbeAlgo, AlgorithmParameterSpec aps, Provider p) throws IOException {
 
         AlgorithmId algid;
         byte[] encryptedData;
@@ -374,9 +359,15 @@ public class EncryptedPrivateKeyInfo {
 
         try {
             var spec = new PBEKeySpec(password);
-            SecretKeyFactory factory = SecretKeyFactory.getInstance(pbeAlgo);
+            SecretKeyFactory factory;
+            if (p == null) {
+                factory = SecretKeyFactory.getInstance(pbeAlgo);
+                cipher = Cipher.getInstance(pbeAlgo);
+            } else {
+                factory = SecretKeyFactory.getInstance(pbeAlgo, p);
+                cipher = Cipher.getInstance(pbeAlgo, p);
+            }
             var skey = factory.generateSecret(spec);
-            cipher = Cipher.getInstance(pbeAlgo);
             cipher.init(Cipher.ENCRYPT_MODE, skey, aps);
             encryptedData = cipher.doFinal(encodedBytes);
             algid = new AlgorithmId(getPBEID(pbeAlgo), cipher.getParameters());
@@ -411,7 +402,7 @@ public class EncryptedPrivateKeyInfo {
      */
     public static byte[] encryptKey(byte[] encodedBytes, char[] password)
         throws IOException {
-        return encryptKey(encodedBytes, password, DEFAULT_ALGO, null);
+        return encryptKey(encodedBytes, password, DEFAULT_ALGO, null, null);
     }
     /**
      * Extract the enclosed PKCS8EncodedKeySpec object from the
