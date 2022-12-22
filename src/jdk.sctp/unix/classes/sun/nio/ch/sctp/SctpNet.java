@@ -132,11 +132,11 @@ public class SctpNet {
 
     static Set<SocketAddress> getRemoteAddresses(int fd, int assocId)
             throws IOException {
-        HashSet<SocketAddress> set = null;
+        Set<SocketAddress> set = null;
         SocketAddress[] saa = getRemoteAddresses0(fd, assocId);
 
         if (saa != null) {
-            set = new HashSet<SocketAddress>(saa.length);
+            set = new HashSet<>(saa.length);
             for (SocketAddress sa : saa)
                 set.add(sa);
         }
@@ -160,8 +160,6 @@ public class SctpNet {
                    name.equals(SCTP_SET_PEER_PRIMARY_ADDR)) {
 
             SocketAddress addr  = (SocketAddress) value;
-            if (addr == null)
-                throw new IllegalArgumentException("Invalid option value");
 
             Net.checkAddress(addr);
             InetSocketAddress netAddr = (InetSocketAddress)addr;
@@ -257,7 +255,7 @@ public class SctpNet {
             arg = (b) ? 1 : 0;
         }
 
-        setIntOption0(fd, ((SctpStdSocketOption)name).constValue(), arg);
+        setIntOption0(fd, ((SctpStdSocketOption<?>)name).constValue(), arg);
     }
 
     static Object getIntOption(int fd, SctpSocketOption<?> name)
@@ -267,11 +265,10 @@ public class SctpNet {
         if (type != Integer.class && type != Boolean.class)
             throw new AssertionError("Should not reach here");
 
-        if (!(name instanceof SctpStdSocketOption))
+        if (!(name instanceof SctpStdSocketOption<?> option))
             throw new AssertionError("Should not reach here");
 
-        int value = getIntOption0(fd,
-                ((SctpStdSocketOption)name).constValue());
+        int value = getIntOption0(fd, option.constValue());
 
         if (type == Integer.class) {
             return Integer.valueOf(value);

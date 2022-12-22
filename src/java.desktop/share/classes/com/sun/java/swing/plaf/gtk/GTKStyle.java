@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,18 +286,6 @@ class GTKStyle extends SynthStyle implements GTKConstants {
                 }
             }
         }
-
-        if ((c instanceof JCheckBox) && (state & SynthConstants.DISABLED) != 0) {
-            if (UIManager.getColor("CheckBox.disabledText") != null) {
-                return UIManager.getColor("CheckBox.disabledText");
-            }
-        } else if ((c instanceof JRadioButton) &&
-                (state & SynthConstants.DISABLED) != 0) {
-            if (UIManager.getColor("RadioButton.disabledText") != null) {
-                return UIManager.getColor("RadioButton.disabledText");
-            }
-        }
-
         return getColorForState(context, type);
     }
 
