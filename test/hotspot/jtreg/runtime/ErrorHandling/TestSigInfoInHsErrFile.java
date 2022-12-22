@@ -65,7 +65,7 @@ public class TestSigInfoInHsErrFile {
     patterns.add(Pattern.compile("# A fatal error has been detected.*"));
     patterns.add(Pattern.compile("# *SIGSEGV.*"));
     patterns.add(Pattern.compile("# *Problematic frame.*"));
-    patterns.add(Pattern.compile("# .*crash_with_segfault.*"));
+    patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
 
     // Crash address: see VMError::_segfault_address
     String crashAddress = Platform.isAix() ? "0x0*1400" : "0x0*400";

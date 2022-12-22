@@ -1803,7 +1803,7 @@ typedef void (*voidfun_t)();
 
 // Crash with an authentic sigfpe
 volatile int sigfpe_int = 0;
-static void NOINLINE crash_with_sigfpe() {
+static void ALWAYSINLINE crash_with_sigfpe() {
 
   // generate a native synchronous SIGFPE where possible;
   sigfpe_int = sigfpe_int/sigfpe_int;
@@ -1819,7 +1819,7 @@ static void NOINLINE crash_with_sigfpe() {
 } // end: crash_with_sigfpe
 
 // crash with sigsegv at non-null address.
-static void NOINLINE crash_with_segfault() {
+static void ALWAYSINLINE crash_with_segfault() {
 
   int* crash_addr = reinterpret_cast<int*>(VMError::segfault_address);
   *crash_addr = 1;
