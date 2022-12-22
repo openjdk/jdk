@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5921,6 +5921,71 @@ public class Collections {
             stream.defaultReadObject();
             s = m.keySet();
         }
+    }
+
+    /**
+     * Returns a sequenced set backed by the specified map.  The resulting set displays
+     * the same ordering, concurrency, and performance characteristics as the
+     * backing map. In essence, this factory method provides a {@link SequencedSet}
+     * implementation corresponding to any {@link SequencedMap} implementation.
+     *
+     * <p>Each method invocation on the set returned by this method results in
+     * exactly one method invocation on the backing map or its {@code keySet}
+     * view, with one exception.  The {@code addAll} method is implemented
+     * as a sequence of {@code put} invocations on the backing map.
+     *
+     * <p>The specified map must be empty at the time this method is invoked,
+     * and should not be accessed directly after this method returns.  These
+     * conditions are ensured if the map is created empty, passed directly
+     * to this method, and no reference to the map is retained.
+     *
+     * <pre>{@code
+     *     SequencedSet<String> set = Collections.newSequencedSetFromMap(
+     *         new LinkedHashMap<String, Boolean>() {
+     *             protected boolean removeEldestEntry(Map.Entry<String, Boolean> e) {
+     *                 return this.size() > 5;
+     *             }
+     *        });
+     * }</pre>
+     *
+     * @param <E> the class of the map keys and of the objects in the
+     *        returned set
+     * @param map the backing map
+     * @return the set backed by the map
+     * @throws IllegalArgumentException if {@code map} is not empty
+     * @since 20
+     */
+    public static <E> SequencedSet<E> newSequencedSetFromMap(SequencedMap<E, Boolean> map) {
+        return new SequencedSetFromMap<>(map);
+    }
+
+    // TODO: serialization
+    private static class SequencedSetFromMap<E> extends SetFromMap<E> implements SequencedSet<E> {
+        private static final long serialVersionUID = 0L;
+
+        transient final SequencedMap<E, Boolean> map;
+
+        private final E nsee(Map.Entry<E, Boolean> e) {
+            if (e == null) {
+                throw new NoSuchElementException();
+            } else {
+                return e.getKey();
+            }
+        }
+
+        SequencedSetFromMap(SequencedMap<E, Boolean> map) {
+            super(map);
+            this.map = map;
+        }
+
+        public SequencedSet<E> reversed() { return new SequencedSetFromMap<>(map.reversed()); }
+
+        public void addFirst(E e) { map.putFirst(e, Boolean.TRUE); }
+        public void addLast(E e)  { map.putLast(e, Boolean.TRUE); }
+        public E getFirst()       { return nsee(map.firstEntry()); }
+        public E getLast()        { return nsee(map.lastEntry()); }
+        public E removeFirst()    { return nsee(map.pollFirstEntry()); }
+        public E removeLast()     { return nsee(map.pollLastEntry()); }
     }
 
     /**
