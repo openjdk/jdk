@@ -1056,6 +1056,9 @@ and other supported compilers may not have anything similar.
 
 ### Additional Permitted Features
 
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
+
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
 ([n3652](https://isocpp.org/files/papers/N3652.html))
