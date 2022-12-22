@@ -34,6 +34,7 @@
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
@@ -660,6 +661,47 @@ const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC_GE;
   return TypeInt::CC;           // else use worst case results
 }
+
+const Type* CmpINode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  // If this test is the zero trip guard for a main or post loop, check whether, with the opaque node removed, the test
+  // would constant fold so the loop is never entered. If so return the type of the test without the opaque node removed:
+  // make the loop unreachable.
+  // The reason for this is that the iv phi captures the bounds of the loop and if the loop becomes unreachable, it can
+  // become top. In that case, the loop must be removed.
+  // This is safe because:
+  // - as optimizations proceed, the range of iterations executed by the main loop narrows. If no iterations remain, then
+  // we're done with optimizations for that loop.
+  // - the post loop is initially not reachable but as long as there's a main loop, the zero trip guard for the post
+  // loop takes a phi that merges the pre and main loop's iv and can't constant fold the zero trip guard. Once, the main
+  // loop is removed, there's no need to preserve the zero trip guard for the post loop anymore.
+  if (in1 != NULL && in2 != NULL) {
+    uint input = 0;
+    Node* cmp = NULL;
+    BoolTest::mask test;
+    if (in1->Opcode() == Op_OpaqueZeroTripGuard && phase->type(in1) != Type::TOP) {
+      cmp = new CmpINode(in1->in(1), in2);
+      test = ((OpaqueZeroTripGuardNode*)in1)->_loop_entered_mask;
+    }
+    if (in2->Opcode() == Op_OpaqueZeroTripGuard && phase->type(in2) != Type::TOP) {
+      assert(cmp == NULL, "A cmp with 2 OpaqueZeroTripGuard inputs");
+      cmp = new CmpINode(in1, in2->in(1));
+      test = ((OpaqueZeroTripGuardNode*)in2)->_loop_entered_mask;
+    }
+    if (cmp != NULL) {
+      const Type* cmp_t = cmp->Value(phase);
+      const Type* t = BoolTest(test).cc2logical(cmp_t);
+      cmp->destruct(phase);
+      if (t == TypeInt::ZERO) {
+        return cmp_t;
+      }
+    }
+  }
+
+  return SubNode::Value(phase);
+}
+
 
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
