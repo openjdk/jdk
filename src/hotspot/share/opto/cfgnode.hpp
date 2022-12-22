@@ -76,7 +76,11 @@ public:
          Control                // Control arcs are [1..len)
   };
 
-  RegionNode(uint required) : Node(required), _is_unreachable_region(false) {
+  RegionNode(uint required)
+    : Node(required),
+      _is_unreachable_region(false),
+      _loop_status(LoopStatus::NeverIrreducibleEntry)
+  {
     init_class_id(Class_Region);
     init_req(0, this);
   }
@@ -95,6 +99,23 @@ public:
   bool is_in_infinite_subgraph();
   static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
 #endif //ASSERT
+
+  enum LoopStatus {
+    // No guarantee: the region may be an irreducible loop entry, thus we have to
+    // be carefull when removing entry control to it.
+    MaybeIrreducibleEntry,
+    // Limited guarantee: this region may be (nested) inside an irreducible loop,
+    // but it will never be an irreducible loop entry.
+    NeverIrreducibleEntry,
+    // Strong guarantee: this region is not (nested) inside an irreducible loop.
+    Reducible,
+  };
+private:
+  LoopStatus _loop_status;
+public:
+  LoopStatus loop_status() const { return _loop_status; };
+  void set_loop_status(LoopStatus status);
+
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual bool pinned() const { return (const Node*)in(0) == this; }
@@ -105,9 +126,13 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  void remove_unreachable_subgraph(PhaseIterGVN* igvn);
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 //------------------------------JProjNode--------------------------------------
@@ -150,6 +175,8 @@ class PhiNode : public TypeNode {
 
   static Node* clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn);
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
+
+  bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
 public:
   // Node layout (parallels RegionNode):

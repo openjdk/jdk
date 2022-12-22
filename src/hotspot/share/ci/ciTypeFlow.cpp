@@ -1624,7 +1624,8 @@ void ciTypeFlow::Block::df_init() {
   _pre_order = -1; assert(!has_pre_order(), "");
   _post_order = -1; assert(!has_post_order(), "");
   _loop = NULL;
-  _irreducible_entry = false;
+  _irreducible_loop_head = false;
+  _irreducible_loop_secondary_entry = false;
   _rpo_next = NULL;
 }
 
@@ -1842,6 +1843,31 @@ void ciTypeFlow::Block::set_backedge_copy(bool z) {
   _backedge_copy = z;
 }
 
+bool ciTypeFlow::Block::is_in_irreducible_loop() const {
+  if (!outer()->has_irreducible_entry()) {
+    return false; // No irreducible loop in method.
+  }
+  Loop* lp = loop(); // Innermost loop containing block.
+  if (lp == nullptr) {
+    assert(!is_post_visited(), "must have enclosing loop once post-visited");
+    return false; // Not yet processed, so we do not yet know.
+  }
+  // Walk all the way up the loop-tree, search for an irreducible loop.
+  do {
+    if (lp->is_irreducible()) {
+      return true; // We are in irreducible loop.
+    }
+    if (lp->head()->pre_order() == 0) {
+      return false; // Found root loop, terminate.
+    }
+    lp = lp->parent();
+  } while (lp != nullptr);
+  // Head of infinite loop, no parent was attached because no exit found
+  // Since this infinite loop does not exit into another loop, it is not
+  // nested in any loop, hence also not in an irreducible loop.
+  return false;
+}
+
 // ------------------------------------------------------------------
 // ciTypeFlow::Block::is_clonable_exit
 //
@@ -1886,7 +1912,9 @@ void ciTypeFlow::Block::print_value_on(outputStream* st) const {
   if (has_rpo())       st->print("rpo#%-2d ", rpo());
   st->print("[%d - %d)", start(), limit());
   if (is_loop_head()) st->print(" lphd");
-  if (is_irreducible_entry()) st->print(" irred");
+  if (is_in_irreducible_loop()) st->print(" in_irred");
+  if (is_irreducible_loop_head()) st->print(" irred_head");
+  if (is_irreducible_loop_secondary_entry()) st->print(" irred_entry");
   if (_jsrs->size() > 0) { st->print("/");  _jsrs->print_on(st); }
   if (is_backedge_copy())  st->print("/backedge_copy");
 }
@@ -2662,9 +2690,11 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
     // Check for irreducible loop.
     // Successor has already been visited. If the successor's loop head
     // has already been post-visited, then this is another entry into the loop.
+    Block* outermost_irreducible_head = nullptr;
     while (lp->head()->is_post_visited() && lp != loop_tree_root()) {
       _has_irreducible_entry = true;
       lp->set_irreducible(succ);
+      outermost_irreducible_head = lp->head();
       if (!succ->is_on_work_list()) {
         // Assume irreducible entries need more data flow
         add_to_work_list(succ);
@@ -2676,6 +2706,9 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
         break;
       }
       lp = plp;
+    }
+    if (outermost_irreducible_head != nullptr) {
+      outermost_irreducible_head->set_irreducible_loop_head();
     }
 
     // Merge loop tree branch for all successors.
