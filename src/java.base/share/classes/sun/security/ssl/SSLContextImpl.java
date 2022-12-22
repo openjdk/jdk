@@ -72,29 +72,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     private final ReentrantLock contextLock = new ReentrantLock();
 
-    protected SessionTicketExtension.StatelessKey getKey(int id) {
-        return serverCache.getKey(id);
-    }
-
-    protected SessionTicketExtension.StatelessKey getKey() {
-        SessionTicketExtension.StatelessKey ssk = serverCache.getKey();
-        if (ssk != null && !ssk.isExpired()) {
-            return ssk;
-        }
-        synchronized (serverCache) {
-            // If the current key is no longer expired, it was already
-            // updated by a concurrent request, and we can return.
-            ssk = serverCache.getKey();
-            if (ssk != null && !ssk.isExpired()) {
-                return ssk;
-            }
-            int newID = serverCache.getCurrentKeyID() + 1;
-            ssk = new SessionTicketExtension.StatelessKey(getSecureRandom(), newID);
-            serverCache.insertNewSessionKey(newID, ssk);
-            return ssk;
-        }
-    }
-
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
         clientCache = new SSLSessionContextImpl(false);
@@ -130,12 +107,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.finest("trigger seeding of SecureRandom");
         }
-        int keyID = secureRandom.nextInt();
+        secureRandom.nextInt();
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.finest("done seeding of SecureRandom");
         }
-        // Use the "priming output" to initialize the FC 5077 session ticket key name
-        serverCache.initCurrentKeyID(keyID);
 
         isInitialized = true;
     }

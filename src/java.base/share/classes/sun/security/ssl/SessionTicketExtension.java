@@ -116,11 +116,11 @@ final class SessionTicketExtension {
         final int num;
 
         // package-private, used only by SSLContextImpl
-        StatelessKey(SecureRandom secRand, int num) {
+        StatelessKey(int num) {
             SecretKey k = null;
             try {
                 KeyGenerator kg = KeyGenerator.getInstance("AES");
-                kg.init(KEYLEN, secRand);
+                kg.init(KEYLEN);
                 k = kg.generateKey();
             } catch (NoSuchAlgorithmException e) {
                 // should not happen;
@@ -146,9 +146,11 @@ final class SessionTicketExtension {
 
         // Get a key with a specific key number
         static StatelessKey getKey(HandshakeContext hc, int num)  {
-            StatelessKey ssk = hc.sslContext.getKey(num);
+            SSLSessionContextImpl serverCache =
+                (SSLSessionContextImpl)hc.sslContext.engineGetServerSessionContext();
+            StatelessKey ssk = serverCache.getKey(num);
 
-            if (ssk == null || ssk.isInvalid(hc.sslContext.engineGetServerSessionContext())) {
+            if (ssk == null || ssk.isInvalid(serverCache)) {
                 return null;
             }
             return ssk;
@@ -156,7 +158,9 @@ final class SessionTicketExtension {
 
         // Get the current valid key, this will generate a new key if needed
         static StatelessKey getCurrentKey(HandshakeContext hc) {
-            return hc.sslContext.getKey();
+            SSLSessionContextImpl serverCache =
+                (SSLSessionContextImpl)hc.sslContext.engineGetServerSessionContext();
+            return serverCache.getKey();
         }
     }
 

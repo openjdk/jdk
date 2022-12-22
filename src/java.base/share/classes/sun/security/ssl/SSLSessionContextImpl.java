@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -73,9 +72,10 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
 
-    private int currentKeyID;           // RFC 5077 session ticket key name
-    private final Map<Integer,          // Maps session keys to session state
-            SessionTicketExtension.StatelessKey> keyHashMap = new ConcurrentHashMap<>();
+    // The current session ticket encryption key ID (only used in server context)
+    private int currentKeyID;
+    // Session ticket encryption keys and IDs map (only used in server context)
+    private final Map<Integer, SessionTicketExtension.StatelessKey> keyHashMap;
 
     // Default setting for stateless session resumption support (RFC 5077)
     private boolean statelessSession = true;
@@ -88,6 +88,14 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         // use soft reference
         sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
         sessionHostPortCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+        if (server) {
+            keyHashMap = new ConcurrentHashMap<>();
+            // Should be "randomly generated" according to RFC 5077,
+            // but doesn't necessarily has to be a true random number.
+            currentKeyID = this.hashCode();
+        } else {
+            keyHashMap = null;
+        }
     }
 
     // Stateless sessions when available, but there is a cache
@@ -178,17 +186,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         return cacheLimit;
     }
 
-    // Package-private, used only from SSLContextImpl::engineInit() to initialie currentKeyID.
-    void initCurrentKeyID(int keyID) {
-        currentKeyID = keyID;
-    }
-
-    // Package-private, used only from SSLContextImpl::getKey() to create a new session key.
-    int getCurrentKeyID() {
-        return currentKeyID;
-    }
-
-    private void cleanupSessionKeys() {
+    private void cleanupStatelessKeys() {
         Iterator<Map.Entry<Integer, SessionTicketExtension.StatelessKey>> it =
             keyHashMap.entrySet().iterator();
         while (it.hasNext()) {
@@ -205,21 +203,30 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         }
     }
 
-    // Every time we insert a new session key we check for and delete invalid keys.
-    // Package-private, used only from SSLContextImpl::getKey() to create a new session key.
-    void insertNewSessionKey(int newID, SessionTicketExtension.StatelessKey ssk) {
-        assert newID != currentKeyID : "Must use a new ID for a new session key!";
-        keyHashMap.put(Integer.valueOf(newID), ssk);
-        currentKeyID = newID;
-        cleanupSessionKeys();
-    }
-
-    // Package-private, used only from SSLContextImpl::getKey().
+    // Package-private, used only from SessionTicketExtension.KeyState::getCurrentKey.
     SessionTicketExtension.StatelessKey getKey() {
-        return keyHashMap.get(currentKeyID);
+        SessionTicketExtension.StatelessKey ssk = keyHashMap.get(currentKeyID);
+        if (ssk != null && !ssk.isExpired()) {
+            return ssk;
+        }
+        synchronized (this) {
+            // If the current key is no longer expired, it was already
+            // updated by a concurrent request, and we can return.
+            ssk = keyHashMap.get(currentKeyID);
+            if (ssk != null && !ssk.isExpired()) {
+                return ssk;
+            }
+            int newID = currentKeyID + 1;
+            ssk = new SessionTicketExtension.StatelessKey(newID);
+            keyHashMap.put(Integer.valueOf(newID), ssk);
+            currentKeyID = newID;
+        }
+        // Check for and delete invalid keys every time we create a new stateless key.
+        cleanupStatelessKeys();
+        return ssk;
     }
 
-    // Package-private, used only from SSLContextImpl::getKey(int id).
+    // Package-private, used only from SessionTicketExtension.KeyState::getKey.
     SessionTicketExtension.StatelessKey getKey(int id) {
         return keyHashMap.get(id);
     }
