@@ -34,6 +34,7 @@
  */
 
 import java.io.File;
+import java.util.Properties;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
@@ -42,6 +43,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestAutoCreateSharedArchiveUpgrade {
+
+    static final Properties props = System.getProperties();
+
     // The JDK being tested
     private static final String TEST_JDK = System.getProperty("test.jdk", null);
 
@@ -151,7 +155,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     // Fetch JDK artifact depending on platform
     private static String fetchBootJDK(String osID) {
-        switch (osId) {
+        switch (osID) {
         case "Windows-x86-32":
             return fetchBootJDK(WINDOWS_X86.class);
 
@@ -187,6 +191,18 @@ public class TestAutoCreateSharedArchiveUpgrade {
             }
         }
         return path;
+    }
+
+    private static String getOsId() {
+        String osName = props.getProperty("os.name");
+        if (osName.startsWith("Win")) {
+            osName = "Windows";
+        } else if (osName.equals("Mac OS X")) {
+            osName = "MacOSX";
+        }
+        String osid = osName + "-" + props.getProperty("os.arch") + "-"
+                + props.getProperty("sun.arch.data.model");
+        return osid;
     }
 
     @Artifact(
