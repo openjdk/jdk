@@ -447,7 +447,7 @@ class ConstantPoolCache: public MetaspaceObj {
   void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
 
-  inline oop resolved_references();
+  inline objArrayOop resolved_references();
   void set_resolved_references(OopHandle s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }

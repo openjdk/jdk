@@ -2127,7 +2127,7 @@ run:
 
           case JVM_CONSTANT_String:
             {
-              oop result = constants->resolved_references()->obj_at(index);
+              oop result = constants->resolved_references_at(index);
               if (result == NULL) {
                 CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
                 SET_STACK_OBJECT(THREAD->vm_result(), 0);
@@ -2232,7 +2232,7 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPool* constants = METHOD->constants();
-        oop result = constants->resolved_references()->obj_at(index);
+        oop result = constants->resolved_references_at(index);
         if (result == NULL) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);

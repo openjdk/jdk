@@ -99,6 +99,10 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
   }
 }
 
-inline oop ConstantPoolCache::resolved_references() { return _resolved_references.resolve(); }
+inline objArrayOop ConstantPoolCache::resolved_references() {
+  oop obj = _resolved_references.resolve();
+  assert(obj == nullptr || obj->is_objArray(), "should be objArray");
+  return (objArrayOop)obj;
+}
 
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

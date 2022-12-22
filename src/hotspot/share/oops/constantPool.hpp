@@ -236,6 +236,9 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   objArrayOop resolved_references_or_null()  const;
+  oop resolved_references_at(int obj_index) const;
+  oop set_resolved_references_at(int index, oop new_value, oop old_value);
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -474,7 +477,7 @@ class ConstantPool : public Metadata {
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
+    return resolved_references_at(obj_index);
   }
 
   Symbol* unresolved_string_at(int which) {
