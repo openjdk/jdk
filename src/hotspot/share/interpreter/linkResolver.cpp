@@ -983,17 +983,11 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
   // check if field exists; i.e., if a klass containing the field def has been selected
   if (sel_klass == NULL) {
     ResourceMark rm(THREAD);
-    /*stringStream ss;
-    ss.print("Class %s does not have field '", resolved_klass->external_name());
-    sig->print_as_signature_external_return_type(&ss);
-    ss.print(" %s'", field->as_C_string());
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), ss.as_string());*/
     THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(),
         err_msg("Class %s does not have field '%s %s'",
                 resolved_klass->external_name(),
                 Signature::field_type_string(sig),
                 field->as_C_string()));
-                //type2name(Signature::basic_type(sig->char_at(0)))
   }
 
   // Access checking may be turned off when calling from within the VM.
