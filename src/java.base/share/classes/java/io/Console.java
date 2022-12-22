@@ -31,6 +31,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
@@ -93,7 +94,7 @@ import sun.security.action.GetPropertyAction;
  * @author  Xueming Shen
  * @since   1.6
  */
-public sealed class Console implements Flushable permits ConsoleImpl, ProxyingConsole {
+public sealed class Console implements Flushable permits ProxyingConsole {
     /**
      * Package private no-arg constructor.
      */
@@ -380,6 +381,8 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
 
     @SuppressWarnings("removal")
     private static Console instantiateConsole(boolean istty) {
+        Console c;
+
         try {
             // Try loading providers
             PrivilegedAction<Console> pa = () -> {
@@ -392,13 +395,19 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
                         .filter(Objects::nonNull)
                         .findAny()
                         .map(jc -> (Console) new ProxyingConsole(jc))
-                        .orElse(istty ? new ConsoleImpl() : null);
+                        .orElse(null);
             };
-            return AccessController.doPrivileged(pa);
+            c = AccessController.doPrivileged(pa);
         } catch (ServiceConfigurationError ignore) {
-            // default to built-in Console
-            return istty ? new ConsoleImpl() : null;
+            c = null;
         }
+
+        // If not found, default to built-in Console
+        if (istty && c == null) {
+            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+        }
+
+        return c;
     }
 
     private static final Console cons;

@@ -1467,7 +1467,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
       cmp1_op == Op_CMoveI && cmp2->find_int_con(1) == 0) {
     // 0 should be on the true branch
-    if (cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
+    if (cmp1->in(CMoveNode::Condition)->is_Bool() &&
+        cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
         cmp1->in(CMoveNode::IfFalse)->find_int_con(0) != 0) {
       BoolNode* target = cmp1->in(CMoveNode::Condition)->as_Bool();
       return new BoolNode(target->in(1),
