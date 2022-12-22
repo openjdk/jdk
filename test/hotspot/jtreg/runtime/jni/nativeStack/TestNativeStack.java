@@ -29,7 +29,7 @@
  * @summary Generate a JNI Fatal error, or a warning, in a launched VM and check
  *          the native stack is present as expected.
  * @comment The native code only supports POSIX so no windows testing
- * @driver TestNativeStack
+ * @run driver TestNativeStack
  */
 
 import jdk.test.lib.Utils;
@@ -55,19 +55,28 @@ public class TestNativeStack {
             ProcessTools.executeTestJvm("-Xcheck:jni",
                                         "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                         "TestNativeStack$Main");
+        oa.shouldHaveExitValue(0);
+        oa.shouldContain("WARNING in native method");
+        oa.shouldContain("thread_start");
         oa.reportDiagnosticSummary();
 
         // Case 2: Trigger a JNI FatalError call
-        oa = ProcessTools.executeTestJvm("-Xcheck:jni",
+        oa = ProcessTools.executeTestJvm("-XX:-CreateCoredumpOnCrash",
                                          "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                          "TestNativeStack$Main",
                                          "error");
+        oa.shouldNotHaveExitValue(0);
+        oa.shouldContain("FATAL ERROR in native method");
+        oa.shouldContain("thread_start");
         oa.reportDiagnosticSummary();
     }
 
     static class Main {
         public static void main(String[] args) throws Throwable {
-            triggerJNIStackTrace(args.length == 0 /* warning if no args */);
+            boolean doWarning = args.length == 0;
+            System.out.println("Triggering a JNI " +
+                               (doWarning ? "warning" : "fatal error"));
+            triggerJNIStackTrace(doWarning);
         }
     }
 }

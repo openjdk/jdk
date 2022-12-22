@@ -36,7 +36,7 @@ void generateWarning(JNIEnv *env) {
   jclass class_id;
   jmethodID method_id;
 
-  printf("About to trigger JNI Warning");
+  printf("About to trigger JNI Warning\n");
 
   // Just call Thread.currentThread() twice in succession without checking
   // for an exception in between.
@@ -59,8 +59,8 @@ void generateWarning(JNIEnv *env) {
 }
 
 void generateError(JNIEnv *env) {
-  printf("About to trigger JNI FatalError");
-  (*env)->FatalError("Fatal error generated in test code");
+  printf("About to trigger JNI FatalError\n");
+  (*env)->FatalError(env, "Fatal error generated in test code");
 }
 
 static void * thread_start(void* unused) {
@@ -92,13 +92,15 @@ static void * thread_start(void* unused) {
 
 JNIEXPORT void JNICALL
 Java_TestNativeStack_triggerJNIStackTrace
-(JNIEnv *env, jclass cls, jboolean warning) {
+(JNIEnv *env, jclass cls, jboolean warn) {
   pthread_t thread;
   int res = (*env)->GetJavaVM(env, &jvm);
   if (res != JNI_OK) {
     fprintf(stderr, "Test ERROR. Can't extract JavaVM: %d\n", res);
     exit(1);
   }
+
+  warning = warn;
 
   if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
