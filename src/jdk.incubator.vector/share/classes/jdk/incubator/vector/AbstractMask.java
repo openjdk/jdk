@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,23 +195,51 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         return res;
     }
 
-    @Override
+    /*package-private*/
     @ForceInline
-    public VectorMask<E> indexInRange(int offset, int limit) {
+    VectorMask<E> indexInRange0Helper(int offset, int limit) {
         int vlength = length();
         Vector<E> iota = vectorSpecies().zero().addIndex(1);
         VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
-        return this.andNot(badMask);
+        return badMask.not();
+    }
+
+    /*package-private*/
+    @ForceInline
+    VectorMask<E> indexInRange0Helper(long offset, long limit) {
+        int vlength = length();
+        Vector<E> iota = vectorSpecies().zero().addIndex(1);
+        VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
+        return badMask.not();
+    }
+
+    @Override
+    @ForceInline
+    public VectorMask<E> indexInRange(int offset, int limit) {
+        if (offset < 0) {
+            return this.and(indexInRange0Helper(offset, limit));
+        } else if (offset >= limit) {
+            return vectorSpecies().maskAll(false);
+        } else if (limit - offset >= length()) {
+            return this;
+        }
+        return this.and(indexInRange0(offset, limit));
     }
 
     @Override
     @ForceInline
     public VectorMask<E> indexInRange(long offset, long limit) {
-        int vlength = length();
-        Vector<E> iota = vectorSpecies().zero().addIndex(1);
-        VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
-        return this.andNot(badMask);
+        if (offset < 0) {
+            return this.and(indexInRange0Helper(offset, limit));
+        } else if (offset >= limit) {
+            return vectorSpecies().maskAll(false);
+        } else if (limit - offset >= length()) {
+            return this;
+        }
+        return this.and(indexInRange0(offset, limit));
     }
+
+    abstract VectorMask<E> indexInRange0(long offset, long limit);
 
     /*package-private*/
     @ForceInline

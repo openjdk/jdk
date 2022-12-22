@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,6 +683,15 @@ final class Int512Vector extends IntVector {
             Objects.requireNonNull(mask);
             Int512Mask m = (Int512Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Int512Mask indexInRange0(long offset, long limit) {
+            return (Int512Mask) VectorSupport.indexInRange(
+                Int512Mask.class, int.class, VLENGTH, offset, limit,
+                (o, l) -> (Int512Mask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations

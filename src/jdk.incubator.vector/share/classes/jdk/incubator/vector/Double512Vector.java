@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,6 +656,15 @@ final class Double512Vector extends DoubleVector {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Double512Mask indexInRange0(long offset, long limit) {
+            return (Double512Mask) VectorSupport.indexInRange(
+                Double512Mask.class, double.class, VLENGTH, offset, limit,
+                (o, l) -> (Double512Mask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations

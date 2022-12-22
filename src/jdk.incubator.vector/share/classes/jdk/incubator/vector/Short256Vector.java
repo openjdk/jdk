@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,6 +683,15 @@ final class Short256Vector extends ShortVector {
             Objects.requireNonNull(mask);
             Short256Mask m = (Short256Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Short256Mask indexInRange0(long offset, long limit) {
+            return (Short256Mask) VectorSupport.indexInRange(
+                Short256Mask.class, short.class, VLENGTH, offset, limit,
+                (o, l) -> (Short256Mask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations

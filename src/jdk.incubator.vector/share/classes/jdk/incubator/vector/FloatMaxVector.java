@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,6 +641,15 @@ final class FloatMaxVector extends FloatVector {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        FloatMaxMask indexInRange0(long offset, long limit) {
+            return (FloatMaxMask) VectorSupport.indexInRange(
+                FloatMaxMask.class, float.class, VLENGTH, offset, limit,
+                (o, l) -> (FloatMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations

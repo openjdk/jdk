@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,6 +653,15 @@ final class ShortMaxVector extends ShortVector {
             Objects.requireNonNull(mask);
             ShortMaxMask m = (ShortMaxMask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        ShortMaxMask indexInRange0(long offset, long limit) {
+            return (ShortMaxMask) VectorSupport.indexInRange(
+                ShortMaxMask.class, short.class, VLENGTH, offset, limit,
+                (o, l) -> (ShortMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations

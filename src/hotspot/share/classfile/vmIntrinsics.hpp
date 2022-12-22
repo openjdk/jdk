@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1195,6 +1195,16 @@ class methodHandle;
                                       "Ljdk/internal/vm/vector/VectorSupport$CompressExpandOperation;)"                                        \
                                       "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                  \
    do_name(vector_compress_expand_op_name,     "compressExpandOp")                                                                             \
+                                                                                                                                               \
+  do_intrinsic(_VectorIndexInRange, jdk_internal_vm_vector_VectorSupport, vector_index_in_range_name, vector_index_in_range_sig, F_S)          \
+    do_signature(vector_index_in_range_sig, "(Ljava/lang/Class;"                                                                               \
+                                            "Ljava/lang/Class;"                                                                                \
+                                            "I"                                                                                                \
+                                            "J"                                                                                                \
+                                            "J"                                                                                                \
+                                            "Ljdk/internal/vm/vector/VectorSupport$IndexInRangeOperation;)"                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$VectorMask;")                                               \
+    do_name(vector_index_in_range_name, "indexInRange")                                                                                        \
                                                                                                                                                \
   do_intrinsic(_IndexVector, jdk_internal_vm_vector_VectorSupport, index_vector_op_name, index_vector_op_sig, F_S)                             \
     do_signature(index_vector_op_sig, "(Ljava/lang/Class;"                                                                                     \

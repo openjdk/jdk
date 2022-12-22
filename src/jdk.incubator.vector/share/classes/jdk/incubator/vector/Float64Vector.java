@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,6 +644,15 @@ final class Float64Vector extends FloatVector {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Float64Mask indexInRange0(long offset, long limit) {
+            return (Float64Mask) VectorSupport.indexInRange(
+                Float64Mask.class, float.class, VLENGTH, offset, limit,
+                (o, l) -> (Float64Mask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations

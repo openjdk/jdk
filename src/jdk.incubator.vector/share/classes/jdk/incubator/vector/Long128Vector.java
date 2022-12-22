@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -645,6 +645,15 @@ final class Long128Vector extends LongVector {
             Objects.requireNonNull(mask);
             Long128Mask m = (Long128Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Long128Mask indexInRange0(long offset, long limit) {
+            return (Long128Mask) VectorSupport.indexInRange(
+                Long128Mask.class, long.class, VLENGTH, offset, limit,
+                (o, l) -> (Long128Mask) TRUE_MASK.indexInRange0Helper(o, l));
         }
 
         // Unary operations
