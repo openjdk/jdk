@@ -22,10 +22,6 @@
  */
 
 /* Base definition for compilation by javac. */
-/*public class FieldName {
-  public static int x = 123;
-}*/
-
 public class FieldName {
   public static int x;
   public static char[] y;
