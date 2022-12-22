@@ -1405,7 +1405,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
-            assert image != null : "Null icons are added into MRI variants map";
+            assert image != null : "Null icon passed as the base image for MRI";
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }
