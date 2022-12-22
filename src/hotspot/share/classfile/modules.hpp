@@ -53,7 +53,7 @@ public:
   static void define_module(Handle module, jboolean is_open, jstring version,
                             jstring location, jobjectArray packages, TRAPS);
 
-  static bool check_module_oop(oop orig_module_obj);
+  static bool check_module_oop(oop orig_module_obj) NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index)
                                              NOT_CDS_JAVA_HEAP_RETURN;
   static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,

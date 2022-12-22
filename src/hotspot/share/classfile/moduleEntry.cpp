@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "jni.h"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -396,7 +397,7 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(is_named(), "unnamed packages/modules are not archived");
   ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
-  archived_entry->_archived_module_index = -2;
+  archived_entry->_archived_module_index = -1;
 
   if (_archive_modules_entries == NULL) {
     _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
@@ -407,7 +408,9 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
 
   if (log_is_enabled(Info, cds, module)) {
     ResourceMark rm;
-    log_info(cds, module)("Archived ModuleEntry* = " PTR_FORMAT " for %s", p2i(archived_entry), debug_info());
+    LogStream ls(Log(cds, module)::info());
+    ls.print("Stored in archive: ");
+    archived_entry->print(&ls);
   }
   return archived_entry;
 }
@@ -486,7 +489,7 @@ void ModuleEntry::init_as_archived_entry() {
 
 void ModuleEntry::update_oops_in_archived_module(int root_oop_index) {
   assert(DumpSharedSpaces, "static dump only");
-  assert(_archived_module_index == -2, "must be set exactly once");
+  assert(_archived_module_index == -1, "must be set exactly once");
   assert(root_oop_index >= 0, "sanity");
 
   _archived_module_index = root_oop_index;
@@ -496,31 +499,12 @@ void ModuleEntry::update_oops_in_archived_module(int root_oop_index) {
   OopHandle null_handle;
   _module = null_handle;
 
-  // For validate_archived_module_entries()
+  // For verify_archived_module_entries()
   DEBUG_ONLY(_num_inited_module_entries++);
 }
 
-char* ModuleEntry::debug_info() const {
-  stringStream info;
-
-  info.print("ModuleEntry* " PTR_FORMAT " (loader = ", p2i(this));
-
-  assert(loader_data()->is_builtin_class_loader_data(), "must be");
-
-  if (loader_data()->is_boot_class_loader_data()) {
-    info.print("boot");
-  } else if (SystemDictionary::is_platform_class_loader(loader_data()->class_loader())) {
-    info.print("platform");
-  } else if (SystemDictionary::is_system_class_loader(loader_data()->class_loader())) {
-    info.print("system");
-  }
-
-  info.print(", name = %s)", (name() == nullptr) ? "unnamed" : name()->as_quoted_ascii());
-  return info.as_string();
-}
-
 #ifndef PRODUCT
-void ModuleEntry::validate_archived_module_entries() {
+void ModuleEntry::verify_archived_module_entries() {
   assert(_num_archived_module_entries == _num_inited_module_entries,
          "%d ModuleEntries have been archived but %d of them have been properly initialized with archived java.lang.Module objects",
          _num_archived_module_entries, _num_inited_module_entries);
@@ -549,7 +533,9 @@ void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
 
   if (log_is_enabled(Info, cds, module)) {
     ResourceMark rm;
-    log_info(cds, module)("Restored archived %s", debug_info());
+    LogStream ls(Log(cds, module)::info());
+    ls.print("Restored from archive: ");
+    print(&ls);
   }
 }
 

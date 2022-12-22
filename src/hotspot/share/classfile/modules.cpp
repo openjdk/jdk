@@ -489,21 +489,22 @@ bool Modules::check_module_oop(oop orig_module_obj) {
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
 
   ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
-  if (orig_module_ent == NULL) {
+  if (orig_module_ent == nullptr) {
     // These special java.lang.Module oops are created in Java code. They are not
     // defined via Modules::define_module(), so they don't have a ModuleEntry:
     //     java.lang.Module::ALL_UNNAMED_MODULE
     //     java.lang.Module::EVERYONE_MODULE
     //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
-    log_info(cds, module)("Archived java.lang.Module oop with no ModuleEntry* @[" PTR_FORMAT "]", p2i(orig_module_obj));
-    assert(java_lang_Module::name(orig_module_obj) == NULL, "must be unnamed");
+    log_info(cds, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
+    assert(java_lang_Module::name(orig_module_obj) == nullptr, "must be unnamed");
     return false;
   } else {
     // This java.lang.Module oop has an ModuleEntry*. Check if the latter is archived.
     if (log_is_enabled(Info, cds, module)) {
       ResourceMark rm;
-      log_info(cds, module)("Archived java.lang.Module oop " PTR_FORMAT " for %s", p2i(orig_module_obj),
-                            orig_module_ent->debug_info());
+      LogStream ls(Log(cds, module)::info());
+      ls.print("Archived java.lang.Module oop " PTR_FORMAT " for ", p2i(orig_module_obj));
+      orig_module_ent->print(&ls);
     }
 
     // We only archive the default module graph, which should contain only java.lang.Module oops
@@ -548,14 +549,14 @@ void Modules::update_oops_in_archived_module(oop orig_module_obj, int archived_m
   // We remember the oop inside the ModuleEntry::_archived_module_index. At runtime, we use
   // this index to reinitialize the ModuleEntry inside ModuleEntry::restore_archived_oops().
   //
-  // ModuleEntry::validate_archived_module_entries(), called below, ensures that every archived
+  // ModuleEntry::verify_archived_module_entries(), called below, ensures that every archived
   // ModuleEntry has been assigned an _archived_module_index.
   ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
   ModuleEntry::get_archived_entry(orig_module_ent)->update_oops_in_archived_module(archived_module_root_index);
 }
 
 void Modules::verify_archived_modules() {
-  ModuleEntry::validate_archived_module_entries();
+  ModuleEntry::verify_archived_module_entries();
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {

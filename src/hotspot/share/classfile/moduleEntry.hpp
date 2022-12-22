@@ -183,8 +183,7 @@ public:
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
   void update_oops_in_archived_module(int root_oop_index);
-  static void validate_archived_module_entries() PRODUCT_RETURN;
-  char* debug_info() const;
+  static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };
 
