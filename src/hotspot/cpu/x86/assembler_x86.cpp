@@ -13282,13 +13282,14 @@ void Assembler::orq(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
-void Assembler::orq(Register dst, int32_t imm32, bool compress_encoding) {
+void Assembler::orq(Register dst, int32_t imm32) {
   (void) prefixq_and_encode(dst->encoding());
-  if (compress_encoding) {
-    emit_arith(0x81, 0xC8, dst, imm32);
-  } else {
-    emit_arith_imm32(0x81, 0xC8, dst, imm32);
-  }
+  emit_arith(0x81, 0xC8, dst, imm32);
+}
+
+void Assembler::orq_imm32(Register dst, int32_t imm32) {
+  (void) prefixq_and_encode(dst->encoding());
+  emit_arith_imm32(0x81, 0xC8, dst, imm32);
 }
 
 void Assembler::orq(Register dst, Address src) {

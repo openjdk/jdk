@@ -37,7 +37,7 @@ source %{
 static void z_color(MacroAssembler& _masm, const MachNode* node, Register ref) {
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shlq(ref, barrier_Relocation::unpatched);
-  __ orq(ref, barrier_Relocation::unpatched, false /* compress_encoding */);
+  __ orq_imm32(ref, barrier_Relocation::unpatched);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
 }
 

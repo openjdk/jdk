@@ -412,7 +412,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       __ movptr(rnew_zpointer, rnew_zaddress);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
       __ shlq(rnew_zpointer, barrier_Relocation::unpatched);
-      __ orq(rnew_zpointer, barrier_Relocation::unpatched, false /* compress_encoding */);
+      __ orq_imm32(rnew_zpointer, barrier_Relocation::unpatched);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
     }
   } else {
@@ -675,7 +675,7 @@ void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
   // Uncolor
   __ andq(tmp1, _zpointer_address_mask);
   // Color
-  __ orq(tmp1, (int32_t)(uint32_t)ZPointerStoreGoodMask, false /* compress_encoding */);
+  __ orq_imm32(tmp1, (int32_t)(uint32_t)ZPointerStoreGoodMask);
   _store_good_relocations.append(__ code_section()->end());
 
   // Store value
@@ -898,7 +898,7 @@ static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shlq(ref->as_register(), barrier_Relocation::unpatched);
-  __ orq(ref->as_register(), barrier_Relocation::unpatched, false /* compress_encoding */);
+  __ orq_imm32(ref->as_register(), barrier_Relocation::unpatched);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
 }
 
