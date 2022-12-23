@@ -638,7 +638,7 @@ void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
   __ movptr(tmp1, src);
 
   // Test address bad mask
-  __ testw(tmp1, (int16_t)(uint16_t)ZPointerLoadBadMask);
+  __ Assembler::testl(tmp1, (int32_t)(uint32_t)ZPointerLoadBadMask);
   _load_bad_relocations.append(__ code_section()->end());
   __ jcc(Assembler::zero, load_done);
 
@@ -916,7 +916,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     bool on_non_strong) const {
   if (on_non_strong) {
     // Test against MarkBad mask
-    __ testw(ref->as_register(), barrier_Relocation::unpatched);
+    __ Assembler::testl(ref->as_register(), barrier_Relocation::unpatched);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadAfterTest);
 
     // Slow path if not zero
@@ -1477,11 +1477,11 @@ static int patch_barrier_relocation_offset(int format) {
   case ZBarrierRelocationFormatLoadGoodBeforeShl:
     return 3;
 
-  case ZBarrierRelocationFormatLoadBadAfterTest:
-  case ZBarrierRelocationFormatMarkBadAfterTest:
   case ZBarrierRelocationFormatStoreGoodAfterCmp:
     return -2;
 
+  case ZBarrierRelocationFormatLoadBadAfterTest:
+  case ZBarrierRelocationFormatMarkBadAfterTest:
   case ZBarrierRelocationFormatStoreBadAfterTest:
   case ZBarrierRelocationFormatStoreGoodAfterOr:
     return -4;
