@@ -39,6 +39,7 @@ public:
   ConNode( const Type *t ) : TypeNode(t->remove_speculative(),1) {
     init_req(0, (Node*)Compile::current()->root());
     init_flags(Flag_is_Con);
+    init_class_id(Class_Con);
   }
   virtual int  Opcode() const;
   virtual uint hash() const;
@@ -53,7 +54,9 @@ public:
 // Simple integer constants
 class ConINode : public ConNode {
 public:
-  ConINode( const TypeInt *t ) : ConNode(t) {}
+  ConINode( const TypeInt *t ) : ConNode(t) {
+    init_class_id(Class_ConI);
+  }
   virtual int Opcode() const;
 
   // Factory method:

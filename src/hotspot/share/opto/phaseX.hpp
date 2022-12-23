@@ -335,6 +335,9 @@ public:
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
+    return saturate(new_type, type_or_null(n), n->type());
+  }
 
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
@@ -476,6 +479,10 @@ public:
   // Node::Value, Node::Identity, hash-based value numbering, Node::Ideal_DU
   // and dominator info to a fixed point.
   void optimize();
+#ifdef ASSERT
+  void verify_optimize();
+  bool verify_node_value(Node* n);
+#endif
 
 #ifndef PRODUCT
   void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
@@ -618,6 +625,14 @@ class PhaseCCP : public PhaseIterGVN {
   // Returns new_type->widen(old_type), which increments the widen bits until
   // giving up with TypeInt::INT or TypeLong::LONG.
   // Result is clipped to limit_type if necessary.
+  virtual const Type* saturate_and_maybe_push_to_igvn_worklist(const TypeNode* n, const Type* new_type) {
+    const Type* t = saturate(new_type, type_or_null(n), n->type());
+    if (t != new_type) {
+      // Type was widened in CCP, but IGVN may be able to make it narrower.
+      _worklist.push((Node*)n);
+    }
+    return t;
+  }
 
 #ifndef PRODUCT
   static uint _total_invokes;    // For profiling, count invocations

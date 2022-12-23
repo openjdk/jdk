@@ -1276,7 +1276,7 @@ class ExtractNode : public Node {
   virtual int Opcode() const;
   uint  pos() const { return in(2)->get_int(); }
 
-  static Node* make(Node* v, uint position, BasicType bt);
+  static Node* make(Node* v, ConINode* pos, BasicType bt);
   static int opcode(BasicType bt);
 };
 

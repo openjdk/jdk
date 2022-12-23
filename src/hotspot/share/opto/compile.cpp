@@ -756,6 +756,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       record_method_not_compilable("cannot parse method");
       return;
     }
+
+    gvn.set_type(root(), root()->bottom_type());
+
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == NULL) {
       if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {

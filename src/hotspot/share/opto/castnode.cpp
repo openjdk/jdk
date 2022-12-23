@@ -50,7 +50,19 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
 // Take 'join' of input and cast-up type
 const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
-  const Type* ft = phase->type(in(1))->filter_speculative(_type);
+
+  const Type* in_type = phase->type(in(1));
+  const Type* ft = in_type->filter_speculative(_type);
+
+  if (ft->speculative() == nullptr && // speculative was dropped
+      _type->speculative() != nullptr &&   // but was present
+      in_type->speculative() != nullptr) { // for cast and input
+    // Speculative type may have disagreed between cast and input, and was
+    // dropped in filtering. Recompute so that ft can take speculative type
+    // of in_type. If we did not do it now, a subsequent ::Value call would
+    // do it, and violate idempotence of ::Value.
+    ft = in_type->filter_speculative(ft);
+  }
 
 #ifdef ASSERT
   // Previous versions of this function had some special case logic,
@@ -58,17 +70,21 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   switch (Opcode()) {
     case Op_CastII:
     {
-      const Type* t1 = phase->type(in(1));
-      if( t1 == Type::TOP )  assert(ft == Type::TOP, "special case #1");
-      const Type* rt = t1->join_speculative(_type);
-      if (rt->empty())       assert(ft == Type::TOP, "special case #2");
+      if (in_type == Type::TOP) {
+        assert(ft == Type::TOP, "special case #1");
+      }
+      const Type* rt = in_type->join_speculative(_type);
+      if (rt->empty()) {
+        assert(ft == Type::TOP, "special case #2");
+      }
       break;
     }
     case Op_CastPP:
-    if (phase->type(in(1)) == TypePtr::NULL_PTR &&
-        _type->isa_ptr() && _type->is_ptr()->_ptr == TypePtr::NotNull)
-    assert(ft == Type::TOP, "special case #3");
-    break;
+    if (in_type == TypePtr::NULL_PTR &&
+        _type->isa_ptr() && _type->is_ptr()->_ptr == TypePtr::NotNull) {
+      assert(ft == Type::TOP, "special case #3");
+      break;
+    }
   }
 #endif //ASSERT
 
@@ -344,7 +360,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (progress != NULL) {
     return progress;
   }
-  if (can_reshape && !phase->C->post_loop_opts_phase()) {
+  if (!phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
     phase->C->record_for_post_loop_opts_igvn(this);
   }

@@ -1356,8 +1356,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
 #endif //ASSERT
 
   // Deal with conversion problems found in data loops.
-  ft = phase->saturate(ft, phase->type_or_null(this), _type);
-
+  ft = phase->saturate_and_maybe_push_to_igvn_worklist(this, ft);
   return ft;
 }
 

@@ -1208,8 +1208,116 @@ void PhaseIterGVN::optimize() {
     loop_count++;
   }
   NOT_PRODUCT(verify_PhaseIterGVN();)
+  DEBUG_ONLY(verify_optimize();)
 }
 
+#ifdef ASSERT
+void PhaseIterGVN::verify_optimize() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  bool failure = false;
+  // BFS all nodes, starting at root
+  worklist.push(C->root());
+  for (uint j = 0; j < worklist.size(); ++j) {
+    Node* n = worklist.at(j);
+    failure |= verify_node_value(n);
+    // traverse all inputs and outputs
+    for (uint i = 0; i < n->req(); i++) {
+      if (n->in(i) != nullptr) {
+        worklist.push(n->in(i));
+      }
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      worklist.push(n->fast_out(i));
+    }
+  }
+  // If we get this assert, check why the reported nodes were not processed again in IGVN.
+  // We should either make sure that these nodes are properly added back to the IGVN worklist
+  // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
+  // in the verification code above if that is not possible for some reason (like Load nodes).
+  assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
+}
+
+// Check that if type(n) == n->Value(), return true if we have a failure
+// We have a list of exceptions, see comments in code.
+bool PhaseIterGVN::verify_node_value(Node* n) {
+  // If we assert inside type(n), because the type is still a nullptr, then maybe
+  // the node never went through gvn.transform,  which would be a bug.
+  const Type* told = type(n);
+  const Type* tnew = n->Value(this);
+  if (told == tnew) {
+    return false;
+  }
+  // Check special cases that are ok
+  if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
+    const TypeInteger* t0 = told->is_integer(tnew->basic_type());
+    const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
+    if (t0->lo_as_long() == t1->lo_as_long() &&
+        t0->hi_as_long() == t1->hi_as_long()) {
+      return false; // ignore integer widen
+    }
+  }
+  if (n->is_Load()) {
+    // MemNode::can_see_stored_value looks up through many memory nodes,
+    // which means we would need to notify modifications from far up in
+    // the inputs all the way down to the LoadNode. We don't do that.
+    return false;
+  }
+  if (n->is_CastII()) {
+    if (n->in(0) != nullptr && n->in(0)->in(0) != nullptr && n->in(0)->in(0)->is_If()) {
+      IfNode* iff = n->in(0)->in(0)->as_If();
+      if (iff->in(1)->is_Bool() && iff->in(1)->in(1)->Opcode() == Op_CmpI) {
+        Node* cmp = iff->in(1)->in(1);
+        if (cmp->in(1) == n->in(1) && type(cmp->in(2))->isa_int()) {
+          // cmp->in(1) may have been updated, but the update not propagated down.
+          // Current notification code does not notify correctly if in(1) is replaced
+          // and only the new in(1) has this CastII below itself.
+          // We could fix this, but it would require a walk down:
+          // CmpI -> Bool -> If -> IfProj -> CastII
+          // On every level, this could be multiple uses.
+          return false;
+        }
+      }
+    }
+  }
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
+    // SubNode::Value
+    // CmpPNode::sub
+    // MemNode::detect_ptr_independence
+    // MemNode::all_controls_dominate
+    // We find all controls of a pointer load, and see if they dominate the control of
+    // an allocation. If they all dominate, we know the allocation is after (independent)
+    // of the pointer load, and we can say the pointers are different. For this we call
+    // n->dominates(sub, nlist) to check if controls n of the pointer load dominate the
+    // control sub of the allocation. The problems is that sometimes dominates answers
+    // false conservatively, and later it can determine that it is indeed true. Loops with
+    // Region heads can lead to giving up, whereas LoopNodes can be skipped easier, and
+    // so the traversal becomes more powerful. This is difficult to remidy, we would have
+    // to notify the CmpP of CFG updates. Luckily, we recompute CmpP::Value during CCP
+    // after loop-opts, so that should take care of many of these cases.
+    return false;
+  }
+  if (n->is_Sub() && n->in(1)->eqv_uncast(n->in(2))) {
+    if ((n->in(1)->is_ConstraintCast() && n->in(1)->in(1)->is_ConstraintCast()) ||
+        (n->in(2)->is_ConstraintCast() && n->in(2)->in(1)->is_ConstraintCast())) {
+      // Sub nodes can replace Sub( CastII(CastII(x)), x) with zero, but the notification
+      // goes only over a singe CastII node. We could make the notification a recursive
+      // traversal: traverse down the CastII outputs recursively, and find all SubNodes.
+      return false;
+    }
+  }
+  tty->cr();
+  tty->print_cr("Missed Value optimization:");
+  n->dump_bfs(1, 0, "");
+  tty->print_cr("Current type:");
+  told->dump_on(tty);
+  tty->cr();
+  tty->print_cr("Optimized type:");
+  tnew->dump_on(tty);
+  tty->cr();
+  return true;
+}
+#endif
 
 /**
  * Register a new node with the optimizer.  Update the types array, the def-use
@@ -1575,16 +1683,16 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           }
         }
       }
-      if (use_op == Op_CmpI) {
-        Node* phi = countedloop_phi_from_cmp((CmpINode*)use, n);
+      if (use_op == Op_CmpI || use_op == Op_CmpL) {
+        Node* phi = countedloop_phi_from_cmp(use->as_Cmp(), n);
         if (phi != NULL) {
-          // If an opaque node feeds into the limit condition of a
-          // CountedLoop, we need to process the Phi node for the
-          // induction variable when the opaque node is removed:
-          // the range of values taken by the Phi is now known and
-          // so its type is also known.
+          // Input to the cmp of a loop exit check has changed, thus
+          // the loop limit may have changed, which can then change the
+          // range values of the trip-count Phi.
           _worklist.push(phi);
         }
+      }
+      if (use_op == Op_CmpI) {
         Node* in1 = use->in(1);
         for (uint i = 0; i < in1->outcnt(); i++) {
           if (in1->raw_out(i)->Opcode() == Op_CastII) {
@@ -1608,8 +1716,10 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     if (use->is_ConstraintCast()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
-        if (u->is_Phi())
+        if (u->is_Phi() || u->is_Sub()) {
+          // Phi (.., CastII, ..) or Sub(Cast(x), x)
           _worklist.push(u);
+        }
       }
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
@@ -1618,6 +1728,15 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         Node* u = use->fast_out(i2);
         if (u->Opcode() == Op_RShiftI)
           _worklist.push(u);
+      }
+    }
+    // If changed LShift inputs, check And users for shift and mask (And) operation
+    if(use_op == Op_LShiftI || use_op == Op_LShiftL) {
+      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+        Node* u = use->fast_out(i2);
+        if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
+          _worklist.push(u);
+        }
       }
     }
     // If changed AddI/SubI inputs, check CmpU for range check optimization.
@@ -1817,40 +1936,12 @@ void PhaseCCP::analyze() {
 
 #ifdef ASSERT
 // For every node n on verify list, check if type(n) == n->Value()
-// We have a list of exceptions, see comments in code.
+// We have a list of exceptions, see comments in verify_node_value.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
-    const Type* told = type(n);
-    const Type* tnew = n->Value(this);
-    if (told != tnew) {
-      // Check special cases that are ok
-      if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
-        const TypeInteger* t0 = told->is_integer(tnew->basic_type());
-        const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
-        if (t0->lo_as_long() == t1->lo_as_long() &&
-            t0->hi_as_long() == t1->hi_as_long()) {
-          continue; // ignore integer widen
-        }
-      }
-      if (n->is_Load()) {
-        // MemNode::can_see_stored_value looks up through many memory nodes,
-        // which means we would need to notify modifications from far up in
-        // the inputs all the way down to the LoadNode. We don't do that.
-        continue;
-      }
-      tty->cr();
-      tty->print_cr("Missed optimization (PhaseCCP):");
-      n->dump_bfs(1, 0, "");
-      tty->print_cr("Current type:");
-      told->dump_on(tty);
-      tty->cr();
-      tty->print_cr("Optimized type:");
-      tnew->dump_on(tty);
-      tty->cr();
-      failure = true;
-    }
+    failure |= verify_node_value(n);
   }
   // If we get this assert, check why the reported nodes were not processed again in CCP.
   // We should either make sure that these nodes are properly added back to the CCP worklist

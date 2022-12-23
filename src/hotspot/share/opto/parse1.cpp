@@ -544,7 +544,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     return;
   }
 
-  gvn().set_type(root(), root()->bottom_type());
   gvn().transform(top());
 
   // Import the results of the ciTypeFlow.

@@ -1380,6 +1380,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   ResourceMark rm;
   Node_List nstack;
+  VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
   nstack.push(dead);
@@ -1387,6 +1388,10 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
+    if (!dead_set.test_set(dead->_idx)) {
+      // If dead has any live uses, those are now still attached. Notify them before we lose them.
+      igvn->add_users_to_worklist(dead);
+    }
     if (dead->Opcode() == Op_SafePoint) {
       dead->as_SafePoint()->disconnect_from_root(igvn);
     }
