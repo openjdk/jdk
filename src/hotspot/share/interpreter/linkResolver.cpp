@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -972,10 +972,7 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
 
   if (resolved_klass == NULL) {
     ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(),
-        err_msg("No resolved class, field '%s %s'",
-                type2name(Signature::basic_type(sig->char_at(0))),
-                field->as_C_string()));
+    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), field->as_C_string());
   }
 
   // Resolve instance field
@@ -983,11 +980,11 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
   // check if field exists; i.e., if a klass containing the field def has been selected
   if (sel_klass == NULL) {
     ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(),
-        err_msg("Class %s does not have field '%s %s'",
-                resolved_klass->external_name(),
-                Signature::field_type_string(sig),
-                field->as_C_string()));
+    stringStream ss;
+    ss.print("Class %s does not have member field '", resolved_klass->external_name());
+    sig->print_signature_as_external_field_type(&ss);
+    ss.print(" %s'", field->as_C_string());
+    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), ss.as_string());
   }
 
   // Access checking may be turned off when calling from within the VM.

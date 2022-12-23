@@ -435,30 +435,6 @@ Symbol* Signature::strip_envelope(const Symbol* signature) {
                                  signature->utf8_length() - 2);
 }
 
-const char* Signature::field_type_string(const Symbol* signature) {
-  return field_type_string_impl(signature, 0);
-}
-
-const char* Signature::field_type_string_impl(const Symbol* signature, int index) {
-  if (basic_type(signature->char_at(index)) == T_OBJECT) {
-    return strip_envelope(signature)->as_C_string();
-  } else if (basic_type(signature->char_at(index)) == T_ARRAY) {
-    int i;
-    // Unravel and count array layers
-    for (i = 0; i < signature->utf8_length() && signature->char_at(i) == JVM_SIGNATURE_ARRAY; i++);
-    char* buf = NEW_RESOURCE_ARRAY(char, 64);
-    strncpy(buf, field_type_string_impl(signature, i), 64);
-    // Append array braces to type name
-    for (int j = 0; j < i; j++) {
-      strncat(buf, "[]", strlen(buf));
-      buf[strlen(buf)] = '\0';
-    }
-    return buf;
-  }
-  // If it is a primitive, grab its basic type and return
-  return (char*)type2name(Signature::basic_type(signature->char_at(index)));
-}
-
 static const int jl_len = 10, object_len = 6, jl_object_len = jl_len + object_len;
 static const char jl_str[] = "java/lang/";
 

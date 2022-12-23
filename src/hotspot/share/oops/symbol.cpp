@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,6 +291,18 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
       os->print("%s", type2name(ss.type()));
     }
     first = false;
+  }
+}
+
+void Symbol::print_signature_as_external_field_type(outputStream *os) {
+  for (SignatureStream ss(this, false); !ss.is_done(); ss.next()) {
+    if (ss.is_array()) {
+      print_array(os, ss);
+    } else if (ss.is_reference()) {
+      print_class(os, ss);
+    } else {
+      os->print("%s", type2name(ss.type()));
+    }
   }
 }
 
