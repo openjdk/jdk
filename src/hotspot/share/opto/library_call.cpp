@@ -3350,9 +3350,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
     = make_load(NULL, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
   thread_obj_handle = _gvn.transform(thread_obj_handle);
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
-  // Stores of oops to native memory not supported yet by BarrierSetC2::store_at_resolved
-  // access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
-  store_to_memory(control(), thread_obj_handle, arr, T_OBJECT, adr_type, MemNode::unordered);
+  access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;
 }
