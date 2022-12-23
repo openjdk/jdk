@@ -4743,7 +4743,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
             static {
                 AccessibleComponentAccessor.addAccessor(c ->
-                        c instanceof AccessibleJTreeNode ? ((AccessibleJTreeNode) c).getCurrentComponent() : null);
+                        c instanceof AccessibleJTreeNode ?
+                                ((AccessibleJTreeNode) c).getCurrentComponent()
+                                : null);
             }
 
             private JTree tree = null;

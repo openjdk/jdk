@@ -8091,12 +8091,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         protected class AccessibleJTableCell extends AccessibleContext
             implements Accessible, AccessibleComponent {
 
-            static {
-                AccessibleComponentAccessor.addAccessor(c ->
-                        c instanceof AccessibleJTableCell ? ((AccessibleJTableCell) c).getCurrentComponent() : null);
-            }
-
-
             private JTable parent;
             private int row;
             private int column;

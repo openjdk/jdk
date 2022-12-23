@@ -3229,11 +3229,6 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             private ListModel<E> listModel;
             private ListCellRenderer<? super E> cellRenderer = null;
 
-              static {
-                  AccessibleComponentAccessor.addAccessor(c ->
-                          c instanceof JList.AccessibleJList.AccessibleJListChild ? ((JList.AccessibleJList.AccessibleJListChild) c).getCurrentComponent() : null);
-              }
-
             /**
              * Constructs an {@code AccessibleJListChild}.
              * @param parent the parent
