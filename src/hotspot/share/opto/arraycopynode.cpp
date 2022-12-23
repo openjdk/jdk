@@ -413,7 +413,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
       igvn->_worklist.push(adr_src);
       igvn->_worklist.push(adr_dest);
     }
-    return phase->transform(mm);
+    return mm;
   }
   return phase->C->top();
 }
