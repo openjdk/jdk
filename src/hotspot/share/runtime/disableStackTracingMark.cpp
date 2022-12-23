@@ -45,7 +45,7 @@ DisableStackTracingMark::~DisableStackTracingMark() {
 
 intptr_t* DisableStackTracingMark::begin(JavaThread* jt) {
   assert(!_is_active, "nesting not supported");
-  _is_active = true;
+  DEBUG_ONLY(_is_active = true;)
   intptr_t* sp = jt->frame_anchor()->last_Java_sp();
   jt->frame_anchor()->set_last_Java_sp(NULL);
   return sp;
@@ -54,5 +54,5 @@ intptr_t* DisableStackTracingMark::begin(JavaThread* jt) {
 void DisableStackTracingMark::end(JavaThread* jt, intptr_t* sp) {
   assert(_is_active, "mismatched begin and end");
   jt->frame_anchor()->set_last_Java_sp(sp);
-  _is_active = false;
+  DEBUG_ONLY(_is_active = false;)
 }
