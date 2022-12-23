@@ -31,6 +31,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
@@ -92,9 +93,9 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             keyHashMap = new ConcurrentHashMap<>();
             // Should be "randomly generated" according to RFC 5077,
             // but doesn't necessarily has to be a true random number.
-            currentKeyID = this.hashCode();
+            currentKeyID = new Random(System.nanoTime()).nextInt();
         } else {
-            keyHashMap = null;
+            keyHashMap = Map.of();
         }
     }
 
@@ -204,7 +205,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     // Package-private, used only from SessionTicketExtension.KeyState::getCurrentKey.
-    SessionTicketExtension.StatelessKey getKey() {
+    SessionTicketExtension.StatelessKey getKey(HandshakeContext hc) {
         SessionTicketExtension.StatelessKey ssk = keyHashMap.get(currentKeyID);
         if (ssk != null && !ssk.isExpired()) {
             return ssk;
@@ -217,7 +218,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                 return ssk;
             }
             int newID = currentKeyID + 1;
-            ssk = new SessionTicketExtension.StatelessKey(newID);
+            ssk = new SessionTicketExtension.StatelessKey(hc, newID);
             keyHashMap.put(Integer.valueOf(newID), ssk);
             currentKeyID = newID;
         }

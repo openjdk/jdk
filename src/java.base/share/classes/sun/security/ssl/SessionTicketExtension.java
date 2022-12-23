@@ -116,11 +116,11 @@ final class SessionTicketExtension {
         final int num;
 
         // package-private, used only by SSLContextImpl
-        StatelessKey(int num) {
+        StatelessKey(HandshakeContext hc, int num) {
             SecretKey k = null;
             try {
                 KeyGenerator kg = KeyGenerator.getInstance("AES");
-                kg.init(KEYLEN);
+                kg.init(KEYLEN, hc.sslContext.getSecureRandom());
                 k = kg.generateKey();
             } catch (NoSuchAlgorithmException e) {
                 // should not happen;
@@ -160,7 +160,7 @@ final class SessionTicketExtension {
         static StatelessKey getCurrentKey(HandshakeContext hc) {
             SSLSessionContextImpl serverCache =
                 (SSLSessionContextImpl)hc.sslContext.engineGetServerSessionContext();
-            return serverCache.getKey();
+            return serverCache.getKey(hc);
         }
     }
 
