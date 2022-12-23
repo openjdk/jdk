@@ -84,10 +84,9 @@ jobs:
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
 
-      - name: 'Run MinGW64'
+      - name: 'Run MinGW'
         run: |
-          $env:RUNNER_TEMP\msys64\mingw64.exe help
-        shell: bash
+          echo $USER
 
       - name: 'Get the BootJDK'
         id: bootjdk
