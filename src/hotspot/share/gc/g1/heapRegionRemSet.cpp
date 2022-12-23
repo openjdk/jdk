@@ -109,11 +109,9 @@ void HeapRegionRemSet::add_code_root(nmethod* nm) {
   assert((!CodeCache_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint()),
           "should call add_code_root_locked instead. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s",
           BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
-  // Optimistic unlocked contains-check
-  if (!_code_roots.contains(nm)) {
-    MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
-    add_code_root_locked(nm);
-  }
+
+  MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
+  add_code_root_locked(nm);
 }
 
 void HeapRegionRemSet::add_code_root_locked(nmethod* nm) {
