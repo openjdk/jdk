@@ -34,7 +34,7 @@ runs:
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
-        location: ${{runner.temp}}/msys2
+        location: ${{ runner.temp }}/msys2
 
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
