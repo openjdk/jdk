@@ -1151,21 +1151,20 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
 
 //------------------------PredicatedIntrinsicGenerator------------------------------
 // Internal class which handles all predicated Intrinsic calls.
-class PredicatedIntrinsicGenerator : public CallGenerator {
+class PredicatedIntrinsicGenerator : public InlineCallGenerator {
   CallGenerator* _intrinsic;
   CallGenerator* _cg;
 
 public:
   PredicatedIntrinsicGenerator(CallGenerator* intrinsic,
                                CallGenerator* cg)
-    : CallGenerator(cg->method())
+    : InlineCallGenerator(cg->method())
   {
     _intrinsic = intrinsic;
     _cg        = cg;
   }
 
   virtual bool      is_virtual()   const    { return true; }
-  virtual bool      is_inline()    const    { return true; }
   virtual bool      is_intrinsic() const    { return true; }
 
   virtual JVMState* generate(JVMState* jvms);
@@ -1238,6 +1237,10 @@ JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
     if (!kit.stopped()) {
       PreserveJVMState pjvms(&kit);
       // Generate intrinsic code:
+      assert(_intrinsic->is_inline(), "LibraryIntrinsic");
+      if (_caller_state != nullptr) {
+        static_cast<InlineCallGenerator*>(_intrinsic)->set_caller_state(_caller_state);
+      }
       JVMState* new_jvms = _intrinsic->generate(kit.sync_jvms());
       if (new_jvms == NULL) {
         // Intrinsic failed, use normal compilation path for this predicate.
@@ -1263,6 +1266,9 @@ JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
     PreserveJVMState pjvms(&kit);
     // Generate normal compilation code:
     kit.set_control(gvn.transform(slow_region));
+    if (_cg->is_inline() && _caller_state != nullptr) {
+      static_cast<InlineCallGenerator*>(_cg)->set_caller_state(_caller_state);
+    }
     JVMState* new_jvms = _cg->generate(kit.sync_jvms());
     if (kit.failing())
       return NULL;  // might happen because of NodeCountInliningCutoff
