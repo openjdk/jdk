@@ -147,7 +147,6 @@ static void signalHandler(int signo, siginfo_t* siginfo, void* ucontext) {
   trace.frames = frames;
   trace.frame_info = NULL;
   trace.num_frames = 0;
-  printf("iterative: %d\n", iterative);
   if (iterative) {
     iterativeFuzzingAsyncGetStackTraceLike(&trace, MAX_DEPTH, ASGST_INCLUDE_C_FRAMES, ucontext);
   } else {

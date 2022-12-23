@@ -22,6 +22,12 @@
  * questions.
  */
 
+#if defined(BSD) || defined(LINUX)
+
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600
+#endif
+
 #include <assert.h>
 #include <dlfcn.h>
 #include <pthread.h>
@@ -32,12 +38,12 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/ucontext.h>
 #include <ucontext.h>
 #include "jni.h"
 #include "jvmti.h"
 #include "profile.h"
 #include "util.hpp"
-
 
 // AsyncGetStackTrace needs class loading events to be turned on!
 static void JNICALL OnClassLoad(jvmtiEnv *jvmti, JNIEnv *jni_env,
@@ -391,3 +397,4 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
   return checkForNonJavaFromThread() && checkWithSkippedCFrames();
 }
 }
+#endif // defined(BSD) || defined(LINUX)

@@ -1264,6 +1264,8 @@ bool os::is_first_C_frame(frame* fr) {
   if (old_fp < ufp) return true;
   if (old_fp - ufp > 64 * K) return true;
 
+  if (fr->sender_pc() == NULL) return true;
+
   return false;
 }
 

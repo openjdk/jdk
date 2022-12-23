@@ -28,7 +28,7 @@ package profiling.innerc;
  * @test
  * @summary Verifies that AsyncGetStackTrace works correctly with Java and native frames intermingled, when skipping all C frames.
  * @compile ASGSTInnerCSkipCTest.java
- * @requires os.family == "linux"
+ * @requires os.family == "linux" | os.family == "mac"
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="s390" | os.arch=="riscv64"
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:AsyncGetStackTraceInnerCSkipCTest profiling.innerc.ASGSTInnerCSkipCTest

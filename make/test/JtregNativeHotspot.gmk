@@ -850,6 +850,12 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine07agent02 := $(NSK_AOD_INC
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine07agent03 := $(NSK_AOD_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine09agent00 := $(NSK_AOD_INCLUDES)
 
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceTest := -ldl -ljvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCTest := -ldl -ljvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCSkipCTest := -ldl -ljvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSampler := -ldl -ljvm
+
 ################################################################################
 
 # Platform specific setup
@@ -864,11 +870,6 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-tls := -ljvm
   BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceTest := -ldl -ljvm
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCTest := -ldl -ljvm
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCSkipCTest := -ldl -ljvm
-  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSampler := -ldl -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceFuzzingSampler := -ldl -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSmallFuzzTest := -ldl -ljvm
 else

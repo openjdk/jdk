@@ -49,7 +49,7 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/jdk/lib/testlibrary /test/lib
  * @compile ASGSTStabilityTest.java
  * @key stress
- * @requires os.family == "linux"
+ * @requires os.family == "linux" | os.family == "mac"
  * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="arm" | os.arch=="aarch64" | os.arch=="ppc64" | os.arch=="s390" | os.arch=="riscv64"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox

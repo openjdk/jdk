@@ -117,7 +117,7 @@ static bool startITimerSampler(long interval_ns) {
   time_t sec = interval_ns / 1000000000;
   suseconds_t usec = (interval_ns % 1000000000) / 1000;
   struct itimerval tv = {{sec, usec}, {sec, usec}};
-  
+
   installSignalHandler(SIGPROF, signalHandler);
 
   if (setitimer(ITIMER_PROF, &tv, NULL) != 0) {
@@ -144,7 +144,7 @@ static void JNICALL OnVMInit(jvmtiEnv *jvmti, JNIEnv *jni_env, jthread thread) {
   for (int i = 0; i < class_count; ++i) {
     GetJMethodIDs(classList[i]);
   }
-  
+
   startITimerSampler(1000); // 1us
 }
 

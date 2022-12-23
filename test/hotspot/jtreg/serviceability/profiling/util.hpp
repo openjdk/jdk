@@ -23,6 +23,10 @@
  * questions.
  */
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600
+#endif
+
 #include <array>
 #include <assert.h>
 #include <signal.h>
@@ -32,6 +36,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/ucontext.h>
 #include <ucontext.h>
 #include <utility>
 #include "jni.h"
