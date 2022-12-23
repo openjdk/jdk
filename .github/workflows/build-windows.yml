@@ -84,10 +84,6 @@ jobs:
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
 
-      - name: 'Run MinGW'
-        run: |
-          echo $USER
-
       - name: 'Get the BootJDK'
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
