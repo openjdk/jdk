@@ -37,6 +37,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +46,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Vector;
 import sun.font.CompositeFontDescriptor;
 import sun.font.SunFontManager;
 import sun.font.FontUtilities;
@@ -837,9 +837,9 @@ public abstract class FontConfiguration {
         }
     }
 
-    private static Vector<String> splitSequence(String sequence) {
-        //String.split would be more convenient, but incurs big performance penalty
-        Vector<String> parts = new Vector<>();
+    private static String[] splitSequence(String sequence) {
+        //String.split would be more convenient, but it behaves slightly different
+        ArrayList<String> parts = new ArrayList<>();
         int start = 0;
         int end;
         while ((end = sequence.indexOf(',', start)) >= 0) {
@@ -849,7 +849,7 @@ public abstract class FontConfiguration {
         if (sequence.length() > start) {
             parts.add(sequence.substring(start));
         }
-        return parts;
+        return parts.toArray(EMPTY_STRING_ARRAY);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -2115,7 +2115,7 @@ public abstract class FontConfiguration {
                 boolean has1252 = false;
 
                 //get the scriptID list
-                String[] ss = splitSequence(value).toArray(EMPTY_STRING_ARRAY);
+                String[] ss = splitSequence(value);
                 short [] sa = new short[ss.length];
                 for (int i = 0; i < ss.length; i++) {
                     if ("alphabetic/default".equals(ss[i])) {
