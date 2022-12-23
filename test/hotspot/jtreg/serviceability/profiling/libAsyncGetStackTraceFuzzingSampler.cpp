@@ -22,6 +22,8 @@
  * questions.
  */
 
+#if defined(LINUX) && defined(__x86_64__)
+
 #include <assert.h>
 #include <ctime>
 #include <dlfcn.h>
@@ -271,3 +273,5 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 }
 
 }
+
+#endif // defined(LINUX) && defined(__x86_64__)

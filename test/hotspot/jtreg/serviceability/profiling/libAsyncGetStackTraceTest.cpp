@@ -39,7 +39,6 @@
 #include "util.hpp"
 
 
-
 // AsyncGetStackTrace needs class loading events to be turned on!
 static void JNICALL OnClassLoad(jvmtiEnv *jvmti, JNIEnv *jni_env,
                                 jthread thread, jclass klass) {

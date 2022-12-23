@@ -22,6 +22,8 @@
  * questions.
  */
 
+#if defined(LINUX) && defined(__x86_64__)
+
 #include <assert.h>
 #include <dlfcn.h>
 #include <signal.h>
@@ -225,3 +227,4 @@ Java_profiling_sanity_ASGSTSmallFuzzTest_checkAsyncGetStackTraceCall(JNIEnv* env
 }
 
 }
+#endif // defined(LINUX) && defined(__x86_64__)
