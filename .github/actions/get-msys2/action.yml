@@ -42,3 +42,10 @@ runs:
         echo "$env:RUNNER_TEMP/msys64" >> $env:GITHUB_PATH
         echo "$env:RUNNER_TEMP/msys64/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
+
+    - name: 'Run Subsystems'
+      run: |
+        msys2 help
+        mingw64 help
+        ucrt64 help
+      shell: bash
