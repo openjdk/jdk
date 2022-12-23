@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -125,7 +126,7 @@ PackageEntry* CDSProtectionDomain::get_package_entry_from_class(InstanceKlass* i
   }
   TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());
   if (pkg_name != NULL) {
-    pkg_entry = SystemDictionaryShared::class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
+    pkg_entry = ClassLoaderData::class_loader_data(class_loader())->packages()->lookup_only(pkg_name);
   } else {
     pkg_entry = NULL;
   }

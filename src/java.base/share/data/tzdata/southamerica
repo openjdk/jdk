@@ -608,9 +608,6 @@ Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
 			-3:00	Arg	-03/-02	2008 Oct 18
 			-3:00	-	-03
 
-# Aruba
-# See America/Puerto_Rico.
-
 # Bolivia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/La_Paz	-4:32:36 -	LMT	1890
@@ -1444,9 +1441,14 @@ Zone Antarctica/Palmer	0	-	-00	1965
 # Milne gives 4:56:16.4 for Bogotá time in 1899.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
+# From Alois Treindl (2022-11-10):
+# End of time change in Colombia 1993 ... should be 6 February 24h ...
+# DECRETO 267 DE 1993
+# https://www.suin-juriscol.gov.co/viewDocument.asp?ruta=Decretos/1061335
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	CO	1992	only	-	May	 3	0:00	1:00	-
-Rule	CO	1993	only	-	Apr	 4	0:00	0	-
+Rule	CO	1992	only	-	May	 3	 0:00	1:00	-
+Rule	CO	1993	only	-	Feb	 6	24:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 		#STDOFF	-4:56:16.4
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
@@ -1455,15 +1457,6 @@ Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 # Malpelo, Providencia, San Andres
 # no information; probably like America/Bogota
 
-# Curaçao
-# See America/Puerto_Rico.
-#
-# From Arthur David Olson (2011-06-15):
-# use links for places with new iso3166 codes.
-# The name "Lower Prince's Quarter" is both longer than fourteen characters
-# and contains an apostrophe; use "Lower_Princes"....
-# From Paul Eggert (2021-09-29):
-# These backward-compatibility links now are in the 'northamerica' file.
 
 # Ecuador
 #
@@ -1778,9 +1771,6 @@ Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:40:36 -	PMT	1945 Oct    # The capital moved?
 			-3:30	-	-0330	1984 Oct
 			-3:00	-	-03
-
-# Trinidad and Tobago
-# See America/Puerto_Rico.
 
 # Uruguay
 # From Paul Eggert (1993-11-18):

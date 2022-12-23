@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,6 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
-
-
-oop fieldDescriptor::loader() const {
-  return _cp->pool_holder()->class_loader();
-}
 
 Symbol* fieldDescriptor::generic_signature() const {
   if (!has_generic_signature()) {
@@ -107,7 +102,9 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
-    assert(field_holder() == ik, "must be already initialized to this class");
+    // If the class is a scratch class, the constant pool points to the original class,
+    // but that's ok because of constant pool merging.
+    assert(field_holder() == ik || ik->is_scratch_class(), "must be already initialized to this class");
   }
   FieldInfo* f = ik->field(index);
   _access_flags = accessFlags_from(f->access_flags());

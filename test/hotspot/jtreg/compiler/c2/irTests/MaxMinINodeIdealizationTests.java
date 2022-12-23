@@ -69,7 +69,7 @@ public class MaxMinINodeIdealizationTests {
     // c0,c1,c2 are constants. x,y,z can be any valid c2 nodes. In this example, x and y are
     // RShiftI nodes and z is a ConI.
     @Test
-    @IR(counts = {IRNode.Max_I, "1",
+    @IR(counts = {IRNode.MAX_I, "1",
                   IRNode.ADD  , "1",
                  })
     public int testMax1(int i) {
@@ -78,7 +78,7 @@ public class MaxMinINodeIdealizationTests {
 
     // Similarly, transform min(x + c0, min(y + c1, z)) to min(add(x, c2), z) if x == y, where c2 = MIN2(c0, c1).
     @Test
-    @IR(counts = {IRNode.Min_I, "1",
+    @IR(counts = {IRNode.MIN_I, "1",
                   IRNode.ADD  , "1",
                  })
     public int testMin1(int i) {
@@ -89,7 +89,7 @@ public class MaxMinINodeIdealizationTests {
     // c0,c1,c2 are constants. x and y can be any valid c2 nodes. If they are equal, this
     // transformation would take place. In this example, x and y are same RShiftI nodes.
     @Test
-    @IR(failOn = {IRNode.Max_I})
+    @IR(failOn = {IRNode.MAX_I})
     @IR(counts = {IRNode.ADD, "1"})
     public int testMax2(int i) {
         return Math.max((i >> 1) + 10, (i >> 1) + 11);
@@ -97,7 +97,7 @@ public class MaxMinINodeIdealizationTests {
 
     // Similarly, transform min(x + c0, y + c1) to add(x, c2) if x == y, where c2 = MIN2(c0, c1).
     @Test
-    @IR(failOn = {IRNode.Min_I})
+    @IR(failOn = {IRNode.MIN_I})
     @IR(counts = {IRNode.ADD, "1"})
     public int testMin2(int i) {
         return Math.min((i >> 1) + 10, (i >> 1) + 11);
@@ -106,13 +106,13 @@ public class MaxMinINodeIdealizationTests {
     // Return the same node without generating a MaxINode/MinINode when a node is compared with itself.
     // In this test, an integer is being compared with itself but it can be any valid c2 node.
     @Test
-    @IR(failOn = {IRNode.Max_I})
+    @IR(failOn = {IRNode.MAX_I})
     public int testMax3(int i) {
         return Math.max(i, i);
     }
 
     @Test
-    @IR(failOn = {IRNode.Min_I})
+    @IR(failOn = {IRNode.MIN_I})
     public int testMin3(int i) {
         return Math.min(i, i);
     }

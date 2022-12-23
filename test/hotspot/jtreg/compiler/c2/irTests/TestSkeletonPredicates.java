@@ -24,8 +24,6 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
-import jdk.test.lib.Utils;
-import java.util.Random;
 
 /*
  * @test
@@ -57,7 +55,7 @@ public class TestSkeletonPredicates {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "2" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "2" })
     static double[] test1(int stop) {
         double[] array1 = new double[10];
         for (int j = 0; j < stop; j++) {

@@ -52,6 +52,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
+import jdk.jfr.Unsigned;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedObject;
@@ -148,6 +149,9 @@ public class TestPrintXML {
                 }
                 if (v.getAnnotation(Timespan.class) != null) {
                     expectedValue = re.getDuration(name);
+                }
+                if (expectedValue instanceof Number && v.getAnnotation(Unsigned.class) != null) {
+                    expectedValue = Long.toUnsignedString(re.getLong(name));
                 }
                 if (!compare(expectedValue, xmlValue)) {
                     return false;

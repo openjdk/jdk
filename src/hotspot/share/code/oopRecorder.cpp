@@ -203,3 +203,11 @@ int ObjectLookup::find_index(jobject handle, OopRecorder* oop_recorder) {
   }
   return _values.at(location).index();
 }
+
+OopRecorder::OopRecorder(Arena* arena, bool deduplicate): _oops(arena), _metadata(arena) {
+  if (deduplicate) {
+    _object_lookup = new ObjectLookup();
+  } else {
+    _object_lookup = NULL;
+  }
+}

@@ -40,7 +40,7 @@ public class TestDoubleIsInfinite extends TestDoubleClassCheck {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"IsInfiniteD", ">= 1"}) // At least one IsInfiniteD node is generated if intrinsic is used
+    @IR(counts = {IRNode.IS_INFINITE_D, ">= 1"}) // At least one IsInfiniteD node is generated if intrinsic is used
     public void testIsInfinite() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             outputs[i] = Double.isInfinite(inputs[i]);

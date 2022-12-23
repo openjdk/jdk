@@ -982,6 +982,7 @@ source_hpp %{
 
 source %{
 
+#include "opto/c2_CodeStubs.hpp"
 #include "oops/klass.inline.hpp"
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1616,7 +1617,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!UseSIGTRAP && !C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
       __ relocate(relocInfo::poll_return_type);
     }
     __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
@@ -3447,6 +3450,7 @@ encode %{
         return;
       }
     }
+    __ post_call_nop();
   %}
 
   // Second node of expanded dynamic call - the call.
@@ -3487,6 +3491,7 @@ encode %{
     // and the entry point might be too far away for bl. Pc() serves
     // as dummy and bl will be patched later.
     __ bl((address) __ pc());
+    __ post_call_nop();
   %}
 
   // postalloc expand emitter for virtual calls.
@@ -3601,6 +3606,7 @@ encode %{
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     }
+    __ post_call_nop();
   %}
 
   // a runtime call
@@ -3612,6 +3618,7 @@ encode %{
 #if defined(ABI_ELFv2)
     address entry= !($meth$$method) ? NULL : (address)$meth$$method;
     __ call_c(entry, relocInfo::runtime_call_type);
+    __ post_call_nop();
 #else
     // The function we're going to call.
     FunctionDescriptor fdtemp;
@@ -3627,6 +3634,7 @@ encode %{
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
+    __ post_call_nop();
 #endif
 
     // Check the ret_addr_offset.
@@ -14369,6 +14377,12 @@ instruct safePoint_poll(iRegPdst poll) %{
 
 // Call Java Static Instruction
 
+source %{
+
+#include "runtime/continuation.hpp"
+
+%}
+
 // Schedulable version of call static node.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
@@ -14378,7 +14392,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
 
   format %{ "CALL,static $meth \t// ==> " %}
-  size(4);
+  size(Continuations::enabled() ? 8 : 4);
   ins_encode( enc_java_static_call(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14399,7 +14413,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
   format %{ "BL        \t// dynamic $meth ==> " %}
-  size(4);
+  size(Continuations::enabled() ? 8 : 4);
   ins_encode( enc_java_dynamic_call_sched(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14477,9 +14491,10 @@ instruct CallLeafDirect(method meth) %{
   predicate(false);  // but never match.
 
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
-  size(4);
+  size(Continuations::enabled() ? 8 : 4);
   ins_encode %{
     __ bctrl();
+    __ post_call_nop();
   %}
   ins_pipe(pipe_class_call);
 %}

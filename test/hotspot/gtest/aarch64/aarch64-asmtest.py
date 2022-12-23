@@ -957,7 +957,9 @@ class LoadStorePairOp(InstructionWithModes):
 class FloatInstruction(Instruction):
 
     def aname(self):
-        if (self._name.endswith("s") | self._name.endswith("d")):
+        if (self._name in ["fcvtsh", "fcvths"]):
+            return self._name[:len(self._name)-2]
+        elif (self._name.endswith("s") | self._name.endswith("d")):
             return self._name[:len(self._name)-1]
         else:
             return self._name
@@ -1009,9 +1011,11 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
-        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic"]):
+        elif not self._isPredicated and (name in ["and", "eor", "orr", "bic", "eor3"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
+        elif name == "revb":
+            self._width = RegVariant(1, 3)
         else:
             self._width = RegVariant(0, 3)
 
@@ -1036,7 +1040,8 @@ class SVEVectorOp(Instruction):
                         width +
                         [str(self.reg[i]) for i in range(1, self.numRegs)]))
     def astr(self):
-        formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
+        firstArg = 0 if self._name == "eor3" else 1
+        formatStr = "%s%s" + ''.join([", %s" for i in range(firstArg, self.numRegs)])
         if self._dnm == 'dn':
             formatStr += ", %s"
             dnReg = [str(self.reg[0]) + self._width.astr()]
@@ -1046,7 +1051,7 @@ class SVEVectorOp(Instruction):
         if self._isPredicated:
             restRegs = [str(self.reg[1]) + self._merge] + dnReg + [str(self.reg[i]) + self._width.astr() for i in range(2, self.numRegs)]
         else:
-            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(1, self.numRegs)]
+            restRegs = dnReg + [str(self.reg[i]) + self._width.astr() for i in range(firstArg, self.numRegs)]
         return (formatStr
                 % tuple([Instruction.astr(self)] +
                         [str(self.reg[0]) + self._width.astr()] +
@@ -1458,7 +1463,7 @@ generate(FourRegFloatOp,
 
 generate(TwoRegFloatOp,
          [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
-          ["fcvts", "ds"],
+          ["fcvts", "ds"], ["fcvtsh", "hs"], ["fcvths", "sh"],
           ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
           ["fcvtd", "sd"],
           ])
@@ -1559,6 +1564,8 @@ generate(ThreeRegNEONOp,
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
           ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
           ["fabd", "fabd", "2D"],
+          ["faddp", "faddp", "2S"], ["faddp", "faddp", "4S"],
+          ["faddp", "faddp", "2D"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
           ["fmul", "fmul", "2D"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
@@ -1922,6 +1929,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        # SVE2 instructions
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
+                       ["eor3", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],

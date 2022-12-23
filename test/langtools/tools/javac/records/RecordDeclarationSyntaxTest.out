@@ -1,0 +1,3 @@
+RecordDeclarationSyntaxTest.java:9:13: compiler.err.expected: '('
+RecordDeclarationSyntaxTest.java:9:14: compiler.err.illegal.start.of.type
+2 errors

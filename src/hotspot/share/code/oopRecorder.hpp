@@ -91,7 +91,7 @@ template <class T> class ValueRecorder : public StackObj {
   int maybe_find_index(T h);
 
   // leaky hash table of handle => index, to help detect duplicate insertion
-  template <class X> class IndexCache : public ResourceObj {
+  template <class X> class IndexCache : public ArenaObj {
     // This class is only used by the ValueRecorder class.
     friend class ValueRecorder;
     enum {
@@ -181,13 +181,7 @@ class OopRecorder : public ResourceObj {
   ValueRecorder<Metadata*>    _metadata;
   ObjectLookup*               _object_lookup;
  public:
-  OopRecorder(Arena* arena = NULL, bool deduplicate = false): _oops(arena), _metadata(arena) {
-    if (deduplicate) {
-      _object_lookup = new ObjectLookup();
-    } else {
-      _object_lookup = NULL;
-    }
-  }
+  OopRecorder(Arena* arena = NULL, bool deduplicate = false);
 
   int allocate_oop_index(jobject h) {
     return _oops.allocate_index(h);
