@@ -100,7 +100,8 @@ inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const fr
   return (address*)(f.fp() + frame::return_addr_offset);
 }
 
-inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intptr_t* sp) {
+inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, const frame& caller) {
+  intptr_t* sp = caller.unextended_sp();
   assert(f.is_interpreted_frame(), "");
   intptr_t* la = f.addr_at(frame::interpreter_frame_sender_sp_offset);
   *la = f.is_heap_frame() ? (intptr_t)(sp - f.fp()) : (intptr_t)sp;
@@ -134,6 +135,10 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame&
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize, bool callee_interpreted) {
   return f.unextended_sp() + (callee_interpreted ? callee_argsize : 0);
+}
+
+inline intptr_t* ContinuationHelper::InterpretedFrame::callers_sp(const frame& f) {
+  return f.fp() + frame::metadata_words;
 }
 
 #endif // CPU_X86_CONTINUATIONHELPER_X86_INLINE_HPP

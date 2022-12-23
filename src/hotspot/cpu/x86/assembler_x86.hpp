@@ -1160,6 +1160,8 @@ private:
   void vcvtps2ph(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vcvtph2ps(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvtps2ph(Address dst, KRegister mask, XMMRegister src, int imm8, int vector_len);
+  void vcvtps2ph(Address dst, XMMRegister src, int imm8, int vector_len);
+  void vcvtph2ps(XMMRegister dst, Address src, int vector_len);
 
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);
@@ -1946,6 +1948,8 @@ private:
   void pshufhw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src,     int mode);
+  void vpshufhw(XMMRegister dst, XMMRegister src, int mode, int vector_len);
+  void vpshuflw(XMMRegister dst, XMMRegister src, int mode, int vector_len);
 
   //shuffle floats and doubles
   void shufps(XMMRegister, XMMRegister, int);
@@ -1969,9 +1973,12 @@ private:
   void vptest(XMMRegister dst, Address src);
 
   void evptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evptestmd(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evptestnmd(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);
+  void vtestps(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);

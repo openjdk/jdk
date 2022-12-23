@@ -2392,17 +2392,6 @@ void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
 }
 
-// log10 rounded down
-uint log10(const uint i) {
-  uint v = 10;
-  uint e = 0;
-  while(v <= i) {
-    v *= 10;
-    e++;
-  }
-  return e;
-}
-
 // -----------------------------dump_idx---------------------------------------
 void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
@@ -2412,9 +2401,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = log10(C->unique()) + 2;
+    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = log10(_idx) + 1 + (is_new ? 0 : 1);
+    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2554,7 +2543,10 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-    if (toop) {
+    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
+    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
+      st->print("  Interface:");
+    } else if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");

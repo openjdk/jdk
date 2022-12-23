@@ -3709,7 +3709,7 @@ void StubGenerator::generate_initial() {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
-  if (UsePolyIntrinsics) {
+  if (UsePoly1305Intrinsics) {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
   }
 
@@ -3808,6 +3808,8 @@ void StubGenerator::generate_all() {
   generate_aes_stubs();
 
   generate_ghash_stubs();
+
+  generate_chacha_stubs();
 
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");

@@ -114,9 +114,6 @@ public:
 
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
 
-  // Return true if given address is in the shared region corresponding to the idx
-  static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
-
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;

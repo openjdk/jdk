@@ -521,10 +521,10 @@ constexpr FloatRegister F13_ARG13  = F13; // volatile
 // Register declarations to be used in frame manager assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R14_bcp       = R14;
-constexpr Register R15_esp       = R15;
+constexpr Register R15_esp       = R15;      // slot below top of expression stack for ld/st with update
 constexpr FloatRegister F15_ftos = F15;
 constexpr Register R16_thread    = R16;      // address of current thread
-constexpr Register R17_tos       = R17;      // address of Java tos (prepushed).
+constexpr Register R17_tos       = R17;      // The interpreter's top of (expression) stack cache register
 constexpr Register R18_locals    = R18;      // address of first param slot (receiver).
 constexpr Register R19_method    = R19;      // address of current method
 

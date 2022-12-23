@@ -119,10 +119,6 @@ class Thread: public ThreadShadow {
   uint64_t _nmethod_disarm_value;
 
  public:
-  int nmethod_disarm_value() {
-    return (int)(uint32_t)_nmethod_disarm_value;
-  }
-
   void set_nmethod_disarm_value(int value) {
     _nmethod_disarm_value = (uint64_t)(uint32_t)value;
   }
@@ -324,7 +320,6 @@ class Thread: public ThreadShadow {
   virtual bool is_Java_thread()     const            { return false; }
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_service_thread() const             { return false; }
-  virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
@@ -363,7 +358,6 @@ class Thread: public ThreadShadow {
   static void check_for_dangling_thread_pointer(Thread *thread);
 #endif
   static void set_priority(Thread* thread, ThreadPriority priority);
-  static ThreadPriority get_priority(const Thread* const thread);
   static void start(Thread* thread);
 
   void set_native_thread_name(const char *name) {
