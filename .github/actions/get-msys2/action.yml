@@ -39,6 +39,5 @@ runs:
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
       run: |
-        echo "$env:RUNNER_TEMP/msys64" >> $env:GITHUB_PATH
         echo "$env:RUNNER_TEMP/msys64/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
