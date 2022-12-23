@@ -66,7 +66,7 @@ jobs:
     runs-on: windows-2019
     defaults:
       run:
-        shell: bash.exe --login -eo pipefail {0}
+        shell: env /usr/bin/bash -l -e -o pipefail {0}
 
     strategy:
       fail-fast: false
@@ -83,6 +83,10 @@ jobs:
 
       - name: 'Get MSYS2'
         uses: ./.github/actions/get-msys2
+
+      - name: 'Login Shell'
+        run: |
+          echo $USER
 
       - name: 'Get the BootJDK'
         id: bootjdk
