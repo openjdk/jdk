@@ -86,7 +86,7 @@ jobs:
 
       - name: 'Run MinGW64'
         run: |
-          mingw64 help
+          $env:RUNNER_TEMP\msys64\mingw64.exe help
         shell: bash
 
       - name: 'Get the BootJDK'
