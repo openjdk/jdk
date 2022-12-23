@@ -39,8 +39,8 @@ public @interface Artifact {
     // For getting jdk versions
     String server() default "";
     String product() default "";
-    String version() default "";
-    String build_number() default "";
+    int version() default 0;
+    int build_number() default 0;
     String file() default "";
 }
 

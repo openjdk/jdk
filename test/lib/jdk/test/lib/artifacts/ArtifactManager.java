@@ -24,7 +24,9 @@
 package jdk.test.lib.artifacts;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 public interface ArtifactManager {
     public Path resolve(Artifact artifact) throws ArtifactResolverException;
+    Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack) throws ArtifactResolverException;
 }

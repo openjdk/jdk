@@ -133,6 +133,7 @@ public class JibArtifactManager implements ArtifactManager {
         return resolve(artifact.name(), artifactDescription, artifact.unpack());
     }
 
+    @Override
     public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack)
             throws ArtifactResolverException {
         Path path;

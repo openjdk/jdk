@@ -59,6 +59,24 @@ public class ArtifactResolver {
         return locations;
     }
 
+    public static Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack) throws ArtifactResolverException {
+        ArtifactManager manager;
+        try {
+            String managerName = System.getProperty("jdk.test.lib.artifacts.artifactmanager");
+            if (managerName != null) {
+                manager = (ArtifactManager) Class.forName(managerName).newInstance();
+            } else if (System.getenv().containsKey(JibArtifactManager.JIB_HOME_ENV_NAME)) {
+                manager = JibArtifactManager.newInstance();
+            } else {
+                manager = new DefaultArtifactManager();
+            }
+        } catch (Exception e) {
+            throw new ArtifactResolverException("Failed to load ArtifactManager", e);
+        }
+
+        return  manager.resolve(name, artifactDescription, unpack);
+    }
+
     private static String artifactName(Artifact artifact) {
         // Format of the artifact name is <organization>.<name>-<revision>(-<classifier>)
         String name = String.format("%s.%s-%s", artifact.organization(), artifact.name(), artifact.revision());

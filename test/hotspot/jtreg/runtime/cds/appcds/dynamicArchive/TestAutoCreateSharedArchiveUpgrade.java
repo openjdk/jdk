@@ -42,6 +42,8 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.util.HashMap;
+
 public class TestAutoCreateSharedArchiveUpgrade {
 
     static final Properties props = System.getProperties();
@@ -157,30 +159,40 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     // Fetch JDK artifact depending on platform
     private static String fetchBootJDK(String osID, int version) {
+        int build;
+        HashMap<String, Object> jdkArtifactMap = new HashMap<>();
+        jdkArtifactMap.put("server", "jpg");
+        jdkArtifactMap.put("product", "jdk");
+
+        switch(version) {
+            case 19:
+                build = 36;
+                break;
+            case 20:
+                build = 29;
+                break;
+            default:
+                build = 0;
+                break;
+        }
+
         switch (osID) {
         case "Windows-amd64-64":
-            switch(version) {
-                case 19:
-                    return fetchBootJDK(WINDOWS_X64_19.class, version);
-                case 20:
-                    return fetchBootJDK(WINDOWS_X64_20.class, version);
-            }
+            jdkArtifactMap.put("version", version);
+            jdkArtifactMap.put("build_number", build);
+            jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
+            return fetchBootJDK(jdkArtifactMap, version);
 
         case "MacOSX-x86_64-64":
-            switch(version) {
-                case 19:
-                    return fetchBootJDK(MACOSX_X64_19.class, version);
-                case 20:
-                    return fetchBootJDK(MACOSX_X64_20.class, version);
-            }
-
+            jdkArtifactMap.put("version", version);
+            jdkArtifactMap.put("build_number", build);
+            jdkArtifactMap.put("file", "bundles/macos-x64/jdk-" + version + "_macos-x64_bin.tar.gz");
+            return fetchBootJDK(jdkArtifactMap, version);
         case "Linux-amd64-64":
-            switch(version) {
-                case 19:
-                    return fetchBootJDK(LINUX_X64_19.class, version);
-                case 20:
-                    return fetchBootJDK(LINUX_X64_20.class, version);
-            }
+            jdkArtifactMap.put("version", version);
+            jdkArtifactMap.put("build_number", build);
+            jdkArtifactMap.put("file", "bundles/linux-x64/jdk-" + version + "_linux-x64_bin.tar.gz");
+            return fetchBootJDK(jdkArtifactMap, version);
 
         default:
             return null;
@@ -188,11 +200,11 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     // Fetch JDK version from artifactory
-    private static String fetchBootJDK(Class<?> clazz, int version) {
+    // private static String fetchBootJDK(Class<?> clazz, HashMap<String, Object> jdkArtifactMap, int version) {
+    private static String fetchBootJDK(HashMap<String, Object> jdkArtifactMap, int version) {
         String path = null;
         try {
-            path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + "/jdk-" + version + "/";
+            path = ArtifactResolver.resolve("jdk", jdkArtifactMap, true) + "/jdk-" + version;
             System.out.println("path: " + path);
         } catch (ArtifactResolverException e) {
             Throwable cause = e.getCause();
@@ -200,7 +212,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 System.out.println("Cannot resolve artifact, "
                         + "please check if JIB jar is present in classpath.");
             } else {
-                throw new RuntimeException("Fetch artifact failed: " + clazz
+                throw new RuntimeException("Fetch artifact failed: "
                         + "\nPlease make sure the artifact is available.", e);
             }
         }
@@ -219,7 +231,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         return osid;
     }
 
-    @Artifact(
+    /*@Artifact(
             server = "jpg",
             product = "jdk",
             version = "19",
@@ -271,5 +283,5 @@ public class TestAutoCreateSharedArchiveUpgrade {
             build_number = "29",
             file = "bundles/windows-x64/jdk-20_windows-x64_bin.zip",
             unpack = true)
-    private static class WINDOWS_X64_20 { }
+    private static class WINDOWS_X64_20 { }*/
 }
