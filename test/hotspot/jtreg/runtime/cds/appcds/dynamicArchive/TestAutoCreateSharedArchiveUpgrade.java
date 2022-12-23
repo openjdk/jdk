@@ -71,10 +71,13 @@ public class TestAutoCreateSharedArchiveUpgrade {
     private static String newJVM;
 
     public static void main(String[] args) throws Throwable {
+        // Get OS and CPU type
+        String arch = props.getProperty("os.arch");
+        String os = props.getProperty("os.name");
         // Earliest testable version is 19
         int n = java.lang.Runtime.version().major() - 1;
         for (int i = 19; i < n; i++) {
-            BOOT_JDK = fetchBootJDK(getOsId(), i);
+            BOOT_JDK = fetchBootJDK(os, arch, i);
             setupJVMs();
             doTest();
         }
@@ -158,12 +161,15 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     // Fetch JDK artifact depending on platform
-    private static String fetchBootJDK(String osID, int version) {
+    private static String fetchBootJDK(String osID, String arch, int version) {
         int build;
+        String architecture;
         HashMap<String, Object> jdkArtifactMap = new HashMap<>();
         jdkArtifactMap.put("server", "jpg");
         jdkArtifactMap.put("product", "jdk");
 
+        // Select the correct build number for each version
+        // *UPDATE THIS* after each release
         switch(version) {
             case 19:
                 build = 36;
@@ -175,23 +181,33 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 build = 0;
                 break;
         }
+        switch(arch) {
+            case("x86"):
+            case("amd64"):
+                architecture = "x";
+                break;
+            case("aarch64"):
+                architecture = "aarch";
+            default:
+                architecture = "";
+        }
 
         switch (osID) {
-        case "Windows-amd64-64":
+        case "Windows":
             jdkArtifactMap.put("version", version);
             jdkArtifactMap.put("build_number", build);
             jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
             return fetchBootJDK(jdkArtifactMap, version);
 
-        case "MacOSX-x86_64-64":
+        case "MacOSX":
             jdkArtifactMap.put("version", version);
             jdkArtifactMap.put("build_number", build);
-            jdkArtifactMap.put("file", "bundles/macos-x64/jdk-" + version + "_macos-x64_bin.tar.gz");
+            jdkArtifactMap.put("file", "bundles/macos-x64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
             return fetchBootJDK(jdkArtifactMap, version);
-        case "Linux-amd64-64":
+        case "Linux":
             jdkArtifactMap.put("version", version);
             jdkArtifactMap.put("build_number", build);
-            jdkArtifactMap.put("file", "bundles/linux-x64/jdk-" + version + "_linux-x64_bin.tar.gz");
+            jdkArtifactMap.put("file", "bundles/linux-x64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
             return fetchBootJDK(jdkArtifactMap, version);
 
         default:
@@ -200,7 +216,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     // Fetch JDK version from artifactory
-    // private static String fetchBootJDK(Class<?> clazz, HashMap<String, Object> jdkArtifactMap, int version) {
     private static String fetchBootJDK(HashMap<String, Object> jdkArtifactMap, int version) {
         String path = null;
         try {
@@ -218,70 +233,4 @@ public class TestAutoCreateSharedArchiveUpgrade {
         }
         return path;
     }
-
-    private static String getOsId() {
-        String osName = props.getProperty("os.name");
-        if (osName.startsWith("Win")) {
-            osName = "Windows";
-        } else if (osName.equals("Mac OS X")) {
-            osName = "MacOSX";
-        }
-        String osid = osName + "-" + props.getProperty("os.arch") + "-"
-                + props.getProperty("sun.arch.data.model");
-        return osid;
-    }
-
-    /*@Artifact(
-            server = "jpg",
-            product = "jdk",
-            version = "19",
-            build_number = "36",
-            file = "bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz",
-            unpack = true)
-    private static class LINUX_X64_19 { }
-
-    @Artifact(
-            server = "jpg",
-            product = "jdk",
-            version = "20",
-            build_number = "29",
-            file = "bundles/linux-x64/jdk-20_linux-x64_bin.tar.gz",
-            unpack = true)
-    private static class LINUX_X64_20 { }
-
-    @Artifact(
-            server = "jpg",
-            product = "jdk",
-            version = "19",
-            build_number = "36",
-            file = "bundles/macosx-x64/jdk-19_macosx-x64_bin.tar.gz",
-            unpack = true)
-    private static class MACOSX_X64_19 { }
-
-    @Artifact(
-            server = "jpg",
-            product = "jdk",
-            version = "20",
-            build_number = "29",
-            file = "bundles/macosx-x64/jdk-20_macosx-x64_bin.tar.gz",
-            unpack = true)
-    private static class MACOSX_X64_20 { }
-
-    @Artifact(
-            server = "jpg",
-            product = "jdk",
-            version = "19",
-            build_number = "36",
-            file = "bundles/windows-x64/jdk-19_windows-x64_bin.zip",
-            unpack = true)
-    private static class WINDOWS_X64_19 { }
-
-    @Artifact(
-            server = "jpg",
-            product = "jdk",
-            version = "20",
-            build_number = "29",
-            file = "bundles/windows-x64/jdk-20_windows-x64_bin.zip",
-            unpack = true)
-    private static class WINDOWS_X64_20 { }*/
 }
