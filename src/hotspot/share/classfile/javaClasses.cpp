@@ -1680,6 +1680,7 @@ int java_lang_Thread::_inheritedAccessControlContext_offset;
 int java_lang_Thread::_eetop_offset;
 int java_lang_Thread::_jvmti_thread_state_offset;
 int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
+int java_lang_Thread::_jvmti_is_in_VTMS_transition_offset;
 int java_lang_Thread::_interrupted_offset;
 int java_lang_Thread::_tid_offset;
 int java_lang_Thread::_continuation_offset;
@@ -1745,6 +1746,14 @@ void java_lang_Thread::dec_VTMS_transition_disable_count(oop java_thread) {
   assert(JvmtiVTMSTransition_lock->owned_by_self(), "Must be locked");
   assert(val > 0, "VTMS_transition_disable_count should never be negative");
   java_thread->int_field_put(_jvmti_VTMS_transition_disable_count_offset, val - 1);
+}
+
+bool java_lang_Thread::is_in_VTMS_transition(oop java_thread) {
+  return java_thread->bool_field_volatile(_jvmti_is_in_VTMS_transition_offset);
+}
+
+void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
+  java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
 }
 
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {

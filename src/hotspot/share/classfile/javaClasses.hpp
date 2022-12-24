@@ -336,6 +336,7 @@ class java_lang_Class : AllStatic {
 #define THREAD_INJECTED_FIELDS(macro)                                  \
   macro(java_lang_Thread, jvmti_thread_state, intptr_signature, false) \
   macro(java_lang_Thread, jvmti_VTMS_transition_disable_count, int_signature, false) \
+  macro(java_lang_Thread, jvmti_is_in_VTMS_transition, bool_signature, false) \
   JFR_ONLY(macro(java_lang_Thread, jfr_epoch, short_signature, false))
 
 class java_lang_Thread : AllStatic {
@@ -350,6 +351,7 @@ class java_lang_Thread : AllStatic {
   static int _eetop_offset;
   static int _jvmti_thread_state_offset;
   static int _jvmti_VTMS_transition_disable_count_offset;
+  static int _jvmti_is_in_VTMS_transition_offset;
   static int _interrupted_offset;
   static int _tid_offset;
   static int _continuation_offset;
@@ -402,6 +404,8 @@ class java_lang_Thread : AllStatic {
   static int  VTMS_transition_disable_count(oop java_thread);
   static void inc_VTMS_transition_disable_count(oop java_thread);
   static void dec_VTMS_transition_disable_count(oop java_thread);
+  static bool is_in_VTMS_transition(oop java_thread);
+  static void set_is_in_VTMS_transition(oop java_thread, bool val);
 
   // Clear all scoped value bindings on error
   static void clear_scopedValueBindings(oop java_thread);

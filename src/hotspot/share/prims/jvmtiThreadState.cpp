@@ -84,7 +84,6 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _earlyret_oop = NULL;
 
   _jvmti_event_queue = NULL;
-  _is_in_VTMS_transition = false;
   _is_virtual = false;
 
   _thread_oop_h = OopHandle(JvmtiExport::jvmti_oop_storage(), thread_oop);
@@ -299,8 +298,6 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
   if (!java_lang_VirtualThread::is_instance(vth())) {
     return; // no-op if _thread is not a virtual thread
   }
-  JvmtiThreadState* vstate = java_lang_Thread::jvmti_thread_state(vth());
-
   ThreadBlockInVM tbivm(thread);
   MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
 
@@ -308,11 +305,11 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
     ml.wait(10); // wait while there is an active suspender or resumer
   }
   Atomic::inc(&_VTMS_transition_disable_for_one_count);
+  java_lang_Thread::inc_VTMS_transition_disable_count(vth());
 
-  while (vstate != NULL && vstate->is_in_VTMS_transition()) {
+  while (java_lang_Thread::is_in_VTMS_transition(vth())) {
     ml.wait(10); // wait while the virtual thread is in transition
   }
-  java_lang_Thread::inc_VTMS_transition_disable_count(vth());
 #ifdef ASSERT
   thread->set_is_VTMS_transition_disabler(true);
 #endif
@@ -375,7 +372,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_one() {
   MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
   java_lang_Thread::dec_VTMS_transition_disable_count(vth());
   Atomic::dec(&_VTMS_transition_disable_for_one_count);
-  if (_VTMS_transition_disable_for_all_count == 0 || _is_SR) {
+  if (_VTMS_transition_disable_for_one_count == 0 || _is_SR) {
     ml.notify_all();
   }
 #ifdef ASSERT
@@ -414,6 +411,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   // Avoid using MonitorLocker on performance critical path, use
   // two-level synchronization with lock-free operations on counters.
   Atomic::inc(&_VTMS_transition_count); // Try to enter VTMS transition section optmistically.
+  java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
 
   // Do not allow suspends inside VTMS transitions.
   // Block while transitions are disabled or there are suspend requests.
@@ -427,6 +425,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
     // Slow path: undo unsuccessful optimistic counter incrementation.
     // It can cause an extra waiting cycle for VTMS transition disablers.
     Atomic::dec(&_VTMS_transition_count);
+    java_lang_Thread::set_is_in_VTMS_transition(vth(), false);
 
     while (true) {
       ThreadBlockInVM tbivm(thread);
@@ -447,6 +446,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
         continue;  // ~ThreadBlockInVM has handshake-based suspend point.
       }
       Atomic::inc(&_VTMS_transition_count);
+      java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
       break;
     }
   }
@@ -461,10 +461,6 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   // Enter VTMS transition section.
   assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
   thread->set_is_in_VTMS_transition(true);
-  JvmtiThreadState* vstate = java_lang_Thread::jvmti_thread_state(vth());
-  if (vstate != NULL) {
-    vstate->set_is_in_VTMS_transition(true);
-  }
 }
 
 void
@@ -475,10 +471,7 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   thread->set_is_in_VTMS_transition(false);
   oop vt = JNIHandles::resolve_external_guard(vthread);
   int64_t thread_id = java_lang_Thread::thread_id(vt);
-  JvmtiThreadState* vstate = java_lang_Thread::jvmti_thread_state(vt);
-  if (vstate != NULL) {
-    vstate->set_is_in_VTMS_transition(false);
-  }
+  java_lang_Thread::set_is_in_VTMS_transition(vt, false);
 
   Atomic::dec(&_VTMS_transition_count);
 
