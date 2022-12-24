@@ -322,11 +322,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     /**
      * Sets ABNORMAL DONE status unless already done, and wakes up threads
      * waiting to join this task.
-     * @return status on exit
+     * @return previous status
      */
-    private int trySetCancelled() {
+    final int trySetCancelled() {
         int s;
-        do {} while ((s = status) >= 0 && !casStatus(s, s |= (DONE | ABNORMAL)));
+        do {} while ((s = status) >= 0 && !casStatus(s, s | (DONE | ABNORMAL)));
         signalWaiters();
         return s;
     }
@@ -852,7 +852,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return {@code true} if this task is now cancelled
      */
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return (trySetCancelled() & (ABNORMAL | THROWN)) == ABNORMAL;
+        trySetCancelled();
+        return isCancelled();
     }
 
     public final boolean isDone() {

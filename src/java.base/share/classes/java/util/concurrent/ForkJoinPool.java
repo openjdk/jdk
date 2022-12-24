@@ -1651,8 +1651,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param ex the exception causing failure, or null if none
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
+        int cfg = 0;
         WorkQueue w = (wt == null) ? null : wt.workQueue;
-        int cfg = (w == null) ? 0 : w.config;
+        if (w != null) {
+            cfg = w.config;
+            w.access = STOP;                  // may be redundant
+        }
         long c = ctl;
         if ((cfg & TRIMMED) == 0)             // decrement counts
             do {} while (c != (c = compareAndExchangeCtl(
@@ -1676,8 +1680,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 signalWork();                 // possibly replace worker
         }
         if (ex != null) {
-            if (w != null) {
-                w.access = STOP;              // cancel tasks
+            if (w != null) {                  // cancel tasks
                 for (ForkJoinTask<?> t; (t = w.nextLocalTask(0)) != null; )
                     ForkJoinTask.cancelIgnoringExceptions(t);
             }
@@ -1807,7 +1810,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
             } while ((src = scan(w, src, r)) >= 0 ||
                      (src = awaitWork(w)) == 0);
-            w.access = STOP;                    // record normal termination
         }
     }
 
@@ -1869,10 +1871,10 @@ public class ForkJoinPool extends AbstractExecutorService {
         } while (pc != (pc = compareAndExchangeCtl(
                             pc, qc = ((pc - RC_UNIT) & UC_MASK) | sp)));
         if ((qc & RC_MASK) <= 0L) {
-            if (hasTasks(true) && (w.phase >= 0 || reactivate() == w))
-                return 0;                        // check for stragglers
             if (runState != 0 && tryTerminate(false, false))
                 return -1;                       // quiescent termination
+            if (hasTasks(true) && (w.phase >= 0 || reactivate() == w))
+                return 0;                        // check for stragglers
             idle = true;
         }
         WorkQueue[] qs = queues; // spin for expected #accesses in scan+signal
@@ -2500,23 +2502,26 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             getAndBitwiseOrRunState(SHUTDOWN | STOP);
         }
-        WorkQueue released = reactivate();          // try signalling waiter
-        int tc = (short)(ctl >>> TC_SHIFT);
-        if (released == null && tc > 0) {           // help unblock and cancel
-            Thread current = Thread.currentThread();
-            WorkQueue w = ((current instanceof ForkJoinWorkerThread) ?
-                           ((ForkJoinWorkerThread)current).workQueue : null);
-            int r = (w == null) ? 0 : w.config + 1; // stagger traversals
-            WorkQueue[] qs = queues;
+        int r = 0;                                  // for queue traversal
+        Thread current = Thread.currentThread();
+        if (current instanceof ForkJoinWorkerThread) {
+            ForkJoinWorkerThread wt = (ForkJoinWorkerThread)current;
+            WorkQueue w = wt.workQueue;
+            if (wt.pool == this && w != null) {
+                r = w.config;                       // stagger traversals
+                w.access = STOP;                    // may be redundant
+            }
+        }
+        if (reactivate() == null) {                 // try signalling waiter
+            WorkQueue[] qs = queues;                // or help unblock and cancel
             int n = (qs == null) ? 0 : qs.length;
             for (int i = 0; i < n; ++i) {
                 WorkQueue q; Thread thread;
-                if ((q = qs[(r + i) & (n - 1)]) != null &&
-                    (thread = q.owner) != current && q.access != STOP) {
+                if ((q = qs[(r + i) & (n - 1)]) != null) {
                     for (ForkJoinTask<?> t; (t = q.poll(null)) != null; )
                         ForkJoinTask.cancelIgnoringExceptions(t);
-                    if (thread != null && !thread.isInterrupted()) {
-                        q.forcePhaseActive();      // for awaitWork
+                    if (q.access != STOP && (thread = q.owner) != null) {
+                        q.forcePhaseActive();       // for awaitWork
                         try {
                             thread.interrupt();
                         } catch (Throwable ignore) {
@@ -2525,7 +2530,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
         }
-        if ((tc <= 0 || (short)(ctl >>> TC_SHIFT) <= 0) &&
+        if ((short)(ctl >>> TC_SHIFT) <= 0 &&
             (getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0 &&
             (lock = registrationLock) != null) {
             lock.lock();                            // signal when no workers
@@ -3037,45 +3042,52 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
     }
 
-    // Task to hold results from InvokeAnyTasks
+    /**
+     * Task to hold results for invokeAny, or to report exception if
+     * all subtasks fail or are cancelled or the pool is terminating.
+     */
     static final class InvokeAnyRoot<E> extends ForkJoinTask<E> {
         private static final long serialVersionUID = 2838392045355241008L;
         @SuppressWarnings("serial") // Conditionally serializable
         volatile E result;
-        final AtomicInteger count;  // in case all throw
+        final AtomicInteger count;  // in case all fail
         @SuppressWarnings("serial")
         final ForkJoinPool pool;    // to check shutdown while collecting
         InvokeAnyRoot(int n, ForkJoinPool p) {
             pool = p;
             count = new AtomicInteger(n);
         }
-        final void tryComplete(Callable<E> c) { // called by InvokeAnyTasks
-            Throwable ex = null;
-            boolean failed;
-            if (c == null || Thread.interrupted() ||
-                (pool != null && pool.runState < 0))
-                failed = true;
-            else if (isDone())
-                failed = false;
-            else {
-                try {
-                    complete(c.call());
-                    failed = false;
-                } catch (Throwable tx) {
-                    ex = tx;
-                    failed = true;
+        final void tryComplete(E v, Throwable ex, boolean fail) {
+            if (!isDone()) {
+                if (!fail) {
+                    result = v;
+                    quietlyComplete();
                 }
+                else if (pool.runState < 0 || count.getAndDecrement() <= 1)
+                    trySetThrown(ex != null? ex : new CancellationException());
             }
-            if ((pool != null && pool.runState < 0) ||
-                (failed && count.getAndDecrement() <= 1))
-                trySetThrown(ex != null ? ex : new CancellationException());
         }
-        public final boolean exec()         { return false; } // never forked
+        final boolean checkDone() {
+            if (isDone())
+                return true;
+            else if (pool.runState >= 0)
+                return false;
+            else {
+                tryComplete(null, null, true);
+                return true;
+            }
+        }
+        public final boolean exec()         { return false; }
         public final E getRawResult()       { return result; }
         public final void setRawResult(E v) { result = v; }
     }
 
-    // Variant of AdaptedInterruptibleCallable with results in InvokeAnyRoot
+    /**
+     * Variant of AdaptedInterruptibleCallable with results in
+     * InvokeAnyRoot (and never independently joined). Task
+     * cancellation status is used to avoid multiple calls to
+     * root.tryComplete by the same task under async cancellation.
+     */
     static final class InvokeAnyTask<E> extends ForkJoinTask<E> {
         private static final long serialVersionUID = 2838392045355241008L;
         final InvokeAnyRoot<E> root;
@@ -3087,23 +3099,36 @@ public class ForkJoinPool extends AbstractExecutorService {
             this.callable = callable;
         }
         public final boolean exec() {
+            InvokeAnyRoot<E> r; Callable<E> c;
             Thread.interrupted();
-            runner = Thread.currentThread();
-            root.tryComplete(callable);
-            runner = null;
-            Thread.interrupted();
+            if ((c = callable) != null && (r = root) != null && !r.checkDone()) {
+                runner = Thread.currentThread();
+                E v = null;
+                Throwable ex = null;
+                boolean fail = false;
+                try {
+                    v = c.call();
+                } catch (Throwable rex) {
+                    ex = rex;
+                    fail = true;
+                }
+                runner = null;
+                if (trySetCancelled() >= 0)      // else lost to async cancel
+                    r.tryComplete(v, ex, fail);
+            }
             return true;
         }
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            Thread t;
-            boolean stat = super.cancel(false);
+            Thread t; InvokeAnyRoot<E> r;
+            if (trySetCancelled() >= 0 && (r = root) != null)
+                r.tryComplete(null, null, true); // else lost race to cancel
             if (mayInterruptIfRunning && (t = runner) != null) {
                 try {
                     t.interrupt();
                 } catch (Throwable ignore) {
                 }
             }
-            return stat;
+            return isCancelled();
         }
         public final void setRawResult(E v) {} // unused
         public final E getRawResult()       { return null; }
@@ -3591,25 +3616,30 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     @Override
     public void close() {
-        if ((config & ISCOMMON) == 0) {
-            boolean terminated = tryTerminate(false, false);
-            if (!terminated) {
-                shutdown();
-                boolean interrupted = false;
-                while (!terminated) {
-                    try {
-                        terminated = awaitTermination(1L, TimeUnit.DAYS);
-                    } catch (InterruptedException e) {
-                        if (!interrupted) {
-                            shutdownNow();
-                            interrupted = true;
-                        }
-                    }
-                }
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
+        ReentrantLock lock = registrationLock;
+        Condition cond = null;
+        boolean interrupted = false;
+        if (lock != null && (config & ISCOMMON) == 0 &&
+            (runState & TERMINATED) == 0) {
+            checkPermission();
+            for (;;) {
+                tryTerminate(interrupted, true); // call outside of lock
+                if ((runState & TERMINATED) != 0)
+                    break;
+                lock.lock();
+                try {
+                    if (cond == null && (cond = termination) == null)
+                        termination = cond = lock.newCondition();
+                    if ((runState & TERMINATED) == 0)
+                        cond.await();
+                } catch (InterruptedException ex) {
+                    interrupted = true;
+                } finally {
+                    lock.unlock();
                 }
             }
+            if (interrupted)
+                Thread.currentThread().interrupt();
         }
     }
 
