@@ -1916,6 +1916,11 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                 }
 
                 state._state.put(obj, new EscapedState(phi));
+                CheckCastPPNode* javaoop = obj->result_cast()->as_CheckCastPP();
+                gvn().set_type(phi, javaoop->type());
+                if (C->do_escape_analysis()) {
+                  record_for_igvn(phi);
+                }
               } else {
                 // all predecessors are virtual:
                 // 1. if all ObjectStates are idential, reuse it.
