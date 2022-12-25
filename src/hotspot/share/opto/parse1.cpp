@@ -440,6 +440,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAS
   }
 
 #ifndef PRODUCT
+  if (Verbose && !CITraceTypeFlow) {
+    _flow->rpo_print_on(tty);
+  }
+
   if (_flow->has_irreducible_entry()) {
     C->set_parsed_irreducible_loop(true);
   }
