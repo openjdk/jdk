@@ -368,7 +368,9 @@ class relocInfo {
   //  - to pad out the relocInfo array to the required oop alignment
   //  - to disable old relocation information which is no longer applicable
 
-  inline friend relocInfo filler_relocInfo();
+  static relocInfo filler_info() {
+    return relocInfo(relocInfo::none, relocInfo::offset_limit() - relocInfo::offset_unit);
+  }
 
   // Every non-prefix relocation may be preceded by at most one prefix,
   // which supplies 1 or more halfwords of associated data.  Conventionally,
@@ -378,7 +380,10 @@ class relocInfo {
   // "immediate" in the prefix header word itself.  This optimization
   // is invisible outside this module.)
 
-  inline friend relocInfo prefix_relocInfo(int datalen);
+  static relocInfo prefix_info(int datalen = 0) {
+    assert(relocInfo::fits_into_immediate(datalen), "datalen in limits");
+    return relocInfo(relocInfo::data_prefix_tag, relocInfo::RAW_BITS, relocInfo::datalen_tag | datalen);
+  }
 
  private:
   // an immediate relocInfo optimizes a prefix with one 10-bit unsigned value
@@ -455,18 +460,6 @@ class relocInfo {
 class name##_Relocation;
 APPLY_TO_RELOCATIONS(FORWARD_DECLARE_EACH_CLASS)
 #undef FORWARD_DECLARE_EACH_CLASS
-
-
-
-inline relocInfo filler_relocInfo() {
-  return relocInfo(relocInfo::none, relocInfo::offset_limit() - relocInfo::offset_unit);
-}
-
-inline relocInfo prefix_relocInfo(int datalen = 0) {
-  assert(relocInfo::fits_into_immediate(datalen), "datalen in limits");
-  return relocInfo(relocInfo::data_prefix_tag, relocInfo::RAW_BITS, relocInfo::datalen_tag | datalen);
-}
-
 
 // Holder for flyweight relocation objects.
 // Although the flyweight subclasses are of varying sizes,
