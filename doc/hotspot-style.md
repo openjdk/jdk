@@ -696,6 +696,17 @@ The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
 platforms that define it. This macro predates the use by HotSpot of C++
 versions providing `alignas`. New code should use `alignas`.
 
+### alignof
+
+`alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
+is permitted alongside `alignas` for querying the alignment of a complete object
+type, an array type with a complete element type, or a reference type to either as
+an alternative to `std::alignment_of<>`. `std::alignment_of<>` precedes the
+operator in the development of the language and just returns the corresponding
+`alignof` value, the operator simply provides less verbose syntax for doing so.
+Newer code should prefer `alignof` to `std::alignment_of<>` if possible.
+
 ### thread_local
 
 Avoid use of `thread_local`
@@ -1055,9 +1066,6 @@ and other supported compilers may not have anything similar.
   "p0136r1"
 
 ### Additional Permitted Features
-
-* `alignof`
-([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))

@@ -73,6 +73,7 @@ Deduction</a></li>
 SFINAE</a></li>
 <li><a href="#enum" id="toc-enum">enum</a></li>
 <li><a href="#alignas" id="toc-alignas">alignas</a></li>
+<li><a href="#alignof" id="toc-alignof">alignof</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
@@ -718,6 +719,18 @@ href="https://cplusplus.github.io/CWG/issues/1437.html">CWG
 capabilities for platforms that define it. This macro predates the use
 by HotSpot of C++ versions providing <code>alignas</code>. New code
 should use <code>alignas</code>.</p>
+<h3 id="alignof">alignof</h3>
+<p><code>alignof</code> (<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)
+is permitted alongside <code>alignas</code> for querying the alignment
+of a complete object type, an array type with a complete element type,
+or a reference type to either as an alternative to
+<code>std::alignment_of&lt;&gt;</code>.
+<code>std::alignment_of&lt;&gt;</code> precedes the operator in the
+development of the language and just returns the corresponding
+<code>alignof</code> value, the operator simply provides less verbose
+syntax for doing so. Newer code should prefer <code>alignof</code> to
+<code>std::alignment_of&lt;&gt;</code> if possible.</p>
 <h3 id="thread_local">thread_local</h3>
 <p>Avoid use of <code>thread_local</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>);
@@ -1060,8 +1073,6 @@ other supported compilers may not have anything similar.</p>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
-<li><p><code>alignof</code> (<a
-href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)</p></li>
 <li><p><code>constexpr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>)
 (<a
