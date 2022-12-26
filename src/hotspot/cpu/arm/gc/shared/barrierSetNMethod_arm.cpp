@@ -37,7 +37,7 @@
 
 // The constant below reflects the size of the barrier
 // in barrierSetAssembler_arm.cpp
-static const int entry_barrier_bytes = 36;
+static const int entry_barrier_bytes = 9 * NativeInstruction::size();
 
 class NativeNMethodBarrier: public NativeInstruction {
   address instruction_address() const { return addr_at(0); }

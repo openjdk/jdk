@@ -204,14 +204,14 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
   Register tmp0 = Rtemp;
-  Register tmp1 = R5; // wrong register here will lead to crash
+  Register tmp1 = R5; // must be callee-save register
 
   if (bs_nm == NULL) {
     return;
   }
 
   // The are no GCs that require memory barrier on arm32 now
-#ifndef PRODUCT
+#ifdef ASSERT
   NMethodPatchingType patching_type = nmethod_patching_type();
   assert(patching_type == NMethodPatchingType::stw_instruction_and_data_patch, "Unsupported patching type");
 #endif
