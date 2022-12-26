@@ -901,7 +901,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                         location =
                                 Win32ShellFolderManager2.createShellFolderFromRelativePIDL(getDesktop(),
                                         linkLocationPIDL);
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException | FileNotFoundException e) {
                         // Return null
                     } catch (InternalError e) {
                         // Could be a link to a non-bindable object, such as a network connection

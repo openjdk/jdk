@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4847375 8171363
+ * @bug 4847375 8171363 8227257
  * @requires (os.family == "windows")
  * @summary JFileChooser Create New Folder button is disabled incorrectly
  * @author Pavel Porvatov
