@@ -238,7 +238,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
-  product(bool, UsePolyIntrinsics, false, DIAGNOSTIC,                       \
+  product(bool, UsePoly1305Intrinsics, false, DIAGNOSTIC,                   \
           "Use intrinsics for sun.security.util.math.intpoly")              \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
@@ -1946,11 +1946,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
-                                                                            \
-  product(intx, ExtentLocalCacheSize, 16,                                   \
-          "Size of the cache for scoped values")                            \
-           range(0, max_intx)                                               \
-           constraint(ExtentLocalCacheSizeConstraintFunc, AtParse)          \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \

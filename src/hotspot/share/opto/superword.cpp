@@ -2079,6 +2079,14 @@ bool SuperWord::implemented(Node_List* p) {
     } else if (is_cmove_fp_opcode(opc)) {
       retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
       NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
+    } else if (requires_long_to_int_conversion(opc)) {
+      // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+      // returns int type, but Vector API for them returns long type. To unify
+      // the implementation in backend, superword splits the vector implementation
+      // for Java API into an execution node with long type plus another node
+      // converting long to int.
+      retValue = VectorNode::implemented(opc, size, T_LONG) &&
+                 VectorCastNode::implemented(Op_ConvL2I, size, T_LONG, T_INT);
     } else {
       // Vector unsigned right shift for signed subword types behaves differently
       // from Java Spec. But when the shift amount is a constant not greater than
@@ -2096,6 +2104,18 @@ bool SuperWord::implemented(Node_List* p) {
 bool SuperWord::is_cmov_pack(Node_List* p) {
   return _cmovev_kit.pack(p->at(0)) != NULL;
 }
+
+bool SuperWord::requires_long_to_int_conversion(int opc) {
+  switch(opc) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+      return true;
+    default:
+      return false;
+  }
+}
+
 //------------------------------same_inputs--------------------------
 // For pack p, are all idx operands the same?
 bool SuperWord::same_inputs(Node_List* p, int idx) {
@@ -2666,21 +2686,33 @@ bool SuperWord::output() {
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
                  opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_PopCountI || opc == Op_PopCountL ||
                  opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
                  opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
                  opc == Op_ReverseI || opc == Op_ReverseL ||
-                 opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
-                 opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
+                 opc == Op_PopCountI || opc == Op_CountLeadingZerosI ||
+                 opc == Op_CountTrailingZerosI) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (requires_long_to_int_conversion(opc)) {
+        // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+        // returns int type, but Vector API for them returns long type. To unify
+        // the implementation in backend, superword splits the vector implementation
+        // for Java API into an execution node with long type plus another node
+        // converting long to int.
+        assert(n->req() == 2, "only one input expected");
+        Node* in = vector_opd(p, 1);
+        Node* longval = VectorNode::make(opc, in, NULL, vlen, T_LONG);
+        _igvn.register_new_node_with_optimizer(longval);
+        _phase->set_ctrl(longval, _phase->get_ctrl(p->at(0)));
+        vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
         assert(n->req() == 2, "only one input expected");
         BasicType bt = velt_basic_type(n);
         Node* in = vector_opd(p, 1);
-        int vopc = VectorCastNode::opcode(in->bottom_type()->is_vect()->element_basic_type());
+        int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
@@ -3198,27 +3230,11 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     return true;
   }
 
-  if (VectorNode::is_type_transition_long_to_int(use)) {
-    // PopCountL/CountLeadingZerosL/CountTrailingZerosL takes long and produces
-    // int - hence the special checks on alignment and size.
-    if (u_pk->size() != d_pk->size()) {
-      return false;
-    }
-    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
-      Node* ui = u_pk->at(i);
-      Node* di = d_pk->at(i);
-      if (alignment(ui) * 2 != alignment(di)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   if (u_pk->size() != d_pk->size())
     return false;
 
   if (longer_type_for_conversion(use) != T_ILLEGAL) {
-    // type conversion takes a type of a kind of size and produces a type of
+    // These opcodes take a type of a kind of size and produce a type of
     // another size - hence the special checks on alignment and size.
     for (uint i = 0; i < u_pk->size(); i++) {
       Node* ui = u_pk->at(i);
@@ -3467,7 +3483,8 @@ void SuperWord::compute_max_depth() {
 }
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
-  if (!VectorNode::is_convert_opcode(n->Opcode()) ||
+  if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
+        requires_long_to_int_conversion(n->Opcode())) ||
       !in_bb(n->in(1))) {
     return T_ILLEGAL;
   }

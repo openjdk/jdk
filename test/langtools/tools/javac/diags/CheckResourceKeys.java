@@ -32,6 +32,7 @@
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 import javax.tools.*;
 import com.sun.tools.classfile.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
@@ -47,6 +48,8 @@ public class CheckResourceKeys {
      *      look for keys in resource bundles that are no longer required
      * -findmissingkeys
      *      look for keys in resource bundles that are missing
+     * -checkformats
+     *      validate MessageFormat patterns in resource bundles
      *
      * @throws Exception if invoked by jtreg and errors occur
      */
@@ -71,16 +74,19 @@ public class CheckResourceKeys {
     boolean run(String... args) throws Exception {
         boolean findDeadKeys = false;
         boolean findMissingKeys = false;
+        boolean checkFormats = false;
 
         if (args.length == 0) {
             if (is_jtreg()) {
                 findDeadKeys = true;
                 findMissingKeys = true;
+                checkFormats = true;
             } else {
                 System.err.println("Usage: java CheckResourceKeys <options>");
                 System.err.println("where options include");
                 System.err.println("  -finddeadkeys      find keys in resource bundles which are no longer required");
                 System.err.println("  -findmissingkeys   find keys in resource bundles that are required but missing");
+                System.err.println("  -checkformats      validate MessageFormat patterns in resource bundles");
                 return true;
             }
         } else {
@@ -89,6 +95,8 @@ public class CheckResourceKeys {
                     findDeadKeys = true;
                 else if (arg.equalsIgnoreCase("-findmissingkeys"))
                     findMissingKeys = true;
+                else if (arg.equalsIgnoreCase("-checkformats"))
+                    checkFormats = true;
                 else
                     error("bad option: " + arg);
             }
@@ -105,6 +113,9 @@ public class CheckResourceKeys {
 
         if (findMissingKeys)
             findMissingKeys(codeStrings, resourceKeys);
+
+        if (checkFormats)
+            checkFormats(getMessageFormatBundles());
 
         return (errors == 0);
     }
@@ -312,6 +323,109 @@ public class CheckResourceKeys {
             "locn."
     ));
 
+    void checkFormats(List<ResourceBundle> messageFormatBundles) {
+        for (ResourceBundle bundle : messageFormatBundles) {
+            for (String key : bundle.keySet()) {
+                final String pattern = bundle.getString(key);
+                try {
+                    validateMessageFormatPattern(pattern);
+                } catch (IllegalArgumentException e) {
+                    error("Invalid MessageFormat pattern for resource \""
+                        + key + "\": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Do some basic validation of a {@link java.text.MessageFormat} format string.
+     *
+     * <p>
+     * This checks for balanced braces and unnecessary quoting.
+     * Code cut, pasted, &amp; simplified from {@link java.text.MessageFormat#applyPattern}.
+     *
+     * @throws IllegalArgumentException if {@code pattern} is invalid
+     * @throws IllegalArgumentException if {@code pattern} is null
+     */
+    public static void validateMessageFormatPattern(String pattern) {
+
+        // Check for null
+        if (pattern == null)
+            throw new IllegalArgumentException("null pattern");
+
+        // Replicate the quirky lexical analysis of MessageFormat's parsing algorithm
+        final int SEG_RAW = 0;
+        final int SEG_INDEX = 1;
+        final int SEG_TYPE = 2;
+        final int SEG_MODIFIER = 3;
+        int part = SEG_RAW;
+        int braceStack = 0;
+        int quotedStartPos = -1;
+        for (int i = 0; i < pattern.length(); i++) {
+            final char ch = pattern.charAt(i);
+            if (part == SEG_RAW) {
+                if (ch == '\'') {
+                    if (i + 1 < pattern.length() && pattern.charAt(i + 1) == '\'')
+                        i++;
+                    else if (quotedStartPos == -1)
+                        quotedStartPos = i;
+                    else {
+                        validateMessageFormatQuoted(pattern.substring(quotedStartPos + 1, i));
+                        quotedStartPos = -1;
+                    }
+                } else if (ch == '{' && quotedStartPos == -1)
+                    part = SEG_INDEX;
+                continue;
+            }
+            if (quotedStartPos != -1) {
+                if (ch == '\'') {
+                    validateMessageFormatQuoted(pattern.substring(quotedStartPos + 1, i));
+                    quotedStartPos = -1;
+                }
+                continue;
+            }
+            switch (ch) {
+            case ',':
+                if (part < SEG_MODIFIER)
+                    part++;
+                break;
+            case '{':
+                braceStack++;
+                break;
+            case '}':
+                if (braceStack == 0)
+                    part = SEG_RAW;
+                else
+                    braceStack--;
+                break;
+            case '\'':
+                quotedStartPos = i;
+                break;
+            default:
+                break;
+            }
+        }
+        if (part != SEG_RAW)
+            throw new IllegalArgumentException("unmatched braces");
+        if (quotedStartPos != -1)
+            throw new IllegalArgumentException("unmatched quote starting at offset " + quotedStartPos);
+    }
+
+    /**
+     * Validate the content of a quoted substring in a {@link java.text.MessageFormat} pattern.
+     *
+     * <p>
+     * We expect this content to contain at least one special character. Otherwise,
+     * it was probably meant to be something in single quotes but somebody forgot
+     * to escape the single quotes by doulbing them; and even if intentional,
+     * it's still bogus because the single quotes are just going to get discarded
+     * and so they were unnecessary in the first place.
+     */
+    static void validateMessageFormatQuoted(String quoted) {
+        if (quoted.matches("[^'{},]+"))
+            throw new IllegalArgumentException("unescaped single quotes around \"" + quoted + "\"");
+    }
+
     /**
      * Look for a resource that ends in this string fragment.
      */
@@ -401,6 +515,20 @@ public class CheckResourceKeys {
             ResourceBundle b =
                     ResourceBundle.getBundle("com.sun.tools.javac.resources." + name, jdk_compiler);
             results.addAll(b.keySet());
+        }
+        return results;
+    }
+
+    /**
+     * Get resource bundles containing MessageFormat strings.
+     */
+    List<ResourceBundle> getMessageFormatBundles() {
+        Module jdk_compiler = ModuleLayer.boot().findModule("jdk.compiler").get();
+        List<ResourceBundle> results = new ArrayList<>();
+        for (String name : new String[]{"compiler", "launcher"}) {
+            ResourceBundle b =
+                    ResourceBundle.getBundle("com.sun.tools.javac.resources." + name, jdk_compiler);
+            results.add(b);
         }
         return results;
     }

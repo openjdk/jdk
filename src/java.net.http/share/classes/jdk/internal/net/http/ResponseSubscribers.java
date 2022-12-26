@@ -282,7 +282,10 @@ public class ResponseSubscribers {
         @Override
         public void onNext(List<ByteBuffer> items) {
             try {
-                out.write(items.toArray(Utils.EMPTY_BB_ARRAY));
+                ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
+                do {
+                    out.write(buffers);
+                } while (Utils.hasRemaining(buffers));
             } catch (IOException ex) {
                 close();
                 subscription.cancel();
@@ -481,7 +484,12 @@ public class ResponseSubscribers {
                     if (debug.on()) debug.log("Next Buffer");
                     currentBuffer = currentListItr.next();
                 } catch (InterruptedException ex) {
-                    // continue
+                    try {
+                        close();
+                    } catch (IOException ignored) {
+                    }
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();

@@ -49,6 +49,11 @@ class MemReporterBase : public StackObj {
     _scale(scale), _output(out)
   {}
 
+  // Helper functions
+  // Calculate total reserved and committed amount
+  static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
+  static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
+
  protected:
   inline outputStream* output() const {
     return _output;
@@ -73,19 +78,14 @@ class MemReporterBase : public StackObj {
     return amount / scale;
   }
 
-  // Helper functions
-  // Calculate total reserved and committed amount
-  size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-  size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;
-  void print_malloc(size_t amount, size_t count, MEMFLAGS flag = mtNone) const;
+  void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed) const;
 
-  void print_malloc_line(size_t amount, size_t count) const;
+  void print_malloc_line(const MemoryCounter* c) const;
   void print_virtual_memory_line(size_t reserved, size_t committed) const;
-  void print_arena_line(size_t amount, size_t count) const;
+  void print_arena_line(const MemoryCounter* c) const;
 
   void print_virtual_memory_region(const char* type, address base, size_t size) const;
 };
