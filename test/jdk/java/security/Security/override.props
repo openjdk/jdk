@@ -1,0 +1,7 @@
+security.provider.1=sun.security.provider.Sun
+security.provider.2=sun.security.rsa.SunRsaSign
+security.provider.3=sun.security.ssl.SunJSSE
+security.provider.4=com.sun.crypto.provider.SunJCE
+security.provider.5=sun.security.jgss.SunProvider
+security.provider.6=com.sun.security.sasl.Provider
+
