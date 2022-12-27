@@ -78,7 +78,30 @@ void fill_file(const char* path, const char* content) {
   fclose(fp);
 }
 
-TEST(cgroupTest, SubSystemFileLineContentsMultipleLines) {
+TEST(cgroupTest, SubSystemFileLineContentsMultipleLinesErrorCases) {
+  TestController my_controller{};
+  const char* test_file = temp_file("cgroups");
+  int x = 0;
+  char s[1024];
+  int err = 0;
+
+  s[0] = '\0';
+  fill_file(test_file, "foo ");
+  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
+  EXPECT_NE(err, 0) << "Value must not be missing in key/value case";
+
+  s[0] = '\0';
+  fill_file(test_file, "faulty_start foo bar");
+  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
+  EXPECT_NE(err, 0) << "Key must be at start";
+
+  s[0] = '\0';
+  fill_file(test_file, "foof bar");
+  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
+  EXPECT_NE(err, 0) << "Key must be exact match";
+}
+
+TEST(cgroupTest, SubSystemFileLineContentsMultipleLinesSuccessCases) {
   TestController my_controller{};
   const char* test_file = temp_file("cgroups");
   int x = 0;
@@ -92,25 +115,10 @@ TEST(cgroupTest, SubSystemFileLineContentsMultipleLines) {
   EXPECT_STREQ(s, "bar") << "Incorrect!";
 
   s[0] = '\0';
-  fill_file(test_file, "foo ");
-  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
-  EXPECT_NE(err, 0) << "Value must not be missing in key/value case";
-
-  s[0] = '\0';
   fill_file(test_file, "foo\tbar");
   err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
   EXPECT_EQ(err, 0);
   EXPECT_STREQ(s, "bar") << "Incorrect!";
-
-  s[0] = '\0';
-  fill_file(test_file, "faulty_start foo bar");
-  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
-  EXPECT_NE(err, 0) << "Key must be at start";
-
-  s[0] = '\0';
-  fill_file(test_file, "foof bar");
-  err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
-  EXPECT_NE(err, 0) << "Key must be exact match";
 
   s[0] = '\0';
   fill_file(test_file, "foof bar\nfoo car");
