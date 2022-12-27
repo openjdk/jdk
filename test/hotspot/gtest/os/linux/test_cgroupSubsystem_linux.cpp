@@ -85,11 +85,6 @@ TEST(cgroupTest, SubSystemFileLineContentsMultipleLines) {
   char s[1024];
   int err = 0;
 
-  fill_file(test_file, "foo");
-  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%s", &s);
-  EXPECT_EQ(err, 0);
-  EXPECT_STREQ(s, "foo");
-
   s[0] = '\0';
   fill_file(test_file, "foo bar");
   err = subsystem_file_line_contents(&my_controller, test_file, "foo", "%s", &s);
@@ -149,6 +144,11 @@ TEST(cgroupTest, SubSystemFileLineContentsSingleLine) {
   int x = 0;
   char s[1024];
   int err = 0;
+
+  fill_file(test_file, "foo");
+  err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%s", &s);
+  EXPECT_EQ(err, 0);
+  EXPECT_STREQ(s, "foo");
 
   fill_file(test_file, "1337");
   err = subsystem_file_line_contents(&my_controller, test_file, nullptr, "%d", &x);
