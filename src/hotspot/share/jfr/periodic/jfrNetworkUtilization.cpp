@@ -55,14 +55,14 @@ void JfrNetworkUtilization::destroy() {
 }
 
 static InterfaceEntry& new_entry(const NetworkInterface* iface, GrowableArray<InterfaceEntry>* interfaces) {
-  assert(iface != NULL, "invariant");
-  assert(interfaces != NULL, "invariant");
+  vmassert(iface != NULL, "invariant");
+  vmassert(interfaces != NULL, "invariant");
 
   // single threaded premise
   static traceid interface_id = 0;
 
   const char* name = iface->get_name();
-  assert(name != NULL, "invariant");
+  vmassert(name != NULL, "invariant");
 
   InterfaceEntry entry;
   const size_t length = strlen(name);
@@ -88,7 +88,7 @@ static InterfaceEntry& get_entry(const NetworkInterface* iface) {
   static int saved_index = -1;
 
   GrowableArray<InterfaceEntry>* interfaces = get_interfaces();
-  assert(interfaces != NULL, "invariant");
+  vmassert(interfaces != NULL, "invariant");
   for (int i = 0; i < _interfaces->length(); ++i) {
     saved_index = (saved_index + 1) % _interfaces->length();
     if (strcmp(_interfaces->at(saved_index).name, iface->get_name()) == 0) {
@@ -101,7 +101,7 @@ static InterfaceEntry& get_entry(const NetworkInterface* iface) {
 // If current counters are less than previous we assume the interface has been reset
 // If no bytes have been either sent or received, we'll also skip the event
 static uint64_t rate_per_second(uint64_t current, uint64_t old, const JfrTickspan& interval) {
-  assert(interval.value() > 0, "invariant");
+  vmassert(interval.value() > 0, "invariant");
   if (current <= old) {
     return 0;
   }
@@ -123,7 +123,7 @@ class JfrNetworkInterfaceName : public JfrSerializer {
 };
 
 static bool register_network_interface_name_serializer() {
-  assert(_interfaces != NULL, "invariant");
+  vmassert(_interfaces != NULL, "invariant");
   return JfrSerializer::register_serializer(TYPE_NETWORKINTERFACENAME,
     false, // disallow caching; we want a callback every rotation
     new JfrNetworkInterfaceName());
