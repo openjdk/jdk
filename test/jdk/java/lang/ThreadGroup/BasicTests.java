@@ -751,13 +751,6 @@ public class BasicTests {
     }
 
     @Test
-    public void testAllowThreadSuspension() {
-        ThreadGroup group = new ThreadGroup("foo");
-        assertFalse(group.allowThreadSuspension(false));
-        assertFalse(group.allowThreadSuspension(true));
-    }
-
-    @Test
     public void testNull1() {
         assertThrows(NullPointerException.class,
                      () -> new ThreadGroup(null, "group"));

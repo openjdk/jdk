@@ -168,7 +168,7 @@ class DescribeStackChunkClosure {
 public:
   DescribeStackChunkClosure(stackChunkOop chunk)
     : _chunk(chunk),
-      _map((JavaThread*)nullptr,
+      _map(nullptr,
            RegisterMap::UpdateMap::include,
            RegisterMap::ProcessFrames::skip,
            RegisterMap::WalkContinuation::include),

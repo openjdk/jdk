@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -362,6 +363,12 @@ public interface JavaLangAccess {
      * @return the number of bytes successfully decoded, at most len
      */
     int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+
+    /**
+     * Returns the initial `System.in` to determine if it is replaced
+     * with `System.setIn(newIn)` method
+     */
+    InputStream initialSystemIn();
 
     /**
      * Encodes ASCII codepoints as possible from the source array into

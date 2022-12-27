@@ -36,7 +36,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
-class StackWatermarkFramesIterator : public CHeapObj<mtInternal> {
+class StackWatermarkFramesIterator : public CHeapObj<mtThread> {
   JavaThread* _jt;
   uintptr_t _caller;
   uintptr_t _callee;
@@ -166,7 +166,7 @@ StackWatermark::StackWatermark(JavaThread* jt, StackWatermarkKind kind, uint32_t
     _iterator(NULL),
     _lock(Mutex::stackwatermark, "StackWatermark_lock"),
     _kind(kind),
-    _linked_watermark(NULL) {
+    _linked_watermarks() {
 }
 
 StackWatermark::~StackWatermark() {
@@ -250,9 +250,15 @@ void StackWatermark::process_one() {
   }
 }
 
-void StackWatermark::link_watermark(StackWatermark* watermark) {
-  assert(watermark == NULL || _linked_watermark == NULL, "nesting not supported");
-  _linked_watermark = watermark;
+void StackWatermark::push_linked_watermark(StackWatermark* watermark) {
+  assert(JavaThread::current() == _jt, "This code is not thread safe");
+  _linked_watermarks.push(watermark);
+}
+
+void StackWatermark::pop_linked_watermark() {
+  assert(JavaThread::current() == _jt, "This code is not thread safe");
+  assert(_linked_watermarks.length() > 0, "Mismatched push and pop?");
+  _linked_watermarks.pop();
 }
 
 uintptr_t StackWatermark::watermark() {
@@ -288,12 +294,22 @@ bool StackWatermark::processing_completed_acquire() const {
   return processing_completed(Atomic::load_acquire(&_state));
 }
 
+void StackWatermark::process_linked_watermarks() {
+  assert(JavaThread::current() == _jt, "This code is not thread safe");
+
+  // Finish processing all linked stack watermarks
+  for (StackWatermark* watermark : _linked_watermarks) {
+    watermark->finish_processing(NULL /* context */);
+  }
+}
+
 void StackWatermark::on_safepoint() {
   start_processing();
-  StackWatermark* linked_watermark = _linked_watermark;
-  if (linked_watermark != NULL) {
-    linked_watermark->finish_processing(NULL /* context */);
-  }
+
+  // If the thread waking up from a safepoint expected certain other
+  // stack watermarks (potentially from different threads) are processed,
+  // then we have to perform processing of said linked watermarks here.
+  process_linked_watermarks();
 }
 
 void StackWatermark::start_processing() {
