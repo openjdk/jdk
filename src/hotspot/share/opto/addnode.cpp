@@ -364,15 +364,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert (~x+c) into (c-1)-x. Note there isn't a bitwise not
-  // bytecode, "~x" would typically represented as "x^(-1)", so (~x+c)
-  // will be (x^(-1))+c.
-  if (op1 == Op_Xor(bt) &&
-      (in2->Opcode() == Op_ConI || in2->Opcode() == Op_ConL) &&
-      phase->type(in1->in(2)) == TypeInteger::minus_1(bt)) {
-    Node* c_minus_one = phase->makecon(add_ring(phase->type(in(2)), TypeInteger::minus_1(bt)));
-    return SubNode::make(c_minus_one, in1->in(1), bt);
-  }
   return AddNode::Ideal(phase, can_reshape);
 }
 
@@ -862,20 +853,38 @@ const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( r0->get_con() | r1->get_con() );
 }
 
+//---------------------------Helper -------------------------------------------
+/* Decide if the given node is used only in arithmetic expressions(add or sub).
+ */
+static bool is_used_in_only_arithmetic(Node* n, BasicType bt) {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (u->Opcode() != Op_Add(bt) && u->Opcode() != Op_Sub(bt)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
-  int op1 = in1->Opcode();
-  // Convert ~(x+c) into (-c-1)-x. Note there isn't a bitwise not
-  // bytecode, "~x" would typically represented as "x^(-1)", so ~(x+c)
-  // will eventually be (x+c)^-1.
-  if (op1 == Op_AddI && phase->type(in2) == TypeInt::MINUS_1 &&
-      in1->in(2)->Opcode() == Op_ConI) {
-    jint c = phase->type(in1->in(2))->isa_int()->get_con();
-    Node* neg_c_minus_one = phase->intcon(java_add(-c, -1));
-    return new SubINode(neg_c_minus_one, in1->in(1));
+
+  // Convert ~x into -1-x when ~x is used in an arithmetic expression
+  // or x itself is an expression.
+  if (phase->type(in2) == TypeInt::MINUS_1) { // follows LHS^(-1), i.e., ~LHS
+    if (phase->is_IterGVN()) {
+      if (is_used_in_only_arithmetic(this, T_INT)
+          // LHS is arithmetic
+          || (in1->Opcode() == Op_AddI || in1->Opcode() == Op_SubI)) {
+        return new SubINode(in2, in1);
+      }
+    } else {
+      // graph could be incomplete in GVN so we postpone to IGVN
+      phase->record_for_igvn(this);
+    }
   }
   return AddNode::Ideal(phase, can_reshape);
 }
@@ -947,15 +956,20 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
-  int op1 = in1->Opcode();
-  // Convert ~(x+c) into (-c-1)-x. Note there isn't a bitwise not
-  // bytecode, "~x" would typically represented as "x^(-1)", so ~(x+c)
-  // will eventually be (x+c)^-1.
-  if (op1 == Op_AddL && phase->type(in2) == TypeLong::MINUS_1 &&
-      in1->in(2)->Opcode() == Op_ConL) {
-    jlong c = phase->type(in1->in(2))->isa_long()->get_con();
-    Node* neg_c_minus_one = phase->longcon(java_add(-c, (jlong)-1));
-    return new SubLNode(neg_c_minus_one, in1->in(1));
+
+  // Convert ~x into -1-x when ~x is used in an arithmetic expression
+  // or x itself is an arithmetic expression.
+  if (phase->type(in2) == TypeLong::MINUS_1) { // follows LHS^(-1), i.e., ~LHS
+    if (phase->is_IterGVN()) {
+      if (is_used_in_only_arithmetic(this, T_LONG)
+          // LHS is arithmetic
+          || (in1->Opcode() == Op_AddL || in1->Opcode() == Op_SubL)) {
+        return new SubLNode(in2, in1);
+      }
+    } else {
+      // graph could be incomplete in GVN so we postpone to IGVN
+      phase->record_for_igvn(this);
+    }
   }
   return AddNode::Ideal(phase, can_reshape);
 }

@@ -52,7 +52,8 @@ public class HandshakeDirectTest  implements Runnable {
         try {
             JVMTIUtils.suspendThread(t);
         } catch (JVMTIUtils.JvmtiException e) {
-            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
                 throw e;
             }
         }
@@ -62,7 +63,8 @@ public class HandshakeDirectTest  implements Runnable {
         try {
             JVMTIUtils.resumeThread(t);
         } catch (JVMTIUtils.JvmtiException e) {
-            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
                 throw e;
             }
         }

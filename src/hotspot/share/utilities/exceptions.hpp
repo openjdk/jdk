@@ -237,7 +237,7 @@ class Exceptions {
 #define CHECK_AND_CLEAR_NULL                    CHECK_AND_CLEAR_(NULL)
 #define CHECK_AND_CLEAR_false                   CHECK_AND_CLEAR_(false)
 
-// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError and j.l.ThreadDeath.
+// CAUTION: These macros clears all exceptions except probable async exceptions j.l.InternalError.
 // So use it with caution.
 #define CLEAR_PENDING_NONASYNC_EXCEPTION        (((ThreadShadow*)THREAD)->clear_pending_nonasync_exception())
 #define CHECK_AND_CLEAR_NONASYNC                THREAD); if (HAS_PENDING_EXCEPTION) { CLEAR_PENDING_NONASYNC_EXCEPTION; return; } (void)(0

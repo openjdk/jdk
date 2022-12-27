@@ -145,10 +145,6 @@ bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-uint32_t ZCollectedHeap::hash_oop(oop obj) const {
-  return _heap.hash_oop(ZOop::to_address(obj));
-}
-
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
   const uintptr_t addr = _heap.alloc_tlab(size_in_bytes);
@@ -161,11 +157,7 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
 }
 
 oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  if (!do_zero) {
-    return CollectedHeap::array_allocate(klass, size, length, false /* do_zero */, THREAD);
-  }
-
-  ZObjArrayAllocator allocator(klass, size, length, THREAD);
+  ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
   return allocator.allocate();
 }
 
@@ -230,6 +222,10 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 
 bool ZCollectedHeap::uses_stack_watermark_barrier() const {
   return true;
+}
+
+MemoryUsage ZCollectedHeap::memory_usage() {
+  return _heap.serviceability_memory_pool()->get_memory_usage();
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {

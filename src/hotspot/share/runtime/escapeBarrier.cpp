@@ -52,7 +52,7 @@
 // Returns true iff objects were reallocated and relocked because of access through JVMTI
 bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // first/oldest update holds the flag
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
   bool result = false;
   if (list != NULL) {
     for (int i = 0; i < list->length(); i++) {
@@ -303,7 +303,7 @@ void EscapeBarrier::thread_removed(JavaThread* jt) {
 // Remember that objects were reallocated and relocked for the compiled frame with the given id
 static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // set in first/oldest update
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list =
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list =
     JvmtiDeferredUpdates::deferred_locals(thread);
   DEBUG_ONLY(bool found = false);
   if (list != NULL) {

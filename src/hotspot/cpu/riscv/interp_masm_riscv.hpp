@@ -56,7 +56,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
-  virtual ~InterpreterMacroAssembler() {}
 
   void load_earlyret_value(TosState state);
 

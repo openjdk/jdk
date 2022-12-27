@@ -543,12 +543,12 @@ D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
 
                 if (FAILED(res)) {
                     DebugPrintD3DError(res, "D3DContext::ConfigureContext: "\
-                                       "cound not reset the device");
+                                       "could not reset the device");
                 }
             }
 
             // note that here we should release all device resources, not only
-            // thos in the default pool since the device is released
+            // those in the default pool since the device is released
             ReleaseContextResources();
             SAFE_RELEASE(pd3dDevice);
         }
@@ -568,7 +568,7 @@ D3DContext::ConfigureContext(D3DPRESENT_PARAMETERS *pNewParams)
         res = pd3dDevice->Reset(pNewParams);
         if (FAILED(res)) {
             DebugPrintD3DError(res,
-                "D3DContext::ConfigureContext: cound not reset the device");
+                "D3DContext::ConfigureContext: could not reset the device");
             return res;
         }
         J2dRlsTraceLn1(J2D_TRACE_INFO,
@@ -1068,7 +1068,7 @@ D3DContext::EndShapeClip()
     pd3dDevice->SetRenderState(D3DRS_SRCBLEND, dwSrcBlendSt);
     pd3dDevice->SetRenderState(D3DRS_DESTBLEND, dwDestBlendSt);
 
-    // resore the transform
+    // restore the transform
     pd3dDevice->SetTransform(D3DTS_WORLD, &tx);
 
     // Enable the depth buffer.

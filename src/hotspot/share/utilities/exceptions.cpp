@@ -74,8 +74,7 @@ void ThreadShadow::clear_pending_exception() {
 
 void ThreadShadow::clear_pending_nonasync_exception() {
   // Do not clear probable async exceptions.
-  if (!_pending_exception->is_a(vmClasses::ThreadDeath_klass()) &&
-      (_pending_exception->klass() != vmClasses::InternalError_klass() ||
+  if ((_pending_exception->klass() != vmClasses::InternalError_klass() ||
        java_lang_InternalError::during_unsafe_access(_pending_exception) != JNI_TRUE)) {
     clear_pending_exception();
   }
@@ -161,8 +160,14 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
     return;
   }
 
-  if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    count_out_of_memory_exceptions(h_exception);
+  if (h_exception->is_a(vmClasses::VirtualMachineError_klass())) {
+    // Remove the ScopedValue bindings in case we got a virtual machine
+    // Error while we were trying to manipulate ScopedValue bindings.
+    thread->clear_scopedValueBindings();
+
+    if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
+      count_out_of_memory_exceptions(h_exception);
+    }
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
@@ -427,7 +432,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
     // in JVMS 6.5.
     if (exception->is_a(vmClasses::Error_klass())) {
       // Pass through an Error, including BootstrapMethodError, any other form
-      // of linkage error, or say ThreadDeath/OutOfMemoryError
+      // of linkage error, or say OutOfMemoryError
       if (ls != NULL) {
         ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i(exception));
         exception->print_on(ls);

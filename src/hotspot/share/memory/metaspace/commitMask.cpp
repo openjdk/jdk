@@ -34,7 +34,7 @@
 namespace metaspace {
 
 CommitMask::CommitMask(const MetaWord* start, size_t word_size) :
-  CHeapBitMap(mask_size(word_size, Settings::commit_granule_words())),
+  CHeapBitMap(mask_size(word_size, Settings::commit_granule_words()), mtMetaspace, true),
   _base(start),
   _word_size(word_size),
   _words_per_bit(Settings::commit_granule_words())

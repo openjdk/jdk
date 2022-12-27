@@ -29,9 +29,9 @@
 
 template<
     typename K, typename V,
-    ResourceObj::allocation_type ALLOC_TYPE,
+    AnyObj::allocation_type ALLOC_TYPE,
     MEMFLAGS MEM_TYPE>
-class ResizeableResourceHashtableStorage : public ResourceObj {
+class ResizeableResourceHashtableStorage : public AnyObj {
   using Node = ResourceHashtableNode<K, V>;
 
 protected:
@@ -71,7 +71,7 @@ protected:
 
 template<
     typename K, typename V,
-    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
+    AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
     MEMFLAGS MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
@@ -125,7 +125,7 @@ public:
       ++bucket;
     }
 
-    if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+    if (ALLOC_TYPE == AnyObj::C_HEAP) {
       FREE_C_HEAP_ARRAY(Node*, old_table);
     }
     BASE::_table = new_table;

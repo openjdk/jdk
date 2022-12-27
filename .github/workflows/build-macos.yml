@@ -45,6 +45,12 @@ on:
       xcode-toolset-version:
         required: true
         type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
 
 jobs:
   build-macos:
@@ -98,7 +104,7 @@ jobs:
           --enable-jtreg-failure-handler
           --with-zlib=system
           --with-jmod-compress=zip-1
-          ${{ inputs.extra-conf-options }} || (
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
@@ -107,7 +113,7 @@ jobs:
         id: build
         uses: ./.github/actions/do-build
         with:
-          make-target: '${{ inputs.make-target }}'
+          make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
 

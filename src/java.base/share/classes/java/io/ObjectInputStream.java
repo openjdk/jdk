@@ -116,18 +116,18 @@ import sun.security.action.GetIntegerAction;
  * the object's most specific class.
  *
  * <p>For example to read from a stream as written by the example in
- * ObjectOutputStream:
+ * {@link ObjectOutputStream}:
  * <br>
- * <pre>
- *      FileInputStream fis = new FileInputStream("t.tmp");
- *      ObjectInputStream ois = new ObjectInputStream(fis);
- *
- *      int i = ois.readInt();
- *      String today = (String) ois.readObject();
- *      Date date = (Date) ois.readObject();
- *
- *      ois.close();
- * </pre>
+ * {@snippet lang="java" :
+ *     try (FileInputStream fis = new FileInputStream("t.tmp");
+ *          ObjectInputStream ois = new ObjectInputStream(fis)) {
+ *         String label = (String) ois.readObject();
+ *         LocalDateTime dateTime = (LocalDateTime) ois.readObject();
+ *         // Use label and dateTime
+ *     } catch (Exception ex) {
+ *         // handle exception
+ *     }
+ * }
  *
  * <p>Classes control how they are serialized by implementing either the
  * java.io.Serializable or java.io.Externalizable interfaces.
@@ -142,14 +142,14 @@ import sun.security.action.GetIntegerAction;
  * serialization and deserialization process should implement methods
  * with the following signatures:
  *
- * <pre>
- * private void writeObject(java.io.ObjectOutputStream stream)
- *     throws IOException;
- * private void readObject(java.io.ObjectInputStream stream)
- *     throws IOException, ClassNotFoundException;
- * private void readObjectNoData()
- *     throws ObjectStreamException;
- * </pre>
+ * {@snippet lang="java":
+ *     private void writeObject(java.io.ObjectOutputStream stream)
+ *         throws IOException;
+ *     private void readObject(java.io.ObjectInputStream stream)
+ *         throws IOException, ClassNotFoundException;
+ *     private void readObjectNoData()
+ *         throws ObjectStreamException;
+ * }
  *
  * <p>The method name, modifiers, return type, and number and type of
  * parameters must match exactly for the method to be used by
@@ -771,9 +771,9 @@ public class ObjectInputStream
      *
      * <p>The default implementation of this method in
      * {@code ObjectInputStream} returns the result of calling
-     * <pre>
+     * {@snippet lang="java":
      *     Class.forName(desc.getName(), false, loader)
-     * </pre>
+     * }
      * where {@code loader} is the first class loader on the current
      * thread's stack (starting from the currently executing method) that is
      * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
@@ -833,9 +833,9 @@ public class ObjectInputStream
      * objects for the interfaces that are named in the {@code interfaces}
      * parameter.  The {@code Class} object for each interface name
      * {@code i} is the value returned by calling
-     * <pre>
+     * {@snippet lang="java":
      *     Class.forName(i, false, loader)
-     * </pre>
+     * }
      * where {@code loader} is the first class loader on the current
      * thread's stack (starting from the currently executing method) that is
      * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform

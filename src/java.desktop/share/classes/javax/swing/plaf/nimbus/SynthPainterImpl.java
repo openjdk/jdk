@@ -123,7 +123,7 @@ class SynthPainterImpl extends SynthPainter {
     private void paintBackground(SynthContext ctx, Graphics g, int x, int y, int w, int h, int orientation) {
         Component c = ctx.getComponent();
         boolean ltr = c.getComponentOrientation().isLeftToRight();
-        // Don't RTL flip JSpliders as they handle it internaly
+        // Don't RTL flip JSliders as they handle it internally
         if (ctx.getComponent() instanceof JSlider) ltr = true;
 
         if (orientation == SwingConstants.VERTICAL && ltr) {

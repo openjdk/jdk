@@ -119,6 +119,10 @@ abstract class UnixFileSystem
         return needToResolveAgainstDefaultDirectory;
     }
 
+    boolean isCaseInsensitiveAndPreserving() {
+        return false;
+    }
+
     UnixPath rootDirectory() {
         return rootDirectory;
     }
@@ -185,8 +189,7 @@ abstract class UnixFileSystem
                         sm.checkRead(rootDirectory.toString());
                     return allowedList.iterator();
                 } catch (SecurityException x) {
-                    List<Path> disallowed = Collections.emptyList();
-                    return disallowed.iterator();
+                    return Collections.emptyIterator(); //disallowed
                 }
             }
         };

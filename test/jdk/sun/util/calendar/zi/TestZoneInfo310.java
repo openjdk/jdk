@@ -176,11 +176,12 @@ public class TestZoneInfo310 {
              * save time in IANA tzdata. This bug is tracked via JDK-8223388.
              *
              * These are the zones/rules that employ negative DST in vanguard
-             * format (as of 2019a):
+             * format (as of 2019a), Palestine added in 2022d:
              *
              *  - Rule "Eire"
              *  - Rule "Morocco"
              *  - Rule "Namibia"
+             *  - Rule "Palestine"
              *  - Zone "Europe/Prague"
              *
              * Tehran/Iran rule has rules beyond 2037, in which javazic assumes
@@ -196,6 +197,8 @@ public class TestZoneInfo310 {
                 zid.equals("Europe/Dublin") || // uses "Eire" rule
                 zid.equals("Europe/Prague") ||
                 zid.equals("Asia/Tehran") || // last rule mismatch
+                zid.equals("Asia/Gaza") || // uses "Palestine" rule
+                zid.equals("Asia/Hebron") || // uses "Palestine" rule
                 zid.equals("Iran")) { // last rule mismatch
                     continue;
             }

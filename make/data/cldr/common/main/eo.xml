@@ -19,179 +19,413 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="aa">afara</language>
 			<language type="ab">abĥaza</language>
+			<language type="ace" draft="unconfirmed">aĉea</language>
+			<language type="ada" draft="unconfirmed">dangba</language>
+			<language type="ady" draft="unconfirmed">adigea</language>
 			<language type="af">afrikansa</language>
+			<language type="ain" draft="unconfirmed">ajnua</language>
 			<language type="ak" draft="unconfirmed">akana</language>
+			<language type="ale" draft="unconfirmed">aleuta</language>
+			<language type="alt" draft="unconfirmed">sud-altaja</language>
 			<language type="am">amhara</language>
+			<language type="an" draft="unconfirmed">aragona</language>
+			<language type="anp" draft="unconfirmed">angika</language>
 			<language type="ar">araba</language>
-			<language type="ar_001" draft="unconfirmed">moderna norma araba</language>
+			<language type="ar_001" draft="unconfirmed">araba moderna norma</language>
 			<language type="arn" draft="unconfirmed">mapuĉa</language>
+			<language type="arp" draft="unconfirmed">arapaha</language>
+			<language type="ars" draft="unconfirmed">araba naĝda</language>
 			<language type="as">asama</language>
+			<language type="ast" draft="unconfirmed">asturia</language>
+			<language type="atj" draft="unconfirmed">atikameka</language>
+			<language type="av" draft="unconfirmed">avara</language>
 			<language type="ay">ajmara</language>
 			<language type="az">azerbajĝana</language>
+			<language type="az" alt="short" draft="unconfirmed">azera</language>
 			<language type="ba">baŝkira</language>
+			<language type="ban" draft="unconfirmed">balia</language>
+			<language type="bas" draft="unconfirmed">basaa</language>
 			<language type="be">belorusa</language>
+			<language type="bem" draft="unconfirmed">bemba</language>
 			<language type="bg">bulgara</language>
+			<language type="bho" draft="unconfirmed">boĝpura</language>
 			<language type="bi">bislamo</language>
+			<language type="bin" draft="unconfirmed">edoa</language>
+			<language type="bla" draft="unconfirmed">siksika</language>
 			<language type="bm" draft="unconfirmed">bambara</language>
 			<language type="bn">bengala</language>
 			<language type="bo">tibeta</language>
 			<language type="br">bretona</language>
 			<language type="brx" draft="unconfirmed">bodoa</language>
 			<language type="bs" draft="contributed">bosnia</language>
+			<language type="bug" draft="unconfirmed">buĝia</language>
+			<language type="byn" draft="unconfirmed">bilena</language>
 			<language type="ca">kataluna</language>
+			<language type="cay" draft="unconfirmed">kajuga</language>
+			<language type="ccp" draft="unconfirmed">ĉakma</language>
+			<language type="ce" draft="unconfirmed">ĉeĉena</language>
+			<language type="ceb" draft="unconfirmed">cebua</language>
+			<language type="cgg" draft="unconfirmed">kiga</language>
+			<language type="ch" draft="unconfirmed">ĉamora</language>
+			<language type="chk" draft="unconfirmed">ĉuka</language>
+			<language type="chm" draft="unconfirmed">maria</language>
+			<language type="cho" draft="unconfirmed">ĉakta</language>
+			<language type="chp" draft="unconfirmed">ĉipevajana</language>
 			<language type="chr" draft="unconfirmed">ĉeroka</language>
+			<language type="chy" draft="unconfirmed">ĉejena</language>
 			<language type="ckb" draft="unconfirmed">sorana</language>
+			<language type="ckb" alt="menu" draft="unconfirmed">kurda, sorana</language>
+			<language type="ckb" alt="variant" draft="unconfirmed">kurda centra</language>
+			<language type="clc" draft="unconfirmed">ĉilkotina</language>
 			<language type="co">korsika</language>
+			<language type="crg" draft="unconfirmed">miĉifa</language>
+			<language type="crj" draft="unconfirmed">kria jakob-golfa suda</language>
+			<language type="crk" draft="unconfirmed">kria preria</language>
+			<language type="crl" draft="unconfirmed">kria jakob-golfa norda</language>
+			<language type="crm" draft="unconfirmed">kria alka</language>
+			<language type="crr" draft="unconfirmed">algonkena (Norda Karolino)</language>
 			<language type="cs">ĉeĥa</language>
+			<language type="csw" draft="unconfirmed">kria marĉa</language>
+			<language type="cu" draft="unconfirmed">malnovslava</language>
+			<language type="cv" draft="unconfirmed">ĉuvaŝa</language>
 			<language type="cy">kimra</language>
 			<language type="da">dana</language>
+			<language type="dak" draft="unconfirmed">dakotaa</language>
+			<language type="dar" draft="unconfirmed">dargva</language>
 			<language type="de">germana</language>
-			<language type="de_AT" draft="unconfirmed">aŭstra germana</language>
-			<language type="de_CH" draft="unconfirmed">svisa germana</language>
+			<language type="de_AT" draft="unconfirmed">germana aŭstra</language>
+			<language type="de_CH" draft="unconfirmed">germana svisa</language>
+			<language type="dgr" draft="unconfirmed">dogriba</language>
+			<language type="dje" draft="unconfirmed">zarmaa</language>
+			<language type="doi" draft="unconfirmed">dogra</language>
 			<language type="dsb" draft="unconfirmed">malsuprasoraba</language>
+			<language type="dua" draft="unconfirmed">dualaa</language>
 			<language type="dv">mahla</language>
+			<language type="dyo" draft="unconfirmed">djola</language>
 			<language type="dz">dzonko</language>
+			<language type="dzg" draft="unconfirmed">dazaa</language>
+			<language type="ebu" draft="unconfirmed">embua</language>
+			<language type="ee" draft="unconfirmed">evea</language>
 			<language type="efi">ibibioefika</language>
+			<language type="eka" draft="unconfirmed">ekaĝuka</language>
 			<language type="el">greka</language>
 			<language type="en">angla</language>
-			<language type="en_AU" draft="unconfirmed">aŭstralia angla</language>
-			<language type="en_CA" draft="unconfirmed">kanada angla</language>
-			<language type="en_GB" draft="unconfirmed">brita angla</language>
-			<language type="en_GB" alt="short" draft="unconfirmed">brita angla</language>
-			<language type="en_US" draft="unconfirmed">usona angla</language>
-			<language type="en_US" alt="short" draft="unconfirmed">usona angla</language>
+			<language type="en_AU" draft="unconfirmed">angla aŭstralia</language>
+			<language type="en_CA" draft="unconfirmed">angla kanada</language>
+			<language type="en_GB" draft="unconfirmed">angla brita</language>
+			<language type="en_US" draft="unconfirmed">angla usona</language>
 			<language type="eo">esperanto</language>
 			<language type="es">hispana</language>
-			<language type="es_419" draft="unconfirmed">amerika hispana</language>
-			<language type="es_ES" draft="unconfirmed">eŭropa hispana</language>
-			<language type="es_MX" draft="unconfirmed">meksika hispana</language>
+			<language type="es_419" draft="unconfirmed">hispana amerika</language>
+			<language type="es_ES" draft="unconfirmed">hispana eŭropa</language>
+			<language type="es_MX" draft="unconfirmed">hispana meksika</language>
 			<language type="et">estona</language>
 			<language type="eu">eŭska</language>
+			<language type="ewo" draft="unconfirmed">eunda</language>
 			<language type="fa">persa</language>
+			<language type="ff" draft="unconfirmed">fula</language>
 			<language type="fi">finna</language>
 			<language type="fil" draft="contributed">filipina</language>
 			<language type="fj">fiĝia</language>
 			<language type="fo">feroa</language>
+			<language type="fon" draft="unconfirmed">fonua</language>
 			<language type="fr">franca</language>
-			<language type="fr_CA" draft="unconfirmed">kanada franca</language>
-			<language type="fr_CH" draft="unconfirmed">svisa franca</language>
+			<language type="fr_CA" draft="unconfirmed">franca kanada</language>
+			<language type="fr_CH" draft="unconfirmed">franca svisa</language>
+			<language type="frc" draft="unconfirmed">kaĵun-franca</language>
+			<language type="frr" draft="unconfirmed">nord-frisa</language>
+			<language type="fur" draft="unconfirmed">friula</language>
 			<language type="fy">frisa</language>
 			<language type="ga">irlanda</language>
+			<language type="gaa" draft="unconfirmed">gaa</language>
 			<language type="gd">gaela</language>
+			<language type="gez" draft="unconfirmed">geeza</language>
+			<language type="gil" draft="unconfirmed">kiribata</language>
 			<language type="gl">galega</language>
 			<language type="gn">gvarania</language>
+			<language type="gor" draft="unconfirmed">gorontala</language>
+			<language type="gsw" draft="unconfirmed">svisgermana</language>
 			<language type="gu">guĝarata</language>
+			<language type="guz" draft="unconfirmed">gusia</language>
+			<language type="gv" draft="unconfirmed">manksa</language>
+			<language type="gwi" draft="unconfirmed">gviĉina</language>
 			<language type="ha">haŭsa</language>
+			<language type="hai" draft="unconfirmed">haida</language>
 			<language type="haw">havaja</language>
+			<language type="hax" draft="unconfirmed">sud-haida</language>
 			<language type="he">hebrea</language>
 			<language type="hi">hinda</language>
+			<language type="hil" draft="unconfirmed">hiligajnona</language>
+			<language type="hmn" draft="unconfirmed">mjaŭa</language>
 			<language type="hr">kroata</language>
+			<language type="hsb" draft="unconfirmed">suprasoraba</language>
 			<language type="ht">haitia kreola</language>
 			<language type="hu">hungara</language>
+			<language type="hup" draft="unconfirmed">hupa</language>
+			<language type="hur" draft="unconfirmed">halkomelema</language>
 			<language type="hy">armena</language>
+			<language type="hz" draft="unconfirmed">herera</language>
 			<language type="ia">interlingvao</language>
+			<language type="iba" draft="unconfirmed">ibana</language>
+			<language type="ibb" draft="unconfirmed">ibibia</language>
 			<language type="id">indonezia</language>
 			<language type="ie">okcidentalo</language>
+			<language type="ig" draft="unconfirmed">igba</language>
+			<language type="ii" draft="unconfirmed">jia</language>
 			<language type="ik">eskima</language>
+			<language type="ikt" draft="unconfirmed">inuvialuktuna</language>
+			<language type="ilo" draft="unconfirmed">iloka</language>
+			<language type="inh" draft="unconfirmed">inguŝa</language>
+			<language type="io" draft="unconfirmed">Ido</language>
 			<language type="is">islanda</language>
 			<language type="it">itala</language>
 			<language type="iu">inuita</language>
 			<language type="ja">japana</language>
+			<language type="jbo" draft="unconfirmed">Loĵbano</language>
+			<language type="jmc" draft="unconfirmed">kimaĉame</language>
 			<language type="jv">java</language>
 			<language type="ka">kartvela</language>
+			<language type="kab" draft="unconfirmed">kabila</language>
+			<language type="kac" draft="unconfirmed">kaĉina</language>
+			<language type="kam" draft="unconfirmed">kambaa</language>
+			<language type="kbd" draft="unconfirmed">kabarda</language>
+			<language type="kde" draft="unconfirmed">makonda</language>
+			<language type="kea" draft="unconfirmed">kaboverda kreolo</language>
+			<language type="kfo" draft="unconfirmed">malinka (Koro)</language>
+			<language type="kgp" draft="unconfirmed">kainganga</language>
+			<language type="kha" draft="unconfirmed">kasia</language>
+			<language type="ki" draft="unconfirmed">kikuja</language>
+			<language type="kj" draft="unconfirmed">kuanjama</language>
 			<language type="kk">kazaĥa</language>
 			<language type="kl">gronlanda</language>
+			<language type="kln" draft="unconfirmed">kalenĝina</language>
 			<language type="km">kmera</language>
+			<language type="kmb" draft="unconfirmed">kimbunda</language>
 			<language type="kn">kanara</language>
 			<language type="ko">korea</language>
+			<language type="kok" draft="unconfirmed">konkana</language>
+			<language type="kpe" draft="unconfirmed">kpelea</language>
+			<language type="kr" draft="unconfirmed">kanura</language>
+			<language type="krc" draft="unconfirmed">karaĉaj-balkara</language>
+			<language type="krl" draft="unconfirmed">karela</language>
+			<language type="kru" draft="unconfirmed">kuruksa</language>
 			<language type="ks">kaŝmira</language>
+			<language type="ksb" draft="unconfirmed">ŝambaa</language>
+			<language type="ksh" draft="unconfirmed">kolonja</language>
 			<language type="ku">kurda</language>
+			<language type="kum" draft="unconfirmed">kumika</language>
+			<language type="kv" draft="unconfirmed">komia</language>
+			<language type="kw" draft="unconfirmed">kornvala</language>
 			<language type="ky">kirgiza</language>
 			<language type="la">latino</language>
+			<language type="lad" draft="unconfirmed">judhispana</language>
+			<language type="lag" draft="unconfirmed">rangia</language>
 			<language type="lb">luksemburga</language>
+			<language type="lez" draft="unconfirmed">lezga</language>
+			<language type="lg" draft="unconfirmed">ganda</language>
+			<language type="li" draft="unconfirmed">limburga</language>
+			<language type="lil" draft="unconfirmed">lilueta</language>
+			<language type="lkt" draft="unconfirmed">lakota</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laŭa</language>
+			<language type="lou" draft="unconfirmed">luiziana kreolo</language>
+			<language type="loz" draft="unconfirmed">lozia</language>
+			<language type="lrc" draft="unconfirmed">nord-lura</language>
 			<language type="lt">litova</language>
+			<language type="lu" draft="unconfirmed">katanga-luba</language>
+			<language type="lua" draft="unconfirmed">kasaja-luba</language>
+			<language type="lun" draft="unconfirmed">lundaa</language>
+			<language type="luo" draft="unconfirmed">lua</language>
+			<language type="luy" draft="unconfirmed">luhia</language>
 			<language type="lv">latva</language>
+			<language type="mad" draft="unconfirmed">madura</language>
+			<language type="mag" draft="unconfirmed">magaha</language>
+			<language type="mai" draft="unconfirmed">majtila</language>
+			<language type="mak" draft="unconfirmed">makasara</language>
+			<language type="mas" draft="unconfirmed">masaja</language>
+			<language type="mdf" draft="unconfirmed">mokŝa</language>
+			<language type="men" draft="unconfirmed">mendea</language>
+			<language type="mer" draft="unconfirmed">merua</language>
+			<language type="mfe" draft="unconfirmed">maŭrica kreolo</language>
 			<language type="mg">malagasa</language>
+			<language type="mgh" draft="unconfirmed">makua (Meetto)</language>
+			<language type="mh" draft="unconfirmed">marŝala</language>
 			<language type="mi">maoria</language>
+			<language type="mic" draft="unconfirmed">mikmaka</language>
+			<language type="min" draft="unconfirmed">minankabaŭa</language>
 			<language type="mk">makedona</language>
 			<language type="ml">malajalama</language>
 			<language type="mn">mongola</language>
+			<language type="mni" draft="unconfirmed">manipura</language>
+			<language type="moe" draft="unconfirmed">inua</language>
+			<language type="moh" draft="unconfirmed">mohoka</language>
+			<language type="mos" draft="unconfirmed">mosia</language>
 			<language type="mr">marata</language>
 			<language type="ms">malaja</language>
 			<language type="mt">malta</language>
 			<language type="mul" draft="unconfirmed">pluraj lingvoj</language>
+			<language type="mus" draft="unconfirmed">krika</language>
+			<language type="mwl" draft="unconfirmed">miranda</language>
 			<language type="my">birma</language>
+			<language type="myv" draft="unconfirmed">erzja</language>
+			<language type="mzn" draft="unconfirmed">mazandarana</language>
 			<language type="na">naura</language>
+			<language type="nap" draft="unconfirmed">napola</language>
+			<language type="naq" draft="unconfirmed">nama</language>
 			<language type="nb">dannorvega</language>
+			<language type="nd" draft="unconfirmed">nord-matabela</language>
+			<language type="nds" draft="unconfirmed">platgermana</language>
 			<language type="ne">nepala</language>
+			<language type="new" draft="unconfirmed">nevara</language>
+			<language type="ng" draft="unconfirmed">ndonga</language>
+			<language type="nia" draft="unconfirmed">niasa</language>
+			<language type="niu" draft="unconfirmed">niua</language>
 			<language type="nl">nederlanda</language>
 			<language type="nl_BE" draft="unconfirmed">flandra</language>
 			<language type="nn">novnorvega</language>
 			<language type="no">norvega</language>
+			<language type="nog" draft="unconfirmed">nogaja</language>
+			<language type="nqo" draft="unconfirmed">N’Ko</language>
+			<language type="nr" draft="unconfirmed">sud-matabela</language>
+			<language type="nso" draft="unconfirmed">nord-sota</language>
+			<language type="nus" draft="unconfirmed">nuera</language>
+			<language type="nv" draft="unconfirmed">navaha</language>
+			<language type="ny" draft="unconfirmed">njanĝa</language>
+			<language type="nyn" draft="unconfirmed">njankora</language>
 			<language type="oc">okcitana</language>
+			<language type="ojb" draft="unconfirmed">oĝibva nordokcidenta</language>
+			<language type="ojc" draft="unconfirmed">oĝibva centra</language>
+			<language type="ojw" draft="unconfirmed">oĝibva okcidenta</language>
+			<language type="oka" draft="unconfirmed">okanagana</language>
 			<language type="om">oroma</language>
 			<language type="or">orijo</language>
+			<language type="os" draft="unconfirmed">oseta</language>
 			<language type="pa">panĝaba</language>
+			<language type="pag" draft="unconfirmed">pangasina</language>
+			<language type="pam" draft="unconfirmed">pampanga</language>
+			<language type="pap" draft="unconfirmed">Papiamento</language>
+			<language type="pau" draft="unconfirmed">palaŭa</language>
+			<language type="pcm" draft="unconfirmed">niĝeria piĝino</language>
+			<language type="pis" draft="unconfirmed">piĵina</language>
 			<language type="pl">pola</language>
+			<language type="pqm" draft="unconfirmed">malesita-pasamakvodja</language>
 			<language type="ps">paŝtoa</language>
 			<language type="pt">portugala</language>
 			<language type="pt_BR">brazilportugala</language>
 			<language type="pt_PT">eŭropportugala</language>
 			<language type="qu">keĉua</language>
+			<language type="rap" draft="unconfirmed">rapanuia</language>
+			<language type="rar" draft="unconfirmed">maoria kukinsula</language>
+			<language type="rhg" draft="unconfirmed">rohinĝa</language>
 			<language type="rm">romanĉa</language>
 			<language type="rn">burunda</language>
 			<language type="ro">rumana</language>
+			<language type="rof" draft="unconfirmed">kiromba</language>
 			<language type="ru">rusa</language>
+			<language type="rup" draft="unconfirmed">arumana</language>
 			<language type="rw">ruanda</language>
 			<language type="sa">sanskrito</language>
+			<language type="sad" draft="unconfirmed">sandavea</language>
+			<language type="sah" draft="unconfirmed">jakuta</language>
+			<language type="saq" draft="unconfirmed">samburua</language>
+			<language type="sat" draft="unconfirmed">santala</language>
+			<language type="sba" draft="unconfirmed">gambaja</language>
+			<language type="sc" draft="unconfirmed">sarda</language>
+			<language type="scn" draft="unconfirmed">sicilia</language>
+			<language type="sco" draft="unconfirmed">skota</language>
 			<language type="sd">sinda</language>
+			<language type="se" draft="unconfirmed">nord-samea</language>
 			<language type="sg">sangoa</language>
 			<language type="sh">serbo-Kroata</language>
+			<language type="shi" draft="unconfirmed">ŝelha</language>
+			<language type="shn" draft="unconfirmed">ŝana</language>
 			<language type="si">sinhala</language>
 			<language type="sk">slovaka</language>
 			<language type="sl">slovena</language>
+			<language type="slh" draft="unconfirmed">sud-laŝucida</language>
 			<language type="sm">samoa</language>
+			<language type="smn" draft="unconfirmed">anar-samea</language>
+			<language type="sms" draft="unconfirmed">skolt-samea</language>
 			<language type="sn">ŝona</language>
+			<language type="snk" draft="unconfirmed">soninka</language>
 			<language type="so">somala</language>
 			<language type="sq">albana</language>
 			<language type="sr">serba</language>
+			<language type="srn" draft="unconfirmed">surinama</language>
 			<language type="ss">svazia</language>
 			<language type="st">sota</language>
+			<language type="str" draft="unconfirmed">saliŝa nord-markola</language>
 			<language type="su">sunda</language>
+			<language type="suk" draft="unconfirmed">sukuma</language>
 			<language type="sv">sveda</language>
 			<language type="sw">svahila</language>
+			<language type="swb" draft="unconfirmed">maorea</language>
+			<language type="syr" draft="unconfirmed">siria</language>
 			<language type="ta">tamila</language>
+			<language type="tce" draft="unconfirmed">sud-tuĉona</language>
 			<language type="te">telugua</language>
+			<language type="tem" draft="unconfirmed">temna</language>
+			<language type="teo" draft="unconfirmed">tesa</language>
+			<language type="tet" draft="unconfirmed">tetuna</language>
 			<language type="tg">taĝika</language>
+			<language type="tgx" draft="unconfirmed">tagiŝa</language>
 			<language type="th">taja</language>
+			<language type="tht" draft="unconfirmed">taltana</language>
 			<language type="ti">tigraja</language>
+			<language type="tig" draft="unconfirmed">tigrea</language>
 			<language type="tk">turkmena</language>
 			<language type="tl">tagaloga</language>
 			<language type="tlh" draft="contributed">klingona</language>
+			<language type="tli" draft="unconfirmed">tlingita</language>
 			<language type="tn">cvana</language>
 			<language type="to">tongaa</language>
+			<language type="tok" draft="unconfirmed">Tokipono</language>
+			<language type="tpi" draft="unconfirmed">Tokpisino</language>
 			<language type="tr">turka</language>
+			<language type="trv" draft="unconfirmed">sedeka</language>
 			<language type="ts">conga</language>
 			<language type="tt">tatara</language>
+			<language type="ttm" draft="unconfirmed">nord-tuĉona</language>
+			<language type="tum" draft="unconfirmed">tumbuka</language>
+			<language type="tvl" draft="unconfirmed">tuvala</language>
+			<language type="ty" draft="unconfirmed">tahitia</language>
+			<language type="tyv" draft="unconfirmed">tuva</language>
+			<language type="tzm" draft="unconfirmed">tamaziĥta mez-atlasa</language>
+			<language type="udm" draft="unconfirmed">udmurta</language>
 			<language type="ug">ujgura</language>
 			<language type="uk">ukraina</language>
+			<language type="umb" draft="unconfirmed">ovimbunda</language>
 			<language type="und">nekonata lingvo</language>
 			<language type="ur">urduo</language>
 			<language type="uz">uzbeka</language>
+			<language type="vai" draft="unconfirmed">vaja</language>
+			<language type="ve" draft="unconfirmed">vendaa</language>
 			<language type="vi">vjetnama</language>
 			<language type="vo">volapuko</language>
+			<language type="vun" draft="unconfirmed">kivunja</language>
+			<language type="wa" draft="unconfirmed">valona</language>
+			<language type="wae" draft="unconfirmed">germana valza</language>
+			<language type="war" draft="unconfirmed">varaja</language>
 			<language type="wo">volofa</language>
+			<language type="wuu" draft="unconfirmed">vua</language>
+			<language type="xal" draft="unconfirmed">kalmuka</language>
 			<language type="xh">ksosa</language>
 			<language type="yi">jida</language>
 			<language type="yo">joruba</language>
+			<language type="yrl" draft="unconfirmed">nengatua</language>
+			<language type="yue" draft="unconfirmed">kantona</language>
+			<language type="yue" alt="menu" draft="unconfirmed">ĉina kantona</language>
 			<language type="za">ĝuanga</language>
+			<language type="zgh" draft="unconfirmed">tamaziĥta maroka norma</language>
 			<language type="zh">ĉina</language>
+			<language type="zh" alt="menu" draft="unconfirmed">ĉina, normlingvo</language>
 			<language type="zh_Hans">ĉina simpligita</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">ĉina normlingvo simpligita</language>
 			<language type="zh_Hant">ĉina tradicia</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">ĉina normlingvo tradicia</language>
 			<language type="zu">zulua</language>
 			<language type="zxx">nelingvaĵo</language>
+			<language type="zza" draft="unconfirmed">zazaa</language>
 		</languages>
 		<scripts>
 			<script type="Arab" draft="unconfirmed">araba</script>
@@ -208,6 +442,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</scripts>
 		<territories>
 			<territory type="001">Mondo</territory>
+			<territory type="002" draft="unconfirmed">Afriko</territory>
+			<territory type="003" draft="unconfirmed">Nordameriko</territory>
+			<territory type="005" draft="unconfirmed">Sudameriko</territory>
+			<territory type="009" draft="unconfirmed">Oceanio</territory>
+			<territory type="011" draft="unconfirmed">Okcidenta Afriko</territory>
+			<territory type="013" draft="unconfirmed">Centra Ameriko</territory>
+			<territory type="014" draft="unconfirmed">Orienta Afriko</territory>
+			<territory type="015" draft="unconfirmed">Norda Afriko</territory>
+			<territory type="017" draft="unconfirmed">Centra Afriko</territory>
+			<territory type="018" draft="unconfirmed">Suda Afriko</territory>
+			<territory type="019" draft="unconfirmed">Amerikoj</territory>
+			<territory type="021" draft="unconfirmed">Norda Ameriko</territory>
+			<territory type="029" draft="unconfirmed">Kariba regiono</territory>
+			<territory type="030" draft="unconfirmed">Orienta Azio</territory>
+			<territory type="034" draft="unconfirmed">Suda Azio</territory>
+			<territory type="035" draft="unconfirmed">Sud-orienta Azio</territory>
+			<territory type="039" draft="unconfirmed">Suda Eŭropo</territory>
+			<territory type="053" draft="unconfirmed">Aŭstralazio</territory>
+			<territory type="054" draft="unconfirmed">Melanezio</territory>
+			<territory type="057" draft="unconfirmed">Mikronezia regiono</territory>
+			<territory type="061" draft="unconfirmed">Polinezio</territory>
+			<territory type="142" draft="unconfirmed">Azio</territory>
+			<territory type="143" draft="unconfirmed">Centra Azio</territory>
+			<territory type="145" draft="unconfirmed">Okcidenta Azio</territory>
+			<territory type="150" draft="unconfirmed">Eŭropo</territory>
+			<territory type="151" draft="unconfirmed">Orienta Eŭropo</territory>
+			<territory type="154" draft="unconfirmed">Norda Eŭropo</territory>
+			<territory type="155" draft="unconfirmed">Okcidenta Eŭropo</territory>
+			<territory type="202" draft="unconfirmed">Subsahara Afriko</territory>
+			<territory type="419" draft="unconfirmed">Latinameriko</territory>
+			<territory type="AC" draft="unconfirmed">Ascension</territory>
 			<territory type="AD">Andoro</territory>
 			<territory type="AE">Unuiĝintaj Arabaj Emirlandoj</territory>
 			<territory type="AF">Afganujo</territory>
@@ -218,9 +483,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AO">Angolo</territory>
 			<territory type="AQ">Antarkto</territory>
 			<territory type="AR">Argentino</territory>
+			<territory type="AS" draft="unconfirmed">Usona Samoo</territory>
 			<territory type="AT">Aŭstrujo</territory>
 			<territory type="AU">Aŭstralio</territory>
 			<territory type="AW">Arubo</territory>
+			<territory type="AX" draft="unconfirmed">Alando</territory>
 			<territory type="AZ">Azerbajĝano</territory>
 			<territory type="BA">Bosnio-Hercegovino</territory>
 			<territory type="BB">Barbado</territory>
@@ -231,18 +498,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BH">Barejno</territory>
 			<territory type="BI">Burundo</territory>
 			<territory type="BJ">Benino</territory>
+			<territory type="BL" draft="unconfirmed">Sankta Bartolomeo</territory>
 			<territory type="BM">Bermudoj</territory>
 			<territory type="BN">Brunejo</territory>
 			<territory type="BO">Bolivio</territory>
+			<territory type="BQ" draft="unconfirmed">Karibia Nederlando</territory>
 			<territory type="BR">Brazilo</territory>
 			<territory type="BS">Bahamoj</territory>
 			<territory type="BT">Butano</territory>
+			<territory type="BV" draft="unconfirmed">Buvetinsulo</territory>
 			<territory type="BW">Bocvano</territory>
 			<territory type="BY">Belorusujo</territory>
 			<territory type="BZ">Belizo</territory>
 			<territory type="CA">Kanado</territory>
+			<territory type="CC" draft="unconfirmed">Kokosinsuloj</territory>
+			<territory type="CD" draft="unconfirmed">Kongo Kinŝasa</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">Demokratia Respubliko Kongo</territory>
 			<territory type="CF">Centr-Afrika Respubliko</territory>
 			<territory type="CG">Kongolo</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">Respubliko Kongo</territory>
 			<territory type="CH">Svisujo</territory>
 			<territory type="CI">Ebur-Bordo</territory>
 			<territory type="CK">Kukinsuloj</territory>
@@ -250,17 +524,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CM">Kameruno</territory>
 			<territory type="CN">Ĉinujo</territory>
 			<territory type="CO">Kolombio</territory>
+			<territory type="CP" draft="unconfirmed">Klipertono</territory>
 			<territory type="CR">Kostariko</territory>
 			<territory type="CU">Kubo</territory>
 			<territory type="CV">Kabo-Verdo</territory>
+			<territory type="CW" draft="unconfirmed">Kuracao</territory>
+			<territory type="CX" draft="unconfirmed">Kristnaskinsulo</territory>
 			<territory type="CY">Kipro</territory>
 			<territory type="CZ">Ĉeĥujo</territory>
 			<territory type="DE">Germanujo</territory>
+			<territory type="DG" draft="unconfirmed">Diego Garcia</territory>
 			<territory type="DJ">Ĝibutio</territory>
 			<territory type="DK">Danujo</territory>
 			<territory type="DM">Dominiko</territory>
 			<territory type="DO">Domingo</territory>
 			<territory type="DZ">Alĝerio</territory>
+			<territory type="EA" draft="unconfirmed">Ceŭto kaj Melilo</territory>
 			<territory type="EC">Ekvadoro</territory>
 			<territory type="EE">Estonujo</territory>
 			<territory type="EG">Egipto</territory>
@@ -268,16 +547,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ER">Eritreo</territory>
 			<territory type="ES">Hispanujo</territory>
 			<territory type="ET">Etiopujo</territory>
+			<territory type="EU" draft="unconfirmed">Eŭropa Unio</territory>
+			<territory type="EZ" draft="unconfirmed">Eŭrozono</territory>
 			<territory type="FI">Finnlando</territory>
 			<territory type="FJ">Fiĝoj</territory>
+			<territory type="FK" draft="unconfirmed">Falklandoj</territory>
 			<territory type="FM">Mikronezio</territory>
 			<territory type="FO">Ferooj</territory>
 			<territory type="FR">Francujo</territory>
 			<territory type="GA">Gabono</territory>
 			<territory type="GB">Unuiĝinta Reĝlando</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">Britujo</territory>
 			<territory type="GD">Grenado</territory>
 			<territory type="GE">Kartvelujo</territory>
 			<territory type="GF">Franca Gviano</territory>
+			<territory type="GG" draft="unconfirmed">Gernezejo</territory>
 			<territory type="GH">Ganao</territory>
 			<territory type="GI">Ĝibraltaro</territory>
 			<territory type="GL">Gronlando</territory>
@@ -297,15 +581,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="HR">Kroatujo</territory>
 			<territory type="HT">Haitio</territory>
 			<territory type="HU">Hungarujo</territory>
+			<territory type="IC" draft="unconfirmed">Kanarioj</territory>
 			<territory type="ID">Indonezio</territory>
 			<territory type="IE">Irlando</territory>
 			<territory type="IL">Israelo</territory>
+			<territory type="IM" draft="unconfirmed">Mankinsulo</territory>
 			<territory type="IN">Hindujo</territory>
 			<territory type="IO">Brita Hindoceana Teritorio</territory>
 			<territory type="IQ">Irako</territory>
 			<territory type="IR">Irano</territory>
 			<territory type="IS">Islando</territory>
 			<territory type="IT">Italujo</territory>
+			<territory type="JE" draft="unconfirmed">Ĵerzejo</territory>
 			<territory type="JM">Jamajko</territory>
 			<territory type="JO">Jordanio</territory>
 			<territory type="JP">Japanujo</territory>
@@ -334,14 +621,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MA">Maroko</territory>
 			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldavujo</territory>
+			<territory type="ME" draft="unconfirmed">Montenegro</territory>
+			<territory type="MF" draft="unconfirmed">Saint-Martin</territory>
 			<territory type="MG">Madagaskaro</territory>
 			<territory type="MH">Marŝaloj</territory>
+			<territory type="MK" draft="unconfirmed">Nord-Makedonujo</territory>
 			<territory type="ML">Malio</territory>
 			<territory type="MM">Mjanmao</territory>
 			<territory type="MN">Mongolujo</territory>
+			<territory type="MO" draft="unconfirmed">Makao</territory>
 			<territory type="MP">Nord-Marianoj</territory>
 			<territory type="MQ">Martiniko</territory>
 			<territory type="MR">Maŭritanujo</territory>
+			<territory type="MS" draft="unconfirmed">Moncerato</territory>
 			<territory type="MT">Malto</territory>
 			<territory type="MU">Maŭricio</territory>
 			<territory type="MV">Maldivoj</territory>
@@ -372,12 +664,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PM">Sent-Piero kaj Mikelono</territory>
 			<territory type="PN">Pitkarna Insulo</territory>
 			<territory type="PR">Puerto-Riko</territory>
+			<territory type="PS" draft="unconfirmed">Palestino</territory>
 			<territory type="PT">Portugalujo</territory>
 			<territory type="PW">Belaŭo</territory>
 			<territory type="PY">Paragvajo</territory>
 			<territory type="QA">Kataro</territory>
+			<territory type="QO" draft="unconfirmed">malproksimaj insuletoj de Oceanio</territory>
 			<territory type="RE">Reunio</territory>
 			<territory type="RO">Rumanujo</territory>
+			<territory type="RS" draft="unconfirmed">Serbujo</territory>
 			<territory type="RU">Rusujo</territory>
 			<territory type="RW">Ruando</territory>
 			<territory type="SA">Saŭda Arabujo</territory>
@@ -398,12 +693,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SS" draft="provisional">Sud-Sudano</territory>
 			<territory type="ST">Sao-Tomeo kaj Principeo</territory>
 			<territory type="SV">Salvadoro</territory>
+			<territory type="SX" draft="unconfirmed">Sint-Maarten</territory>
 			<territory type="SY">Sirio</territory>
 			<territory type="SZ">Svazilando</territory>
+			<territory type="TA" draft="unconfirmed">Tristan da Cunha</territory>
+			<territory type="TC" draft="unconfirmed">Turkoj kaj Kajkoj</territory>
 			<territory type="TD">Ĉado</territory>
+			<territory type="TF" draft="unconfirmed">Francaj Sudaj Teritorioj</territory>
 			<territory type="TG">Togolo</territory>
 			<territory type="TH">Tajlando</territory>
 			<territory type="TJ">Taĝikujo</territory>
+			<territory type="TK" draft="unconfirmed">Tokelao</territory>
+			<territory type="TL" draft="unconfirmed">Orienta Timoro</territory>
 			<territory type="TM">Turkmenujo</territory>
 			<territory type="TN">Tunizio</territory>
 			<territory type="TO">Tongo</territory>
@@ -415,6 +716,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UA">Ukrajno</territory>
 			<territory type="UG">Ugando</territory>
 			<territory type="UM">Usonaj malgrandaj insuloj</territory>
+			<territory type="UN" draft="unconfirmed">Unuiĝintaj Nacioj</territory>
 			<territory type="US">Usono</territory>
 			<territory type="UY">Urugvajo</territory>
 			<territory type="UZ">Uzbekujo</territory>
@@ -427,6 +729,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Vanuatuo</territory>
 			<territory type="WF">Valiso kaj Futuno</territory>
 			<territory type="WS">Samoo</territory>
+			<territory type="XA" draft="unconfirmed">pseŭdo-supersignoj</territory>
+			<territory type="XB" draft="unconfirmed">pseŭdo-inversdirekta</territory>
+			<territory type="XK" draft="unconfirmed">Kosovo</territory>
 			<territory type="YE">Jemeno</territory>
 			<territory type="YT">Majoto</territory>
 			<territory type="ZA">Sud-Afriko</territory>
@@ -498,91 +803,185 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'je' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'je' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="unconfirmed">M y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="unconfirmed">y-MM-dd GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="unconfirmed">E, y-MM-dd GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="unconfirmed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="unconfirmed">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="unconfirmed">QQQ 'de' y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="unconfirmed">QQQQ 'de' y G</dateFormatItem>
+					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y GGGGG – MMM y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y GGGGG – d MMM y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d MMM y GGGGG – E, d MMM y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM-dd – MMM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM-dd – MMM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MMM-dd – E, MMM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MMM-dd – E, MMM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">G y–y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">G y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">G y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">y-MM – y-MM GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y-MM – y-MM GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">G y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">G y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">G y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y-MM-dd – y-MM-dd GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M" draft="unconfirmed">G y-MMM – y-MMM</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">G y-MMM – y-MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">G y-MMM-dd – y-MMM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">G y-MMM-dd – y-MMM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">G y-MMM-dd – y-MMM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d-'a' - E, d-'a' 'de' MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d-'a' 'de' MMM – E, d-'a' 'de' MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d-'a' 'de' MMM y – E, d-'a' 'de' MMM y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -620,6 +1019,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jan</month>
+							<month type="2" draft="unconfirmed">Feb</month>
+							<month type="3" draft="unconfirmed">Mar</month>
+							<month type="4" draft="unconfirmed">Apr</month>
+							<month type="5" draft="unconfirmed">Maj</month>
+							<month type="6" draft="unconfirmed">Jun</month>
+							<month type="7" draft="unconfirmed">Jul</month>
+							<month type="8" draft="unconfirmed">Aŭg</month>
+							<month type="9" draft="unconfirmed">Sep</month>
+							<month type="10" draft="unconfirmed">Okt</month>
+							<month type="11" draft="unconfirmed">Nov</month>
+							<month type="12" draft="unconfirmed">Dec</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">J</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -695,19 +1108,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">K1</quarter>
-							<quarter type="2" draft="unconfirmed">K2</quarter>
-							<quarter type="3" draft="unconfirmed">K3</quarter>
-							<quarter type="4" draft="unconfirmed">K4</quarter>
+							<quarter type="1" draft="unconfirmed">1. jk.</quarter>
+							<quarter type="2" draft="unconfirmed">2. jk.</quarter>
+							<quarter type="3" draft="unconfirmed">3. jk.</quarter>
+							<quarter type="4" draft="unconfirmed">4. jk.</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1-a kvaronjaro</quarter>
-							<quarter type="2" draft="unconfirmed">2-a kvaronjaro</quarter>
-							<quarter type="3" draft="unconfirmed">3-a kvaronjaro</quarter>
-							<quarter type="4" draft="unconfirmed">4-a kvaronjaro</quarter>
+							<quarter type="1" draft="unconfirmed">1-a jarkvarono</quarter>
+							<quarter type="2" draft="unconfirmed">2-a jarkvarono</quarter>
+							<quarter type="3" draft="unconfirmed">3-a jarkvarono</quarter>
+							<quarter type="4" draft="unconfirmed">4-a jarkvarono</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1. jk.</quarter>
+							<quarter type="2" draft="unconfirmed">2. jk.</quarter>
+							<quarter type="3" draft="unconfirmed">3. jk.</quarter>
+							<quarter type="4" draft="unconfirmed">4. jk.</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">1</quarter>
 							<quarter type="2" draft="unconfirmed">2</quarter>
@@ -715,10 +1134,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1-a kvaronjaro</quarter>
-							<quarter type="2" draft="unconfirmed">2-a kvaronjaro</quarter>
-							<quarter type="3" draft="unconfirmed">3-a kvaronjaro</quarter>
-							<quarter type="4" draft="unconfirmed">4-a kvaronjaro</quarter>
+							<quarter type="1" draft="unconfirmed">1-a jarkvarono</quarter>
+							<quarter type="2" draft="unconfirmed">2-a jarkvarono</quarter>
+							<quarter type="3" draft="unconfirmed">3-a jarkvarono</quarter>
+							<quarter type="4" draft="unconfirmed">4-a jarkvarono</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -737,23 +1156,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">ptm</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">a</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">aK</era>
-						<era type="0" alt="variant" draft="unconfirmed">antaŭ Komuna Erao</era>
+						<era type="0" alt="variant" draft="unconfirmed">antaŭ Kristo</era>
 						<era type="1">pK</era>
-						<era type="1" alt="variant" draft="unconfirmed">Komuna Erao</era>
+						<era type="1" alt="variant" draft="unconfirmed">post Kristo</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">aK</era>
-						<era type="0" alt="variant" draft="unconfirmed">a.K.E.</era>
 						<era type="1">pK</era>
-						<era type="1" alt="variant" draft="unconfirmed">K.E.</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">aK</era>
-						<era type="0" alt="variant" draft="unconfirmed">aKE</era>
 						<era type="1">pK</era>
 						<era type="1" alt="variant" draft="unconfirmed">KE</era>
 					</eraNarrow>
@@ -811,103 +1233,191 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'je' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'je' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d" draft="unconfirmed">d</dateFormatItem>
-						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, MM-dd</dateFormatItem>
+						<dateFormatItem id="MMM" draft="unconfirmed">MMM</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd" draft="unconfirmed">E 'la' d-'an' 'de' MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one" draft="unconfirmed">W-'a' 'semajno' 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">W-'a' 'semajno' 'de' MMMM</dateFormatItem>
 						<dateFormatItem id="y" draft="unconfirmed">y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">E, y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd" draft="unconfirmed">E 'la' d-'an' 'de' MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ 'de' y</dateFormatItem>
+						<dateFormatItem id="yw" count="one" draft="unconfirmed">w-'a' 'semajno' 'de' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="unconfirmed">w-'a' 'semajno' 'de' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Timezone" draft="unconfirmed">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, MM-dd – E, MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM-dd – MMM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM-dd – MMM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, MMM-dd – E, MMM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, MMM-dd – E, MMM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y-MM – y-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y-MM-dd – y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, y-MM-dd – E, y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M" draft="unconfirmed">y-MMM – y-MMM</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y-MMM – y-MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">y-MMM-dd – y-MMM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">y-MMM-dd – y-MMM-dd</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y-MMM-dd – y-MMM-dd</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d–d MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d-'a' - E, d-'a' 'de' MMM y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d-'a' 'de' MMM – E, d-'a' 'de' MMM y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d-'a' 'de' MMM y – E, d-'a' 'de' MMM y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -931,15 +1441,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} jaroj</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter">
-				<displayName draft="unconfirmed">kvaronjaro</displayName>
+			<field type="year-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta j.</relative>
+				<relative type="0" draft="unconfirmed">nuna j.</relative>
+				<relative type="1" draft="unconfirmed">venonta j.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="unconfirmed">post {0} kvaronjaro</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">post {0} kvaronjaroj</relativeTimePattern>
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} j.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} j.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} kvaronjaro</relativeTimePattern>
-					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} kvaronjaroj</relativeTimePattern>
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} j.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} j.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">jarkvarono</displayName>
+				<relative type="-1" draft="unconfirmed">pasinta jarkvarono</relative>
+				<relative type="0" draft="unconfirmed">nuna jarkvarono</relative>
+				<relative type="1" draft="unconfirmed">venonta jarkvarono</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} jarkvarono</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} jarkvaronoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} jarkvarono</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} jarkvaronoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">jk.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} jk.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} jk.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} jk.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} jk.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -956,6 +1493,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} monatoj</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">mon.</displayName>
+				<relative type="-1" draft="unconfirmed">pasinta mon.</relative>
+				<relative type="0" draft="unconfirmed">nuna mon.</relative>
+				<relative type="1" draft="unconfirmed">venonta mon.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} mon.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} mon.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta mon.</relative>
+				<relative type="0" draft="unconfirmed">nuna mon.</relative>
+				<relative type="1" draft="unconfirmed">venonta mon.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} mon.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} mon.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} mon.</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">semajno</displayName>
 				<relative type="-1" draft="unconfirmed">pasinta semajno</relative>
@@ -969,6 +1533,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} semajno</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} semajnoj</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">la semajno de {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">sem.</displayName>
+				<relative type="-1" draft="unconfirmed">pasinta sem.</relative>
+				<relative type="0" draft="unconfirmed">nuna sem.</relative>
+				<relative type="1" draft="unconfirmed">venonta sem.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} sem.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod draft="unconfirmed">la semajno de {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta sem.</relative>
+				<relative type="0" draft="unconfirmed">nuna sem.</relative>
+				<relative type="1" draft="unconfirmed">venonta sem.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} sem.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sem.</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod draft="unconfirmed">sem. de {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName draft="unconfirmed">semajno de monato</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">sem. de mon.</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">tago</displayName>
@@ -984,49 +1584,323 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} tagoj</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">t.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} t.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} t.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} t.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} t.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName draft="unconfirmed">tago de jaro</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName draft="unconfirmed">t. de j.</displayName>
+			</field>
 			<field type="weekday">
-				<displayName draft="unconfirmed">tago de la semajno</displayName>
+				<displayName draft="unconfirmed">tago de semajno</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName draft="unconfirmed">semajntago</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="unconfirmed">st.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName draft="unconfirmed">semajntago de monato</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName draft="unconfirmed">st. de monato</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1" draft="unconfirmed">pasinta dimanĉo</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu dimanĉo</relative>
 				<relative type="1" draft="unconfirmed">venonta dimanĉo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} dimanĉo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} dimanĉoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} dimanĉo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} dimanĉoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1" draft="unconfirmed">pasinta di.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu di.</relative>
+				<relative type="1" draft="unconfirmed">venonta di.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} di.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} di.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} di.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} di.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta d.</relative>
+				<relative type="0" draft="unconfirmed">nuna d.</relative>
+				<relative type="1" draft="unconfirmed">venonta d.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} d.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} d.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} d.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} d.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1" draft="unconfirmed">pasinta lundo</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu lundo</relative>
 				<relative type="1" draft="unconfirmed">venonta lundo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} lundo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} lundoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} lundo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} lundoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1" draft="unconfirmed">pasinta lu.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu lu.</relative>
+				<relative type="1" draft="unconfirmed">venonta lu.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} lu.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} lu.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} lu.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} lu.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta l.</relative>
+				<relative type="0" draft="unconfirmed">nuna l.</relative>
+				<relative type="1" draft="unconfirmed">venonta l.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} l.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} l.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} l.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} l.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1" draft="unconfirmed">pasinta mardo</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu mardo</relative>
 				<relative type="1" draft="unconfirmed">venonta mardo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} mardo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} mardoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} mardo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} mardoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1" draft="unconfirmed">pasinta ma.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu ma.</relative>
+				<relative type="1" draft="unconfirmed">venonta ma.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} ma.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} ma.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ma.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ma.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta ma.</relative>
+				<relative type="0" draft="unconfirmed">nuna ma.</relative>
+				<relative type="1" draft="unconfirmed">venonta ma.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} ma.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} ma.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ma.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ma.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1" draft="unconfirmed">pasinta merkredo</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu merkredo</relative>
 				<relative type="1" draft="unconfirmed">venonta merkredo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} merkredo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} merkredoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} merkredo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} merkredoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="unconfirmed">pasinta me.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu me.</relative>
+				<relative type="1" draft="unconfirmed">venonta me.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} me.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} me.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} me.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} me.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta me.</relative>
+				<relative type="0" draft="unconfirmed">nuna me.</relative>
+				<relative type="1" draft="unconfirmed">venonta me.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} me.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} me.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} me.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} me.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1" draft="unconfirmed">pasinta ĵaŭdo</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu ĵaŭdo</relative>
 				<relative type="1" draft="unconfirmed">venonta ĵaŭdo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} ĵaŭdo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} ĵaŭdoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ĵaŭdo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ĵaŭdoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1" draft="unconfirmed">pasinta ĵa.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu ĵa.</relative>
+				<relative type="1" draft="unconfirmed">venonta ĵa.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} ĵa.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} ĵa.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ĵa.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ĵa.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta ĵ.</relative>
+				<relative type="0" draft="unconfirmed">nuna ĵ.</relative>
+				<relative type="1" draft="unconfirmed">venonta ĵ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} ĵ.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} ĵ.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ĵ.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ĵ.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1" draft="unconfirmed">pasinta vendredo</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu vendredo</relative>
 				<relative type="1" draft="unconfirmed">venonta vendredo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} vendredo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} vendredoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} vendredo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} vendredoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1" draft="unconfirmed">pasinta ve.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu ve.</relative>
+				<relative type="1" draft="unconfirmed">venonta ve.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} ve.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} ve.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} ve.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} ve.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta v.</relative>
+				<relative type="0" draft="unconfirmed">nuna v.</relative>
+				<relative type="1" draft="unconfirmed">venonta v.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} v.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} v.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} v.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} v.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1" draft="unconfirmed">pasinta sabato</relative>
 				<relative type="0" draft="unconfirmed">ĉi tiu sabato</relative>
 				<relative type="1" draft="unconfirmed">venonta sabato</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} sabato</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} sabatoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sabato</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sabatoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1" draft="unconfirmed">pasinta sa.</relative>
+				<relative type="0" draft="unconfirmed">ĉi tiu sa.</relative>
+				<relative type="1" draft="unconfirmed">venonta sa.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} sa.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} sa.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sa.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sa.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1" draft="unconfirmed">pasinta s.</relative>
+				<relative type="0" draft="unconfirmed">nuna s.</relative>
+				<relative type="1" draft="unconfirmed">venonta s.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} s.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} s.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} s.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} s.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">tagotempo</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName draft="unconfirmed">atm/ptm</displayName>
+				<displayName draft="unconfirmed">mateno / posttagmezo / vespero</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName draft="unconfirmed">tagotempo</displayName>
 			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">horo</displayName>
+				<relative type="0" draft="unconfirmed">nuna horo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">post {0} horo</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">post {0} horoj</relativeTimePattern>
@@ -1038,9 +1912,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-narrow">
 				<displayName draft="unconfirmed">h</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} h</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} h</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} h</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minuto</displayName>
+				<relative type="0" draft="unconfirmed">nuna minuto</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">post {0} minuto</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">post {0} minutoj</relativeTimePattern>
@@ -1050,11 +1933,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} minutoj</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">min.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} min.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} min.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} min.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} min.</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="minute-narrow">
-				<displayName draft="unconfirmed">m</displayName>
+				<displayName draft="unconfirmed">min</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} min</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} min</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} min</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">sekundo</displayName>
+				<relative type="0" draft="unconfirmed">nun</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">post {0} sekundo</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">post {0} sekundoj</relativeTimePattern>
@@ -1064,15 +1967,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sekundoj</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">sek.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} sek.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} sek.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} sek.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} sek.</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="second-narrow">
 				<displayName draft="unconfirmed">s</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} s</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} s</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} s</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName draft="unconfirmed">horzono</displayName>
 			</field>
+			<field type="zone-narrow">
+				<displayName draft="unconfirmed">zono</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;−HH:mm</hourFormat>
+			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat draft="unconfirmed">UTC{0}</gmtFormat>
 			<gmtZeroFormat draft="unconfirmed">UTC</gmtZeroFormat>
 			<regionFormat draft="unconfirmed">tempo de {0}</regionFormat>
@@ -1082,54 +2007,881 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="unconfirmed">nekonata urbo</exemplarCity>
 			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity draft="unconfirmed">Andoro</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity draft="unconfirmed">Antigvo</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity draft="unconfirmed">Angvilo</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">Tirano</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity draft="unconfirmed">Luando</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="unconfirmed">Río Gallegos</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="unconfirmed">Mendoza</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="unconfirmed">San Juan</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="unconfirmed">Ushuaia</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="unconfirmed">La Rioja</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="unconfirmed">San Luis</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="unconfirmed">Catamarca</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity draft="unconfirmed">Saltaurbo</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="unconfirmed">San Salvador de Jujuy</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="unconfirmed">San Miguel de Tucumán</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">Kordobo</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="unconfirmed">Bonaero</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">Vieno</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity draft="unconfirmed">Arubo</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity draft="unconfirmed">Mariehamn</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity draft="unconfirmed">Sarajevo</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity draft="unconfirmed">Barbado</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Bruselo</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">Vagaduguo</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity draft="unconfirmed">Sofio</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity draft="unconfirmed">Buĵumburo</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity draft="unconfirmed">Porto-Novo</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity draft="unconfirmed">Sankta Bartolomeo</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">Bermudoj</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity draft="unconfirmed">La-Pazo</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity draft="unconfirmed">Kralendijk</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="unconfirmed">Eirunepé</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="unconfirmed">Rio Branco</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="unconfirmed">Porto Velho</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity draft="unconfirmed">Boa Vista</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="unconfirmed">Manaŭso</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="unconfirmed">Cuiabá</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity draft="unconfirmed">Santarém</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="unconfirmed">Campo Grande</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="unconfirmed">Belemo</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="unconfirmed">Araguaína</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="unconfirmed">San-Paŭlo</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="unconfirmed">Bahia</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity draft="unconfirmed">Fortalezo</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="unconfirmed">Maceió</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="unconfirmed">Recife</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="unconfirmed">Fernando de Noronha</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">Nasaŭo</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity draft="unconfirmed">Gaborono</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity draft="unconfirmed">Minsko</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">Belizo</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="unconfirmed">Dawson</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="unconfirmed">Whitehorse</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="unconfirmed">Inuvik</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="unconfirmed">Vankuvero</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity draft="unconfirmed">Fort Nelson</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="unconfirmed">Dawson Creek</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity draft="unconfirmed">Creston</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity draft="unconfirmed">Yellowknife</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="unconfirmed">Edmontono</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="unconfirmed">Swift Current</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="unconfirmed">Cambridge Bay</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="unconfirmed">Regina</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="unconfirmed">Vinipego</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="unconfirmed">Resolute</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity draft="unconfirmed">Rainy River</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="unconfirmed">Rankin Inlet</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="unconfirmed">Atikokan</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity draft="unconfirmed">Thunder Bay</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity draft="unconfirmed">Nipigon</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="unconfirmed">Toronto</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="unconfirmed">Ikaluito</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity draft="unconfirmed">Pangnirtung</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="unconfirmed">Monktono</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="unconfirmed">Halifakso</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="unconfirmed">Goose Bay</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="unconfirmed">Glace Bay</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="unconfirmed">Blanc-Sablon</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">St. John’s</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="unconfirmed">Kinŝaso</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="unconfirmed">Lubumbaŝo</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity draft="unconfirmed">Bango</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity draft="unconfirmed">Brazavilo</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">Zuriko</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">Abiĝano</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="unconfirmed">Paskinsulo</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity draft="unconfirmed">Punta Arenas</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity draft="unconfirmed">Santiago</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity draft="unconfirmed">Dualao</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity draft="unconfirmed">Bogoto</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">Kostariko</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">Havano</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">Kaboverdo</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">Kuracao</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">Prago</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity draft="unconfirmed">Büsingen am Hochrhein</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity draft="unconfirmed">Berlino</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">Ĝibutio</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">Kopenhago</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity draft="unconfirmed">Dominiko</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity draft="unconfirmed">Sankta Domingo</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">Alĝero</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">Galapagoj</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity draft="unconfirmed">Guayaquil</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">Talino</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">Kairo</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity draft="unconfirmed">Ajuno</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity draft="unconfirmed">Asmero</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">Kanarioj</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="unconfirmed">Ceŭto</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity draft="unconfirmed">Madrido</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity draft="unconfirmed">Adis-Abebo</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity draft="unconfirmed">Helsinko</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity draft="unconfirmed">Stanlejo</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">Ferooj</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity draft="unconfirmed">Parizo</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity draft="unconfirmed">Librevilo</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<exemplarCity draft="unconfirmed">Londono</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">Grenado</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity draft="unconfirmed">Kajeno</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity draft="unconfirmed">Gernezejo</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">Akrao</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity draft="unconfirmed">Ĝibraltaro</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="unconfirmed">Qaanaaq</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity draft="unconfirmed">Nuko</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="unconfirmed">Ittoqqortoormiit</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="unconfirmed">Danmarkshavn</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity draft="unconfirmed">Banjulo</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity draft="unconfirmed">Konakrio</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">Gvadelupo</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity draft="unconfirmed">Malabo</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">Ateno</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity draft="unconfirmed">Sud-Georgio</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity draft="unconfirmed">Gvatemalo</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="unconfirmed">Bisaŭo</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity draft="unconfirmed">Gujano</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity draft="unconfirmed">Tegucigalpo</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity draft="unconfirmed">Zagrebo</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">Portoprinco</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">Budapeŝto</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<exemplarCity draft="unconfirmed">Dublino</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">Mankinsulo</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity draft="unconfirmed">Ĉagosoj</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">Rejkjaviko</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">Romo</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">Ĵerzejo</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">Jamajko</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity draft="unconfirmed">Najrobio</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity draft="unconfirmed">Komoroj</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">Sankta Kristoforo</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">Kajmanoj</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">Sankta Lucio</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity draft="unconfirmed">Vaduzo</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity draft="unconfirmed">Monrovio</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity draft="unconfirmed">Maseruo</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">Vilno</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity draft="unconfirmed">Luksemburgo</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity draft="unconfirmed">Rigo</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">Tripolo</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity draft="unconfirmed">Kazablanko</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">Monako</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="unconfirmed">Kiŝinevo</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity draft="unconfirmed">Podgorico</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity draft="unconfirmed">Marigoto</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity draft="unconfirmed">Antananarivo</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity draft="unconfirmed">Skopjo</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity draft="unconfirmed">Bamako</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">Martiniko</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity draft="unconfirmed">Nuakŝoto</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">Moncerato</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity draft="unconfirmed">Malto</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity draft="unconfirmed">Maŭricio</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity draft="unconfirmed">Blantyre</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="unconfirmed">Tijuana</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">Hermosillo</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="unconfirmed">Mazatlán</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="unconfirmed">Chihuahua</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity draft="unconfirmed">Bahía de Banderas</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity draft="unconfirmed">Ojinaga</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">Monterejo</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">Meksikurbo</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity draft="unconfirmed">Matamoros</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">Merido</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">Kankuno</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity draft="unconfirmed">Maputo</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="unconfirmed">Vindhuko</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity draft="unconfirmed">Niamejo</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity draft="unconfirmed">Lagoso</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity draft="unconfirmed">Managvo</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">Amsterdamo</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity draft="unconfirmed">Oslo</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">Panamo</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity draft="unconfirmed">Limo</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">Varsovio</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity draft="unconfirmed">Mikelono</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">Puertoriko</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">Acoroj</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="unconfirmed">Madejro</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity draft="unconfirmed">Lisbono</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity draft="unconfirmed">Asunciono</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity draft="unconfirmed">Reunio</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">Bukareŝto</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">Beogrado</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity draft="unconfirmed">Kigalo</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity draft="unconfirmed">Mahé</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">Ĥartumo</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity draft="unconfirmed">Stokholmo</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity draft="unconfirmed">Sankta Heleno</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">Ljubljano</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity draft="unconfirmed">Longjerurbo</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity draft="unconfirmed">Bratislavo</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity draft="unconfirmed">Fritaŭno</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity draft="unconfirmed">Sanmarino</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity draft="unconfirmed">Dakaro</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">Mogadiŝo</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity draft="unconfirmed">Paramaribo</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity draft="unconfirmed">Ĝubao</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity draft="unconfirmed">Santomeo</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity draft="unconfirmed">Salvadoro</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity draft="unconfirmed">Lower Prince’s Quarter</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity draft="unconfirmed">Mbabano</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">Granda Turko</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity draft="unconfirmed">Niĝameno</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity draft="unconfirmed">Kergelenoj</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity draft="unconfirmed">Lomeo</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">Tunizo</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity draft="unconfirmed">Portospeno</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity draft="unconfirmed">Daresalamo</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity draft="unconfirmed">Uĵhorodo</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="unconfirmed">Kievo</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">Simferopolo</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity draft="unconfirmed">Zaporiĵo</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity draft="unconfirmed">Kampalo</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="unconfirmed">Adak</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="unconfirmed">Nome</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="unconfirmed">Anchorage</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">Yakutat</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity draft="unconfirmed">Sitka</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="unconfirmed">Juneau</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity draft="unconfirmed">Metlakatla</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="unconfirmed">Los-Anĝeleso</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="unconfirmed">Boise</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="unconfirmed">Fenikso</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="unconfirmed">Denvero</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">Beulah, Norda Dakoto</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">New Salem, Norda Dakoto</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">Center, Norda Dakoto</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="unconfirmed">Ĉikago</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="unconfirmed">Menominee</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">Vincennes, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">Petersburg, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">Tell City, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">Knox, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">Winamac, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">Marengo, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="unconfirmed">Indianapolo, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">Louisville</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">Vevay, Indianao</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">Monticello, Kentukio</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="unconfirmed">Detrojto</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">Novjorko</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity draft="unconfirmed">Montevideo</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">Vatikano</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">Sankta Vincento</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity draft="unconfirmed">Karakaso</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">Tortola</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity draft="unconfirmed">Sankta Tomaso</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity draft="unconfirmed">Majoto</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity draft="unconfirmed">Johanesburgo</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity draft="unconfirmed">Lusako</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity draft="unconfirmed">Harareo</exemplarCity>
+			</zone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard draft="unconfirmed">centra afrika tempo</standard>
+					<standard draft="unconfirmed">centrafrika tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
-					<standard draft="unconfirmed">orienta afrika tempo</standard>
+					<standard draft="unconfirmed">orientafrika tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard draft="unconfirmed">suda afrika tempo</standard>
+					<standard draft="unconfirmed">sudafrika tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">okcidenta afrika tempo</generic>
-					<standard draft="unconfirmed">okcidenta afrika norma tempo</standard>
-					<daylight draft="unconfirmed">okcidenta afrika somera tempo</daylight>
+					<generic draft="unconfirmed">okcidentafrika tempo</generic>
+					<standard draft="unconfirmed">okcidentafrika norma tempo</standard>
+					<daylight draft="unconfirmed">okcidentafrika somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="unconfirmed">alaska tempo</generic>
+					<standard draft="unconfirmed">alaska norma tempo</standard>
+					<daylight draft="unconfirmed">alaska somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="unconfirmed">amazonia tempo</generic>
+					<standard draft="unconfirmed">amazonia norma tempo</standard>
+					<daylight draft="unconfirmed">amazonia somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic draft="unconfirmed">centra nord-amerika tempo</generic>
-					<standard draft="unconfirmed">centra nord-amerika norma tempo</standard>
-					<daylight draft="unconfirmed">centra nord-amerika somera tempo</daylight>
+					<generic draft="unconfirmed">centra nordamerika tempo</generic>
+					<standard draft="unconfirmed">centra nordamerika norma tempo</standard>
+					<daylight draft="unconfirmed">centra nordamerika somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic draft="unconfirmed">orienta nord-amerika tempo</generic>
-					<standard draft="unconfirmed">orienta nord-amerika norma tempo</standard>
-					<daylight draft="unconfirmed">orienta nord-amerika somera tempo</daylight>
+					<generic draft="unconfirmed">orienta nordamerika tempo</generic>
+					<standard draft="unconfirmed">orienta nordamerika norma tempo</standard>
+					<daylight draft="unconfirmed">orienta nordamerika somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic draft="unconfirmed">monta nord-amerika tempo</generic>
-					<standard draft="unconfirmed">monta nord-amerika norma tempo</standard>
-					<daylight draft="unconfirmed">monta nord-amerika somera tempo</daylight>
+					<generic draft="unconfirmed">montara nordamerika tempo</generic>
+					<standard draft="unconfirmed">montara nordamerika norma tempo</standard>
+					<daylight draft="unconfirmed">montara nordamerika somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic draft="unconfirmed">pacifika nord-amerika tempo</generic>
-					<standard draft="unconfirmed">pacifika nord-amerika norma tempo</standard>
-					<daylight draft="unconfirmed">pacifika nord-amerika somera tempo</daylight>
+					<generic draft="unconfirmed">pacifika nordamerika tempo</generic>
+					<standard draft="unconfirmed">pacifika nordamerika norma tempo</standard>
+					<daylight draft="unconfirmed">pacifika nordamerika somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -1139,11 +2891,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">araba somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="unconfirmed">argentina tempo</generic>
+					<standard draft="unconfirmed">argentina norma tempo</standard>
+					<daylight draft="unconfirmed">argentina somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="unconfirmed">okcident-argentina tempo</generic>
+					<standard draft="unconfirmed">okcident-argentina norma tempo</standard>
+					<daylight draft="unconfirmed">okcident-argentina somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic draft="unconfirmed">atlantika nord-amerika tempo</generic>
-					<standard draft="unconfirmed">atlantika nord-amerika norma tempo</standard>
-					<daylight draft="unconfirmed">atlantika nord-amerika somera tempo</daylight>
+					<generic draft="unconfirmed">atlantika nordamerika tempo</generic>
+					<standard draft="unconfirmed">atlantika nordamerika norma tempo</standard>
+					<daylight draft="unconfirmed">atlantika nordamerika somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
@@ -1174,6 +2940,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">okcidenta aŭstralia somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">horzono Acoroj</generic>
+					<standard draft="unconfirmed">Acoroj (norma tempo)</standard>
+					<daylight draft="unconfirmed">Acoroj (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="unconfirmed">bolivia tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="unconfirmed">brazilja tempo</generic>
+					<standard draft="unconfirmed">brazilja norma tempo</standard>
+					<daylight draft="unconfirmed">brazilja somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="unconfirmed">kaboverda tempo</generic>
+					<standard draft="unconfirmed">kaboverda norma tempo</standard>
+					<daylight draft="unconfirmed">kaboverda somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="unconfirmed">ĉilia tempo</generic>
+					<standard draft="unconfirmed">ĉilia norma tempo</standard>
+					<daylight draft="unconfirmed">ĉilia somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="China">
 				<long>
 					<generic draft="unconfirmed">ĉina tempo</generic>
@@ -1181,25 +2980,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ĉina somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">kolombia tempo</generic>
+					<standard draft="unconfirmed">kolombia norma tempo</standard>
+					<daylight draft="unconfirmed">kolombia somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">horzono Kubo</generic>
+					<standard draft="unconfirmed">Kubo (norma tempo)</standard>
+					<daylight draft="unconfirmed">Kubo (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="unconfirmed">paskinsula tempo</generic>
+					<standard draft="unconfirmed">paskinsula norma tempo</standard>
+					<daylight draft="unconfirmed">paskinsula somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">ekvadora tempo</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic draft="unconfirmed">centra eŭropa tempo</generic>
-					<standard draft="unconfirmed">centra eŭropa norma tempo</standard>
-					<daylight draft="unconfirmed">centra eŭropa somera tempo</daylight>
+					<generic draft="unconfirmed">centreŭropa tempo</generic>
+					<standard draft="unconfirmed">centreŭropa norma tempo</standard>
+					<daylight draft="unconfirmed">centreŭropa somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic draft="unconfirmed">orienta eŭropa tempo</generic>
-					<standard draft="unconfirmed">orienta eŭropa norma tempo</standard>
-					<daylight draft="unconfirmed">orienta eŭropa somera tempo</daylight>
+					<generic draft="unconfirmed">orienteŭropa tempo</generic>
+					<standard draft="unconfirmed">orienteŭropa norma tempo</standard>
+					<daylight draft="unconfirmed">orienteŭropa somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">ekstrem-orienteŭropa tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic draft="unconfirmed">okcidenta eŭropa tempo</generic>
-					<standard draft="unconfirmed">okcidenta eŭropa norma tempo</standard>
-					<daylight draft="unconfirmed">okcidenta eŭropa somera tempo</daylight>
+					<generic draft="unconfirmed">okcidenteŭropa tempo</generic>
+					<standard draft="unconfirmed">okcidenteŭropa norma tempo</standard>
+					<daylight draft="unconfirmed">okcidenteŭropa somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="unconfirmed">falklanda tempo</generic>
+					<standard draft="unconfirmed">falklanda norma tempo</standard>
+					<daylight draft="unconfirmed">falklanda somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="unconfirmed">horzono Franca Gviano</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="unconfirmed">horzono Francaj Sudaj Teritorioj</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">galapaga tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
@@ -1207,9 +3059,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">universala tempo kunordigita</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">orienta gronlanda tempo</generic>
+					<standard draft="unconfirmed">orienta gronlanda norma tempo</standard>
+					<daylight draft="unconfirmed">orienta gronlanda somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">okcidenta gronlanda tempo</generic>
+					<standard draft="unconfirmed">okcidenta gronlanda norma tempo</standard>
+					<daylight draft="unconfirmed">okcidenta gronlanda somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="unconfirmed">gujana tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">horzono Havajo-Aleutoj</generic>
+					<standard draft="unconfirmed">Havajo-Aleutoj (norma tempo)</standard>
+					<daylight draft="unconfirmed">Havajo-Aleutoj (somera tempo)</daylight>
+				</long>
+			</metazone>
 			<metazone type="India">
 				<long>
 					<standard draft="unconfirmed">barata tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">hindoceana tempo</standard>
 				</long>
 			</metazone>
 			<metazone type="Indochina">
@@ -1253,11 +3136,104 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">korea somera tempo</daylight>
 				</long>
 			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="unconfirmed">maŭricia tempo</generic>
+					<standard draft="unconfirmed">maŭricia norma tempo</standard>
+					<daylight draft="unconfirmed">maŭricia somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic draft="unconfirmed">nordokcidenta meksika tempo</generic>
+					<standard draft="unconfirmed">nordokcidenta meksika norma tempo</standard>
+					<daylight draft="unconfirmed">nordokcidenta meksika somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">pacifika meksika tempo</generic>
+					<standard draft="unconfirmed">pacifika meksika norma tempo</standard>
+					<daylight draft="unconfirmed">pacifika meksika somera tempo</daylight>
+				</long>
+			</metazone>
 			<metazone type="Moscow">
 				<long>
 					<generic draft="unconfirmed">moskva tempo</generic>
 					<standard draft="unconfirmed">moskva norma tempo</standard>
 					<daylight draft="unconfirmed">moskva somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">horzono Novlando</generic>
+					<standard draft="unconfirmed">Novlando (norma tempo)</standard>
+					<daylight draft="unconfirmed">Novlando (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="unconfirmed">horzono Fernando de Noronha</generic>
+					<standard draft="unconfirmed">Fernando de Noronha (norma tempo)</standard>
+					<daylight draft="unconfirmed">Fernando de Noronha (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="unconfirmed">paragvaja tempo</generic>
+					<standard draft="unconfirmed">paragvaja norma tempo</standard>
+					<daylight draft="unconfirmed">paragvaja somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="unconfirmed">perua tempo</generic>
+					<standard draft="unconfirmed">perua norma tempo</standard>
+					<daylight draft="unconfirmed">perua somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">horzono Sankta Piero kaj Mikelono</generic>
+					<standard draft="unconfirmed">Sankta Piero kaj Mikelono (norma tempo)</standard>
+					<daylight draft="unconfirmed">Sankta Piero kaj Mikelono (somera tempo)</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="unconfirmed">horzono Reunio</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="unconfirmed">sejŝela tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="unconfirmed">horzono Sud-Georgio</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="unconfirmed">surinama tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="unconfirmed">urugvaja tempo</generic>
+					<standard draft="unconfirmed">urugvaja norma tempo</standard>
+					<daylight draft="unconfirmed">urugvaja somera tempo</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">venezuela tempo</standard>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">jukonia tempo</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>

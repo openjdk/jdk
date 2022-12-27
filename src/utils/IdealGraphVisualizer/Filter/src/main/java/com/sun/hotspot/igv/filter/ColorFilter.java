@@ -24,8 +24,8 @@
 package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
 import com.sun.hotspot.igv.graph.*;
+import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;

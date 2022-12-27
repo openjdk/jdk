@@ -333,7 +333,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
-        R r = scan(node.getVariable(), p);
+        R r = scan(node.getVariableOrRecordPattern(), p);
         r = scanAndReduce(node.getExpression(), p, r);
         r = scanAndReduce(node.getStatement(), p, r);
         return r;
@@ -839,7 +839,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     public R visitDeconstructionPattern(DeconstructionPatternTree node, P p) {
         R r = scan(node.getDeconstructor(), p);
         r = scanAndReduce(node.getNestedPatterns(), p, r);
-        r = scanAndReduce(node.getVariable(), p, r);
         return r;
     }
 

@@ -45,6 +45,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gsw">瑞士德文</language>
 			<language type="hmn">苗語</language>
 			<language type="hr">克羅地亞文</language>
+			<language type="ig">伊博文</language>
 			<language type="it">意大利文</language>
 			<language type="jpr">猶太波斯文</language>
 			<language type="ka">格魯吉亞文</language>
@@ -136,7 +137,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT">危地馬拉</territory>
 			<territory type="GW">幾內亞比紹</territory>
 			<territory type="GY">圭亞那</territory>
-			<territory type="HK" alt="short">中國香港</territory>
 			<territory type="HN">洪都拉斯</territory>
 			<territory type="HR">克羅地亞</territory>
 			<territory type="IM">馬恩島</territory>
@@ -151,7 +151,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="LS">萊索托</territory>
 			<territory type="ME">黑山</territory>
 			<territory type="ML">馬里</territory>
-			<territory type="MO" alt="short">中國澳門</territory>
 			<territory type="MR">毛里塔尼亞</territory>
 			<territory type="MS">蒙特塞拉特</territory>
 			<territory type="MT">馬耳他</territory>
@@ -163,7 +162,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NG">尼日利亞</territory>
 			<territory type="NR">瑙魯</territory>
 			<territory type="PF">法屬波利尼西亞</territory>
-			<territory type="PG">巴布亞新幾內亞</territory>
+			<territory type="PG">巴布亞新畿內亞</territory>
 			<territory type="PN">皮特凱恩島</territory>
 			<territory type="PS">巴勒斯坦領土</territory>
 			<territory type="QA">卡塔爾</territory>
@@ -174,6 +173,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SI">斯洛文尼亞</territory>
 			<territory type="SJ">斯瓦爾巴特群島及揚馬延島</territory>
 			<territory type="SL">塞拉利昂</territory>
+			<territory type="SM">聖馬力諾</territory>
 			<territory type="SO">索馬里</territory>
 			<territory type="SR">蘇里南</territory>
 			<territory type="ST">聖多美和普林西比</territory>
@@ -3152,6 +3152,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-year">
 				<unitPattern count="other">{0}年</unitPattern>
 				<perUnitPattern>{0} 每年</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<unitPattern count="other">{0}刻</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<unitPattern count="other">{0}個月</unitPattern>

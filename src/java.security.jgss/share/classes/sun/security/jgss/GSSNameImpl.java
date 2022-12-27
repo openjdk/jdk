@@ -408,13 +408,7 @@ public final class GSSNameImpl implements GSSName {
                                        "Invalid OID String ");
         }
         DerOutputStream dout = new DerOutputStream();
-        try {
-            dout.putOID(oid);
-        } catch (IOException e) {
-            throw new GSSExceptionImpl(GSSException.FAILURE,
-                                   "Could not ASN.1 Encode "
-                                   + oid.toString());
-        }
+        dout.putOID(oid);
         oidBytes = dout.toByteArray();
 
         byte[] retVal = new byte[2
