@@ -2756,6 +2756,7 @@ void Compile::Code_Gen() {
       cfg.set_loop_alignment();
     }
     cfg.fixup_flow();
+    cfg.remove_unreachable_blocks();
   }
 
   // Apply peephole optimizations
