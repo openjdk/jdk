@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,6 @@
 #import "AWTFont.h"
 #import <Cocoa/Cocoa.h>
 #import "JNIUtilities.h"
-
-// these flags are not defined on Tiger on PPC, so we need to make them a no-op
-#if !defined(kCGBitmapByteOrder32Host)
-#define kCGBitmapByteOrder32Host 0
-#endif
-#if !defined(kCGBitmapByteOrder16Host)
-#define kCGBitmapByteOrder16Host 0
-#endif
 
 // NOTE : Modify the printSurfaceDataDiagnostics API if you change this enum
 enum SDRenderType
