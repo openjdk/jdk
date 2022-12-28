@@ -25,19 +25,12 @@
 #ifndef SHARE_METAPROGRAMMING_CONDITIONAL_HPP
 #define SHARE_METAPROGRAMMING_CONDITIONAL_HPP
 
-#include "memory/allStatic.hpp"
+#include <type_traits>
 
 // This trait evaluates its typedef called "type" to TrueType iff the condition
 // is true. Otherwise it evaluates to FalseType.
 
-template <bool condition, typename TrueType, typename FalseType>
-struct Conditional: AllStatic {
-  typedef TrueType type;
-};
-
-template <typename TrueType, typename FalseType>
-struct Conditional<false, TrueType, FalseType>: AllStatic {
-  typedef FalseType type;
-};
+template <bool Condition, typename TrueType, typename FalseType>
+using Conditional = std::conditional<Condition, TrueType, FalseType>;
 
 #endif // SHARE_METAPROGRAMMING_CONDITIONAL_HPP

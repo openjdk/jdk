@@ -25,6 +25,7 @@
 #ifndef SHARE_METAPROGRAMMING_INTEGRALCONSTANT_HPP
 #define SHARE_METAPROGRAMMING_INTEGRALCONSTANT_HPP
 
+#include <type_traits>
 
 // An Integral Constant is a class providing a compile-time value of an
 // integral type.  An Integral Constant is also a nullary metafunction,
@@ -42,18 +43,13 @@
 // A model of the Integer Constant concept.
 // T is an integral type, and is the value_type.
 // v is an integral constant, and is the value.
-template<typename T, T v>
-struct IntegralConstant {
-  typedef T value_type;
-  static const value_type value = v;
-  typedef IntegralConstant<T, v> type;
-  operator value_type() { return value; }
-};
+template<typename T, T V>
+using IntegralConstant = std::integral_constant<T, V>;
 
 // A bool valued IntegralConstant whose value is true.
-typedef IntegralConstant<bool, true> TrueType;
+using TrueType = std::true_type;
 
 // A bool valued IntegralConstant whose value is false.
-typedef IntegralConstant<bool, false> FalseType;
+using FalseType = std::false_type;
 
 #endif // SHARE_METAPROGRAMMING_INTEGRALCONSTANT_HPP

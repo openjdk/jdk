@@ -25,11 +25,9 @@
 #ifndef SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
 #define SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
 
-#include "memory/allStatic.hpp"
+#include <type_traits>
 
-template <typename T> struct RemoveExtent: AllStatic { typedef T type; };
-
-template <typename T> struct RemoveExtent<T[]>: AllStatic { typedef T type; };
-template <typename T, size_t S> struct RemoveExtent<T[S]>: AllStatic { typedef T type; };
+template <typename T>
+using RemoveExtent = std::remove_extent<T>;
 
 #endif // SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP

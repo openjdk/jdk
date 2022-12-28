@@ -27,7 +27,9 @@
 
 #include "metaprogramming/integralConstant.hpp"
 
-template <typename T> struct IsVolatile: public FalseType {};
-template <typename T> struct IsVolatile<volatile T>: public TrueType {};
+#include <type_traits>
+
+template <typename T>
+using IsVolatile = std::is_volatile<T>;
 
 #endif // SHARE_METAPROGRAMMING_ISVOLATILE_HPP

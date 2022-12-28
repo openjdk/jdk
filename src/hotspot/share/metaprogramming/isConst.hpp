@@ -27,7 +27,9 @@
 
 #include "metaprogramming/integralConstant.hpp"
 
-template <typename T> struct IsConst: public FalseType {};
-template <typename T> struct IsConst<const T>: public TrueType {};
+#include <type_traits>
+
+template <typename T>
+using IsConst = std::is_const<T>;
 
 #endif // SHARE_METAPROGRAMMING_ISCONST_HPP

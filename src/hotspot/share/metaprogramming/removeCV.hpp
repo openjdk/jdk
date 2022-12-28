@@ -25,26 +25,8 @@
 #ifndef SHARE_METAPROGRAMMING_REMOVECV_HPP
 #define SHARE_METAPROGRAMMING_REMOVECV_HPP
 
-#include "memory/allStatic.hpp"
+#include <type_traits>
 
-template <typename T>
-struct RemoveCV: AllStatic {
-  typedef T type;
-};
-
-template <typename T>
-struct RemoveCV<const T>: AllStatic {
-  typedef T type;
-};
-
-template <typename T>
-struct RemoveCV<volatile T>: AllStatic {
-  typedef T type;
-};
-
-template <typename T>
-struct RemoveCV<const volatile T>: AllStatic {
-  typedef T type;
-};
+using RemoveCV = std::remove_cv<T>;
 
 #endif // SHARE_METAPROGRAMMING_REMOVECV_HPP

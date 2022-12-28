@@ -27,9 +27,9 @@
 
 #include "metaprogramming/integralConstant.hpp"
 
-template <typename T> struct IsArray: public FalseType {};
+#include <type_traits>
 
-template <typename T> struct IsArray<T[]>: public TrueType {};
-template <typename T, size_t S> struct IsArray<T[S]>: public TrueType {};
+template <typename T>
+using IsArray = std::is_array<T>;
 
 #endif // SHARE_METAPROGRAMMING_ISARRAY_HPP

@@ -27,12 +27,11 @@
 
 #include "metaprogramming/integralConstant.hpp"
 
+#include <type_traits>
+
 // This trait returns true iff the two types X and Y are the same
 
 template <typename X, typename Y>
-struct IsSame: public FalseType {};
-
-template <typename X>
-struct IsSame<X, X>: public TrueType {};
+using IsSame = std::is_same<X, Y>;
 
 #endif // SHARE_METAPROGRAMMING_ISSAME_HPP

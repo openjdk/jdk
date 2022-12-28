@@ -25,14 +25,13 @@
 #ifndef SHARE_METAPROGRAMMING_REMOVEREFERENCE_HPP
 #define SHARE_METAPROGRAMMING_REMOVEREFERENCE_HPP
 
-#include "memory/allStatic.hpp"
+#include <type_traits>
 
 // This metafunction returns for a type T either the underlying type behind
 // the reference iff T is a reference type, or the same type T if T is not
 // a reference type.
 
-template <typename T> struct RemoveReference: AllStatic { typedef T type; };
-
-template <typename T> struct RemoveReference<T&>: AllStatic { typedef T type; };
+template <typename T>
+using RemoveReference = std::remove_reference<T>;
 
 #endif // SHARE_METAPROGRAMMING_REMOVEREFERENCE_HPP
