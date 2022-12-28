@@ -700,12 +700,10 @@ versions providing `alignas`. New code should use `alignas`.
 
 `alignof`
 ([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
-is permitted alongside `alignas` for querying the alignment of a complete object
-type, an array type with a complete element type, or a reference type to either as
-an alternative to `std::alignment_of<>`. `std::alignment_of<>` precedes the
-operator in the development of the language and just returns the corresponding
-`alignof` value, the operator simply provides less verbose syntax for doing so.
-Newer code should prefer `alignof` to `std::alignment_of<>` if possible.
+is permitted alongside `alignas` for checking alignment as a less verbose
+alternative to `std::alignment_of<>`. The template precedes the operator
+in the language, so `alignof` should be preferred to `std::alignment_of<>`
+if possible.
 
 ### thread_local
 

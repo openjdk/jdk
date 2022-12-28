@@ -722,15 +722,11 @@ should use <code>alignas</code>.</p>
 <h3 id="alignof">alignof</h3>
 <p><code>alignof</code> (<a
 href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)
-is permitted alongside <code>alignas</code> for querying the alignment
-of a complete object type, an array type with a complete element type,
-or a reference type to either as an alternative to
-<code>std::alignment_of&lt;&gt;</code>.
-<code>std::alignment_of&lt;&gt;</code> precedes the operator in the
-development of the language and just returns the corresponding
-<code>alignof</code> value, the operator simply provides less verbose
-syntax for doing so. Newer code should prefer <code>alignof</code> to
-<code>std::alignment_of&lt;&gt;</code> if possible.</p>
+is permitted alongside <code>alignas</code> for checking alignment as a
+less verbose alternative to <code>std::alignment_of&lt;&gt;</code>. The
+template precedes the operator in the language, so <code>alignof</code>
+should be preferred to <code>std::alignment_of&lt;&gt;</code> if
+possible.</p>
 <h3 id="thread_local">thread_local</h3>
 <p>Avoid use of <code>thread_local</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>);
