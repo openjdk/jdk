@@ -27,6 +27,7 @@
 
 #include <type_traits>
 
+template <typename T>
 using RemoveCV = std::remove_cv<T>;
 
 #endif // SHARE_METAPROGRAMMING_REMOVECV_HPP
