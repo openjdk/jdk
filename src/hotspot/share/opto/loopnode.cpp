@@ -2547,7 +2547,8 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 
 Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
     while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0) != NULL && ctrl->in(0)->is_If() &&
-            (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
+           !is_zero_trip_guard_if(ctrl->in(0)->as_If()) &&
+           (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
              (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
               ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
       ctrl = ctrl->in(0)->in(0);
@@ -2555,6 +2556,22 @@ Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
 
     return ctrl;
   }
+
+bool CountedLoopNode::is_zero_trip_guard_if(const IfNode* iff) {
+  if (iff->in(1) == NULL || !iff->in(1)->is_Bool()) {
+    return false;
+  }
+  if (iff->in(1)->in(1) == NULL || iff->in(1)->in(1)->Opcode() != Op_CmpI) {
+    return false;
+  }
+  if (iff->in(1)->in(1)->in(1) != NULL && iff->in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  if (iff->in(1)->in(1)->in(2) != NULL && iff->in(1)->in(1)->in(2)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  return false;
+}
 
 Node* CountedLoopNode::skip_predicates() {
   Node* ctrl = in(LoopNode::EntryControl);
@@ -3615,6 +3632,17 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
             // Skip to head of inner loop
             assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
             n = nlpt->_head;
+            if (_head == n) {
+              // this and nlpt (inner loop) have the same loop head. This should not happen because
+              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+              // but then attached in the build_loop_tree afterwards, and so still have unmerged
+              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+              // since we have reached the loop head of this.
+              assert(_head->as_Region()->is_in_infinite_subgraph(),
+                     "only expect unmerged backedges in infinite loops");
+              break;
+            }
           }
         }
       }
@@ -5436,7 +5464,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
     return NULL;
   }
   Node* iffm = ctrl->in(0);
-  if (iffm == NULL || !iffm->is_If()) {
+  if (iffm == NULL || iffm->Opcode() != Op_If) {
     return NULL;
   }
   Node* bolzm = iffm->in(1);
@@ -6176,7 +6204,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
 void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
   Node* next;
   uint padding = 3;
-  uint node_index_padding_width = static_cast<int>(log10(C->unique())) + 1;
+  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
   for (int i = idom_list.size() - 1; i >= 0; i--) {
     if (i == 9 || i == 99) {
       padding++;
