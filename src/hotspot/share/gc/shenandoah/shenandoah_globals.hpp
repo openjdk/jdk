@@ -540,7 +540,14 @@
                                                                             \
   product(uintx, ShenandoahAgingCyclePeriod, 1, EXPERIMENTAL,               \
           "With generational mode, increment the age of objects and"        \
-          "regions each time this many young-gen GC cycles are completed.")
- // end of GC_SHENANDOAH_FLAGS
+          "regions each time this many young-gen GC cycles are completed.") \
+                                                                            \
+  notproduct(bool, ShenandoahEnableCardStats, trueInDebug,                  \
+          "Enable statistics collection related to clean & dirty cards")    \
+                                                                            \
+  notproduct(int, ShenandoahCardStatsLogInterval, 50,                       \
+          "Log cumulative card stats every so many remembered set or "      \
+          "update refs scans")                                              \
+  // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

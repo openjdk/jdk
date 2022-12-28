@@ -30,6 +30,7 @@
 #include "oops/oop.hpp"
 #include "oops/objArrayOop.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -463,34 +464,35 @@ ShenandoahScanRemembered<RememberedSet>::mark_range_as_empty(HeapWord *addr, siz
 
 template<typename RememberedSet>
 template <typename ClosureType>
-inline void
-ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range,
-                                                          ClosureType *cl, bool is_concurrent) {
-  process_clusters(first_cluster, count, end_of_range, cl, false, is_concurrent);
+inline void ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range,
+                                                          ClosureType *cl, bool is_concurrent, uint worker_id) {
+  process_clusters(first_cluster, count, end_of_range, cl, false, is_concurrent, worker_id);
 }
 
 // Process all objects starting within count clusters beginning with first_cluster for which the start address is
-// less than end_of_range.  For any such object, process the complete object, even if its end reaches beyond end_of_range.
-
+// less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,
+// even if its end reaches beyond end_of_range. Object arrays, on the other hand,s are precisely dirtied and only
+// the portions of the array on dirty cards need to be scanned.
+//
 // Do not CANCEL within process_clusters.  It is assumed that if a worker thread accepts responsbility for processing
 // a chunk of work, it will finish the work it starts.  Otherwise, the chunk of work will be lost in the transition to
 // degenerated execution.
 template<typename RememberedSet>
 template <typename ClosureType>
-inline void
-ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range,
-                                                          ClosureType *cl, bool write_table, bool is_concurrent) {
+void ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range,
+                                                               ClosureType *cl, bool write_table, bool is_concurrent, uint worker_id) {
 
   // Unlike traditional Shenandoah marking, the old-gen resident objects that are examined as part of the remembered set are not
-  // themselves marked.  Each such object will be scanned only once.  Any young-gen objects referenced from the remembered set will
-  // be marked and then subsequently scanned.
+  // always themselves marked.  Each such object will be scanned exactly once.  Any young-gen objects referenced from the remembered
+  // set will be marked and then subsequently scanned.
 
   // If old-gen evacuation is active, then MarkingContext for old-gen heap regions is valid.  We use the MarkingContext
   // bits to determine which objects within a DIRTY card need to be scanned.  This is necessary because old-gen heap
-  // regions which are in the candidate collection set have not been coalesced and filled.  Thus, these heap regions
+  // regions that are in the candidate collection set have not been coalesced and filled.  Thus, these heap regions
   // may contain zombie objects.  Zombie objects are known to be dead, but have not yet been "collected".  Scanning
   // zombie objects is unsafe because the Klass pointer is not reliable, objects referenced from a zombie may have been
-  // collected and their memory repurposed, and because zombie objects might refer to objects that are themselves dead.
+  // collected (if dead), or relocated (if live), or if dead but not yet collected, we don't want to "revive" them
+  // by marking them (when marking) or evacuating them (when updating refereces).
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahMarkingContext* ctx;
@@ -501,26 +503,33 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
     ctx = nullptr;
   }
 
-  size_t card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
-  HeapWord *start_of_range = _rs->addr_for_card_index(card_index);
+  size_t cur_cluster = first_cluster;
+  size_t cur_count = count;
+  size_t card_index = cur_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
+  HeapWord* start_of_range = _rs->addr_for_card_index(card_index);
   ShenandoahHeapRegion* r = heap->heap_region_containing(start_of_range);
   assert(end_of_range <= r->top(), "process_clusters() examines one region at a time");
 
-  while (count-- > 0) {
+  NOT_PRODUCT(ShenandoahCardStats stats(ShenandoahCardCluster<RememberedSet>::CardsPerCluster, card_stats(worker_id));)
+
+  while (cur_count-- > 0) {
     // TODO: do we want to check cancellation in inner loop, on every card processed?  That would be more responsive,
     // but require more overhead for checking.
-    card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
+    card_index = cur_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
     size_t end_card_index = card_index + ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
-    first_cluster++;
+    cur_cluster++;
     size_t next_card_index = 0;
-    while (card_index < end_card_index) {
+
+    assert(stats.is_clean(), "Error");
+    while (card_index < end_card_index) {    // TODO: understand why end_of_range is needed.
       if (_rs->addr_for_card_index(card_index) > end_of_range) {
-        count = 0;
+        cur_count = 0;
         card_index = end_card_index;
         break;
       }
       bool is_dirty = (write_table)? is_write_card_dirty(card_index): is_card_dirty(card_index);
       bool has_object = _scc->has_object(card_index);
+      NOT_PRODUCT(stats.increment_card_cnt(is_dirty);)
       if (is_dirty) {
         size_t prev_card_index = card_index;
         if (has_object) {
@@ -546,6 +555,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           p += start_offset;
           while (p < endp) {
             oop obj = cast_to_oop(p);
+            NOT_PRODUCT(stats.increment_obj_cnt(is_dirty);)
 
             // ctx->is_marked() returns true if mark bit set or if obj above TAMS.
             if (!ctx || ctx->is_marked(obj)) {
@@ -557,8 +567,10 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
                 objArrayOop array = objArrayOop(obj);
                 int len = array->length();
                 array->oop_iterate_range(cl, 0, len);
+                NOT_PRODUCT(stats.increment_scan_cnt(is_dirty);)
               } else if (obj->is_instance()) {
                 obj->oop_iterate(cl);
+                NOT_PRODUCT(stats.increment_scan_cnt(is_dirty);)
               } else {
                 // Case 3: Primitive array. Do nothing, no oops there. We use the same
                 // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
@@ -586,78 +598,83 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           // Card is dirty but has no object.  Card will have been scanned during scan of a previous cluster.
           card_index++;
         }
-      } else if (has_object) {
-        // Card is clean but has object.
-
-        // Scan the last object that starts within this card memory if it spans at least one dirty card within this cluster
-        // or if it reaches into the next cluster.
-        size_t start_offset = _scc->get_last_start(card_index);
-        HeapWord *card_start = _rs->addr_for_card_index(card_index);
-        HeapWord *p = card_start + start_offset;
-        oop obj = cast_to_oop(p);
-
-        size_t last_card;
-        if (!ctx || ctx->is_marked(obj)) {
-          HeapWord *nextp = p + obj->size();
-
-          // Can't use _scc->card_index_for_addr(endp) here because it crashes with assertion
-          // failure if nextp points to end of heap. Must also not attempt to read past last
-          // valid index for card table.
-          last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
-          last_card = MIN2(last_card, last_valid_index());
-
-          bool reaches_next_cluster = (last_card > end_card_index);
-          bool spans_dirty_within_this_cluster = false;
-
-          if (!reaches_next_cluster) {
-            size_t span_card;
-            for (span_card = card_index+1; span_card <= last_card; span_card++)
-              if ((write_table)? _rs->is_write_card_dirty(span_card): _rs->is_card_dirty(span_card)) {
-                spans_dirty_within_this_cluster = true;
-                break;
-              }
-          }
-
-          // TODO: only iterate over this object if it spans dirty within this cluster or within following clusters.
-          // Code as written is known not to examine a zombie object because either the object is marked, or we are
-          // not using the mark-context to differentiate objects, so the object is known to have been coalesced and
-          // filled if it is not "live".
-
-          if (reaches_next_cluster || spans_dirty_within_this_cluster) {
-            if (obj->is_objArray()) {
-              objArrayOop array = objArrayOop(obj);
-              int len = array->length();
-              array->oop_iterate_range(cl, 0, len);
-            } else if (obj->is_instance()) {
-              obj->oop_iterate(cl);
-            } else {
-              // Case 3: Primitive array. Do nothing, no oops there. We use the same
-              // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
-              // We skip iterating over the klass pointer since we know that
-              // Universe::TypeArrayKlass never moves.
-              assert (obj->is_typeArray(), "should be type array");
-            }
-          }
-        } else {
-          // The object that spans end of this clean card is not marked, so no need to scan it or its
-          // unmarked neighbors.  Containing region r is initialized above.
-          HeapWord* tams = ctx->top_at_mark_start(r);
-          HeapWord* nextp;
-          if (p >= tams) {
-            nextp = p + obj->size();
-          } else {
-            nextp = ctx->get_next_marked_addr(p, tams);
-          }
-          last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
-        }
-        // Increment card_index to account for the spanning object, even if we didn't scan it.
-        card_index = (last_card > card_index)? last_card: card_index + 1;
       } else {
-        // Card is clean and has no object.  No need to clean this card.
-        card_index++;
+        if (has_object) {
+          // Card is clean but has object.
+          // Scan the last object that starts within this card memory if it spans at least one dirty card within this cluster
+          // or if it reaches into the next cluster.
+          size_t start_offset = _scc->get_last_start(card_index);
+          HeapWord *card_start = _rs->addr_for_card_index(card_index);
+          HeapWord *p = card_start + start_offset;
+          oop obj = cast_to_oop(p);
+
+          size_t last_card;
+          if (!ctx || ctx->is_marked(obj)) {
+            HeapWord *nextp = p + obj->size();
+            NOT_PRODUCT(stats.increment_obj_cnt(is_dirty);)
+
+            // Can't use _scc->card_index_for_addr(endp) here because it crashes with assertion
+            // failure if nextp points to end of heap. Must also not attempt to read past last
+            // valid index for card table.
+            last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
+            last_card = MIN2(last_card, last_valid_index());
+
+            bool reaches_next_cluster = (last_card > end_card_index);
+            bool spans_dirty_within_this_cluster = false;
+
+            if (!reaches_next_cluster) {
+              for (size_t span_card = card_index+1; span_card <= last_card; span_card++) {
+                if ((write_table)? _rs->is_write_card_dirty(span_card): _rs->is_card_dirty(span_card)) {
+                  spans_dirty_within_this_cluster = true;
+                  break;
+                }
+              }
+            }
+
+            // TODO: only iterate over this object if it spans dirty within this cluster or within following clusters.
+            // Code as written is known not to examine a zombie object because either the object is marked, or we are
+            // not using the mark-context to differentiate objects, so the object is known to have been coalesced and
+            // filled if it is not "live".
+
+            if (reaches_next_cluster || spans_dirty_within_this_cluster) {
+              if (obj->is_objArray()) {
+                objArrayOop array = objArrayOop(obj);
+                int len = array->length();
+                array->oop_iterate_range(cl, 0, len);
+                NOT_PRODUCT(stats.increment_scan_cnt(is_dirty);)
+              } else if (obj->is_instance()) {
+                obj->oop_iterate(cl);
+                NOT_PRODUCT(stats.increment_scan_cnt(is_dirty);)
+              } else {
+                // Case 3: Primitive array. Do nothing, no oops there. We use the same
+                // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
+                // We skip iterating over the klass pointer since we know that
+                // Universe::TypeArrayKlass never moves.
+                assert (obj->is_typeArray(), "should be type array");
+              }
+            }
+          } else {
+            // The object that spans end of this clean card is not marked, so no need to scan it or its
+            // unmarked neighbors.  Containing region r is initialized above.
+            HeapWord* tams = ctx->top_at_mark_start(r);
+            HeapWord* nextp;
+            if (p >= tams) {
+              nextp = p + obj->size();
+            } else {
+              nextp = ctx->get_next_marked_addr(p, tams);
+            }
+            last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
+          }
+          // Increment card_index to account for the spanning object, even if we didn't scan it.
+          card_index = (last_card > card_index)? last_card: card_index + 1;
+        } else {
+          // Card is clean and has no object.  No need to clean this card.
+          card_index++;
+        }
       }
-    }
-  }
+    } // end of a range of cards in current cluster
+    NOT_PRODUCT(stats.update_run(true /* record */);)
+  } // end of all clusters
 }
 
 // Given that this range of clusters is known to span a humongous object spanned by region r, scan the
@@ -684,27 +701,9 @@ ShenandoahScanRemembered<RememberedSet>::process_humongous_clusters(ShenandoahHe
 template<typename RememberedSet>
 template <typename ClosureType>
 inline void
-ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl, bool is_concurrent) {
-  process_region(region, cl, false, is_concurrent);
-}
-
-template<typename RememberedSet>
-template <typename ClosureType>
-inline void
-ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *region, ClosureType *cl,
-                                                        bool use_write_table, bool is_concurrent) {
-  size_t cluster_size =
-    CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  size_t clusters = ShenandoahHeapRegion::region_size_words() / cluster_size;
-  process_region_slice(region, 0, clusters, region->end(), cl, use_write_table, is_concurrent);
-}
-
-template<typename RememberedSet>
-template <typename ClosureType>
-inline void
 ShenandoahScanRemembered<RememberedSet>::process_region_slice(ShenandoahHeapRegion *region, size_t start_offset, size_t clusters,
                                                               HeapWord *end_of_range, ClosureType *cl, bool use_write_table,
-                                                              bool is_concurrent) {
+                                                              bool is_concurrent, uint worker_id) {
   HeapWord *start_of_range = region->bottom() + start_offset;
   size_t cluster_size =
     CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
@@ -753,7 +752,7 @@ ShenandoahScanRemembered<RememberedSet>::process_region_slice(ShenandoahHeapRegi
       ShenandoahHeapRegion* start_region = region->humongous_start_region();
       process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table, is_concurrent);
     } else {
-      process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, is_concurrent);
+      process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, is_concurrent, worker_id);
     }
   }
 }
@@ -775,7 +774,7 @@ ShenandoahScanRemembered<RememberedSet>::addr_for_cluster(size_t cluster_no) {
 
 // This is used only for debug verification so don't worry about making the scan parallel.
 template<typename RememberedSet>
-inline void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure* cl) {
+void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure* cl) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* region = heap->get_region(i);
@@ -793,11 +792,63 @@ inline void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure*
         process_humongous_clusters(region->humongous_start_region(), start_cluster_no, num_clusters, end_of_range, cl,
                                    false /* is_write_table */, false /* is_concurrent */);
       } else {
-        process_clusters(start_cluster_no, num_clusters, end_of_range, cl, false /* is_concurrent */);
+        process_clusters(start_cluster_no, num_clusters, end_of_range, cl, false /* is_concurrent */, 0);
       }
     }
   }
 }
+
+#ifndef PRODUCT
+// Log given card stats
+template<typename RememberedSet>
+inline void ShenandoahScanRemembered<RememberedSet>::log_card_stats(HdrSeq* stats) {
+  for (int i = 0; i < MAX_CARD_STAT_TYPE; i++) {
+    log_info(gc, remset)("%18s: [ %8.2f %8.2f %8.2f %8.2f %8.2f ]",
+      _card_stats_name[i],
+      stats[i].percentile(0), stats[i].percentile(25),
+      stats[i].percentile(50), stats[i].percentile(75),
+      stats[i].maximum());
+  }
+}
+
+// Log card stats for all nworkers for a specific phase t
+template<typename RememberedSet>
+void ShenandoahScanRemembered<RememberedSet>::log_card_stats(uint nworkers, CardStatLogType t) {
+  assert(ShenandoahEnableCardStats, "Do not call");
+  HdrSeq* cum_stats = card_stats_for_phase(t);
+  log_info(gc, remset)("%s", _card_stat_log_type[t]);
+  for (uint i = 0; i < nworkers; i++) {
+    log_worker_card_stats(i, cum_stats);
+  }
+
+  // Every so often, log the cumulative global stats
+  if (++_card_stats_log_counter[t] >= ShenandoahCardStatsLogInterval) {
+    _card_stats_log_counter[t] = 0;
+    log_info(gc, remset)("Cumulative stats");
+    log_card_stats(cum_stats);
+  }
+}
+
+// Log card stats for given worker_id, & clear them after merging into given cumulative stats
+template<typename RememberedSet>
+void ShenandoahScanRemembered<RememberedSet>::log_worker_card_stats(uint worker_id, HdrSeq* cum_stats) {
+  assert(ShenandoahEnableCardStats, "Do not call");
+
+  HdrSeq* worker_card_stats = card_stats(worker_id);
+  log_info(gc, remset)("Worker %u Card Stats: ", worker_id);
+  log_card_stats(worker_card_stats);
+  // Merge worker stats into the cumulative stats & clear worker stats
+  merge_worker_card_stats_cumulative(worker_card_stats, cum_stats);
+}
+
+template<typename RememberedSet>
+void ShenandoahScanRemembered<RememberedSet>::merge_worker_card_stats_cumulative(
+  HdrSeq* worker_stats, HdrSeq* cum_stats) {
+  for (int i = 0; i < MAX_CARD_STAT_TYPE; i++) {
+    worker_stats[i].merge(cum_stats[i]);
+  }
+}
+#endif
 
 inline bool ShenandoahRegionChunkIterator::has_next() const {
   return _index < _total_chunks;
@@ -838,5 +889,4 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   assignment->_chunk_size = group_chunk_size;
   return true;
 }
-
 #endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP

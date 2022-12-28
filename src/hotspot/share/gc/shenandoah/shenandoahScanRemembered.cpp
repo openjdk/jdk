@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "logging/log.hpp"
 
 ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable* card_table, size_t total_card_count) {
   _heap = ShenandoahHeap::heap();
@@ -79,15 +80,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
   struct ShenandoahRegionChunk assignment;
-  bool has_work = _work_list->next(&assignment);
-  while (has_work) {
-#ifdef ENABLE_REMEMBERED_SET_CANCELLATION
-    // This check is currently disabled to avoid crashes that occur
-    // when we try to cancel remembered set scanning
-    if (heap->check_cancelled_gc_and_yield(_is_concurrent)) {
-      return;
-    }
-#endif
+  while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
     log_debug(gc)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
                   SIZE_FORMAT " at offset " SIZE_FORMAT ", size: " SIZE_FORMAT,
@@ -99,13 +92,22 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
       assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignments must align on cluster boundaries");
       HeapWord* end_of_range = region->bottom() + assignment._chunk_offset + assignment._chunk_size;
 
-      // During concurrent mark, region->top() equals TAMS with respect to the current young-gen pass.  */
+      // During concurrent mark, region->top() equals TAMS with respect to the current young-gen pass.
       if (end_of_range > region->top()) {
         end_of_range = region->top();
       }
-      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, _is_concurrent);
+      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, _is_concurrent, worker_id);
     }
-    has_work = _work_list->next(&assignment);
+#ifdef ENABLE_REMEMBERED_SET_CANCELLATION
+    // This check is currently disabled to avoid crashes that occur
+    // when we try to cancel remembered set scanning; it should be re-enabled
+    // after the issues are fixed, as it would allow more prompt cancellation and
+    // transition to degenerated / full GCs. Note that work that has been assigned/
+    // claimed above must be completed before we return here upon cancellation.
+    if (heap->check_cancelled_gc_and_yield(_is_concurrent)) {
+      return;
+    }
+#endif
   }
 }
 

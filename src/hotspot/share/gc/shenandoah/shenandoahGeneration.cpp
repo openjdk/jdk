@@ -912,6 +912,10 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent);
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
+  if (ShenandoahEnableCardStats) {
+    assert(heap->card_scan() != NULL, "Not generational");
+    heap->card_scan()->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
+  }
 }
 
 size_t ShenandoahGeneration::increment_affiliated_region_count() {

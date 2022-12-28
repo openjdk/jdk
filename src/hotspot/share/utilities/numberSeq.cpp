@@ -110,7 +110,6 @@ double AbsSeq::dsd() const {
   return sqrt(var);
 }
 
-
 void AbsSeq::merge(AbsSeq& abs2, bool clear_this) {
 
   if (num() == 0) return;  // nothing to do
@@ -121,8 +120,7 @@ void AbsSeq::merge(AbsSeq& abs2, bool clear_this) {
 
   // Decaying stats need a bit more thought
   assert(abs2._alpha == _alpha, "Caution: merge incompatible?");
-
-  // Until JDK-... is fixed, we taint the decaying statistics
+  // Until JDK-8298902 is fixed, we taint the decaying statistics
   if (abs2._davg != NAN) {
     abs2._davg = NAN;
     abs2._dvariance = NAN;
