@@ -251,7 +251,7 @@ TEST_VM(unsigned5, reader) {
     printer.print_on(&st, 4, "(", ")");
     std::string st_s(st.base(), st.size());
     char buf2[sizeof(stbuf)];
-    sprintf(buf2, "(%d %d %d %d)", ints[0], ints[1], ints[2], ints[3]);
+    os::snprintf_checked(buf2, sizeof(buf2), "(%d %d %d %d)", ints[0], ints[1], ints[2], ints[3]);
     std::string exp_s(buf2, strlen(buf2));
     ASSERT_EQ(exp_s, st_s);
   }
