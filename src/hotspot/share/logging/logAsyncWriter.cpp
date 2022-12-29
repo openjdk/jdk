@@ -80,7 +80,7 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   }
 
   _data_available = true;
-  if (_buffer->ratio_used() >= 0.3) {
+  if (_buffer->fraction_used() >= 0.3) {
     _lock.notify();
   }
 }

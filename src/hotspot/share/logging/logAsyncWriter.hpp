@@ -113,8 +113,8 @@ class AsyncLogWriter : public NonJavaThread {
 
    public:
 
-    // Ratio of buffer that is filled in range [0,1]
-    double ratio_used() {
+    // Fraction of buffer that is filled in range [0,1]
+    double fraction_used() {
       return (double)_pos / (double)_capacity;
     }
     Buffer(size_t capacity) :  _pos(0), _capacity(capacity) {
