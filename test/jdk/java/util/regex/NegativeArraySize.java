@@ -25,7 +25,7 @@
  * @test
  * @bug 8223174
  * @summary Pattern.compile() can throw confusing NegativeArraySizeException
- * @requires os.maxMemory >= 6g & vm.bits == 64  & !vm.musl
+ * @requires os.maxMemory >= 6g & vm.bits == 64 & !vm.musl
  * @run testng/othervm -Xms5G -Xmx5G NegativeArraySize
  */
 
