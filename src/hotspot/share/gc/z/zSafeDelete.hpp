@@ -26,12 +26,13 @@
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zLock.hpp"
-#include "metaprogramming/removeExtent.hpp"
+
+#include <type_traits>
 
 template <typename T>
 class ZSafeDeleteImpl {
 private:
-  typedef typename RemoveExtent<T>::type ItemT;
+  typedef typename std::remove_extent<T>::type ItemT;
 
   ZLock*         _lock;
   uint64_t       _enabled;
