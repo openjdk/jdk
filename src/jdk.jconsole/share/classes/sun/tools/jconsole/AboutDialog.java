@@ -87,6 +87,7 @@ public class AboutDialog extends InternalDialog {
     private JEditorPane helpLink;
     private final String urlStr = getOnlineDocUrl();
 
+    @SuppressWarnings("this-escape")
     public AboutDialog(JConsole jConsole) {
         super(jConsole, Messages.HELP_ABOUT_DIALOG_TITLE, false);
 

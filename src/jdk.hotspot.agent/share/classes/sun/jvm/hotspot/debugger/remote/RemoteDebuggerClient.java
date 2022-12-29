@@ -45,6 +45,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
   private RemoteThreadFactory threadFactory;
   private static final int cacheSize = 256 * 1024 * 1024; // 256 MB
 
+  @SuppressWarnings("this-escape")
   public RemoteDebuggerClient(RemoteDebugger remoteDebugger) throws DebuggerException {
     super();
     try {

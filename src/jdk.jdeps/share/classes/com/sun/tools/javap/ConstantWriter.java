@@ -47,6 +47,7 @@ public class ConstantWriter extends BasicWriter {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected ConstantWriter(Context context) {
         super(context);
         context.put(ConstantWriter.class, this);

@@ -74,6 +74,7 @@ public class MatchPatternIterator extends LocPathIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("this-escape")
   MatchPatternIterator(Compiler compiler, int opPos, int analysis)
           throws javax.xml.transform.TransformerException
   {

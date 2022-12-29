@@ -89,6 +89,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * non-{@code null} but is not a directory.
      * @throws IOException if a cache file cannot be created.
      */
+    @SuppressWarnings("this-escape")
     public FileCacheImageInputStream(InputStream stream, File cacheDir)
         throws IOException {
         if (stream == null) {

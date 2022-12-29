@@ -53,6 +53,7 @@ public class CreateMBeanDialog extends InternalDialog
         "sun.management.HotspotInternal";
     private static final String HOTSPOT_MBEAN_OBJECTNAME =
         "sun.management:type=HotspotInternal";
+    @SuppressWarnings("this-escape")
     public CreateMBeanDialog(JConsole jConsole) {
         super(jConsole, "JConsole: Hotspot MBeans", true);
 

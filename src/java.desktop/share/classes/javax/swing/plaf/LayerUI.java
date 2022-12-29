@@ -62,6 +62,7 @@ import java.io.Serializable;
 public class LayerUI<V extends Component>
         extends ComponentUI implements Serializable {
 
+    @SuppressWarnings("this-escape")
     private final PropertyChangeSupport propertyChangeSupport =
             new PropertyChangeSupport(this);
 

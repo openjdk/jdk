@@ -94,6 +94,7 @@ public class DGCAckHandler {
      * "received" method with the specified UID is equivalent to
      * invoking this instance's "release" method.
      **/
+    @SuppressWarnings("this-escape")
     DGCAckHandler(UID id) {
         this.id = id;
         if (id != null) {

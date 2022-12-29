@@ -72,6 +72,7 @@ class Authenticator {
     private String requestingScheme;
     private URL requestingURL;
     private RequestorType requestingAuthType;
+    @SuppressWarnings("this-escape")
     private final String key = AuthenticatorKeys.computeKey(this);
 
     /**

@@ -48,6 +48,7 @@ public class VirtualCallTypeData<K,M> extends VirtualCallData<K,M> implements Ca
     return uintAt(cellCountGlobalOffset());
   }
 
+  @SuppressWarnings("this-escape")
   public VirtualCallTypeData(MethodDataInterface<K,M> methodData, DataLayout layout) {
     super(methodData, layout);
     args = new TypeStackSlotEntries<K,M>(methodData, this, VirtualCallData.staticCellCount()+TypeEntriesAtCall.headerCellCount(), numberOfArguments());

@@ -1972,6 +1972,7 @@ public class JTabbedPane extends JComponent
         /**
          *  Constructs an AccessibleJTabbedPane
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJTabbedPane() {
             super();
             JTabbedPane.this.model.addChangeListener(this);

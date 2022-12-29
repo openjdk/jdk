@@ -58,7 +58,7 @@ public class MarshalOutputStream extends ObjectOutputStream
     /**
      * Creates a marshal output stream with the given protocol version.
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings({ "removal", "this-escape" })
     public MarshalOutputStream(OutputStream out, int protocolVersion)
         throws IOException
     {

@@ -40,6 +40,7 @@ public class JSR_W extends JsrInstruction {
     }
 
 
+    @SuppressWarnings("this-escape")
     public JSR_W(final InstructionHandle target) {
         super(com.sun.org.apache.bcel.internal.Const.JSR_W, target);
         super.setLength(5);

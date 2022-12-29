@@ -146,6 +146,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      *          <code>HORIZONTAL</code> nor <code>VERTICAL</code>
      * @since 1.3
      */
+    @SuppressWarnings("this-escape")
     public JToolBar( String name , int orientation) {
         setName(name);
         checkOrientation( orientation );
@@ -739,6 +740,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
 
         BoxLayout lm;
 
+        @SuppressWarnings("this-escape")
         DefaultToolBarLayout(int orientation) {
             if (orientation == JToolBar.VERTICAL) {
                 lm = new BoxLayout(JToolBar.this, BoxLayout.PAGE_AXIS);

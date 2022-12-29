@@ -1430,6 +1430,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         /**
          * constructs an AccessibleJSlider
          */
+        @SuppressWarnings("this-escape")
         protected AccessibleJSlider() {
             // model is guaranteed to be non-null
             oldModelValue = getModel().getValue();

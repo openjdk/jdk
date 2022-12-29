@@ -206,6 +206,7 @@ public class ScrollPane extends Container implements Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     @ConstructorProperties({"scrollbarDisplayPolicy"})
+    @SuppressWarnings("this-escape")
     public ScrollPane(int scrollbarDisplayPolicy) throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
         this.layoutMgr = null;

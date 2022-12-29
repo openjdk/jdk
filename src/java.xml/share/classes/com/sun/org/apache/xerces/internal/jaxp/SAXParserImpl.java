@@ -400,6 +400,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
             this(null, null, null);
         }
 
+        @SuppressWarnings("this-escape")
         JAXPSAXParser(SAXParserImpl saxParser, XMLSecurityPropertyManager securityPropertyMgr,
                 XMLSecurityManager securityManager) {
             super();

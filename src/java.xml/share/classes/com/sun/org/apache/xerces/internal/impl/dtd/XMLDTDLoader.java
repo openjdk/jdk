@@ -158,6 +158,7 @@ public class XMLDTDLoader
         this(symbolTable, grammarPool, null, new XMLEntityManager());
     } // init(SymbolTable, XMLGrammarPool)
 
+    @SuppressWarnings("this-escape")
     XMLDTDLoader(SymbolTable symbolTable,
                 XMLGrammarPool grammarPool, XMLErrorReporter errorReporter,
                 XMLEntityResolver entityResolver) {

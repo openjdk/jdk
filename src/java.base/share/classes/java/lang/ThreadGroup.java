@@ -108,6 +108,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     /**
      * Creates a ThreadGroup without any permission or other checks.
      */
+    @SuppressWarnings("this-escape")
     ThreadGroup(ThreadGroup parent, String name, int maxPriority, boolean daemon) {
         this.parent = parent;
         this.name = name;

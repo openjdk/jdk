@@ -388,6 +388,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         int fid;
         Thread loadThread;
 
+        @SuppressWarnings("this-escape")
         public FilesLoader(final File currentDirectory, final int fid) {
             this.currentDirectory = currentDirectory;
             this.fid = fid;

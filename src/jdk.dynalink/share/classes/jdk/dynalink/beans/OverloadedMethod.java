@@ -90,6 +90,7 @@ class OverloadedMethod {
     private final ArrayList<MethodHandle> fixArgMethods;
     private final ArrayList<MethodHandle> varArgMethods;
 
+    @SuppressWarnings("this-escape")
     OverloadedMethod(final List<MethodHandle> methodHandles,
             final OverloadedDynamicMethod parent,
             final ClassLoader callSiteClassLoader,

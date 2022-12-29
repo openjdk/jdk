@@ -62,6 +62,7 @@ public abstract class PhysicalFont extends Font2D {
      * @throws FontFormatException if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
+    @SuppressWarnings("this-escape")
     PhysicalFont(String platname, Object nativeNames)
         throws FontFormatException {
 
@@ -70,6 +71,7 @@ public abstract class PhysicalFont extends Font2D {
         this.nativeNames = nativeNames;
     }
 
+    @SuppressWarnings("this-escape")
     protected PhysicalFont() {
         handle = new Font2DHandle(this);
     }

@@ -185,6 +185,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     private AquaFileSystemModel model;
 
+    @SuppressWarnings("this-escape")
     final AquaFileView fileView = new AquaFileView(this);
 
     boolean selectionInProgress = false;

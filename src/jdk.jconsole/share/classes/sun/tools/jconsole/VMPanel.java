@@ -92,6 +92,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
         return tabInfos.toArray(new TabInfo[tabInfos.size()]);
     }
 
+    @SuppressWarnings("this-escape")
     VMPanel(ProxyClient proxyClient, int updateInterval) {
         this.proxyClient = proxyClient;
         this.updateInterval = updateInterval;

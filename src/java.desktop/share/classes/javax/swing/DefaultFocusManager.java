@@ -50,8 +50,10 @@ import java.util.Comparator;
 @SuppressWarnings("serial") // Obsolete class
 public class DefaultFocusManager extends FocusManager {
 
+    @SuppressWarnings("this-escape")
     final FocusTraversalPolicy gluePolicy =
         new LegacyGlueFocusTraversalPolicy(this);
+    @SuppressWarnings("this-escape")
     private final FocusTraversalPolicy layoutPolicy =
         new LegacyLayoutFocusTraversalPolicy(this);
     private final LayoutComparator comparator =

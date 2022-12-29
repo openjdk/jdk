@@ -105,6 +105,7 @@ public class JavacElements implements Elements {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected JavacElements(Context context) {
         context.put(JavacElements.class, this);
         javaCompiler = JavaCompiler.instance(context);

@@ -163,6 +163,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @throws InvalidNameException If a syntax error occurs during
      *                  parsing of the rdnString.
      */
+    @SuppressWarnings("this-escape")
     public Rdn(String rdnString) throws InvalidNameException {
         entries = new ArrayList<>(DEFAULT_SIZE);
         (new Rfc2253Parser(rdnString)).parseRdn(this);

@@ -42,6 +42,7 @@ public class InlineView extends LabelView {
      *
      * @param elem the element
      */
+    @SuppressWarnings("this-escape")
     public InlineView(Element elem) {
         super(elem);
         StyleSheet sheet = getStyleSheet();

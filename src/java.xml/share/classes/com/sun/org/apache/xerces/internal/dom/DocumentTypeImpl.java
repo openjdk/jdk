@@ -134,6 +134,7 @@ public class DocumentTypeImpl
     //
 
     /** Factory method for creating a document type node. */
+    @SuppressWarnings("this-escape")
     public DocumentTypeImpl(CoreDocumentImpl ownerDocument, String name) {
         super(ownerDocument);
 

@@ -78,6 +78,7 @@ public class ClassWriter extends BasicWriter {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected ClassWriter(Context context) {
         super(context);
         context.put(ClassWriter.class, this);

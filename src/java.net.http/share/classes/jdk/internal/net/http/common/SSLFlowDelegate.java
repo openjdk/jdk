@@ -89,6 +89,7 @@ import java.util.function.IntBinaryOperator;
  */
 public class SSLFlowDelegate {
 
+    @SuppressWarnings("this-escape")
     final Logger debug =
             Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
@@ -133,6 +134,7 @@ public class SSLFlowDelegate {
      * Flow.Subscriber requires an associated {@link CompletableFuture}
      * for errors that need to be signaled from downstream to upstream.
      */
+    @SuppressWarnings("this-escape")
     public SSLFlowDelegate(SSLEngine engine,
             Executor exec,
             Consumer<ByteBuffer> recycler,

@@ -171,41 +171,41 @@ $(BUILD_DEMO_CodePointIM_JAR): $(CODEPOINT_METAINF_SERVICE_FILE)
 
 $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked, \
 ))
 
 $(eval $(call SetupBuildDemo, SwingSet2, \
     DEMO_SUBDIR := jfc, \
     EXTRA_COPY_TO_JAR := .java, \
     EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, J2Ddemo, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := java2d.J2Ddemo, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked cast lossy-conversions, \
     JAR_NAME := J2Ddemo, \
 ))
 
 $(eval $(call SetupBuildDemo, Metalworks, \
-    DISABLED_WARNINGS := rawtypes unchecked this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Notepad, \
-    DISABLED_WARNINGS := rawtypes this-escape, \
+    DISABLED_WARNINGS := rawtypes, \
     DEMO_SUBDIR := jfc, \
 ))
 
 $(eval $(call SetupBuildDemo, Stylepad, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes unchecked this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked, \
     EXTRA_SRC_DIR := $(DEMO_SHARE_SRC)/jfc/Notepad, \
     EXCLUDE_FILES := $(DEMO_SHARE_SRC)/jfc/Notepad/README.txt, \
 ))
@@ -215,7 +215,7 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation, \
     DEMO_SUBDIR := jfc, \
 ))
 

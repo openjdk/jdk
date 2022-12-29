@@ -48,6 +48,7 @@ public class CustomMediaTray extends MediaTray {
     }
 
 
+    @SuppressWarnings("this-escape")
     public CustomMediaTray(String name, String choice) {
         super(nextValue(name));
         choiceName = choice;

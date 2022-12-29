@@ -49,6 +49,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #end[rw]
 
+    @SuppressWarnings("this-escape")
     ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb, MemorySegment segment) {   // package-private
 #if[rw]
         super(-1, 0,

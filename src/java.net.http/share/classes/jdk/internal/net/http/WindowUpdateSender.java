@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 abstract class WindowUpdateSender {
 
+    @SuppressWarnings("this-escape")
     final Logger debug =
             Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 

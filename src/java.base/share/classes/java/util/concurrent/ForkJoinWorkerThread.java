@@ -71,6 +71,7 @@ public class ForkJoinWorkerThread extends Thread {
     /**
      * Full nonpublic constructor.
      */
+    @SuppressWarnings("this-escape")
     ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
                          boolean useSystemClassLoader,
                          boolean clearThreadLocals) {

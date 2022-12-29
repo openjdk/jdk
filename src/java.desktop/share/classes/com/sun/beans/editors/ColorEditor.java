@@ -228,5 +228,6 @@ public class ColorEditor extends Panel implements PropertyEditor {
     private TextField text;
     private Choice chooser;
 
+    @SuppressWarnings("this-escape")
     private PropertyChangeSupport support = new PropertyChangeSupport(this);
 }

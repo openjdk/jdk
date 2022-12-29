@@ -40,6 +40,7 @@ public class GOTO_W extends GotoInstruction {
     }
 
 
+    @SuppressWarnings("this-escape")
     public GOTO_W(final InstructionHandle target) {
         super(com.sun.org.apache.bcel.internal.Const.GOTO_W, target);
         super.setLength(5);

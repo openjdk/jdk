@@ -695,6 +695,7 @@ public class GregorianCalendar extends Calendar {
      * in the calendar.
      * @param millis the value used to set the {@code MILLISECOND} calendar field
      */
+    @SuppressWarnings("this-escape")
     GregorianCalendar(int year, int month, int dayOfMonth,
                       int hourOfDay, int minute, int second, int millis) {
         super();

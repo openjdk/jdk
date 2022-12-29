@@ -61,6 +61,7 @@ public class Tokens {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);

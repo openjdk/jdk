@@ -50,6 +50,7 @@ class CustomMediaSizeName extends MediaSizeName {
       return (customStringTable.size()-1);
     }
 
+    @SuppressWarnings("this-escape")
     public CustomMediaSizeName(String name) {
         super(nextValue(name));
         customEnumTable.add(this);
@@ -57,6 +58,7 @@ class CustomMediaSizeName extends MediaSizeName {
         mediaName = null;
     }
 
+    @SuppressWarnings("this-escape")
     public CustomMediaSizeName(String name, String choice,
                                float width, float length) {
         super(nextValue(name));

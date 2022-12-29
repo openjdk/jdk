@@ -80,6 +80,7 @@ public class TreeMaker implements JCTree.Factory {
 
     /** Create a tree maker with null toplevel and NOPOS as initial position.
      */
+    @SuppressWarnings("this-escape")
     protected TreeMaker(Context context) {
         context.put(treeMakerKey, this);
         this.pos = Position.NOPOS;

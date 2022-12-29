@@ -160,6 +160,7 @@ public class RISCV64HotSpotRegisterConfig implements RegisterConfig {
         assert callerSaved.size() >= allocatable.size();
     }
 
+    @SuppressWarnings("this-escape")
     public RISCV64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
         this.target = target;
         this.allocatable = allocatable;

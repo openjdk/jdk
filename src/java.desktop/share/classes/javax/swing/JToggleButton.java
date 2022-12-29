@@ -494,6 +494,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
         /**
          * Constructs {@code AccessibleJToggleButton}
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJToggleButton() {
             super();
             JToggleButton.this.addItemListener(this);

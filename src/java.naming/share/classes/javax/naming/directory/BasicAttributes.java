@@ -112,6 +112,7 @@ public class BasicAttributes implements Attributes {
       * @param val The value of the attribute to add. If null, a null
       *        value is added to the attribute.
       */
+    @SuppressWarnings("this-escape")
     public BasicAttributes(String attrID, Object val) {
         this();
         this.put(new BasicAttribute(attrID, val));
@@ -134,6 +135,7 @@ public class BasicAttributes implements Attributes {
       *                   when retrieving or adding attributes;
       *                   false means case is respected.
       */
+    @SuppressWarnings("this-escape")
     public BasicAttributes(String attrID, Object val, boolean ignoreCase) {
         this(ignoreCase);
         this.put(new BasicAttribute(attrID, val));

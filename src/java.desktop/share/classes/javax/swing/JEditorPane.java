@@ -251,6 +251,7 @@ public class JEditorPane extends JTextComponent {
      * Creates a new <code>JEditorPane</code>.
      * The document model is set to <code>null</code>.
      */
+    @SuppressWarnings("this-escape")
     public JEditorPane() {
         super();
         setFocusCycleRoot(true);
@@ -2206,6 +2207,7 @@ public class JEditorPane extends JTextComponent {
          */
         static class PlainParagraph extends javax.swing.text.ParagraphView {
 
+            @SuppressWarnings("this-escape")
             PlainParagraph(Element elem) {
                 super(elem);
                 layoutPool = new LogicalView(elem);

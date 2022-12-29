@@ -38,6 +38,7 @@ public class CCheckboxMenuItem extends CMenuItem implements CheckboxMenuItemPeer
     private native void nativeSetState(long modelPtr, boolean state);
     private native void nativeSetIsCheckbox(long modelPtr);
 
+    @SuppressWarnings("this-escape")
     CCheckboxMenuItem(final CheckboxMenuItem target) {
         super(target);
         execute(this::nativeSetIsCheckbox);

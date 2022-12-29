@@ -84,6 +84,7 @@ public class FontFamily {
         }
     }
 
+    @SuppressWarnings("this-escape")
     public FontFamily(String name, boolean isLogFont, int rank) {
         logicalFont = isLogFont;
         familyName = name;

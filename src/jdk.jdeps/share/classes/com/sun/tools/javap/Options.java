@@ -47,6 +47,7 @@ public class Options {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Options(Context context) {
         context.put(Options.class, this);
     }

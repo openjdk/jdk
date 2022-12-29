@@ -42,6 +42,7 @@ public class PropertyEditorSupport implements PropertyEditor {
      *
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     public PropertyEditorSupport() {
         setSource(this);
     }

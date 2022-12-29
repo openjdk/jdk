@@ -53,6 +53,7 @@ public class CodeWriter extends BasicWriter {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected CodeWriter(Context context) {
         super(context);
         context.put(CodeWriter.class, this);

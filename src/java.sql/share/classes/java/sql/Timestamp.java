@@ -108,6 +108,7 @@ public class Timestamp extends java.util.Date {
      *         January 1, 1970, 00:00:00 GMT.
      * @see java.util.Calendar
      */
+    @SuppressWarnings("this-escape")
     public Timestamp(long time) {
         super((time/1000)*1000);
         nanos = (int)((time%1000) * 1000000);

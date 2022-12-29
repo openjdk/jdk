@@ -92,6 +92,7 @@ class XSDocumentInfo {
 
     // note that the caller must ensure to call returnSchemaAttrs()
     // to avoid memory leaks!
+    @SuppressWarnings("this-escape")
     XSDocumentInfo (Element schemaRoot, XSAttributeChecker attrChecker, SymbolTable symbolTable)
                     throws XMLSchemaException {
         fSchemaElement = schemaRoot;

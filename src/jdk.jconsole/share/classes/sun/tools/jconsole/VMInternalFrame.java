@@ -35,6 +35,7 @@ import static sun.tools.jconsole.Utilities.*;
 public class VMInternalFrame extends MaximizableInternalFrame {
     private VMPanel vmPanel;
 
+    @SuppressWarnings("this-escape")
     public VMInternalFrame(VMPanel vmPanel) {
         super("", true, true, true, true);
 

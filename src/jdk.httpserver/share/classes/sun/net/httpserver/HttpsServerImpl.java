@@ -44,6 +44,7 @@ public class HttpsServerImpl extends HttpsServer {
         this (new InetSocketAddress(443), 0);
     }
 
+    @SuppressWarnings("this-escape")
     HttpsServerImpl (
         InetSocketAddress addr, int backlog
     ) throws IOException {

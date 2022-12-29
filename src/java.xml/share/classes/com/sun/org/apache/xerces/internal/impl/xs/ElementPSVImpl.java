@@ -94,6 +94,7 @@ public class ElementPSVImpl implements ElementPSVI {
 
     public ElementPSVImpl() {}
 
+    @SuppressWarnings("this-escape")
     public ElementPSVImpl(boolean isConstant, ElementPSVI elementPSVI) {
         fDeclaration = elementPSVI.getElementDeclaration();
         fTypeDecl = elementPSVI.getTypeDefinition();

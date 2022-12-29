@@ -79,6 +79,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
      *         {@code units < 1} or {@code x > y}
      */
+    @SuppressWarnings("this-escape")
     public MediaSize(float x, float y,int units) {
         super (x, y, units);
         if (x > y) {
@@ -97,6 +98,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
      *         {@code units < 1} or {@code x > y}
      */
+    @SuppressWarnings("this-escape")
     public MediaSize(int x, int y,int units) {
         super (x, y, units);
         if (x > y) {
@@ -117,6 +119,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
      *         {@code units < 1} or {@code x > y}
      */
+    @SuppressWarnings("this-escape")
     public MediaSize(float x, float y,int units, MediaSizeName media) {
         super (x, y, units);
         if (x > y) {
@@ -140,6 +143,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
      *         {@code units < 1} or {@code x > y}
      */
+    @SuppressWarnings("this-escape")
     public MediaSize(int x, int y,int units, MediaSizeName media) {
         super (x, y, units);
         if (x > y) {

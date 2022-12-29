@@ -100,11 +100,14 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 class Stream<T> extends ExchangeImpl<T> {
 
     private static final String COOKIE_HEADER = "Cookie";
+    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     final ConcurrentLinkedQueue<Http2Frame> inputQ = new ConcurrentLinkedQueue<>();
+    @SuppressWarnings("this-escape")
     final SequentialScheduler sched =
             SequentialScheduler.lockingScheduler(this::schedule);
+    @SuppressWarnings("this-escape")
     final SubscriptionBase userSubscription =
             new SubscriptionBase(sched, this::cancel, this::onSubscriptionError);
 
@@ -884,6 +887,7 @@ class Stream<T> extends ExchangeImpl<T> {
         // See RequestSubscriber::trySend below.
         final SequentialScheduler sendScheduler;
 
+        @SuppressWarnings("this-escape")
         RequestSubscriber(long contentLen) {
             this.contentLength = contentLen;
             this.remainingContentLength = contentLen;

@@ -46,6 +46,7 @@ public class InputMethodJFrame
     /**
      * Constructs a Swing based input method window.
      */
+    @SuppressWarnings("this-escape")
     public InputMethodJFrame(String title, InputContext context) {
         super(title);
         //InputMethodJFrame never has LookAndFeel decoration

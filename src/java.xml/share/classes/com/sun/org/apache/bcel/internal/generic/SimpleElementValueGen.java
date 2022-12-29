@@ -117,6 +117,7 @@ public class SimpleElementValueGen extends ElementValueGen
      * the 'new'. You need to use this ctor if the annotation is being copied
      * from one file to another.
      */
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final SimpleElementValue value,
             final ConstantPoolGen cpool, final boolean copyPoolEntries)
     {

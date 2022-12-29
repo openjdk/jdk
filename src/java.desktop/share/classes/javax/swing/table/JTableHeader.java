@@ -942,6 +942,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
              * @param p  the parent <code>JTableHeader</code>
              * @param t  the table <code>JTable</code>
              */
+            @SuppressWarnings("this-escape")
             public AccessibleJTableHeaderEntry(int c, JTableHeader p, JTable t) {
                 parent = p;
                 column = c;

@@ -61,6 +61,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         return new AquaTabbedPaneUI();
     }
 
+    @SuppressWarnings("this-escape")
     protected final AquaTabbedPaneTabState visibleTabState = new AquaTabbedPaneTabState(this);
     protected final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIStateFactory.getTab());
 
@@ -865,6 +866,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     class MouseHandler extends MouseInputAdapter implements ActionListener {
 
         int trackingTab = -3;
+        @SuppressWarnings("this-escape")
         private final Timer popupTimer = new Timer(500, this);
 
         MouseHandler() {

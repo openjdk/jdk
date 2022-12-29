@@ -4274,6 +4274,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         /**
          * Constructs {@code AccessibleJTree}
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJTree() {
             // Add a tree model listener for JTree
             TreeModel model = JTree.this.getModel();

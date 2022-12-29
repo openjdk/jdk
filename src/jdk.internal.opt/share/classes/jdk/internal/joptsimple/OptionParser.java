@@ -272,6 +272,7 @@ public class OptionParser implements OptionDeclarer {
      * @throws OptionException if the option specification contains illegal characters or otherwise cannot be
      * recognized
      */
+    @SuppressWarnings("this-escape")
     public OptionParser( String optionSpecification ) {
         this();
 

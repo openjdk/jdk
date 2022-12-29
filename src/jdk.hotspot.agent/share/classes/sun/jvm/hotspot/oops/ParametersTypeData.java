@@ -46,6 +46,7 @@ public class ParametersTypeData<K,M> extends ArrayData {
     return arrayStartOffSet + TypeStackSlotEntries.typeLocalOffset(i);
   }
 
+  @SuppressWarnings("this-escape")
   public ParametersTypeData(MethodDataInterface<K,M> methodData, DataLayout layout) {
     super(layout);
     parameters = new TypeStackSlotEntries<K,M>(methodData, this, 1, numberOfParameters());

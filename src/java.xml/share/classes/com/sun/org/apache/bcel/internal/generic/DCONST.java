@@ -40,6 +40,7 @@ public class DCONST extends Instruction implements ConstantPushInstruction {
     }
 
 
+    @SuppressWarnings("this-escape")
     public DCONST(final double f) {
         super(com.sun.org.apache.bcel.internal.Const.DCONST_0, (short) 1);
         if (f == 0.0) {

@@ -358,6 +358,7 @@ class EventRequestManagerImpl extends MirrorImpl
                                      implements BreakpointRequest {
         private final Location location;
 
+        @SuppressWarnings("this-escape")
         BreakpointRequestImpl(Location location) {
             this.location = location;
             filters.add(0,JDWP.EventRequest.Set.Modifier.LocationOnly
@@ -380,6 +381,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class ClassPrepareRequestImpl extends ClassVisibleEventRequestImpl
                                   implements ClassPrepareRequest {
+        @SuppressWarnings("this-escape")
         ClassPrepareRequestImpl() {
             requestList().add(this);
         }
@@ -411,6 +413,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class ClassUnloadRequestImpl extends ClassVisibleEventRequestImpl
                                  implements ClassUnloadRequest {
+        @SuppressWarnings("this-escape")
         ClassUnloadRequestImpl() {
             requestList().add(this);
         }
@@ -430,6 +433,7 @@ class EventRequestManagerImpl extends MirrorImpl
         boolean caught = true;
         boolean uncaught = true;
 
+        @SuppressWarnings("this-escape")
         ExceptionRequestImpl(ReferenceType refType,
                           boolean notifyCaught, boolean notifyUncaught) {
             exception = refType;
@@ -471,6 +475,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class MethodEntryRequestImpl extends ClassVisibleEventRequestImpl
                                  implements MethodEntryRequest {
+        @SuppressWarnings("this-escape")
         MethodEntryRequestImpl() {
             requestList().add(this);
         }
@@ -486,6 +491,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class MethodExitRequestImpl extends ClassVisibleEventRequestImpl
                                 implements MethodExitRequest {
+        @SuppressWarnings("this-escape")
         MethodExitRequestImpl() {
             if (methodExitEventCmd == 0) {
                 /*
@@ -518,6 +524,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class MonitorContendedEnterRequestImpl extends ClassVisibleEventRequestImpl
                                            implements MonitorContendedEnterRequest {
+        @SuppressWarnings("this-escape")
         MonitorContendedEnterRequestImpl() {
             requestList().add(this);
         }
@@ -533,6 +540,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class MonitorContendedEnteredRequestImpl extends ClassVisibleEventRequestImpl
                                              implements MonitorContendedEnteredRequest {
+        @SuppressWarnings("this-escape")
         MonitorContendedEnteredRequestImpl() {
             requestList().add(this);
         }
@@ -548,6 +556,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class MonitorWaitRequestImpl extends ClassVisibleEventRequestImpl
                                  implements MonitorWaitRequest {
+        @SuppressWarnings("this-escape")
         MonitorWaitRequestImpl() {
             requestList().add(this);
         }
@@ -563,6 +572,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class MonitorWaitedRequestImpl extends ClassVisibleEventRequestImpl
                                    implements MonitorWaitedRequest {
+        @SuppressWarnings("this-escape")
         MonitorWaitedRequestImpl() {
             requestList().add(this);
         }
@@ -582,6 +592,7 @@ class EventRequestManagerImpl extends MirrorImpl
         int size;
         int depth;
 
+        @SuppressWarnings("this-escape")
         StepRequestImpl(ThreadReference thread, int size, int depth) {
             this.thread = (ThreadReferenceImpl)thread;
             this.size = size;
@@ -658,6 +669,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class ThreadDeathRequestImpl extends ThreadLifecycleEventRequestImpl
                                  implements ThreadDeathRequest {
+        @SuppressWarnings("this-escape")
         ThreadDeathRequestImpl() {
             requestList().add(this);
         }
@@ -673,6 +685,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class ThreadStartRequestImpl extends ThreadLifecycleEventRequestImpl
                                  implements ThreadStartRequest {
+        @SuppressWarnings("this-escape")
         ThreadStartRequestImpl() {
             requestList().add(this);
         }
@@ -705,6 +718,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class AccessWatchpointRequestImpl extends WatchpointRequestImpl
                                       implements AccessWatchpointRequest {
+        @SuppressWarnings("this-escape")
         AccessWatchpointRequestImpl(Field field) {
             super(field);
             requestList().add(this);
@@ -721,6 +735,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class ModificationWatchpointRequestImpl extends WatchpointRequestImpl
                                             implements ModificationWatchpointRequest {
+        @SuppressWarnings("this-escape")
         ModificationWatchpointRequestImpl(Field field) {
             super(field);
             requestList().add(this);
@@ -737,6 +752,7 @@ class EventRequestManagerImpl extends MirrorImpl
 
     class VMDeathRequestImpl extends EventRequestImpl
                              implements VMDeathRequest {
+        @SuppressWarnings("this-escape")
         VMDeathRequestImpl() {
             requestList().add(this);
         }

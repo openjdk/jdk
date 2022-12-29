@@ -226,6 +226,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @throws RemoteException if failed to export object
      * @since 1.2
      */
+    @SuppressWarnings("this-escape")
     protected UnicastRemoteObject(int port) throws RemoteException
     {
         this.port = port;
@@ -248,6 +249,7 @@ public class UnicastRemoteObject extends RemoteServer {
      * @throws RemoteException if failed to export object
      * @since 1.2
      */
+    @SuppressWarnings("this-escape")
     protected UnicastRemoteObject(int port,
                                   RMIClientSocketFactory csf,
                                   RMIServerSocketFactory ssf)

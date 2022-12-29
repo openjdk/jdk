@@ -59,6 +59,7 @@ public class StackMapWriter extends InstructionDetailWriter {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected StackMapWriter(Context context) {
         super(context);
         context.put(StackMapWriter.class, this);

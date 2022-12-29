@@ -2925,6 +2925,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
         /**
          * Constructs an {@code AccessibleJList}.
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJList() {
             super();
             JList.this.addPropertyChangeListener(this);
@@ -3233,6 +3234,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
              * @param parent the parent
              * @param indexInParent the index in the parent
              */
+            @SuppressWarnings("this-escape")
             public AccessibleJListChild(JList<E> parent, int indexInParent) {
                 this.parent = parent;
                 this.setAccessibleParent(parent);

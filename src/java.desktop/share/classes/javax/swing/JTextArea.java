@@ -209,6 +209,7 @@ public class JTextArea extends JTextComponent {
      * @throws IllegalArgumentException if the rows or columns
      *  arguments are negative.
      */
+    @SuppressWarnings("this-escape")
     public JTextArea(Document doc, String text, int rows, int columns) {
         super();
         this.rows = rows;

@@ -234,6 +234,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     private int[] styles = { Font.PLAIN, Font.BOLD, Font.ITALIC };
     private int[] pointSizes = { 3, 5, 8, 10, 12, 14, 18, 24, 36, 48 };
 
+    @SuppressWarnings("this-escape")
     private PropertyChangeSupport support = new PropertyChangeSupport(this);
 
 }

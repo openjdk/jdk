@@ -420,6 +420,7 @@ public class BasicHTML {
      */
     static class Renderer extends View {
 
+        @SuppressWarnings("this-escape")
         Renderer(JComponent c, ViewFactory f, View v) {
             super(null);
             host = c;

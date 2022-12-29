@@ -140,6 +140,7 @@ public class Utils {
     private final JavaScriptScanner javaScriptScanner;
     private final DocFinder docFinder = newDocFinder();
 
+    @SuppressWarnings("this-escape")
     public Utils(BaseConfiguration c) {
         configuration = c;
         options = configuration.getOptions();

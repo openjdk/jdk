@@ -94,6 +94,7 @@ public class Preview {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     Preview(Context context) {
         context.put(previewKey, this);
         Options options = Options.instance(context);

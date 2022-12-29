@@ -55,6 +55,7 @@ public class WalkingIterator extends LocPathIterator implements ExpressionOwner
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("this-escape")
   WalkingIterator(
           Compiler compiler, int opPos, int analysis, boolean shouldLoadWalkers)
             throws javax.xml.transform.TransformerException

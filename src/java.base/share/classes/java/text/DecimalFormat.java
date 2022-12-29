@@ -4139,6 +4139,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMaximumIntegerDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    maximumIntegerDigits = super.getMaximumIntegerDigits();
 
     /**
@@ -4151,6 +4152,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMinimumIntegerDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    minimumIntegerDigits = super.getMinimumIntegerDigits();
 
     /**
@@ -4163,6 +4165,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMaximumFractionDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    maximumFractionDigits = super.getMaximumFractionDigits();
 
     /**
@@ -4175,6 +4178,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #getMinimumFractionDigits
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     private int    minimumFractionDigits = super.getMinimumFractionDigits();
 
     /**

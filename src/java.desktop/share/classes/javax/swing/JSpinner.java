@@ -649,6 +649,7 @@ public class JSpinner extends JComponent implements Accessible
          * @see #getTextField
          * @see JSpinner#addChangeListener
          */
+        @SuppressWarnings("this-escape")
         public DefaultEditor(JSpinner spinner) {
             super(null);
 
@@ -1489,6 +1490,7 @@ public class JSpinner extends JComponent implements Accessible
         /**
          * AccessibleJSpinner constructor
          */
+        @SuppressWarnings("this-escape")
         protected AccessibleJSpinner() {
             // model is guaranteed to be non-null
             oldModelValue = model.getValue();

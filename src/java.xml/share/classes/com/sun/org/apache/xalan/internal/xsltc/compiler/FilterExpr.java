@@ -56,6 +56,7 @@ class FilterExpr extends Expression {
      */
     private final List<Expression> _predicates;
 
+    @SuppressWarnings("this-escape")
     public FilterExpr(Expression primary, List<Expression> predicates) {
         _primary = primary;
         _predicates = predicates;

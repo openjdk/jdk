@@ -85,6 +85,7 @@ public class JavacMessages implements Messages {
 
     /** Creates a JavacMessages object.
      */
+    @SuppressWarnings("this-escape")
     public JavacMessages(Context context) {
         this(defaultBundleName, context.get(Locale.class));
         this.context = context;

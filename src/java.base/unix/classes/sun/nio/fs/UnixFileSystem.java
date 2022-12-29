@@ -77,6 +77,7 @@ abstract class UnixFileSystem
     private final UnixPath rootDirectory;
 
     // package-private
+    @SuppressWarnings("this-escape")
     UnixFileSystem(UnixFileSystemProvider provider, String dir) {
         this.provider = provider;
         this.defaultDirectory = Util.toBytes(UnixPath.normalizeAndCheck(dir));

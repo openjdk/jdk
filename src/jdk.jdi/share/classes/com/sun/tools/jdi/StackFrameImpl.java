@@ -63,6 +63,7 @@ public class StackFrameImpl extends MirrorImpl
     private Map<String, LocalVariable> visibleVariables =  null;
     private ObjectReference thisObject = null;
 
+    @SuppressWarnings("this-escape")
     StackFrameImpl(VirtualMachine vm, ThreadReferenceImpl thread,
                    long id, Location location) {
         super(vm);

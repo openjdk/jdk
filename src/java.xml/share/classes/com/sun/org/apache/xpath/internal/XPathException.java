@@ -70,6 +70,7 @@ public class XPathException extends TransformerException
    * an error message.
    * @param message The error message.
    */
+  @SuppressWarnings("this-escape")
   public XPathException(String message, ExpressionNode ex)
   {
     super(message);

@@ -67,6 +67,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
  */
 public class SSLTube implements FlowTube {
 
+    @SuppressWarnings("this-escape")
     final Logger debug =
             Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 

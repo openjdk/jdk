@@ -87,6 +87,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
         return Messages.THREADS;
     }
 
+    @SuppressWarnings("this-escape")
     public ThreadTab(VMPanel vmPanel) {
         super(vmPanel, getTabName());
 

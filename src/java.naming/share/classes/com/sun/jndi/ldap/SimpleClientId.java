@@ -41,6 +41,7 @@ class SimpleClientId extends ClientId {
     private final Object passwd;
     private final int myHash;
 
+    @SuppressWarnings("this-escape")
     SimpleClientId(int version, String hostname, int port,
         String protocol, Control[] bindCtls, OutputStream trace,
         String socketFactory, String username, Object passwd) {

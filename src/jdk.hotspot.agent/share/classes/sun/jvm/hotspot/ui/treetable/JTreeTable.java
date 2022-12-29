@@ -84,6 +84,7 @@ public class JTreeTable extends JTable {
         tree.setShowsRootHandles(newValue);
     }
 
+    @SuppressWarnings("this-escape")
     public JTreeTable(TreeTableModel treeTableModel) {
         super();
 

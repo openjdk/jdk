@@ -481,6 +481,7 @@ public class Main {
     static class MainClassListener implements TaskListener {
         TypeElement mainClass;
 
+        @SuppressWarnings("this-escape")
         MainClassListener(JavacTask t) {
             t.addTaskListener(this);
         }

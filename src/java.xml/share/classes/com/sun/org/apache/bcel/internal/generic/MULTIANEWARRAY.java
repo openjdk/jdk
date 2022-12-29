@@ -47,6 +47,7 @@ public class MULTIANEWARRAY extends CPInstruction implements LoadClass, Allocati
     }
 
 
+    @SuppressWarnings("this-escape")
     public MULTIANEWARRAY(final int index, final short dimensions) {
         super(com.sun.org.apache.bcel.internal.Const.MULTIANEWARRAY, index);
         if (dimensions < 1) {

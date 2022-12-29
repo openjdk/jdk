@@ -1306,6 +1306,7 @@ import javax.swing.text.*;
          *
          * @param elem the element that this view is responsible for
          */
+        @SuppressWarnings("this-escape")
         public RowView(Element elem) {
             super(elem, View.X_AXIS);
             fillColumns = new BitSet();

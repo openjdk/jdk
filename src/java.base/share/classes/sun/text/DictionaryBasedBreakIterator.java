@@ -114,6 +114,7 @@ public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
      * @param dictionaryData the dictionary data loaded from the dictionary file
      * @throws MissingResourceException if rule data or dictionary initialization failed
      */
+    @SuppressWarnings("this-escape")
     public DictionaryBasedBreakIterator(String ruleFile, byte[] ruleData,
                                         String dictionaryFile, byte[] dictionaryData) {
         super(ruleFile, ruleData);

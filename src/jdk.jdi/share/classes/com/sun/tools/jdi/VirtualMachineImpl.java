@@ -153,6 +153,7 @@ class VirtualMachineImpl extends MirrorImpl
     private Process process;
 
     // coordinates state changes and corresponding listener notifications
+    @SuppressWarnings("this-escape")
     private VMState state = new VMState(this);
 
     private Object initMonitor = new Object();
@@ -194,6 +195,7 @@ class VirtualMachineImpl extends MirrorImpl
         return true;
     }
 
+    @SuppressWarnings("this-escape")
     VirtualMachineImpl(VirtualMachineManager manager,
                        Connection connection, Process process,
                        int sequenceNumber) {

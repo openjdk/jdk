@@ -2567,6 +2567,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Constructs an AccessibleJTextComponent.  Adds a listener to track
          * caret change.
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJTextComponent() {
             Document doc = JTextComponent.this.getDocument();
             if (doc != null) {

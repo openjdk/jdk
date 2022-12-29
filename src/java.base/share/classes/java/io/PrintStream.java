@@ -111,6 +111,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /* Private constructors */
+    @SuppressWarnings("this-escape")
     private PrintStream(boolean autoFlush, OutputStream out) {
         super(out);
         this.autoFlush = autoFlush;
@@ -212,6 +213,7 @@ public class PrintStream extends FilterOutputStream
      *
      * @since  10
      */
+    @SuppressWarnings("this-escape")
     public PrintStream(OutputStream out, boolean autoFlush, Charset charset) {
         super(out);
         this.autoFlush = autoFlush;

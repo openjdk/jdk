@@ -199,6 +199,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected JavacProcessingEnvironment(Context context) {
         this.context = context;
         context.put(JavacProcessingEnvironment.class, this);

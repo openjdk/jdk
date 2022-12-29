@@ -38,6 +38,7 @@ public class ICONST extends Instruction implements ConstantPushInstruction {
     }
 
 
+    @SuppressWarnings("this-escape")
     public ICONST(final int i) {
         super(com.sun.org.apache.bcel.internal.Const.ICONST_0, (short) 1);
         if ((i >= -1) && (i <= 5)) {

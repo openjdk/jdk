@@ -43,6 +43,7 @@ public class EventQueueImpl extends MirrorImpl implements EventQueue {
     TargetVM target;
     boolean closed = false;
 
+    @SuppressWarnings("this-escape")
     EventQueueImpl(VirtualMachine vm, TargetVM target) {
         super(vm);
         this.target = target;

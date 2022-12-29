@@ -128,6 +128,7 @@ public class ToolEnvironment {
      *
      * @param context      Context for this javadoc instance.
      */
+    @SuppressWarnings("this-escape")
     protected ToolEnvironment(Context context) {
         context.put(ToolEnvKey, this);
         this.context = context;

@@ -99,6 +99,7 @@ public class Headers implements Map<String,List<String>> {
      *                              null.
      * @since 18
      */
+    @SuppressWarnings("this-escape")
     public Headers(Map<String,List<String>> headers) {
         Objects.requireNonNull(headers);
         var h = headers.entrySet().stream()

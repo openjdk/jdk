@@ -114,6 +114,7 @@ public class Enter extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Enter(Context context) {
         context.put(enterKey, this);
 

@@ -53,6 +53,7 @@ public class MissingInfoHandler {
     private final Names names;
     private ParameterNameProvider parameterNameProvider;
 
+    @SuppressWarnings("this-escape")
     protected MissingInfoHandler(Context context) {
         context.put(missingInfoHandlerWrapperKey, this);
         names = Names.instance(context);

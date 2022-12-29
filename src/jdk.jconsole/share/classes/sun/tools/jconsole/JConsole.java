@@ -107,6 +107,7 @@ public class JConsole extends JFrame
     private int frameLoc = 5;
     static boolean debug;
 
+    @SuppressWarnings("this-escape")
     public JConsole(boolean hotspot) {
         super(title);
 

@@ -55,6 +55,7 @@ public class TargetVM implements Runnable {
     private static final int OVERLOADED_QUEUE = 10000;
     private static final int UNDERLOADED_QUEUE = 100;
 
+    @SuppressWarnings("this-escape")
     TargetVM(VirtualMachineImpl vm, Connection connection) {
         this.vm = vm;
         this.connection = connection;

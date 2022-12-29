@@ -143,6 +143,7 @@ public abstract class BaseConfiguration {
     /**
      * The package grouping instance.
      */
+    @SuppressWarnings("this-escape")
     public final Group group = new Group(this);
 
     /**

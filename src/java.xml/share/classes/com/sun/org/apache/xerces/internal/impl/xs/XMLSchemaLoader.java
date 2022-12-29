@@ -320,6 +320,7 @@ XSLoader, DOMConfiguration {
         this(null, errorReporter, null, grammarBucket, sHandler, builder);
     }
 
+    @SuppressWarnings("this-escape")
     XMLSchemaLoader(SymbolTable symbolTable, XMLErrorReporter errorReporter,
             XMLEntityManager entityResolver, XSGrammarBucket grammarBucket,
             SubstitutionGroupHandler sHandler, CMBuilder builder) {

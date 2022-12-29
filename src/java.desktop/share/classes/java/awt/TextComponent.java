@@ -889,6 +889,7 @@ public sealed class TextComponent extends Component implements Accessible
          * Constructs an AccessibleAWTTextComponent.  Adds a listener to track
          * caret change.
          */
+        @SuppressWarnings("this-escape")
         public AccessibleAWTTextComponent() {
             TextComponent.this.addTextListener(this);
         }

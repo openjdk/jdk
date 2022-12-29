@@ -202,6 +202,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.1
      */
+    @SuppressWarnings("this-escape")
     public Checkbox(String label, boolean state, CheckboxGroup group)
         throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
@@ -731,6 +732,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
         /**
          * Constructor for {@code AccessibleAWTCheckbox}
          */
+        @SuppressWarnings("this-escape")
         public AccessibleAWTCheckbox() {
             super();
             Checkbox.this.addItemListener(this);

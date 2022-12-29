@@ -142,6 +142,7 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
      * {@code CallSite} dependency context.
      * JVM uses CallSite.context to store nmethod dependencies on the call site target.
      */
+    @SuppressWarnings("this-escape")
     private final MethodHandleNatives.CallSiteContext context = MethodHandleNatives.CallSiteContext.make(this);
 
     /**

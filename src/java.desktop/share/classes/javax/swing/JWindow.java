@@ -157,6 +157,7 @@ public class JWindow extends Window implements Accessible,
      *
      * @since  1.3
      */
+    @SuppressWarnings("this-escape")
     public JWindow(GraphicsConfiguration gc) {
         this(null, gc);
         super.setFocusableWindowState(false);

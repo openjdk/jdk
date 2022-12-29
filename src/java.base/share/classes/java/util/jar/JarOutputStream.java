@@ -53,6 +53,7 @@ public class JarOutputStream extends ZipOutputStream {
      * @param man the optional {@code Manifest}
      * @throws    IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     public JarOutputStream(OutputStream out, Manifest man) throws IOException {
         super(out);
         if (man == null) {

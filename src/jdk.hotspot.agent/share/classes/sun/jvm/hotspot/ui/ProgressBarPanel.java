@@ -42,6 +42,7 @@ public class ProgressBarPanel extends JPanel {
   }
 
   /** LayoutType is either VERTICAL or HORIZONTAL */
+  @SuppressWarnings("this-escape")
   public ProgressBarPanel(int layoutType) {
     super();
     if (layoutType == VERTICAL) {

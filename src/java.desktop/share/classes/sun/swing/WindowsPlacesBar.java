@@ -72,6 +72,7 @@ public class WindowsPlacesBar extends JToolBar
     File[] files;
     final Dimension buttonSize;
 
+    @SuppressWarnings("this-escape")
     public WindowsPlacesBar(JFileChooser fc, boolean isXPStyle) {
         super(JToolBar.VERTICAL);
         this.fc = fc;

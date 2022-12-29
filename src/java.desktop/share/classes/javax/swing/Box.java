@@ -90,6 +90,7 @@ public class Box extends JComponent implements Accessible {
      * @see #createHorizontalBox
      * @see #createVerticalBox
      */
+    @SuppressWarnings("this-escape")
     public Box(int axis) {
         super();
         super.setLayout(new BoxLayout(this, axis));

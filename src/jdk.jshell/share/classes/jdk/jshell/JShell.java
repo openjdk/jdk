@@ -112,6 +112,7 @@ public class JShell implements AutoCloseable {
     private static final String L10N_RB_NAME    = "jdk.jshell.resources.l10n";
     private static ResourceBundle outputRB  = null;
 
+    @SuppressWarnings("this-escape")
     JShell(Builder b) throws IllegalStateException {
         this.in = b.in;
         this.out = b.out;

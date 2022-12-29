@@ -845,6 +845,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
         private boolean isPressed = false;
         private boolean isSelected = false;
 
+        @SuppressWarnings("this-escape")
         AccessibleJMenuItem() {
             super();
             JMenuItem.this.addChangeListener(this);

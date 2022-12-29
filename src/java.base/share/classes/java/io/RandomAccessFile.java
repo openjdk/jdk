@@ -222,6 +222,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         this(file, mode, false);
     }
 
+    @SuppressWarnings("this-escape")
     private RandomAccessFile(File file, String mode, boolean openAndDelete)
         throws FileNotFoundException
     {

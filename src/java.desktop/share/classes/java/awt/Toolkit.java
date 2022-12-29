@@ -1688,6 +1688,7 @@ public abstract class Toolkit {
     /**
      * The desktop properties change support.
      */
+    @SuppressWarnings("this-escape")
     protected final PropertyChangeSupport desktopPropsSupport =
             Toolkit.createPropertyChangeSupport(this);
 

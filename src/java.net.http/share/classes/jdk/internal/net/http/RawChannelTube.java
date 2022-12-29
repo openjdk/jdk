@@ -66,6 +66,7 @@ public class RawChannelTube implements RawChannel {
     private static final Cleaner cleaner =
             Utils.ASSERTIONSENABLED  && Utils.DEBUG_WS ? Cleaner.create() : null;
 
+    @SuppressWarnings("this-escape")
     RawChannelTube(HttpConnection connection,
                    Supplier<ByteBuffer> initial) {
         this.connection = connection;

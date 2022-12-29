@@ -55,6 +55,7 @@ public class MBeansTab extends Tab implements
         return Messages.MBEANS;
     }
 
+    @SuppressWarnings("this-escape")
     public MBeansTab(final VMPanel vmPanel) {
         super(vmPanel, getTabName());
         addPropertyChangeListener(this);

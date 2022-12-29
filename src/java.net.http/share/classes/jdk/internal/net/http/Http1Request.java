@@ -485,6 +485,7 @@ class Http1Request {
         return ByteBuffer.wrap(header);
     }
 
+    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::toString, Utils.DEBUG);
 
 }

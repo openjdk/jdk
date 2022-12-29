@@ -49,6 +49,7 @@ class JdiEventHandler implements Runnable {
      * @param reportVMExit callback to report exit/disconnect
      * (passed true if the VM has died)
      */
+    @SuppressWarnings("this-escape")
     JdiEventHandler(VirtualMachine vm, Consumer<String> reportVMExit) {
         this.vm = vm;
         this.reportVMExit = reportVMExit;

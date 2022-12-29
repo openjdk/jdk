@@ -40,6 +40,7 @@ import javax.swing.*;
 public class TimeComboBox extends JComboBox<String> implements ItemListener, PropertyChangeListener {
     private ArrayList<Plotter> plotters = new ArrayList<Plotter>();
 
+    @SuppressWarnings("this-escape")
     public TimeComboBox(Plotter... plotterArray) {
         super(Plotter.rangeNames);
 

@@ -139,6 +139,7 @@ class ZipFileSystem extends FileSystem {
 
     private final Set<String> supportedFileAttributeViews;
 
+    @SuppressWarnings("this-escape")
     ZipFileSystem(ZipFileSystemProvider provider,
                   Path zfpath,
                   Map<String, ?> env) throws IOException

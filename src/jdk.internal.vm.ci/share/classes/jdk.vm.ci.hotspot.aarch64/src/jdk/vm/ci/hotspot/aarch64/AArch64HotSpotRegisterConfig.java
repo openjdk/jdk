@@ -167,6 +167,7 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         assert callerSaved.size() >= allocatable.size();
     }
 
+    @SuppressWarnings("this-escape")
     public AArch64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable) {
         this.target = target;
 

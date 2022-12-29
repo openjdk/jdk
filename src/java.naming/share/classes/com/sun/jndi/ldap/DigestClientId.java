@@ -61,6 +61,7 @@ class DigestClientId extends SimpleClientId {
     private final String[] propvals;
     private final int myHash;
 
+    @SuppressWarnings("this-escape")
     DigestClientId(int version, String hostname, int port,
         String protocol, Control[] bindCtls, OutputStream trace,
         String socketFactory, String username,

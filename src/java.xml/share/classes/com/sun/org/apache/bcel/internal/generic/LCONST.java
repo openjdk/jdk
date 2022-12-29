@@ -39,6 +39,7 @@ public class LCONST extends Instruction implements ConstantPushInstruction {
     }
 
 
+    @SuppressWarnings("this-escape")
     public LCONST(final long l) {
         super(com.sun.org.apache.bcel.internal.Const.LCONST_0, (short) 1);
         if (l == 0) {

@@ -43,6 +43,7 @@ public class EnumElementValueGen extends ElementValueGen
      * value - as indicated by typeIdx and valueIdx. This ctor is used for
      * deserialization
      */
+    @SuppressWarnings("this-escape")
     protected EnumElementValueGen(final int typeIdx, final int valueIdx,
             final ConstantPoolGen cpool)
     {

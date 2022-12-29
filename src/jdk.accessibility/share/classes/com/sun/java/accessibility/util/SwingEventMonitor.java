@@ -776,6 +776,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
          * @see EventQueueMonitor
          * @see SwingEventMonitor
          */
+        @SuppressWarnings("this-escape")
         public SwingEventListener() {
             initializeIntrospection();
             installListeners();

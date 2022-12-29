@@ -91,6 +91,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @param filename the file to be generated.
      */
+    @SuppressWarnings("this-escape")
     public ClassUseWriter(HtmlConfiguration configuration,
                           ClassUseMapper mapper, DocPath filename,
                           TypeElement typeElement) {

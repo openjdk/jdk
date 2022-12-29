@@ -50,6 +50,7 @@ public class EventHandler implements Runnable {
     boolean stopOnVMStart;
     private final boolean trackVthreads;
 
+    @SuppressWarnings("this-escape")
     EventHandler(EventNotifier notifier, boolean stopOnVMStart, boolean trackVthreads) {
         this.notifier = notifier;
         this.stopOnVMStart = stopOnVMStart;

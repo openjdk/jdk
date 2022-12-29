@@ -72,6 +72,7 @@ public class ConnectDialog extends InternalDialog
     private Action connectAction, cancelAction;
 
 
+    @SuppressWarnings("this-escape")
     public ConnectDialog(JConsole jConsole) {
         super(jConsole, Messages.CONNECT_DIALOG_TITLE, true);
 

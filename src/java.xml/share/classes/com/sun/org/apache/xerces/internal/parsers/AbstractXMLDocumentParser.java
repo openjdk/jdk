@@ -78,6 +78,7 @@ public abstract class AbstractXMLDocumentParser
      * Constructs a document parser using the default symbol table
      * and grammar pool.
      */
+    @SuppressWarnings("this-escape")
     protected AbstractXMLDocumentParser(XMLParserConfiguration config) {
         super(config);
 

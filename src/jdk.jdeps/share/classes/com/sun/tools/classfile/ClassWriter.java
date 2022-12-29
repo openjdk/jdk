@@ -167,6 +167,7 @@ public class ClassWriter {
      * convenience methods either,
      */
     protected static class ClassOutputStream extends ByteArrayOutputStream {
+        @SuppressWarnings("this-escape")
         public ClassOutputStream() {
             d = new DataOutputStream(this);
         }

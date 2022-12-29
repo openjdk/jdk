@@ -40,6 +40,7 @@ public class FCONST extends Instruction implements ConstantPushInstruction {
     }
 
 
+    @SuppressWarnings("this-escape")
     public FCONST(final float f) {
         super(com.sun.org.apache.bcel.internal.Const.FCONST_0, (short) 1);
         if (f == 0.0) {

@@ -776,6 +776,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         ShellFolderColumnInfo[] columns;
         int[] columnMap;
 
+        @SuppressWarnings("this-escape")
         DetailsTableModel(JFileChooser fc) {
             this.chooser = fc;
             directoryModel = getModel();

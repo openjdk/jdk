@@ -86,6 +86,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      * @throws IllegalArgumentException if {@code raf} is
      * {@code null}.
      */
+    @SuppressWarnings("this-escape")
     public FileImageInputStream(RandomAccessFile raf) {
         if (raf == null) {
             throw new IllegalArgumentException("raf == null!");

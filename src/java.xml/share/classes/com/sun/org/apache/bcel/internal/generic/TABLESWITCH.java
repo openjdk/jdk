@@ -47,6 +47,7 @@ public class TABLESWITCH extends Select {
      * @param targets where to branch for matched values
      * @param defaultTarget default branch
      */
+    @SuppressWarnings("this-escape")
     public TABLESWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle defaultTarget) {
         super(com.sun.org.apache.bcel.internal.Const.TABLESWITCH, match, targets, defaultTarget);
         /* Alignment remainder assumed 0 here, until dump time */

@@ -1227,6 +1227,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
          *
          * @since 1.5
          */
+        @SuppressWarnings("this-escape")
         protected AccessibleJPopupMenu() {
             JPopupMenu.this.addPropertyChangeListener(this);
         }

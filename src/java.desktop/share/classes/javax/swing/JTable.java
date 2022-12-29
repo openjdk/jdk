@@ -6742,6 +6742,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          *
          * @since 1.5
          */
+        @SuppressWarnings("this-escape")
         protected AccessibleJTable() {
             super();
             JTable.this.putClientProperty("JTable.forceAutoStartsEdit", true);
@@ -8104,6 +8105,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
              * @param i an {@code int} specifying the index to this cell
              * @since 1.4
              */
+            @SuppressWarnings("this-escape")
             public AccessibleJTableCell(JTable t, int r, int c, int i) {
                 parent = t;
                 row = r;

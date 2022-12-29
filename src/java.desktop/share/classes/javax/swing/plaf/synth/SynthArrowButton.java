@@ -37,6 +37,7 @@ import javax.swing.plaf.UIResource;
 class SynthArrowButton extends JButton implements SwingConstants, UIResource {
     private int direction;
 
+    @SuppressWarnings("this-escape")
     public SynthArrowButton(int direction) {
         super();
         super.setFocusable(false);
