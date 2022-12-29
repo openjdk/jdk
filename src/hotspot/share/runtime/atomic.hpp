@@ -32,12 +32,12 @@
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
-#include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
+
 #include <type_traits>
 
 enum atomic_memory_order {
@@ -794,8 +794,8 @@ template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
   D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
-                    IsSame<typename RemoveCV<D>::type,
-                           typename RemoveCV<U>::type>::value>::type>
+                    IsSame<typename std::remove_cv<D>::type,
+                           typename std::remove_cv<U>::type>::value>::type>
 {
   D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {
