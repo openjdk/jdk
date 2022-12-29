@@ -80,7 +80,9 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   }
 
   _data_available = true;
-  _lock.notify();
+  if (_buffer->ratio_used() >= 0.3) {
+    _lock.notify();
+  }
 }
 
 void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
@@ -174,7 +176,7 @@ void AsyncLogWriter::run() {
       AsyncLogLocker locker;
 
       while (!_data_available) {
-        _lock.wait(0/* no timeout */);
+        _lock.wait(1000);
       }
     }
 
