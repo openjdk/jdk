@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   LIR_Opr mask_reg = gen->new_register(T_INT);
   __ move(mask, mask_reg);
 
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ logical_and(flag_val, mask_reg, flag_val);
   } else {
     LIR_Opr masked_flag = gen->new_register(T_INT);
@@ -335,7 +335,7 @@ void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_O
   assert(addr->is_register(), "must be a register at this point");
 
   LIR_Opr tmp = gen->new_pointer_register();
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ move(addr, tmp);
     __ unsigned_shift_right(tmp, CardTable::card_shift(), tmp);
   } else {

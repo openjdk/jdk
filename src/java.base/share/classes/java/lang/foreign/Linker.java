@@ -180,9 +180,7 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @return a linker for the ABI associated with the OS and processor where the Java runtime is currently executing.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static Linker nativeLinker() {

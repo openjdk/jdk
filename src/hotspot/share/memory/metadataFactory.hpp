@@ -70,6 +70,7 @@ class MetadataFactory : AllStatic {
       assert(!md->on_stack(), "can't deallocate things on stack");
       assert(!md->is_shared(), "cannot deallocate if in shared spaces");
       md->deallocate_contents(loader_data);
+      bool is_klass = md->is_klass();
       // Call the destructor. This is currently used for MethodData which has a member
       // that needs to be destructed to release resources. Most Metadata derived classes have noop
       // destructors and/or cleanup using deallocate_contents.
@@ -77,7 +78,7 @@ class MetadataFactory : AllStatic {
       // or volatile so we can call the destructor of the type T points to.
       using U = std::remove_cv_t<T>;
       md->~U();
-      loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, md->is_klass());
+      loader_data->metaspace_non_null()->deallocate((MetaWord*)md, size, is_klass);
     }
   }
 };
