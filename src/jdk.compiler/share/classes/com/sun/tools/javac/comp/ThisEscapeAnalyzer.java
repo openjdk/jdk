@@ -243,7 +243,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             // Determines if the current class could be extended in some external compilation unit
             private boolean currentClassIsExternallyExtendable() {
-                return !this.currentClass.sym.isFinal() && !this.privateOuter;
+                return !this.currentClass.sym.isFinal() &&
+                  !(this.currentClass.sym.isSealed() && this.currentClass.permitting.isEmpty()) &&
+                  !this.privateOuter;
             }
         }.scan(tree);
 
