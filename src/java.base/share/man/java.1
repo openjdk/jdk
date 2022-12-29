@@ -2524,6 +2524,22 @@ instructions.
 Flags that control intrinsics now require the option
 \f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
 .TP
+\f[V]-XX:+UseChaCha20Intrinsics\f[R]
+Enable ChaCha20 intrinsics.
+This option is on by default for supported platforms.
+To disable ChaCha20 intrinsics, specify
+\f[V]-XX:-UseChaCha20Intrinsics\f[R].
+Flags that control intrinsics now require the option
+\f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
+.TP
+\f[V]-XX:+UsePoly1305Intrinsics\f[R]
+Enable Poly1305 intrinsics.
+This option is on by default for supported platforms.
+To disable Poly1305 intrinsics, specify
+\f[V]-XX:-UsePoly1305Intrinsics\f[R].
+Flags that control intrinsics now require the option
+\f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
+.TP
 \f[V]-XX:+UseBASE64Intrinsics\f[R]
 Controls the use of accelerated BASE64 encoding routines for
 \f[V]java.util.Base64\f[R].
