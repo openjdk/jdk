@@ -114,7 +114,6 @@ import javax.swing.table.TableRowSorter;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
 import sun.reflect.misc.ReflectUtil;
-import sun.swing.AccessibleComponentAccessor;
 import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;

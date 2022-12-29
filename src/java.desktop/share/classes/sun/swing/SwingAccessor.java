@@ -25,10 +25,19 @@
 
 package sun.swing;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Point;
 import java.lang.invoke.MethodHandles;
-import javax.swing.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
 
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
+import javax.swing.RepaintManager;
+import javax.swing.TransferHandler;
+import javax.swing.UIDefaults;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -46,6 +55,26 @@ public final class SwingAccessor {
      */
     private SwingAccessor() {
     }
+
+    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
+        return accessibleComponentAccessor;
+    }
+
+    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
+        accessibleComponentAccessor = accessibleAccessor;
+    }
+
+    /**
+     * This interface provides access to the renderer's accessibility component.
+     * For example, the renderer of a list element, a table cell, or a tree node
+     */
+    public interface AccessibleComponentAccessor {
+        Accessible getCurrentAccessible(AccessibleContext ac);
+    }
+
+    private static AccessibleComponentAccessor accessibleComponentAccessor = null;
+
+
 
     /**
      * An accessor for the JComponent class.

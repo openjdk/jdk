@@ -76,7 +76,6 @@ import javax.swing.text.Position;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
-import sun.swing.AccessibleComponentAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 
