@@ -36,6 +36,7 @@ import java.awt.Window;
  * Comparator which attempts to sort Components based on their size and
  * position. Code adapted from original javax.swing.DefaultFocusManager
  * implementation.
+ * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
  * future Swing releases. The current serialization support is

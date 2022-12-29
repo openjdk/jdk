@@ -42,6 +42,7 @@ import java.security.PrivilegedAction;
  * Responsible for starting up a new DocumentParser
  * each time its parse method is invoked. Stores a
  * reference to the dtd.
+ * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
  * future Swing releases. The current serialization support is
