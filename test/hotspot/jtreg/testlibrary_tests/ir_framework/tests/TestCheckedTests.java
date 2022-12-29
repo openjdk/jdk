@@ -26,6 +26,8 @@ package ir_framework.tests;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.IRViolationException;
 import compiler.lib.ir_framework.driver.TestVMException;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import jdk.test.lib.Asserts;
 
 /*
@@ -41,11 +43,17 @@ public class TestCheckedTests {
     public int iFld;
 
     public static void main(String[] args) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        PrintStream oldOut = System.out;
+        System.setOut(ps);
+
         TestFramework.run();
         try {
             TestFramework.run(BadIRAndRuntimeCheckedTests.class);
-            Utils.shouldHaveThrownException();
+            Utils.shouldHaveThrownException(baos.toString());
         } catch (TestVMException e) {
+            System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (2)"));
             Asserts.assertTrue(e.getExceptionInfo().contains("checkTestBad3"));
             Asserts.assertTrue(e.getExceptionInfo().contains("checkTestBad5"));
@@ -53,10 +61,12 @@ public class TestCheckedTests {
             Asserts.assertFalse(e.getExceptionInfo().contains("Failed IR Rules"));
         }
 
+        System.setOut(ps);
         try {
             TestFramework.run(BadIRCheckedTests.class);
-            Utils.shouldHaveThrownException();
+            Utils.shouldHaveThrownException(baos.toString());
         } catch (IRViolationException e) {
+            System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Failed IR Rules (3)"));
         }
     }
