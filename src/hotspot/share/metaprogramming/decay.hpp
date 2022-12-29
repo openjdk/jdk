@@ -36,7 +36,7 @@
 
 template <typename T>
 struct Decay: AllStatic {
-  typedef typename std::remove_cv<typename RemoveReference<T>::type>::type type;
+  typedef std::remove_cv_t<typename RemoveReference<T>::type> type;
 };
 
 #endif // SHARE_METAPROGRAMMING_DECAY_HPP
