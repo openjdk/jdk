@@ -31,7 +31,6 @@
 #include "metaprogramming/decay.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isFloatingPoint.hpp"
 #include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
@@ -42,6 +41,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include <type_traits>
 
 // This metafunction returns either oop or narrowOop depending on whether
 // an access needs to use compressed oops or not.
@@ -1097,7 +1097,7 @@ namespace AccessInternal {
     // not recognized as a valid primitive type to a primitive Access function.
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
                    (IsPointer<T>::value || IsIntegral<T>::value) ||
-                    IsFloatingPoint<T>::value)); // not allowed primitive type
+                    std::is_floating_point<T>::value)); // not allowed primitive type
   }
 
   template <DecoratorSet decorators, typename P, typename T>
@@ -1217,7 +1217,7 @@ namespace AccessInternal {
                         size_t length) {
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
                    (IsSame<T, void>::value || IsIntegral<T>::value) ||
-                    IsFloatingPoint<T>::value)); // arraycopy allows type erased void elements
+                    std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
     typedef typename Decay<T>::type DecayedT;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
     return arraycopy_reduce_types<expanded_decorators>(src_obj, src_offset_in_bytes, const_cast<DecayedT*>(src_raw),
