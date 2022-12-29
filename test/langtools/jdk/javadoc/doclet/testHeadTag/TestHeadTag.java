@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ public class TestHeadTag extends JavadocTester {
     final String version = System.getProperty("java.specification.version");
 
     public static void main(String... args) throws Exception {
-        TestHeadTag tester = new TestHeadTag();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestHeadTag();
+        tester.runTests();
     }
 
     TestHeadTag() {
