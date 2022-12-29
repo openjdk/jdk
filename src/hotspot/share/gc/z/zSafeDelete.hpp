@@ -32,7 +32,7 @@
 template <typename T>
 class ZSafeDeleteImpl {
 private:
-  typedef typename std::remove_extent<T>::type ItemT;
+  using ItemT = std::remove_extent_t<T>;
 
   ZLock*         _lock;
   uint64_t       _enabled;
