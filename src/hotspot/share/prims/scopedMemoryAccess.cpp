@@ -80,7 +80,7 @@ public:
 
   void do_thread(Thread* thread) {
 
-    JavaThread* jt = (JavaThread*)thread;
+    JavaThread* jt = JavaThread::cast(thread);
 
     if (!jt->has_last_Java_frame()) {
       return;

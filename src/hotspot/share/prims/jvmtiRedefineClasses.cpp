@@ -4371,16 +4371,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     (int)strlen(scratch_class->source_debug_extension()));
 
   // Use of javac -g could be different in the old and the new
-  if (scratch_class->access_flags().has_localvariable_table() !=
-      the_class->access_flags().has_localvariable_table()) {
-
-    AccessFlags flags = the_class->access_flags();
-    if (scratch_class->access_flags().has_localvariable_table()) {
-      flags.set_has_localvariable_table();
-    } else {
-      flags.clear_has_localvariable_table();
-    }
-    the_class->set_access_flags(flags);
+  if (scratch_class->has_localvariable_table() !=
+      the_class->has_localvariable_table()) {
+    the_class->set_has_localvariable_table(scratch_class->has_localvariable_table());
   }
 
   swap_annotations(the_class, scratch_class);

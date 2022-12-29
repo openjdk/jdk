@@ -101,11 +101,6 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  // These values are predictions of how much we think will survive in each
-  // section of the heap.
-  size_t _predicted_surviving_bytes_from_survivor;
-  size_t _predicted_surviving_bytes_from_old;
-
   size_t _rs_length;
 
   size_t _pending_cards_at_gc_start;
@@ -210,10 +205,9 @@ private:
 
   // Updates the internal young gen maximum and target and desired lengths.
   // If no parameters are passed, predict pending cards and the RS length using
-  // the prediction model. If after_gc is set, make sure that there is one eden region
-  // available (if there is enough space) to guarantee some progress.
+  // the prediction model.
   void update_young_length_bounds();
-  void update_young_length_bounds(size_t pending_cards, size_t rs_length, bool after_gc);
+  void update_young_length_bounds(size_t pending_cards, size_t rs_length);
 
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
@@ -241,7 +235,7 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length, bool after_gc) const;
+  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
   // The GCLocker might cause us to need more regions than the target. Calculate
@@ -359,11 +353,6 @@ public:
                                                  uint const max_optional_regions,
                                                  double time_remaining_ms,
                                                  uint& num_optional_regions);
-
-  // Returns whether a collection should be done proactively, taking into
-  // account the current number of free regions and the expected survival
-  // rates in each section of the heap.
-  bool preventive_collection_required(uint region_count);
 
 private:
 
