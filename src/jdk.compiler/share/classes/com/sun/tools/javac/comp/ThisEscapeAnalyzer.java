@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -251,6 +253,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // TODO: eliminate sealed classes where all permitted subclasses are in this compilation unit
 
+        // Gather all warnings here
+        final ArrayList<DiagnosticPosition[]> warningList = new ArrayList<>();
+
         // Now analyze all of the analyzable constructors we found
         for (Map.Entry<Symbol, MethodInfo> entry : this.methodMap.entrySet()) {
 
@@ -278,13 +283,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
                     // Analyze statement
                     this.scan(stat);
 
-                    // Emit any pending warning, showing the entire "stack trace"
+                    // Grab any pending warning
                     if (this.pendingWarning != null) {
-                        JCDiagnostic.Warning key = Warnings.PossibleThisEscape;
-                        for (DiagnosticPosition pos : this.pendingWarning) {
-                            this.log.warning(Lint.LintCategory.THIS_ESCAPE, pos, key);
-                            key = Warnings.PossibleThisEscapeLocation;
-                        }
+                        warningList.add(this.pendingWarning.toArray(new DiagnosticPosition[0]));
                         this.pendingWarning = null;
                         break;          // at most one warning per constructor
                     }
@@ -294,6 +295,57 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 this.methodClass = null;
                 this.targetClass = null;
                 this.refs = null;
+            }
+        }
+
+        // Eliminate duplicate warnings. Warning B duplicates warning A if the stack trace of A is a prefix
+        // of the stack trace of B. For example, if constructor Foo(int x) has a leak, and constructor
+        // Foo() invokes this(0), then emitting a warning for Foo() would be redundant.
+        final BiPredicate<DiagnosticPosition[], DiagnosticPosition[]> extendsAsPrefix = (warning1, warning2) -> {
+            if (warning2.length < warning1.length)
+                return false;
+            for (int index = 0; index < warning1.length; index++) {
+                if (warning2[index].getPreferredPosition() != warning1[index].getPreferredPosition())
+                    return false;
+            }
+            return true;
+        };
+
+        // Stack traces are ordered top to bottom, and so duplicates always have the same first element(s).
+        // Sort the stack traces lexicographically, so that duplicates immediately follow what they duplicate.
+        final Comparator<DiagnosticPosition[]> ordering = (warning1, warning2) -> {
+            for (int index1 = 0, index2 = 0; true; index1++, index2++) {
+                final boolean end1 = index1 >= warning1.length;
+                final boolean end2 = index2 >= warning2.length;
+                if (end1 && end2)
+                    return 0;
+                if (end1)
+                    return -1;
+                if (end2)
+                    return 1;
+                final int posn1 = warning1[index1].getPreferredPosition();
+                final int posn2 = warning2[index2].getPreferredPosition();
+                final int diff = Integer.compare(posn1, posn2);
+                if (diff != 0)
+                    return diff;
+            }
+        };
+        warningList.sort(ordering);
+
+        // Now emit the warnings, but skipping over duplicates as we go through the list
+        DiagnosticPosition[] previous = null;
+        for (DiagnosticPosition[] warning : warningList) {
+
+            // Skip duplicates
+            if (previous != null && extendsAsPrefix.test(previous, warning))
+                continue;
+            previous = warning;
+
+            // Emit warnings showing the entire stack trace
+            JCDiagnostic.Warning key = Warnings.PossibleThisEscape;
+            for (DiagnosticPosition pos : warning) {
+                this.log.warning(Lint.LintCategory.THIS_ESCAPE, pos, key);
+                key = Warnings.PossibleThisEscapeLocation;
             }
         }
     }
