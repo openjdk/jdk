@@ -104,7 +104,7 @@ JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
 # Allow overriding on the command line
 # (intentionally sharing name with the javac option)
-JAVA_WARNINGS_ARE_ERRORS ?= -Werror
+JAVA_WARNINGS_ARE_ERRORS ?= -Werror -Xmaxwarns 10000
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
