@@ -50,6 +50,7 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     }
 
     // Handle is the valid X window
+    @SuppressWarnings("this-escape")
     public XEmbeddedFrame(long handle, boolean supportsXEmbed, boolean isTrayIconWindow) {
         super(handle, supportsXEmbed);
 
