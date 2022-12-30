@@ -48,6 +48,7 @@ public class DirectionPanel extends JPanel {
 
     private ButtonGroup group;
 
+    @SuppressWarnings("this-escape")
     public DirectionPanel(boolean enable, String selection, ActionListener l) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setAlignmentY(TOP_ALIGNMENT);
@@ -132,6 +133,7 @@ public class DirectionPanel extends JPanel {
         /**
          * A layout direction button
          */
+        @SuppressWarnings("this-escape")
         public DirectionButton(Icon icon, Icon downIcon, String direction,
                                String description, ActionListener l,
                                ButtonGroup group, boolean selected)

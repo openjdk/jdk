@@ -53,6 +53,7 @@ public class LayoutControlPanel extends JPanel implements SwingConstants {
 
     // private ComponentOrientChanger componentOrientChanger = null;
 
+    @SuppressWarnings("this-escape")
     LayoutControlPanel(ButtonDemo demo) {
         this.demo = demo;
 

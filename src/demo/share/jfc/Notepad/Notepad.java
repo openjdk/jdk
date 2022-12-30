@@ -499,6 +499,7 @@ public class Notepad extends JPanel {
      */
     class StatusBar extends JComponent {
 
+        @SuppressWarnings("this-escape")
         public StatusBar() {
             super();
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));

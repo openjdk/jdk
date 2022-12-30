@@ -121,6 +121,7 @@ public class J2Ddemo extends JPanel implements ItemListener, ActionListener, Dem
     /**
      * Construct the J2D Demo.
      */
+    @SuppressWarnings("this-escape")
     public J2Ddemo(DemoProgress progress, RunWindowSettings runWndSetts) {
         this.runWndSetts = runWndSetts;
 

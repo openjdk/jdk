@@ -57,6 +57,7 @@ public class ScrollPaneDemo extends DemoModule {
     /**
      * ScrollPaneDemo Constructor
      */
+    @SuppressWarnings("this-escape")
     public ScrollPaneDemo(SwingSet2 swingset) {
         super(swingset, "ScrollPaneDemo", "toolbar/JScrollPane.gif");
 

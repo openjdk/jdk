@@ -403,6 +403,7 @@ public class FileChooserDemo extends DemoModule {
 class FilePreviewer extends JComponent implements PropertyChangeListener {
     ImageIcon thumbnail = null;
 
+    @SuppressWarnings("this-escape")
     public FilePreviewer(JFileChooser fc) {
         setPreferredSize(new Dimension(100, 50));
         fc.addPropertyChangeListener(this);
