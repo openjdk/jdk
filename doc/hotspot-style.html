@@ -73,7 +73,6 @@ Deduction</a></li>
 SFINAE</a></li>
 <li><a href="#enum" id="toc-enum">enum</a></li>
 <li><a href="#alignas" id="toc-alignas">alignas</a></li>
-<li><a href="#alignof" id="toc-alignof">alignof</a></li>
 <li><a href="#thread_local" id="toc-thread_local">thread_local</a></li>
 <li><a href="#nullptr" id="toc-nullptr">nullptr</a></li>
 <li><a href="#atomic" id="toc-atomic">&lt;atomic&gt;</a></li>
@@ -598,9 +597,17 @@ conventions might appear jarring and reduce readability.</p></li>
 <code>std::nothrow</code>, and <code>std::nothrow_t</code>.</li>
 <li><code>#include &lt;limits&gt;</code> to use
 <code>std::numeric_limits</code>.</li>
-<li><code>#include &lt;type_traits&gt;</code>.</li>
+<li><code>#include &lt;type_traits&gt;</code> with some considerations,
+listed below.</li>
 <li><code>#include &lt;cstddef&gt;</code> to use
 <code>std::nullptr_t</code> and <code>std::max_align_t</code>.</li>
+</ul>
+<p>Certain declarations from <code>&lt;type_traits&gt;</code> should be
+avoided.</p>
+<ul>
+<li><code>std::alignment_of&lt;&gt;</code> has been superseded by
+<code>alignof</code>, and the newer operator should be preferred over it
+instead, whenever possible.</li>
 </ul>
 <p>TODO: Rather than directly #including (permitted) Standard Library
 headers, use a convention of #including wrapper headers (in some
@@ -719,14 +726,6 @@ href="https://cplusplus.github.io/CWG/issues/1437.html">CWG
 capabilities for platforms that define it. This macro predates the use
 by HotSpot of C++ versions providing <code>alignas</code>. New code
 should use <code>alignas</code>.</p>
-<h3 id="alignof">alignof</h3>
-<p><code>alignof</code> (<a
-href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)
-is permitted alongside <code>alignas</code> for checking alignment as a
-less verbose alternative to <code>std::alignment_of&lt;&gt;</code>. The
-template precedes the operator in the language, so <code>alignof</code>
-should be preferred to <code>std::alignment_of&lt;&gt;</code> if
-possible.</p>
 <h3 id="thread_local">thread_local</h3>
 <p>Avoid use of <code>thread_local</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>);
@@ -1069,6 +1068,8 @@ other supported compilers may not have anything similar.</p>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
+<li><p><code>alignof</code> (<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)</p></li>
 <li><p><code>constexpr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>)
 (<a

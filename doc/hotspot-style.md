@@ -572,8 +572,13 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>`.
+* `#include <type_traits>` with some considerations, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+
+Certain declarations from `<type_traits>` should be avoided.
+
+* `std::alignment_of<>` has been superseded by `alignof`, and the newer
+operator should be preferred over it instead, whenever possible.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -695,15 +700,6 @@ later (C++14) explicitly disallowed
 The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
 platforms that define it. This macro predates the use by HotSpot of C++
 versions providing `alignas`. New code should use `alignas`.
-
-### alignof
-
-`alignof`
-([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
-is permitted alongside `alignas` for checking alignment as a less verbose
-alternative to `std::alignment_of<>`. The template precedes the operator
-in the language, so `alignof` should be preferred to `std::alignment_of<>`
-if possible.
 
 ### thread_local
 
@@ -1064,6 +1060,9 @@ and other supported compilers may not have anything similar.
   "p0136r1"
 
 ### Additional Permitted Features
+
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
