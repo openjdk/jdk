@@ -1785,6 +1785,7 @@ class Win32MediaSize extends MediaSizeName {
         return predefMedia;
     }
 
+    @SuppressWarnings("this-escape")
     public Win32MediaSize(String name, int dmPaper) {
         super(nextValue(name));
         dmPaperID = dmPaper;

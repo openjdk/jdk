@@ -48,6 +48,7 @@ class WindowsFileSystemProvider
 
     private final WindowsFileSystem theFileSystem;
 
+    @SuppressWarnings("this-escape")
     public WindowsFileSystemProvider() {
         theFileSystem = new WindowsFileSystem(this, StaticProperty.userDir());
     }

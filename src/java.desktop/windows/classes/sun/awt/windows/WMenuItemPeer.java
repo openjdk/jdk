@@ -90,6 +90,7 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
         this(target, false);
     }
 
+    @SuppressWarnings("this-escape")
     WMenuItemPeer(MenuItem target, boolean isCheckbox) {
         this.target = target;
         this.parent = (WMenuPeer) WToolkit.targetToPeer(target.getParent());

@@ -522,6 +522,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         private Skin listBoxBorder = null;
         private XPStyle xp;
 
+        @SuppressWarnings("this-escape")
         public WinComboPopUp(JComboBox<Object> combo) {
             super(combo);
             xp = XPStyle.getXP();

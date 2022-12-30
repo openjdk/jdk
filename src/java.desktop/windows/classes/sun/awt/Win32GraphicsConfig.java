@@ -91,6 +91,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * replaced by {@code getConfig()}
      */
     @Deprecated
+    @SuppressWarnings("this-escape")
     public Win32GraphicsConfig(GraphicsDevice device, int visualnum) {
         this.device = (Win32GraphicsDevice)device;
         this.visual = visualnum;

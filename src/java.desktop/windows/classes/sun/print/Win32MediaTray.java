@@ -64,6 +64,7 @@ public class Win32MediaTray extends MediaTray {
       return (getTraySize()-1);
     }
 
+    @SuppressWarnings("this-escape")
     protected Win32MediaTray(int id, String name) {
         super (nextValue(name));
         winID = id;

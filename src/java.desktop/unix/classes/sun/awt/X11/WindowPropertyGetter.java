@@ -42,6 +42,7 @@ public class WindowPropertyGetter {
     private final boolean auto_delete;
     private final long type;
     private boolean executed = false;
+    @SuppressWarnings("this-escape")
     public WindowPropertyGetter(long window, XAtom property, long offset,
                                 long length, boolean auto_delete, long type)
     {
