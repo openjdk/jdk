@@ -211,7 +211,7 @@ public class BezierAnim extends AnimatingControlsSurface {
         PaintedIcon[] drawIcons = new PaintedIcon[drawPaints.length];
         Font font = new Font(Font.SERIF, Font.PLAIN, 10);
 
-        @SuppressWarnings("LeakingThisInConstructor")
+        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
         public DemoControls(BezierAnim demo) {
             super(demo.name);
             this.demo = demo;

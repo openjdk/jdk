@@ -109,7 +109,7 @@ public class Rotate extends ControlsSurface {
         Rotate demo;
         JTextField tf1, tf2;
 
-        @SuppressWarnings("LeakingThisInConstructor")
+        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
         public DemoControls(Rotate demo) {
             super(demo.name);
             this.demo = demo;

@@ -105,7 +105,7 @@ public final class Tools extends JPanel implements ActionListener,
     public boolean doSlider;
     public boolean isExpanded;
 
-    @SuppressWarnings("LeakingThisInConstructor")
+    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
     public Tools(Surface surface, DemoInstVarsAccessor demoInstVars) {
         this.surface = surface;
         this.demoInstVars = demoInstVars;

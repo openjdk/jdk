@@ -110,7 +110,7 @@ public class Gradient extends ControlsSurface {
         ColoredSquare[] squares = new ColoredSquare[colors.length];
         JMenu imenu, omenu;
 
-        @SuppressWarnings("LeakingThisInConstructor")
+        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
         public DemoControls(Gradient demo) {
             super(demo.name);
             this.demo = demo;

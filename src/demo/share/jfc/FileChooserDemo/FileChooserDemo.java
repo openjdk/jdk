@@ -151,7 +151,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
     private final FilePreviewer previewer;
     private final JFileChooser chooser;
 
-    @SuppressWarnings("LeakingThisInConstructor")
+    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
     public FileChooserDemo() {
         UIManager.LookAndFeelInfo[] installedLafs = UIManager.
                 getInstalledLookAndFeels();
@@ -505,7 +505,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
         JLabel messageLabel;
         JButton backButton, nextButton, closeButton;
 
-        @SuppressWarnings("LeakingThisInConstructor")
+        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
         WizardDialog(JFrame frame, boolean modal) {
             super(frame, "Embedded JFileChooser Demo", modal);
 
@@ -743,7 +743,7 @@ public class FileChooserDemo extends JPanel implements ActionListener {
 
         ImageIcon thumbnail = null;
 
-        @SuppressWarnings("LeakingThisInConstructor")
+        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
         public FilePreviewer(JFileChooser fc) {
             setPreferredSize(new Dimension(100, 50));
             fc.addPropertyChangeListener(this);

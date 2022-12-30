@@ -56,7 +56,7 @@ public class WarpImage extends AnimatingSurface {
     private int pNum;
     private int x, y;
 
-    @SuppressWarnings("LeakingThisInConstructor")
+    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
     public WarpImage() {
         setBackground(Color.white);
         img = getImage("surfing.png");

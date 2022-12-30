@@ -265,7 +265,7 @@ public class Balls extends AnimatingControlsSurface {
         Balls demo;
         JToolBar toolbar;
 
-        @SuppressWarnings("LeakingThisInConstructor")
+        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
         public DemoControls(Balls demo) {
             super(demo.name);
             this.demo = demo;
