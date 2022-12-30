@@ -94,7 +94,11 @@ class PEAState {
 
   void add_new_allocation(Node* obj);
   void merge(const PEAState& merge);
-
+  bool contains(ObjID id) const { return _state.contains(id); }
+  void update(ObjID id, EscapedState* es) {
+    assert(contains(id), "sanity check");
+    _state.put(id, es);
+  }
   EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
 
 #ifndef PRODUCT

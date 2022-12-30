@@ -169,6 +169,8 @@ class Parse : public GraphKit {
     int                _all_successors; // Include exception paths also.
     Block**            _successors;
     Block**            _predecessors;
+    Block*             _from_block;
+    int                _init_pnum;      // the pnum of Block where _state is copied from.
     PEAState           _state; // Keep track all allocations
 
     const MethodLivenessResult& liveness() const {
@@ -199,7 +201,8 @@ class Parse : public GraphKit {
 
     // True after any predecessor flows control into this block
     bool is_merged() const                 { return _start_map != NULL; }
-
+    Block* from_block() const              { return _from_block; }
+    int init_pnum() const                  { return _init_pnum; }
     PEAState& state()                      { return _state; }
 #ifdef ASSERT
     // True after backedge predecessor flows control into this block
@@ -280,7 +283,7 @@ class Parse : public GraphKit {
     int add_new_path();
 
     // Initialize me by recording the parser's map.  My own map must be NULL.
-    void record_state(Parse* outer);
+    void record_state(Parse* outer, int pnum);
   };
 
 #ifndef PRODUCT
@@ -459,7 +462,7 @@ class Parse : public GraphKit {
   // Functions for managing basic blocks:
   void init_blocks();
   void load_state_from(Block* b);
-  void store_state_to(Block* b) { b->record_state(this); }
+  void store_state_to(Block* b, int pnum) { b->record_state(this, pnum); }
 
   // Parse all the basic blocks.
   void do_all_blocks();
@@ -491,6 +494,9 @@ class Parse : public GraphKit {
   // Helper functions for merging individual cells.
   PhiNode *ensure_phi(       int idx, bool nocreate = false);
   PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
+  // materialize object ID
+  Node* ensure_object_materialized(ObjID id, PEAState& state, SafePointNode* map, RegionNode* r, int pnum);
+
   // Helper to merge the current memory state into the given basic block
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 

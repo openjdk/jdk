@@ -1530,11 +1530,13 @@ void Parse::load_state_from(Block* block) {
 
 
 //-----------------------------record_state------------------------------------
-void Parse::Block::record_state(Parse* p) {
+void Parse::Block::record_state(Parse* p, int pnum) {
   assert(!is_merged(), "can only record state once, on 1st inflow");
   assert(start_sp() == p->sp(), "stack pointer must agree with ciTypeFlow");
   set_start_map(p->stop());
 
+  _from_block = p->block();
+  _init_pnum = pnum;
   // it looks like op->block() is null only when the current method is java.lang.Object.<init>
   if (p->block() != nullptr) {
     _state = p->block()->state();
@@ -1707,16 +1709,6 @@ void Parse::handle_missing_successor(int target_bci) {
   ShouldNotReachHere();
 }
 
-class AliasIterator {
-  const ObjID _id;
-
- public:
-  AliasIterator(const ObjID id): _id(id) {}
-  bool do_entry(Node* key, ObjID id) {
-    return id == _id;
-  }
-};
-
 //--------------------------merge_common---------------------------------------
 void Parse::merge_common(Parse::Block* target, int pnum) {
   if (TraceOptoParse) {
@@ -1770,7 +1762,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     }
 
     // Convert the existing Parser mapping into a mapping at this bci.
-    store_state_to(target);
+    store_state_to(target, pnum);
     assert(target->is_merged(), "do not come here twice");
 
   } else {                      // Prior mapping at this bci
@@ -1809,164 +1801,14 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           tty->print_cr("Block #%d replace %d with %d", block()->rpo(), r->_idx, result->_idx);
         }
       }
-
-      if (DoPartialEscapeAnalysis) {
-        assert(block()->is_ready(), "all predecessors have parsed");
-
-        // Only ObjIDs that exist in all predecessors states and have at least one common alias will survive the merge
-        PEAState& state = target->state();
-        bool changed = true;
-
-        while (changed) {
-          changed = false;
-          GrowableArray<ObjID> dead;
-          GrowableArray<ObjID> worklist;
-          // this is a bad idea. we should traverse _alias!
-          // all live and tracking objects are in _alias.
-          state._state.iterate([&](ObjID key, ObjectState* val) {
-            Unique_Node_List alias;
-
-            state._alias.iterate([&](Node* node, ObjID id) {
-              if (id == key) {
-                alias.push(node);
-              }
-              return true;
-            });
-
-            for (int i=0;  i < target->pred_count(); ++i) {
-              Block* pred = target->predecessor_at(i);
-              PEAState& pred_state = pred->state();
-
-              if (!pred_state._state.contains(key)) {
-                dead.append(key);
-                break;
-              }
-
-              Unique_Node_List alias2;
-              pred_state._alias.iterate([&](Node* node, ObjID id) {
-                if (id == key) {
-                  alias2.push(node);
-                }
-                return true;
-              });
-
-              VectorSet& set = alias.member_set();
-              set &= alias2.member_set();
-
-              if (set.is_empty()) {
-                dead.append(key);
-                break;
-              } else {
-                alias.remove_useless_nodes(set);
-              }
-            }
-
-            worklist.append(key);
-            return true;
-          });
-
-          int n = dead.length();
-          if (n > 0) {
-            changed = true;
-            for (int i = 0; i < n; ++i) {
-              ObjID id = dead.at(i);
-
-              state._state.remove(id);
-              // update alias
-              AliasIterator iter(id);
-              state._alias.unlink(&iter);
-            }
-          } else {
-            while (!worklist.is_empty()) {
-              ObjID obj = worklist.pop();
-              VectorSet bitmap;
-              for (int i=0; i < target->pred_count(); ++i) {
-                Block* pred = target->predecessor_at(i);
-                PEAState& pred_state = pred->state();
-
-                ObjectState* st = pred_state.get_object_state(obj);
-                if (!st->is_virtual()) {
-                  bitmap.set(i);
-                }
-              }
-
-              if (!bitmap.is_empty()) {
-                PhiNode* phi = PhiNode::make(r, obj->result_cast());
-                const int pred_count = target->pred_count();
-                for (int i=0; i < pred_count; ++i) {
-                  Block* block = target->predecessor_at(i);
-                  PEAState& pred_state = block->state();
-                  int pnum2 = pred_count - i; // pnum is opposite to the index
-
-                  if (!bitmap.test(i)) {
-                    SafePointNode* map = block->start_map();
-                    GraphKit kit(map->jvms());
-
-                    kit.set_control(r->in(pnum2));
-                    EscapedState* es = pred_state.materialize(&kit, obj, block->start_map());
-                    add_exception_states_from(kit.transfer_exceptions_into_jvms());
-                    // should be ProjNode.
-                    Node* proj = es->get_materialized_value()->in(0);
-                    assert(proj->is_Proj(), "wrong result");
-                    r->set_req(pnum2, proj);
-                    do_exceptions();
-                  }
-
-                  phi->set_req(pnum2, pred_state.get_object_state(obj)->get_materialized_value());
-                }
-
-                state._state.put(obj, new EscapedState(phi));
-                CheckCastPPNode* javaoop = obj->result_cast()->as_CheckCastPP();
-                gvn().set_type(phi, javaoop->type());
-                if (C->do_escape_analysis()) {
-                  record_for_igvn(phi);
-                }
-              } else {
-                // all predecessors are virtual:
-                // 1. if all ObjectStates are idential, reuse it.
-                // 2. or create a brand new virtual ObjectState and individual fields.
-                bool identical = true;
-                ObjectState* st = state.get_object_state(obj);
-                for (int i = 0; identical && i < target->pred_count(); ++i) {
-                  Block* pred = target->predecessor_at(i);
-                  PEAState& pred_state = pred->state();
-                  if (pred_state.get_object_state(obj) != st) {
-                    identical = false;
-                  }
-                }
-
-                if (!identical) {
-                  assert(0, "not implement yet. merge fields");
-                }
-              }
-            }
-          }
-
-          // after merging
-          for (int i=0; i < jvms()->loc_size(); ++i) {
-            Node* lv = local(i);
-            ObjID obj = state.is_alias(lv);
-
-            if (obj != nullptr) {
-              ObjectState* os = state.get_object_state(obj);
-              Node* val = os->get_materialized_value();
-              // TODO: also need to merge virtual objects? (val == nullptr)
-              if (val != nullptr && val != lv) {
-                set_local(i, val);
-                //changed = true;
-              }
-            }
-          }
-        } // while(changed)
-      } // DoPartialEscapeAnalysis
-
       record_for_igvn(r);
     }
 
     // Update all the non-control inputs to map:
     assert(TypeFunc::Parms == newin->jvms()->locoff(), "parser map should contain only youngest jvms");
     bool check_elide_phi = target->is_SEL_backedge(save_block);
-    for (uint j = 1; j < newin->req(); j++) {
+    // from right to left, we update I_O and memory last because PEA materialization may change them.
+    for (uint j = newin->req()-1; j >= 1; --j) {
       Node* m = map()->in(j);   // Current state of target.
       Node* n = newin->in(j);   // Incoming change to target state.
       PhiNode* phi;
@@ -1997,6 +1839,26 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
               C->gvn_replace_by(n, m);
             } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
+
+              if (DoPartialEscapeAnalysis && phi != nullptr) {
+                PEAState& as = block()->state();
+                ObjID id = as.is_alias(m);
+                if (id != nullptr) {
+                  ObjectState* os = as.get_object_state(id);
+                  PEAState& pred_as = save_block->state();
+                  assert(pred_as.is_alias(n) == id, "sanity: must be live before");
+                  ObjectState* pred_os = pred_as.get_object_state(id);
+                  // we need to materialize 'm'.
+                  if (os->is_virtual() && !pred_os->is_virtual()) {
+                    assert(pred_os->get_materialized_value() == n, "sanity: materialized value is m");
+                    SafePointNode* map = block()->from_block()->start_map();
+                    // object materialization takes place in from_block(), which is the first block 
+                    // see Block::record_state()
+                    Node* mv = ensure_object_materialized(id, as, map, r, block()->init_pnum());
+                    phi->replace_edge(m, mv);
+                  }
+                }
+              } // DoPartialEscapeAnalysis
             }
           }
           break;
@@ -2010,6 +1872,19 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (phi != NULL) {
         assert(n != top() || r->in(pnum) == top(), "live value must not be garbage");
         assert(phi->region() == r, "");
+        ObjID escaped_obj = nullptr;
+        if (DoPartialEscapeAnalysis) {
+          PEAState& pred_as = save_block->state();
+          PEAState& as = block()->state();
+          ObjID id = pred_as.is_alias(n);
+          if (id != nullptr && as.contains(id)) {
+            escaped_obj = id;
+            if (pred_as.get_object_state(id)->is_virtual()
+                && !as.get_object_state(id)->is_virtual()) {
+              n = ensure_object_materialized(id, pred_as, newin, r, pnum);
+            }
+          }
+        }
         phi->set_req(pnum, n);  // Then add 'n' to the merge
         if (pnum == PhiNode::Input) {
           // Last merge for this Phi.
@@ -2023,6 +1898,10 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           debug_only(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
+
+          if (escaped_obj) {
+            block()->state().update(escaped_obj, new EscapedState(phi));
+          }
         }
       }
     } // End of for all values to be merged
@@ -2277,6 +2156,19 @@ PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
   else
     mem->set_memory_at(idx, phi);
   return phi;
+}
+
+Node* Parse::ensure_object_materialized(ObjID id, PEAState& state, SafePointNode* from_map, RegionNode* r, int pnum) {
+  assert(map() != from_map, "should be different");
+
+  GraphKit kit(from_map->jvms());
+  kit.set_control(r->in(pnum));
+  EscapedState* es = state.materialize(&kit, id, from_map);
+  add_exception_states_from(kit.transfer_exceptions_into_jvms());
+  Node* mv = es->get_materialized_value();
+  r->set_req(pnum, mv->in(0));
+  do_exceptions();
+  return mv;
 }
 
 //------------------------------call_register_finalizer-----------------------
