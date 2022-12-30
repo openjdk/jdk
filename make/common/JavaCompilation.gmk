@@ -268,7 +268,7 @@ define SetupJavaCompilationBody
   endif
 
   # Allow overriding on the command line
-  JAVA_WARNINGS_ARE_ERRORS ?= -Werror -Xmaxwarns 10000
+  JAVA_WARNINGS_ARE_ERRORS ?= -Xmaxwarns 10000
 
   # Tell javac to do exactly as told and no more
   PARANOIA_FLAGS := -implicit:none -Xprefer:source -XDignore.symbol.file=true -encoding ascii
