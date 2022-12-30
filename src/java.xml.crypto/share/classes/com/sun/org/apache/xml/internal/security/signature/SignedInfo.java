@@ -240,6 +240,7 @@ public class SignedInfo extends Manifest {
      * @see <A HREF="http://lists.w3.org/Archives/Public/w3c-ietf-xmldsig/2001OctDec/0054.html">
      * Answer</A>
      */
+    @SuppressWarnings("this-escape")
     public SignedInfo(
         Element element, String baseURI, boolean secureValidation, Provider provider
     ) throws XMLSecurityException {

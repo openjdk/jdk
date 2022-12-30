@@ -121,6 +121,7 @@ public class Arguments {
     private static final InheritableThreadLocal<Arguments> instance =
             new InheritableThreadLocal<Arguments>();
 
+    @SuppressWarnings("this-escape")
     public Arguments(String[] args) {
         instance.set(this);
 

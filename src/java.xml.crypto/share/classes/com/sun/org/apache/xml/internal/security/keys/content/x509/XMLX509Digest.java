@@ -57,6 +57,7 @@ public class XMLX509Digest extends Signature11ElementProxy implements XMLX509Dat
      * @param digestBytes
      * @param algorithmURI
      */
+    @SuppressWarnings("this-escape")
     public XMLX509Digest(Document doc, byte[] digestBytes, String algorithmURI) {
         super(doc);
         this.addBase64Text(digestBytes);
@@ -71,6 +72,7 @@ public class XMLX509Digest extends Signature11ElementProxy implements XMLX509Dat
      * @param algorithmURI
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public XMLX509Digest(Document doc, X509Certificate x509certificate, String algorithmURI) throws XMLSecurityException {
         super(doc);
         this.addBase64Text(getDigestBytesFromCert(x509certificate, algorithmURI));

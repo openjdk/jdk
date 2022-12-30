@@ -158,6 +158,7 @@ class WrapToken_v2 extends MessageToken_v2 {
     /**
      * Writes a WrapToken_v2 object
      */
+    @SuppressWarnings("this-escape")
     public WrapToken_v2(Krb5Context context, MessageProp prop,
                      byte[] dataBytes, int dataOffset, int dataLen)
             throws GSSException {

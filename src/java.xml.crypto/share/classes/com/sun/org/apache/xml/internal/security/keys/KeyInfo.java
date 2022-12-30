@@ -120,6 +120,7 @@ public class KeyInfo extends SignatureElementProxy {
      * Constructor KeyInfo
      * @param doc
      */
+    @SuppressWarnings("this-escape")
     public KeyInfo(Document doc) {
         super(doc);
         addReturnToSelf();

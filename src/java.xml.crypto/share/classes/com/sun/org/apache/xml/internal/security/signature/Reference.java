@@ -167,6 +167,7 @@ public class Reference extends SignatureElementProxy {
      * applied to the data
      * TODO should we throw XMLSignatureException if MessageDigestAlgoURI is wrong?
      */
+    @SuppressWarnings("this-escape")
     protected Reference(
         Document doc, String baseURI, String referenceURI, Manifest manifest,
         Transforms transforms, String messageDigestAlgorithm

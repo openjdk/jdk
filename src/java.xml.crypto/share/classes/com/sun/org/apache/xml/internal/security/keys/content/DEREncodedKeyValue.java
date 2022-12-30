@@ -61,6 +61,7 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
      * @param publicKey
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public DEREncodedKeyValue(Document doc, PublicKey publicKey) throws XMLSecurityException {
         super(doc);
 
@@ -73,6 +74,7 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
      * @param doc
      * @param encodedKey
      */
+    @SuppressWarnings("this-escape")
     public DEREncodedKeyValue(Document doc, byte[] encodedKey) {
         super(doc);
 

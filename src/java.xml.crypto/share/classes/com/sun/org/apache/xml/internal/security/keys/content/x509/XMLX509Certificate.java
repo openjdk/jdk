@@ -59,6 +59,7 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
      * @param doc
      * @param certificateBytes
      */
+    @SuppressWarnings("this-escape")
     public XMLX509Certificate(Document doc, byte[] certificateBytes) {
         super(doc);
 
@@ -72,6 +73,7 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
      * @param x509certificate
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public XMLX509Certificate(Document doc, X509Certificate x509certificate)
         throws XMLSecurityException {
         super(doc);

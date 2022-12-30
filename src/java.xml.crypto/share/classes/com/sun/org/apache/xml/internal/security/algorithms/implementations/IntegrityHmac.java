@@ -69,6 +69,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
         this(null);
     }
 
+    @SuppressWarnings("this-escape")
     public IntegrityHmac(Provider provider) throws XMLSignatureException {
         String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
         LOG.debug("Created IntegrityHmacSHA1 using {}", algorithmID);

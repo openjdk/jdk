@@ -60,6 +60,7 @@ public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataCont
      * @param doc
      * @param skiBytes
      */
+    @SuppressWarnings("this-escape")
     public XMLX509SKI(Document doc, byte[] skiBytes) {
         super(doc);
         this.addBase64Text(skiBytes);
@@ -72,6 +73,7 @@ public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataCont
      * @param x509certificate
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public XMLX509SKI(Document doc, X509Certificate x509certificate)
         throws XMLSecurityException {
         super(doc);

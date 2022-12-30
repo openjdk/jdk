@@ -128,6 +128,7 @@ public class GSSContextImpl implements GSSContext {
     }
 
     // Used by new ExtendedGSSContext.ExtendedGSSContextImpl(ctxt)
+    @SuppressWarnings("this-escape")
     protected GSSContextImpl(GSSContextImpl src) {
         for (Field f: GSSContextImpl.class.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {

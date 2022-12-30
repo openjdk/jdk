@@ -52,6 +52,7 @@ public class PerfStringConstantMonitor extends PerfStringMonitor {
      * @param supported support level indicator
      * @param bb the buffer containing the string instrument data
      */
+    @SuppressWarnings("this-escape")
     public PerfStringConstantMonitor(String name, boolean supported,
                                      ByteBuffer bb) {
         super(name, Variability.CONSTANT, supported, bb);

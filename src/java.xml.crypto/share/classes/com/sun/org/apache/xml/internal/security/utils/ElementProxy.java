@@ -69,6 +69,7 @@ public abstract class ElementProxy {
      *
      * @param doc
      */
+    @SuppressWarnings("this-escape")
     public ElementProxy(Document doc) {
         if (doc == null) {
             throw new RuntimeException("Document is null");
@@ -85,6 +86,7 @@ public abstract class ElementProxy {
      * @param baseURI
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public ElementProxy(Element element, String baseURI) throws XMLSecurityException {
         if (element == null) {
             throw new XMLSecurityException("ElementProxy.nullElement");

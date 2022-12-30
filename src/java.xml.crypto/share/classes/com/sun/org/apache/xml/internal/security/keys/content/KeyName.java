@@ -49,6 +49,7 @@ public class KeyName extends SignatureElementProxy implements KeyInfoContent {
      * @param doc
      * @param keyName
      */
+    @SuppressWarnings("this-escape")
     public KeyName(Document doc, String keyName) {
         super(doc);
 

@@ -49,6 +49,7 @@ public class StorageResolver {
      *
      * @param resolver
      */
+    @SuppressWarnings("this-escape")
     public StorageResolver(StorageResolverSpi resolver) {
         this.add(resolver);
     }
@@ -58,6 +59,7 @@ public class StorageResolver {
      *
      * @param keyStore
      */
+    @SuppressWarnings("this-escape")
     public StorageResolver(KeyStore keyStore) {
         this.add(keyStore);
     }
@@ -67,6 +69,7 @@ public class StorageResolver {
      *
      * @param x509certificate
      */
+    @SuppressWarnings("this-escape")
     public StorageResolver(X509Certificate x509certificate) {
         this.add(x509certificate);
     }

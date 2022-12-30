@@ -65,6 +65,7 @@ public class GSSCredElement implements GSSCredentialSpi {
 
     // Construct delegation cred using the actual context mech and srcName
     // Warning: called by NativeUtil.c
+    @SuppressWarnings("this-escape")
     GSSCredElement(long pCredentials, GSSNameElement srcName, Oid mech)
         throws GSSException {
         pCred = pCredentials;
@@ -74,6 +75,7 @@ public class GSSCredElement implements GSSCredentialSpi {
         cleanable = Krb5Util.cleaner.register(this, disposerFor(cStub, pCred));
     }
 
+    @SuppressWarnings("this-escape")
     GSSCredElement(GSSNameElement name, int lifetime, int usage,
                    GSSLibStub stub) throws GSSException {
         cStub = stub;

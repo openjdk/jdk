@@ -132,6 +132,7 @@ public class Transforms extends SignatureElementProxy {
      * @throws XMLSecurityException
      * @throws XMLSignatureException
      */
+    @SuppressWarnings("this-escape")
     public Transforms(Element element, String baseURI)
         throws DOMException, XMLSignatureException, InvalidTransformException,
             TransformationException, XMLSecurityException {

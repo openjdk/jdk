@@ -118,6 +118,7 @@ abstract class P11Key implements Key, Length {
                 "true".equalsIgnoreCase(disableKeyExtraction);
     }
 
+    @SuppressWarnings("this-escape")
     P11Key(String type, Session session, long keyID, String algorithm,
             int keyLength, CK_ATTRIBUTE[] attrs) {
         this.type = type;

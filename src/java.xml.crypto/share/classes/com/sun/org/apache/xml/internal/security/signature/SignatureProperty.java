@@ -57,6 +57,7 @@ public class SignatureProperty extends SignatureElementProxy {
      *  element to which the property applies
      * @param id the {@code id} will be specified by {@link Reference#getURI} in validation
      */
+    @SuppressWarnings("this-escape")
     public SignatureProperty(Document doc, String target, String id) {
         super(doc);
 
