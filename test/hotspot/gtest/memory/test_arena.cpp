@@ -57,17 +57,13 @@ TEST_VM(Arena, alloc_size_0) {
   void* p = ar.Amalloc(0);
   ASSERT_NOT_NULL(p);
   ASSERT_ALIGN_AMALLOC(p);
-  if (!UseMallocOnly) {
-    // contains works differently for malloced mode (and there its broken anyway)
-    ASSERT_FALSE(ar.contains(p));
-  }
+
+  ASSERT_FALSE(ar.contains(p));
   // Allocate again. The new allocations should have the same position as the 0-sized
   // first one.
-  if (!UseMallocOnly) {
-    void* p2 = ar.Amalloc(1);
-    ASSERT_AMALLOC(ar, p2);
-    ASSERT_EQ(p2, p);
-  }
+  void* p2 = ar.Amalloc(1);
+  ASSERT_AMALLOC(ar, p2);
+  ASSERT_EQ(p2, p);
 }
 
 // Test behavior for Arealloc(p, 0)
@@ -81,10 +77,8 @@ TEST_VM(Arena, realloc_size_0) {
   ASSERT_NULL(p2);
 
   // a subsequent allocation should get the same pointer
-  if (!UseMallocOnly) {
-    void* p3 = ar.Amalloc(0x20);
-    ASSERT_EQ(p3, p1);
-  }
+  void* p3 = ar.Amalloc(0x20);
+  ASSERT_EQ(p3, p1);
 }
 
 // Realloc equal sizes is a noop
@@ -96,9 +90,7 @@ TEST_VM(Arena, realloc_same_size) {
 
   void* p2 = ar.Arealloc(p1, 0x200, 0x200);
 
-  if (!UseMallocOnly) {
-    ASSERT_EQ(p2, p1);
-  }
+  ASSERT_EQ(p2, p1);
   ASSERT_RANGE_IS_MARKED(p2, 0x200);
 }
 
@@ -157,29 +149,26 @@ TEST_VM(Arena, free_top) {
   DEBUG_ONLY(ASSERT_RANGE_IS_MARKED_WITH(p, 0x10, badResourceValue);)
 
   // a subsequent allocation should get the same pointer
-  if (!UseMallocOnly) {
-    void* p2 = ar.Amalloc(0x20);
-    ASSERT_EQ(p2, p);
-  }
+  void* p2 = ar.Amalloc(0x20);
+  ASSERT_EQ(p2, p);
 }
+
 
 // In-place shrinking.
 TEST_VM(Arena, realloc_top_shrink) {
-  if (!UseMallocOnly) {
-    Arena ar(mtTest);
+  Arena ar(mtTest);
 
-    void* p1 = ar.Amalloc(0x200);
-    ASSERT_AMALLOC(ar, p1);
-    GtestUtils::mark_range(p1, 0x200);
+  void* p1 = ar.Amalloc(0x200);
+  ASSERT_AMALLOC(ar, p1);
+  GtestUtils::mark_range(p1, 0x200);
 
-    void* p2 = ar.Arealloc(p1, 0x200, 0x100);
-    ASSERT_EQ(p1, p2);
-    ASSERT_RANGE_IS_MARKED(p2, 0x100); // realloc should preserve old content
+  void* p2 = ar.Arealloc(p1, 0x200, 0x100);
+  ASSERT_EQ(p1, p2);
+  ASSERT_RANGE_IS_MARKED(p2, 0x100); // realloc should preserve old content
 
-    // A subsequent allocation should be placed right after the end of the first, shrunk, allocation
-    void* p3 = ar.Amalloc(1);
-    ASSERT_EQ(p3, ((char*)p1) + 0x100);
-  }
+  // A subsequent allocation should be placed right after the end of the first, shrunk, allocation
+  void* p3 = ar.Amalloc(1);
+  ASSERT_EQ(p3, ((char*)p1) + 0x100);
 }
 
 // not-in-place shrinking.
@@ -193,9 +182,7 @@ TEST_VM(Arena, realloc_nontop_shrink) {
   void* p_other = ar.Amalloc(20); // new top, p1 not top anymore
 
   void* p2 = ar.Arealloc(p1, 200, 100);
-  if (!UseMallocOnly) {
-    ASSERT_EQ(p1, p2); // should still shrink in place
-  }
+  ASSERT_EQ(p1, p2); // should still shrink in place
   ASSERT_RANGE_IS_MARKED(p2, 100); // realloc should preserve old content
 }
 
@@ -208,9 +195,7 @@ TEST_VM(Arena, realloc_top_grow) {
   GtestUtils::mark_range(p1, 0x10);
 
   void* p2 = ar.Arealloc(p1, 0x10, 0x20);
-  if (!UseMallocOnly) {
-    ASSERT_EQ(p1, p2);
-  }
+  ASSERT_EQ(p1, p2);
   ASSERT_RANGE_IS_MARKED(p2, 0x10); // realloc should preserve old content
 }
 

@@ -372,7 +372,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     if (m->object_peek() == NULL) {
       return false;
     }
-    JavaThread* const owner = (JavaThread*) m->owner_raw();
+    JavaThread* const owner = static_cast<JavaThread*>(m->owner_raw());
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability
@@ -429,7 +429,7 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
   if (DiagnoseSyncOnValueBasedClasses == FATAL_EXIT) {
     ResourceMark rm(current);
     stringStream ss;
-    current->print_stack_on(&ss);
+    current->print_active_stack_on(&ss);
     char* base = (char*)strstr(ss.base(), "at");
     char* newline = (char*)strchr(ss.base(), '\n');
     if (newline != NULL) {
@@ -444,7 +444,7 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
     vblog.info("Synchronizing on object " INTPTR_FORMAT " of klass %s", p2i(obj()), obj->klass()->external_name());
     if (current->has_last_Java_frame()) {
       LogStream info_stream(vblog.info());
-      current->print_stack_on(&info_stream);
+      current->print_active_stack_on(&info_stream);
     } else {
       vblog.info("Cannot find the last Java frame");
     }
@@ -692,16 +692,6 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   // DTRACE_MONITOR_PROBE(waited, monitor, obj(), THREAD);
   int ret_code = dtrace_waited_probe(monitor, obj, THREAD);
   return ret_code;
-}
-
-// No exception are possible in this case as we only use this internally when locking is
-// correct and we have to wait until notified - so no interrupts or timeouts.
-void ObjectSynchronizer::wait_uninterruptibly(Handle obj, JavaThread* current) {
-  // The ObjectMonitor* can't be async deflated because the _waiters
-  // field is incremented before ownership is dropped and decremented
-  // after ownership is regained.
-  ObjectMonitor* monitor = inflate(current, obj(), inflate_cause_wait);
-  monitor->wait(0 /* wait-forever */, false /* not interruptible */, current);
 }
 
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
