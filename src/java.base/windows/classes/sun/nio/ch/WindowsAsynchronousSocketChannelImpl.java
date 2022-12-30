@@ -87,6 +87,7 @@ class WindowsAsynchronousSocketChannelImpl
     private final long writeBufferArray;
 
 
+    @SuppressWarnings("this-escape")
     WindowsAsynchronousSocketChannelImpl(Iocp iocp, boolean failIfGroupShutdown)
         throws IOException
     {
