@@ -129,7 +129,7 @@ public class Joins extends ControlsSurface {
         JoinIcon[] icons = new JoinIcon[joinType.length];
         JToolBar toolbar;
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public DemoControls(Joins demo) {
             super(demo.name);
             setBorder(new CompoundBorder(getBorder(),

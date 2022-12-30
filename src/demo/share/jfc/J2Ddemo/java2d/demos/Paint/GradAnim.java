@@ -268,7 +268,7 @@ public class GradAnim extends AnimatingControlsSurface {
         GradAnim demo;
         JComboBox<String> combo;
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public DemoControls(GradAnim demo) {
             super(demo.name);
             this.demo = demo;

@@ -395,7 +395,7 @@ public final class FadeAnim extends AnimatingControlsSurface {
         JSlider shapeSlider, stringSlider, imageSlider;
         Font font = new Font(Font.SERIF, Font.BOLD, 10);
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public DemoControls(FadeAnim demo) {
             super(demo.name);
             this.demo = demo;

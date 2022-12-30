@@ -77,7 +77,7 @@ public class RunWindow extends JPanel implements Runnable, ActionListener {
     private Thread thread;
     private JProgressBar pb;
 
-    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+    @SuppressWarnings("this-escape")
     public RunWindow(DemoInstVarsAccessor demoInstVars, RunWindowSettings runWndSetts) {
         this.demoInstVars = demoInstVars;
 

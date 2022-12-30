@@ -50,7 +50,7 @@ public class DukeAnim extends AnimatingSurface implements ImageObserver {
     private int x;
     private JButton b;
 
-    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+    @SuppressWarnings("this-escape")
     public DukeAnim() {
         setBackground(Color.white);
         clouds = getImage("clouds.jpg");

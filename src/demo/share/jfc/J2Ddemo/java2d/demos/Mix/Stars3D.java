@@ -257,7 +257,7 @@ public class Stars3D extends ControlsSurface {
         Stars3D demo;
         JTextField tf1, tf2;
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public DemoControls(Stars3D demo) {
             super(demo.name);
             this.demo = demo;

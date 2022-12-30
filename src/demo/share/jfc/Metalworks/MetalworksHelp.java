@@ -71,7 +71,7 @@ class HtmlPane extends JScrollPane implements HyperlinkListener {
 
     JEditorPane html;
 
-    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+    @SuppressWarnings("this-escape")
     public HtmlPane() {
         try {
             URL url = getClass().getResource("/resources/HelpFiles/toc.html");

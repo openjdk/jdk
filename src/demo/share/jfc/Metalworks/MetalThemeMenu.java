@@ -60,7 +60,7 @@ public class MetalThemeMenu extends JMenu implements ActionListener {
 
     MetalTheme[] themes;
 
-    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+    @SuppressWarnings("this-escape")
     public MetalThemeMenu(String name, MetalTheme[] themeArray) {
         super(name);
         themes = themeArray;

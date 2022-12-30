@@ -139,7 +139,7 @@ public class AllFonts extends AnimatingControlsSurface {
         JMenuItem[] menuitem = new JMenuItem[fsize.length];
         Font[] font = new Font[fsize.length];
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public DemoControls(AllFonts demo) {
             this.demo = demo;
             setBackground(GRAY);

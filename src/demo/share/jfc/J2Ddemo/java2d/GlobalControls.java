@@ -71,7 +71,7 @@ public class GlobalControls extends JPanel implements ItemListener,
     public Object obj;
     private Font font = new Font(Font.SERIF, Font.PLAIN, 12);
 
-    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+    @SuppressWarnings("this-escape")
     public GlobalControls(DemoInstVarsAccessor demoInstVars) {
         this.demoInstVars = demoInstVars;
 

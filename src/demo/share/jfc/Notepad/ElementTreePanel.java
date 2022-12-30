@@ -90,7 +90,7 @@ public class ElementTreePanel extends JPanel implements CaretListener,
     /** Set to true when updatin the selection. */
     protected boolean updatingSelection;
 
-    @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+    @SuppressWarnings("this-escape")
     public ElementTreePanel(JTextComponent editor) {
         this.editor = editor;
 

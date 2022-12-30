@@ -202,7 +202,7 @@ public class Intro extends JPanel {
         private JTable table;
         private TableModel dataModel;
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public ScenesTable(final Intro intro) {
             this.intro = intro;
 
@@ -336,7 +336,7 @@ public class Intro extends JPanel {
         public long sleepAmt = 30;
         private Thread thread;
 
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("this-escape")
         public Surface() {
             setBackground(myBlack);
             setLayout(new BorderLayout());
