@@ -4676,7 +4676,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 11) ?
+            11 * a.length + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4706,7 +4710,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 6.5) ?
+            (int) (6.5 * a.length + 2) : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4736,7 +4744,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 4) ?
+            4 * a.length + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4766,7 +4778,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 3.5) ?
+            (int) (3.5 * a.length + 2) : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4796,7 +4812,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 3) ?
+            3 * a.length + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4826,7 +4846,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 6.5) ?
+            (int) (6.5 * a.length + 2) : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4857,7 +4881,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 8) ?
+            8 * a.length + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4887,7 +4915,11 @@ public class Arrays {
         if (iMax == -1)
             return "[]";
 
-        StringBuilder b = new StringBuilder();
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        // Avoid overflow in the case of a humongous length
+        int initialCapacity = (a.length <= (MAX_INITIAL_CAPACITY - 2) / 13) ?
+            13 * a.length + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
         b.append('[');
         for (int i = 0; ; i++) {
             b.append(a[i]);
@@ -4970,7 +5002,7 @@ public class Arrays {
 
         int bufLen = 20 * a.length;
         if (a.length != 0 && bufLen <= 0)
-            bufLen = Integer.MAX_VALUE;
+            bufLen = Integer.MAX_VALUE - 8; // Avoid overflow
         StringBuilder buf = new StringBuilder(bufLen);
         deepToString(a, buf, new HashSet<>());
         return buf.toString();
