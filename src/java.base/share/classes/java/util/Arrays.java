@@ -3515,6 +3515,110 @@ public class Arrays {
                          Math.min(original.length, newLength));
         return copy;
     }
+    
+    /**
+     * Returns a copy of the "deep structure" of the specified
+     * array.  If the array contains other arrays as elements, the method
+     * copy their structure and so on. This method is designed for
+     * clone multidimensional arrays. For all indices, the copy will
+     * contain the same values of the original, unless they are themselves
+     * arrays.
+     *
+     * <p>If an element {@code e} is an array of a primitive type, it is
+     * copied as by invoking the appropriate overloading of {@code copyOf(e, e.length)}.
+     * If an element {@code e} is an array of a reference type,
+     * it is copied as by invoking this method recursively.
+     *
+     * <p>To avoid infinite recursion and to preserve the consistence of the "deep structure",
+     * if the specified array contains the same array more than once, or contains
+     * an indirect reference to an array through one
+     * or more levels of arrays more than once (possibly itself),
+     * the self-reference is cloned using only one copy (the first one).
+     * For example, an array {@code a = {a}}, containing only a reference
+     * to itself, would be copied as {@code c = {c}}.
+     * The resulting array is of exactly the same class as the original array.
+     *
+     * @param <T> the class of the objects in the array
+     * @param original the array to be copied
+     * @return a copy of the original array
+     * @throws NegativeArraySizeException if {@code newLength} is negative
+     * @throws NullPointerException if {@code original} is null
+     * @since 21
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T[] deepCopyOf(T[] original) {
+        return (T[]) deepCopyOf(original, original.getClass());
+    }
+    
+    /**
+     * Returns a copy of the "deep structure" of the specified
+     * array.  If the array contains other arrays as elements, the method
+     * copy their structure and so on. This method is designed for
+     * clone multidimensional arrays. For all indices, the copy will
+     * contain the same values of the original, unless they are themselves
+     * arrays.
+     *
+     * <p>If an element {@code e} is an array of a primitive type, it is
+     * copied as by invoking the appropriate overloading of {@code copyOf(e, e.length)}.
+     * If an element {@code e} is an array of a reference type,
+     * it is copied as by invoking this method recursively.
+     *
+     * <p>To avoid infinite recursion and to preserve the consistence of the "deep structure",
+     * if the specified array contains the same array more than once, or contains
+     * an indirect reference to an array through one
+     * or more levels of arrays more than once (possibly itself),
+     * the self-reference is cloned using only one copy (the first one).
+     * For example, an array {@code a = {a}}, containing only a reference
+     * to itself, would be copied as {@code c = {c}}.
+     * The resulting array is of the class {@code newType}.
+     *
+     * @param <U> the class of the objects in the original array
+     * @param <T> the class of the objects in the returned array
+     * @param original the array to be copied
+     * @param newType the class of the copy to be returned
+     * @return a copy of the "deep structure" of the original array
+     * @throws NullPointerException if {@code original} is null
+     * @throws ArrayStoreException if an element copied from
+     *     {@code original} is not of a runtime type that can be stored in
+     *     an array of class {@code newType}
+     * @since 21
+     */
+    @IntrinsicCandidate
+    public static <T, U> T[] deepCopyOf(U[] original, Class<? extends T[]> newType) {
+        @SuppressWarnings("unchecked")
+        T[] copy = ((Object)newType == (Object)Object[].class)
+            ? (T[]) new Object[original.length]
+            : (T[]) Array.newInstance(newType.getComponentType(), original.length);
+        
+        deepCopy(original, copy, new HashMap<>());
+        return copy;
+    }
+    
+    private static void deepCopy(Object[] original, Object[] copy, Map<Object, Object> alreadyCopied) {
+        alreadyCopied.put(original, copy);
+        
+        for (int i = 0; i < copy.length; i++) {
+            Object element = original[i];
+            final Class<?> compType;
+            final Object cache;
+            
+            if (element == null || (compType = element.getClass().componentType()) == null) // element isn't an array
+                copy[i] = element;
+            else if ((cache = alreadyCopied.get(element)) != null) // element is an array but it's been already copied
+                copy[i] = cache;
+            else {
+                int len = Array.getLength(element);
+                copy[i] = Array.newInstance(compType, len);
+                
+                if (element instanceof Object[]) // element may be a multi-array
+                    deepCopy((Object[]) element, (Object[]) copy[i], alreadyCopied);
+                else {
+                    alreadyCopied.put(element, copy[i]);
+                    System.arraycopy(element, 0, copy[i], 0, len);
+                }
+            }
+        }
+    }
 
     /**
      * Copies the specified array, truncating or padding with zeros (if necessary)
