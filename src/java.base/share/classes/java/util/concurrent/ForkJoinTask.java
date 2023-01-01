@@ -413,7 +413,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             q = (wt = (ForkJoinWorkerThread)t).workQueue;
             p = wt.pool;
         }
-        else if ((p = ForkJoinPool.common) != null && (how & POOLSUBMIT) == 0)
+        else if ((how & POOLSUBMIT) != 0)
+            p = null;
+        else if ((p = ForkJoinPool.common) != null)
             q = p.externalQueue();
         if (q != null && p != null) { // try helping
             if (this instanceof CountedCompleter)
@@ -433,6 +435,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             Aux a;
             if ((s = status) < 0)
                 break;
+            else if (p != null && p.runState < 0)
+                cancelIgnoringExceptions(this); // cancel on shutdown
             else if (node == null)
                 node = new Aux(Thread.currentThread(), null);
             else if (!queued) {
@@ -446,9 +450,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
             else if (Thread.interrupted()) {
                 interrupted = true;
-                if ((how & POOLSUBMIT) != 0 && p != null && p.runState < 0)
-                    cancelIgnoringExceptions(this); // cancel on shutdown
-                else if ((how & INTERRUPTIBLE) != 0) {
+                if ((how & INTERRUPTIBLE) != 0) {
                     s = ABNORMAL;
                     break;
                 }
@@ -852,8 +854,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return {@code true} if this task is now cancelled
      */
     public boolean cancel(boolean mayInterruptIfRunning) {
-        trySetCancelled();
-        return isCancelled();
+        int s = trySetCancelled();
+        return (s >= 0 || (s & (ABNORMAL | THROWN)) == ABNORMAL);
     }
 
     public final boolean isDone() {
@@ -1483,10 +1485,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         public final boolean exec() {
+            ForkJoinPool p; // for termination check
             Thread.interrupted();
             runner = Thread.currentThread();
             try {
-                if (!isDone()) // recheck
+                if ((p = getPool()) != null && p.runState < 0)
+                    trySetCancelled();
+                else if (!isDone())
                     result = callable.call();
                 return true;
             } catch (RuntimeException rex) {
@@ -1495,20 +1500,21 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 throw new RuntimeException(ex);
             } finally {
                 runner = null;
-                Thread.interrupted();
             }
         }
         public final void run() { invoke(); }
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            Thread t;
-            boolean stat = super.cancel(false);
-            if (mayInterruptIfRunning && (t = runner) != null) {
-                try {
-                    t.interrupt();
-                } catch (Throwable ignore) {
+            int s; Thread t;
+            if ((s = trySetCancelled()) >= 0) {
+                if (mayInterruptIfRunning && (t = runner) != null) {
+                    try {
+                        t.interrupt();
+                    } catch (Throwable ignore) {
+                    }
                 }
+                return true;
             }
-            return stat;
+            return ((s & (ABNORMAL | THROWN)) == ABNORMAL);
         }
         public String toString() {
             return super.toString() + "[Wrapped task = " + callable + "]";
