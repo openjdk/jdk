@@ -190,7 +190,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                     // Recurse
                     super.visitClassDef(tree);
                 } finally {
-                    this.currentClass = currentClass;
+                    this.currentClass = currentClassPrev;
                     this.privateOuter = privateOuterPrev;
                     this.lint = lintPrev;
                 }
