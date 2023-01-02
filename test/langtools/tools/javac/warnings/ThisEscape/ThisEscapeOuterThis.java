@@ -20,4 +20,15 @@ public class ThisEscapeOuterThis {
             ThisEscapeOuterThis.this.mightLeak();
         }
     }
+
+    // No leak here because class 'Local' cannot be externally extended
+    public static void method1() {
+        class Local {
+            Local() {
+                this.wontLeak();
+            }
+            void wontLeak() {
+            }
+        }
+    }
 }

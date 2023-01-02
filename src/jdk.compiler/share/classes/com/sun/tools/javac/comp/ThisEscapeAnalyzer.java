@@ -279,6 +279,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             private boolean currentClassIsExternallyExtendable() {
                 return !this.currentClass.sym.isFinal() &&
                   !(this.currentClass.sym.isSealed() && this.currentClass.permitting.isEmpty()) &&
+                  !(this.currentClass.sym.owner.kind == MTH) &&
                   !this.privateOuter;
             }
         }.scan(tree);
