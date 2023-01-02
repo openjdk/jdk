@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,6 +422,9 @@ public class SALauncher {
                 throw new SAGetoptException("Invalid RMI connector port: " + rmiPortString);
             }
         }
+        if (rmiPort < 0) {
+            System.err.println("Warning - negative rmiport " + rmiPort + " can lead to errors");
+        }
 
         final HotSpotAgent agent = new HotSpotAgent();
 
@@ -500,6 +503,8 @@ public class SALauncher {
                 func.accept(oldArgs);
             }
         } catch (SAGetoptException e) {
+            System.err.println("SA agent option related exception occured");
+            e.printStackTrace();
             System.err.println(e.getMessage());
             toolHelp(args[0]);
             // Exit with error status
