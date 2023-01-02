@@ -439,7 +439,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             }
 
             // If the expression type is incompatible with 'this', discard it
-            if (type != null && !this.types.isSubtypeUnchecked(this.targetClass.sym.type, type))
+            if (type != null && !this.isSubtype(this.targetClass.sym.type, type))
                 this.refs.remove(ExprRef.direct(this.depth));
         }
     }
@@ -862,8 +862,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             // Check for implicit 'this' reference
             final Type.ClassType currentClassType = (Type.ClassType)this.methodClass.sym.type;
-            final Type methodOwnerType = this.types.erasure(sym.owner.type);
-            if (this.types.isSubtypeUnchecked(currentClassType, methodOwnerType)) {
+            final Type methodOwnerType = sym.owner.type;
+            if (this.isSubtype(currentClassType, methodOwnerType)) {
                 if (this.refs.contains(ThisRef.direct()))
                     this.refs.add(ExprRef.direct(this.depth));
                 if (this.refs.contains(ThisRef.indirect()))
@@ -1097,6 +1097,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
         return sym != null &&
             sym.kind == VAR &&
             (sym.owner.kind == MTH || sym.owner.kind == VAR);
+    }
+
+    // Is type A a subtype of B when both types are erased?
+    private boolean isSubtype(Type a, Type b) {
+        return this.types.isSubtypeUnchecked(this.types.erasure(a), this.types.erasure(b));
     }
 
     // When scanning nodes we can be in one of two modes:
