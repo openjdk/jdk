@@ -731,8 +731,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
         final boolean selectedIndirectRef = this.refs.remove(ExprRef.indirect(this.depth));
 
         // Explicit 'this' reference?
-        final Type.ClassType methodClassType = (Type.ClassType)this.methodClass.sym.type;
-        if (TreeInfo.isExplicitThisReference(this.types, methodClassType, tree)) {
+        final Type.ClassType currentClassType = (Type.ClassType)this.methodClass.sym.type;
+        if (TreeInfo.isExplicitThisReference(this.types, currentClassType, tree)) {
             if (this.refs.contains(ThisRef.direct()))
                 this.refs.add(ExprRef.direct(this.depth));
             if (this.refs.contains(ThisRef.indirect()))
@@ -745,7 +745,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         if (selectedType.hasTag(CLASS)) {
             final Type.ClassType selectedClassType = (Type.ClassType)selectedType;
             if (tree.name == this.names._this &&
-                this.types.hasOuterClass(methodClassType, selectedClassType)) {
+                this.types.hasOuterClass(currentClassType, selectedClassType)) {
                 if (this.refs.contains(OuterRef.direct()))
                     this.refs.add(ExprRef.direct(this.depth));
                 if (this.refs.contains(OuterRef.indirect()))
@@ -813,12 +813,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         // Parameter or local variable?
-        final Symbol sym = tree.sym;
-        if (this.isParamOrVar(sym)) {
-            final VarSymbol vsym = (VarSymbol)tree.sym;
-            if (this.refs.contains(VarRef.direct(vsym)))
+        if (this.isParamOrVar(tree.sym)) {
+            final VarSymbol sym = (VarSymbol)tree.sym;
+            if (this.refs.contains(VarRef.direct(sym)))
                 this.refs.add(ExprRef.direct(this.depth));
-            if (this.refs.contains(VarRef.indirect(vsym)))
+            if (this.refs.contains(VarRef.indirect(sym)))
                 this.refs.add(ExprRef.indirect(this.depth));
             return;
         }
