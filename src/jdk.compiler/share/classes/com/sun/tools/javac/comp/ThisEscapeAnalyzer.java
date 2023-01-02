@@ -822,6 +822,36 @@ class ThisEscapeAnalyzer extends TreeScanner {
             return;
         }
 
+        // An unqualified, non-static method invocation must reference 'this' or outer 'this'.
+        // The "value" of a non-static method is a reference to its instance.
+        if (tree.sym.kind == MTH && (tree.sym.flags() & Flags.STATIC) == 0) {
+            final MethodSymbol sym = (MethodSymbol)tree.sym;
+
+            // Check for implicit 'this' reference
+            final Type.ClassType currentClassType = (Type.ClassType)this.methodClass.sym.type;
+            final Type methodOwnerType = this.types.erasure(sym.owner.type);
+            if (this.types.isSubtypeUnchecked(currentClassType, methodOwnerType)) {
+                if (this.refs.contains(ThisRef.direct()))
+                    this.refs.add(ExprRef.direct(this.depth));
+                if (this.refs.contains(ThisRef.indirect()))
+                    this.refs.add(ExprRef.indirect(this.depth));
+                return;
+            }
+
+            // Check for implicit outer 'this' reference
+            if (this.types.hasOuterClass(currentClassType, methodOwnerType)) {
+                if (this.refs.contains(OuterRef.direct()))
+                    this.refs.add(ExprRef.direct(this.depth));
+                if (this.refs.contains(OuterRef.indirect()))
+                    this.refs.add(ExprRef.indirect(this.depth));
+                return;
+            }
+
+            // What could it be?
+            //Assert.check(false);
+            return;
+        }
+
         // Unknown
         return;
     }
