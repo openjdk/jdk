@@ -761,7 +761,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 if (selectedDirectRef)
                     this.refs.add(ExprRef.direct(this.depth));
                 if (selectedIndirectRef)
-                    this.refs.add(ExprRef.direct(this.depth));
+                    this.refs.add(ExprRef.indirect(this.depth));
             }
             return;
         }
