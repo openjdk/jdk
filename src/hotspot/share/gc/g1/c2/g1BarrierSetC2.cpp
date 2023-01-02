@@ -245,8 +245,7 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
 
     if (do_load) {
       // load original value
-      // alias_idx correct??
-      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx);
+      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx, false, MemNode::unordered, LoadNode::Pinned);
     }
 
     // if (pre_val != NULL)
@@ -612,7 +611,6 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
 
   Node* top = Compile::current()->top();
   Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
-  Node* load = CardTableBarrierSetC2::load_at_resolved(access, val_type);
 
   // If we are reading the value of the referent field of a Reference
   // object (either by using Unsafe directly or through reflection)
@@ -624,12 +622,26 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
                             (in_heap && unknown && offset != top && obj != top));
 
   if (!access.is_oop() || !need_read_barrier) {
-    return load;
+    return CardTableBarrierSetC2::load_at_resolved(access, val_type);
   }
 
   assert(access.is_parse_access(), "entry not supported at optimization time");
+
   C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
   GraphKit* kit = parse_access.kit();
+  Node* load;
+
+  Node* control =  kit->control();
+  const TypePtr* adr_type = access.addr().type();
+  MemNode::MemOrd mo = access.mem_node_mo();
+  bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
+  bool unaligned = (decorators & C2_UNALIGNED) != 0;
+  bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
+  // Pinned control dependency is the strictest. So it's ok to substitute it for any other.
+  load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
+      LoadNode::Pinned, requires_atomic_access, unaligned, mismatched, unsafe,
+      access.barrier_data());
+
 
   if (on_weak || on_phantom) {
     // Use the pre-barrier to record the value in the referent field
@@ -781,6 +793,135 @@ Node* G1BarrierSetC2::step_over_gc_barrier(Node* c) const {
 }
 
 #ifdef ASSERT
+bool G1BarrierSetC2::has_cas_in_use_chain(Node *n) const {
+  Unique_Node_List visited;
+  Node_List worklist;
+  worklist.push(n);
+  while (worklist.size() > 0) {
+    Node* x = worklist.pop();
+    if (visited.member(x)) {
+      continue;
+    } else {
+      visited.push(x);
+    }
+
+    if (x->is_LoadStore()) {
+      int op = x->Opcode();
+      if (op == Op_CompareAndExchangeP || op == Op_CompareAndExchangeN ||
+          op == Op_CompareAndSwapP     || op == Op_CompareAndSwapN     ||
+          op == Op_WeakCompareAndSwapP || op == Op_WeakCompareAndSwapN) {
+        return true;
+      }
+    }
+    if (!x->is_CFG()) {
+      for (SimpleDUIterator iter(x); iter.has_next(); iter.next()) {
+        Node* use = iter.get();
+        worklist.push(use);
+      }
+    }
+  }
+  return false;
+}
+
+void G1BarrierSetC2::verify_pre_load(Node* marking_if, Unique_Node_List& loads /*output*/) const {
+  assert(loads.size() == 0, "Loads list should be empty");
+  Node* pre_val_if = marking_if->find_out_with(Op_IfTrue)->find_out_with(Op_If);
+  if (pre_val_if != NULL) {
+    Unique_Node_List visited;
+    Node_List worklist;
+    Node* pre_val = pre_val_if->in(1)->in(1)->in(1);
+
+    worklist.push(pre_val);
+    while (worklist.size() > 0) {
+      Node* x = worklist.pop();
+      if (visited.member(x)) {
+        continue;
+      } else {
+        visited.push(x);
+      }
+
+      if (has_cas_in_use_chain(x)) {
+        loads.clear();
+        return;
+      }
+
+      if (x->is_Con()) {
+        continue;
+      }
+      if (x->is_EncodeP() || x->is_DecodeN()) {
+        worklist.push(x->in(1));
+        continue;
+      }
+      if (x->is_Load() || x->is_LoadStore()) {
+        assert(x->in(0) != NULL, "Pre-val load has to have a control");
+        loads.push(x);
+        continue;
+      }
+      if (x->is_Phi()) {
+        for (uint i = 1; i < x->req(); i++) {
+          worklist.push(x->in(i));
+        }
+        continue;
+      }
+      assert(false, "Pre-val anomaly");
+    }
+  }
+}
+
+void G1BarrierSetC2::verify_no_safepoints(Compile* compile, Node* marking_check_if, const Unique_Node_List& loads) const {
+  if (loads.size() == 0) {
+    return;
+  }
+
+  if (loads.size() == 1) { // Handle the typical situation when there a single pre-value load
+                           // that is dominated by the marking_check_if, that's true when the
+                           // barrier itself does the pre-val load.
+    Node *pre_val = loads.at(0);
+    if (pre_val->in(0)->in(0) == marking_check_if) { // IfTrue->If
+      return;
+    }
+  }
+
+  // All other cases are when pre-value loads dominate the marking check.
+  Unique_Node_List controls;
+  for (uint i = 0; i < loads.size(); i++) {
+    Node *c = loads.at(i)->in(0);
+    controls.push(c);
+  }
+
+  Unique_Node_List visited;
+  Unique_Node_List safepoints;
+  Node_List worklist;
+  uint found = 0;
+
+  worklist.push(marking_check_if);
+  while (worklist.size() > 0 && found < controls.size()) {
+    Node* x = worklist.pop();
+    if (x == NULL || x == compile->top()) continue;
+    if (visited.member(x)) {
+      continue;
+    } else {
+      visited.push(x);
+    }
+
+    if (controls.member(x)) {
+      found++;
+    }
+    if (x->is_Region()) {
+      for (uint i = 1; i < x->req(); i++) {
+        worklist.push(x->in(i));
+      }
+    } else {
+      if (!x->is_SafePoint()) {
+        worklist.push(x->in(0));
+      } else {
+        safepoints.push(x);
+      }
+    }
+  }
+  assert(found == controls.size(), "Pre-barrier structure anomaly or possible safepoint");
+}
+
 void G1BarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) const {
   if (phase != BarrierSetC2::BeforeCodeGen) {
     return;
@@ -835,6 +976,10 @@ void G1BarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase phase) co
                 }
               }
               assert(load_ctrl != NULL && if_ctrl == load_ctrl, "controls must match");
+
+              Unique_Node_List loads;
+              verify_pre_load(iff, loads);
+              verify_no_safepoints(compile, iff, loads);
             }
           }
         }
