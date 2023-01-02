@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package compiler.lib.ir_framework;
 
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -58,8 +58,8 @@ import java.lang.annotation.RetentionPolicy;
  * If the specified preconditions fail, then the framework does not apply the IR rule. These preconditions can be
  * set with {@link #applyIf()}, {@link #applyIfNot()}, {@link #applyIfAnd()}, or {@link #applyIfOr()}.
  * <p>
- * Examples on how to write tests with IR rules can be found in {@link jdk.test.lib.hotspot.ir_framework.examples.IRExample}
- * and also as part of the internal testing in {@link jdk.test.lib.hotspot.ir_framework.tests.TestIRMatching}.
+ * Examples on how to write tests with IR rules can be found in {@link ir_framework.examples.IRExample}
+ * and also as part of the internal testing in {@link ir_framework.tests.TestIRMatching}.
  *
  * @see Test
  * @see IRNode
