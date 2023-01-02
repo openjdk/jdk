@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_ISCONST_HPP
-#define SHARE_METAPROGRAMMING_ISCONST_HPP
+/*
+ * @test
+ * @bug 8298824
+ * @summary Test BoolNode::Ideal() transformation with CMoveINode that has a Con node as condition.
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.c2.TestCMoveIConAsBool::test
+ *                   compiler.c2.TestCMoveIConAsBool
+ */
 
-#include "metaprogramming/integralConstant.hpp"
+package compiler.c2;
 
-template <typename T> struct IsConst: public FalseType {};
-template <typename T> struct IsConst<const T>: public TrueType {};
+public class TestCMoveIConAsBool {
+    static int x;
 
-#endif // SHARE_METAPROGRAMMING_ISCONST_HPP
+    public static void main(String[] strArr) {
+        test();
+    }
+
+    static void test() {
+        int i = 7;
+        boolean b = false;
+        float f = 7.135f;
+
+        do {
+            b = i > f | b || x != 7;
+        }
+        while (++i < 0);
+    }
+}

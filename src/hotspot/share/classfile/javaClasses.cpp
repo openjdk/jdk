@@ -1714,7 +1714,7 @@ void java_lang_Thread::serialize_offsets(SerializeClosure* f) {
 #endif
 
 JavaThread* java_lang_Thread::thread(oop java_thread) {
-  return (JavaThread*)java_thread->address_field(_eetop_offset);
+  return reinterpret_cast<JavaThread*>(java_thread->address_field(_eetop_offset));
 }
 
 void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {

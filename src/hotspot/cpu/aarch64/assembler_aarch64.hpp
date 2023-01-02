@@ -2716,6 +2716,7 @@ template<typename R, typename... Rx>
   INSN(fabd, 1, 1, 0b110101);
   INSN(fadd, 0, 0, 0b110101);
   INSN(fdiv, 1, 0, 0b111111);
+  INSN(faddp, 1, 0, 0b110101);
   INSN(fmul, 1, 0, 0b110111);
   INSN(fsub, 0, 1, 0b110101);
   INSN(fmla, 0, 0, 0b110011);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/isVolatile.hpp"
-#include "utilities/debug.hpp"
+/*
+ * @test
+ * @bug 8296412
+ * @compile TestInfiniteLoopWithUnmergedBackedges.jasm
+ * @summary Infinite loops may not have the backedges merged, before we call IdealLoopTree::check_safepts
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-LoopUnswitching
+ *      -XX:CompileCommand=compileonly,TestInfiniteLoopWithUnmergedBackedges::test*
+ *      TestInfiniteLoopWithUnmergedBackedgesMain
+ */
 
-class IsVolatileTest {
-  class A: AllStatic {};
-
-  STATIC_ASSERT(IsVolatile<volatile int>::value);
-  STATIC_ASSERT(IsVolatile<const volatile int>::value);
-  STATIC_ASSERT(!IsVolatile<const int>::value);
-  STATIC_ASSERT(!IsVolatile<int>::value);
-
-  STATIC_ASSERT(IsVolatile<volatile A>::value);
-  STATIC_ASSERT(!IsVolatile<const A>::value);
-  STATIC_ASSERT(!IsVolatile<A>::value);
-
-  STATIC_ASSERT(!IsVolatile<volatile A*>::value);
-  STATIC_ASSERT(IsVolatile<A* volatile>::value);
-  STATIC_ASSERT(IsVolatile<volatile A* volatile>::value);
-  STATIC_ASSERT(IsVolatile<A* const volatile>::value);
-};
+public class TestInfiniteLoopWithUnmergedBackedgesMain {
+    public static void main (String[] args) {
+        TestInfiniteLoopWithUnmergedBackedges.test_001(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_002(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_003(1, 0, 0, 0, 0);
+        TestInfiniteLoopWithUnmergedBackedges.test_004(1, 0, 0, 0, 0);
+    }
+}

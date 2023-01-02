@@ -35,13 +35,13 @@
 #include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
-#include "metaprogramming/isVolatile.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include <type_traits>
 
 // This metafunction returns either oop or narrowOop depending on whether
 // an access needs to use compressed oops or not.
@@ -1109,7 +1109,7 @@ namespace AccessInternal {
     // If a volatile address is passed in but no memory ordering decorator,
     // set the memory ordering to MO_RELAXED by default.
     const DecoratorSet expanded_decorators = DecoratorFixup<
-      (IsVolatile<P>::value && !HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
+      (std::is_volatile<P>::value && !HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
       (MO_RELAXED | decorators) : decorators>::value;
     store_reduce_types<expanded_decorators>(const_cast<DecayedP*>(addr), decayed_value);
   }
@@ -1135,7 +1135,7 @@ namespace AccessInternal {
     // If a volatile address is passed in but no memory ordering decorator,
     // set the memory ordering to MO_RELAXED by default.
     const DecoratorSet expanded_decorators = DecoratorFixup<
-      (IsVolatile<P>::value && !HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
+      (std::is_volatile<P>::value && !HasDecorator<decorators, MO_DECORATOR_MASK>::value) ?
       (MO_RELAXED | decorators) : decorators>::value;
     return load_reduce_types<expanded_decorators, DecayedT>(const_cast<DecayedP*>(addr));
   }
