@@ -53,7 +53,7 @@ public class IconifyTest {
     private static volatile int windowStatusEventType;
     private static volatile int windowIconifiedEventType;
     private static volatile boolean focusGained = false;
-    
+
     public static void initializeGUI() {
         frame = new Frame();
         frame.setLayout(new FlowLayout());
@@ -184,6 +184,5 @@ public class IconifyTest {
         windowStatusEventType = -1;
         focusGained = false;
     }
-
 }
 
