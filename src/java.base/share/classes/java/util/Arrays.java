@@ -3588,7 +3588,7 @@ public class Arrays {
         @SuppressWarnings("unchecked")
         T[] copy = ((Object)newType == (Object)Object[].class)
             ? (T[]) new Object[original.length]
-            : (T[]) Array.newInstance(newType.getComponentType(), original.length);
+            : (T[]) Array.newInstance(newType.componentType(), original.length);
         
         deepCopy(original, copy, new HashMap<>());
         return copy;
@@ -3599,16 +3599,16 @@ public class Arrays {
         
         for (int i = 0; i < copy.length; i++) {
             Object element = original[i];
-            final Class<?> compType;
+            final Class<?> eClass = element.getClass();
             final Object cache;
             
-            if (element == null || (compType = element.getClass().componentType()) == null) // element isn't an array
+            if (element == null || !eClass.isArray()) // element isn't an array
                 copy[i] = element;
             else if ((cache = alreadyCopied.get(element)) != null) // element is an array but it's been already copied
                 copy[i] = cache;
             else {
                 int len = Array.getLength(element);
-                copy[i] = Array.newInstance(compType, len);
+                copy[i] = Array.newInstance(eClass.componentType(), len);
                 
                 if (element instanceof Object[]) // element may be a multi-array
                     deepCopy((Object[]) element, (Object[]) copy[i], alreadyCopied);
