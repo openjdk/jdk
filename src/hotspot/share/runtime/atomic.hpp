@@ -30,6 +30,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
+#include "metaprogramming/isSigned.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removePointer.hpp"
