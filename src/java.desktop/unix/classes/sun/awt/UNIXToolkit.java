@@ -77,7 +77,7 @@ public abstract class UNIXToolkit extends SunToolkit
         public int getNumber() {
             return number;
         }
-    };
+    }
 
     private Boolean nativeGTKAvailable;
     private Boolean nativeGTKLoaded;
