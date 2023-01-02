@@ -3599,10 +3599,10 @@ public class Arrays {
         
         for (int i = 0; i < copy.length; i++) {
             Object element = original[i];
-            final Class<?> eClass = element.getClass();
+            final Class<?> eClass;
             final Object cache;
             
-            if (element == null || !eClass.isArray()) // element isn't an array
+            if (element == null || !(eClass = element.getClass()).isArray()) // element isn't an array
                 copy[i] = element;
             else if ((cache = alreadyCopied.get(element)) != null) // element is an array but it's been already copied
                 copy[i] = cache;
