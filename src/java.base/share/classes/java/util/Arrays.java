@@ -3515,7 +3515,7 @@ public class Arrays {
                          Math.min(original.length, newLength));
         return copy;
     }
-    
+
     /**
      * Returns a copy of the "deep structure" of the specified
      * array.  If the array contains other arrays as elements, the method
@@ -3549,7 +3549,7 @@ public class Arrays {
     public static <T> T[] deepCopyOf(T[] original) {
         return (T[]) deepCopyOf(original, original.getClass());
     }
-    
+
     /**
      * Returns a copy of the "deep structure" of the specified
      * array.  If the array contains other arrays as elements, the method
@@ -3589,19 +3589,19 @@ public class Arrays {
         T[] copy = ((Object)newType == (Object)Object[].class)
             ? (T[]) new Object[original.length]
             : (T[]) Array.newInstance(newType.componentType(), original.length);
-        
+
         deepCopy(original, copy, new HashMap<>());
         return copy;
     }
-    
+
     private static void deepCopy(Object[] original, Object[] copy, Map<Object, Object> alreadyCopied) {
         alreadyCopied.put(original, copy);
-        
+
         for (int i = 0; i < copy.length; i++) {
             Object element = original[i];
             final Class<?> eClass;
             final Object cache;
-            
+
             if (element == null || !(eClass = element.getClass()).isArray()) // element isn't an array
                 copy[i] = element;
             else if ((cache = alreadyCopied.get(element)) != null) // element is an array but it's been already copied
@@ -3609,7 +3609,7 @@ public class Arrays {
             else {
                 int len = Array.getLength(element);
                 copy[i] = Array.newInstance(eClass.componentType(), len);
-                
+
                 if (element instanceof Object[]) // element may be a multi-array
                     deepCopy((Object[]) element, (Object[]) copy[i], alreadyCopied);
                 else {
