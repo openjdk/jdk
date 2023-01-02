@@ -299,7 +299,7 @@ public class ServerSocket implements java.io.Closeable {
                     } catch (SocketException e) {
                         throw e;
                     } catch (IOException e) {
-                        throw new SocketException(e.getMessage());
+                        throw new SocketException(e.getMessage(), e);
                     }
                     created = true;
                 }
@@ -694,7 +694,7 @@ public class ServerSocket implements java.io.Closeable {
             Thread thread = Thread.currentThread();
             if (thread.isVirtual() && thread.isInterrupted()) {
                 close();
-                throw new SocketException("Closed by interrupt");
+                throw new SocketException("Closed by interrupt", e);
             }
             throw e;
         }

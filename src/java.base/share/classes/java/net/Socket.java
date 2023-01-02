@@ -532,7 +532,7 @@ public class Socket implements java.io.Closeable {
             impl.create(stream);
             created = true;
         } catch (IOException e) {
-            throw new SocketException(e.getMessage());
+            throw new SocketException(e.getMessage(), e);
         }
     }
 
@@ -670,7 +670,7 @@ public class Socket implements java.io.Closeable {
             Thread thread = Thread.currentThread();
             if (thread.isVirtual() && thread.isInterrupted()) {
                 close();
-                throw new SocketException("Closed by interrupt");
+                throw new SocketException("Closed by interrupt", e);
             }
             throw e;
         }
@@ -1029,7 +1029,7 @@ public class Socket implements java.io.Closeable {
                 Thread thread = Thread.currentThread();
                 if (thread.isVirtual() && thread.isInterrupted()) {
                     close();
-                    throw new SocketException("Closed by interrupt");
+                    throw new SocketException("Closed by interrupt", e);
                 }
                 throw e;
             }
@@ -1122,7 +1122,7 @@ public class Socket implements java.io.Closeable {
                 Thread thread = Thread.currentThread();
                 if (thread.isVirtual() && thread.isInterrupted()) {
                     close();
-                    throw new SocketException("Closed by interrupt");
+                    throw new SocketException("Closed by interrupt", e);
                 }
                 throw e;
             }

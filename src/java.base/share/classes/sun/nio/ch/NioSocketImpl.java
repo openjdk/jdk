@@ -310,9 +310,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw e;
         } catch (ConnectionResetException e) {
             connectionReset = true;
-            throw new SocketException("Connection reset");
+            throw new SocketException("Connection reset", e);
         } catch (IOException ioe) {
-            throw new SocketException(ioe.getMessage());
+            throw new SocketException(ioe.getMessage(), ioe);
         } finally {
             endRead(n > 0);
         }
@@ -410,7 +410,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         } catch (InterruptedIOException e) {
             throw e;
         } catch (IOException ioe) {
-            throw new SocketException(ioe.getMessage());
+            throw new SocketException(ioe.getMessage(), ioe);
         } finally {
             endWrite(n > 0);
         }
@@ -1084,7 +1084,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             } catch (SocketException e) {
                 throw e;
             } catch (IllegalArgumentException | IOException e) {
-                throw new SocketException(e.getMessage());
+                throw new SocketException(e.getMessage(), e);
             }
         }
     }
@@ -1136,7 +1136,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             } catch (SocketException e) {
                 throw e;
             } catch (IllegalArgumentException | IOException e) {
-                throw new SocketException(e.getMessage());
+                throw new SocketException(e.getMessage(), e);
             }
         }
     }
