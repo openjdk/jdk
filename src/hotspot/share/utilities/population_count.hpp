@@ -27,10 +27,11 @@
 
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isSigned.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // Returns the population count of x, i.e., the number of bits set in x.
 //
@@ -47,7 +48,7 @@ template <typename T>
 inline unsigned population_count(T x) {
   STATIC_ASSERT(BitsPerWord <= 128);
   STATIC_ASSERT(BitsPerByte == 8);
-  STATIC_ASSERT(IsIntegral<T>::value);
+  STATIC_ASSERT(std::is_integral<T>::value);
   STATIC_ASSERT(!IsSigned<T>::value);
   // We need to take care with implicit integer promotion when dealing with
   // integers < 32-bit. We chose to do this by explicitly widening constants
