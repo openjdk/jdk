@@ -28,7 +28,6 @@
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/conditional.hpp"
-#include "metaprogramming/decay.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/isIntegral.hpp"
