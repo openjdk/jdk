@@ -2125,6 +2125,8 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         set_ctrl(phi, prev);
       }
       // Make 'use' use the Phi instead of the old loop body exit value
+      assert(use->in(idx) == old, "old is still input of use");
+      _igvn.add_users_to_worklist(old); // notify, then modify
       _igvn.replace_input_of(use, idx, phi);
       if( use->_idx >= new_counter ) { // If updating new phis
         // Not needed for correctness, but prevents a weak assert
