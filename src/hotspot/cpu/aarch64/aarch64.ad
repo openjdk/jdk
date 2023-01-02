@@ -3916,7 +3916,7 @@ encode %{
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
+    __ tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
 
     // Check if it is still a light weight lock, this is is true if we
     // see the stack address of the basicLock in the markWord of the
