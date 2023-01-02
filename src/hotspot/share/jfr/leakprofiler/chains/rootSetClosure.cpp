@@ -65,17 +65,17 @@ void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
 class RootSetClosureMarkScope : public MarkScope {};
 
 template <typename Delegate>
-class NonBarrieredRootClosure : public OopClosure {
+class RawRootClosure : public OopClosure {
   Delegate* _delegate;
 
 public:
-  NonBarrieredRootClosure(Delegate* delegate) : _delegate(delegate) {}
+  RawRootClosure(Delegate* delegate) : _delegate(delegate) {}
 
   void do_oop(oop* ref) {
     assert(ref != NULL, "invariant");
     assert(is_aligned(ref, HeapWordSize), "invariant");
     if (*ref != nullptr) {
-      _delegate->do_root(UnifiedOopRef::encode_non_barriered(ref));
+      _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
     }
   }
 
@@ -83,7 +83,7 @@ public:
     assert(ref != NULL, "invariant");
     assert(is_aligned(ref, HeapWordSize), "invariant");
     if (!CompressedOops::is_null(*ref)) {
-      _delegate->do_root(UnifiedOopRef::encode_non_barriered(ref));
+      _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
     }
   }
 };
@@ -98,8 +98,8 @@ void RootSetClosure<Delegate>::process() {
   OopStorageSet::strong_oops_do(this);
 
   // We don't follow code blob oops, because they have misaligned oops.
-  NonBarrieredRootClosure<Delegate> nbrc(_delegate);
-  Threads::oops_do(&nbrc, NULL);
+  RawRootClosure<Delegate> rrc(_delegate);
+  Threads::oops_do(&rrc, NULL);
 }
 
 template class RootSetClosure<BFSClosure>;

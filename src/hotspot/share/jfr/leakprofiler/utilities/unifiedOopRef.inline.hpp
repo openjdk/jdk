@@ -53,8 +53,8 @@ inline bool UnifiedOopRef::is_native() const {
   return (_value & native_tag) != 0;
 }
 
-inline bool UnifiedOopRef::is_non_barriered() const {
-  return (_value & non_barriered_tag) != 0;
+inline bool UnifiedOopRef::is_raw() const {
+  return (_value & raw_tag) != 0;
 }
 
 inline bool UnifiedOopRef::is_null() const {
@@ -80,13 +80,13 @@ inline UnifiedOopRef UnifiedOopRef::encode_in_native(const oop* ref) {
   return create_with_tag(ref, native_tag);
 }
 
-inline UnifiedOopRef UnifiedOopRef::encode_non_barriered(const narrowOop* ref) {
+inline UnifiedOopRef UnifiedOopRef::encode_as_raw(const narrowOop* ref) {
   NOT_LP64(ShouldNotReachHere());
-  return create_with_tag(ref, non_barriered_tag | narrow_tag);
+  return create_with_tag(ref, raw_tag | narrow_tag);
 }
 
-inline UnifiedOopRef UnifiedOopRef::encode_non_barriered(const oop* ref) {
-  return create_with_tag(ref, non_barriered_tag);
+inline UnifiedOopRef UnifiedOopRef::encode_as_raw(const oop* ref) {
+  return create_with_tag(ref, raw_tag);
 }
 
 inline UnifiedOopRef UnifiedOopRef::encode_in_heap(const narrowOop* ref) {
@@ -104,7 +104,7 @@ inline UnifiedOopRef UnifiedOopRef::encode_null() {
 }
 
 inline oop UnifiedOopRef::dereference() const {
-  if (is_non_barriered()) {
+  if (is_raw()) {
     if (is_narrow()) {
       NOT_LP64(ShouldNotReachHere());
       return RawAccess<>::oop_load(addr<narrowOop*>());

@@ -29,14 +29,14 @@
 #include "utilities/globalDefinitions.hpp"
 
 struct UnifiedOopRef {
-  static const uintptr_t tag_mask          = LP64_ONLY(0b111) NOT_LP64(0b011);
-  static const uintptr_t native_tag        = 0b001;
-  static const uintptr_t non_barriered_tag = 0b010;
-  static const uintptr_t narrow_tag        = LP64_ONLY(0b100) NOT_LP64(0);
-  STATIC_ASSERT((native_tag & non_barriered_tag) == 0);
+  static const uintptr_t tag_mask   = LP64_ONLY(0b111) NOT_LP64(0b011);
+  static const uintptr_t native_tag = 0b001;
+  static const uintptr_t raw_tag    = 0b010;
+  static const uintptr_t narrow_tag = LP64_ONLY(0b100) NOT_LP64(0);
+  STATIC_ASSERT((native_tag & raw_tag) == 0);
   STATIC_ASSERT((native_tag & narrow_tag) == 0);
-  STATIC_ASSERT((non_barriered_tag & narrow_tag) == 0);
-  STATIC_ASSERT((native_tag | non_barriered_tag | narrow_tag) == tag_mask);
+  STATIC_ASSERT((raw_tag & narrow_tag) == 0);
+  STATIC_ASSERT((native_tag | raw_tag | narrow_tag) == tag_mask);
 
   uintptr_t _value;
 
@@ -45,15 +45,15 @@ struct UnifiedOopRef {
 
   bool is_narrow() const;
   bool is_native() const;
-  bool is_non_barriered() const;
+  bool is_raw() const;
   bool is_null() const;
 
   oop dereference() const;
 
   static UnifiedOopRef encode_in_native(const narrowOop* ref);
   static UnifiedOopRef encode_in_native(const oop* ref);
-  static UnifiedOopRef encode_non_barriered(const narrowOop* ref);
-  static UnifiedOopRef encode_non_barriered(const oop* ref);
+  static UnifiedOopRef encode_as_raw(const narrowOop* ref);
+  static UnifiedOopRef encode_as_raw(const oop* ref);
   static UnifiedOopRef encode_in_heap(const narrowOop* ref);
   static UnifiedOopRef encode_in_heap(const oop* ref);
   static UnifiedOopRef encode_null();
