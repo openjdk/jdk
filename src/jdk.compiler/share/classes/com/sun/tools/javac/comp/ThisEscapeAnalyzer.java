@@ -85,6 +85,38 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * When tracking references, we distinguish between direct references and indirect references,
  * but do no further refinement. In particular, we do not attempt to track references stored
  * in fields at all. So we are mainly just trying to track what's on the Java stack.
+ *
+ * <p>
+ * A few notes on this implementation:
+ * <ul>
+ *  <li>We "execute" constructors and track where the 'this' reference goes as the constructor executes.
+ *  <li>We use a very simplified flow analysis that you might call a "flood analysis", where the union
+ *      of every possible code branch is taken.
+ *  <li>A "leak" is defined as the possible passing of a subclassed 'this' reference to code defined
+ *      outside of the current compilation unit.
+ *  <ul>
+ *      <li>In other words, we don't try to protect the current compilation unit from itself.
+ *      <li>For example, we ignore private constructors because they can never be directly invoked
+ *          by external subclasses, etc. However, they can be indirectly invoked by other constructors.
+ *  </ul>
+ *  <li>If a constructor invokes a method defined in the same compilation unit, and that method cannot
+ *      be overridden, then our analysis can safely "recurse" into the method.
+ *  <ul>
+ *      <li>When this occurs the warning displays each step in the stack trace to help in comprehension.
+ *  </ul>
+ *  <li>The possible locations for a 'this' reference that we try to track are:
+ *  <ul>
+ *      <li>Current 'this' instance
+ *      <li>Current outer 'this' instance
+ *      <li>Local parameter/variable
+ *      <li>Method return value
+ *      <li>Current expression value (i.e. top of stack)
+ *  </ul>
+ *  <li>We assume that native methods do not leak.
+ *  <li>We don't try to track assignments to &amp; from fields (for future study).
+ *  <li>We don't try to follow {@code super()} invocations.
+ *  <li>We categorize tracked references as direct or indirect to add a tiny bit of nuance.
+ *  </ul>
  */
 class ThisEscapeAnalyzer extends TreeScanner {
 
