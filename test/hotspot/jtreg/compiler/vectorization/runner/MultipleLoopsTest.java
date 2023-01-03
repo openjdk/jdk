@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
         for (int j = 0; j < N; ++j) {
             for (i3 = 1; i3 < 63; ++i3) {
                 arr[i3] -= 1;
-                i1 +=i3;
+                i1 += i3;
             }
             for (i4 = 2; i4 < 63; ++i4) {
                 res += i4 - i2;
