@@ -56,14 +56,6 @@ public final class SwingAccessor {
     private SwingAccessor() {
     }
 
-    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
-        return accessibleComponentAccessor;
-    }
-
-    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
-        accessibleComponentAccessor = accessibleAccessor;
-    }
-
     /**
      * This interface provides access to the renderer's accessibility component.
      * For example, the renderer of a list element, a table cell, or a tree node
@@ -74,7 +66,13 @@ public final class SwingAccessor {
 
     private static AccessibleComponentAccessor accessibleComponentAccessor = null;
 
+    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
+        return accessibleComponentAccessor;
+    }
 
+    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
+        accessibleComponentAccessor = accessibleAccessor;
+    }
 
     /**
      * An accessor for the JComponent class.
