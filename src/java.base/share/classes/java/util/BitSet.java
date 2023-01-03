@@ -1109,8 +1109,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
      */
     public void andNot(BitSet set) {
         // Perform logical (a & !b) on words in common
-        for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--)
+        for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--) {
+            cardinality -= bitCount(i);
             words[i] &= ~set.words[i];
+            cardinality += bitCount(i);
+        }
 
         recalculateWordsInUse();
         checkInvariants();
