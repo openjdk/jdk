@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/os.hpp"
 #include "utilities/unsigned5.hpp"
 #include "unittest.hpp"
 
