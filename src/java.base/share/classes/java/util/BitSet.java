@@ -670,9 +670,9 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since 1.4
      */
     public void clear() {
+        Arrays.fill(words, 0, wordsInUse, 0);
+        wordsInUse = 0;
         cardinality = 0;
-        while (wordsInUse > 0)
-            words[--wordsInUse] = 0;
     }
 
     /**
@@ -1027,14 +1027,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
         if (this == set)
             return;
 
-        int wordsInCommon;
+        int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
 
         if (wordsInUse < set.wordsInUse) {
-            wordsInCommon = wordsInUse;
             ensureCapacity(set.wordsInUse);
             wordsInUse = set.wordsInUse;
-        } else
-            wordsInCommon = set.wordsInUse;
+        }
 
 
         // Perform logical OR on words in common
