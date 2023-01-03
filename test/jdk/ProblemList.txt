@@ -684,6 +684,8 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
 # jdk_text
 
+java/text/Format/NumberFormat/CurrencyFormat.java 8299439 generic-all
+
 ############################################################################
 
 # jdk_time
@@ -797,4 +799,3 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
-

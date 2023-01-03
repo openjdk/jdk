@@ -26,8 +26,9 @@
 #define SHARE_METAPROGRAMMING_DECAY_HPP
 
 #include "memory/allStatic.hpp"
-#include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removeReference.hpp"
+
+#include <type_traits>
 
 // This trait trims the type from CV qualifiers and references.
 // This trait provides a subset of the functionality of std::decay;
@@ -35,7 +36,7 @@
 
 template <typename T>
 struct Decay: AllStatic {
-  typedef typename RemoveCV<typename RemoveReference<T>::type>::type type;
+  using type = std::remove_cv_t<typename RemoveReference<T>::type>;
 };
 
 #endif // SHARE_METAPROGRAMMING_DECAY_HPP
