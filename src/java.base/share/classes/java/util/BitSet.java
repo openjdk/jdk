@@ -1034,7 +1034,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
             wordsInUse = set.wordsInUse;
         }
 
-
         // Perform logical OR on words in common
         for (int i = 0; i < wordsInCommon; i++) {
             cardinality -= bitCount(i);
@@ -1069,6 +1068,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @param  set a bit set
      */
     public void xor(BitSet set) {
+        if (this == set) {
+            clear();
+            return;
+        }
+
         int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
 
         if (wordsInUse < set.wordsInUse) {
@@ -1077,14 +1081,19 @@ public class BitSet implements Cloneable, java.io.Serializable {
         }
 
         // Perform logical XOR on words in common
-        for (int i = 0; i < wordsInCommon; i++)
+        for (int i = 0; i < wordsInCommon; i++) {
+            cardinality -= bitCount(i);
             words[i] ^= set.words[i];
+            cardinality += bitCount(i);
+        }
 
         // Copy any remaining words
-        if (wordsInCommon < set.wordsInUse)
+        if (wordsInCommon < set.wordsInUse) {
             System.arraycopy(set.words, wordsInCommon,
                              words, wordsInCommon,
-                             set.wordsInUse - wordsInCommon);
+                             wordsInUse - wordsInCommon);
+            cardinality += bitCount(wordsInCommon, wordsInUse);
+        }
 
         recalculateWordsInUse();
         checkInvariants();
