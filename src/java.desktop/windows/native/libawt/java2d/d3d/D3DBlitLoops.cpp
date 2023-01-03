@@ -511,8 +511,8 @@ D3DBlitTextureToSurface(D3DContext *d3dc,
     pSrc = srcOps->pResource->GetTexture();
     RETURN_STATUS_IF_NULL(pSrc, E_FAIL);
 
-    if (FAILED(res = d3dc->BeginScene(STATE_TEXTUREOP)   ||
-        FAILED(res = d3dc->SetTexture(pSrc))))
+    if (FAILED(res = d3dc->BeginScene(STATE_TEXTUREOP))  ||
+        FAILED(res = d3dc->SetTexture(pSrc)))
     {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "D3DBlitTextureToSurface: BeginScene or SetTexture failed");
