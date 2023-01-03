@@ -295,15 +295,21 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
 }
 
 void Symbol::print_signature_as_external_field_type(outputStream *os) {
-  for (SignatureStream ss(this, false); !ss.is_done(); ss.next()) {
-    if (ss.is_array()) {
-      print_array(os, ss);
-    } else if (ss.is_reference()) {
-      print_class(os, ss);
-    } else {
-      os->print("%s", type2name(ss.type()));
-    }
+  SignatureStream ss(this, false);
+  assert(!ss.is_done(), "must have at least one element in field ref");
+  assert(!ss.at_return_type(), "field ref cannot be a return type");
+
+  if (ss.is_array()) {
+    print_array(os, ss);
+  } else if (ss.is_reference()) {
+    print_class(os, ss);
+  } else {
+    os->print("%s", type2name(ss.type()));
   }
+#ifdef ASSERT
+  ss.next();
+  assert(ss.is_done(), "must have at most one element in field ref");
+#endif
 }
 
 // Increment refcount while checking for zero.  If the Symbol's refcount becomes zero
