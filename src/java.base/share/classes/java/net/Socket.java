@@ -159,6 +159,15 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
+     * Creates an unconnected socket with the given {@code SocketImpl}.
+     */
+    private Socket(Void unused, SocketImpl impl) {
+        if (impl != null) {
+            this.impl = impl;
+        }
+    }
+
+    /**
      * Creates an unconnected Socket.
      * <p>
      * If the application has specified a client socket implementation
@@ -170,7 +179,7 @@ public class Socket implements java.io.Closeable {
      * @revised 1.4
      */
     public Socket() {
-        this.impl = newSocketImpl();
+        this.impl = createImpl();
     }
 
     /**
@@ -261,12 +270,6 @@ public class Socket implements java.io.Closeable {
      */
     protected Socket(SocketImpl impl) throws SocketException {
         this(checkPermission(impl), impl);
-    }
-
-    private Socket(Void unused, SocketImpl impl) {
-        if (impl != null) {
-            this.impl = impl;
-        }
     }
 
     private static Void checkPermission(SocketImpl impl) {
@@ -540,7 +543,7 @@ public class Socket implements java.io.Closeable {
         Objects.requireNonNull(address);
 
         // create the SocketImpl and the underlying socket
-        SocketImpl impl = newSocketImpl();
+        SocketImpl impl = createImpl();
         impl.create(stream);
 
         this.impl = impl;
@@ -561,9 +564,10 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Create a SocketImpl for a connecting/client socket.
+     * Create a new SocketImpl for a connecting/client socket. The SocketImpl
+     * is created without an underlying socket.
      */
-    private static SocketImpl newSocketImpl() {
+    private static SocketImpl createImpl() {
         SocketImplFactory factory = Socket.factory;
         if (factory != null) {
             return factory.createSocketImpl();
@@ -589,14 +593,14 @@ public class Socket implements java.io.Closeable {
                     }
                     SocketImpl impl = this.impl;
                     if (impl == null) {
-                        this.impl = impl = newSocketImpl();
+                        this.impl = impl = createImpl();
                     }
                     try {
                         impl.create(true);
                     } catch (SocketException e) {
                         throw e;
                     } catch (IOException e) {
-                        throw new SocketException(e.getMessage());
+                        throw new SocketException(e.getMessage(), e);
                     }
                     getAndBitwiseOrState(SOCKET_CREATED);
                 }
@@ -613,8 +617,8 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Sets the SocketImpl that is connected to a peer. If the Socket has
-     * an existing SocketImpl then it closed.
+     * Sets the SocketImpl. The SocketImpl is connected to a peer. If the Socket
+     * has an existing SocketImpl then it closed.
      * @throws SocketException if the Socket is closed
      * @apiNote For ServerSocket use when accepting connections
      */

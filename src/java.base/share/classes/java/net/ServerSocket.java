@@ -90,6 +90,13 @@ public class ServerSocket implements java.io.Closeable {
     private final Object socketLock = new Object();
 
     /**
+     * Creates a server socket with the given {@code SocketImpl}.
+     */
+    private ServerSocket(Void unused, SocketImpl impl) {
+        this.impl = Objects.requireNonNull(impl);
+    }
+
+    /**
      * Creates a server socket with a user-specified {@code SocketImpl}.
      *
      * @param      impl an instance of a SocketImpl to use on the ServerSocket.
@@ -103,10 +110,6 @@ public class ServerSocket implements java.io.Closeable {
      */
     protected ServerSocket(SocketImpl impl) {
         this(checkPermission(), impl);
-    }
-
-    private ServerSocket(Void unused, SocketImpl impl) {
-        this.impl = Objects.requireNonNull(impl);
     }
 
     private static Void checkPermission() {
@@ -125,7 +128,7 @@ public class ServerSocket implements java.io.Closeable {
      * @revised 1.4
      */
     public ServerSocket() throws IOException {
-        this.impl = newSocketImpl();
+        this.impl = createImpl();
     }
 
     /**
@@ -270,12 +273,25 @@ public class ServerSocket implements java.io.Closeable {
         if (backlog < 1)
             backlog = 50;
 
-        this.impl = newSocketImpl();
+        this.impl = createImpl();
         try {
             bind(new InetSocketAddress(bindAddr, port), backlog);
         } catch (IOException | SecurityException e) {
             close();
             throw e;
+        }
+    }
+
+    /**
+     * Create a SocketImpl for a server socket. The SocketImpl s created
+     * without an underlying socket.
+     */
+    private static SocketImpl createImpl() {
+        SocketImplFactory factory = ServerSocket.factory;
+        if (factory != null) {
+            return factory.createSocketImpl();
+        } else {
+            return SocketImpl.createPlatformSocketImpl(true);
         }
     }
 
@@ -296,25 +312,13 @@ public class ServerSocket implements java.io.Closeable {
                     } catch (SocketException e) {
                         throw e;
                     } catch (IOException e) {
-                        throw new SocketException(e.getMessage());
+                        throw new SocketException(e.getMessage(), e);
                     }
                     created = true;
                 }
             }
         }
         return impl;
-    }
-
-    /**
-     * Create a SocketImpl for a server socket.
-     */
-    private static SocketImpl newSocketImpl() {
-        SocketImplFactory factory = ServerSocket.factory;
-        if (factory != null) {
-            return factory.createSocketImpl();
-        } else {
-            return SocketImpl.createPlatformSocketImpl(true);
-        }
     }
 
     /**
@@ -382,8 +386,9 @@ public class ServerSocket implements java.io.Closeable {
         if (security != null)
             security.checkListen(epoint.getPort());
 
-        getImpl().bind(epoint.getAddress(), epoint.getPort());
-        getImpl().listen(backlog);
+        SocketImpl impl = getImpl();
+        impl.bind(epoint.getAddress(), epoint.getPort());
+        impl.listen(backlog);
         bound = true;
     }
 
