@@ -128,7 +128,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         assert(wordsInUse == 0 || words[wordsInUse - 1] != 0);
         assert(wordsInUse >= 0 && wordsInUse <= words.length);
         assert(wordsInUse == words.length || words[wordsInUse] == 0);
-        assert(cardinality <= length());
+        assert(cardinality >= 0 && cardinality <= length());
     }
 
     /**
@@ -182,7 +182,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      */
     private BitSet(long[] words) {
         this.words = words;
-        this.wordsInUse = words.length;
+        wordsInUse = words.length;
+        cardinality = computeCardinality();
         checkInvariants();
     }
 
@@ -904,6 +905,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.4
      */
     public int cardinality() {
+        return cardinality;
+    }
+    
+    private int computeCardinality() {
         int sum = 0;
         for (int i = 0; i < wordsInUse; i++)
             sum += Long.bitCount(words[i]);
