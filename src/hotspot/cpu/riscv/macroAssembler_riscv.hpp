@@ -1328,8 +1328,6 @@ public:
     jalr(x0, x1, 0);
   }
 
-private:
-
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
   // call generation (see trampoline_call() below), when a set of Labels must
@@ -1343,6 +1341,9 @@ private:
     lbl.reset();
   }
 #endif
+
+private:
+
   void repne_scan(Register addr, Register value, Register count, Register tmp);
 
   // Return true if an address is within the 48-bit RISCV64 address space.

@@ -1084,9 +1084,6 @@ public:
                bool acquire, bool release, bool weak,
                Register result);
 
-private:
-  void compare_eq(Register rn, Register rm, enum operand_size size);
-
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
   // call generation (see trampoline_call() below),  when a set of Labels must
@@ -1100,6 +1097,9 @@ private:
     lbl.reset();
   }
 #endif
+
+private:
+  void compare_eq(Register rn, Register rm, enum operand_size size);
 
 public:
   // AArch64 OpenJDK uses four different types of calls:
