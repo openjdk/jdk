@@ -28,6 +28,7 @@
 
 #include "orderAccess_bsd_zero.hpp"
 #include "runtime/os.hpp"
+#include "utilities/bit_cast.hpp"
 
 // Implementation of class atomic
 
@@ -310,7 +311,7 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   volatile int64_t dest;
   atomic_copy64(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
-  return PrimitiveConversions::cast<T>(dest);
+  return bit_cast<T>(dest);
 }
 
 template<>

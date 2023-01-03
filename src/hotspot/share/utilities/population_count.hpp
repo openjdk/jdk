@@ -32,6 +32,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#if defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L
+#include <bit>
+#endif
+
 // Returns the population count of x, i.e., the number of bits set in x.
 //
 // Adapted from Hacker's Delight, 2nd Edition, Figure 5-2 and the text that
@@ -49,6 +53,9 @@ inline unsigned population_count(T x) {
   STATIC_ASSERT(BitsPerByte == 8);
   STATIC_ASSERT(IsIntegral<T>::value);
   STATIC_ASSERT(!IsSigned<T>::value);
+#if defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L
+  return std::popcount(static_cast<std::make_unsigned_t<T>>(x));
+#else
   // We need to take care with implicit integer promotion when dealing with
   // integers < 32-bit. We chose to do this by explicitly widening constants
   // to unsigned
@@ -66,6 +73,7 @@ inline unsigned population_count(T x) {
   // calculations can exceed the range of T. We need to discard any such excess
   // before the right-shift, hence the conversion back to T.
   return static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte));
+#endif
 }
 
 #endif // SHARE_UTILITIES_POPULATION_COUNT_HPP

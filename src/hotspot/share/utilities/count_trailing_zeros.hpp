@@ -29,6 +29,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#if defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L
+#include <bit>
+#endif
+
 // unsigned count_trailing_zeros(T x)
 
 // Return the number of trailing zeros in x, e.g. the zero-based index
@@ -40,9 +44,22 @@
 // Dispatch on toolchain to select implementation.
 
 /*****************************************************************************
+ * C++20 Bit operations
+ *****************************************************************************/
+#if defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L
+
+inline unsigned count_trailing_zeros_32(uint32_t x) {
+  return std::countr_zero(x);
+}
+
+inline unsigned count_trailing_zeros_64(uint64_t x) {
+  return std::countr_zero(x);
+}
+
+/*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
+#elif defined(TARGET_COMPILER_gcc)
 
 inline unsigned count_trailing_zeros_32(uint32_t x) {
   return __builtin_ctz(x);

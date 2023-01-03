@@ -28,6 +28,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#if defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L
+#include <bit>
+#endif
+
 // uint32_t count_leading_zeros(T x)
 
 // Return the number of leading zeros in x, e.g. the zero-based index
@@ -42,9 +46,38 @@ template <typename T> unsigned count_leading_zeros(T v) {
 }
 
 /*****************************************************************************
+ * C++20 Bit operations
+ *****************************************************************************/
+#if defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L
+
+template <typename T> struct CountLeadingZerosImpl<T, 1> {
+  static unsigned doit(T v) {
+    return std::countl_zero(static_cast<std::make_unsigned_t<T>>(v));
+  }
+};
+
+template <typename T> struct CountLeadingZerosImpl<T, 2> {
+  static unsigned doit(T v) {
+    return std::countl_zero(static_cast<std::make_unsigned_t<T>>(v));
+  }
+};
+
+template <typename T> struct CountLeadingZerosImpl<T, 4> {
+  static unsigned doit(T v) {
+    return std::countl_zero(static_cast<std::make_unsigned_t<T>>(v));
+  }
+};
+
+template <typename T> struct CountLeadingZerosImpl<T, 8> {
+  static unsigned doit(T v) {
+    return std::countl_zero(static_cast<std::make_unsigned_t<T>>(v));
+  }
+};
+
+/*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
+#elif defined(TARGET_COMPILER_gcc)
 
 template <typename T> struct CountLeadingZerosImpl<T, 1> {
   static unsigned doit(T v) {

@@ -635,4 +635,11 @@
 #define NOT_CDS_JAVA_HEAP_RETURN_(code) { return code; }
 #endif
 
+// __has_builtin is supported by GCC 10+ and Clang for determining the availability of bulitins.
+#ifdef __has_builtin
+#define HAS_BUILTIN(x) __has_builtin(x)
+#else
+#define HAS_BUILTIN(x) 0
+#endif
+
 #endif // SHARE_UTILITIES_MACROS_HPP

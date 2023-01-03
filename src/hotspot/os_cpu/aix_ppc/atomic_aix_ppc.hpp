@@ -31,6 +31,7 @@
 #endif
 
 #include "orderAccess_aix_ppc.hpp"
+#include "utilities/bit_cast.hpp"
 #include "utilities/debug.hpp"
 
 // Implementation of class atomic
@@ -300,7 +301,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
 
   post_membar(order);
 
-  return PrimitiveConversions::cast<T>((unsigned char)old_value);
+  return bit_cast<T>((unsigned char)old_value);
 }
 
 template<>
