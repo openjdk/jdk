@@ -34,10 +34,12 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 
+#include <type_traits>
+
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
-inline typename EnableIf<
-  AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
+inline std::enable_if_t<
+  AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>
 RawAccessBarrier<decorators>::decode_internal(typename HeapOopType<idecorators>::type value) {
   if (HasDecorator<decorators, IS_NOT_NULL>::value) {
     return CompressedOops::decode_not_null(value);
@@ -48,9 +50,9 @@ RawAccessBarrier<decorators>::decode_internal(typename HeapOopType<idecorators>:
 
 template <DecoratorSet decorators>
 template <DecoratorSet idecorators, typename T>
-inline typename EnableIf<
+inline std::enable_if_t<
   AccessInternal::MustConvertCompressedOop<idecorators, T>::value,
-  typename HeapOopType<idecorators>::type>::type
+  typename HeapOopType<idecorators>::type>
 RawAccessBarrier<decorators>::encode_internal(T value) {
   if (HasDecorator<decorators, IS_NOT_NULL>::value) {
     return CompressedOops::encode_not_null(value);
@@ -132,8 +134,8 @@ inline bool RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, size_t
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_SEQ_CST>::value, T>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_SEQ_CST>::value, T>
 RawAccessBarrier<decorators>::load_internal(void* addr) {
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     OrderAccess::fence();
@@ -143,48 +145,48 @@ RawAccessBarrier<decorators>::load_internal(void* addr) {
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_ACQUIRE>::value, T>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_ACQUIRE>::value, T>
 RawAccessBarrier<decorators>::load_internal(void* addr) {
   return Atomic::load_acquire(reinterpret_cast<const volatile T*>(addr));
 }
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_RELAXED>::value, T>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_RELAXED>::value, T>
 RawAccessBarrier<decorators>::load_internal(void* addr) {
   return Atomic::load(reinterpret_cast<const volatile T*>(addr));
 }
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_SEQ_CST>::value>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_SEQ_CST>::value>
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
   Atomic::release_store_fence(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_RELEASE>::value>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_RELEASE>::value>
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
   Atomic::release_store(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_RELAXED>::value>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_RELAXED>::value>
 RawAccessBarrier<decorators>::store_internal(void* addr, T value) {
   Atomic::store(reinterpret_cast<volatile T*>(addr), value);
 }
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_RELAXED>::value, T>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_RELAXED>::value, T>
 RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
   return Atomic::cmpxchg(reinterpret_cast<volatile T*>(addr),
                          compare_value,
@@ -194,8 +196,8 @@ RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_valu
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_SEQ_CST>::value, T>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_SEQ_CST>::value, T>
 RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_value, T new_value) {
   return Atomic::cmpxchg(reinterpret_cast<volatile T*>(addr),
                          compare_value,
@@ -205,8 +207,8 @@ RawAccessBarrier<decorators>::atomic_cmpxchg_internal(void* addr, T compare_valu
 
 template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
-inline typename EnableIf<
-  HasDecorator<ds, MO_SEQ_CST>::value, T>::type
+inline std::enable_if_t<
+  HasDecorator<ds, MO_SEQ_CST>::value, T>
 RawAccessBarrier<decorators>::atomic_xchg_internal(void* addr, T new_value) {
   return Atomic::xchg(reinterpret_cast<volatile T*>(addr),
                       new_value);
@@ -218,8 +220,8 @@ RawAccessBarrier<decorators>::atomic_xchg_internal(void* addr, T new_value) {
 
 template <DecoratorSet ds>
 template <DecoratorSet decorators, typename T>
-inline typename EnableIf<
-  AccessInternal::PossiblyLockedAccess<T>::value, T>::type
+inline std::enable_if_t<
+  AccessInternal::PossiblyLockedAccess<T>::value, T>
 RawAccessBarrier<ds>::atomic_xchg_maybe_locked(void* addr, T new_value) {
   if (!AccessInternal::wide_atomic_needs_locking()) {
     return atomic_xchg_internal<ds>(addr, new_value);
@@ -234,8 +236,8 @@ RawAccessBarrier<ds>::atomic_xchg_maybe_locked(void* addr, T new_value) {
 
 template <DecoratorSet ds>
 template <DecoratorSet decorators, typename T>
-inline typename EnableIf<
-  AccessInternal::PossiblyLockedAccess<T>::value, T>::type
+inline std::enable_if_t<
+  AccessInternal::PossiblyLockedAccess<T>::value, T>
 RawAccessBarrier<ds>::atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value) {
   if (!AccessInternal::wide_atomic_needs_locking()) {
     return atomic_cmpxchg_internal<ds>(addr, compare_value, new_value);
@@ -254,8 +256,8 @@ class RawAccessBarrierArrayCopy: public AllStatic {
   template<typename T> struct IsHeapWordSized: public IntegralConstant<bool, sizeof(T) == HeapWordSize> { };
 public:
   template <DecoratorSet decorators, typename T>
-  static inline typename EnableIf<
-    HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value>::type
+  static inline std::enable_if_t<
+    HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value>
   arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
             arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
             size_t length) {
@@ -273,9 +275,9 @@ public:
   }
 
   template <DecoratorSet decorators, typename T>
-  static inline typename EnableIf<
+  static inline std::enable_if_t<
     !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
-    HasDecorator<decorators, ARRAYCOPY_ARRAYOF>::value>::type
+    HasDecorator<decorators, ARRAYCOPY_ARRAYOF>::value>
   arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
             arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
             size_t length) {
@@ -286,9 +288,9 @@ public:
   }
 
   template <DecoratorSet decorators, typename T>
-  static inline typename EnableIf<
+  static inline std::enable_if_t<
     !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
-    HasDecorator<decorators, ARRAYCOPY_DISJOINT>::value && IsHeapWordSized<T>::value>::type
+    HasDecorator<decorators, ARRAYCOPY_DISJOINT>::value && IsHeapWordSized<T>::value>
   arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
             arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
             size_t length) {
@@ -304,11 +306,11 @@ public:
   }
 
   template <DecoratorSet decorators, typename T>
-  static inline typename EnableIf<
+  static inline std::enable_if_t<
     !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
     !(HasDecorator<decorators, ARRAYCOPY_DISJOINT>::value && IsHeapWordSized<T>::value) &&
     !HasDecorator<decorators, ARRAYCOPY_ARRAYOF>::value &&
-    !HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value>::type
+    !HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value>
   arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
             arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
             size_t length) {
@@ -319,11 +321,11 @@ public:
   }
 
   template <DecoratorSet decorators, typename T>
-  static inline typename EnableIf<
+  static inline std::enable_if_t<
     !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
     !(HasDecorator<decorators, ARRAYCOPY_DISJOINT>::value && IsHeapWordSized<T>::value) &&
     !HasDecorator<decorators, ARRAYCOPY_ARRAYOF>::value &&
-    HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value>::type
+    HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value>
   arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
             arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
             size_t length) {

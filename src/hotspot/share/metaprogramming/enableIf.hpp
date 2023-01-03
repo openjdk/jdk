@@ -25,14 +25,9 @@
 #ifndef SHARE_METAPROGRAMMING_ENABLEIF_HPP
 #define SHARE_METAPROGRAMMING_ENABLEIF_HPP
 
-#include "metaprogramming/logical.hpp"
-#include <type_traits>
+#include "utilities/globalDefinitions.hpp"
 
-// Retained temporarily for backward compatibility.
-// For function template SFINAE, use the ENABLE_IF macro below.
-// For class template SFINAE, use std::enable_if_t directly.
-template<bool cond, typename T = void>
-using EnableIf = std::enable_if<cond, T>;
+#include <type_traits>
 
 // ENABLE_IF(Condition...)
 // ENABLE_IF_SDEFN(Condition...)

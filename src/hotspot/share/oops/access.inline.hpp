@@ -31,6 +31,8 @@
 #include "gc/shared/barrierSetConfig.inline.hpp"
 #include "oops/accessBackend.inline.hpp"
 
+#include <type_traits>
+
 // This file outlines the last 2 steps of the template pipeline of accesses going through
 // the Access API.
 // * Step 5.a: Barrier resolution. This step is invoked the first time a runtime-dispatch
@@ -206,9 +208,9 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename FunctionPointerT, BarrierType barrier_type>
   struct BarrierResolver: public AllStatic {
     template <DecoratorSet ds>
-    static typename EnableIf<
+    static std::enable_if_t<
       HasDecorator<ds, INTERNAL_VALUE_IS_OOP>::value,
-      FunctionPointerT>::type
+      FunctionPointerT>
     resolve_barrier_gc() {
       BarrierSet* bs = BarrierSet::barrier_set();
       assert(bs != NULL, "GC barriers invoked before BarrierSet is set");
@@ -229,9 +231,9 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet ds>
-    static typename EnableIf<
+    static std::enable_if_t<
       !HasDecorator<ds, INTERNAL_VALUE_IS_OOP>::value,
-      FunctionPointerT>::type
+      FunctionPointerT>
     resolve_barrier_gc() {
       BarrierSet* bs = BarrierSet::barrier_set();
       assert(bs != NULL, "GC barriers invoked before BarrierSet is set");

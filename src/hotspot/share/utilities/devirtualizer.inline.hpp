@@ -31,6 +31,8 @@
 #include "oops/access.inline.hpp"
 #include "utilities/debug.hpp"
 
+#include <type_traits>
+
 // Implementation of the non-virtual do_oop dispatch.
 //
 // The same implementation is used for do_metadata, do_klass, and do_cld.
@@ -73,13 +75,13 @@
 //   p       - The oop (or narrowOop) field to pass to the closure
 
 template <typename T, typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<IsSame<Receiver, Base>::value, void>
 call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
   closure->do_oop(p);
 }
 
 template <typename T, typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<!IsSame<Receiver, Base>::value, void>
 call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
   // Sanity check
   STATIC_ASSERT((!IsSame<OopClosureType, OopIterateClosure>::value));
@@ -94,13 +96,13 @@ inline void Devirtualizer::do_oop(OopClosureType* closure, T* p) {
 // Implementation of the non-virtual do_metadata dispatch.
 
 template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, bool>::type
+static std::enable_if_t<IsSame<Receiver, Base>::value, bool>
 call_do_metadata(bool (Receiver::*)(), bool (Base::*)(), OopClosureType* closure) {
   return closure->do_metadata();
 }
 
 template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, bool>::type
+static std::enable_if_t<!IsSame<Receiver, Base>::value, bool>
 call_do_metadata(bool (Receiver::*)(), bool (Base::*)(), OopClosureType* closure) {
   return closure->OopClosureType::do_metadata();
 }
@@ -113,13 +115,13 @@ inline bool Devirtualizer::do_metadata(OopClosureType* closure) {
 // Implementation of the non-virtual do_klass dispatch.
 
 template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<IsSame<Receiver, Base>::value, void>
 call_do_klass(void (Receiver::*)(Klass*), void (Base::*)(Klass*), OopClosureType* closure, Klass* k) {
   closure->do_klass(k);
 }
 
 template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<!IsSame<Receiver, Base>::value, void>
 call_do_klass(void (Receiver::*)(Klass*), void (Base::*)(Klass*), OopClosureType* closure, Klass* k) {
   closure->OopClosureType::do_klass(k);
 }
@@ -132,13 +134,13 @@ inline void Devirtualizer::do_klass(OopClosureType* closure, Klass* k) {
 // Implementation of the non-virtual do_cld dispatch.
 
 template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<IsSame<Receiver, Base>::value, void>
 call_do_cld(void (Receiver::*)(ClassLoaderData*), void (Base::*)(ClassLoaderData*), OopClosureType* closure, ClassLoaderData* cld) {
   closure->do_cld(cld);
 }
 
 template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<!IsSame<Receiver, Base>::value, void>
 call_do_cld(void (Receiver::*)(ClassLoaderData*), void (Base::*)(ClassLoaderData*), OopClosureType* closure, ClassLoaderData* cld) {
   closure->OopClosureType::do_cld(cld);
 }
@@ -151,13 +153,13 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 // Implementation of the non-virtual do_derived_oop dispatch.
 
 template <typename Receiver, typename Base, typename DerivedOopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<IsSame<Receiver, Base>::value, void>
 call_do_derived_oop(void (Receiver::*)(oop*, derived_pointer*), void (Base::*)(oop*, derived_pointer*), DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
   closure->do_derived_oop(base, derived);
 }
 
 template <typename Receiver, typename Base, typename DerivedOopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
+static std::enable_if_t<!IsSame<Receiver, Base>::value, void>
 call_do_derived_oop(void (Receiver::*)(oop*, derived_pointer*), void (Base::*)(oop*, derived_pointer*), DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
   closure->DerivedOopClosureType::do_derived_oop(base, derived);
 }

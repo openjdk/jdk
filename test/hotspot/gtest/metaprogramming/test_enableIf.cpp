@@ -34,9 +34,9 @@ class EnableIfTest: AllStatic {
   class A: AllStatic {
   public:
     template <bool condition>
-    static typename EnableIf<condition, char>::type test();
+    static std::enable_if_t<condition, char> test();
     template <bool condition>
-    static typename EnableIf<!condition, long>::type test();
+    static std::enable_if_t<!condition, long> test();
   };
 
   static const bool A_test_true_is_char = sizeof(A::test<true>()) == sizeof(char);

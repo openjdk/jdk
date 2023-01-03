@@ -393,7 +393,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || IsPointer<T>::value>::type>
+  std::enable_if_t<IsIntegral<T>::value || IsPointer<T>::value>>
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -412,7 +412,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  std::enable_if_t<PrimitiveConversions::Translate<T>::value>>
 {
   T operator()(T const volatile* dest) const {
     typedef PrimitiveConversions::Translate<T> Translator;
@@ -445,7 +445,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value>::type>
+  std::enable_if_t<IsIntegral<T>::value>>
 {
   void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
@@ -462,7 +462,7 @@ template<typename D, typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   D*, T*,
   PlatformOp,
-  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
+  std::enable_if_t<Atomic::IsPointerConvertible<T*, D*>::value>>
 {
   void operator()(D* volatile* dest, T* new_value) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
@@ -481,7 +481,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
-  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  std::enable_if_t<PrimitiveConversions::Translate<T>::value>>
 {
   void operator()(T volatile* dest, T new_value) const {
     typedef PrimitiveConversions::Translate<T> Translator;
@@ -676,10 +676,10 @@ inline D Atomic::fetch_and_add(D volatile* dest, I add_value,
 template<typename D, typename I>
 struct Atomic::AddImpl<
   D, I,
-  typename EnableIf<IsIntegral<I>::value &&
+  std::enable_if_t<IsIntegral<I>::value &&
                     IsIntegral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
-                    (IsSigned<I>::value == IsSigned<D>::value)>::type>
+                    (IsSigned<I>::value == IsSigned<D>::value)>>
 {
   static D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
@@ -694,7 +694,7 @@ struct Atomic::AddImpl<
 template<typename P, typename I>
 struct Atomic::AddImpl<
   P*, I,
-  typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
+  td::enable_if_t<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>>
 {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
@@ -769,7 +769,7 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
 template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
-  typename EnableIf<IsIntegral<T>::value>::type>
+  std::enable_if_t<IsIntegral<T>::value>>
 {
   T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
@@ -793,9 +793,9 @@ struct Atomic::CmpxchgImpl<
 template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
   D*, U*, T*,
-  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
+  std::enable_if_t<Atomic::IsPointerConvertible<T*, D*>::value &&
                     IsSame<std::remove_cv_t<D>,
-                           std::remove_cv_t<U>>::value>::type>
+                           std::remove_cv_t<U>>::value>>
 {
   D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {
@@ -818,7 +818,7 @@ struct Atomic::CmpxchgImpl<
 template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
-  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  std::enable_if_t<PrimitiveConversions::Translate<T>::value>>
 {
   T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
@@ -904,7 +904,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<IsIntegral<T>::value>::type>
+  std::enable_if_t<IsIntegral<T>::value>>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
@@ -920,7 +920,7 @@ struct Atomic::XchgImpl<
 template<typename D, typename T>
 struct Atomic::XchgImpl<
   D*, T*,
-  typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
+  std::enable_if_t<Atomic::IsPointerConvertible<T*, D*>::value>>
 {
   D* operator()(D* volatile* dest, T* exchange_value, atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
@@ -939,7 +939,7 @@ struct Atomic::XchgImpl<
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
+  std::enable_if_t<PrimitiveConversions::Translate<T>::value>>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;

@@ -191,14 +191,14 @@ protected:
 protected:
   // Only encode if INTERNAL_VALUE_IS_OOP
   template <DecoratorSet idecorators, typename T>
-  static inline typename EnableIf<
-    AccessInternal::MustConvertCompressedOop<idecorators, T>::value,
+  static inline std::enable_if_t<
+    AccessInternal::MustConvertCompressedOop<idecorators, T>,
     typename HeapOopType<idecorators>::type>::type
   encode_internal(T value);
 
   template <DecoratorSet idecorators, typename T>
-  static inline typename EnableIf<
-    !AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
+  static inline std::enable_if_t<
+    !AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>
   encode_internal(T value) {
     return value;
   }
@@ -211,13 +211,13 @@ protected:
 
   // Only decode if INTERNAL_VALUE_IS_OOP
   template <DecoratorSet idecorators, typename T>
-  static inline typename EnableIf<
-    AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
+  static inline std::enable_if_t<
+    AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>
   decode_internal(typename HeapOopType<idecorators>::type value);
 
   template <DecoratorSet idecorators, typename T>
-  static inline typename EnableIf<
-    !AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
+  static inline std::enable_if_t<
+    !AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>
   decode_internal(T value) {
     return value;
   }
@@ -229,62 +229,62 @@ protected:
 
 protected:
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_SEQ_CST>::value, T>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_SEQ_CST>::value, T>
   load_internal(void* addr);
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_ACQUIRE>::value, T>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_ACQUIRE>::value, T>
   load_internal(void* addr);
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_RELAXED>::value, T>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_RELAXED>::value, T>
   load_internal(void* addr);
 
   template <DecoratorSet ds, typename T>
-  static inline typename EnableIf<
-    HasDecorator<ds, MO_UNORDERED>::value, T>::type
+  static inline std::enable_if_t<
+    HasDecorator<ds, MO_UNORDERED>::value, T>
   load_internal(void* addr) {
     return *reinterpret_cast<T*>(addr);
   }
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_SEQ_CST>::value>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_SEQ_CST>::value>
   store_internal(void* addr, T value);
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_RELEASE>::value>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_RELEASE>::value>
   store_internal(void* addr, T value);
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_RELAXED>::value>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_RELAXED>::value>
   store_internal(void* addr, T value);
 
   template <DecoratorSet ds, typename T>
-  static inline typename EnableIf<
-    HasDecorator<ds, MO_UNORDERED>::value>::type
+  static inline std::enable_if_t<
+    HasDecorator<ds, MO_UNORDERED>::value>
   store_internal(void* addr, T value) {
     *reinterpret_cast<T*>(addr) = value;
   }
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_SEQ_CST>::value, T>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_SEQ_CST>::value, T>
   atomic_cmpxchg_internal(void* addr, T compare_value, T new_value);
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_RELAXED>::value, T>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_RELAXED>::value, T>
   atomic_cmpxchg_internal(void* addr, T compare_value, T new_value);
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    HasDecorator<ds, MO_SEQ_CST>::value, T>::type
+  static std::enable_if_t<
+    HasDecorator<ds, MO_SEQ_CST>::value, T>
   atomic_xchg_internal(void* addr, T new_value);
 
   // The following *_locked mechanisms serve the purpose of handling atomic operations
@@ -292,27 +292,27 @@ protected:
   // a slower path using a mutex to perform the operation.
 
   template <DecoratorSet ds, typename T>
-  static inline typename EnableIf<
-    !AccessInternal::PossiblyLockedAccess<T>::value, T>::type
+  static inline std::enable_if_t<
+    !AccessInternal::PossiblyLockedAccess<T>::value, T>
   atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value) {
     return atomic_cmpxchg_internal<ds>(addr, compare_value, new_value);
   }
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    AccessInternal::PossiblyLockedAccess<T>::value, T>::type
+  static std::enable_if_t<
+    AccessInternal::PossiblyLockedAccess<T>::value, T>
   atomic_cmpxchg_maybe_locked(void* addr, T compare_value, T new_value);
 
   template <DecoratorSet ds, typename T>
-  static inline typename EnableIf<
-    !AccessInternal::PossiblyLockedAccess<T>::value, T>::type
+  static inline std::enable_if_t<
+    !AccessInternal::PossiblyLockedAccess<T>::value, T>
   atomic_xchg_maybe_locked(void* addr, T new_value) {
     return atomic_xchg_internal<ds>(addr, new_value);
   }
 
   template <DecoratorSet ds, typename T>
-  static typename EnableIf<
-    AccessInternal::PossiblyLockedAccess<T>::value, T>::type
+  static std::enable_if_t<
+    AccessInternal::PossiblyLockedAccess<T>::value, T>
   atomic_xchg_maybe_locked(void* addr, T new_value);
 
 public:
@@ -646,8 +646,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value>
     store(void* addr, T value) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
@@ -658,8 +658,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value>
     store(void* addr, T value) {
       if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
@@ -671,8 +671,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value>
     store(void* addr, T value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -683,15 +683,15 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value>
     store_at(oop base, ptrdiff_t offset, T value) {
       store<decorators>(field_addr(base, offset), value);
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value>
     store_at(oop base, ptrdiff_t offset, T value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -702,8 +702,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>
     load(void* addr) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
@@ -714,8 +714,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>
     load(void* addr) {
       if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
@@ -727,8 +727,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, T>
     load(void* addr) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -739,15 +739,15 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value, T>
     load_at(oop base, ptrdiff_t offset) {
       return load<decorators, T>(field_addr(base, offset));
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, T>
     load_at(oop base, ptrdiff_t offset) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -758,8 +758,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>
     atomic_cmpxchg(void* addr, T compare_value, T new_value) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
@@ -770,8 +770,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>
     atomic_cmpxchg(void* addr, T compare_value, T new_value) {
       if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
@@ -783,8 +783,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, T>
     atomic_cmpxchg(void* addr, T compare_value, T new_value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -795,15 +795,15 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value, T>
     atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
       return atomic_cmpxchg<decorators>(field_addr(base, offset), compare_value, new_value);
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, T>
     atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -814,8 +814,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>
     atomic_xchg(void* addr, T new_value) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
@@ -826,8 +826,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>
     atomic_xchg(void* addr, T new_value) {
       if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
@@ -839,8 +839,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, T>
     atomic_xchg(void* addr, T new_value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -851,15 +851,15 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value, T>
     atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
       return atomic_xchg<decorators>(field_addr(base, offset), new_value);
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, T>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, T>
     atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
@@ -870,8 +870,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, bool>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, bool>
     arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
               size_t length) {
@@ -888,8 +888,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, bool>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, bool>
     arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
               size_t length) {
@@ -907,8 +907,8 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators, typename T>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value, bool>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value, bool>
     arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
               size_t length) {
@@ -925,16 +925,16 @@ namespace AccessInternal {
     }
 
     template <DecoratorSet decorators>
-    inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value>::type
+    inline static std::enable_if_t<
+      HasDecorator<decorators, AS_RAW>::value>
     clone(oop src, oop dst, size_t size) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       Raw::clone(src, dst, size);
     }
 
     template <DecoratorSet decorators>
-    inline static typename EnableIf<
-      !HasDecorator<decorators, AS_RAW>::value>::type
+    inline static std::enable_if_t<
+      !HasDecorator<decorators, AS_RAW>::value>
     clone(oop src, oop dst, size_t size) {
       RuntimeDispatch<decorators, oop, BARRIER_CLONE>::clone(src, dst, size);
     }
