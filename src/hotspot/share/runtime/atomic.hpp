@@ -694,7 +694,7 @@ struct Atomic::AddImpl<
 template<typename P, typename I>
 struct Atomic::AddImpl<
   P*, I,
-  td::enable_if_t<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>>
+  std::enable_if_t<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>>
 {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
