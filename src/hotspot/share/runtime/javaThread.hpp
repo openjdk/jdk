@@ -945,7 +945,7 @@ private:
   void print_vthread_stack_on(outputStream* st);
   // This prints the active stack: either carrier/platform or virtual.
   void print_active_stack_on(outputStream* st);
-  // Print stack trace for checked JNI warnings and JNI fatal errors.
+  // Print current stack trace for checked JNI warnings and JNI fatal errors.
   // This is the external format from above, but selecting the platform
   // or vthread as applicable.
   void print_jni_stack();

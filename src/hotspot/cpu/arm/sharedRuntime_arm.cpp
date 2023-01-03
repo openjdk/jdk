@@ -28,6 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -872,6 +873,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ raw_push(FP, LR);
   __ mov(FP, SP);
   __ sub_slow(SP, SP, stack_size - 2*wordSize);
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  assert(bs != NULL, "Sanity");
+  bs->nmethod_entry_barrier(masm);
 
   int frame_complete = __ pc() - start;
 

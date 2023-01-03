@@ -32,7 +32,6 @@
 #include "metaprogramming/isSame.hpp"
 #include "metaprogramming/isSigned.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
-#include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
@@ -795,8 +794,8 @@ template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
   D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
-                    IsSame<typename RemoveCV<D>::type,
-                           typename RemoveCV<U>::type>::value>::type>
+                    IsSame<std::remove_cv_t<D>,
+                           std::remove_cv_t<U>>::value>::type>
 {
   D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {
