@@ -72,7 +72,7 @@ public class FileOutputStream extends OutputStream
     /**
      * Access to FileDescriptor internals.
      */
-    private static final JavaIOFileDescriptorAccess fdAccess =
+    private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     /**
@@ -316,7 +316,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(int b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             write(b, append);
@@ -346,7 +346,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, 0, b.length, append);
@@ -367,7 +367,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        boolean append = fdAccess.getAppend(fd);
+        boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
             writeBytes(b, off, len, append);

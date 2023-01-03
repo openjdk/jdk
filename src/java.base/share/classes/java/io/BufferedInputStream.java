@@ -55,17 +55,17 @@ import jdk.internal.util.ArraysSupport;
  */
 public class BufferedInputStream extends FilterInputStream {
 
-    private static int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
      * As this class is used early during bootstrap, it's motivated to use
      * Unsafe.compareAndSetObject instead of AtomicReferenceFieldUpdater
      * (or VarHandles) to reduce dependencies and improve startup time.
      */
-    private static final Unsafe U = Unsafe.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     private static final long BUF_OFFSET
-            = U.objectFieldOffset(BufferedInputStream.class, "buf");
+            = UNSAFE.objectFieldOffset(BufferedInputStream.class, "buf");
 
     // initialized to null when BufferedInputStream is sub-classed
     private final InternalLock lock;
@@ -243,7 +243,7 @@ public class BufferedInputStream extends FilterInputStream {
                     nsz = marklimit;
                 byte[] nbuf = new byte[nsz];
                 System.arraycopy(buffer, 0, nbuf, 0, pos);
-                if (!U.compareAndSetReference(this, BUF_OFFSET, buffer, nbuf)) {
+                if (!UNSAFE.compareAndSetReference(this, BUF_OFFSET, buffer, nbuf)) {
                     // Can't replace buf if there was an async close.
                     // Note: This would need to be changed if fill()
                     // is ever made accessible to multiple threads.
@@ -342,7 +342,7 @@ public class BufferedInputStream extends FilterInputStream {
      *
      * </ul> If the first {@code read} on the underlying stream returns
      * {@code -1} to indicate end-of-file then this method returns
-     * {@code -1}.  Otherwise this method returns the number of bytes
+     * {@code -1}.  Otherwise, this method returns the number of bytes
      * actually read.
      *
      * <p> Subclasses of this class are encouraged, but not required, to
@@ -577,7 +577,7 @@ public class BufferedInputStream extends FilterInputStream {
     public void close() throws IOException {
         byte[] buffer;
         while ( (buffer = buf) != null) {
-            if (U.compareAndSetReference(this, BUF_OFFSET, buffer, null)) {
+            if (UNSAFE.compareAndSetReference(this, BUF_OFFSET, buffer, null)) {
                 InputStream input = in;
                 in = null;
                 if (input != null)

@@ -39,7 +39,7 @@ class DeleteOnExitHook {
     static {
         // DeleteOnExitHook must be the last shutdown hook to be invoked.
         // Application shutdown hooks may add the first file to the
-        // delete on exit list and cause the DeleteOnExitHook to be
+        // delete-on-exit list and cause the DeleteOnExitHook to be
         // registered during shutdown in progress. So set the
         // registerShutdownInProgress parameter to true.
         SharedSecrets.getJavaLangAccess()

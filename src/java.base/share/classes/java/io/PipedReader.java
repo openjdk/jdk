@@ -54,7 +54,7 @@ public class PipedReader extends Reader {
     /**
      * The circular buffer into which incoming data is placed.
      */
-    char buffer[];
+    char[] buffer;
 
     /**
      * The index of the position in the circular buffer at which the
@@ -341,11 +341,7 @@ public class PipedReader extends Reader {
                    && !closedByWriter && (in < 0)) {
             throw new IOException("Write end dead");
         }
-        if (in < 0) {
-            return false;
-        } else {
-            return true;
-        }
+        return in >= 0;
     }
 
     /**

@@ -265,7 +265,7 @@ public class LineNumberReader extends BufferedReader {
     private static final int maxSkipBufferSize = 8192;
 
     /** Skip buffer, null until allocated */
-    private char skipBuffer[] = null;
+    private char[] skipBuffer = null;
 
     /**
      * {@inheritDoc}

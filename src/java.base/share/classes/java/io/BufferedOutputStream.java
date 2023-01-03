@@ -48,7 +48,7 @@ public class BufferedOutputStream extends FilterOutputStream {
     /**
      * The internal buffer where data is stored.
      */
-    protected byte buf[];
+    protected byte[] buf;
 
     /**
      * The number of valid bytes in the buffer. This value is always

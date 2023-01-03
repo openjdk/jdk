@@ -37,7 +37,7 @@ import java.util.Objects;
 public class StringReader extends Reader {
 
     private String str;
-    private int length;
+    private final int length;
     private int next = 0;
     private int mark = 0;
 

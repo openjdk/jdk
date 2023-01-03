@@ -85,8 +85,8 @@ public class BufferedReader extends Reader {
     /** The skipLF flag when the mark was set */
     private boolean markedSkipLF = false;
 
-    private static int defaultCharBufferSize = 8192;
-    private static int defaultExpectedLineLength = 80;
+    private static final int DEFAULT_CHAR_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_EXPECTED_LINE_LENGTH = 80;
 
     /**
      * Creates a buffering character-input stream that uses an input buffer of
@@ -113,7 +113,7 @@ public class BufferedReader extends Reader {
      * @param  in   A Reader
      */
     public BufferedReader(Reader in) {
-        this(in, defaultCharBufferSize);
+        this(in, DEFAULT_CHAR_BUFFER_SIZE);
     }
 
     /** Checks to make sure that the stream has not been closed */
@@ -277,7 +277,7 @@ public class BufferedReader extends Reader {
      * however, the buffer is empty, the mark is not valid, and the requested
      * length is at least as large as the buffer, then this method will read
      * characters directly from the underlying stream into the given array.
-     * Thus redundant {@code BufferedReader}s will not copy data
+     * Thus, redundant {@code BufferedReader}s will not copy data
      * unnecessarily.
      *
      * @param      cbuf  {@inheritDoc}
@@ -414,7 +414,7 @@ public class BufferedReader extends Reader {
             }
 
             if (s == null)
-                s = new StringBuilder(defaultExpectedLineLength);
+                s = new StringBuilder(DEFAULT_EXPECTED_LINE_LENGTH);
             s.append(cb, startChar, i - startChar);
         }
     }
@@ -551,7 +551,7 @@ public class BufferedReader extends Reader {
      *                         A limit value larger than the size of the input
      *                         buffer will cause a new buffer to be allocated
      *                         whose size is no smaller than limit.
-     *                         Therefore large values should be used with care.
+     *                         Therefore, large values should be used with care.
      *
      * @throws     IllegalArgumentException  If {@code readAheadLimit < 0}
      * @throws     IOException  If an I/O error occurs

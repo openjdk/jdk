@@ -44,7 +44,7 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @param     obj the object to be written
      * @throws    IOException Any of the usual Input/Output related exceptions.
      */
-    public void writeObject(Object obj)
+    void writeObject(Object obj)
       throws IOException;
 
     /**
@@ -53,7 +53,7 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @param     b the byte
      * @throws    IOException If an I/O error has occurred.
      */
-    public void write(int b) throws IOException;
+    void write(int b) throws IOException;
 
     /**
      * Writes an array of bytes. This method will block until the bytes
@@ -61,7 +61,7 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @param     b the data to be written
      * @throws    IOException If an I/O error has occurred.
      */
-    public void write(byte[] b) throws IOException;
+    void write(byte[] b) throws IOException;
 
     /**
      * Writes a sub array of bytes.
@@ -71,14 +71,14 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * @throws    IOException If an I/O error has occurred.
      * @throws    IndexOutOfBoundsException {@inheritDoc}
      */
-    public void write(byte[] b, int off, int len) throws IOException;
+    void write(byte[] b, int off, int len) throws IOException;
 
     /**
      * Flushes the stream. This will write any buffered
      * output bytes.
      * @throws    IOException If an I/O error has occurred.
      */
-    public void flush() throws IOException;
+    void flush() throws IOException;
 
     /**
      * Closes the stream. This method must be called
@@ -86,5 +86,5 @@ public interface ObjectOutput extends DataOutput, AutoCloseable {
      * stream.
      * @throws    IOException If an I/O error has occurred.
      */
-    public void close() throws IOException;
+    void close() throws IOException;
 }

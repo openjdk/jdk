@@ -34,14 +34,14 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 
 class ExpiringCache {
-    private long millisUntilExpiration;
-    private Map<String,Entry> map;
+    private final long millisUntilExpiration;
+    private final Map<String,Entry> map;
     // Clear out old entries every few queries
     private int queryCount;
-    private int queryOverflow = 300;
-    private int MAX_ENTRIES = 200;
+    private final int queryOverflow = 300;
+    private static final int MAX_ENTRIES = 200;
 
-    static class Entry {
+    static final class Entry {
         private long   timestamp;
         private String val;
 

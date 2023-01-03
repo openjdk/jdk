@@ -40,15 +40,15 @@ package java.io;
 
 public class StringWriter extends Writer {
 
-    private StringBuffer buf;
+    private final StringBuffer buf;
 
     /**
      * Create a new string writer using the default initial string-buffer
      * size.
      */
     public StringWriter() {
-        buf = new StringBuffer();
-        lock = buf;
+        super(new StringBuffer());
+        buf = (StringBuffer) lock;
     }
 
     /**
@@ -63,11 +63,8 @@ public class StringWriter extends Writer {
      *         If {@code initialSize} is negative
      */
     public StringWriter(int initialSize) {
-        if (initialSize < 0) {
-            throw new IllegalArgumentException("Negative buffer size");
-        }
-        buf = new StringBuffer(initialSize);
-        lock = buf;
+        super(new StringBuffer(checkSize(initialSize)));
+        buf = (StringBuffer) lock;
     }
 
     /**
@@ -241,6 +238,13 @@ public class StringWriter extends Writer {
      * an {@code IOException}.
      */
     public void close() throws IOException {
+    }
+
+    private static int checkSize(int initialSize) {
+        if (initialSize < 0) {
+            throw new IllegalArgumentException("Negative buffer size");
+        }
+        return initialSize;
     }
 
 }

@@ -53,11 +53,11 @@ public class ByteArrayInputStream extends InputStream {
      * stream;  element {@code buf[pos]} is
      * the next byte to be read.
      */
-    protected byte buf[];
+    protected byte[] buf;
 
     /**
      * The index of the next character to read from the input stream buffer.
-     * This value should always be nonnegative
+     * This value should always be non-negative
      * and not larger than the value of {@code count}.
      * The next byte to be read from the input stream buffer
      * will be {@code buf[pos]}.
@@ -82,7 +82,7 @@ public class ByteArrayInputStream extends InputStream {
     /**
      * The index one greater than the last valid character in the input
      * stream buffer.
-     * This value should always be nonnegative
+     * This value should always be non-negative
      * and not larger than the length of {@code buf}.
      * It  is one greater than the position of
      * the last byte within {@code buf} that

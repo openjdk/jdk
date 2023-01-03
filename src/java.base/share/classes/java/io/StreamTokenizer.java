@@ -68,7 +68,7 @@ public class StreamTokenizer {
     private Reader reader = null;
     private InputStream input = null;
 
-    private char buf[] = new char[20];
+    private char[] buf = new char[20];
 
     /**
      * The next character to be considered by the nextToken method.  May also
@@ -91,7 +91,7 @@ public class StreamTokenizer {
     private boolean slashSlashCommentsP = false;
     private boolean slashStarCommentsP = false;
 
-    private byte ctype[] = new byte[256];
+    private final byte[] ctype = new byte[256];
     private static final byte CT_WHITESPACE = 1;
     private static final byte CT_DIGIT = 2;
     private static final byte CT_ALPHA = 4;
@@ -527,7 +527,7 @@ public class StreamTokenizer {
             pushedBack = false;
             return ttype;
         }
-        byte ct[] = ctype;
+        byte[] ct = ctype;
         sval = null;
 
         int c = peekc;
@@ -794,7 +794,7 @@ public class StreamTokenizer {
                 if (ttype < 256 && ((ctype[ttype] & CT_QUOTE) != 0)) {
                     yield sval;
                 }
-                char s[] = new char[3];
+                char[] s = new char[3];
                 s[0] = s[2] = '\'';
                 s[1] = (char) ttype;
                 yield new String(s);

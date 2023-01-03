@@ -73,8 +73,9 @@ public class BufferedWriter extends Writer {
 
     private Writer out;
 
-    private char cb[];
-    private int nChars, nextChar;
+    private char[] cb;
+    private int nChars;
+    private int nextChar;
     private final int maxChars;  // maximum number of buffers chars
 
     /**
