@@ -1342,7 +1342,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
                     hi = fence = (wordsInUse >= wordIndex(Integer.MAX_VALUE))
                                  ? Integer.MAX_VALUE
                                  : wordsInUse << ADDRESS_BITS_PER_WORD;
-                    est = cardinality();
+                    est = cardinality;
                     index = nextSetBit(0);
                 }
                 return hi;
