@@ -78,11 +78,10 @@
  *   TestStackWalk
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -115,20 +114,19 @@ public class TestStackWalk extends NativeTestHelper {
     static boolean armed;
 
     public static void main(String[] args) throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), session);
-            MemoryAddress stubAddress = stub.address();
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena.scope());
             armed = false;
             for (int i = 0; i < 20_000; i++) {
-                payload(stubAddress); // warmup
+                payload(stub); // warmup
             }
 
             armed = true;
-            payload(stubAddress); // test
+            payload(stub); // test
         }
     }
 
-    static void payload(MemoryAddress cb) throws Throwable {
+    static void payload(MemorySegment cb) throws Throwable {
         MH_foo.invoke(cb);
         Reference.reachabilityFence(cb); // keep oop alive across call
     }

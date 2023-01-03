@@ -119,7 +119,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Rank   rank() const          { return _rank; }
   const char*  rank_name() const;
   Mutex* next()  const         { return _next; }
-  void   set_next(Mutex *next) { _next = next; }
 #endif // ASSERT
 
  protected:

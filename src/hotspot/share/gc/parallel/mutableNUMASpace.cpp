@@ -314,9 +314,12 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
     assert(region().contains(aligned_region), "Sanity");
     // First we tell the OS which page size we want in the given range. The underlying
     // large page can be broken down if we require small pages.
-    os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
+    const size_t os_align = UseLargePages ? page_size() : os::vm_page_size();
+    os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // Then we uncommit the pages in the range.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
+    // The alignment_hint argument must be less than or equal to the small page
+    // size if not using large pages or else this function does nothing.
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), lgrp_id);
   }

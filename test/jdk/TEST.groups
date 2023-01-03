@@ -126,6 +126,7 @@ jdk_util = \
 jdk_util_other = \
     java/util \
     sun/util \
+    jdk/internal/util \
     -:jdk_collections \
     -:jdk_concurrent \
     -:jdk_stream
@@ -623,9 +624,6 @@ jdk_core_manual_no_input_security = \
     com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
     com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
     sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
-    sun/security/provider/PolicyParser/ExtDirs.java \
-    sun/security/provider/PolicyParser/ExtDirsChange.java \
-    sun/security/provider/PolicyParser/ExtDirsDefaultPolicy.java \
     sun/security/provider/PolicyParser/PrincipalExpansionError.java \
     sun/security/smartcardio/TestChannel.java \
     sun/security/smartcardio/TestConnect.java \

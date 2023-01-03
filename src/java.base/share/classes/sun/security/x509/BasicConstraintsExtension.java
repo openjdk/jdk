@@ -56,7 +56,7 @@ public class BasicConstraintsExtension extends Extension {
     private int pathLen = -1;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream out = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
 
@@ -78,7 +78,7 @@ public class BasicConstraintsExtension extends Extension {
      * @param ca true, if the subject of the Certificate is a CA.
      * @param len specifies the depth of the certification path.
      */
-    public BasicConstraintsExtension(boolean ca, int len) throws IOException {
+    public BasicConstraintsExtension(boolean ca, int len) {
         this(Boolean.valueOf(ca), ca, len);
     }
 
@@ -89,8 +89,7 @@ public class BasicConstraintsExtension extends Extension {
      * @param ca true, if the subject of the Certificate is a CA.
      * @param len specifies the depth of the certification path.
      */
-    public BasicConstraintsExtension(Boolean critical, boolean ca, int len)
-    throws IOException {
+    public BasicConstraintsExtension(Boolean critical, boolean ca, int len) {
         this.ca = ca;
         this.pathLen = len;
         this.extensionId = PKIXExtensions.BasicConstraints_Id;
@@ -178,7 +177,7 @@ public class BasicConstraintsExtension extends Extension {
       * @param out the DerOutputStream to encode the extension to.
       */
      @Override
-     public void encode(DerOutputStream out) throws IOException {
+     public void encode(DerOutputStream out) {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
              critical = ca;

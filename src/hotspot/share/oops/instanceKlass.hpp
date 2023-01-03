@@ -336,6 +336,9 @@ class InstanceKlass: public Klass {
   bool has_nonstatic_fields() const        { return _misc_status.has_nonstatic_fields(); }
   void set_has_nonstatic_fields(bool b)    { _misc_status.set_has_nonstatic_fields(b); }
 
+  bool has_localvariable_table() const     { return _misc_status.has_localvariable_table(); }
+  void set_has_localvariable_table(bool b) { _misc_status.set_has_localvariable_table(b); }
+
   // field sizes
   int nonstatic_field_size() const         { return _nonstatic_field_size; }
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }
@@ -1012,7 +1015,7 @@ public:
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
 
-  virtual void release_C_heap_structures(bool release_constant_pool = true);
+  virtual void release_C_heap_structures(bool release_sub_metadata = true);
 
   // Naming
   const char* signature_name() const;

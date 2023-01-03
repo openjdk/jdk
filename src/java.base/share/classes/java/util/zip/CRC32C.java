@@ -24,7 +24,6 @@
  */
 package java.util.zip;
 
-import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -32,6 +31,8 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.nio.ch.DirectBuffer;
+
+import static java.util.zip.ZipUtils.NIO_ACCESS;
 
 /**
  * A class that can be used to compute the CRC-32C of a data stream.
@@ -171,11 +172,12 @@ public final class CRC32C implements Checksum {
         }
 
         if (buffer.isDirect()) {
+            NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateDirectByteBuffer(crc, ((DirectBuffer) buffer).address(),
+                crc = updateDirectByteBuffer(crc, ((DirectBuffer)buffer).address(),
                         pos, limit);
             } finally {
-                Reference.reachabilityFence(buffer);
+                NIO_ACCESS.releaseSession(buffer);
             }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(),

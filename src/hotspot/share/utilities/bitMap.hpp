@@ -97,9 +97,9 @@ class BitMap {
   // Helper for get_next_{zero,one}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
-  // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
+  // - aligned_right is true if end is a priori on a bm_word_t boundary.
   template<bm_word_t flip, bool aligned_right>
-  inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
+  inline idx_t get_next_bit_impl(idx_t beg, idx_t end) const;
 
   // Values for get_next_bit_impl flip parameter.
   static const bm_word_t find_ones_flip = 0;
@@ -262,11 +262,11 @@ class BitMap {
   template <class BitMapClosureType>
   bool iterate(BitMapClosureType* cl);
 
-  // Looking for 1's and 0's at indices equal to or greater than "l_index",
-  // stopping if none has been found before "r_index", and returning
-  // "r_index" (which must be at most "size") in that case.
-  idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
-  idx_t get_next_zero_offset(idx_t l_index, idx_t r_index) const;
+  // Looking for 1's and 0's at indices equal to or greater than "beg",
+  // stopping if none has been found before "end", and returning
+  // "end" (which must be at most "size") in that case.
+  idx_t get_next_one_offset (idx_t beg, idx_t end) const;
+  idx_t get_next_zero_offset(idx_t beg, idx_t end) const;
 
   idx_t get_next_one_offset(idx_t offset) const {
     return get_next_one_offset(offset, size());
@@ -275,9 +275,9 @@ class BitMap {
     return get_next_zero_offset(offset, size());
   }
 
-  // Like "get_next_one_offset", except requires that "r_index" is
+  // Like "get_next_one_offset", except requires that "end" is
   // aligned to bitsizeof(bm_word_t).
-  idx_t get_next_one_offset_aligned_right(idx_t l_index, idx_t r_index) const;
+  idx_t get_next_one_offset_aligned_right(idx_t beg, idx_t end) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
