@@ -1279,11 +1279,9 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
 
         final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
-        int numBits = (wordsInUse > 128) ?
-            cardinality() : wordsInUse * BITS_PER_WORD;
-        // Avoid overflow in the case of a humongous numBits
-        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
-            6 * numBits + 2 : MAX_INITIAL_CAPACITY;
+        // Avoid overflow in the case of a humongous cardinality
+        int initialCapacity = (cardinality <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
+            6 * cardinality + 2 : MAX_INITIAL_CAPACITY;
         StringBuilder b = new StringBuilder(initialCapacity);
         b.append('{');
 
