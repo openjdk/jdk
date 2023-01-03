@@ -52,7 +52,6 @@ import nsk.share.gc.gp.*;
 public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, MemoryStrategyAware {
         // Keep thread count to 4, intention is to juggle
         // with multiple threads, not to overwhelm gc
-        private static int NUM_JUGGLE_THREADS = 4;
         private GarbageProducer garbageProducer;
         private MemoryStrategy memoryStrategy;
         private Object[] array;
@@ -75,8 +74,9 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
                 log.debug("Garbage producer: " + garbageProducer);
                 log.debug("Memory strategy: " + memoryStrategy);
                 long memory = runParams.getTestMemory();
-                runParams.setNumberOfThreads(NUM_JUGGLE_THREADS);
-                int objectCount = memoryStrategy.getCount(memory);
+                // Keep object count to 4, intention is to juggle
+                // not to overwhelm gc
+                int objectCount = 4;
                 objectSize = memoryStrategy.getSize(memory);
                 log.debug("Object count: " + objectCount);
                 log.debug("Object size: " + objectSize);
