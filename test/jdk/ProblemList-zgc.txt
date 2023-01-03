@@ -26,3 +26,5 @@
 # List of quarantined tests for testing with ZGC.
 #
 #############################################################################
+
+jdk/internal/vm/Continuation/Fuzz.java#default 8298058 generic-x64
