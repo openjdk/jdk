@@ -34,7 +34,7 @@ package sun.font;
  * the Font2D itself. In the event that the Font2D implementation
  * determines it the font resource has errors (a bad font file)
  * it makes its handle point at another "stable" Font2D.
- * Once all referers no longer have a reference to the Font2D it
+ * Once all referrers no longer have a reference to the Font2D it
  * may be GC'd and its resources freed.
  * This does not immediately help in the case that objects are
  * already using a bad Font2D (ie have already dereferenced the

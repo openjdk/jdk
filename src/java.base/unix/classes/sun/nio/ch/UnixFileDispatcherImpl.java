@@ -39,7 +39,6 @@ class UnixFileDispatcherImpl extends FileDispatcher {
 
     static {
         IOUtil.load();
-        init();
     }
 
     private static final JavaIOFileDescriptorAccess fdAccess =
@@ -106,14 +105,6 @@ class UnixFileDispatcherImpl extends FileDispatcher {
 
     void close(FileDescriptor fd) throws IOException {
         fdAccess.close(fd);
-    }
-
-    void preClose(FileDescriptor fd) throws IOException {
-        preClose0(fd);
-    }
-
-    void dup(FileDescriptor fd1, FileDescriptor fd2) throws IOException {
-        dup0(fd1, fd2);
     }
 
     FileDescriptor duplicateForMapping(FileDescriptor fd) {
@@ -211,14 +202,6 @@ class UnixFileDispatcherImpl extends FileDispatcher {
     static native void release0(FileDescriptor fd, long pos, long size)
         throws IOException;
 
-    // Shared with SocketDispatcher and DatagramDispatcher but
-    // NOT used by FileDispatcherImpl
-    static native void close0(FileDescriptor fd) throws IOException;
-
-    static native void preClose0(FileDescriptor fd) throws IOException;
-
-    static native void dup0(FileDescriptor fd1, FileDescriptor fd2) throws IOException;
-
     static native void closeIntFD(int fd) throws IOException;
 
     static native long allocationGranularity0();
@@ -230,6 +213,4 @@ class UnixFileDispatcherImpl extends FileDispatcher {
     static native int unmap0(long address, long length);
 
     static native int setDirect0(FileDescriptor fd) throws IOException;
-
-    static native void init();
 }

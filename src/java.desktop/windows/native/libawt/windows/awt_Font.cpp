@@ -1204,7 +1204,7 @@ void AwtFontCache::Clear()
 /* NOTE: In the interlock calls below the return value is different
          depending on which version of windows. However, all versions
          return a 0 or less than value when the count gets there. Only
-         under NT 4.0 & 98 does the value actaully represent the new value. */
+         under NT 4.0 & 98 does the value actually represent the new value. */
 
 void AwtFontCache::IncRefCount(HFONT hFont){
     Item* item = fontCache.m_head;
@@ -1884,7 +1884,7 @@ CCombinedSegTable* CCombinedSegTableManager::GetTable(LPCWSTR lpszFontName)
 
 
 /************************************************************************
- * WDefaultFontCharset native methos
+ * WDefaultFontCharset native methods
  */
 
 extern "C" {

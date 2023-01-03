@@ -73,7 +73,7 @@ frame will contain a name of the test in the title and detailed instructions.
    5. Push "Fail" button again
    6. Screenshot and the description are saved for further analysis
    7. Test UI closes
-   
+
 **Wasning: Do not close any window directly, all windows will be closed once the test is finished as passed or failed.**
 
 **Note: Keyboard navigation is supported throughout the test framework UI.**

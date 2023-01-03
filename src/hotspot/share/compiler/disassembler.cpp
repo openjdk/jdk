@@ -192,7 +192,7 @@ class decode_env {
   typedef ResourceHashtable<
       address, SourceFileInfo,
       15889,      // prime number
-      ResourceObj::C_HEAP> SourceFileInfoTable;
+      AnyObj::C_HEAP> SourceFileInfoTable;
 
   static SourceFileInfoTable* _src_table;
   static const char* _cached_src;
@@ -200,7 +200,7 @@ class decode_env {
 
   static SourceFileInfoTable& src_table() {
     if (_src_table == NULL) {
-      _src_table = new (ResourceObj::C_HEAP, mtCode)SourceFileInfoTable();
+      _src_table = new (mtCode)SourceFileInfoTable();
     }
     return *_src_table;
   }
@@ -265,7 +265,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           }
           _cached_src_lines->clear();
         } else {
-          _cached_src_lines = new (ResourceObj::C_HEAP, mtCode)GrowableArray<const char*>(0, mtCode);
+          _cached_src_lines = new (mtCode) GrowableArray<const char*>(0, mtCode);
         }
 
         if ((fp = os::fopen(file, "r")) == NULL) {
@@ -757,7 +757,7 @@ address decode_env::decode_instructions(address start, address end, address orig
 
 void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int ebuflen, outputStream* st) {
   int sz = buflen - offset;
-  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, os::dll_file_extension());
+  int written = jio_snprintf(&buf[offset], sz, "%s%s", hsdis_library_name, JNI_LIB_SUFFIX);
   if (written < sz) { // written successfully, not truncated.
     if (Verbose) st->print_cr("Trying to load: %s", buf);
     return os::dll_load(buf, ebuf, ebuflen);

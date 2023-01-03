@@ -139,8 +139,6 @@ CodeBuffer::~CodeBuffer() {
   }
 
   NOT_PRODUCT(clear_strings());
-
-  assert(_default_oop_recorder.allocated_on_stack_or_embedded(), "should be embedded object");
 }
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
@@ -350,8 +348,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
   // each carrying the largest possible offset, to advance the locs_point.
   while (offset >= relocInfo::offset_limit()) {
     assert(end < locs_limit(), "adjust previous paragraph of code");
-    *end++ = filler_relocInfo();
-    offset -= filler_relocInfo().addr_offset();
+    *end++ = relocInfo::filler_info();
+    offset -= relocInfo::filler_info().addr_offset();
   }
 
   // If it's a simple reloc with no data, we'll just write (rtype | offset).
@@ -422,6 +420,21 @@ void CodeSection::expand_locs(int new_capacity) {
   }
 }
 
+int CodeSection::alignment() const {
+  if (_index == CodeBuffer::SECT_CONSTS) {
+    // CodeBuffer controls the alignment of the constants section
+    return _outer->_const_section_alignment;
+  }
+  if (_index == CodeBuffer::SECT_INSTS) {
+    return (int) CodeEntryAlignment;
+  }
+  if (_index == CodeBuffer::SECT_STUBS) {
+    // CodeBuffer installer expects sections to be HeapWordSize aligned
+    return HeapWordSize;
+  }
+  ShouldNotReachHere();
+  return 0;
+}
 
 /// Support for emitting the code to its final location.
 /// The pattern is the same for all functions.
@@ -621,7 +634,7 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
            code_point_so_far < new_code_point;
            code_point_so_far += jump) {
         jump = new_code_point - code_point_so_far;
-        relocInfo filler = filler_relocInfo();
+        relocInfo filler = relocInfo::filler_info();
         if (jump >= filler.addr_offset()) {
           jump = filler.addr_offset();
         } else {  // else shrink the filler to fit

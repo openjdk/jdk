@@ -63,19 +63,12 @@ public:
   inline StackChunkFrameStream(stackChunkOop chunk, const frame& f);
 
   bool is_done() const { return _sp >= _end; }
-  bool is_last() const { return next_sp() >= _end; }
-
-  intptr_t* end() { return _end; }
-  void set_end(intptr_t* end) { _end = end; }
 
   // Query
-  intptr_t* end() const { return _end; }
-
   intptr_t*        sp() const  { return _sp; }
   inline address   pc() const  { return get_pc(); }
   inline intptr_t* fp() const;
   inline intptr_t* unextended_sp() const { return frame_kind == ChunkFrames::Mixed ? _unextended_sp : _sp; }
-  NOT_PRODUCT(int index() { return _index; })
   inline address orig_pc() const;
 
   inline bool is_interpreted() const;
@@ -94,13 +87,10 @@ public:
 
   void handle_deopted() const;
 
-  inline int to_offset(stackChunkOop chunk) const;
-
   inline frame to_frame() const;
 
 #ifdef ASSERT
   bool is_in_frame(void* p) const;
-  bool is_deoptimized() const;
   template <typename RegisterMapT> bool is_in_oops(void* p, const RegisterMapT* map) const;
 #endif
 
@@ -110,12 +100,10 @@ public:
   inline address get_pc() const;
   inline void get_cb();
 
-  inline intptr_t* next_sp() const;
   inline int interpreter_frame_size() const;
   inline int interpreter_frame_num_oops() const;
   inline int interpreter_frame_stack_argsize() const;
   inline void next_for_interpreter_frame();
-  inline intptr_t* next_sp_for_interpreter_frame() const;
   inline intptr_t* unextended_sp_for_interpreter_frame() const;
   inline intptr_t* derelativize(int offset) const;
   inline void get_oopmap() const;

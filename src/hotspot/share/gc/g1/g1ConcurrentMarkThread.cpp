@@ -161,9 +161,10 @@ bool G1ConcurrentMarkThread::wait_for_next_cycle() {
   return !should_terminate();
 }
 
-void G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
+bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
   G1ConcPhaseTimer p(_cm, "Concurrent Clear Claimed Marks");
   ClassLoaderDataGraph::clear_claimed_marks();
+  return _cm->has_aborted();
 }
 
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
@@ -267,9 +268,6 @@ void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   HandleMark hm(Thread::current());
   ResourceMark rm;
 
-  // Phase 1: Clear CLD claimed marks.
-  phase_clear_cld_claimed_marks();
-
   // We have to ensure that we finish scanning the root regions
   // before the next GC takes place. To ensure this we have to
   // make sure that we do not join the STS until the root regions
@@ -287,20 +285,23 @@ void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   // We can not easily abort before root region scan either because of the
   // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
 
-  // Phase 2: Scan root regions.
+  // Phase 1: Scan root regions.
   if (phase_scan_root_regions()) return;
 
-  // Phase 3: Actual mark loop.
+  // Phase 2: Actual mark loop.
   if (phase_mark_loop()) return;
 
-  // Phase 4: Rebuild remembered sets and scrub dead objects.
+  // Phase 3: Rebuild remembered sets and scrub dead objects.
   if (phase_rebuild_and_scrub()) return;
 
-  // Phase 5: Wait for Cleanup.
+  // Phase 4: Wait for Cleanup.
   if (phase_delay_to_keep_mmu_before_cleanup()) return;
 
-  // Phase 6: Cleanup pause
+  // Phase 5: Cleanup pause
   if (phase_cleanup()) return;
+
+  // Phase 6: Clear CLD claimed marks.
+  if (phase_clear_cld_claimed_marks()) return;
 
   // Phase 7: Clear bitmap for next mark.
   phase_clear_bitmap_for_next_mark();
@@ -316,7 +317,10 @@ void G1ConcurrentMarkThread::concurrent_undo_cycle_do() {
 
   _cm->flush_all_task_caches();
 
-  // Phase 1: Clear bitmap for next mark.
+  // Phase 1: Clear CLD claimed marks.
+  if (phase_clear_cld_claimed_marks()) return;
+
+  // Phase 2: Clear bitmap for next mark.
   phase_clear_bitmap_for_next_mark();
 }
 

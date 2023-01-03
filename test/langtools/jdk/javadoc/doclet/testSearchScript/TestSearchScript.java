@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178982 8220497 8210683 8241982
+ * @bug 8178982 8220497 8210683 8241982 8297216
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @library /test/lib
@@ -55,18 +55,21 @@ import jtreg.SkippedException;
 public class TestSearchScript extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSearchScript tester = new TestSearchScript();
+        var tester = new TestSearchScript();
         tester.runTests();
     }
 
     private Invocable getEngine() throws ScriptException, IOException, NoSuchMethodException {
+        // For installing and using GraalVM JS on stock JDK see
+        // https://github.com/oracle/graaljs/blob/master/docs/user/RunOnJDK.md
+        // and https://github.com/graalvm/graal-js-jdk11-maven-demo
         ScriptEngineManager engineManager = new ScriptEngineManager();
         // Use "js" engine name to use any available JavaScript engine.
         ScriptEngine engine = engineManager.getEngineByName("js");
         if (engine == null) {
             throw new SkippedException("JavaScript engine is not available.");
         }
-        // For GraalJS set Nashorn compatibility mode via Bindings,
+        // Set Nashorn compatibility mode via Bindings for use with GraalVM JS,
         // see https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md
         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put("polyglot.js.nashorn-compat", true);
@@ -332,6 +335,28 @@ public class TestSearchScript extends JavadocTester {
         checkSearch(inv, "with map", List.of(
                 "listpkg.Nolist.withTypeParams(Map<String, ? extends Collection>)"));
 
+    }
+
+    @Test
+    public void testChannelSearch() throws ScriptException, IOException, NoSuchMethodException {
+        javadoc("-d", "out-channel",
+                "-Xdoclint:none",
+                "-use",
+                "-sourcepath", testSrc,
+                "channels");
+        checkExit(Exit.OK);
+
+        Invocable inv = getEngine();
+
+        checkSearch(inv, "FileChannel", List.of("channels.FileChannel", "channels.FileChannel.Map",
+                "channels.FileChannel.FileChannel()"));
+        checkSearch(inv, "FileChannel.", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.FileChannel()", "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "filechannel.M", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "FileChannel.map", List.of("channels.FileChannel.Map",
+                "channels.FileChannel.map(FileChannel.Map, int)"));
+        checkSearch(inv, "FileChannel.map(", List.of("channels.FileChannel.map(FileChannel.Map, int)"));
     }
 
     void checkSearch(Invocable inv, String query, List<String> results) throws ScriptException, NoSuchMethodException {

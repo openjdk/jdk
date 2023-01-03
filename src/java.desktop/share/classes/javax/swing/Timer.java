@@ -156,7 +156,7 @@ public class Timer implements Serializable
     //    EventQueue and be pending (ie in the process of notifying the
     //    ActionListener). If we didn't do this it would allow for a
     //    situation where the app is taking too long to process the
-    //    actionPerformed, and thus we'ld end up queing a bunch of Runnables
+    //    actionPerformed, and thus we'd end up queueing a bunch of Runnables
     //    and the app would never return: not good. This of course implies
     //    you can get dropped events, but such is life.
     // notify is used to indicate if the ActionListener can be notified, when
@@ -438,7 +438,7 @@ public class Timer implements Serializable
     /**
      * Returns the {@code Timer}'s initial delay.
      *
-     * @return the {@code Timer}'s intial delay, in milliseconds
+     * @return the {@code Timer}'s initial delay, in milliseconds
      * @see #setInitialDelay
      * @see #setDelay
      */

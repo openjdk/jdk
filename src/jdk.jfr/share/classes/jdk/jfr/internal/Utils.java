@@ -32,10 +32,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -57,9 +54,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import jdk.internal.module.Checks;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
-import jdk.internal.platform.Metrics;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
@@ -461,7 +455,7 @@ public final class Utils {
     }
 
     public static Map<String, String> sanitizeNullFreeStringMap(Map<String, String> settings) {
-        HashMap<String, String> map = new HashMap<>(settings.size());
+        HashMap<String, String> map = HashMap.newHashMap(settings.size());
         for (Map.Entry<String, String> e : settings.entrySet()) {
             String key = e.getKey();
             if (key == null) {

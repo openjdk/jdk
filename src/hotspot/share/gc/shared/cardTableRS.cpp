@@ -111,7 +111,7 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
   }
 }
 
-void CardTableRS::younger_refs_in_space_iterate(Space* sp,
+void CardTableRS::younger_refs_in_space_iterate(ContiguousSpace* sp,
                                                 HeapWord* gen_boundary,
                                                 OopIterateClosure* cl) {
   verify_used_region_at_save_marks(sp);
@@ -431,7 +431,6 @@ void CardTableRS::verify() {
   // generational heaps.
   VerifyCTGenClosure blk(this);
   GenCollectedHeap::heap()->generation_iterate(&blk, false);
-  CardTable::verify();
 }
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
@@ -441,7 +440,7 @@ void CardTableRS::initialize() {
   CardTable::initialize();
 }
 
-void CardTableRS::non_clean_card_iterate(Space* sp,
+void CardTableRS::non_clean_card_iterate(ContiguousSpace* sp,
                                          HeapWord* gen_boundary,
                                          MemRegion mr,
                                          OopIterateClosure* cl,

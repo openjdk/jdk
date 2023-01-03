@@ -69,7 +69,6 @@ public:
   }
 
   virtual jint initialize();
-  virtual void post_initialize();
   virtual void initialize_serviceability();
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();

@@ -244,10 +244,10 @@ void TemplateTable::fconst(int value) {
       __ fmv_w_x(f10, zr);
       break;
     case 1:
-      __ flw(f10, t0, 0);
+      __ flw(f10, Address(t0, 0));
       break;
     case 2:
-      __ flw(f10, t0, sizeof(float));
+      __ flw(f10, Address(t0, sizeof(float)));
       break;
     default:
       ShouldNotReachHere();
@@ -263,10 +263,10 @@ void TemplateTable::dconst(int value) {
       __ fmv_d_x(f10, zr);
       break;
     case 1:
-      __ fld(f10, t0, 0);
+      __ fld(f10, Address(t0, 0));
       break;
     case 2:
-      __ fld(f10, t0, sizeof(double));
+      __ fld(f10, Address(t0, sizeof(double)));
       break;
     default:
       ShouldNotReachHere();
@@ -285,11 +285,11 @@ void TemplateTable::sipush() {
   __ sraiw(x10, x10, 16);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Label call_ldc, notFloat, notClass, notInt, Done;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
    __ get_unsigned_2_byte_index_at_bcp(x11, 1);
   } else {
    __ load_unsigned_byte(x11, at_bcp(1));
@@ -320,7 +320,7 @@ void TemplateTable::ldc(bool wide) {
   __ bne(x13, t1, notClass);
 
   __ bind(call_ldc);
-  __ mv(c_rarg1, wide);
+  __ mv(c_rarg1, is_ldc_wide(type) ? 1 : 0);
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), c_rarg1);
   __ push_ptr(x10);
   __ verify_oop(x10);
@@ -354,14 +354,14 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
   const Register result = x10;
   const Register tmp = x11;
   const Register rarg = x12;
 
-  const int index_size = wide ? sizeof(u2) : sizeof(u1);
+  const int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
 
@@ -387,7 +387,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
     // Stash null_sentinel address to get its value later
     int32_t offset = 0;
-    __ movptr_with_offset(rarg, Universe::the_null_sentinel_addr(), offset);
+    __ mv(rarg, Universe::the_null_sentinel_addr(), offset);
     __ ld(tmp, Address(rarg, offset));
     __ resolve_oop_handle(tmp, x15, t1);
     __ bne(result, tmp, notNull);
@@ -2263,9 +2263,12 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     // take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address) JvmtiExport::get_field_access_count_addr()), offset);
-    __ lwu(x10, Address(t0, offset));
+    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(x10, Address(t0, offset));
+    });
 
     __ beqz(x10, L1);
 
@@ -2479,9 +2482,12 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     // we take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)JvmtiExport::get_field_modification_count_addr()), offset);
-    __ lwu(x10, Address(t0, offset));
+    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(x10, Address(t0, offset));
+    });
     __ beqz(x10, L1);
 
     __ get_cache_and_index_at_bcp(c_rarg2, t0, 1);
@@ -2778,9 +2784,12 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
     Label L2;
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)JvmtiExport::get_field_modification_count_addr()), offset);
-    __ lwu(c_rarg3, Address(t0, offset));
+    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(c_rarg3, Address(t0, offset));
+    });
     __ beqz(c_rarg3, L2);
     __ pop_ptr(x9);                  // copy the object pointer from tos
     __ verify_oop(x9);
@@ -2914,9 +2923,12 @@ void TemplateTable::fast_accessfield(TosState state) {
     // Check to see if a field access watch has been set before we
     // take the time to call into the VM.
     Label L1;
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)JvmtiExport::get_field_access_count_addr()), offset);
-    __ lwu(x12, Address(t0, offset));
+    ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lwu(x12, Address(t0, offset));
+    });
     __ beqz(x12, L1);
     // access constant pool cache entry
     __ get_cache_entry_pointer_at_bcp(c_rarg2, t1, 1);

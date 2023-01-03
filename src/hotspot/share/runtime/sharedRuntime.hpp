@@ -27,7 +27,6 @@
 
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
-#include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
@@ -129,9 +128,11 @@ class SharedRuntime: AllStatic {
   static jfloat  d2f (jdouble x);
   static jfloat  l2f (jlong   x);
   static jdouble l2d (jlong   x);
+  static jfloat  hf2f(jshort  x);
+  static jshort  f2hf(jfloat  x);
+  static jfloat  i2f (jint    x);
 
 #ifdef __SOFTFP__
-  static jfloat  i2f (jint    x);
   static jdouble i2d (jint    x);
   static jdouble f2d (jfloat  x);
 #endif // __SOFTFP__
@@ -271,20 +272,18 @@ class SharedRuntime: AllStatic {
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
 
-  static oop retrieve_receiver(Symbol* sig, frame caller);
-
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
   static int dtrace_object_alloc(oopDesc* o);
-  static int dtrace_object_alloc(Thread* thread, oopDesc* o);
-  static int dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size);
+  static int dtrace_object_alloc(JavaThread* thread, oopDesc* o);
+  static int dtrace_object_alloc(JavaThread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
   // Utility method for retrieving the Java thread id, returns 0 if the
   // thread is not a well formed Java thread.
-  static jlong get_java_tid(Thread* thread);
+  static jlong get_java_tid(JavaThread* thread);
 
 
   // used by native wrappers to re-enable yellow if overflow happened in native code
@@ -555,26 +554,20 @@ class SharedRuntime: AllStatic {
   // Statistics code
   // stats for "normal" compiled calls (non-interface)
   static int64_t _nof_normal_calls;               // total # of calls
-  static int64_t _nof_optimized_calls;            // total # of statically-bound calls
   static int64_t _nof_inlined_calls;              // total # of inlined normal calls
   static int64_t _nof_static_calls;               // total # of calls to static methods or super methods (invokespecial)
   static int64_t _nof_inlined_static_calls;       // total # of inlined static calls
   // stats for compiled interface calls
   static int64_t _nof_interface_calls;            // total # of compiled calls
-  static int64_t _nof_optimized_interface_calls;  // total # of statically-bound interface calls
   static int64_t _nof_inlined_interface_calls;    // total # of inlined interface calls
-  static int64_t _nof_megamorphic_interface_calls;// total # of megamorphic interface calls
 
  public: // for compiler
   static address nof_normal_calls_addr()                { return (address)&_nof_normal_calls; }
-  static address nof_optimized_calls_addr()             { return (address)&_nof_optimized_calls; }
   static address nof_inlined_calls_addr()               { return (address)&_nof_inlined_calls; }
   static address nof_static_calls_addr()                { return (address)&_nof_static_calls; }
   static address nof_inlined_static_calls_addr()        { return (address)&_nof_inlined_static_calls; }
   static address nof_interface_calls_addr()             { return (address)&_nof_interface_calls; }
-  static address nof_optimized_interface_calls_addr()   { return (address)&_nof_optimized_interface_calls; }
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
-  static address nof_megamorphic_interface_calls_addr() { return (address)&_nof_megamorphic_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
   static void print_statistics();
   static void print_ic_miss_histogram();

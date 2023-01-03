@@ -33,8 +33,8 @@
  *      file system provider} to enumerate and read the class and resource
  *      files in a run-time image.
  *      The jrt file system can be created by calling
- *      {@link java.nio.file.FileSystems#newFileSystem
- *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
+ *      {@link java.nio.file.FileSystems#getFileSystem
+ *      FileSystems.getFileSystem(URI.create("jrt:/"))}.
  *      </dd>
  * </dl>
  *
@@ -165,11 +165,18 @@ module java.base {
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,
-        jdk.net;
+        jdk.jfr,
+        jdk.net,
+        jdk.incubator.concurrent,
+        jdk.sctp,
+        jdk.crypto.cryptoki;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
         jdk.jfr;
+    exports jdk.internal.io to
+        jdk.internal.le,
+        jdk.jshell;
     exports jdk.internal.jimage to
         jdk.jlink;
     exports jdk.internal.jimage.decompressor to
@@ -244,12 +251,14 @@ module java.base {
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
+        jdk.incubator.concurrent,
         jdk.internal.jvmstat,
         jdk.management,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
+        jdk.incubator.concurrent,
         jdk.incubator.vector,
         jdk.jfr,
         jdk.unsupported;
@@ -304,7 +313,8 @@ module java.base {
     exports sun.security.action to
         java.desktop,
         java.security.jgss,
-        jdk.crypto.ec;
+        jdk.crypto.ec,
+        jdk.incubator.concurrent;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -402,6 +412,7 @@ module java.base {
 
     // JDK-internal service types
 
+    uses jdk.internal.io.JdkConsoleProvider;
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
     uses sun.util.spi.CalendarProvider;

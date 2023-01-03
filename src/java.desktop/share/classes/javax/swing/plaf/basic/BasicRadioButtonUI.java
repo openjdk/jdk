@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,11 @@
 package javax.swing.plaf.basic;
 
 import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.text.View;
 import sun.swing.SwingUtilities2;
 import sun.awt.AppContext;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * RadioButtonUI implementation for BasicRadioButtonUI
@@ -54,8 +49,6 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
     private boolean defaults_initialized = false;
 
     private static final String propertyPrefix = "RadioButton" + ".";
-
-    private KeyListener keyListener = null;
 
     // ********************************
     //        Create PLAF

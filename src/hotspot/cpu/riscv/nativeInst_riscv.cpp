@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/ostream.hpp"
@@ -280,7 +281,7 @@ address NativeJump::jump_destination() const {
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
-  // As a special case we also use sequence movptr_with_offset(r,0), jalr(r,0)
+  // As a special case we also use sequence movptr(r,0), jalr(r,0)
   // i.e. jump to 0 when we need leave space for a wide immediate
   // load
 
@@ -390,9 +391,10 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
+  Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr_with_offset(t0, entry, offset); // lui, addi, slli, addi, slli
+  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
   a.jalr(x0, t0, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
@@ -435,4 +437,33 @@ void NativeMembar::set_kind(uint32_t order_kind) {
 
   address membar = addr_at(0);
   *(unsigned int*) membar = insn;
+}
+
+void NativePostCallNop::make_deopt() {
+  MacroAssembler::assert_alignment(addr_at(0));
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+int NativePostCallNop::displacement() const {
+  // Discard the high 32 bits
+  return (int)(intptr_t)MacroAssembler::get_target_of_li32(addr_at(4));
+}
+
+void NativePostCallNop::patch(jint diff) {
+  assert(diff != 0, "must be");
+  assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
+
+  MacroAssembler::patch_imm_in_li32(addr_at(4), diff);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // 0xc0201073 encodes CSRRW x0, instret, x0
+  uint32_t insn = 0xc0201073;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  ICache::invalidate_range(code_pos, 4);
 }

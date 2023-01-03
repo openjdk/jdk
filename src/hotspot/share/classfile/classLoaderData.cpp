@@ -283,6 +283,12 @@ void ClassLoaderData::clear_claim(int claim) {
   }
 }
 
+#ifdef ASSERT
+void ClassLoaderData::verify_not_claimed(int claim) {
+  assert((_claim & claim) == 0, "Found claim: %d bits in _claim: %d", claim, _claim);
+}
+#endif
+
 bool ClassLoaderData::try_claim(int claim) {
   for (;;) {
     int old_claim = Atomic::load(&_claim);
@@ -598,23 +604,16 @@ const int _default_loader_dictionary_size = 107;
 Dictionary* ClassLoaderData::create_dictionary() {
   assert(!has_class_mirror_holder(), "class mirror holder cld does not have a dictionary");
   int size;
-  bool resizable = false;
   if (_the_null_class_loader_data == NULL) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
   } else if (is_system_class_loader_data()) {
     size = _boot_loader_dictionary_size;
-    resizable = true;
   } else {
     size = _default_loader_dictionary_size;
-    resizable = true;
   }
-  if (!DynamicallyResizeSystemDictionaries || DumpSharedSpaces) {
-    resizable = false;
-  }
-  return new Dictionary(this, size, resizable);
+  return new Dictionary(this, size);
 }
 
 // Tell the GC to keep this klass alive. Needed while iterating ClassLoaderDataGraph,
@@ -822,9 +821,10 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == NULL) {
-      _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, mtClass);
+      _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
+    ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
   }
@@ -973,6 +973,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
     case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_stw_fullgc_mark:            out->print_cr("stw full gc mark"); break;
+    case _claim_stw_fullgc_adjust:          out->print_cr("stw full gc adjust"); break;
     case _claim_other:                      out->print_cr("other"); break;
     case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;

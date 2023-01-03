@@ -21,19 +21,19 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Stress test Thread.sleep
  * @requires vm.debug != true & vm.continuations
- * @compile --enable-preview -source ${jdk.version} SleepALot.java
- * @run main/othervm --enable-preview SleepALot
+ * @enablePreview
+ * @run main/othervm SleepALot 500000
  */
 
-/**
+/*
  * @test
  * @requires vm.debug == true & vm.continuations
- * @compile --enable-preview -source ${jdk.version} SleepALot.java
- * @run main/othervm/timeout=300 --enable-preview SleepALot 200000
+ * @enablePreview
+ * @run main/othervm/timeout=300 SleepALot 200000
  */
 
 import java.time.Duration;

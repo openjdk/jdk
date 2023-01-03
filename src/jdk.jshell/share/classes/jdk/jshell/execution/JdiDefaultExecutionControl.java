@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
+import java.util.stream.Stream;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.remoteInputOutput;
@@ -96,10 +97,15 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
             int port = listener.getLocalPort();
+            List<String> augmentedremoteVMOptions =
+                    Stream.concat(env.extraRemoteVMOptions().stream(),
+                                  //disable System.console():
+                                  List.of("-Djdk.console=java.base").stream())
+                          .toList();
 
             // Set-up the JDI connection
             JdiInitiator jdii = new JdiInitiator(port,
-                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host,
+                    augmentedremoteVMOptions, remoteAgent, isLaunch, host,
                     timeout, Collections.emptyMap());
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
@@ -148,6 +154,11 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
         deathListeners.add(s -> disposeVM());
      }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     @Override
     public String invoke(String classname, String methodname)
             throws RunException,

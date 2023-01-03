@@ -193,6 +193,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     return;
   }
 
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
+
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
@@ -256,7 +258,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ beq(t0, t1, skip_barrier);
 
     int32_t offset = 0;
-    __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
     __ jalr(ra, t0, offset);
     __ j(skip_barrier);
 

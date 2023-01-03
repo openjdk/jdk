@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.misc.InternalLock;
 
@@ -53,6 +54,8 @@ import jdk.internal.misc.InternalLock;
  * @since   1.0
  */
 public class PushbackInputStream extends FilterInputStream {
+
+    // initialized to null when PushbackInputStream is sub-classed
     private final InternalLock closeLock;
 
     /**
@@ -405,4 +408,23 @@ public class PushbackInputStream extends FilterInputStream {
             buf = null;
         }
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        ensureOpen();
+        if (getClass() == PushbackInputStream.class) {
+            int avail = buf.length - pos;
+            if (avail > 0) {
+                // Prevent poisoning and leaking of buf
+                byte[] buffer = Arrays.copyOfRange(buf, pos, buf.length);
+                out.write(buffer);
+                pos = buffer.length;
+            }
+            return avail + in.transferTo(out);
+        } else {
+            return super.transferTo(out);
+        }
+    }
+
 }

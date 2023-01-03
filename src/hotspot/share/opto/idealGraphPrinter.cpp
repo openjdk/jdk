@@ -149,7 +149,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   } else {
     init_network_stream();
   }
-  _xml = new (ResourceObj::C_HEAP, mtCompiler) xmlStream(_output);
+  _xml = new (mtCompiler) xmlStream(_output);
   if (!append) {
     head(TOP_ELEMENT);
   }
@@ -731,10 +731,9 @@ Node* IdealGraphPrinter::get_load_node(const Node* node) {
 
 void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set) {
   VectorSet visited;
-  GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
+  GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, nullptr);
   nodeStack.push(start);
-  visited.test_set(start->_idx);
-  if (C->cfg() != NULL) {
+  if (C->cfg() != nullptr) {
     // once we have a CFG there are some nodes that aren't really
     // reachable but are in the CFG so add them here.
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
@@ -745,25 +744,23 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
     }
   }
 
-  while(nodeStack.length() > 0) {
+  while (nodeStack.length() > 0) {
+    Node* n = nodeStack.pop();
+    if (visited.test_set(n->_idx)) {
+      continue;
+    }
 
-    Node *n = nodeStack.pop();
     visit_node(n, edges, temp_set);
 
     if (_traverse_outs) {
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
-        Node* p = n->out(i);
-        if (!visited.test_set(p->_idx)) {
-          nodeStack.push(p);
-        }
+        nodeStack.push(n->out(i));
       }
     }
 
-    for ( uint i = 0; i < n->len(); i++ ) {
-      if ( n->in(i) ) {
-        if (!visited.test_set(n->in(i)->_idx)) {
-          nodeStack.push(n->in(i));
-        }
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i) != nullptr) {
+        nodeStack.push(n->in(i));
       }
     }
   }
@@ -851,9 +848,9 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
     } else {
       st.print("%s%d", file_name, _file_count);
     }
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(st.as_string(), "w");
+    _output = new (mtCompiler) fileStream(st.as_string(), "w");
   } else {
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, append ? "a" : "w");
+    _output = new (mtCompiler) fileStream(file_name, append ? "a" : "w");
   }
   if (use_multiple_files) {
     assert(!append, "append should only be used for debugging with a single file");
@@ -862,7 +859,7 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
 }
 
 void IdealGraphPrinter::init_network_stream() {
-  _network_stream = new (ResourceObj::C_HEAP, mtCompiler) networkStream();
+  _network_stream = new (mtCompiler) networkStream();
   // Try to connect to visualizer
   if (_network_stream->connect(PrintIdealGraphAddress, PrintIdealGraphPort)) {
     char c = 0;

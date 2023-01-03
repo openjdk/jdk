@@ -879,9 +879,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">E 'dä' d.</dateFormatItem>
-						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm" draft="contributed">H:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E d. M.</dateFormatItem>
@@ -906,9 +906,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -923,22 +923,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="contributed">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM. y – MMM. y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM. y – MMM. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">MMMM–MMMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1187,9 +1187,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">E 'dä' d.</dateFormatItem>
-						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm" draft="contributed">H:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E d. M.</dateFormatItem>
@@ -1214,9 +1214,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -1231,26 +1231,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="contributed">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM. y – MMM. y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM. y – MMM. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d.–d. MMMM y</greatestDifference>
-							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E y-MM-dd – E y-MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">MMMM–MMMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>

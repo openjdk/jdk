@@ -98,7 +98,8 @@ public class RunBasic {
         runTest("person", "test.StorePerson",
                 "-Dcom.sun.jndi.ldap.object.trustSerialData=true");
         runTest("fruit", "test.StoreFruit",
-                "-Dcom.sun.jndi.ldap.object.trustSerialData=true");
+                "-Dcom.sun.jndi.ldap.object.trustSerialData=true",
+                "-Djdk.jndi.ldap.object.factoriesFilter=org.example.fruit.FruitFactory");
         runTest("hello", "test.StoreRemote",
                 "-Dcom.sun.jndi.ldap.object.trustSerialData=true");
         runTest("foo", "test.ConnectWithFoo");

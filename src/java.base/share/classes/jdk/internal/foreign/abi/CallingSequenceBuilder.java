@@ -27,7 +27,6 @@ package jdk.internal.foreign.abi;
 import jdk.internal.foreign.Utils;
 import sun.security.action.GetPropertyAction;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -48,6 +47,7 @@ public class CallingSequenceBuilder {
             GetPropertyAction.privilegedGetProperty("java.lang.foreign.VERIFY_BINDINGS", "true"));
 
     private final ABIDescriptor abi;
+    private final LinkerOptions linkerOptions;
 
     private final boolean forUpcall;
     private final List<List<Binding>> inputBindings = new ArrayList<>();
@@ -56,9 +56,10 @@ public class CallingSequenceBuilder {
     private MethodType mt = MethodType.methodType(void.class);
     private FunctionDescriptor desc = FunctionDescriptor.ofVoid();
 
-    public CallingSequenceBuilder(ABIDescriptor abi, boolean forUpcall) {
+    public CallingSequenceBuilder(ABIDescriptor abi, boolean forUpcall, LinkerOptions linkerOptions) {
         this.abi = abi;
         this.forUpcall = forUpcall;
+        this.linkerOptions = linkerOptions;
     }
 
     public final CallingSequenceBuilder addArgumentBindings(Class<?> carrier, MemoryLayout layout,
@@ -96,12 +97,17 @@ public class CallingSequenceBuilder {
         MethodType callerMethodType;
         MethodType calleeMethodType;
         if (!forUpcall) {
-            addArgumentBinding(0, Addressable.class, ValueLayout.ADDRESS, List.of(
-                Binding.unboxAddress(Addressable.class),
+            if (linkerOptions.hasCapturedCallState()) {
+                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                        Binding.unboxAddress(),
+                        Binding.vmStore(abi.capturedStateStorage(), long.class)));
+            }
+            addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                Binding.unboxAddress(),
                 Binding.vmStore(abi.targetAddrStorage(), long.class)));
             if (needsReturnBuffer) {
                 addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
-                    Binding.unboxAddress(MemorySegment.class),
+                    Binding.unboxAddress(),
                     Binding.vmStore(abi.retBufAddrStorage(), long.class)));
             }
 
@@ -111,15 +117,14 @@ public class CallingSequenceBuilder {
             if (needsReturnBuffer) {
                 addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
                         Binding.vmLoad(abi.retBufAddrStorage(), long.class),
-                        Binding.boxAddress(),
-                        Binding.toSegment(returnBufferSize)));
+                        Binding.boxAddress(returnBufferSize)));
             }
 
             callerMethodType = computeCallerTypeForUpcall();
             calleeMethodType = mt;
         }
         return new CallingSequence(forUpcall, callerMethodType, calleeMethodType, desc, needsReturnBuffer,
-                returnBufferSize, allocationSize, inputBindings, outputBindings);
+                returnBufferSize, allocationSize, inputBindings, outputBindings, linkerOptions);
     }
 
     private MethodType computeCallerTypeForUpcall() {
@@ -195,8 +200,8 @@ public class CallingSequenceBuilder {
         //ALLOC_BUFFER,
         //BOX_ADDRESS,
         UNBOX_ADDRESS,
-        //TO_SEGMENT,
-        DUP
+        DUP,
+        CAST
     );
 
     private static void verifyUnboxBindings(Class<?> inType, List<Binding> bindings) {
@@ -223,8 +228,8 @@ public class CallingSequenceBuilder {
         ALLOC_BUFFER,
         BOX_ADDRESS,
         //UNBOX_ADDRESS,
-        TO_SEGMENT,
-        DUP
+        DUP,
+        CAST
     );
 
     private static void verifyBoxBindings(Class<?> expectedOutType, List<Binding> bindings) {

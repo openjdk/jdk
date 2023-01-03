@@ -26,7 +26,6 @@
 package sun.security.pkcs;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
@@ -209,21 +208,14 @@ public class SignerInfo implements DerEncoder {
         }
     }
 
-    public void encode(DerOutputStream out) throws IOException {
-
-        derEncode(out);
-    }
-
     /**
      * DER encode this object onto an output stream.
      * Implements the {@code DerEncoder} interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
-    public void derEncode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
         seq.putInteger(version);
         DerOutputStream issuerAndSerialNumber = new DerOutputStream();
@@ -245,10 +237,7 @@ public class SignerInfo implements DerEncoder {
         if (unauthenticatedAttributes != null)
             unauthenticatedAttributes.encode((byte)0xA1, seq);
 
-        DerOutputStream tmp = new DerOutputStream();
-        tmp.write(DerValue.tag_Sequence, seq);
-
-        out.write(tmp.toByteArray());
+        out.write(DerValue.tag_Sequence, seq);
     }
 
     /*
@@ -440,16 +429,11 @@ public class SignerInfo implements DerEncoder {
             boolean[] keyUsageBits = cert.getKeyUsage();
             if (keyUsageBits != null) {
                 KeyUsageExtension keyUsage;
-                try {
-                    // We don't care whether this extension was marked
-                    // critical in the certificate.
-                    // We're interested only in its value (i.e., the bits set)
-                    // and treat the extension as critical.
-                    keyUsage = new KeyUsageExtension(keyUsageBits);
-                } catch (IOException ioe) {
-                    throw new SignatureException("Failed to parse keyUsage "
-                                                 + "extension");
-                }
+                // We don't care whether this extension was marked
+                // critical in the certificate.
+                // We're interested only in its value (i.e., the bits set)
+                // and treat the extension as critical.
+                keyUsage = new KeyUsageExtension(keyUsageBits);
 
                 boolean digSigAllowed
                         = keyUsage.get(KeyUsageExtension.DIGITAL_SIGNATURE);

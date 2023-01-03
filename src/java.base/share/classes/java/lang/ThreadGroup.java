@@ -375,7 +375,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     public int activeCount() {
         int n = 0;
         for (Thread thread : Thread.getAllThreads()) {
-            @SuppressWarnings("deprecation")
             ThreadGroup g = thread.getThreadGroup();
             if (parentOf(g)) {
                 n++;
@@ -446,7 +445,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
         int n = 0;
         if (list.length > 0) {
             for (Thread thread : Thread.getAllThreads()) {
-                @SuppressWarnings("deprecation")
                 ThreadGroup g = thread.getThreadGroup();
                 if (g == this || (recurse && parentOf(g))) {
                     list[n++] = thread;
@@ -582,7 +580,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     public final void interrupt() {
         checkAccess();
         for (Thread thread : Thread.getAllThreads()) {
-            @SuppressWarnings("deprecation")
             ThreadGroup g = thread.getThreadGroup();
             if (parentOf(g)) {
                 thread.interrupt();
@@ -704,23 +701,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Does nothing.
-     *
-     * @return false
-     *
-     * @param b ignored
-     *
-     * @deprecated This method was originally intended for controlling suspension
-     *             in low memory conditions. It was never specified.
-     *
-     * @since   1.1
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public boolean allowThreadSuspension(boolean b) {
-        return false;
-    }
-
-    /**
      * Returns a string representation of this Thread group.
      *
      * @return  a string representation of this thread group.
@@ -793,6 +773,14 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
         synchronized (this) {
             return subgroups();
         }
+    }
+
+    /**
+     * Returns a snapshot of the subgroups as an array, used by JVMTI.
+     */
+    private ThreadGroup[] subgroupsAsArray() {
+        List<ThreadGroup> groups = synchronizedSubgroups();
+        return groups.toArray(new ThreadGroup[0]);
     }
 
     /**

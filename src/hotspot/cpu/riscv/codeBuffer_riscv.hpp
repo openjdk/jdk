@@ -35,4 +35,6 @@ public:
   void flush_bundle(bool start_new_bundle) {}
   static constexpr bool supports_shared_stubs() { return true; }
 
+  void share_trampoline_for(address dest, int caller_offset);
+
 #endif // CPU_RISCV_CODEBUFFER_RISCV_HPP

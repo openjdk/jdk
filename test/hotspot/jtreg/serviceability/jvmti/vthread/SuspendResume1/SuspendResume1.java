@@ -29,7 +29,7 @@
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} SuspendResume1.java
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=600
  *      --enable-preview
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -agentlib:SuspendResume1

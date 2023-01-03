@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -39,7 +40,10 @@
 #include "nativeInst_riscv.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -55,6 +59,9 @@
 #ifdef COMPILER2
 #include "adfiles/ad_riscv.hpp"
 #include "opto/runtime.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
 #define __ masm->
@@ -208,6 +215,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 #ifdef COMPILER2
   __ pop_CPU_state(_save_vectors, Matcher::scalable_vector_reg_size(T_BYTE));
 #else
+#if !INCLUDE_JVMCI
+  assert(!_save_vectors, "vectors are generated only by C2 and JVMCI");
+#endif
   __ pop_CPU_state(_save_vectors);
 #endif
   __ leave();
@@ -333,9 +343,12 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mv(c_rarg0, xmethod);
   __ mv(c_rarg1, ra);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
   __ pop_CPU_state();
   // restore sp
@@ -493,6 +506,18 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // Pre-load the register-jump target early, to schedule it better.
   __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_offset())));
 
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ ld(t0, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    Label no_alternative_target;
+    __ beqz(t0, no_alternative_target);
+    __ mv(t1, t0);
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ bind(no_alternative_target);
+  }
+#endif // INCLUDE_JVMCI
+
   // Now generate the shuffle code.
   for (int i = 0; i < total_args_passed; i++) {
     if (sig_bt[i] == T_VOID) {
@@ -567,6 +592,8 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
+  __ push_cont_fastpath(xthread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+
   // 6243940 We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that
   // happens we don't want to take a safepoint because the
@@ -612,7 +639,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   {
     __ block_comment("c2i_unverified_entry {");
-    __ load_klass(t0, receiver);
+    __ load_klass(t0, receiver, tmp);
     __ ld(tmp, Address(holder, CompiledICHolder::holder_klass_offset()));
     __ ld(xmethod, Address(holder, CompiledICHolder::holder_metadata_offset()));
     __ beq(t0, tmp, ok);
@@ -836,6 +863,245 @@ static void verify_oop_args(MacroAssembler* masm,
   }
 }
 
+// on exit, sp points to the ContinuationEntry
+static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  stack_slots += (int)ContinuationEntry::size() / wordSize;
+  __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
+
+  OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize) / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
+
+  __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+  __ sd(t0, Address(sp, ContinuationEntry::parent_offset()));
+  __ sd(sp, Address(xthread, JavaThread::cont_entry_offset()));
+
+  return map;
+}
+
+// on entry c_rarg1 points to the continuation
+//          sp points to ContinuationEntry
+//          c_rarg3 -- isVirtualThread
+static void fill_continuation_entry(MacroAssembler* masm) {
+#ifdef ASSERT
+  __ mvw(t0, ContinuationEntry::cookie_value());
+  __ sw(t0, Address(sp, ContinuationEntry::cookie_offset()));
+#endif
+
+  __ sd(c_rarg1, Address(sp, ContinuationEntry::cont_offset()));
+  __ sw(c_rarg3, Address(sp, ContinuationEntry::flags_offset()));
+  __ sd(zr,      Address(sp, ContinuationEntry::chunk_offset()));
+  __ sw(zr,      Address(sp, ContinuationEntry::argsize_offset()));
+  __ sw(zr,      Address(sp, ContinuationEntry::pin_count_offset()));
+
+  __ ld(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
+  __ sd(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ ld(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
+  __ sd(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+
+  __ sd(zr, Address(xthread, JavaThread::cont_fastpath_offset()));
+  __ sd(zr, Address(xthread, JavaThread::held_monitor_count_offset()));
+}
+
+// on entry, sp points to the ContinuationEntry
+// on exit, fp points to the spilled fp + 2 * wordSize in the entry frame
+static void continuation_enter_cleanup(MacroAssembler* masm) {
+#ifndef PRODUCT
+  Label OK;
+  __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+  __ beq(sp, t0, OK);
+  __ stop("incorrect sp");
+  __ bind(OK);
+#endif
+
+  __ ld(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ sd(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
+  __ ld(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ sd(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
+
+  __ ld(t0, Address(sp, ContinuationEntry::parent_offset()));
+  __ sd(t0, Address(xthread, JavaThread::cont_entry_offset()));
+  __ add(fp, sp, (int)ContinuationEntry::size() + 2 * wordSize /* 2 extra words to match up with leave() */);
+}
+
+// enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
+// On entry: c_rarg1 -- the continuation object
+//           c_rarg2 -- isContinue
+//           c_rarg3 -- isVirtualThread
+static void gen_continuation_enter(MacroAssembler* masm,
+                                   const methodHandle& method,
+                                   const BasicType* sig_bt,
+                                   const VMRegPair* regs,
+                                   int& exception_offset,
+                                   OopMapSet*oop_maps,
+                                   int& frame_complete,
+                                   int& stack_slots,
+                                   int& interpreted_entry_offset,
+                                   int& compiled_entry_offset) {
+  // verify_oop_args(masm, method, sig_bt, regs);
+  Address resolve(SharedRuntime::get_resolve_static_call_stub(), relocInfo::static_call_type);
+
+  address start = __ pc();
+
+  Label call_thaw, exit;
+
+  // i2i entry used at interp_only_mode only
+  interpreted_entry_offset = __ pc() - start;
+  {
+#ifdef ASSERT
+    Label is_interp_only;
+    __ lw(t0, Address(xthread, JavaThread::interp_only_mode_offset()));
+    __ bnez(t0, is_interp_only);
+    __ stop("enterSpecial interpreter entry called when not in interp_only_mode");
+    __ bind(is_interp_only);
+#endif
+
+    // Read interpreter arguments into registers (this is an ad-hoc i2c adapter)
+    __ ld(c_rarg1, Address(esp, Interpreter::stackElementSize * 2));
+    __ ld(c_rarg2, Address(esp, Interpreter::stackElementSize * 1));
+    __ ld(c_rarg3, Address(esp, Interpreter::stackElementSize * 0));
+    __ push_cont_fastpath(xthread);
+
+    __ enter();
+    stack_slots = 2; // will be adjusted in setup
+    OopMap* map = continuation_enter_setup(masm, stack_slots);
+    // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
+    // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
+
+    fill_continuation_entry(masm);
+
+    __ bnez(c_rarg2, call_thaw);
+
+    // Make sure the call is patchable
+    __ align(NativeInstruction::instruction_size);
+
+    const address tr_call = __ trampoline_call(resolve);
+
+    oop_maps->add_gc_map(__ pc() - start, map);
+    __ post_call_nop();
+
+    __ j(exit);
+
+    CodeBuffer* cbuf = masm->code_section()->outer();
+    CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  }
+
+  // compiled entry
+  __ align(CodeEntryAlignment);
+  compiled_entry_offset = __ pc() - start;
+
+  __ enter();
+  stack_slots = 2; // will be adjusted in setup
+  OopMap* map = continuation_enter_setup(masm, stack_slots);
+  frame_complete = __ pc() - start;
+
+  fill_continuation_entry(masm);
+
+  __ bnez(c_rarg2, call_thaw);
+
+  // Make sure the call is patchable
+  __ align(NativeInstruction::instruction_size);
+
+  const address tr_call = __ trampoline_call(resolve);
+
+  oop_maps->add_gc_map(__ pc() - start, map);
+  __ post_call_nop();
+
+  __ j(exit);
+
+  __ bind(call_thaw);
+
+  __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
+  oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
+  __ post_call_nop();
+
+  __ bind(exit);
+  continuation_enter_cleanup(masm);
+  __ leave();
+  __ ret();
+
+  // exception handling
+  exception_offset = __ pc() - start;
+  {
+    __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
+
+    continuation_enter_cleanup(masm);
+
+    __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
+
+    // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
+
+    __ mv(x11, x10); // the exception handler
+    __ mv(x10, x9); // restore return value contaning the exception oop
+    __ verify_oop(x10);
+
+    __ leave();
+    __ mv(x13, ra);
+    __ jr(x11); // the exception handler
+  }
+
+  CodeBuffer* cbuf = masm->code_section()->outer();
+  CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+}
+
+static void gen_continuation_yield(MacroAssembler* masm,
+                                   const methodHandle& method,
+                                   const BasicType* sig_bt,
+                                   const VMRegPair* regs,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& stack_slots,
+                                   int& compiled_entry_offset) {
+  enum layout {
+    fp_off,
+    fp_off2,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+  // assert(is_even(framesize/2), "sp not 16-byte aligned");
+
+  stack_slots = framesize / VMRegImpl::slots_per_word;
+  assert(stack_slots == 2, "recheck layout");
+
+  address start = __ pc();
+
+  compiled_entry_offset = __ pc() - start;
+  __ enter();
+
+  __ mv(c_rarg1, sp);
+
+  frame_complete = __ pc() - start;
+  address the_pc = __ pc();
+
+  __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
+
+  __ mv(c_rarg0, xthread);
+  __ set_last_Java_frame(sp, fp, the_pc, t0);
+  __ call_VM_leaf(Continuation::freeze_entry(), 2);
+  __ reset_last_Java_frame(true);
+
+  Label pinned;
+
+  __ bnez(x10, pinned);
+
+  // We've succeeded, set sp to the ContinuationEntry
+  __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+  continuation_enter_cleanup(masm);
+
+  __ bind(pinned); // pinned -- return to caller
+
+  __ leave();
+  __ ret();
+
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(the_pc - start, map);
+}
+
 static void gen_special_dispatch(MacroAssembler* masm,
                                  const methodHandle& method,
                                  const BasicType* sig_bt,
@@ -932,14 +1198,82 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
+  if (method->is_continuation_native_intrinsic()) {
+    int exception_offset = -1;
+    OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
+    int interpreted_entry_offset = -1;
+    int vep_offset = -1;
+    if (method->is_continuation_enter_intrinsic()) {
+      gen_continuation_enter(masm,
+                             method,
+                             in_sig_bt,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      gen_continuation_yield(masm,
+                             method,
+                             in_sig_bt,
+                             in_regs,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             vep_offset);
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
+    __ flush();
+    nmethod* nm = nmethod::new_native_nmethod(method,
+                                              compile_id,
+                                              masm->code(),
+                                              vep_offset,
+                                              frame_complete,
+                                              stack_slots,
+                                              in_ByteSize(-1),
+                                              in_ByteSize(-1),
+                                              oop_maps,
+                                              exception_offset);
+    if (method->is_continuation_enter_intrinsic()) {
+      ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      _cont_doYield_stub = nm;
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
+    return nm;
+  }
+
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
     int vep_offset = ((intptr_t)__ pc()) - start;
 
     // First instruction must be a nop as it may need to be patched on deoptimisation
-    MacroAssembler::assert_alignment(__ pc());
-    __ nop();
+    {
+      Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+      MacroAssembler::assert_alignment(__ pc());
+      __ nop();  // 4 bytes
+    }
     gen_special_dispatch(masm,
                          method,
                          in_sig_bt,
@@ -1075,9 +1409,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label hit;
   Label exception_pending;
 
-  assert_different_registers(ic_reg, receiver, t0);
   __ verify_oop(receiver);
-  __ cmp_klass(receiver, ic_reg, t0, hit);
+  assert_different_registers(ic_reg, receiver, t0, t2);
+  __ cmp_klass(receiver, ic_reg, t0, t2 /* call-clobbered t2 as a tmp */, hit);
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 
@@ -1090,8 +1424,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.
-  MacroAssembler::assert_alignment(__ pc());
-  __ nop();
+  {
+    Assembler::IncompressibleRegion ir(masm);  // keep the nop as 4 bytes for patching.
+    MacroAssembler::assert_alignment(__ pc());
+    __ nop();  // 4 bytes
+  }
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
     Label L_skip_barrier;
@@ -1263,9 +1600,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label dtrace_method_entry, dtrace_method_entry_done;
   {
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)&DTraceMethodProbes), offset);
-    __ lbu(t0, Address(t0, offset));
+    ExternalAddress target((address)&DTraceMethodProbes);
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lbu(t0, Address(t0, offset));
+    });
     __ addw(t0, t0, zr);
     __ bnez(t0, dtrace_method_entry);
     __ bind(dtrace_method_entry_done);
@@ -1296,6 +1636,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label lock_done;
 
   if (method->is_synchronized()) {
+    Label count;
 
     const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
 
@@ -1318,10 +1659,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
 
       // src -> dest if dest == x10 else x10 <- dest
-      {
-        Label here;
-        __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, lock_done, /*fallthrough*/NULL);
-      }
+      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 3) == 0, and
@@ -1341,6 +1679,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       __ j(slow_path_lock);
     }
+
+    __ bind(count);
+    __ increment(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1427,14 +1768,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
-    Label done;
+    Label done, not_recursive;
 
     if (!UseHeavyMonitors) {
       // Simple recursive lock?
       __ ld(t0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      __ beqz(t0, done);
+      __ bnez(t0, not_recursive);
+      __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
+      __ j(done);
     }
 
+    __ bind(not_recursive);
 
     // Must save x10 if if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
@@ -1448,9 +1792,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ ld(old_hdr, Address(x10, 0));
 
       // Atomic swap old header if oop still contains the stack lock
-      Label succeed;
-      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, succeed, &slow_path_unlock);
-      __ bind(succeed);
+      Label count;
+      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, count, &slow_path_unlock);
+      __ bind(count);
+      __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     } else {
       __ j(slow_path_unlock);
     }
@@ -1466,9 +1811,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label dtrace_method_exit, dtrace_method_exit_done;
   {
-    int32_t offset = 0;
-    __ la_patchable(t0, ExternalAddress((address)&DTraceMethodProbes), offset);
-    __ lbu(t0, Address(t0, offset));
+    ExternalAddress target((address)&DTraceMethodProbes);
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ lbu(t0, Address(t0, offset));
+    });
     __ bnez(t0, dtrace_method_exit);
     __ bind(dtrace_method_exit_done);
   }
@@ -1599,9 +1947,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifndef PRODUCT
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
-    int32_t offset = 0;
-    __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)), offset);
-    __ jalr(x1, t0, offset);
+    RuntimeAddress target(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
 
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
@@ -1675,6 +2026,11 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // Setup code generation tools
   int pad = 0;
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    pad += 512; // Increase the buffer size when compiling for JVMCI
+  }
+#endif
   CodeBuffer buffer("deopt_blob", 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
@@ -1726,6 +2082,12 @@ void SharedRuntime::generate_deopt_blob() {
   __ j(cont);
 
   int reexecute_offset = __ pc() - start;
+#if INCLUDE_JVMCI && !defined(COMPILER1)
+  if (EnableJVMCI && UseJVMCICompiler) {
+    // JVMCI does not use this kind of deoptimization
+    __ should_not_reach_here();
+  }
+#endif
 
   // Reexecute case
   // return address is the pc describes what bci to do re-execute at
@@ -1735,6 +2097,47 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mvw(xcpool, Deoptimization::Unpack_reexecute); // callee-saved
   __ j(cont);
+
+#if INCLUDE_JVMCI
+  Label after_fetch_unroll_info_call;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
+
+  if (EnableJVMCI) {
+    implicit_exception_uncommon_trap_offset = __ pc() - start;
+
+    __ ld(ra, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ sd(zr, Address(xthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+
+    uncommon_trap_offset = __ pc() - start;
+
+    // Save everything in sight.
+    reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
+    // fetch_unroll_info needs to call last_java_frame()
+    Label retaddr;
+    __ set_last_Java_frame(sp, noreg, retaddr, t0);
+
+    __ lw(c_rarg1, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ mvw(t0, -1);
+    __ sw(t0, Address(xthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+
+    __ mvw(xcpool, (int32_t)Deoptimization::Unpack_reexecute);
+    __ mv(c_rarg0, xthread);
+    __ orrw(c_rarg2, zr, xcpool); // exec mode
+    RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
+    __ bind(retaddr);
+    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+
+    __ reset_last_Java_frame(false);
+
+    __ j(after_fetch_unroll_info_call);
+  } // EnableJVMCI
+#endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
 
@@ -1818,9 +2221,12 @@ void SharedRuntime::generate_deopt_blob() {
 #endif // ASSERT
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, xcpool);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
 
   // Need to have an oopmap that tells fetch_unroll_info where to
@@ -1828,6 +2234,12 @@ void SharedRuntime::generate_deopt_blob() {
   oop_maps->add_gc_map(__ pc() - start, map);
 
   __ reset_last_Java_frame(false);
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
+#endif
 
   // Load UnrollBlock* into x15
   __ mv(x15, x10);
@@ -1956,9 +2368,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, xcpool); // second arg: exec_mode
-  offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)), offset);
-  __ jalr(x1, t0, offset);
+  target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
   // Set an oopmap for the call site
   // Use the same PC we used for the last java frame
@@ -1984,6 +2399,12 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != NULL, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
+#endif
 }
 
 // Number of stack slots between incoming argument block and the start of
@@ -2042,11 +2463,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ mv(c_rarg0, xthread);
   __ mvw(c_rarg2, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  int32_t offset = 0;
-  __ la_patchable(t0,
-        RuntimeAddress(CAST_FROM_FN_PTR(address,
-                                        Deoptimization::uncommon_trap)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
 
   // Set an oopmap for the call site
@@ -2088,8 +2510,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
                       size_of_deoptimized_frame_offset_in_bytes()));
   __ sub(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
-  __ ld(fp, sp, 0);
-  __ ld(ra, sp, wordSize);
+  __ ld(fp, Address(sp, 0));
+  __ ld(ra, Address(sp, wordSize));
   __ addi(sp, sp, 2 * wordSize);
   // RA should now be the return address to the caller (3) frame
 
@@ -2168,9 +2590,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // sp should already be aligned
   __ mv(c_rarg0, xthread);
   __ mvw(c_rarg1, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames)), offset);
-  __ jalr(x1, t0, offset);
+  target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
   // Set an oopmap for the call site
   // Use the same PC we used for the last java frame
@@ -2239,9 +2664,12 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // Do the call
   __ mv(c_rarg0, xthread);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(call_ptr), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(call_ptr);
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -2349,9 +2777,12 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
     __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
     __ mv(c_rarg0, xthread);
-    int32_t offset = 0;
-    __ la_patchable(t0, RuntimeAddress(destination), offset);
-    __ jalr(x1, t0, offset);
+    RuntimeAddress target(destination);
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
     __ bind(retaddr);
   }
 
@@ -2480,9 +2911,12 @@ void OptoRuntime::generate_exception_blob() {
   address the_pc = __ pc();
   __ set_last_Java_frame(sp, noreg, the_pc, t0);
   __ mv(c_rarg0, xthread);
-  int32_t offset = 0;
-  __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)), offset);
-  __ jalr(x1, t0, offset);
+  RuntimeAddress target(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(x1, t0, offset);
+  });
 
 
   // handle_exception_C is a special VM call which does not require an explicit

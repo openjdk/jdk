@@ -40,6 +40,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">アムハラ語</language>
 			<language type="an">アラゴン語</language>
 			<language type="ang">古英語</language>
+			<language type="ann">オボロ語</language>
 			<language type="anp">アンギカ語</language>
 			<language type="ar">アラビア語</language>
 			<language type="ar_001">現代標準アラビア語</language>
@@ -57,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="asa">アス語</language>
 			<language type="ase">アメリカ手話</language>
 			<language type="ast">アストゥリアス語</language>
+			<language type="atj">アティカメク語</language>
 			<language type="av">アヴァル語</language>
 			<language type="avk">コタヴァ</language>
 			<language type="awa">アワディー語</language>
@@ -125,14 +127,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ckb">中央クルド語</language>
 			<language type="ckb" alt="menu">クルド語（中央）</language>
 			<language type="ckb" alt="variant">クルド語（ソラニー）</language>
+			<language type="clc">チルコーティン語</language>
 			<language type="co">コルシカ語</language>
 			<language type="cop">コプト語</language>
 			<language type="cps">カピス語</language>
 			<language type="cr">クリー語</language>
+			<language type="crg">ミチフ語</language>
 			<language type="crh">クリミア・タタール語</language>
+			<language type="crj">東部クリー語(南部)</language>
+			<language type="crk">平原クリー語</language>
+			<language type="crl">東部クリー語(北部)</language>
+			<language type="crm">ムースクリー語</language>
+			<language type="crr">カロライナ・アルゴンキン語</language>
 			<language type="crs">セーシェル・クレオール語</language>
 			<language type="cs">チェコ語</language>
 			<language type="csb">カシューブ語</language>
+			<language type="csw">湿原クリー語</language>
 			<language type="cu">教会スラブ語</language>
 			<language type="cv">チュヴァシ語</language>
 			<language type="cy">ウェールズ語</language>
@@ -233,8 +243,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hai">ハイダ語</language>
 			<language type="hak">客家語</language>
 			<language type="haw">ハワイ語</language>
+			<language type="hax">南部ハイダ語</language>
 			<language type="he">ヘブライ語</language>
 			<language type="hi">ヒンディー語</language>
+			<language type="hi_Latn" alt="variant">インド英語 (ヒングリッシュ)</language>
 			<language type="hif">フィジー・ヒンディー語</language>
 			<language type="hil">ヒリガイノン語</language>
 			<language type="hit">ヒッタイト語</language>
@@ -246,6 +258,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">ハイチ・クレオール語</language>
 			<language type="hu">ハンガリー語</language>
 			<language type="hup">フパ語</language>
+			<language type="hur">ハルコメレム語</language>
 			<language type="hy">アルメニア語</language>
 			<language type="hz">ヘレロ語</language>
 			<language type="ia">インターリングア</language>
@@ -256,6 +269,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">イボ語</language>
 			<language type="ii">四川イ語</language>
 			<language type="ik">イヌピアック語</language>
+			<language type="ikt">イヌイナクトゥン語</language>
 			<language type="ilo">イロカノ語</language>
 			<language type="inh">イングーシ語</language>
 			<language type="io">イド語</language>
@@ -322,6 +336,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">クテナイ語</language>
 			<language type="kv">コミ語</language>
 			<language type="kw">コーンウォール語</language>
+			<language type="kwk">クヮキゥワラ語</language>
 			<language type="ky">キルギス語</language>
 			<language type="la">ラテン語</language>
 			<language type="lad">ラディノ語</language>
@@ -334,6 +349,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lg">ガンダ語</language>
 			<language type="li">リンブルフ語</language>
 			<language type="lij">リグリア語</language>
+			<language type="lil">リルエット語</language>
 			<language type="liv">リヴォニア語</language>
 			<language type="lkt">ラコタ語</language>
 			<language type="lmo">ロンバルド語</language>
@@ -343,6 +359,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">ルイジアナ・クレオール語</language>
 			<language type="loz">ロジ語</language>
 			<language type="lrc">北ロル語</language>
+			<language type="lsm">サーミア語</language>
 			<language type="lt">リトアニア語</language>
 			<language type="ltg">ラトガリア語</language>
 			<language type="lu">ルバ・カタンガ語</language>
@@ -381,6 +398,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">モンゴル語</language>
 			<language type="mnc">満州語</language>
 			<language type="mni">マニプリ語</language>
+			<language type="moe">イヌー＝アイムン語</language>
 			<language type="moh">モーホーク語</language>
 			<language type="mos">モシ語</language>
 			<language type="mr">マラーティー語</language>
@@ -432,6 +450,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">ンゼマ語</language>
 			<language type="oc">オック語</language>
 			<language type="oj">オジブウェー語</language>
+			<language type="ojb">北西部オジブワ語</language>
+			<language type="ojc">中部オジブワ語</language>
+			<language type="ojs">セヴァーン・オジブワ語</language>
+			<language type="ojw">西部オジブワ語</language>
+			<language type="oka">オカナガン語</language>
 			<language type="om">オロモ語</language>
 			<language type="or">オディア語</language>
 			<language type="os">オセット語</language>
@@ -451,10 +474,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pfl">プファルツ語</language>
 			<language type="phn">フェニキア語</language>
 			<language type="pi">パーリ語</language>
+			<language type="pis">ピジン語</language>
 			<language type="pl">ポーランド語</language>
 			<language type="pms">ピエモンテ語</language>
 			<language type="pnt">ポントス・ギリシャ語</language>
 			<language type="pon">ポンペイ語</language>
+			<language type="pqm">マリシート＝パサマコディ語</language>
 			<language type="prg">プロシア語</language>
 			<language type="pro">古期プロバンス語</language>
 			<language type="ps">パシュトゥー語</language>
@@ -516,6 +541,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">シダモ語</language>
 			<language type="sk">スロバキア語</language>
 			<language type="sl">スロベニア語</language>
+			<language type="slh">南部ルシュツィード語</language>
 			<language type="sli">低シレジア語</language>
 			<language type="sly">スラヤール語</language>
 			<language type="sm">サモア語</language>
@@ -535,6 +561,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ssy">サホ語</language>
 			<language type="st">南部ソト語</language>
 			<language type="stq">ザーターフリジア語</language>
+			<language type="str">ストレイツセイリッシュ語</language>
 			<language type="su">スンダ語</language>
 			<language type="suk">スクマ語</language>
 			<language type="sus">スス語</language>
@@ -547,6 +574,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syr">シリア語</language>
 			<language type="szl">シレジア語</language>
 			<language type="ta">タミル語</language>
+			<language type="tce">南部トゥショーニ語</language>
 			<language type="tcy">トゥル語</language>
 			<language type="te">テルグ語</language>
 			<language type="tem">テムネ語</language>
@@ -554,7 +582,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ter">テレーノ語</language>
 			<language type="tet">テトゥン語</language>
 			<language type="tg">タジク語</language>
+			<language type="tgx">タギシュ語</language>
 			<language type="th">タイ語</language>
+			<language type="tht">タールタン語</language>
 			<language type="ti">ティグリニア語</language>
 			<language type="tig">ティグレ語</language>
 			<language type="tiv">ティブ語</language>
@@ -569,6 +599,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">ツワナ語</language>
 			<language type="to">トンガ語</language>
 			<language type="tog">トンガ語(ニアサ)</language>
+			<language type="tok">トキポナ語</language>
 			<language type="tpi">トク・ピシン語</language>
 			<language type="tr">トルコ語</language>
 			<language type="tru">トゥロヨ語</language>
@@ -577,6 +608,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tsd">ツァコン語</language>
 			<language type="tsi">チムシュ語</language>
 			<language type="tt">タタール語</language>
+			<language type="ttm">北部トゥショーニ語</language>
 			<language type="ttt">ムスリム・タタール語</language>
 			<language type="tum">トゥンブカ語</language>
 			<language type="tvl">ツバル語</language>
@@ -644,11 +676,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">ザザ語</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">アドラム文字</script>
 			<script type="Afak">アファカ文字</script>
 			<script type="Aghb" draft="contributed">カフカス・アルバニア文字</script>
 			<script type="Arab">アラビア文字</script>
 			<script type="Arab" alt="variant">ペルソ・アラビア文字</script>
-			<script type="Aran" draft="contributed">ナスタアリーク体</script>
+			<script type="Aran">ナスタアリーク体</script>
 			<script type="Armi">帝国アラム文字</script>
 			<script type="Armn">アルメニア文字</script>
 			<script type="Avst">アヴェスター文字</script>
@@ -766,6 +799,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Plrd">ポラード音声記号</script>
 			<script type="Prti">碑文パルティア文字</script>
 			<script type="Rjng">ルジャン文字</script>
+			<script type="Rohg">ロヒンギャ文字</script>
 			<script type="Roro">ロンゴロンゴ文字</script>
 			<script type="Runr">ルーン文字</script>
 			<script type="Samr">サマリア文字</script>
@@ -1034,6 +1068,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">ナウル</territory>
 			<territory type="NU">ニウエ</territory>
 			<territory type="NZ">ニュージーランド</territory>
+			<territory type="NZ" alt="variant">アオテアロア・ニュージーランド</territory>
 			<territory type="OM">オマーン</territory>
 			<territory type="PA">パナマ</territory>
 			<territory type="PE">ペルー</territory>
@@ -1093,6 +1128,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">チュニジア</territory>
 			<territory type="TO">トンガ</territory>
 			<territory type="TR">トルコ</territory>
+			<territory type="TR" alt="variant">テュルキエ</territory>
 			<territory type="TT">トリニダード・トバゴ</territory>
 			<territory type="TV">ツバル</territory>
 			<territory type="TW">台湾</territory>
@@ -1218,10 +1254,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">ユダヤ暦</type>
 			<type key="calendar" type="indian">インド国定暦</type>
 			<type key="calendar" type="islamic">イスラム暦</type>
-			<type key="calendar" type="islamic-civil">イスラム歴(定周期、公民紀元)</type>
+			<type key="calendar" type="islamic-civil">イスラム暦(定周期、公民紀元)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">イスラム暦(サウジアラビア、月観測)</type>
 			<type key="calendar" type="islamic-tbla">イスラム歴(定周期、天文紀元)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">イスラム暦(ウンム・アルクラー)</type>
+			<type key="calendar" type="islamic-umalqura">イスラム暦(ウンム・アルクラー)</type>
 			<type key="calendar" type="iso8601">ISO-8601</type>
 			<type key="calendar" type="japanese">和暦</type>
 			<type key="calendar" type="persian">ペルシア暦</type>
@@ -1238,13 +1274,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseLevel" type="no" draft="contributed">大文字小文字を区別しないで並べ替え</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">大文字小文字を区別して並べ替え</type>
 			<type key="collation" type="big5han">繁体字中国語順(Big5)</type>
-			<type key="collation" type="compat" draft="contributed">以前の順序（互換性）</type>
+			<type key="collation" type="compat">以前の順序（互換性）</type>
 			<type key="collation" type="dictionary">辞書順</type>
 			<type key="collation" type="ducet">ユニコード照合順</type>
 			<type key="collation" type="eor" draft="contributed">ヨーロッパ言語文字の並べ替え規則</type>
 			<type key="collation" type="gb2312han">簡体字中国語順(GB2312)</type>
 			<type key="collation" type="phonebook">電話帳順</type>
-			<type key="collation" type="phonetic" draft="contributed">音声順による並べ替え</type>
+			<type key="collation" type="phonetic">音声順による並べ替え</type>
 			<type key="collation" type="pinyin">ピンイン順</type>
 			<type key="collation" type="reformed">リフォーム</type>
 			<type key="collation" type="search">汎用検索</type>
@@ -1253,7 +1289,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="stroke">画数順</type>
 			<type key="collation" type="traditional">トラディッショナル</type>
 			<type key="collation" type="unihan">部首順</type>
-			<type key="collation" type="zhuyin" draft="contributed">注音順</type>
+			<type key="collation" type="zhuyin">注音順</type>
 			<type key="colNormalization" type="no">正規化しないで並べ替え</type>
 			<type key="colNormalization" type="yes">Unicode 正規化で並べ替え</type>
 			<type key="colNumeric" type="no" draft="contributed">数値を独立して並べ替え</type>
@@ -1285,7 +1321,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="bali">バリ数字</type>
 			<type key="numbers" type="beng">ベンガル数字</type>
 			<type key="numbers" type="brah" draft="contributed">ブラーフミー数字</type>
-			<type key="numbers" type="cakm" draft="contributed">チャクマ数字</type>
+			<type key="numbers" type="cakm">チャクマ数字</type>
 			<type key="numbers" type="cham">チャム数字</type>
 			<type key="numbers" type="deva">デーバナーガリー数字</type>
 			<type key="numbers" type="ethi">エチオピア数字</type>
@@ -1319,7 +1355,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="mtei">マニプリ数字</type>
 			<type key="numbers" type="mymr">ミャンマー数字</type>
 			<type key="numbers" type="mymrshan">ミャンマー・シャン数字</type>
-			<type key="numbers" type="native" draft="contributed">独自の記数法</type>
+			<type key="numbers" type="native">独自の記数法</type>
 			<type key="numbers" type="nkoo">ンコ数字</type>
 			<type key="numbers" type="olck">オルチキ数字</type>
 			<type key="numbers" type="orya">オディア数字</type>
@@ -5521,6 +5557,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>エンダーベリー島</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>カントン島</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>キリスィマスィ島</exemplarCity>
 			</zone>
@@ -6020,7 +6059,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ウージュホロド</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
-				<exemplarCity>キエフ</exemplarCity>
+				<exemplarCity>キーウ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>シンフェロポリ</exemplarCity>
@@ -7197,6 +7236,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000000" count="other">0兆</pattern>
 					<pattern type="10000000000000" count="other">00兆</pattern>
 					<pattern type="100000000000000" count="other">000兆</pattern>
+					<pattern type="1000000000000000" count="other">0000兆</pattern>
+					<pattern type="10000000000000000" count="other">0京</pattern>
+					<pattern type="100000000000000000" count="other">00京</pattern>
+					<pattern type="1000000000000000000" count="other">000京</pattern>
+					<pattern type="10000000000000000000" count="other">0000京</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
@@ -7213,6 +7257,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000000000000" count="other">0兆</pattern>
 					<pattern type="10000000000000" count="other">00兆</pattern>
 					<pattern type="100000000000000" count="other">000兆</pattern>
+					<pattern type="1000000000000000" count="other">0000兆</pattern>
+					<pattern type="10000000000000000" count="other">0京</pattern>
+					<pattern type="100000000000000000" count="other">00京</pattern>
+					<pattern type="1000000000000000000" count="other">000京</pattern>
+					<pattern type="10000000000000000000" count="other">0000京</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -7234,25 +7283,50 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">0</pattern>
 					<pattern type="10000" count="other">¤0万</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 0万</pattern>
 					<pattern type="100000" count="other">¤00万</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 00万</pattern>
 					<pattern type="1000000" count="other">¤000万</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 000万</pattern>
 					<pattern type="10000000" count="other">¤0000万</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 0000万</pattern>
 					<pattern type="100000000" count="other">¤0億</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 0億</pattern>
 					<pattern type="1000000000" count="other">¤00億</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 00億</pattern>
 					<pattern type="10000000000" count="other">¤000億</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 000億</pattern>
 					<pattern type="100000000000" count="other">¤0000億</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 0000億</pattern>
 					<pattern type="1000000000000" count="other">¤0兆</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0兆</pattern>
 					<pattern type="10000000000000" count="other">¤00兆</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00兆</pattern>
 					<pattern type="100000000000000" count="other">¤000兆</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000兆</pattern>
+					<pattern type="1000000000000000" count="other">¤0000兆</pattern>
+					<pattern type="1000000000000000" count="other" alt="alphaNextToNumber">¤ 0000兆</pattern>
+					<pattern type="10000000000000000" count="other">¤0京</pattern>
+					<pattern type="10000000000000000" count="other" alt="alphaNextToNumber">¤ 0京</pattern>
+					<pattern type="100000000000000000" count="other">¤00京</pattern>
+					<pattern type="100000000000000000" count="other" alt="alphaNextToNumber">¤ 00京</pattern>
+					<pattern type="1000000000000000000" count="other">¤000京</pattern>
+					<pattern type="1000000000000000000" count="other" alt="alphaNextToNumber">¤ 000京</pattern>
+					<pattern type="10000000000000000000" count="other">¤0000京</pattern>
+					<pattern type="10000000000000000000" count="other" alt="alphaNextToNumber">¤ 0000京</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0}{1}</unitPattern>
@@ -9158,6 +9232,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 年</unitPattern>
 				<perUnitPattern>{0}/年</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>四半期</displayName>
+				<unitPattern count="other">{0} 四半期</unitPattern>
+				<perUnitPattern>{0}/四半期</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>か月</displayName>
 				<unitPattern count="other">{0} か月</unitPattern>
@@ -9419,7 +9498,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>太陽光度</displayName>
 				<unitPattern count="other">{0} 太陽光度</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>トン</displayName>
 				<unitPattern count="other">{0} トン</unitPattern>
 			</unit>
@@ -9949,6 +10028,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 年</unitPattern>
 				<perUnitPattern>{0}/年</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>四半期</displayName>
+				<unitPattern count="other">{0}四半期</unitPattern>
+				<perUnitPattern>{0}/四半期</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>か月</displayName>
 				<unitPattern count="other">{0} か月</unitPattern>
@@ -10212,7 +10296,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>太陽光度</displayName>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>トン</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -10714,6 +10798,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}y</unitPattern>
 				<perUnitPattern>{0}/年</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>四半期</displayName>
+				<unitPattern count="other">{0}Q</unitPattern>
+				<perUnitPattern>{0}/Q</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>か月</displayName>
 				<unitPattern count="other">{0}m</unitPattern>
@@ -10886,11 +10975,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-mile">
 				<displayName>マイル</displayName>
-				<unitPattern count="other">{0}マイル</unitPattern>
+				<unitPattern count="other">{0}mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>ヤード</displayName>
-				<unitPattern count="other">{0}ヤード</unitPattern>
+				<unitPattern count="other">{0}yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>フィート</displayName>
@@ -10952,7 +11041,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>L☉</displayName>
 				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
@@ -11032,15 +11121,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">水銀柱ミリメートル</displayName>
+				<displayName>水銀柱ミリメートル</displayName>
 				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName draft="contributed">重量ポンド毎平方インチ</displayName>
+				<displayName>重量ポンド毎平方インチ</displayName>
 				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName draft="contributed">水銀柱インチ</displayName>
+				<displayName>水銀柱インチ</displayName>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
@@ -11049,6 +11138,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millibar">
 				<displayName>ミリバール</displayName>
 				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="other">{0}atm</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>Pa</displayName>
@@ -11458,4 +11550,156 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">表形式数字</featureName>
 		<featureName type="zero">スラッシュゼロ</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve">・</foreignSpaceReplacement>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{prefix} {given-informal} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{given} {given2} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{given} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{given}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix}{surname}{given2}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{prefix}{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname}{given2}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}{given2}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}{given2}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}{given}{suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}{suffix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}{given}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}{given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">慎太郎</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">一郎</nameField>
+			<nameField type="surname">安藤</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">太郎</nameField>
+			<nameField type="given2">トーマス</nameField>
+			<nameField type="surname">山田</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">ドクター</nameField>
+			<nameField type="given">英子</nameField>
+			<nameField type="given-informal">えいこ</nameField>
+			<nameField type="given2">ソフィア</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">内田</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="suffix">さん</nameField>
+		</sampleName>
+	</personNames>
 </ldml>
