@@ -5996,13 +5996,17 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
         CHECK);
     }
     Handle loader(THREAD, _loader_data->class_loader());
-    _super_klass = (const InstanceKlass*)
+    if (loader.is_null() && super_class_name == vmSymbols::java_lang_Object()) {
+      _super_klass = vmClasses::Object_klass();
+    } else {
+      _super_klass = (const InstanceKlass*)
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                loader,
                                                                _protection_domain,
                                                                true,
                                                                CHECK);
+    }
   }
 
   if (_super_klass != NULL) {

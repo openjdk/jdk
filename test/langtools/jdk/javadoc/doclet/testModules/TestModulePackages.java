@@ -47,8 +47,8 @@ public class TestModulePackages extends JavadocTester {
     enum ColKind { EXPORTED_TO, OPENED_TO };
 
     public static void main(String... args) throws Exception {
-        TestModulePackages tester = new TestModulePackages();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestModulePackages();
+        tester.runTests();
     }
 
     private final ToolBox tb;

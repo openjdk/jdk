@@ -106,7 +106,8 @@ public class CipherInputStream extends FilterInputStream {
      * The ostart and ofinish indices are reset to 0.
      *
      * If obuffer is null/zero-sized, do not allocate a new buffer.
-     * This reduces allocation for AEAD ciphers that never return data from update
+     * This reduces allocation for authenticated decryption
+     * that never returns data from update
      *
      * @param inLen the input length (in bytes)
      */
@@ -152,7 +153,7 @@ public class CipherInputStream extends FilterInputStream {
                     ofinish = cipher.doFinal(obuffer, 0);
                 } else {
                     obuffer = cipher.doFinal();
-                    ofinish = obuffer.length;
+                    ofinish = (obuffer != null) ? obuffer.length : 0;
                 }
             } catch (IllegalBlockSizeException | BadPaddingException
                     | ShortBufferException e) {
@@ -167,7 +168,7 @@ public class CipherInputStream extends FilterInputStream {
         ensureCapacity(readin);
         try {
             // initial obuffer is assigned by update/doFinal;
-            // for AEAD ciphers, obuffer is always null or zero-length here
+            // for AEAD decryption, obuffer is always null or zero-length here
             if (obuffer != null && obuffer.length > 0) {
                 ofinish = cipher.update(ibuffer, 0, readin, obuffer, ostart);
             } else {
