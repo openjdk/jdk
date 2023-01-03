@@ -70,13 +70,13 @@
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
+#include "symbolengine.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#include "symbolengine.hpp"
 #include "windbghelp.hpp"
 
 #ifdef _DEBUG

@@ -300,75 +300,72 @@ BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t request
 }
 
 // offsets into the JfrCheckpointEntry
-static const juint starttime_offset = sizeof(jlong);
-static const juint duration_offset = starttime_offset + sizeof(jlong);
-static const juint checkpoint_type_offset = duration_offset + sizeof(jlong);
-static const juint types_offset = checkpoint_type_offset + sizeof(juint);
-static const juint payload_offset = types_offset + sizeof(juint);
+static const size_t starttime_offset = sizeof(int64_t);
+static const size_t duration_offset = starttime_offset + sizeof(int64_t);
+static const size_t checkpoint_type_offset = duration_offset + sizeof(int64_t);
+static const size_t types_offset = checkpoint_type_offset + sizeof(uint32_t);
+static const size_t payload_offset = types_offset + sizeof(uint32_t);
 
 template <typename Return>
 static Return read_data(const u1* data) {
   return JfrBigEndian::read<Return>(data);
 }
 
-static jlong total_size(const u1* data) {
-  return read_data<jlong>(data);
+static size_t total_size(const u1* data) {
+  const int64_t size = read_data<int64_t>(data);
+  assert(size > 0, "invariant");
+  return static_cast<size_t>(size);
 }
 
-static jlong starttime(const u1* data) {
-  return read_data<jlong>(data + starttime_offset);
+static int64_t starttime(const u1* data) {
+  return read_data<int64_t>(data + starttime_offset);
 }
 
-static jlong duration(const u1* data) {
-  return read_data<jlong>(data + duration_offset);
+static int64_t duration(const u1* data) {
+  return read_data<int64_t>(data + duration_offset);
 }
 
-static juint checkpoint_type(const u1* data) {
-  return read_data<juint>(data + checkpoint_type_offset);
+static int32_t checkpoint_type(const u1* data) {
+  return read_data<int32_t>(data + checkpoint_type_offset);
 }
 
-static juint number_of_types(const u1* data) {
-  return read_data<juint>(data + types_offset);
+static uint32_t number_of_types(const u1* data) {
+  return read_data<uint32_t>(data + types_offset);
 }
 
-static void write_checkpoint_header(JfrChunkWriter& cw, int64_t delta_to_last_checkpoint, const u1* data) {
-  cw.reserve(sizeof(u4));
-  cw.write<u8>(EVENT_CHECKPOINT);
-  cw.write(starttime(data));
-  cw.write(duration(data));
-  cw.write(delta_to_last_checkpoint);
-  cw.write(checkpoint_type(data));
-  cw.write(number_of_types(data));
+static size_t payload_size(const u1* data) {
+  return total_size(data) - sizeof(JfrCheckpointEntry);
 }
 
-static void write_checkpoint_content(JfrChunkWriter& cw, const u1* data, size_t size) {
-  assert(data != NULL, "invariant");
-  cw.write_unbuffered(data + payload_offset, size - sizeof(JfrCheckpointEntry));
-}
-
-static size_t write_thread_checkpoint_content(JfrChunkWriter& cw, const u1* data) {
-  assert(data != NULL, "invariant");
-  const size_t size = total_size(data);
-  assert(size > sizeof(JfrCheckpointEntry), "invariant");
-  assert(checkpoint_type(data) == THREADS, "invariant");
-  assert(number_of_types(data) == 1, "invariant");
-  // Thread checkpoints are small so write them buffered to cache as much as possible before flush.
-  cw.write_buffered(data + payload_offset, size - sizeof(JfrCheckpointEntry));
-  return size;
+static uint64_t calculate_event_size_bytes(JfrChunkWriter& cw, const u1* data, int64_t event_begin, int64_t delta_to_last_checkpoint) {
+  assert(data != nullptr, "invariant");
+  size_t bytes = cw.size_in_bytes(EVENT_CHECKPOINT);
+  bytes += cw.size_in_bytes(starttime(data));
+  bytes += cw.size_in_bytes(duration(data));
+  bytes += cw.size_in_bytes(delta_to_last_checkpoint);
+  bytes += cw.size_in_bytes(checkpoint_type(data));
+  bytes += cw.size_in_bytes(number_of_types(data));
+  bytes += payload_size(data); // in bytes already.
+  return bytes + cw.size_in_bytes(bytes + cw.size_in_bytes(bytes));
 }
 
 static size_t write_checkpoint_event(JfrChunkWriter& cw, const u1* data) {
   assert(data != NULL, "invariant");
   const int64_t event_begin = cw.current_offset();
   const int64_t last_checkpoint_event = cw.last_checkpoint_offset();
-  const int64_t delta_to_last_checkpoint = last_checkpoint_event == 0 ? 0 : last_checkpoint_event - event_begin;
-  const int64_t checkpoint_size = total_size(data);
-  write_checkpoint_header(cw, delta_to_last_checkpoint, data);
-  write_checkpoint_content(cw, data, checkpoint_size);
-  const int64_t event_size = cw.current_offset() - event_begin;
-  cw.write_padded_at_offset<u4>(event_size, event_begin);
   cw.set_last_checkpoint_offset(event_begin);
-  return (size_t)checkpoint_size;
+  const int64_t delta_to_last_checkpoint = last_checkpoint_event == 0 ? 0 : last_checkpoint_event - event_begin;
+  const uint64_t event_size = calculate_event_size_bytes(cw, data, event_begin, delta_to_last_checkpoint);
+  cw.write(event_size);
+  cw.write(EVENT_CHECKPOINT);
+  cw.write(starttime(data));
+  cw.write(duration(data));
+  cw.write(delta_to_last_checkpoint);
+  cw.write(checkpoint_type(data));
+  cw.write(number_of_types(data));
+  cw.write_unbuffered(data + payload_offset, payload_size(data));
+  assert(static_cast<uint64_t>(cw.current_offset() - event_begin) == event_size, "invariant");
+  return total_size(data);
 }
 
 static size_t write_checkpoints(JfrChunkWriter& cw, const u1* data, size_t size) {
@@ -385,6 +382,17 @@ static size_t write_checkpoints(JfrChunkWriter& cw, const u1* data, size_t size)
   }
   assert(next == limit, "invariant");
   return processed;
+}
+
+static size_t write_thread_checkpoint_content(JfrChunkWriter& cw, const u1* data) {
+  assert(data != NULL, "invariant");
+  const size_t size = total_size(data);
+  assert(size > 0, "invariant");
+  assert(checkpoint_type(data) == THREADS, "invariant");
+  assert(number_of_types(data) == 1, "invariant");
+  // Thread checkpoints are small so write them buffered to cache as much as possible before flush.
+  cw.write_buffered(data + payload_offset, payload_size(data));
+  return size;
 }
 
 static size_t write_thread_checkpoint_payloads(JfrChunkWriter& cw, const u1* data, size_t size, u4& elements) {
@@ -419,7 +427,6 @@ class CheckpointWriteOp {
   size_t processed() const { return _processed; }
 };
 
-
 // This op will collapse all individual vthread checkpoints into a single checkpoint.
 template <typename T>
 class VirtualThreadLocalCheckpointWriteOp {
@@ -428,14 +435,14 @@ class VirtualThreadLocalCheckpointWriteOp {
   int64_t _begin_offset;
   int64_t _elements_offset;
   size_t _processed;
-  u4 _elements;
+  uint32_t _elements;
  public:
   typedef T Type;
   VirtualThreadLocalCheckpointWriteOp(JfrChunkWriter& cw) : _cw(cw), _begin_offset(cw.current_offset()), _elements_offset(0), _processed(0), _elements(0) {
     const int64_t last_checkpoint = cw.last_checkpoint_offset();
     const int64_t delta = last_checkpoint == 0 ? 0 : last_checkpoint - _begin_offset;
-    cw.reserve(sizeof(u4));
-    cw.write<u8>(EVENT_CHECKPOINT);
+    cw.reserve(sizeof(uint64_t));
+    cw.write(EVENT_CHECKPOINT);
     cw.write(JfrTicks::now().value());
     cw.write(0);
     cw.write(delta);
@@ -443,7 +450,7 @@ class VirtualThreadLocalCheckpointWriteOp {
     cw.write(1); // Number of types in this checkpoint, only one, TYPE_THREAD.
     cw.write(TYPE_THREAD); // Constant pool type.
     _elements_offset = cw.current_offset(); // Offset for the number of entries in the TYPE_THREAD constant pool.
-    cw.reserve(sizeof(u4));
+    cw.reserve(sizeof(uint32_t));
   }
 
   ~VirtualThreadLocalCheckpointWriteOp() {
@@ -453,8 +460,8 @@ class VirtualThreadLocalCheckpointWriteOp {
       return;
     }
     const int64_t event_size = _cw.current_offset() - _begin_offset;
-    _cw.write_padded_at_offset<u4>(_elements, _elements_offset);
-    _cw.write_padded_at_offset<u4>(event_size, _begin_offset);
+    _cw.write_padded_at_offset(_elements, _elements_offset);
+    _cw.write_padded_at_offset(event_size, _begin_offset);
     _cw.set_last_checkpoint_offset(_begin_offset);
   }
 

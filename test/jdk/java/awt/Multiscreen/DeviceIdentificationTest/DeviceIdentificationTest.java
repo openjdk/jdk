@@ -24,7 +24,7 @@
  * @test
  * @bug 6614214 8198613
  * @summary Verifies that we enter the fs mode on the correct screen.
- * Here is how to test: start the test on on a multi-screen system.
+ * Here is how to test: start the test on a multi-screen system.
  * Verify that the display is correctly tracked by dragging the frame back
  * and forth between screens. Then verify that the correct device enters
  * the full-screen mode - when "Enter FS mode" is pressed it should enter on

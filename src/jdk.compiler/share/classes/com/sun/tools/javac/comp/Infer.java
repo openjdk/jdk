@@ -57,8 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +68,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
+import java.util.Comparator;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
@@ -507,8 +507,11 @@ public class Infer {
             }
         }
         //step 2 - replace fresh tvars in their bounds
-        List<Type> formals = vars;
-        for (Type t : todo) {
+        replaceTypeVarsInBounds(todo.toList(), inferenceContext);
+    }
+
+    private void replaceTypeVarsInBounds(List<Type> vars, InferenceContext inferenceContext) {
+        for (Type t : vars) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.getInst();
             ct.setUpperBound( types.glb(inferenceContext.asInstTypes(types.getBounds(ct))) );
@@ -516,7 +519,6 @@ public class Infer {
                 //report inference error if glb fails
                 reportBoundError(uv, InferenceBound.UPPER);
             }
-            formals = formals.tail;
         }
     }
 
@@ -650,6 +652,122 @@ public class Infer {
             checkContext.compatible(owntype, funcInterface, types.noWarnings);
             return owntype;
         }
+    }
+
+    /**
+     * Infer record type for pattern matching. Given an expression type
+     * (@code expressionType}), and a given record ({@code patternTypeSymbol}),
+     * a parameterized type of {@code patternTypeSymbol} is inferred
+     * according to JLS 18.5.5.
+     *
+     * @param expressionType
+     * @param patternTypeSymbol
+     * @return
+     */
+    public Type instantiatePatternType(Type expressionType, TypeSymbol patternTypeSymbol) {
+        if (expressionType.tsym == patternTypeSymbol)
+            return expressionType;
+
+        //step 1:
+        List<Type> expressionTypes = List.nil();
+        List<Type> params = patternTypeSymbol.type.allparams();
+        List<Type> capturedWildcards = List.nil();
+        List<Type> todo = List.of(expressionType);
+        while (todo.nonEmpty()) {
+            Type current = todo.head;
+            todo = todo.tail;
+            switch (current.getTag()) {
+                case CLASS -> {
+                    if (current.isCompound()) {
+                        todo = todo.prependList(types.directSupertypes(current));
+                    } else {
+                        Type captured = types.capture(current);
+
+                        for (Type ta : captured.getTypeArguments()) {
+                            if (ta.hasTag(TYPEVAR) && ((TypeVar) ta).isCaptured()) {
+                                params = params.prepend((TypeVar) ta);
+                                capturedWildcards = capturedWildcards.prepend(ta);
+                            }
+                        }
+                        expressionTypes = expressionTypes.prepend(captured);
+                    }
+                }
+                case TYPEVAR -> {
+                    todo = todo.prepend(types.skipTypeVars(current, false));
+                }
+                default -> expressionTypes = expressionTypes.prepend(current);
+            }
+        }
+        //add synthetic captured ivars
+        InferenceContext c = new InferenceContext(this, params);
+        Type patternType = c.asUndetVar(patternTypeSymbol.type);
+        List<Type> exprTypes = expressionTypes.map(t -> c.asUndetVar(t));
+
+        capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
+
+        try {
+            //step 2:
+            for (Type exprType : exprTypes) {
+                if (exprType.isParameterized()) {
+                    Type patternAsExpression =
+                            types.asSuper(patternType, exprType.tsym);
+                    if (patternAsExpression == null ||
+                        !types.isSameType(patternAsExpression, exprType)) {
+                        return null;
+                    }
+                }
+            }
+
+            doIncorporation(c, types.noWarnings);
+
+            //step 3:
+            List<Type> freshVars = instantiatePatternVars(params, c);
+
+            Type substituted = c.asInstType(patternTypeSymbol.type);
+
+            //step 4:
+            return types.upward(substituted, freshVars);
+        } catch (Infer.InferenceException ex) {
+            return null;
+        }
+    }
+
+    private List<Type> instantiatePatternVars(List<Type> vars, InferenceContext c) {
+        ListBuffer<Type> freshVars = new ListBuffer<>();
+        ListBuffer<Type> todo = new ListBuffer<>();
+
+        //step 1 - create fresh tvars
+        for (Type t : vars) {
+            UndetVar undet = (UndetVar) c.asUndetVar(t);
+            List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
+            if (bounds.nonEmpty()) {
+                undet.setInst(bounds.head);
+            } else {
+                List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
+                Type upper;
+                boolean recursive = Type.containsAny(upperBounds, vars);
+                if (recursive) {
+                    upper = types.makeIntersectionType(upperBounds);
+                    todo.append(undet);
+                } else if (upperBounds.nonEmpty()) {
+                    upper = types.glb(upperBounds);
+                } else {
+                    upper = syms.objectType;
+                }
+                List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
+                Type lower = lowerBounds.isEmpty() ? syms.botType
+                                                   : lowerBounds.tail.isEmpty() ? lowerBounds.head
+                                                                                : types.lub(lowerBounds);
+                TypeVar vt = new TypeVar(syms.noSymbol, upper, lower);
+                freshVars.add(vt);
+                undet.setInst(vt);
+            }
+        }
+
+        //step 2 - replace fresh tvars in their bounds
+        replaceTypeVarsInBounds(todo.toList(), c);
+
+        return freshVars.toList();
     }
     // </editor-fold>
 
@@ -1145,7 +1263,7 @@ public class Infer {
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
-    Map<IncorporationBinaryOp, Boolean> incorporationCache = new HashMap<>();
+    Map<IncorporationBinaryOp, Boolean> incorporationCache = new LinkedHashMap<>();
 
     protected static class BoundFilter implements Predicate<Type> {
 
@@ -1307,7 +1425,7 @@ public class Infer {
         }
 
         /** cache used to avoid redundant computation of tree costs */
-        final Map<Node, Pair<List<Node>, Integer>> treeCache = new HashMap<>();
+        final Map<Node, Pair<List<Node>, Integer>> treeCache = new LinkedHashMap<>();
 
         /** constant value used to mark non-existent paths */
         final Pair<List<Node>, Integer> noPath = new Pair<>(null, Integer.MAX_VALUE);
@@ -1635,7 +1753,7 @@ public class Infer {
                  * through all its dependencies.
                  */
                 protected Set<Node> closure() {
-                    Set<Node> closure = new HashSet<>();
+                    Set<Node> closure = new LinkedHashSet<>();
                     closureInternal(closure);
                     return closure;
                 }

@@ -160,8 +160,14 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
     return;
   }
 
-  if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    count_out_of_memory_exceptions(h_exception);
+  if (h_exception->is_a(vmClasses::VirtualMachineError_klass())) {
+    // Remove the ScopedValue bindings in case we got a virtual machine
+    // Error while we were trying to manipulate ScopedValue bindings.
+    thread->clear_scopedValueBindings();
+
+    if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
+      count_out_of_memory_exceptions(h_exception);
+    }
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {

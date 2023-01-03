@@ -94,7 +94,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
       (char*)"isExcluded", (char*)"(Ljava/lang/Class;)Z", (void*)jfr_is_class_excluded,
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
-      (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized
+      (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
+      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

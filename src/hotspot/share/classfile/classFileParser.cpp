@@ -83,7 +83,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/utf8.hpp"
-
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -142,6 +141,8 @@
 #define JAVA_19_VERSION                   63
 
 #define JAVA_20_VERSION                   64
+
+#define JAVA_21_VERSION                   65
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -2259,18 +2260,16 @@ void ClassFileParser::copy_method_annotations(ConstMethod* cm,
 // Method* to save footprint, so we only know the size of the resulting Method* when the
 // entire method attribute is parsed.
 //
-// The promoted_flags parameter is used to pass relevant access_flags
-// from the method back up to the containing klass. These flag values
-// are added to klass's access_flags.
+// The has_localvariable_table parameter is used to pass up the value to InstanceKlass.
 
 Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                       bool is_interface,
                                       const ConstantPool* cp,
-                                      AccessFlags* const promoted_flags,
+                                      bool* const has_localvariable_table,
                                       TRAPS) {
   assert(cfs != NULL, "invariant");
   assert(cp != NULL, "invariant");
-  assert(promoted_flags != NULL, "invariant");
+  assert(has_localvariable_table != NULL, "invariant");
 
   ResourceMark rm(THREAD);
   // Parse fixed parts:
@@ -2819,7 +2818,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   // Copy class file LVT's/LVTT's into the HotSpot internal LVT.
   if (total_lvt_length > 0) {
-    promoted_flags->set_has_localvariable_table();
+    *has_localvariable_table = true;
     copy_localvariable_table(m->constMethod(),
                              lvt_cnt,
                              localvariable_table_length,
@@ -2875,18 +2874,15 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 }
 
 
-// The promoted_flags parameter is used to pass relevant access_flags
-// from the methods back up to the containing klass. These flag values
-// are added to klass's access_flags.
 // Side-effects: populates the _methods field in the parser
 void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
                                     bool is_interface,
-                                    AccessFlags* promoted_flags,
+                                    bool* const has_localvariable_table,
                                     bool* has_final_method,
                                     bool* declares_nonstatic_concrete_methods,
                                     TRAPS) {
   assert(cfs != NULL, "invariant");
-  assert(promoted_flags != NULL, "invariant");
+  assert(has_localvariable_table != NULL, "invariant");
   assert(has_final_method != NULL, "invariant");
   assert(declares_nonstatic_concrete_methods != NULL, "invariant");
 
@@ -2906,7 +2902,7 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
       Method* method = parse_method(cfs,
                                     is_interface,
                                     _cp,
-                                    promoted_flags,
+                                    has_localvariable_table,
                                     CHECK);
 
       if (method->is_final()) {
@@ -5332,6 +5328,10 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(NULL == _record_components, "invariant");
   assert(NULL == _permitted_subclasses, "invariant");
 
+  if (_has_localvariable_table) {
+    ik->set_has_localvariable_table(true);
+  }
+
   if (_has_final_method) {
     ik->set_has_final_method();
   }
@@ -5595,6 +5595,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _relax_verify(false),
   _has_nonstatic_concrete_methods(false),
   _declares_nonstatic_concrete_methods(false),
+  _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
   _has_finalizer(false),
@@ -5900,18 +5901,14 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   assert(_fields != NULL, "invariant");
 
   // Methods
-  AccessFlags promoted_flags;
   parse_methods(stream,
                 _access_flags.is_interface(),
-                &promoted_flags,
+                &_has_localvariable_table,
                 &_has_final_method,
                 &_declares_nonstatic_concrete_methods,
                 CHECK);
 
   assert(_methods != NULL, "invariant");
-
-  // promote flags from parse_methods() to the klass' flags
-  _access_flags.add_promoted_flags(promoted_flags.as_int());
 
   if (_declares_nonstatic_concrete_methods) {
     _has_nonstatic_concrete_methods = true;
@@ -5999,13 +5996,17 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
         CHECK);
     }
     Handle loader(THREAD, _loader_data->class_loader());
-    _super_klass = (const InstanceKlass*)
+    if (loader.is_null() && super_class_name == vmSymbols::java_lang_Object()) {
+      _super_klass = vmClasses::Object_klass();
+    } else {
+      _super_klass = (const InstanceKlass*)
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                loader,
                                                                _protection_domain,
                                                                true,
                                                                CHECK);
+    }
   }
 
   if (_super_klass != NULL) {

@@ -169,7 +169,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
     strncpy(header_version, vm_version, JVM_IDENT_MAX-9);
 
     // Append the hash code as eight hex digits.
-    sprintf(&header_version[JVM_IDENT_MAX-9], "%08x", hash);
+    os::snprintf_checked(&header_version[JVM_IDENT_MAX-9], 9, "%08x", hash);
     header_version[JVM_IDENT_MAX-1] = 0;  // Null terminate.
   }
 
@@ -1267,10 +1267,6 @@ public:
       return false;
     }
 
-    if (!check_common_app_classpath_prefix_len()) {
-      return false;
-    }
-
     // All fields in the GenericCDSFileMapHeader has been validated.
     _is_valid = true;
     return true;
@@ -1351,15 +1347,6 @@ public:
 
     return true;
   }
-
-  bool check_common_app_classpath_prefix_len() {
-    int common_path_size = _header->_common_app_classpath_prefix_size;
-    if (common_path_size < 0) {
-      FileMapInfo::fail_continue("common app classpath prefix len < 0");
-      return false;
-    }
-    return true;
-  }
 };
 
 // Return value:
@@ -1432,6 +1419,12 @@ bool FileMapInfo::init_from_file(int fd) {
     log_info(cds)("           actual: 0x%x", header()->version());
     fail_continue("The shared archive file has the wrong version.");
     return false;
+  }
+
+  int common_path_size = header()->common_app_classpath_prefix_size();
+  if (common_path_size < 0) {
+      FileMapInfo::fail_continue("common app classpath prefix len < 0");
+      return false;
   }
 
   unsigned int base_offset = header()->base_archive_name_offset();
@@ -1636,13 +1629,13 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     assert(!DynamicDumpSharedSpaces, "must be");
     requested_base = base;
     if (UseCompressedOops) {
-      mapping_offset = (size_t)CompressedOops::encode_not_null(cast_to_oop(base));
+      mapping_offset = (size_t)((address)base - CompressedOops::base());
+      assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
 #if INCLUDE_G1GC
       mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
 #endif
     }
-    assert(mapping_offset == (size_t)(uint32_t)mapping_offset, "must be 32-bit only");
   } else {
     char* requested_SharedBaseAddress = (char*)MetaspaceShared::requested_base_address();
     requested_base = ArchiveBuilder::current()->to_requested(base);
@@ -2067,14 +2060,18 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   return count;
 }
 
-address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode) {
-  size_t offset = spc->mapping_offset();
-  narrowOop n = CompressedOops::narrow_oop_cast(offset);
-  if (with_current_oop_encoding_mode) {
-    return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
-  } else {
-    return cast_from_oop<address>(ArchiveHeapLoader::decode_from_archive(n));
+// Get the total size in bytes of a read only region
+size_t FileMapInfo::readonly_total() {
+  size_t total = 0;
+  if (current_info() != nullptr) {
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::ro);
+    if (r->read_only()) total += r->used();
   }
+  if (dynamic_info() != nullptr) {
+    FileMapRegion* r = FileMapInfo::dynamic_info()->region_at(MetaspaceShared::ro);
+    if (r->read_only()) total += r->used();
+  }
+  return total;
 }
 
 static MemRegion *closed_heap_regions = NULL;
@@ -2091,7 +2088,7 @@ bool FileMapInfo::has_heap_regions() {
 // current oop encoding mode. This range may be different than the one seen at
 // dump time due to encoding mode differences. The result is used in determining
 // if/how these regions should be relocated at run time.
-MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
+MemRegion FileMapInfo::get_heap_regions_requested_range() {
   address start = (address) max_uintx;
   address end   = NULL;
 
@@ -2101,8 +2098,10 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
     FileMapRegion* r = region_at(i);
     size_t size = r->used();
     if (size > 0) {
-      address s = start_address_as_decoded_with_current_oop_encoding_mode(r);
+      address s = heap_region_requested_address(r);
       address e = s + size;
+      log_info(cds)("Heap region %s = " INTPTR_FORMAT " - " INTPTR_FORMAT " = "  SIZE_FORMAT_W(8) " bytes",
+                    region_name(i), p2i(s), p2i(e), size);
       if (start > s) {
         start = s;
       }
@@ -2112,6 +2111,10 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
     }
   }
   assert(end != NULL, "must have at least one used heap region");
+
+  start = align_down(start, HeapRegion::GrainBytes);
+  end = align_up(end, HeapRegion::GrainBytes);
+
   return MemRegion((HeapWord*)start, (HeapWord*)end);
 }
 
@@ -2124,7 +2127,12 @@ void FileMapInfo::map_or_load_heap_regions() {
     } else if (ArchiveHeapLoader::can_load()) {
       success = ArchiveHeapLoader::load_heap_regions(this);
     } else {
-      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+      if (!UseCompressedOops && !ArchiveHeapLoader::can_map()) {
+        // TODO - remove implicit knowledge of G1
+        log_info(cds)("Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops");
+      } else {
+        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+      }
     }
   }
 
@@ -2179,25 +2187,53 @@ bool FileMapInfo::can_use_heap_regions() {
   return true;
 }
 
-// The address where the bottom of this shared heap region should be mapped
-// at runtime
-address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc) {
+// The actual address of this region during dump time.
+address FileMapInfo::heap_region_dumptime_address(FileMapRegion* r) {
   assert(UseSharedSpaces, "runtime only");
-  spc->assert_is_heap_region();
+  r->assert_is_heap_region();
+  assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   if (UseCompressedOops) {
-    return start_address_as_decoded_from_archive(spc);
+    return /*dumptime*/ narrow_oop_base() + r->mapping_offset();
   } else {
-    assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
-    return header()->heap_begin() + spc->mapping_offset() + ArchiveHeapLoader::runtime_delta();
+    return heap_region_requested_address(r);
   }
 }
 
-void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
+// The address where this region can be mapped into the runtime heap without
+// patching any of the pointers that are embedded in this region.
+address FileMapInfo::heap_region_requested_address(FileMapRegion* r) {
+  assert(UseSharedSpaces, "runtime only");
+  r->assert_is_heap_region();
+  assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
+  assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
   if (UseCompressedOops) {
-    ArchiveHeapLoader::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
+    // We can avoid relocation if each region's offset from the runtime CompressedOops::base()
+    // is the same as its offset from the CompressedOops::base() during dumptime.
+    // Note that CompressedOops::base() may be different between dumptime and runtime.
+    //
+    // Example:
+    // Dumptime base = 0x1000 and shift is 0. We have a region at address 0x2000. There's a
+    // narrowOop P stored in this region that points to an object at address 0x2200.
+    // P's encoded value is 0x1200.
+    //
+    // Runtime base = 0x4000 and shift is also 0. If we map this region at 0x5000, then
+    // the value P can remain 0x1200. The decoded address = (0x4000 + (0x1200 << 0)) = 0x5200,
+    // which is the runtime location of the referenced object.
+    return /*runtime*/ CompressedOops::base() + r->mapping_offset();
   } else {
-    ArchiveHeapLoader::set_runtime_delta(delta);
+    // We can avoid relocation if each region is mapped into the exact same address
+    // where it was at dump time.
+    return /*dumptime*/header()->heap_begin() + r->mapping_offset();
   }
+}
+
+// The address where this shared heap region is actually mapped at runtime. This function
+// can be called only after we have determined the value for ArchiveHeapLoader::mapped_heap_delta().
+address FileMapInfo::heap_region_mapped_address(FileMapRegion* r) {
+  assert(UseSharedSpaces, "runtime only");
+  r->assert_is_heap_region();
+  assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
+  return heap_region_requested_address(r) + ArchiveHeapLoader::mapped_heap_delta();
 }
 
 //
@@ -2215,71 +2251,46 @@ void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
 // regions may be added. GC may mark and update references in the mapped
 // open archive objects.
 void FileMapInfo::map_heap_regions_impl() {
-  if (narrow_oop_mode() != CompressedOops::mode() ||
-      narrow_oop_base() != CompressedOops::base() ||
-      narrow_oop_shift() != CompressedOops::shift()) {
+  // G1 -- always map at the very top of the heap to avoid fragmentation.
+  assert(UseG1GC, "the following code assumes G1");
+  _heap_pointers_need_patching = false;
+
+  MemRegion heap_range = G1CollectedHeap::heap()->reserved();
+  MemRegion archive_range = get_heap_regions_requested_range();
+
+  address heap_end = (address)heap_range.end();
+  address archive_end = (address)archive_range.end();
+
+  assert(is_aligned(heap_end, HeapRegion::GrainBytes), "must be");
+  assert(is_aligned(archive_end, HeapRegion::GrainBytes), "must be");
+
+  if (UseCompressedOops &&
+      (narrow_oop_mode() != CompressedOops::mode() ||
+       narrow_oop_shift() != CompressedOops::shift())) {
     log_info(cds)("CDS heap data needs to be relocated because the archive was created with an incompatible oop encoding mode.");
     _heap_pointers_need_patching = true;
+  } else if (!heap_range.contains(archive_range)) {
+    log_info(cds)("CDS heap data needs to be relocated because");
+    log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(archive_range.start()), p2i(archive_range.end()));
+    log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(heap_range.start()), p2i(heap_range.end()));
+    _heap_pointers_need_patching = true;
   } else {
-    if (UseCompressedOops) {
-      MemRegion range = get_heap_regions_range_with_current_oop_encoding_mode();
-      if (!CompressedOops::is_in(range)) {
-        log_info(cds)("CDS heap data needs to be relocated because");
-        log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
-        log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT, p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
-        _heap_pointers_need_patching = true;
-      } else if (header()->heap_end() != CompressedOops::end()) {
-        log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
-        _heap_pointers_need_patching = true;
-      }
-    } else {
-      MemRegion range((HeapWord*)header()->heap_begin(), (HeapWord*)header()->heap_end());
-      if (!G1CollectedHeap::heap()->reserved().contains(range)) {
-        log_info(cds)("CDS heap data needs to be relocated because");
-        log_info(cds)("the desired range " PTR_FORMAT " - "  PTR_FORMAT, p2i(range.start()), p2i(range.end()));
-        log_info(cds)("is outside of the heap " PTR_FORMAT " - "  PTR_FORMAT,
-            p2i((address)G1CollectedHeap::heap()->reserved().start()), p2i((address)G1CollectedHeap::heap()->reserved().end()));
-        _heap_pointers_need_patching = true;
-      } else if (header()->heap_end() != (address)G1CollectedHeap::heap()->reserved().end()) {
-        log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
-        _heap_pointers_need_patching = true;
-      }
+    assert(heap_end >= archive_end, "must be");
+    if (heap_end != archive_end) {
+      log_info(cds)("CDS heap data needs to be relocated to the end of the runtime heap to reduce fragmentation");
+      _heap_pointers_need_patching = true;
     }
   }
 
   ptrdiff_t delta = 0;
   if (_heap_pointers_need_patching) {
-    //   dumptime heap end  ------------v
-    //   [      |archived heap regions| ]         run time heap end -----v
-    //                                       [   |archived heap regions| ]
-    //          ^
-    //          D                                ^
-    //                                           R
-    //                                  |<-----delta-------------------->|
-    //
-    // At dump time, the archived heap regions were near the top of the heap.
-    // At run time, if the heap ends at a different address, we need to
-    // move them near to top of the run time heap. This can be done by
-    // the simple math of adding the delta as shown above.
-    //
-    // Also: D = bottom of a heap region at dump time
-    //       R = bottom of a heap region at run time
-    //
-    // FileMapRegion* spc = ...;
-    //   address D = header()->heap_begin() + spc->mapping_offset();
-    //   address R = D + delta;
-    address dumptime_heap_end = header()->heap_end();
-    address runtime_heap_end = UseCompressedOops ? CompressedOops::end() :
-                                                   (address)G1CollectedHeap::heap()->reserved().end();
-    delta = runtime_heap_end - dumptime_heap_end;
+    delta = heap_end - archive_end;
   }
 
   log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
 
-  set_shared_heap_runtime_delta(delta);
-
   FileMapRegion* r = region_at(MetaspaceShared::first_closed_heap_region);
-  address relocated_closed_heap_region_bottom = heap_region_runtime_start_address(r);
+  address relocated_closed_heap_region_bottom = heap_region_requested_address(r) + delta;
 
   if (!is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes)) {
     // Align the bottom of the closed archive heap regions at G1 region boundary.
@@ -2291,10 +2302,12 @@ void FileMapInfo::map_heap_regions_impl() {
     log_info(cds)("CDS heap data needs to be relocated lower by a further " SIZE_FORMAT
                   " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
                   align, delta);
-    set_shared_heap_runtime_delta(delta);
-    relocated_closed_heap_region_bottom = heap_region_runtime_start_address(r);
     _heap_pointers_need_patching = true;
   }
+
+  ArchiveHeapLoader::init_mapped_heap_relocation(delta, narrow_oop_shift());
+  relocated_closed_heap_region_bottom = heap_region_mapped_address(r);
+
   assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
          "must be");
 
@@ -2360,7 +2373,7 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
     r = region_at(i);
     size_t size = r->used();
     if (size > 0) {
-      HeapWord* start = (HeapWord*)heap_region_runtime_start_address(r);
+      HeapWord* start = (HeapWord*)heap_region_mapped_address(r);
       regions[num_regions] = MemRegion(start, size / HeapWordSize);
       num_regions ++;
       log_info(cds)("Trying to map heap data: region[%d] at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
@@ -2425,7 +2438,6 @@ void FileMapInfo::patch_heap_embedded_pointers() {
     return;
   }
 
-  log_info(cds)("patching heap embedded pointers");
   patch_heap_embedded_pointers(closed_heap_regions,
                                num_closed_heap_regions,
                                MetaspaceShared::first_closed_heap_region);
@@ -2435,14 +2447,23 @@ void FileMapInfo::patch_heap_embedded_pointers() {
                                MetaspaceShared::first_open_heap_region);
 }
 
+narrowOop FileMapInfo::encoded_heap_region_dumptime_address(FileMapRegion* r) {
+  assert(UseSharedSpaces, "runtime only");
+  assert(UseCompressedOops, "sanity");
+  r->assert_is_heap_region();
+  return CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
+}
+
 void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                                int first_region_idx) {
   char* bitmap_base = map_bitmap_region();
   assert(bitmap_base != NULL, "must have already been mapped");
   for (int i=0; i<num_regions; i++) {
-    FileMapRegion* r = region_at(i + first_region_idx);
+    int region_idx = i + first_region_idx;
+    FileMapRegion* r = region_at(region_idx);
+
     ArchiveHeapLoader::patch_embedded_pointers(
-      regions[i],
+      this, r, regions[i],
       (address)(region_at(MetaspaceShared::bm)->mapped_base()) + r->oopmap_offset(),
       r->oopmap_size_in_bits());
   }
@@ -2606,14 +2627,9 @@ bool FileMapInfo::initialize() {
 }
 
 char* FileMapInfo::region_addr(int idx) {
+  assert(UseSharedSpaces, "must be");
   FileMapRegion* r = region_at(idx);
-  if (HeapShared::is_heap_region(idx)) {
-    assert(DumpSharedSpaces, "The following doesn't work at runtime");
-    return r->used() > 0 ?
-          (char*)start_address_as_decoded_with_current_oop_encoding_mode(r) : NULL;
-  } else {
-    return r->mapped_base();
-  }
+  return r->mapped_base();
 }
 
 // The 2 core spaces are RW->RO
@@ -2731,17 +2747,6 @@ bool FileMapInfo::validate_header() {
   } else {
     return DynamicArchive::validate(this);
   }
-}
-
-// Check if a given address is within one of the shared regions
-bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
-  assert(idx == MetaspaceShared::ro ||
-         idx == MetaspaceShared::rw, "invalid region index");
-  char* base = region_addr(idx);
-  if (p >= base && p < base + region_at(idx)->used()) {
-    return true;
-  }
-  return false;
 }
 
 // Unmap mapped regions of shared space.
