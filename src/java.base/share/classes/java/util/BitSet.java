@@ -102,7 +102,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * The number of bits set to {@code true} in this {@code BitSet}.
      * @since  21
      */
-    private transient int cardinality;
+    private transient int cardinality = 0;
 
     /**
      * Whether the size of "words" is user-specified.  If so, we assume
@@ -128,6 +128,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         assert(wordsInUse == 0 || words[wordsInUse - 1] != 0);
         assert(wordsInUse >= 0 && wordsInUse <= words.length);
         assert(wordsInUse == words.length || words[wordsInUse] == 0);
+        assert(cardinality <= length());
     }
 
     /**
