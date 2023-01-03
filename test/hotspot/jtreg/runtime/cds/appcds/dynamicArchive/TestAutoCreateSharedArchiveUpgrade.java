@@ -78,6 +78,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         int n = java.lang.Runtime.version().major() - 1;
         for (int i = 19; i < n; i++) {
             BOOT_JDK = fetchBootJDK(os, arch, i);
+            System.out.println("The Boot JDK is: " + BOOT_JDK);
             setupJVMs();
             doTest();
         }
@@ -188,30 +189,32 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 break;
             case("aarch64"):
                 architecture = "aarch";
+                break;
             default:
                 architecture = "";
+                break;
         }
-
+        System.out.printf("Platform: %s %s, Version: %s.%s\n", osID, arch, version, build);
         switch (osID) {
-        case "Windows":
-            jdkArtifactMap.put("version", version);
-            jdkArtifactMap.put("build_number", build);
-            jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
-            return fetchBootJDK(jdkArtifactMap, version);
+            case "Windows":
+                jdkArtifactMap.put("version", version);
+                jdkArtifactMap.put("build_number", build);
+                jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
+                return fetchBootJDK(jdkArtifactMap, version);
 
-        case "MacOSX":
-            jdkArtifactMap.put("version", version);
-            jdkArtifactMap.put("build_number", build);
-            jdkArtifactMap.put("file", "bundles/macos-x64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
-            return fetchBootJDK(jdkArtifactMap, version);
-        case "Linux":
-            jdkArtifactMap.put("version", version);
-            jdkArtifactMap.put("build_number", build);
-            jdkArtifactMap.put("file", "bundles/linux-x64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
-            return fetchBootJDK(jdkArtifactMap, version);
+            case "MacOSX":
+                jdkArtifactMap.put("version", version);
+                jdkArtifactMap.put("build_number", build);
+                jdkArtifactMap.put("file", "bundles/macos-" + architecture + "64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
+                return fetchBootJDK(jdkArtifactMap, version);
+            case "Linux":
+                jdkArtifactMap.put("version", version);
+                jdkArtifactMap.put("build_number", build);
+                jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
+                return fetchBootJDK(jdkArtifactMap, version);
 
-        default:
-            return null;
+            default:
+                return null;
         }
     }
 
@@ -220,7 +223,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         String path = null;
         try {
             path = ArtifactResolver.resolve("jdk", jdkArtifactMap, true) + "/jdk-" + version;
-            System.out.println("path: " + path);
+            System.out.println("Boot JDK path: " + path);
         } catch (ArtifactResolverException e) {
             Throwable cause = e.getCause();
             if (cause == null) {
