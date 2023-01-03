@@ -985,12 +985,17 @@ public class BitSet implements Cloneable, java.io.Serializable {
         if (this == set)
             return;
 
-        while (wordsInUse > set.wordsInUse)
-            words[--wordsInUse] = 0;
+        while (wordsInUse > set.wordsInUse) {
+            cardinality -= bitCount(--wordsInUse);
+            words[wordsInUse] = 0;
+        }
 
         // Perform logical AND on words in common
-        for (int i = 0; i < wordsInUse; i++)
+        for (int i = 0; i < wordsInUse; i++) {
+            cardinality -= bitCount(i);
             words[i] &= set.words[i];
+            cardinality += bitCount(i);
+        }
 
         recalculateWordsInUse();
         checkInvariants();
