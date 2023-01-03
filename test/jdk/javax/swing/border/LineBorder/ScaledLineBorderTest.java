@@ -243,14 +243,11 @@ public class ScaledLineBorderTest {
                 childSize = childPanel.getPreferredSize();
             }
             childPanel.setBounds(0, childSize.height * i, childSize.width, childSize.height);
+
+            panelLocations.add(childPanel.getLocation());
         }
 
         contentPanel.setSize(childSize.width, childSize.height * 4);
-
-        // Save coordinates of the panels
-        for (Component comp : contentPanel.getComponents()) {
-            panelLocations.add(comp.getLocation());
-        }
 
         return contentPanel;
     }
