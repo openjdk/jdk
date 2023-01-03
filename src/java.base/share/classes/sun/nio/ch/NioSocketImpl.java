@@ -310,7 +310,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             throw e;
         } catch (ConnectionResetException e) {
             connectionReset = true;
-            throw new SocketException("Connection reset", e);
+            throw new SocketException("Connection reset");
         } catch (IOException ioe) {
             throw new SocketException(ioe.getMessage(), ioe);
         } finally {
