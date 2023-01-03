@@ -188,11 +188,24 @@ public class BitSet implements Cloneable, java.io.Serializable {
     }
     
     private void computeCardinality() {
-        cardinality = 0;
-        for (int i = 0; i < wordsInUse; i++)
-            cardinality += bitCount(i);
+        cardinality = bitCount(0, wordsInUse);
     }
 
+    /**
+     * Returns the number of bits set to true, starting from
+     * startWord (inclusive) to endWord (exclusive)
+     */
+    private int bitCount(int startWord, int endWord) {
+        int sum = 0;
+        for (int i = startWord; i < endWord; i++)
+            sum += bitCount(i);
+        
+        return sum;
+    }
+
+    /**
+     * Returns the number of bits set to true at the specified word
+     */
     private int bitCount(int wordIndex) {
         return Long.bitCount(words[wordIndex]);
     }
@@ -1014,22 +1027,30 @@ public class BitSet implements Cloneable, java.io.Serializable {
         if (this == set)
             return;
 
-        int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
+        int wordsInCommon;
 
         if (wordsInUse < set.wordsInUse) {
+            wordsInCommon = wordsInUse;
             ensureCapacity(set.wordsInUse);
             wordsInUse = set.wordsInUse;
-        }
+        } else
+            wordsInCommon = set.wordsInUse;
+
 
         // Perform logical OR on words in common
-        for (int i = 0; i < wordsInCommon; i++)
+        for (int i = 0; i < wordsInCommon; i++) {
+            cardinality -= bitCount(i);
             words[i] |= set.words[i];
+            cardinality += bitCount(i);
+        }
 
         // Copy any remaining words
-        if (wordsInCommon < set.wordsInUse)
+        if (wordsInCommon < set.wordsInUse) {
             System.arraycopy(set.words, wordsInCommon,
                              words, wordsInCommon,
                              wordsInUse - wordsInCommon);
+            cardinality += bitCount(wordsInCommon, wordsInUse);
+        }
 
         // recalculateWordsInUse() is unnecessary
         checkInvariants();
