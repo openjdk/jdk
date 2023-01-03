@@ -50,8 +50,6 @@ import nsk.share.gc.gp.*;
  * objects using given garbage producer and memory strategy.
  */
 public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, MemoryStrategyAware {
-        // Keep thread count to 4, intention is to juggle
-        // with multiple threads, not to overwhelm gc
         private GarbageProducer garbageProducer;
         private MemoryStrategy memoryStrategy;
         private Object[] array;
