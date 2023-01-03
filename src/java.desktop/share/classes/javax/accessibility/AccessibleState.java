@@ -288,7 +288,7 @@ public class AccessibleState extends AccessibleBundle {
      * Indicates the orientation of this object is vertical. This is usually
      * associated with objects such as scrollbars, sliders, and progress bars.
      *
-     * @see #VERTICAL
+     * @see #HORIZONTAL
      * @see AccessibleRole#SCROLL_BAR
      * @see AccessibleRole#SLIDER
      * @see AccessibleRole#PROGRESS_BAR
@@ -300,7 +300,7 @@ public class AccessibleState extends AccessibleBundle {
      * Indicates the orientation of this object is horizontal. This is usually
      * associated with objects such as scrollbars, sliders, and progress bars.
      *
-     * @see #HORIZONTAL
+     * @see #VERTICAL
      * @see AccessibleRole#SCROLL_BAR
      * @see AccessibleRole#SLIDER
      * @see AccessibleRole#PROGRESS_BAR

@@ -517,7 +517,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      *  @param columnCount  the new number of columns in the model
      *
-     *  @see #setColumnCount
+     *  @see #setRowCount
      * @since 1.3
      */
     public void setColumnCount(int columnCount) {
