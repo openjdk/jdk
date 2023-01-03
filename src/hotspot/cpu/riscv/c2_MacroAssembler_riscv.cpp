@@ -385,7 +385,6 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   // UL case. We'll re-read last character in inner pre-loop code to have
   // single outer pre-loop load
   const int firstStep = isLL ? 7 : 3;
-
   const int ASIZE = 256;
   const int STORE_BYTES = 8; // 8 bytes stored per instruction(sd)
 
@@ -562,7 +561,12 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
     assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
   }
-  trampoline_call(stub);
+  address call = trampoline_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(LINEARSEARCH, DONE, NOMATCH));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
   j(DONE);
 
   bind(NOMATCH);
@@ -965,7 +969,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       ShouldNotReachHere();
   }
   assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-  trampoline_call(stub);
+  address call = trampoline_call(stub);
+  if (call == nullptr) {
+    DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
   j(DONE);
 
   bind(SHORT_STRING);

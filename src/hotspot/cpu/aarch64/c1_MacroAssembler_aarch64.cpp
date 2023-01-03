@@ -199,8 +199,11 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   mov(rscratch1, len_in_bytes);
   lea(t1, Address(obj, hdr_size_in_bytes));
   lsr(t2, rscratch1, LogBytesPerWord);
-  zero_words(t1, t2);
-
+  address tpc = zero_words(t1, t2);
+  if (tpc == nullptr) {
+    DEBUG_ONLY(reset_labels(done));
+    BAILOUT("trampoline stub overflow");
+  }
   bind(done);
 }
 
@@ -228,10 +231,14 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
        initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
+       CHECK_BAILOUT();
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
-       zero_words(t1, con_size_in_bytes / BytesPerWord);
+       address tpc = zero_words(t1, con_size_in_bytes / BytesPerWord);
+       if (tpc == nullptr) {
+         BAILOUT("trampoline stub overflow");
+       }
      }
   }
 
@@ -267,6 +274,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   // clear rest of allocated space
   initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  CHECK_BAILOUT();
 
   membar(StoreStore);
 

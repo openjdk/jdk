@@ -298,7 +298,12 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
       assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
     }
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(LINEARSEARCH, LINEAR_MEDIUM, DONE, NOMATCH, MATCH));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
   }
 
@@ -857,7 +862,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
         ShouldNotReachHere();
      }
     assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
 
   bind(SHORT_STRING);
