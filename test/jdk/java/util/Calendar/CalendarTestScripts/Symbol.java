@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static java.util.Calendar.*;
 import static java.util.GregorianCalendar.*;
 
 public class Symbol {
