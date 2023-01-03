@@ -449,7 +449,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
             // Handle intermediate words, if any
             for (int i = startWordIndex+1; i < endWordIndex; i++) {
-                cardinality += BITS_PER_WORD - (bitCount(i) << 1);
+                cardinality += BITS_PER_WORD - 2 * bitCount(i);
                 words[i] ^= WORD_MASK;
             }
 
