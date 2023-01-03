@@ -218,6 +218,19 @@ public class TCPChannel implements Channel {
         conn = new TCPConnection(this, sock);
 
         try {
+            /*
+             * Set socket read timeout to configured value for JRMP
+             * connection handshake; this also serves to guard against
+             * non-JRMP servers that do not respond (see 4322806).
+             */
+            int originalSoTimeout = 0;
+            try {
+                originalSoTimeout = sock.getSoTimeout();
+                sock.setSoTimeout(handshakeTimeout);
+            } catch (Exception e) {
+                // if we fail to set this, ignore and proceed anyway
+            }
+
             DataOutputStream out =
                 new DataOutputStream(conn.getOutputStream());
             writeTransportHeader(out);
@@ -228,19 +241,6 @@ public class TCPChannel implements Channel {
             } else {
                 out.writeByte(TransportConstants.StreamProtocol);
                 out.flush();
-
-                /*
-                 * Set socket read timeout to configured value for JRMP
-                 * connection handshake; this also serves to guard against
-                 * non-JRMP servers that do not respond (see 4322806).
-                 */
-                int originalSoTimeout = 0;
-                try {
-                    originalSoTimeout = sock.getSoTimeout();
-                    sock.setSoTimeout(handshakeTimeout);
-                } catch (Exception e) {
-                    // if we fail to set this, ignore and proceed anyway
-                }
 
                 DataInputStream in =
                     new DataInputStream(conn.getInputStream());
