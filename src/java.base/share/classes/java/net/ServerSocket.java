@@ -694,7 +694,7 @@ public class ServerSocket implements java.io.Closeable {
             Thread thread = Thread.currentThread();
             if (thread.isVirtual() && thread.isInterrupted()) {
                 close();
-                throw new SocketException("Closed by interrupt", e);
+                throw new SocketException("Closed by interrupt");
             }
             throw e;
         }
