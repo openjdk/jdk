@@ -186,6 +186,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
         computeCardinality();
         checkInvariants();
     }
+    
+    private void computeCardinality() {
+        cardinality = 0;
+        for (int i = 0; i < wordsInUse; i++)
+            cardinality += bitCount(i);
+    }
 
     /**
      * Returns a new bit set containing all the bits in the given long array.
@@ -940,12 +946,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
      */
     public int cardinality() {
         return cardinality;
-    }
-    
-    private void computeCardinality() {
-        cardinality = 0;
-        for (int i = 0; i < wordsInUse; i++)
-            cardinality += bitCount(i);
     }
     
     private int bitCount(int wordIndex) {
