@@ -74,7 +74,6 @@ public class TestNimbusLabel
                 UIManager.getDefaults().put("Label[Enabled].textForeground",
                                             java.awt.Color.red);
                 label =
-                    //new JLabel("This text should be in red");
                     new JLabel("<html><body>This text should be in red</body></html>");
 
                 frame.getContentPane().add(label);
