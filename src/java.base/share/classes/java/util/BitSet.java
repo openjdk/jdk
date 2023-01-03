@@ -392,9 +392,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
-
-        words[wordIndex] ^= (1L << bitIndex);
-
+        
+        final long bitMask = 1L << bitIndex;
+        words[wordIndex] ^= bitMask;
+        
+        cardinality += (words[wordIndex] & bitMask) != 0 ? 1 : -1;
         recalculateWordsInUse();
         checkInvariants();
     }
@@ -425,18 +427,26 @@ public class BitSet implements Cloneable, java.io.Serializable {
         long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
+            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] ^= (firstWordMask & lastWordMask);
+            cardinality += bitCount(startWordIndex);
         } else {
             // Case 2: Multiple words
             // Handle first word
+            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] ^= firstWordMask;
+            cardinality += bitCount(startWordIndex);
 
             // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++)
+            for (int i = startWordIndex+1; i < endWordIndex; i++) {
+                cardinality += Long.SIZE - (bitCount(i) << 1);
                 words[i] ^= WORD_MASK;
+            }
 
             // Handle last word
+            cardinality -= bitCount(endWordIndex);
             words[endWordIndex] ^= lastWordMask;
+            cardinality += bitCount(endWordIndex);
         }
 
         recalculateWordsInUse();
@@ -457,7 +467,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
 
-        words[wordIndex] |= (1L << bitIndex); // Restores invariants
+        final long bitMask = 1L << bitIndex;
+        if ((words[wordIndex] & bitMask) == 0) {
+            words[wordIndex] |= bitMask; // Restores invariants
+            cardinality++;
+        }
 
         checkInvariants();
     }
@@ -503,18 +517,26 @@ public class BitSet implements Cloneable, java.io.Serializable {
         long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
+            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] |= (firstWordMask & lastWordMask);
+            cardinality += bitCount(startWordIndex);
         } else {
             // Case 2: Multiple words
             // Handle first word
+            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] |= firstWordMask;
+            cardinality += bitCount(startWordIndex);
 
             // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++)
+            for (int i = startWordIndex+1; i < endWordIndex; i++) {
+                cardinality += Long.SIZE - bitCount(i);
                 words[i] = WORD_MASK;
+            }
 
             // Handle last word (restores invariants)
+            cardinality -= bitCount(endWordIndex);
             words[endWordIndex] |= lastWordMask;
+            cardinality += bitCount(endWordIndex);
         }
 
         checkInvariants();
@@ -911,8 +933,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
     private int computeCardinality() {
         int sum = 0;
         for (int i = 0; i < wordsInUse; i++)
-            sum += Long.bitCount(words[i]);
+            sum += bitCount(i);
         return sum;
+    }
+    
+    private int bitCount(int wordIndex) {
+        return Long.bitCount(words[wordIndex]);
     }
 
     /**
