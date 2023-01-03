@@ -7901,114 +7901,129 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
+typedef __uint128_t u128;
+typedef uint64_t u64;
+typedef uint32_t u32;
 
 #define ADC(result, carry, n, m) {              \
   result = n + m + carry;                       \
   carry = (u128)n + m > result;                 \
 }
 
+  static constexpr int BLOCK_LENGTH = 16;
+
   static void print128(u128 n) {
     u64 n1 = n >> 64; u64 n0 = (u128)(n << 64 >> 64);
     printf("%016lx %016lx", (u64)(n >> 64), (u64)(n << 64 >> 64));
   }
 
-  static void poly1305_processBlocks(char *input_start, jlong len, jlong *acc_start, jlong *r_start) {
+  // private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
+  static void poly1305_processBlocks(char *input_start, jlong length, jlong *acc_start, jlong *r_start) {
     setbuf(stdout, NULL);
 
-    // s = h + c, without carry propagation
-    const u64 s0 = ctx->h[0] + (u64)ctx->c[0]; // s0 <= 1_fffffffe
-    const u64 s1 = ctx->h[1] + (u64)ctx->c[1]; // s1 <= 1_fffffffe
-    const u64 s2 = ctx->h[2] + (u64)ctx->c[2]; // s2 <= 1_fffffffe
-    const u64 s3 = ctx->h[3] + (u64)ctx->c[3]; // s3 <= 1_fffffffe
-    const u32 s4 = ctx->h[4] +      ctx->c[4]; // s4 <=          5
+    while (length >= BLOCK_LENGTH) {
+      u32 *ctx_h = (u32 *)acc_start;
+      u32 *ctx_c = (u32 *)input_start;
+      u32 *ctx_r = (u32 *)r_start;
 
-    u64 *b_h = (u64*)ctx->h;
-    u64 *b_c = (u64*)ctx->c;
-    uint32_t carry = 0;
-    u64 b_s0; ADC(b_s0, carry, b_h[0], b_c[0]); if (carry) printf("#");
-    u64 b_s1; ADC(b_s1, carry, b_h[1], b_c[1]); if (carry) printf("*");
-    u32 b_s2 = s4 + carry;
+      // s = h + c, without carry propagation
+      const u64 s0 = ctx_h[0] + (u64)ctx_c[0]; // s0 <= 1_fffffffe
+      const u64 s1 = ctx_h[1] + (u64)ctx_c[1]; // s1 <= 1_fffffffe
+      const u64 s2 = ctx_h[2] + (u64)ctx_c[2]; // s2 <= 1_fffffffe
+      const u64 s3 = ctx_h[3] + (u64)ctx_c[3]; // s3 <= 1_fffffffe
+      const u32 s4 = ctx_h[4] +      ctx_c[4]; // s4 <=          5
 
-    printf("\n");
-    printf("S: %lx:%016lx:%016lx\n", b_s2, b_s1, b_s0);
-    printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", s4, s3, s2, s1, s0);
+      u64 *b_h = (u64*)ctx_h;
+      u64 *b_c = (u64*)ctx_c;
+      uint32_t carry = 0;
+      u64 b_s0; ADC(b_s0, carry, b_h[0], b_c[0]); if (carry) printf("#");
+      u64 b_s1; ADC(b_s1, carry, b_h[1], b_c[1]); if (carry) printf("*");
+      u32 b_s2 = s4 + carry;
 
-    // Local all the things!
-    const u32 r0 = ctx->r[0];       // r0  <= 0fffffff
-    const u32 r1 = ctx->r[1];       // r1  <= 0ffffffc
-    const u32 r2 = ctx->r[2];       // r2  <= 0ffffffc
-    const u32 r3 = ctx->r[3];       // r3  <= 0ffffffc
-    const u32 rr0 = (r0 >> 2) * 5;  // rr0 <= 13fffffb // lose 2 bits...
-    const u32 rr1 = (r1 >> 2) + r1; // rr1 <= 13fffffb // rr1 == (r1 >> 2) * 5
-    const u32 rr2 = (r2 >> 2) + r2; // rr2 <= 13fffffb // rr1 == (r2 >> 2) * 5
-    const u32 rr3 = (r3 >> 2) + r3; // rr3 <= 13fffffb // rr1 == (r3 >> 2) * 5
+      printf("\n");
+      printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);
+      printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", (u64)s4, s3, s2, s1, s0);
 
-    // (h + c) * r, without carry propagation
-    const u64 x0 = s0*r0+ s1*rr3+ s2*rr2+ s3*rr1+ s4*rr0; // <= 97ffffe007fffff8
-    const u64 x1 = s0*r1+ s1*r0 + s2*rr3+ s3*rr2+ s4*rr1; // <= 8fffffe20ffffff6
-    const u64 x2 = s0*r2+ s1*r1 + s2*r0 + s3*rr3+ s4*rr2; // <= 87ffffe417fffff4
-    const u64 x3 = s0*r3+ s1*r2 + s2*r1 + s3*r0 + s4*rr3; // <= 7fffffe61ffffff2
-    const u32 x4 = s4 * (r0 & 3); // ...recover 2 bits    // <=                f
+      // Local all the things!
+      const u32 r0 = ctx_r[0];       // r0  <= 0fffffff
+      const u32 r1 = ctx_r[1];       // r1  <= 0ffffffc
+      const u32 r2 = ctx_r[2];       // r2  <= 0ffffffc
+      const u32 r3 = ctx_r[3];       // r3  <= 0ffffffc
+      const u32 rr0 = (r0 >> 2) * 5;  // rr0 <= 13fffffb // lose 2 bits...
+      const u32 rr1 = (r1 >> 2) + r1; // rr1 <= 13fffffb // rr1 == (r1 >> 2) * 5
+      const u32 rr2 = (r2 >> 2) + r2; // rr2 <= 13fffffb // rr1 == (r2 >> 2) * 5
+      const u32 rr3 = (r3 >> 2) + r3; // rr3 <= 13fffffb // rr1 == (r3 >> 2) * 5
 
-    const uint64_t  b_r0 = ((uint64_t)r1 << 32) + r0;
-    const uint64_t  b_r1 = ((uint64_t)r3 << 32) + r2;
-    const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
-    const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
+      // (h + c) * r, without carry propagation
+      const u64 x0 = s0*r0+ s1*rr3+ s2*rr2+ s3*rr1+ s4*rr0; // <= 97ffffe007fffff8
+      const u64 x1 = s0*r1+ s1*r0 + s2*rr3+ s3*rr2+ s4*rr1; // <= 8fffffe20ffffff6
+      const u64 x2 = s0*r2+ s1*r1 + s2*r0 + s3*rr3+ s4*rr2; // <= 87ffffe417fffff4
+      const u64 x3 = s0*r3+ s1*r2 + s2*r1 + s3*r0 + s4*rr3; // <= 7fffffe61ffffff2
+      const u32 x4 = s4 * (r0 & 3); // ...recover 2 bits    // <=                f
 
-    printf("R:   %016llx:%016llx\n", b_r1, b_r0);
-    printf("R:  %08lx:%08lx:%08lx:%08lx\n", r3, r2, r1, r0);
+      const uint64_t  b_r0 = ((uint64_t)r1 << 32) + r0;
+      const uint64_t  b_r1 = ((uint64_t)r3 << 32) + r2;
+      const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
+      const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
 
-    printf("RR:   %016llx:%016llx\n", b_rr1, b_rr0);
-    printf("RR:  %08lx:%08lx:%08lx:%08lx\n", rr3, rr2, rr1, rr0);
+      printf("R:   %016lx:%016lx\n", b_r1, b_r0);
+      printf("R:  %08x:%08x:%08x:%08x\n", r3, r2, r1, r0);
 
-    // {
-    //   const u64 tx0 = s0*r0+ s1*rr3;
-    //   const u64 tx1 = s0*r1+ s1*r0;
-    //   const u128 b_tx0 = (u128)b_s0*b_r0;
+      printf("RR:   %016lx:%016lx\n", b_rr1, b_rr0);
+      printf("RR:  %08x:%08x:%08x:%08x\n", rr3, rr2, rr1, rr0);
 
-    //   print128(b_tx0); printf("\n");
-    //   printf("TX: %016lx:%016lx\n", tx1, tx0);
-    // }
-    const u128 tst = (u128)b_s0*b_r0;
+      // {
+      //   const u64 tx0 = s0*r0+ s1*rr3;
+      //   const u64 tx1 = s0*r1+ s1*r0;
+      //   const u128 b_tx0 = (u128)b_s0*b_r0;
 
-    const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
-    const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
-    const u64 b_x2 = b_s2 * (b_r0 & 3);
+      //   print128(b_tx0); printf("\n");
+      //   printf("TX: %016lx:%016lx\n", tx1, tx0);
+      // }
+      const u128 tst = (u128)b_s0*b_r0;
 
-    printf("X: ");
-    print128(b_x2); printf(":");
-    print128(b_x1); printf(":");
-    print128(b_x0); printf("\n");
-    printf("X: %lx:%017lx:%017lx:%017lx:%017lx\n", x4, x3, x2, x1, x0);
+      const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
+      const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
+      const u64 b_x2 = b_s2 * (b_r0 & 3);
 
-    // partial reduction modulo 2^130 - 5
-    const u32 u5 = x4 + (x3 >> 32); // u5 <= 7ffffff5
-    const u64 u0 = (u5 >>  2) * 5 + (x0 & 0xffffffff);
-    const u64 u1 = (u0 >> 32)     + (x1 & 0xffffffff) + (x0 >> 32);
-    const u64 u2 = (u1 >> 32)     + (x2 & 0xffffffff) + (x1 >> 32);
-    const u64 u3 = (u2 >> 32)     + (x3 & 0xffffffff) + (x2 >> 32);
-    const u64 u4 = (u3 >> 32)     + (u5 & 3);
+      printf("X: ");
+      print128(b_x2); printf(":");
+      print128(b_x1); printf(":");
+      print128(b_x0); printf("\n");
+      printf("X: %x:%017lx:%017lx:%017lx:%017lx\n", x4, x3, x2, x1, x0);
 
-    const u128 b_u3 = b_x2 + (b_x1 >> 64);
-    const u128 b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
-    const u128 b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
-    const u128 b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
+      // partial reduction modulo 2^130 - 5
+      const u32 u5 = x4 + (x3 >> 32); // u5 <= 7ffffff5
+      const u64 u0 = (u5 >>  2) * 5 + (x0 & 0xffffffff);
+      const u64 u1 = (u0 >> 32)     + (x1 & 0xffffffff) + (x0 >> 32);
+      const u64 u2 = (u1 >> 32)     + (x2 & 0xffffffff) + (x1 >> 32);
+      const u64 u3 = (u2 >> 32)     + (x3 & 0xffffffff) + (x2 >> 32);
+      const u64 u4 = (u3 >> 32)     + (u5 & 3);
 
-    // Update the hash
-    ctx->h[0] = (u32)u0; // u0 <= 1_9ffffff0
-    ctx->h[1] = (u32)u1; // u1 <= 1_97ffffe0
-    ctx->h[2] = (u32)u2; // u2 <= 1_8fffffe2
-    ctx->h[3] = (u32)u3; // u3 <= 1_87ffffe4
-    ctx->h[4] = (u32)u4; // u4 <=          4
+      const u128 b_u3 = b_x2 + (b_x1 >> 64);
+      const u128 b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
+      const u128 b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
+      const u128 b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
 
-    printf("U:   %llx:%016llx:%016llx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
-    printf("U: %x:%08x:%08x:%08x:%08x\n", ctx->h[4], ctx->h[3], ctx->h[2], ctx->h[1], ctx->h[0]);
+      // Update the hash
+      ctx_h[0] = (u32)u0; // u0 <= 1_9ffffff0
+      ctx_h[1] = (u32)u1; // u1 <= 1_97ffffe0
+      ctx_h[2] = (u32)u2; // u2 <= 1_8fffffe2
+      ctx_h[3] = (u32)u3; // u3 <= 1_87ffffe4
+      ctx_h[4] = (u32)u4; // u4 <=          4
 
-    ctx->h[0] = (u32)b_u0; // u0 <= 1_9ffffff0
-    ctx->h[1] = (u32)(b_u0 >> 32); // u1 <= 1_97ffffe0
-    ctx->h[2] = (u32)b_u1; // u2 <= 1_8fffffe2
-    ctx->h[3] = (u32)(b_u1 >> 32); // u3 <= 1_87ffffe4
-    ctx->h[4] = (u32)b_u2; // u4 <=          4
+      printf("U:   %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
+      printf("U: %x:%08x:%08x:%08x:%08x\n", ctx_h[4], ctx_h[3], ctx_h[2], ctx_h[1], ctx_h[0]);
+
+      ctx_h[0] = (u32)b_u0; // u0 <= 1_9ffffff0
+      ctx_h[1] = (u32)(b_u0 >> 32); // u1 <= 1_97ffffe0
+      ctx_h[2] = (u32)b_u1; // u2 <= 1_8fffffe2
+      ctx_h[3] = (u32)(b_u1 >> 32); // u3 <= 1_87ffffe4
+      ctx_h[4] = (u32)b_u2; // u4 <=          4
+
+      input_start += BLOCK_LENGTH;
+      length -= BLOCK_LENGTH;
+    }
   }
 
   // Initialization
