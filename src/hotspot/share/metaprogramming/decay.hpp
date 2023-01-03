@@ -22,29 +22,21 @@
  *
  */
 
-#ifndef SHARE_METAPROGRAMMING_REMOVECV_HPP
-#define SHARE_METAPROGRAMMING_REMOVECV_HPP
+#ifndef SHARE_METAPROGRAMMING_DECAY_HPP
+#define SHARE_METAPROGRAMMING_DECAY_HPP
 
 #include "memory/allStatic.hpp"
+#include "metaprogramming/removeReference.hpp"
+
+#include <type_traits>
+
+// This trait trims the type from CV qualifiers and references.
+// This trait provides a subset of the functionality of std::decay;
+// array types and function types are not supported here.
 
 template <typename T>
-struct RemoveCV: AllStatic {
-  typedef T type;
+struct Decay: AllStatic {
+  using type = std::remove_cv_t<typename RemoveReference<T>::type>;
 };
 
-template <typename T>
-struct RemoveCV<const T>: AllStatic {
-  typedef T type;
-};
-
-template <typename T>
-struct RemoveCV<volatile T>: AllStatic {
-  typedef T type;
-};
-
-template <typename T>
-struct RemoveCV<const volatile T>: AllStatic {
-  typedef T type;
-};
-
-#endif // SHARE_METAPROGRAMMING_REMOVECV_HPP
+#endif // SHARE_METAPROGRAMMING_DECAY_HPP
