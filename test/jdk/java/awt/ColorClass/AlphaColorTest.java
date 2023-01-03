@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8204931 8227392 8224825 8233910
+ * @bug 8204931 8227392 8224825 8233910 8275843
  * @summary test alpha colors are blended with background.
  */
 
