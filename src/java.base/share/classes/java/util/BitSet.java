@@ -25,8 +25,6 @@
 
 package java.util;
 
-import jdk.internal.util.ArraysSupport;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -1173,7 +1171,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
             return false;
 
         // Check words in use by both BitSets
-        return ArraysSupport.mismatch(words, 0, set.words, 0, wordsInUse) < 0;
+        for (int i = 0; i < wordsInUse; i++)
+            if (words[i] != set.words[i])
+                return false;
+
+        return true;
     }
 
     /**
@@ -1245,6 +1247,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         // or reduction in logical size
         wordsInUse = words.length;
         recalculateWordsInUse();
+        computeCardinality();
         sizeIsSticky = (words.length > 0 && words[words.length-1] == 0L); // heuristic
         checkInvariants();
     }
