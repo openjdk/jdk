@@ -102,7 +102,8 @@ public class IconifyTest {
         frame.setVisible(true);
     }
 
-    public static void main(String[] args) throws AWTException, InvocationTargetException, InterruptedException {
+    public static void main(String[] args) throws AWTException,
+            InvocationTargetException, InterruptedException {
         robot = new Robot();
         try {
             robot.setAutoDelay(100);
@@ -118,11 +119,13 @@ public class IconifyTest {
             Point locOnScreen = frameloc.get();
             Dimension frameSizeOnScreen = framesize.get();
 
-            robot.mouseMove(locOnScreen.x + frameSizeOnScreen.width / 2, locOnScreen.y + frameSizeOnScreen.height / 2);
+            robot.mouseMove(locOnScreen.x + frameSizeOnScreen.width / 2,
+                    locOnScreen.y + frameSizeOnScreen.height / 2);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             if (windowStatusEventType != WindowEvent.WINDOW_ACTIVATED) {
-                throw new RuntimeException("FAIL: WINDOW_ACTIVATED event did not occur when the undecorated frame is activated!");
+                throw new RuntimeException(
+                        "FAIL: WINDOW_ACTIVATED event did not occur when the undecorated frame is activated!");
             }
             clearEventTypeValue();
             final AtomicReference<Point> buttonloc = new AtomicReference<>();
@@ -134,36 +137,45 @@ public class IconifyTest {
             Point buttonLocOnScreen = buttonloc.get();
             Dimension buttonSizeOnScreen = buttonsize.get();
 
-            robot.mouseMove(buttonLocOnScreen.x + buttonSizeOnScreen.width / 2, buttonLocOnScreen.y + buttonSizeOnScreen.height / 2);
+            robot.mouseMove(buttonLocOnScreen.x + buttonSizeOnScreen.width / 2,
+                    buttonLocOnScreen.y + buttonSizeOnScreen.height / 2);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
             if (windowIconifiedEventType != WindowEvent.WINDOW_ICONIFIED) {
-                throw new RuntimeException("FAIL: WINDOW_ICONIFIED event did not occur when the undecorated frame is iconified!");
+                throw new RuntimeException(
+                        "FAIL: WINDOW_ICONIFIED event did not occur when the undecorated frame is iconified!");
             }
             if (windowStatusEventType != WindowEvent.WINDOW_DEACTIVATED) {
-                throw new RuntimeException("FAIL: WINDOW_DEACTIVATED event did not occur when the undecorated frame is iconified!");
+                throw new RuntimeException(
+                        "FAIL: WINDOW_DEACTIVATED event did not occur when the undecorated frame is iconified!");
             }
             final AtomicReference<Boolean> frameHasFocus = new AtomicReference<>();
-            SwingUtilities.invokeAndWait(() -> frameHasFocus.set(frame.hasFocus()));
+            SwingUtilities
+                    .invokeAndWait(() -> frameHasFocus.set(frame.hasFocus()));
             final boolean hasFocus = frameHasFocus.get();
             if (hasFocus) {
-                throw new RuntimeException("FAIL: The undecorated frame has focus even when it is iconified!");
+                throw new RuntimeException(
+                        "FAIL: The undecorated frame has focus even when it is iconified!");
             }
 
             clearEventTypeValue();
 
-            SwingUtilities.invokeAndWait(() -> frame.setExtendedState(Frame.NORMAL));
+            SwingUtilities
+                    .invokeAndWait(() -> frame.setExtendedState(Frame.NORMAL));
             robot.waitForIdle();
 
             if (windowIconifiedEventType != WindowEvent.WINDOW_DEICONIFIED) {
-                throw new RuntimeException("FAIL: WINDOW_DEICONIFIED event did not occur when the state is set to NORMAL!");
+                throw new RuntimeException(
+                        "FAIL: WINDOW_DEICONIFIED event did not occur when the state is set to NORMAL!");
             }
             if (windowStatusEventType != WindowEvent.WINDOW_ACTIVATED) {
-                throw new RuntimeException("FAIL: WINDOW_ACTIVATED event did not occur when the state is set to NORMAL!");
+                throw new RuntimeException(
+                        "FAIL: WINDOW_ACTIVATED event did not occur when the state is set to NORMAL!");
             }
             if (!focusGained) {
-                throw new RuntimeException("FAIL: The undecorated frame does not have focus when it is deiconified!");
+                throw new RuntimeException(
+                        "FAIL: The undecorated frame does not have focus when it is deiconified!");
             }
             System.out.println("Test passed");
         }
