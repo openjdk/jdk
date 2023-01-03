@@ -684,8 +684,6 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
 # jdk_text
 
-java/text/Format/NumberFormat/CurrencyFormat.java 8299439 generic-all
-
 ############################################################################
 
 # jdk_time
