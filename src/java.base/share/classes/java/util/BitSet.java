@@ -911,8 +911,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         if (wordsInUse == 0)
             return 0;
 
-        return BITS_PER_WORD * (wordsInUse - 1) +
-            (BITS_PER_WORD - Long.numberOfLeadingZeros(words[wordsInUse - 1]));
+        return BITS_PER_WORD * wordsInUse - Long.numberOfLeadingZeros(words[wordsInUse - 1]);
     }
 
     /**
