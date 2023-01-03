@@ -175,7 +175,7 @@ class LinkInfo : public StackObj {
 
   // Case where we just find the method and don't check access against the current class, used by JavaCalls
   LinkInfo(Klass* resolved_klass, Symbol*name, Symbol* signature) :
-    LinkInfo(resolved_klass, name, signature, (Klass*)nullptr, AccessCheck::skip, LoaderConstraintCheck::skip,
+    LinkInfo(resolved_klass, name, signature, nullptr, AccessCheck::skip, LoaderConstraintCheck::skip,
              JVM_CONSTANT_Invalid) {}
 
   // accessors
