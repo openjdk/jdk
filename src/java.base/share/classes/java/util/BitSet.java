@@ -183,7 +183,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     private BitSet(long[] words) {
         this.words = words;
         wordsInUse = words.length;
-        cardinality = computeCardinality();
+        computeCardinality();
         checkInvariants();
     }
 
@@ -700,20 +700,20 @@ public class BitSet implements Cloneable, java.io.Serializable {
         if (toIndex > len)
             toIndex = len;
 
+        BitSet result = new BitSet(toIndex - fromIndex);
         int targetWords = wordIndex(toIndex - fromIndex - 1) + 1;
         int sourceIndex = wordIndex(fromIndex);
         boolean wordAligned = ((fromIndex & BIT_INDEX_MASK) == 0);
 
-        long[] resWords = new long[targetWords];
         // Process all words but the last word
         for (int i = 0; i < targetWords - 1; i++, sourceIndex++)
-            resWords[i] = wordAligned ? words[sourceIndex] :
+            result.words[i] = wordAligned ? words[sourceIndex] :
                 (words[sourceIndex] >>> fromIndex) |
                 (words[sourceIndex+1] << -fromIndex);
 
         // Process the last word
         long lastWordMask = WORD_MASK >>> -toIndex;
-        resWords[targetWords - 1] =
+        result.words[targetWords - 1] =
             ((toIndex-1) & BIT_INDEX_MASK) < (fromIndex & BIT_INDEX_MASK)
             ? /* straddles source words */
             ((words[sourceIndex] >>> fromIndex) |
@@ -722,8 +722,9 @@ public class BitSet implements Cloneable, java.io.Serializable {
             ((words[sourceIndex] & lastWordMask) >>> fromIndex);
 
         // Set wordsInUse correctly
-        BitSet result = new BitSet(resWords);
+        result.wordsInUse = targetWords;
         result.recalculateWordsInUse();
+        result.computeCardinality();
         result.checkInvariants();
 
         return result;
@@ -941,11 +942,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
         return cardinality;
     }
     
-    private int computeCardinality() {
-        int sum = 0;
+    private void computeCardinality() {
+        cardinality = 0;
         for (int i = 0; i < wordsInUse; i++)
-            sum += bitCount(i);
-        return sum;
+            cardinality += bitCount(i);
     }
     
     private int bitCount(int wordIndex) {
