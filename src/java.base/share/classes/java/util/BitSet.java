@@ -922,7 +922,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.4
      */
     public boolean isEmpty() {
-        return wordsInUse == 0;
+        return cardinality == 0;
     }
 
     /**
@@ -939,6 +939,27 @@ public class BitSet implements Cloneable, java.io.Serializable {
             if ((words[i] & set.words[i]) != 0)
                 return true;
         return false;
+    }
+
+    /**
+     * Returns true if all {@code true} bits in the specified {@code BitSet}
+     * are also set to {@code true} in this {@code BitSet}, i. e. the specified
+     * {@code BitSet} is a subset of this {@code BitSet}.
+     *
+     * @param  set {@code BitSet} to test if it's a subset
+     * @return boolean indicating whether this {@code BitSet} includes
+     *         the specified {@code BitSet}
+     * @since  21
+     */
+    public boolean includes(BitSet set) {
+        if (set.cardinality > cardinality || set.length() > length())
+            return false;
+        
+        // set.wordsInUse <= wordsInUse
+        for (int i = set.wordsInUse - 1; i >= 0; i--)
+            if ((words[i] & set.words[i]) != set.words[i])
+                return false;
+        return true;
     }
 
     /**
