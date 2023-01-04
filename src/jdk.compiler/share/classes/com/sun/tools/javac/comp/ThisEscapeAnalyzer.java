@@ -156,10 +156,20 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private final Set<Pair<JCTree, RefSet<Ref>>> invocations = new HashSet<>();
 
-    /** Snapshot of {@link #callStack} where a possible 'this' escape occurs.
-     *  If this is non-empty then a 'this' escape warning is pending.
+    /** Snapshot of {@link #callStack} where a possible 'this' escape occurs in
+     *  the constructor body. If non-empty, a 'this' escape warning is pending.
      */
-    private ArrayDeque<DiagnosticPosition> pendingWarning;
+    private DiagnosticPosition[] pendingWarning;
+
+    /** Snapshots of {@link #callStack} where a possible 'this' escapes occur in
+     *  field initializers and/or initialization blocks. If this field is null,
+     *  we have not yet seen a super() invocation.
+     */
+    private ArrayList<DiagnosticPosition[]> initializationWarnings;
+
+    /** Indicates that we're scanning field initializers and initialization blocks.
+     */
+    private boolean scanningInitializers;
 
 // These fields are scoped to the CONSTRUCTOR OR INVOKED METHOD BEING ANALYZED
 
@@ -303,6 +313,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
             this.methodClass = this.targetClass;
             Assert.check(this.depth == -1);
             Assert.check(this.refs == null);
+            Assert.check(this.initializationWarnings == null);
+            Assert.check(!this.scanningInitializers);
             this.pushScope();
             try {
 
@@ -318,16 +330,21 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
                     // Grab any pending warning
                     if (this.pendingWarning != null) {
-                        warningList.add(this.pendingWarning.toArray(new DiagnosticPosition[0]));
+                        warningList.add(this.pendingWarning);
                         this.pendingWarning = null;
                         break;          // at most one warning per constructor
                     }
                 }
+
+                // Add any warnings from field initializations and initializer blocks
+                if (this.initializationWarnings != null)
+                    warningList.addAll(this.initializationWarnings);
             } finally {
                 this.popScope();
                 this.methodClass = null;
                 this.targetClass = null;
                 this.refs = null;
+                this.initializationWarnings = null;
             }
         }
 
@@ -509,15 +526,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // However, we do need to "invoke" non-static initializers/blocks.
         final Name name = TreeInfo.name(invoke.meth);
         if (name == this.names._super) {
-            for (List<JCTree> defs = this.methodClass.defs; defs.nonEmpty(); defs = defs.tail) {
-                if ((TreeInfo.flags(defs.head) & Flags.STATIC) != 0)
-                    continue;
-                if (defs.head.hasTag(VARDEF)) {
-                    this.scan((JCVariableDecl)defs.head);
-                } else if (defs.head.hasTag(BLOCK)) {
-                    this.scan((JCBlock)defs.head);
-                }
-            }
+            if (this.initializationWarnings == null)
+                this.scanInitializers();
             return;
         }
 
@@ -535,6 +545,26 @@ class ThisEscapeAnalyzer extends TreeScanner {
             this.invokeInvokable(invoke, invoke.args, receiverRefs, methodInfo);
         else
             this.invokeUnknown(invoke, invoke.args, receiverRefs);
+    }
+
+    // Scan field initializers and initialization blocks
+    private void scanInitializers() {
+        Assert.check(this.initializationWarnings == null);
+        this.initializationWarnings = new ArrayList<>();
+        this.scanningInitializers = true;
+        try {
+            for (List<JCTree> defs = this.methodClass.defs; defs.nonEmpty(); defs = defs.tail) {
+                if ((TreeInfo.flags(defs.head) & Flags.STATIC) != 0)
+                    continue;
+                if (defs.head.hasTag(VARDEF)) {
+                    this.scan((JCVariableDecl)defs.head);
+                } else if (defs.head.hasTag(BLOCK)) {
+                    this.scan((JCBlock)defs.head);
+                }
+            }
+        } finally {
+            this.scanningInitializers = false;
+        }
     }
 
     // Handle the invocation of a local analyzable method or constructor
@@ -717,7 +747,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     // we create an indirect ExprRef because the lambda must be holding a 'this' reference.
     @Override
     public void visitLambda(JCLambda lambda) {
-        final ArrayDeque<DiagnosticPosition> pendingWarningPrev = this.pendingWarning;
+        final DiagnosticPosition[] pendingWarningPrev = this.pendingWarning;
         this.pendingWarning = null;
         final RefSet<Ref> refsPrev = this.refs.clone();
         final boolean lambdaLeaks;
@@ -1088,10 +1118,17 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     // Note a possible 'this' reference leak at the specified location
     private void leakAt(JCTree tree) {
-        if (this.pendingWarning == null) {
-            this.pendingWarning = new ArrayDeque<>(this.callStack);
-            this.pendingWarning.addFirst(tree.pos());
-        }
+
+        // Snapshot the current stack trace
+        this.callStack.push(tree.pos());
+        final DiagnosticPosition[] warning = this.callStack.toArray(new DiagnosticPosition[0]);
+        this.callStack.pop();
+
+        // Record the warning
+        if (this.scanningInitializers)
+            this.initializationWarnings.add(warning);
+        else if (this.pendingWarning == null)           // at most one warning per statement
+            this.pendingWarning = warning;
     }
 
     // Does the symbol correspond to a parameter or local variable (not a field)?
