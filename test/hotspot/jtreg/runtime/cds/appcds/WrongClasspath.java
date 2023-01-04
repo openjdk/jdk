@@ -40,9 +40,21 @@ public class WrongClasspath {
 
   public static void main(String[] args) throws Exception {
     String appJar = JarBuilder.getOrCreateHelloJar();
+    String appJarInWorkDir = JarBuilder.getOrCreateHelloJarInWorkDir();
     String unableToUseMsg = "Unable to use shared archive";
     String mismatchMsg = "shared class paths mismatch";
     String hintMsg = "(hint: enable -Xlog:class+path=info to diagnose the failure)";
+
+    // Dump CDS archive with hello.jar
+    // Run with a jar file that differs from the original jar file by the first character only: -cp mello.jar
+    // Shared class paths mismatch should be detected.
+    String mellojar = appJarInWorkDir.replace("hello.jar", "mello.jar");
+    JarBuilder.copyJar(appJarInWorkDir, mellojar);
+    TestCommon.testDump("hello.jar", TestCommon.list("Hello"));
+    TestCommon.run("-cp", "mello.jar",
+        "-Xlog:cds",
+        "Hello")
+        .assertAbnormalExit(unableToUseMsg, mismatchMsg, hintMsg);
 
     // Dump an archive with a specified JAR file in -classpath
     TestCommon.testDump(appJar, TestCommon.list("Hello"));

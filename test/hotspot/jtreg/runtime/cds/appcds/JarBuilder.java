@@ -38,7 +38,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.spi.ToolProvider;
 
@@ -51,6 +53,10 @@ public class JarBuilder {
 
     public static String getJarFilePath(String jarName) {
         return CDSTestUtils.getOutputDir() +  File.separator + jarName + ".jar";
+    }
+
+    public static String getJarFilePathInWorkDir(String jarName) {
+        return System.getProperty("user.dir") + File.separator + jarName + ".jar";
     }
 
     // jar all files under dir, with manifest file man, with an optional versionArgs
@@ -88,6 +94,12 @@ public class JarBuilder {
         throws Exception {
 
         return createSimpleJar(classDir, getJarFilePath(jarName), classNames);
+    }
+
+    public static String buildInWorkDir(String jarName, String ...classNames)
+        throws Exception {
+
+        return createSimpleJar(classDir, getJarFilePathInWorkDir(jarName), classNames);
     }
 
     public static String build(boolean classesInWorkDir, String jarName, String ...classNames)
@@ -222,6 +234,25 @@ public class JarBuilder {
         } else {
             return build("hello", "Hello");
         }
+    }
+    public static String getOrCreateHelloJarInWorkDir() throws Exception {
+        String jarPath = getJarFilePathInWorkDir("hello");
+
+        File jarFile = new File(jarPath);
+        if (jarFile.exists()) {
+            return jarPath;
+        } else {
+            return buildInWorkDir("hello", "Hello");
+        }
+    }
+
+    public static void copyJar(String source, String target) throws Exception {
+        File jarFile = new File(source);
+        if (!jarFile.exists()) {
+            throw new RuntimeException("jar file to be copied does not exist");
+	}
+        File targetFile = new File(target);
+        Files.copy(jarFile.toPath(), targetFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
     }
 
     public static void compile(String dstPath, String source, String... extraArgs) throws Exception {
