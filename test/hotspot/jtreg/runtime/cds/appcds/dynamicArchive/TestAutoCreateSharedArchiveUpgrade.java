@@ -60,6 +60,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // the test.boot.jdk property is normally passed by make/RunTests.gmk
     // now it is pulled by the artifactory
     private static String BOOT_JDK;
+    private static String DEFAULT_BOOT_JDK = System.getProperty("test.boot.jdk", null);
 
     private static final String USER_DIR = System.getProperty("user.dir", ".");
     private static final String FS = System.getProperty("file.separator", "/");
@@ -74,7 +75,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         // Get OS and CPU type
         String arch = props.getProperty("os.arch");
         String os = getOsId();
-        System.out.printf("OS: %s, Arch: %s\n", os, arch);
+
         // Earliest testable version is 19
         int n = java.lang.Runtime.version().major() - 1;
         for (int i = 19; i < n; i++) {
@@ -95,11 +96,9 @@ public class TestAutoCreateSharedArchiveUpgrade {
         if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
-            if (os == "MacOSX") {
-                oldJVM = BOOT_JDK + ".jdk" + FS + "Contents" + FS + "Home" + FS + "bin" + FS + "java";
-            } else {
-                oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
-            }
+            oldJVM = (os == "MacOSX") ?
+                BOOT_JDK + ".jdk" + FS + "Contents" + FS + "Home" + FS + "bin" + FS + "java" :
+                BOOT_JDK + FS + "bin" + FS + "java";
         } else {
             throw new RuntimeException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
@@ -167,6 +166,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     // Fetch JDK artifact depending on platform
+    // If the artifact cannot be found, default to the test.boot.jdk property
     private static String fetchBootJDK(String osID, String arch, int version) {
         int build;
         String architecture;
@@ -222,13 +222,13 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 return fetchBootJDK(jdkArtifactMap, version);
 
             default:
-                return null;
+                return DEFAULT_BOOT_JDK;
         }
     }
 
     // Fetch JDK version from artifactory
     private static String fetchBootJDK(HashMap<String, Object> jdkArtifactMap, int version) {
-        String path = null;
+        String path = DEFAULT_BOOT_JDK;
         try {
             path = ArtifactResolver.resolve("jdk", jdkArtifactMap, true) + "/jdk-" + version;
             System.out.println("Boot JDK path: " + path);
