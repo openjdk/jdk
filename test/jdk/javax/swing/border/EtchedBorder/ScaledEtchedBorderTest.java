@@ -141,6 +141,13 @@ public class ScaledEtchedBorderTest {
                     thickness, img);
     }
 
+    private enum State {
+        BACKGROUND,
+        LEFT_SHADOW, LEFT_HIGHLIGHT,
+        INSIDE,
+        RIGHT_SHADOW, RIGHT_HIGHLIGHT
+    }
+
     private static void checkBorder(final int xStart, final int yStart,
                                     final int xStep,  final int yStep,
                                     final int thickness,
@@ -234,13 +241,6 @@ public class ScaledEtchedBorderTest {
                 }
             } while (yStep > 0 && ((y += yStep) < height));
         } while (xStep > 0 && ((x += xStep) < width));
-    }
-
-    private enum State {
-        BACKGROUND,
-        LEFT_SHADOW, LEFT_HIGHLIGHT,
-        INSIDE,
-        RIGHT_SHADOW, RIGHT_HIGHLIGHT
     }
 
     private static void throwWrongThickness(int thickness, int borderThickness,
