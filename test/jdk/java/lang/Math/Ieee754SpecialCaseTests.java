@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,8 @@ public class Ieee754SpecialCaseTests {
 
     private static int testCosCase(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.cos",       input, Math.cos(input),       expected);
-        failures += Tests.test("StrictMath.cos", input, StrictMath.cos(input), expected);
+        failures += Tests.test("Math.cos",       input, Math::cos,       expected);
+        failures += Tests.test("StrictMath.cos", input, StrictMath::cos, expected);
         return failures;
     }
 
@@ -82,8 +82,8 @@ public class Ieee754SpecialCaseTests {
 
     private static int testAcosCase(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.acos",       input, Math.acos(input),       expected);
-        failures += Tests.test("StrictMath.acos", input, StrictMath.acos(input), expected);
+        failures += Tests.test("Math.acos",       input, Math::acos,       expected);
+        failures += Tests.test("StrictMath.acos", input, StrictMath::acos, expected);
         return failures;
     }
 
@@ -103,8 +103,8 @@ public class Ieee754SpecialCaseTests {
 
     private static int testAtanCase(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.atan",       input, Math.atan(input),       expected);
-        failures += Tests.test("StrictMath.atan", input, StrictMath.atan(input), expected);
+        failures += Tests.test("Math.atan",       input, Math::atan,       expected);
+        failures += Tests.test("StrictMath.atan", input, StrictMath::atan, expected);
         return failures;
     }
 
@@ -123,8 +123,8 @@ public class Ieee754SpecialCaseTests {
 
     private static int testLogCase(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.log",       input, Math.log(input),       expected);
-        failures += Tests.test("StrictMath.log", input, StrictMath.log(input), expected);
+        failures += Tests.test("Math.log",       input, Math::log,       expected);
+        failures += Tests.test("StrictMath.log", input, StrictMath::log, expected);
         return failures;
     }
 }
