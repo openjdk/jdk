@@ -38,6 +38,7 @@ public class SharedMemoryAttachingConnector extends GenericAttachingConnector {
 
     static final String ARG_NAME = "name";
 
+    @SuppressWarnings("this-escape")
     public SharedMemoryAttachingConnector() {
         super(new SharedMemoryTransportService());
 

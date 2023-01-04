@@ -66,6 +66,7 @@ public class NativeFont extends PhysicalFont {
      * Verifies native font is accessible.
      * @throws FontFormatException if the font can't be located.
      */
+    @SuppressWarnings("this-escape")
     public NativeFont(String platName, boolean bitmapDelegate)
         throws FontFormatException {
         super(platName, null);
