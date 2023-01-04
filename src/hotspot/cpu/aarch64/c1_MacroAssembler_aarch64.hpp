@@ -48,7 +48,7 @@ using MacroAssembler::null_check;
   );
 
   void initialize_header(Register obj, Register klass, Register len, Register t1, Register t2);
-  void initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2);
+  address initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2);
 
   void float_cmp(bool is_float, int unordered_result,
                  FloatRegister f0, FloatRegister f1,
@@ -67,7 +67,7 @@ using MacroAssembler::null_check;
   // disp_hdr: must be r0 & must point to the displaced header location, contents destroyed
   void unlock_object(Register swap, Register obj, Register lock, Label& slow_case);
 
-  void initialize_object(
+  address initialize_object(
     Register obj,                      // result: pointer to object after successful allocation
     Register klass,                    // object klass
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -85,7 +85,7 @@ using MacroAssembler::null_check;
   // header_size: size of object header in words
   // object_size: total size of object in words
   // slow_case  : exit to slow case implementation if fast allocation fails
-  void allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case);
+  address allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case);
 
   enum {
     max_array_allocation_length = 0x00FFFFFF
@@ -98,7 +98,7 @@ using MacroAssembler::null_check;
   // header_size: size of object header in words
   // f          : element scale factor
   // slow_case  : exit to slow case implementation if fast allocation fails
-  void allocate_array(Register obj, Register len, Register t, Register t2, int header_size, int f, Register klass, Label& slow_case);
+  address allocate_array(Register obj, Register len, Register t, Register t2, int header_size, int f, Register klass, Label& slow_case);
 
   int  rsp_offset() const { return _rsp_offset; }
   void set_rsp_offset(int n) { _rsp_offset = n; }

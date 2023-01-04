@@ -185,7 +185,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 //
 // Scratch registers: t1 = r10, t2 = r11
 //
-void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
+address C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   assert(t1 == r10 && t2 == r11, "must be");
 
@@ -200,25 +200,22 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   lea(t1, Address(obj, hdr_size_in_bytes));
   lsr(t2, rscratch1, LogBytesPerWord);
   address tpc = zero_words(t1, t2);
-  if (tpc == nullptr) {
-    DEBUG_ONLY(reset_labels(done));
-    BAILOUT("trampoline stub overflow");
-  }
   bind(done);
+  return tpc;
 }
 
 
-void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case) {
+address C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case) {
   assert_different_registers(obj, t1, t2); // XXX really?
   assert(header_size >= 0 && object_size >= header_size, "illegal sizes");
 
   try_allocate(obj, noreg, object_size * BytesPerWord, t1, t2, slow_case);
 
-  initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
+  return initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
 }
 
 // Scratch registers: t1 = r10, t2 = r11
-void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
+address C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
   const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
@@ -230,14 +227,16 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
      const Register index = t2;
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
-       initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
-       CHECK_BAILOUT();
+       address tpc = initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
+       if (tpc == nullptr) {
+         return nullptr;
+       }
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
        address tpc = zero_words(t1, con_size_in_bytes / BytesPerWord);
        if (tpc == nullptr) {
-         BAILOUT("trampoline stub overflow");
+         return nullptr;
        }
      }
   }
@@ -250,8 +249,10 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   }
 
   verify_oop(obj);
+  return pc();
 }
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case) {
+address C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case) {
+  address tpc = nullptr;
   assert_different_registers(obj, len, t1, t2, klass);
 
   // determine alignment mask
@@ -273,8 +274,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
-  CHECK_BAILOUT();
+  tpc = initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
 
   membar(StoreStore);
 
@@ -284,6 +284,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   }
 
   verify_oop(obj);
+  return tpc;
 }
 
 
