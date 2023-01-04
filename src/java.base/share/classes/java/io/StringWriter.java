@@ -92,7 +92,7 @@ public class StringWriter extends Writer {
      *          of the given array
      */
     public void write(char[] cbuf, int off, int len) {
-        Objects.checkFromToIndex(off, len, cbuf.length);
+        Objects.checkFromIndexSize(off, len, cbuf.length);
         if (len == 0) {
             return;
         }
