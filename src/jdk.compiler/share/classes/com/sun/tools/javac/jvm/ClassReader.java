@@ -2207,7 +2207,7 @@ public class ClassReader {
         readMemberAttrs(v);
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1 ||
             Integer.bitCount(rawFlags & (FINAL | VOLATILE)) > 1)
-            throw badClassFile("illegal.flag.combo", String.format("0x%04x", (int)rawFlags), "field", v);
+            throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "field", v);
         return v;
     }
 
@@ -2265,7 +2265,7 @@ public class ClassReader {
         setParameters(m, type);
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
-            throw badClassFile("illegal.flag.combo", String.format("0x%04x", (int)rawFlags), "method", m);
+            throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
         if ((flags & VARARGS) != 0) {
             final Type last = type.getParameterTypes().last();
             if (last == null || !last.hasTag(ARRAY)) {
