@@ -27,10 +27,14 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Utils.gmk
 include Modules.gmk
 
 JVM_VARIANT := $(JVM_VARIANT_MAIN)
 include hotspot/HotspotCommon.gmk
+include lib/JvmFeatures.gmk
+include lib/JvmOverrideFiles.gmk
+include lib/JvmFlags.gmk
 
 IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
 
@@ -118,6 +122,11 @@ EmitMatchingMakeTarget = \
   $(call AppendFile,                <useDefaultCommand>false</useDefaultCommand>, $(NATIVE_FILE)) \
   $(call AppendFile,                <runAllBuilders>true</runAllBuilders>, $(NATIVE_FILE)) \
   $(call AppendFile,            </target>, $(NATIVE_FILE))
+
+# Emit the defines extracted from the list of options specified in the first parameter into
+# the language settings file, in Eclipse format.
+EmitExtractedDefines = \
+  $(shell echo $(1) | grep -o "\-D\s\?")
 
 ################################################################################
 # Create an Eclipse Workspace with the specified nature
@@ -233,7 +242,7 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.$(call RandomDigits, 9)" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">, $(NATIVE_FILE))
     $$(call AppendFile,                            <option id="cdt.managedbuild.option.gnu.cross.path.$(call RandomDigits, 9)" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="$(COMPILER_PATH)" valueType="string"/>, $(NATIVE_FILE))
     $$(call AppendFile,                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.$(WORKSPACE_ID)" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>, $(NATIVE_FILE))
-    $$(call AppendFile,                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="GNU Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>, $(NATIVE_FILE))
+    $$(call AppendFile,                            <builder command="$(MAKE_EXE)" arguments="-C $(call FixPath, $(TOPDIR))" id="cdt.managedbuild.builder.gnu.cross.$(call RandomDigits, 9)" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>, $(NATIVE_FILE))
     $$(call AppendFile,                        </toolChain>, $(NATIVE_FILE))
     $$(call AppendFile,                    </folderInfo>, $(NATIVE_FILE))
     $$(call AppendFile,                    <sourceEntries>, $(NATIVE_FILE))
@@ -283,17 +292,6 @@ define SetupEclipseWorkspaceBody
     $$(call AppendFile,<project>, $(LANGUAGE_SETTINGS))
     $$(call AppendFile,    <configuration id="cdt.managedbuild.toolchain.gnu.cross.base.$(WORKSPACE_ID)" name="Java">, $(LANGUAGE_SETTINGS))
 
-    # $$(call AppendFile,        <extension point="org.eclipse.cdt.core.language">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,            <language class="org.eclipse.cdt.core.dom.ast.gnu.c.GCCLanguage" id="org.eclipse.cdt.core.gcc" name="C">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cSource"/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cHeader"/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,            </language>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,            <language class="org.eclipse.cdt.core.dom.ast.gnu.cpp.GPPLanguage" id="org.eclipse.cdt.core.g++" name="C++">, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cxxSource"/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                <contentType id="org.eclipse.cdt.core.cxxHeader"/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,            </language>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,        </extension>, $(LANGUAGE_SETTINGS))
-
     $$(call AppendFile,        <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">, $(LANGUAGE_SETTINGS))
     $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
@@ -340,6 +338,17 @@ define SetupEclipseWorkspaceBody
         $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/>, $(LANGUAGE_SETTINGS)) \
         $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))))
 
+      # jdk.sctp is a special (C only) case that needs several java.base headers
+      $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%, $$(call FindModuleNativeDirs, jdk.sctp))), \
+        $$(call AppendFile,                    <resource project-relative-path="$$(dirs)">, $(LANGUAGE_SETTINGS)) \
+        $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/>, $(LANGUAGE_SETTINGS)) \
+        $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS)))
+
+      # main.c source file used for generic launchers
+      $$(call AppendFile,                    <resource project-relative-path="src/java.base/share/native/launcher/main.c">, $(LANGUAGE_SETTINGS))
+      $$(call AppendFile,                        <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/>, $(LANGUAGE_SETTINGS))
+      $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
+
       $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
     endif
 
@@ -369,11 +378,31 @@ define SetupEclipseWorkspaceBody
       $$(call AppendFile,                        <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles)"/>, $(LANGUAGE_SETTINGS))
     endif
 
-    # $$(call AppendFile,                        <entry kind="macro" name="PRODUCT" value=""/>, $(LANGUAGE_SETTINGS))
-    # $$(call AppendFile,                        <entry kind="macro" name="_WINDOWS" value=""/>, $(LANGUAGE_SETTINGS))
-
     $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
 
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    $$(call AppendFile,                    <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp">, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME), $(HOTSPOT_BUILD_TIME), $(call EpochToISO8601, $(shell $(DATE) +"%s")))&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
+
+    $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
+
+    $$(call AppendFile,                    <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp">, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                        <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME), $(HOTSPOT_BUILD_TIME), $(call EpochToISO8601, $(shell $(DATE) +"%s")))&quot;"/>, $(LANGUAGE_SETTINGS))
+    $$(call AppendFile,                    </resource>, $(LANGUAGE_SETTINGS))
+
+    # Now the rest of the C++ sources in the codebase
     ifneq ($$(findstring $$($1_NATURE), NATIVE FULL), )
       $$(call EmitEmptyLine, $(LANGUAGE_SETTINGS))
 
@@ -402,8 +431,6 @@ define SetupEclipseWorkspaceBody
 
   # Eclipse does have rudimentary support for these, so why not?
   # Their inclusion will not affect or slow indexing down in any way regardless
-  $$(call EmitLinkedDirectory, .github,$(TOPDIR)/.github)
-  $$(call EmitLinkedDirectory, .jcheck,$(TOPDIR)/.jcheck)
   $$(call EmitLinkedDirectory, bin,$(TOPDIR)/bin)
   $$(call EmitLinkedDirectory, doc,$(TOPDIR)/doc)
 
