@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlTag extends JavadocTester {
     private static final String defaultLanguage = Locale.getDefault().getLanguage();
     public static void main(String... args) throws Exception {
-        TestHtmlTag tester = new TestHtmlTag();
+        var tester = new TestHtmlTag();
         tester.runTests();
     }
     @Test

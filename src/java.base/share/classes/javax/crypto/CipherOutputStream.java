@@ -91,11 +91,18 @@ public class CipherOutputStream extends FilterOutputStream {
      * Ensure obuffer is big enough for the next update or doFinal
      * operation, given the input length {@code inLen} (in bytes)
      *
+     * If obuffer is null/zero-sized, do not allocate a new buffer.
+     * This reduces allocation for authenticated decryption
+     * that never returns data from update
+     *
      * @param inLen the input length (in bytes)
      */
     private void ensureCapacity(int inLen) {
+        if (obuffer == null || obuffer.length == 0) {
+            return;
+        }
         int minLen = cipher.getOutputSize(inLen);
-        if (obuffer == null || obuffer.length < minLen) {
+        if (obuffer.length < minLen) {
             obuffer = new byte[minLen];
         }
     }
@@ -144,7 +151,15 @@ public class CipherOutputStream extends FilterOutputStream {
         ibuffer[0] = (byte) b;
         ensureCapacity(1);
         try {
-            int ostored = cipher.update(ibuffer, 0, 1, obuffer);
+            // initial obuffer is assigned by update/doFinal;
+            // for AEAD decryption, obuffer is always null or zero-length here
+            int ostored;
+            if (obuffer != null && obuffer.length > 0) {
+                ostored = cipher.update(ibuffer, 0, 1, obuffer);
+            } else {
+                obuffer = cipher.update(ibuffer, 0, 1);
+                ostored = (obuffer != null) ? obuffer.length : 0;
+            }
             if (ostored > 0) {
                 output.write(obuffer, 0, ostored);
             }
@@ -186,7 +201,15 @@ public class CipherOutputStream extends FilterOutputStream {
     public void write(byte[] b, int off, int len) throws IOException {
         ensureCapacity(len);
         try {
-            int ostored = cipher.update(b, off, len, obuffer);
+            // initial obuffer is assigned by update/doFinal;
+            // for AEAD decryption, obuffer is always null or zero-length here
+            int ostored;
+            if (obuffer != null && obuffer.length > 0) {
+                ostored = cipher.update(b, off, len, obuffer);
+            } else {
+                obuffer = cipher.update(b, off, len);
+                ostored = (obuffer != null) ? obuffer.length : 0;
+            }
             if (ostored > 0) {
                 output.write(obuffer, 0, ostored);
             }
@@ -241,7 +264,13 @@ public class CipherOutputStream extends FilterOutputStream {
         closed = true;
         ensureCapacity(0);
         try {
-            int ostored = cipher.doFinal(obuffer, 0);
+            int ostored;
+            if (obuffer != null && obuffer.length > 0) {
+                ostored = cipher.doFinal(obuffer, 0);
+            } else {
+                obuffer = cipher.doFinal();
+                ostored = (obuffer != null) ? obuffer.length : 0;
+            }
             if (ostored > 0) {
                 output.write(obuffer, 0, ostored);
             }
