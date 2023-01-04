@@ -952,6 +952,7 @@ class java_lang_ref_Reference: AllStatic {
   static inline oop phantom_referent_no_keepalive(oop ref);
   static inline oop unknown_referent_no_keepalive(oop ref);
   static inline void clear_referent(oop ref);
+  static inline void clear_referent_raw(oop ref);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
   static inline void set_next(oop ref, oop value);

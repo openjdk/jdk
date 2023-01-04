@@ -41,7 +41,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlDefinitionListTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHtmlDefinitionListTag tester = new TestHtmlDefinitionListTag();
+        var tester = new TestHtmlDefinitionListTag();
         tester.runTests();
     }
 

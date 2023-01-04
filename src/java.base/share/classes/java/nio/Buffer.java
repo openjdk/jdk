@@ -213,7 +213,7 @@ public abstract sealed class Buffer
     private int mark = -1;
     private int position = 0;
     private int limit;
-    private int capacity;
+    private final int capacity;
 
     // Used by heap byte buffers or direct buffers with Unsafe access
     // For heap byte buffers this field will be the address relative to the

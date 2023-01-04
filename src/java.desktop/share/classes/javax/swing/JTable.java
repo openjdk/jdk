@@ -685,6 +685,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                            JComponent.getManagingFocusForwardTraversalKeys());
         setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
                            JComponent.getManagingFocusBackwardTraversalKeys());
+
         if (cm == null) {
             cm = createDefaultColumnModel();
             autoCreateColumnsFromModel = true;
@@ -703,7 +704,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             dm = createDefaultDataModel();
         }
         setModel(dm);
-
         initializeLocalVars();
         updateUI();
     }
@@ -1399,6 +1399,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             return null;
         }
         else {
+            if (defaultRenderersByColumnClass == null) {
+                createDefaultRenderers();
+            }
             Object renderer = defaultRenderersByColumnClass.get(columnClass);
             if (renderer != null) {
                 return (TableCellRenderer)renderer;
@@ -1456,6 +1459,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             return null;
         }
         else {
+            if (defaultEditorsByColumnClass == null) {
+                createDefaultEditors();
+            }
             Object editor = defaultEditorsByColumnClass.get(columnClass);
             if (editor != null) {
                 return (TableCellEditor)editor;
