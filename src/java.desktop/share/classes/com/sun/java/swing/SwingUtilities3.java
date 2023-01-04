@@ -25,24 +25,26 @@
 
 package com.sun.java.swing;
 
-import sun.awt.AppContext;
-import sun.awt.SunToolkit;
-
+import java.applet.Applet;
 import java.awt.BasicStroke;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
+import java.awt.Window;
 import java.awt.geom.AffineTransform;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.applet.Applet;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Window;
+
 import javax.swing.JComponent;
 import javax.swing.JInternalFrame;
 import javax.swing.RepaintManager;
+
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
+
 
 import static sun.java2d.pipe.Region.clipRound;
 
@@ -145,65 +147,62 @@ public class SwingUtilities3 {
     }
 
     @FunctionalInterface
-    public interface PaintInterface {
+    public interface UnscaledBorderPainter {
         void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                 int w, int h, double scale, int strokeWidth);
+                                 int w, int h, double scaleFactor, int strokeWidth);
     }
 
     public static void paintBorder(Component c, Graphics g, int x, int y,
-                            int w, int h, PaintInterface paintFunction) {
+                            int w, int h, UnscaledBorderPainter painter) {
 
-        //STEP 1: RESET TRANSFORM
-        //save old values
+        // Step 1: Reset Transform
         AffineTransform at = null;
         Stroke oldStk = null;
         boolean resetTransform = false;
-        int stkWidth = 1;
+        int strokeWidth = 1;
         double scaleFactor = 1;
 
-        if (g instanceof Graphics2D g2d) {
+        int xtranslation = x;
+        int ytranslation = y;
+        int width = w;
+        int height = h;
+
+        if (g instanceof Graphics2D) {
+            Graphics2D g2d = (Graphics2D) g;
             at = g2d.getTransform();
             oldStk = g2d.getStroke();
             scaleFactor = Math.min(at.getScaleX(), at.getScaleY());
 
-            /* Deactivate the HiDPI scaling transform,
-             * so we can do paint operations in the device
-             * pixel coordinate system instead of the logical coordinate system.
-             */
-            resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
+            // if m01 or m10 is non-zero, then there is a rotation or shear
+            // or if scale=1, skip resetting the transform
+            resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0)) &&
+                    ((at.getScaleX() > 1) || (at.getScaleY() > 1));
 
             if (resetTransform) {
+                /* Deactivate the HiDPI scaling transform,
+                 * so we can do paint operations in the device
+                 * pixel coordinate system instead of the logical coordinate system.
+                 */
                 g2d.setTransform(new AffineTransform());
-                stkWidth = c instanceof JInternalFrame ?
+                strokeWidth = (c instanceof JInternalFrame) ?
                         clipRound(scaleFactor) : (int) Math.floor(scaleFactor);
-                g2d.setStroke(new BasicStroke((float) stkWidth));
+                g2d.setStroke(new BasicStroke((float) strokeWidth));
+
+                double xx = at.getScaleX() * x + at.getTranslateX();
+                double yy = at.getScaleY() * y + at.getTranslateY();
+                xtranslation = clipRound(xx);
+                ytranslation = clipRound(yy);
+                width = clipRound(at.getScaleX() * w + xx) - xtranslation;
+                height = clipRound(at.getScaleY() * h + yy) - ytranslation;
             }
         }
 
-        int xtranslation = 0;
-        int ytranslation = 0;
-        int width = 0;
-        int height = 0;
-
-        if (resetTransform) {
-            double xx = at.getScaleX() * x + at.getTranslateX();
-            double yy = at.getScaleY() * y + at.getTranslateY();
-            xtranslation = clipRound(xx);
-            ytranslation = clipRound(yy);
-            width = clipRound(at.getScaleX() * w + xx) - xtranslation;
-            height = clipRound(at.getScaleY() * h + yy) - ytranslation;
-        } else {
-            xtranslation = x;
-            ytranslation = y;
-            width = w;
-            height = h;
-        }
         g.translate(xtranslation, ytranslation);
 
-        //STEP 2: Call respective paintBorder with transformed values
-        paintFunction.paintUnscaledBorder(c, g, x, y, width, height, scaleFactor, stkWidth);
+        // Step 2: Call respective paintBorder with transformed values
+        painter.paintUnscaledBorder(c, g, x, y, width, height, scaleFactor, strokeWidth);
 
-        //STEP 3: RESTORE TRANSFORM
+        // Step 3: Restore Transform
         g.translate(-xtranslation, -ytranslation);
         if (resetTransform) {
             Graphics2D g2d = (Graphics2D) g;

@@ -250,7 +250,7 @@ public class MetalBorders {
         }
 
         private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                         int w, int h, double scale, int stroke) {
+                                         int width, int height, double scaleFactor, int strokeWidth) {
             Color background;
             Color highlight;
             Color shadow;
@@ -266,41 +266,41 @@ public class MetalBorders {
             }
 
             // scaled border
-            int thickness = (int) Math.ceil(4 * scale);
+            int thickness = (int) Math.ceil(4 * scaleFactor);
 
             g.setColor(background);
             // Draw the bulk of the border
             for (int i = 0; i <= thickness; i++) {
-                g.drawRect(i, i, w - (i * 2), h - (i * 2));
+                g.drawRect(i, i, width - (i * 2), height - (i * 2));
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
                 int midPoint = thickness / 2;
-                int offset = (((scale - stroke) >= 0) && ((stroke % 2) != 0)) ? 1 : 0;
-                int loc1 = thickness % 2 == 0 ? midPoint + stroke / 2 - stroke : midPoint;
-                int loc2 = thickness % 2 == 0 ? midPoint + stroke / 2 : midPoint + stroke;
+                int offset = (((scaleFactor - strokeWidth) >= 0) && ((strokeWidth % 2) != 0)) ? 1 : 0;
+                int loc1 = thickness % 2 == 0 ? midPoint + strokeWidth / 2 - strokeWidth : midPoint;
+                int loc2 = thickness % 2 == 0 ? midPoint + strokeWidth / 2 : midPoint + strokeWidth;
                 // scaled corner
-                int corner = (int) Math.round(CORNER * scale);
+                int corner = (int) Math.round(CORNER * scaleFactor);
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
-                g.drawLine(corner + 1, loc2, w - corner, loc2); //top
-                g.drawLine(loc2, corner + 1, loc2, h - corner); //left
-                g.drawLine((w - offset) - loc1, corner + 1,
-                        (w - offset) - loc1, h - corner); //right
-                g.drawLine(corner + 1, (h - offset) - loc1,
-                        w - corner, (h - offset) - loc1); //bottom
+                g.drawLine(corner + 1, loc2, width - corner, loc2); //top
+                g.drawLine(loc2, corner + 1, loc2, height - corner); //left
+                g.drawLine((width - offset) - loc1, corner + 1,
+                        (width - offset) - loc1, height - corner); //right
+                g.drawLine(corner + 1, (height - offset) - loc1,
+                        width - corner, (height - offset) - loc1); //bottom
 
                 // Draw the Long shadow lines
                 g.setColor(shadow);
-                g.drawLine(corner, loc1, w - corner - 1, loc1);
-                g.drawLine(loc1, corner, loc1, h - corner - 1);
-                g.drawLine((w - offset) - loc2, corner,
-                        (w - offset) - loc2, h - corner - 1);
-                g.drawLine(corner, (h - offset) - loc2,
-                        w - corner - 1, (h - offset) - loc2);
+                g.drawLine(corner, loc1, width - corner - 1, loc1);
+                g.drawLine(loc1, corner, loc1, height - corner - 1);
+                g.drawLine((width - offset) - loc2, corner,
+                        (width - offset) - loc2, height - corner - 1);
+                g.drawLine(corner, (height - offset) - loc2,
+                        width - corner - 1, (height - offset) - loc2);
             }
         }
 

@@ -152,14 +152,14 @@ public class EtchedBorder extends AbstractBorder
     }
 
     private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                    int w, int h, double scale, int stroke) {
+                                    int width, int height, double scaleFactor, int stkWidth) {
 
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
                                                    : getShadowColor(c),
-                          w, h, stroke);
+                          width, height, stkWidth);
         paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
                                                       : getHighlightColor(c),
-                             w, h, stroke);
+                             width, height, stkWidth);
     }
 
     /**
