@@ -3583,9 +3583,8 @@ public class Arrays {
      *     an array of class {@code newType}
      * @since 21
      */
-    @IntrinsicCandidate
+    @SuppressWarnings("unchecked")
     public static <T, U> T[] deepCopyOf(U[] original, Class<? extends T[]> newType) {
-        @SuppressWarnings("unchecked")
         T[] copy = ((Object)newType == (Object)Object[].class)
             ? (T[]) new Object[original.length]
             : (T[]) Array.newInstance(newType.componentType(), original.length);
