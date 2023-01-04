@@ -47,7 +47,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // will not be able to find all Hotspot processes.
     // Any changes to this needs to be synchronized with HotSpot.
     private static final String tmpdir = "/tmp";
-    String socket_path;
+    String socketPath;
     /**
      * Attaches to the target VM
      */
@@ -63,43 +63,43 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
 
         // Try to resolve to the "inner most" pid namespace
-        int ns_pid = getNamespacePid(pid);
+        int nsPid = getNamespacePid(pid);
 
         // Find the socket file. If not found then we attempt to start the
         // attach mechanism in the target VM by sending it a QUIT signal.
         // Then we attempt to find the socket file again.
-        File socket_file = findSocketFile(pid, ns_pid);
-        socket_path = socket_file.getPath();
-        if (!socket_file.exists()) {
+        File socketFile = findSocketFile(pid, nsPid);
+        socketPath = socketFile.getPath();
+        if (!socketFile.exists()) {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
-            File f = createAttachFile(pid, ns_pid).getCanonicalFile();
+            File f = createAttachFile(pid, nsPid).getCanonicalFile();
             try {
                 sendQuitTo(pid);
 
                 // give the target VM time to start the attach mechanism
-                final int delay_step = 100;
+                final int delayStep = 100;
                 final long timeout = attachTimeout();
-                long time_spend = 0;
+                long timeSpend = 0;
                 long delay = 0;
                 do {
                     // Increase timeout on each attempt to reduce polling
-                    delay += delay_step;
+                    delay += delayStep;
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
 
-                    time_spend += delay;
-                    if (time_spend > timeout/2 && !socket_file.exists()) {
+                    timeSpend += delay;
+                    if (timeSpend > timeout/2 && !socketFile.exists()) {
                         // Send QUIT again to give target VM the last chance to react
                         sendQuitTo(pid);
                     }
-                } while (time_spend <= timeout && !socket_file.exists());
-                if (!socket_file.exists()) {
+                } while (timeSpend <= timeout && !socketFile.exists());
+                if (!socketFile.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
                           "target process %d doesn't respond within %dms " +
-                          "or HotSpot VM not loaded", socket_path, pid,
-                                      time_spend));
+                          "or HotSpot VM not loaded", socketPath, pid,
+                                      timeSpend));
                 }
             } finally {
                 f.delete();
@@ -108,14 +108,14 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // Check that the file owner/permission to avoid attaching to
         // bogus process
-        checkPermissions(socket_path);
+        checkPermissions(socketPath);
 
         // Check that we can connect to the process
         // - this ensures we throw the permission denied error now rather than
         // later when we attempt to enqueue a command.
         int s = socket();
         try {
-            connect(s, socket_path);
+            connect(s, socketPath);
         } finally {
             close(s);
         }
@@ -126,8 +126,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     public void detach() throws IOException {
         synchronized (this) {
-            if (socket_path != null) {
-                socket_path = null;
+            if (socketPath != null) {
+                socketPath = null;
             }
         }
     }
@@ -143,7 +143,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // did we detach?
         synchronized (this) {
-            if (socket_path == null) {
+            if (socketPath == null) {
                 throw new IOException("Detached from target VM");
             }
         }
@@ -153,7 +153,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // connect to target VM
         try {
-            connect(s, socket_path);
+            connect(s, socketPath);
         } catch (IOException x) {
             close(s);
             throw x;
@@ -209,20 +209,20 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // Return the socket file for the given process.
-    private File findSocketFile(int pid, int ns_pid) {
+    private File findSocketFile(int pid, int nsPid) {
         // A process may not exist in the same mount namespace as the caller.
         // Instead, attach relative to the target root filesystem as exposed by
         // procfs regardless of namespaces.
         String root = "/proc/" + pid + "/root/" + tmpdir;
-        return new File(root, ".java_pid" + ns_pid);
+        return new File(root, ".java_pid" + nsPid);
     }
 
     // On Linux a simple handshake is used to start the attach mechanism
     // if not already started. The client creates a .attach_pid<pid> file in the
     // target VM's working directory (or temp directory), and the SIGQUIT handler
     // checks for the file.
-    private File createAttachFile(int pid, int ns_pid) throws IOException {
-        String fn = ".attach_pid" + ns_pid;
+    private File createAttachFile(int pid, int nsPid) throws IOException {
+        String fn = ".attach_pid" + nsPid;
         String path = "/proc/" + pid + "/cwd/" + fn;
         File f = new File(path);
         try {
@@ -230,7 +230,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             f.createNewFile();
         } catch (IOException x) {
             String root;
-            if (pid != ns_pid) {
+            if (pid != nsPid) {
                 // A process may not exist in the same mount namespace as the caller.
                 // Instead, attach relative to the target root filesystem as exposed by
                 // procfs regardless of namespaces.
@@ -280,8 +280,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     // The last entry represents the PID the JVM "thinks" it is.
                     // Even in non-namespaced pids these entries should be
                     // valid. You could refer to it as the inner most pid.
-                    int ns_pid = Integer.parseInt(parts[parts.length - 1]);
-                    return ns_pid;
+                    int nsPid = Integer.parseInt(parts[parts.length - 1]);
+                    return nsPid;
                 }
             }
             // Old kernels may not have NSpid field (i.e. 3.10).
