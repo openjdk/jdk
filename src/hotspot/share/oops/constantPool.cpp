@@ -178,9 +178,9 @@ oop ConstantPool::resolved_references_at(int index) const {
 }
 
 // Use a CAS for multithreaded access
-oop ConstantPool::set_resolved_references_at(int index, oop new_result, oop old_result) {
+oop ConstantPool::set_resolved_references_at(int index, oop new_result) {
   assert(oopDesc::is_oop_or_null(new_result), "Must be oop");
-  return resolved_references()->atomic_compare_exchange_oop(index, new_result, old_result);
+  return resolved_references()->replace_if_null(index, new_result);
 }
 
 // Create resolved_references array and mapping array for original cp indexes
@@ -458,7 +458,7 @@ int ConstantPool::cp_to_object_index(int cp_index) {
 }
 
 void ConstantPool::string_at_put(int which, int obj_index, oop str) {
-  oop result = set_resolved_references_at(obj_index, str, nullptr);
+  oop result = set_resolved_references_at(obj_index, str);
   assert(result == nullptr || result == str, "Only set once or to the same string.");
 }
 
@@ -1172,7 +1172,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // It doesn't matter which racing thread wins, as long as only one
     // result is used by all threads, and all future queries.
     oop new_result = (result_oop == NULL ? Universe::the_null_sentinel() : result_oop);
-    oop old_result = this_cp->set_resolved_references_at(cache_index, new_result, nullptr);
+    oop old_result = this_cp->set_resolved_references_at(cache_index, new_result);
     if (old_result == nullptr) {
       return result_oop;  // was installed
     } else {
