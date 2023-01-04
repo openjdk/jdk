@@ -50,7 +50,7 @@ final class ReadWriteValues {
     void testGetShort() {
         longs().forEach(l -> {
             short expected = (short) l;
-            putShort(BUFF, OFFSET, expected);
+            RefImpl.putShort(BUFF, OFFSET, expected);
             short actual = BitsProxy.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -61,7 +61,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             short expected = (short) l;
             BitsProxy.putShort(BUFF, OFFSET, expected);
-            short actual = getShort(BUFF, OFFSET);
+            short actual = RefImpl.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -70,7 +70,7 @@ final class ReadWriteValues {
     void testGetChar() {
         longs().forEach(l -> {
             char expected = (char) l;
-            putChar(BUFF, OFFSET, expected);
+            RefImpl.putChar(BUFF, OFFSET, expected);
             char actual = BitsProxy.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -81,7 +81,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             char expected = (char) l;
             BitsProxy.putChar(BUFF, OFFSET, expected);
-            char actual = getChar(BUFF, OFFSET);
+            char actual = RefImpl.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -90,7 +90,7 @@ final class ReadWriteValues {
     void testGetInt() {
         longs().forEach(l -> {
             int expected = (int) l;
-            putInt(BUFF, OFFSET, expected);
+            RefImpl.putInt(BUFF, OFFSET, expected);
             int actual = BitsProxy.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -101,7 +101,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             int expected = (int) l;
             BitsProxy.putInt(BUFF, OFFSET, expected);
-            int actual = getInt(BUFF, OFFSET);
+            int actual = RefImpl.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -109,7 +109,7 @@ final class ReadWriteValues {
     @Test
     void testGetLong() {
         longs().forEach(expected -> {
-            putLong(BUFF, OFFSET, expected);
+            RefImpl.putLong(BUFF, OFFSET, expected);
             long actual = BitsProxy.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -119,7 +119,7 @@ final class ReadWriteValues {
     void testPutLong() {
         longs().forEach(expected -> {
             BitsProxy.putLong(BUFF, OFFSET, expected);
-            long actual = getLong(BUFF, OFFSET);
+            long actual = RefImpl.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -128,7 +128,7 @@ final class ReadWriteValues {
     void testGetFloat() {
         doubles().forEach(d -> {
             float expected = (float) d;
-            putFloat(BUFF, OFFSET, expected);
+            RefImpl.putFloat(BUFF, OFFSET, expected);
             float actual = BitsProxy.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -139,7 +139,7 @@ final class ReadWriteValues {
         doubles().forEach(d -> {
             float expected = (float) d;
             BitsProxy.putFloat(BUFF, OFFSET, expected);
-            float actual = getFloat(BUFF, OFFSET);
+            float actual = RefImpl.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -147,7 +147,7 @@ final class ReadWriteValues {
     @Test
     void testGetDouble() {
         doubles().forEach(expected -> {
-            putDouble(BUFF, OFFSET, expected);
+            RefImpl.putDouble(BUFF, OFFSET, expected);
             double actual = BitsProxy.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -157,7 +157,7 @@ final class ReadWriteValues {
     void testPutDouble() {
         doubles().forEach(expected -> {
             BitsProxy.putDouble(BUFF, OFFSET, expected);
-            double actual = getDouble(BUFF, OFFSET);
+            double actual = RefImpl.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -211,83 +211,88 @@ final class ReadWriteValues {
 
     }
 
-    // Equivalent methods from the old java.io.Bits implementation
+    /**
+    * Reference implementation from the old java.io.Bits implementation
+    */
+    private static final class RefImpl {
+        private RefImpl() {}
 
-    static char getChar(byte[] b, int off) {
-        return (char) ((b[off + 1] & 0xFF) +
-                (b[off] << 8));
-    }
+        static char getChar(byte[] b, int off) {
+            return (char) ((b[off + 1] & 0xFF) +
+                    (b[off] << 8));
+        }
 
-    static short getShort(byte[] b, int off) {
-        return (short) ((b[off + 1] & 0xFF) +
-                (b[off] << 8));
-    }
+        static short getShort(byte[] b, int off) {
+            return (short) ((b[off + 1] & 0xFF) +
+                    (b[off] << 8));
+        }
 
-    static int getInt(byte[] b, int off) {
-        return ((b[off + 3] & 0xFF)) +
-                ((b[off + 2] & 0xFF) << 8) +
-                ((b[off + 1] & 0xFF) << 16) +
-                ((b[off]) << 24);
-    }
+        static int getInt(byte[] b, int off) {
+            return ((b[off + 3] & 0xFF)) +
+                    ((b[off + 2] & 0xFF) << 8) +
+                    ((b[off + 1] & 0xFF) << 16) +
+                    ((b[off]) << 24);
+        }
 
-    static float getFloat(byte[] b, int off) {
-        return Float.intBitsToFloat(getInt(b, off));
-    }
+        static float getFloat(byte[] b, int off) {
+            return Float.intBitsToFloat(getInt(b, off));
+        }
 
-    static long getLong(byte[] b, int off) {
-        return ((b[off + 7] & 0xFFL)) +
-                ((b[off + 6] & 0xFFL) << 8) +
-                ((b[off + 5] & 0xFFL) << 16) +
-                ((b[off + 4] & 0xFFL) << 24) +
-                ((b[off + 3] & 0xFFL) << 32) +
-                ((b[off + 2] & 0xFFL) << 40) +
-                ((b[off + 1] & 0xFFL) << 48) +
-                (((long) b[off]) << 56);
-    }
+        static long getLong(byte[] b, int off) {
+            return ((b[off + 7] & 0xFFL)) +
+                    ((b[off + 6] & 0xFFL) << 8) +
+                    ((b[off + 5] & 0xFFL) << 16) +
+                    ((b[off + 4] & 0xFFL) << 24) +
+                    ((b[off + 3] & 0xFFL) << 32) +
+                    ((b[off + 2] & 0xFFL) << 40) +
+                    ((b[off + 1] & 0xFFL) << 48) +
+                    (((long) b[off]) << 56);
+        }
 
-    static double getDouble(byte[] b, int off) {
-        return Double.longBitsToDouble(getLong(b, off));
-    }
+        static double getDouble(byte[] b, int off) {
+            return Double.longBitsToDouble(getLong(b, off));
+        }
 
-    /*
-     * Methods for packing primitive values into byte arrays starting at given
-     * offsets.
-     */
+        /*
+         * Methods for packing primitive values into byte arrays starting at given
+         * offsets.
+         */
 
-    static void putChar(byte[] b, int off, char val) {
-        b[off + 1] = (byte) (val);
-        b[off] = (byte) (val >>> 8);
-    }
+        static void putChar(byte[] b, int off, char val) {
+            b[off + 1] = (byte) (val);
+            b[off] = (byte) (val >>> 8);
+        }
 
-    static void putShort(byte[] b, int off, short val) {
-        b[off + 1] = (byte) (val);
-        b[off] = (byte) (val >>> 8);
-    }
+        static void putShort(byte[] b, int off, short val) {
+            b[off + 1] = (byte) (val);
+            b[off] = (byte) (val >>> 8);
+        }
 
-    static void putInt(byte[] b, int off, int val) {
-        b[off + 3] = (byte) (val);
-        b[off + 2] = (byte) (val >>> 8);
-        b[off + 1] = (byte) (val >>> 16);
-        b[off] = (byte) (val >>> 24);
-    }
+        static void putInt(byte[] b, int off, int val) {
+            b[off + 3] = (byte) (val);
+            b[off + 2] = (byte) (val >>> 8);
+            b[off + 1] = (byte) (val >>> 16);
+            b[off] = (byte) (val >>> 24);
+        }
 
-    static void putFloat(byte[] b, int off, float val) {
-        putInt(b, off, Float.floatToIntBits(val));
-    }
+        static void putFloat(byte[] b, int off, float val) {
+            putInt(b, off, Float.floatToIntBits(val));
+        }
 
-    static void putLong(byte[] b, int off, long val) {
-        b[off + 7] = (byte) (val);
-        b[off + 6] = (byte) (val >>> 8);
-        b[off + 5] = (byte) (val >>> 16);
-        b[off + 4] = (byte) (val >>> 24);
-        b[off + 3] = (byte) (val >>> 32);
-        b[off + 2] = (byte) (val >>> 40);
-        b[off + 1] = (byte) (val >>> 48);
-        b[off] = (byte) (val >>> 56);
-    }
+        static void putLong(byte[] b, int off, long val) {
+            b[off + 7] = (byte) (val);
+            b[off + 6] = (byte) (val >>> 8);
+            b[off + 5] = (byte) (val >>> 16);
+            b[off + 4] = (byte) (val >>> 24);
+            b[off + 3] = (byte) (val >>> 32);
+            b[off + 2] = (byte) (val >>> 40);
+            b[off + 1] = (byte) (val >>> 48);
+            b[off] = (byte) (val >>> 56);
+        }
 
-    static void putDouble(byte[] b, int off, double val) {
-        putLong(b, off, Double.doubleToLongBits(val));
+        static void putDouble(byte[] b, int off, double val) {
+            putLong(b, off, Double.doubleToLongBits(val));
+        }
     }
 
 }
