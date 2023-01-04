@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1733,9 +1733,9 @@ public:
 
   bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
 
-  void process_load_klass_helper(const Node* n, Node* cmp, int i);
+  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
 
-  bool process_cmp_loadklass(Node* n, const Node* blk1, const Node* blk2);
+  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 };
