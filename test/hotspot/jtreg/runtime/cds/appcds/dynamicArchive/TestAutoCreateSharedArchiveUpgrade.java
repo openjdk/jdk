@@ -73,28 +73,33 @@ public class TestAutoCreateSharedArchiveUpgrade {
     public static void main(String[] args) throws Throwable {
         // Get OS and CPU type
         String arch = props.getProperty("os.arch");
-        String os = props.getProperty("os.name");
+        String os = getOsId();
+        System.out.printf("OS: %s, Arch: %s\n", os, arch);
         // Earliest testable version is 19
         int n = java.lang.Runtime.version().major() - 1;
         for (int i = 19; i < n; i++) {
             BOOT_JDK = fetchBootJDK(os, arch, i);
-            System.out.println("The Boot JDK is: " + BOOT_JDK);
-            setupJVMs();
+            setupJVMs(os);
             doTest();
         }
     }
 
-    static void setupJVMs() throws Throwable {
+    static void setupJVMs(String os) throws Throwable {
         if (TEST_JDK == null) {
             throw new RuntimeException("-Dtest.jdk should point to the JDK being tested");
         }
 
         newJVM = TEST_JDK + FS + "bin" + FS + "java";
 
+        // Example path: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz/jdk-19/bin/java
         if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
-            oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
+            if (os == "MacOSX") {
+                oldJVM = BOOT_JDK + ".jdk" + FS + "Contents" + FS + "Home" + FS + "bin" + FS + "java";
+            } else {
+                oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
+            }
         } else {
             throw new RuntimeException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
@@ -169,7 +174,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         jdkArtifactMap.put("server", "jpg");
         jdkArtifactMap.put("product", "jdk");
 
-        // Select the correct build number for each version
+        // Select the correct release build number for each version
         // *UPDATE THIS* after each release
         switch(version) {
             case 19:
@@ -182,8 +187,10 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 build = 0;
                 break;
         }
+        // Get correct file name for architecture
         switch(arch) {
             case("x86"):
+            case("x86_64"):
             case("amd64"):
                 architecture = "x";
                 break;
@@ -194,7 +201,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 architecture = "";
                 break;
         }
-        System.out.printf("Platform: %s %s, Version: %s.%s\n", osID, arch, version, build);
+        // File name is bundles/<os>-<architecture>64/jdk-<version>_<os>-<architecture>64_bin.<extension>
+        // Ex: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz
         switch (osID) {
             case "Windows":
                 jdkArtifactMap.put("version", version);
@@ -235,5 +243,15 @@ public class TestAutoCreateSharedArchiveUpgrade {
             }
         }
         return path;
+    }
+
+    private static String getOsId() {
+        String osName = props.getProperty("os.name");
+        if (osName.startsWith("Win")) {
+            osName = "Windows";
+        } else if (osName.equals("Mac OS X")) {
+            osName = "MacOSX";
+        }
+        return osName;
     }
 }
