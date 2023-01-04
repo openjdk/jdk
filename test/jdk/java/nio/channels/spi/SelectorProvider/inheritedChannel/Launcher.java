@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,11 +104,14 @@ public class Launcher {
         ServerSocketChannel ch;
         try {
             ch = ServerSocketChannel.open(INET);
+            System.out.println("Using INET (IPv4) channel");
         } catch (Exception e) {
             ch = ServerSocketChannel.open();
+            System.out.println("Using default channel (probably IPv6)");
         }
         try (ServerSocketChannel ssc = ch) {
             ssc.socket().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            System.out.println("Socket bound to " + ssc.getLocalAddress());
             SocketChannel sc1 = SocketChannel.open(ssc.getLocalAddress());
             try (SocketChannel sc2 = ssc.accept()) {
                 launch(className, options, args, Util.getFD(sc2));
