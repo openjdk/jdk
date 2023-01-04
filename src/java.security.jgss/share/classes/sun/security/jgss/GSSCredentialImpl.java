@@ -65,6 +65,7 @@ public class GSSCredentialImpl implements GSSCredential {
              (Oid[]) null, usage);
     }
 
+    @SuppressWarnings("this-escape")
     GSSCredentialImpl(GSSManagerImpl gssManager, GSSName name,
                              int lifetime, Oid mech, int usage)
         throws GSSException {
@@ -74,6 +75,7 @@ public class GSSCredentialImpl implements GSSCredential {
         add(name, lifetime, lifetime, mech, usage);
     }
 
+    @SuppressWarnings("this-escape")
     GSSCredentialImpl(GSSManagerImpl gssManager, GSSName name,
                       int lifetime, Oid[] mechs, int usage)
         throws GSSException {
@@ -103,6 +105,7 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     // Wrap a mech cred into a GSS cred
+    @SuppressWarnings("this-escape")
     public GSSCredentialImpl(GSSManagerImpl gssManager,
                       GSSCredentialSpi mechElement) throws GSSException {
 

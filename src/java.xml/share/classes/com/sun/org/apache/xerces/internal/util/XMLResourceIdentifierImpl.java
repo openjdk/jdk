@@ -68,6 +68,7 @@ public class XMLResourceIdentifierImpl
      * @param baseSystemId The base system identifier.
      * @param expandedSystemId The expanded system identifier.
      */
+    @SuppressWarnings("this-escape")
     public XMLResourceIdentifierImpl(String publicId,
                                      String literalSystemId, String baseSystemId,
                                      String expandedSystemId) {
@@ -84,6 +85,7 @@ public class XMLResourceIdentifierImpl
      * @param expandedSystemId The expanded system identifier.
      * @param namespace The namespace.
      */
+    @SuppressWarnings("this-escape")
     public XMLResourceIdentifierImpl(String publicId, String literalSystemId,
                                      String baseSystemId, String expandedSystemId,
                                      String namespace) {

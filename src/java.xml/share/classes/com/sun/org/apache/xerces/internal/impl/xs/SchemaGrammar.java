@@ -184,6 +184,7 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
     } // <init>(String, XSDDescription)
 
     // Clone an existing schema grammar
+    @SuppressWarnings("this-escape")
     public SchemaGrammar(SchemaGrammar grammar) {
         fTargetNamespace = grammar.fTargetNamespace;
         fGrammarDescription = grammar.fGrammarDescription.makeClone();

@@ -115,6 +115,7 @@ class SimpleHeaderTable {
     private int maxSize;
     private int size;
 
+    @SuppressWarnings("this-escape")
     public SimpleHeaderTable(int maxSize, Logger logger) {
         this.logger = logger;
         setMaxSize(maxSize);

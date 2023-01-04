@@ -67,6 +67,7 @@ public class OneStepIteratorForward extends ChildTestIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
+  @SuppressWarnings("this-escape")
   public OneStepIteratorForward(int axis)
   {
     super(null);

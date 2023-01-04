@@ -31,6 +31,7 @@ import javax.xml.stream.XMLStreamReader;
 class UIIconRegion extends UIRegion {
     private String basicKey;
 
+    @SuppressWarnings("this-escape")
     UIIconRegion(XMLStreamReader reader) throws XMLStreamException {
         super(reader, false);
         basicKey = reader.getAttributeValue(null, "basicKey");

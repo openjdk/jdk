@@ -46,7 +46,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     @Serial
     private static final long serialVersionUID = 6732704486002715933L;
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "this-escape" })
     public FontEditor() {
         setLayout(null);
 

@@ -170,6 +170,7 @@ class MetalTitlePane extends JComponent {
                           MetalLookAndFeel.getControl() );
 
 
+    @SuppressWarnings("this-escape")
     public MetalTitlePane(JRootPane root, MetalRootPaneUI ui) {
         this.rootPane = root;
         rootPaneUI = ui;

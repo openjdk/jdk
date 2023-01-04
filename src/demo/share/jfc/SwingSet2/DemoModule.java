@@ -95,6 +95,7 @@ public class DemoModule extends JFrame {
         this(swingset, null, null);
     }
 
+    @SuppressWarnings("this-escape")
     public DemoModule(SwingSet2 swingset, String resourceName, String iconPath) {
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         panel = new JPanel();

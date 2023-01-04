@@ -170,6 +170,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
         /**
          * @serial The descriptor containing the appropriate metadata for this instance
          */
+        @SuppressWarnings("this-escape")
         private Descriptor operationDescriptor = validDescriptor(null);
 
         private static final String currClass = "ModelMBeanOperationInfo";
@@ -186,6 +187,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          * @param description A human readable description of the operation.
          */
 
+        @SuppressWarnings("this-escape")
         public ModelMBeanOperationInfo(String description,
                                        Method operationMethod)
         {
@@ -227,6 +229,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          *
          */
 
+        @SuppressWarnings("this-escape")
         public ModelMBeanOperationInfo(String description,
                                        Method operationMethod,
                                        Descriptor descriptor)
@@ -253,6 +256,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
         * ACTION_INFO, UNKNOWN.
         */
 
+        @SuppressWarnings("this-escape")
         public ModelMBeanOperationInfo(String name,
                                        String description,
                                        MBeanParameterInfo[] signature,
@@ -297,6 +301,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
         * "setter".
         */
 
+        @SuppressWarnings("this-escape")
         public ModelMBeanOperationInfo(String name,
                                        String description,
                                        MBeanParameterInfo[] signature,
@@ -322,6 +327,7 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          *
          */
 
+        @SuppressWarnings("this-escape")
         public ModelMBeanOperationInfo(ModelMBeanOperationInfo inInfo)
         {
                 super(inInfo.getName(),

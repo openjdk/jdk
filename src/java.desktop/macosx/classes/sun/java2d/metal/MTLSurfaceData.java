@@ -592,6 +592,7 @@ public abstract class MTLSurfaceData extends SurfaceData
     public static class MTLOffScreenSurfaceData extends MTLSurfaceData {
         private final Image offscreenImage;
 
+        @SuppressWarnings("this-escape")
         public MTLOffScreenSurfaceData(MTLGraphicsConfig gc, int width,
                                        int height, Image image,
                                        ColorModel cm, int type) {

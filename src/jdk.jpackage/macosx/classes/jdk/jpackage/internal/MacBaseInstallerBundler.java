@@ -47,6 +47,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
+    @SuppressWarnings("this-escape")
     private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
             new StandardBundlerParam<>(
             "mac.app.imageRoot",

@@ -94,6 +94,7 @@ class UnixAsynchronousSocketChannelImpl
     private Future<?> writeTimer;
 
 
+    @SuppressWarnings("this-escape")
     UnixAsynchronousSocketChannelImpl(Port port)
         throws IOException
     {
@@ -115,6 +116,7 @@ class UnixAsynchronousSocketChannelImpl
     }
 
     // Constructor for sockets created by UnixAsynchronousServerSocketChannelImpl
+    @SuppressWarnings("this-escape")
     UnixAsynchronousSocketChannelImpl(Port port,
                                       FileDescriptor fd,
                                       InetSocketAddress remote)

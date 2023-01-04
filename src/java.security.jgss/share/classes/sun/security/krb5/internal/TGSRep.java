@@ -50,11 +50,13 @@ public class TGSRep extends KDCRep {
               new_encPart, Krb5.KRB_TGS_REP);
     }
 
+    @SuppressWarnings("this-escape")
     public TGSRep(byte[] data) throws Asn1Exception,
     RealmException, KrbApErrException, IOException {
         init(new DerValue(data));
     }
 
+    @SuppressWarnings("this-escape")
     public TGSRep(DerValue encoding) throws Asn1Exception,
     RealmException, KrbApErrException, IOException {
         init(encoding);

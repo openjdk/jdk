@@ -67,6 +67,7 @@ public class Panel extends Container implements Accessible {
      * @param layout the layout manager for this panel.
      * @since 1.1
      */
+    @SuppressWarnings("this-escape")
     public Panel(LayoutManager layout) {
         setLayout(layout);
     }

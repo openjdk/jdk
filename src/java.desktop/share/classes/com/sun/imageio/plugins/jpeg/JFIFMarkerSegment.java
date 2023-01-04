@@ -146,6 +146,7 @@ class JFIFMarkerSegment extends MarkerSegment {
     /**
      * Constructs a JFIF header from a DOM Node.
      */
+    @SuppressWarnings("this-escape")
     JFIFMarkerSegment(Node node) throws IIOInvalidTreeException {
         this();
         updateFromNativeNode(node, true);

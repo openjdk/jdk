@@ -247,6 +247,7 @@ public class OptionParser implements OptionDeclarer {
      * @param allowAbbreviations whether unambiguous abbreviations of long options should be recognized
      * by the parser
      */
+    @SuppressWarnings("this-escape")
     public OptionParser( boolean allowAbbreviations ) {
         trainingOrder = new ArrayList<>();
         requiredIf = new HashMap<>();

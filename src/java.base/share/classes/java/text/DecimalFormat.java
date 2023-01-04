@@ -398,6 +398,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getCurrencyInstance
      * @see java.text.NumberFormat#getPercentInstance
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat() {
         // Get the pattern for the default locale.
         Locale def = Locale.getDefault(Locale.Category.FORMAT);
@@ -432,6 +433,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getCurrencyInstance
      * @see java.text.NumberFormat#getPercentInstance
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat(String pattern) {
         // Always applyPattern after the symbols are set
         this.symbols = DecimalFormatSymbols.getInstance(Locale.getDefault(Locale.Category.FORMAT));
@@ -460,6 +462,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getPercentInstance
      * @see java.text.DecimalFormatSymbols
      */
+    @SuppressWarnings("this-escape")
     public DecimalFormat (String pattern, DecimalFormatSymbols symbols) {
         // Always applyPattern after the symbols are set
         this.symbols = (DecimalFormatSymbols)symbols.clone();

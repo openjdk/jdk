@@ -66,6 +66,7 @@ class AdobeMarkerSegment extends MarkerSegment {
         buffer.bufAvail -= length;
     }
 
+    @SuppressWarnings("this-escape")
     AdobeMarkerSegment(Node node) throws IIOInvalidTreeException {
         this(0); // default transform will be changed
         updateFromNativeNode(node, true);

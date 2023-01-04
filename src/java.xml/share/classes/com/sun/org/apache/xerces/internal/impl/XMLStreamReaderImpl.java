@@ -140,6 +140,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
      * @param props
      * @throws XMLStreamException
      */
+    @SuppressWarnings("this-escape")
     public XMLStreamReaderImpl(InputStream inputStream, PropertyManager props) throws XMLStreamException {
         init(props);
         //publicId, systemid, baseSystemId, inputStream, enocding
@@ -158,6 +159,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
      * @param props
      * @throws XMLStreamException
      */
+    @SuppressWarnings("this-escape")
     public XMLStreamReaderImpl(String systemid, PropertyManager props) throws XMLStreamException {
         init(props);
         //publicId, systemid, baseSystemId, inputStream, enocding
@@ -172,6 +174,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
      * @param props
      * @throws XMLStreamException
      */
+    @SuppressWarnings("this-escape")
     public XMLStreamReaderImpl(InputStream inputStream, String encoding, PropertyManager props)
             throws XMLStreamException {
         init(props);
@@ -187,6 +190,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
      * @param props
      * @throws XMLStreamException
      */
+    @SuppressWarnings("this-escape")
     public XMLStreamReaderImpl(Reader reader, PropertyManager props)
             throws XMLStreamException {
         init(props);
@@ -203,6 +207,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
      * @param props
      * @throws XMLStreamException
      */
+    @SuppressWarnings("this-escape")
     public XMLStreamReaderImpl(XMLInputSource inputSource, PropertyManager props)
             throws XMLStreamException {
         init(props);

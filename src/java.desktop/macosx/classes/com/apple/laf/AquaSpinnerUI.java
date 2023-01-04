@@ -274,6 +274,7 @@ public class AquaSpinnerUI extends SpinnerUI {
 
         boolean interceptRepaints = false;
 
+        @SuppressWarnings("this-escape")
         public TransparentButton() {
             super();
             setFocusable(false);
@@ -638,6 +639,7 @@ public class AquaSpinnerUI extends SpinnerUI {
 
         Dimension kPreferredSize = new Dimension(15, 24); // 19,27 before trimming
 
+        @SuppressWarnings("this-escape")
         public SpinPainter(final AbstractButton top, final AbstractButton bottom) {
             if (top != null) {
                 fTopModel = top.getModel();

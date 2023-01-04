@@ -108,6 +108,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         this(clazz, classGuard, classGuard);
     }
 
+    @SuppressWarnings("this-escape")
     AbstractJavaLinker(final Class<?> clazz, final MethodHandle classGuard, final MethodHandle assignableGuard) {
         this.clazz = clazz;
         this.classGuard = classGuard;

@@ -90,6 +90,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
+    @SuppressWarnings("this-escape")
     public PropertyDescriptor(String propertyName, Class<?> beanClass,
                 String readMethodName, String writeMethodName)
                 throws IntrospectionException {
@@ -132,6 +133,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
+    @SuppressWarnings("this-escape")
     public PropertyDescriptor(String propertyName, Method readMethod, Method writeMethod)
                 throws IntrospectionException {
         if (propertyName == null || propertyName.length() == 0) {
@@ -152,6 +154,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *
      * @since 9
      */
+    @SuppressWarnings("this-escape")
     PropertyDescriptor(Entry<String,PropertyInfo> entry, boolean bound) {
         String base = entry.getKey();
         PropertyInfo info = entry.getValue();
@@ -555,6 +558,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      * @param x  The first (lower priority) PropertyDescriptor
      * @param y  The second (higher priority) PropertyDescriptor
      */
+    @SuppressWarnings("this-escape")
     PropertyDescriptor(PropertyDescriptor x, PropertyDescriptor y) {
         super(x,y);
 

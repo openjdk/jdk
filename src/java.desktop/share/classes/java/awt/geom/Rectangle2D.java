@@ -126,6 +126,7 @@ public abstract class Rectangle2D extends RectangularShape {
          *          {@code Rectangle2D}
          * @since 1.2
         */
+        @SuppressWarnings("this-escape")
         public Float(float x, float y, float w, float h) {
             setRect(x, y, w, h);
         }
@@ -360,6 +361,7 @@ public abstract class Rectangle2D extends RectangularShape {
          *          {@code Rectangle2D}
          * @since 1.2
          */
+        @SuppressWarnings("this-escape")
         public Double(double x, double y, double w, double h) {
             setRect(x, y, w, h);
         }

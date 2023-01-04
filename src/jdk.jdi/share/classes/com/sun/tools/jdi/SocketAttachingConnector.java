@@ -40,6 +40,7 @@ public class SocketAttachingConnector extends GenericAttachingConnector {
     static final String ARG_PORT = "port";
     static final String ARG_HOST = "hostname";
 
+    @SuppressWarnings("this-escape")
     public SocketAttachingConnector() {
         super(new SocketTransportService());
 

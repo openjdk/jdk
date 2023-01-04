@@ -68,6 +68,7 @@ public class ColorConvert extends Surface {
     private static Color[] colors = { red, pink, orange,
         yellow, green, magenta, cyan, blue };
 
+    @SuppressWarnings("this-escape")
     public ColorConvert() {
         setBackground(white);
         img = getImage("clouds.jpg");

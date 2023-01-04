@@ -41,6 +41,7 @@ public class BytecodeStream {
   private boolean _is_wide;
 
   // Construction
+  @SuppressWarnings("this-escape")
   public BytecodeStream(Method method) {
     _method = method;
     setInterval(0, (int) method.getCodeSize());

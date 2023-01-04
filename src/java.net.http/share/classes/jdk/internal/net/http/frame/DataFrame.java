@@ -52,6 +52,7 @@ public class DataFrame extends Http2Frame {
         this.dataLength = Utils.remaining(data, Integer.MAX_VALUE);
     }
 
+    @SuppressWarnings("this-escape")
     public DataFrame(int streamid, int flags, List<ByteBuffer> data, int padLength) {
         this(streamid, flags, data);
         if (padLength > 0) {

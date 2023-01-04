@@ -42,6 +42,7 @@ public class LineNumberGen implements InstructionTargeter, Cloneable {
      *
      * @param ih instruction handle to reference
      */
+    @SuppressWarnings("this-escape")
     public LineNumberGen(final InstructionHandle ih, final int src_line) {
         setInstruction(ih);
         setSourceLine(src_line);

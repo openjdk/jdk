@@ -45,7 +45,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
     @Serial
     private static final long serialVersionUID = 1781257185164716054L;
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "this-escape" })
     public ColorEditor() {
         setLayout(null);
 

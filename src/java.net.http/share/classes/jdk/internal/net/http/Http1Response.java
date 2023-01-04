@@ -74,6 +74,7 @@ class Http1Response<T> {
     enum State {INITIAL, READING_HEADERS, READING_BODY, DONE}
     private volatile State readProgress = State.INITIAL;
 
+    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final AtomicLong responseCount = new AtomicLong();
     final long id = responseCount.incrementAndGet();

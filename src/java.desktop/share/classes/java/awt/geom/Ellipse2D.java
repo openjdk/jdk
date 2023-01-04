@@ -98,6 +98,7 @@ public abstract class Ellipse2D extends RectangularShape {
          * @param h the height of the framing rectangle
          * @since 1.2
          */
+        @SuppressWarnings("this-escape")
         public Float(float x, float y, float w, float h) {
             setFrame(x, y, w, h);
         }
@@ -243,6 +244,7 @@ public abstract class Ellipse2D extends RectangularShape {
          * @param h the height of the framing rectangle
          * @since 1.2
          */
+        @SuppressWarnings("this-escape")
         public Double(double x, double y, double w, double h) {
             setFrame(x, y, w, h);
         }

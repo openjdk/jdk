@@ -73,6 +73,7 @@ public class TryBlockWriter extends InstructionDetailWriter {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected TryBlockWriter(Context context) {
         super(context);
         context.put(TryBlockWriter.class, this);

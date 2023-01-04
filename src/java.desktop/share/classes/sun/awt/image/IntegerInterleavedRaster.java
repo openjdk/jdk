@@ -120,6 +120,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
+    @SuppressWarnings("this-escape")
     public IntegerInterleavedRaster(SampleModel sampleModel,
                                     DataBufferInt dataBuffer,
                                     Rectangle aRegion,

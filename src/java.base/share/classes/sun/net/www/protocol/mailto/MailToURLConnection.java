@@ -52,6 +52,7 @@ public class MailToURLConnection extends URLConnection {
     private int connectTimeout = -1;
     private int readTimeout = -1;
 
+    @SuppressWarnings("this-escape")
     MailToURLConnection(URL u) {
         super(u);
 

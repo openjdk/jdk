@@ -1987,6 +1987,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             return v.visitUndetVar(this, s);
         }
 
+        @SuppressWarnings("this-escape")
         public UndetVar(TypeVar origin, UndetVarListener listener, Types types) {
             // This is a synthesized internal type, so we cannot annotate it.
             super(UNDETVAR, origin);

@@ -271,7 +271,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
         final int size;
         private Font normalFont, italicFont;
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({ "unchecked", "this-escape" })
         public XTabularData(XOpenTypeData parent, TabularData tabular) {
             super(parent, accessFirstElement(tabular));
             this.tabular = tabular;
@@ -349,6 +349,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
         };
         CompositeData composite;
 
+        @SuppressWarnings("this-escape")
         public XCompositeData() {
             super(null);
             initTable(columnNames);
@@ -359,6 +360,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
             super(parent);
         }
 
+        @SuppressWarnings("this-escape")
         public XCompositeData(XOpenTypeData parent,
                 CompositeData composite) {
             super(parent);
@@ -453,6 +455,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
             this(parent, type.getDimension(), type.getElementOpenType(), val);
         }
 
+        @SuppressWarnings("this-escape")
         XArrayData(XOpenTypeData parent, int dimension,
                 OpenType<?> elemType, Object val) {
             super(parent);

@@ -42,6 +42,7 @@ public class InspectAction extends DelegateAction {
     public static final String VALUE_SHORT_DESCRIPTION = "Inspect selected thread";
     public static final String VALUE_LONG_DESCRIPTION = "Open an inspector on the selected thread";
 
+    @SuppressWarnings("this-escape")
     public InspectAction() {
         super(VALUE_NAME, ActionManager.getIcon(VALUE_SMALL_ICON));
 

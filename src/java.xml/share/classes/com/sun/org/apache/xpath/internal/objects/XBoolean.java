@@ -63,6 +63,7 @@ public class XBoolean extends XObject
    *
    * @param b Value of the boolean object
    */
+  @SuppressWarnings("this-escape")
   public XBoolean(Boolean b)
   {
 

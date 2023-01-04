@@ -165,6 +165,7 @@ public class InitialContext implements Context {
      * @see #init(Hashtable)
      * @since 1.3
      */
+    @SuppressWarnings("this-escape")
     protected InitialContext(boolean lazy) throws NamingException {
         if (!lazy) {
             init(null);
@@ -180,6 +181,7 @@ public class InitialContext implements Context {
      *
      * @see #InitialContext(Hashtable)
      */
+    @SuppressWarnings("this-escape")
     public InitialContext() throws NamingException {
         init(null);
     }
@@ -199,6 +201,7 @@ public class InitialContext implements Context {
      *
      * @throws  NamingException if a naming exception is encountered
      */
+    @SuppressWarnings("this-escape")
     public InitialContext(Hashtable<?,?> environment)
         throws NamingException
     {

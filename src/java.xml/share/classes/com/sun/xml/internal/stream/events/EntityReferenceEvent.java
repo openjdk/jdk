@@ -39,10 +39,12 @@ implements EntityReference {
     private EntityDeclaration fEntityDeclaration ;
     private String fEntityName;
 
+    @SuppressWarnings("this-escape")
     public EntityReferenceEvent() {
         init();
     }
 
+    @SuppressWarnings("this-escape")
     public EntityReferenceEvent(String entityName , EntityDeclaration entityDeclaration) {
         init();
         fEntityName = entityName;

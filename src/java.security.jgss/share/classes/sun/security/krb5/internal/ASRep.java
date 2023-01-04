@@ -49,11 +49,13 @@ public class ASRep extends KDCRep {
                 new_encPart, Krb5.KRB_AS_REP);
     }
 
+    @SuppressWarnings("this-escape")
     public ASRep(byte[] data) throws Asn1Exception,
             RealmException, KrbApErrException, IOException {
         init(new DerValue(data));
     }
 
+    @SuppressWarnings("this-escape")
     public ASRep(DerValue encoding) throws Asn1Exception,
             RealmException, KrbApErrException, IOException {
         init(encoding);

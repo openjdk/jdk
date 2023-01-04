@@ -53,6 +53,7 @@ public class RawCommandLineLauncher extends AbstractLauncher {
         return transport;
     }
 
+    @SuppressWarnings("this-escape")
     public RawCommandLineLauncher() {
         super();
 

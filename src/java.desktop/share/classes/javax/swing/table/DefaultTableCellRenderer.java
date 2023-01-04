@@ -110,6 +110,7 @@ public class DefaultTableCellRenderer extends JLabel
     /**
      * Creates a default table cell renderer.
      */
+    @SuppressWarnings("this-escape")
     public DefaultTableCellRenderer() {
         super();
         setOpaque(true);

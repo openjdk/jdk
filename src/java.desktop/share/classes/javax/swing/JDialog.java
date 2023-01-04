@@ -272,6 +272,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see JComponent#getDefaultLocale
      */
+    @SuppressWarnings("this-escape")
     public JDialog(Frame owner, String title, boolean modal) {
         super(owner == null? SwingUtilities.getSharedOwnerFrame() : owner,
               title, modal);
@@ -322,6 +323,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see JComponent#getDefaultLocale
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public JDialog(Frame owner, String title, boolean modal,
                    GraphicsConfiguration gc) {
         super(owner == null? SwingUtilities.getSharedOwnerFrame() : owner,
@@ -422,6 +424,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see JComponent#getDefaultLocale
      */
+    @SuppressWarnings("this-escape")
     public JDialog(Dialog owner, String title, boolean modal) {
         super(owner, title, modal);
         dialogInit();
@@ -460,6 +463,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see JComponent#getDefaultLocale
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public JDialog(Dialog owner, String title, boolean modal,
                    GraphicsConfiguration gc) {
         super(owner, title, modal, gc);
@@ -592,6 +596,7 @@ public class JDialog extends Dialog implements WindowConstants,
      *
      * @since 1.6
      */
+    @SuppressWarnings("this-escape")
     public JDialog(Window owner, String title, Dialog.ModalityType modalityType) {
         super(owner, title, modalityType);
         dialogInit();
@@ -637,6 +642,7 @@ public class JDialog extends Dialog implements WindowConstants,
      *
      * @since 1.6
      */
+    @SuppressWarnings("this-escape")
     public JDialog(Window owner, String title, Dialog.ModalityType modalityType,
                    GraphicsConfiguration gc) {
         super(owner, title, modalityType, gc);

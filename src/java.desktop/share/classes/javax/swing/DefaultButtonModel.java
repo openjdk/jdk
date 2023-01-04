@@ -79,6 +79,7 @@ public class DefaultButtonModel implements ButtonModel, Serializable {
      * Constructs a <code>DefaultButtonModel</code>.
      *
      */
+    @SuppressWarnings("this-escape")
     public DefaultButtonModel() {
         stateMask = 0;
         setEnabled(true);

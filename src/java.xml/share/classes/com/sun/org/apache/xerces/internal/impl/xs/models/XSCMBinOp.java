@@ -37,6 +37,7 @@ public class XSCMBinOp extends CMNode {
     // -------------------------------------------------------------------
     //  Constructors
     // -------------------------------------------------------------------
+    @SuppressWarnings("this-escape")
     public XSCMBinOp(int type, CMNode leftNode, CMNode rightNode)
     {
         super(type);

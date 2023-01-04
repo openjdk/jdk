@@ -608,6 +608,7 @@ public class SSLFlowDelegate {
             }
         }
 
+        @SuppressWarnings("this-escape")
         Monitor() {
             super("Monitor");
             setDaemon(true);
@@ -688,6 +689,7 @@ public class SSLFlowDelegate {
         // queues of buffers received from upstream waiting
         // to be processed by the SSLEngine
         final List<ByteBuffer> writeList;
+        @SuppressWarnings("this-escape")
         final Logger debugw =  Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
         volatile boolean completing;
         boolean completed; // only accessed in processData

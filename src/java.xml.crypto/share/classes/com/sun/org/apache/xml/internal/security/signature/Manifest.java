@@ -89,6 +89,7 @@ public class Manifest extends SignatureElementProxy {
      *
      * @param doc the {@link Document} in which {@code XMLsignature} is placed
      */
+    @SuppressWarnings("this-escape")
     public Manifest(Document doc) {
         super(doc);
 
@@ -116,6 +117,7 @@ public class Manifest extends SignatureElementProxy {
      * @param secureValidation
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public Manifest(
         Element element, String baseURI, boolean secureValidation
     ) throws XMLSecurityException {

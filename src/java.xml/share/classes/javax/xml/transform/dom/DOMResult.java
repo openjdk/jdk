@@ -56,6 +56,7 @@ public class DOMResult implements Result {
      * {@code systemId}
      * will be set to {@code null}.
      */
+    @SuppressWarnings("this-escape")
     public DOMResult() {
         setNode(null);
         setNextSibling(null);
@@ -77,6 +78,7 @@ public class DOMResult implements Result {
      *
      * @param node The DOM node that will contain the result tree.
      */
+    @SuppressWarnings("this-escape")
     public DOMResult(Node node) {
         setNode(node);
         setNextSibling(null);
@@ -97,6 +99,7 @@ public class DOMResult implements Result {
      * @param node The DOM node that will contain the result tree.
      * @param systemId The system identifier which may be used in association with this node.
      */
+    @SuppressWarnings("this-escape")
     public DOMResult(Node node, String systemId) {
         setNode(node);
         setNextSibling(null);
@@ -134,6 +137,7 @@ public class DOMResult implements Result {
      *
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     public DOMResult(Node node, Node nextSibling) {
 
         // does the correct parent/child relationship exist?
@@ -187,6 +191,7 @@ public class DOMResult implements Result {
      *
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     public DOMResult(Node node, Node nextSibling, String systemId) {
 
         // does the correct parent/child relationship exist?

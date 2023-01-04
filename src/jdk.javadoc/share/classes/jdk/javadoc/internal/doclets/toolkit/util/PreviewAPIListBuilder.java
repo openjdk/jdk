@@ -59,6 +59,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      *
      * @param configuration the current configuration of the doclet
      */
+    @SuppressWarnings("this-escape")
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
         super(configuration, configuration.utils::isPreviewAPI);
         buildSummaryAPIInfo();

@@ -59,6 +59,7 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
      *
      * @throws MonitorException
      */
+    @SuppressWarnings("this-escape")
     public PerfDataBuffer(VmIdentifier vmid) throws MonitorException {
         try {
             ByteBuffer bb = perf.attach(vmid.getLocalVmId());

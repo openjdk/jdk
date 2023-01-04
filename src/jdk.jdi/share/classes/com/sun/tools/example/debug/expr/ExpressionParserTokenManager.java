@@ -1434,6 +1434,7 @@ public ExpressionParserTokenManager(JavaCharStream stream){
 }
 
 /** Constructor. */
+@SuppressWarnings("this-escape")
 public ExpressionParserTokenManager(JavaCharStream stream, int lexState){
    this(stream);
    SwitchTo(lexState);

@@ -79,6 +79,7 @@ abstract class HttpConnection implements Closeable {
     private final TrailingOperations trailingOperations;
     private final long id;
 
+    @SuppressWarnings("this-escape")
     HttpConnection(InetSocketAddress address, HttpClientImpl client) {
         this.address = address;
         this.client = client;

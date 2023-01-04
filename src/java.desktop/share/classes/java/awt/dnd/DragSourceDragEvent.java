@@ -114,6 +114,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      * @see DragSourceEvent#getLocation
      */
 
+    @SuppressWarnings("this-escape")
     public DragSourceDragEvent(DragSourceContext dsc, int dropAction,
                                int action, int modifiers) {
         super(dsc);
@@ -164,6 +165,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      * @see java.awt.event.InputEvent
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public DragSourceDragEvent(DragSourceContext dsc, int dropAction,
                                int action, int modifiers, int x, int y) {
         super(dsc, x, y);

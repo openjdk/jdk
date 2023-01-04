@@ -4275,6 +4275,7 @@ public class BidiBase {
      * @see #DIRECTION_DEFAULT_RIGHT_TO_LEFT
      * @stable ICU 3.8
      */
+    @SuppressWarnings("this-escape")
     public BidiBase(char[] text,
             int textStart,
             byte[] embeddings,

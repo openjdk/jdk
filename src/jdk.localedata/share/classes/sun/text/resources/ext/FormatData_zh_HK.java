@@ -49,6 +49,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
 public class FormatData_zh_HK extends ParallelListResourceBundle {
 
     // reparent to zh_TW for traditional Chinese names
+    @SuppressWarnings("this-escape")
     public FormatData_zh_HK() {
         ResourceBundle bundle = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE())
             .getLocaleData().getDateFormatData(Locale.TAIWAN);

@@ -131,6 +131,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @throws IllegalArgumentException if profile is inappropriate for
      *         representing a {@code ColorSpace}
      */
+    @SuppressWarnings("this-escape")
     public ICC_ColorSpace(ICC_Profile profile) {
         super(profile.getColorSpaceType(), profile.getNumComponents());
 

@@ -76,6 +76,7 @@ public class XMLString {
      * @param offset The offset into the character array.
      * @param length The length of characters from the offset.
      */
+    @SuppressWarnings("this-escape")
     public XMLString(char[] ch, int offset, int length) {
         setValues(ch, offset, length);
     } // <init>(char[],int,int)
@@ -89,6 +90,7 @@ public class XMLString {
      *
      * @param string The XMLString to copy.
      */
+    @SuppressWarnings("this-escape")
     public XMLString(XMLString string) {
         setValues(string);
     } // <init>(XMLString)

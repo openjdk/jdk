@@ -50,6 +50,7 @@ public class Ed25519Operations extends EdECOperations {
     private static final BigInteger SEVEN = BigInteger.valueOf(7);
     private final BigInteger sizeMinus5;
 
+    @SuppressWarnings("this-escape")
     public Ed25519Operations(ImmutableIntegerModuloP d, BigInteger baseX,
                              BigInteger baseY) {
 

@@ -49,6 +49,7 @@ class NameBase extends FunctionCall {
     /**
      * Handles calls with one parameter (either node or node-set).
      */
+    @SuppressWarnings("this-escape")
     public NameBase(QName fname, List<Expression> arguments) {
         super(fname, arguments);
         _param = argument(0);

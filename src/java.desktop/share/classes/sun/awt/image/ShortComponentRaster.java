@@ -146,6 +146,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
+    @SuppressWarnings("this-escape")
     public ShortComponentRaster(SampleModel sampleModel,
                                 DataBufferUShort dataBuffer,
                                 Rectangle aRegion,

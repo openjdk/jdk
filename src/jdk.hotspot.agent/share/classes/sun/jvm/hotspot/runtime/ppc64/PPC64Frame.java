@@ -103,6 +103,7 @@ public class PPC64Frame extends Frame {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public PPC64Frame(Address raw_sp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_sp;
@@ -127,6 +128,7 @@ public class PPC64Frame extends Frame {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public PPC64Frame(Address raw_sp, Address raw_fp) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_sp;
@@ -147,6 +149,7 @@ public class PPC64Frame extends Frame {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public PPC64Frame(Address raw_sp, Address raw_unextendedSp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_unextendedSp;

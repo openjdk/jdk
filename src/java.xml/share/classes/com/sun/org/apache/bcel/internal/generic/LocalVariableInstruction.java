@@ -68,6 +68,7 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
      * @param cTag Instruction number for compact version, ALOAD_0, e.g.
      * @param n local variable index (unsigned short)
      */
+    @SuppressWarnings("this-escape")
     protected LocalVariableInstruction(final short opcode, final short cTag, final int n) {
         super(opcode, (short) 2);
         this.cTag = cTag;

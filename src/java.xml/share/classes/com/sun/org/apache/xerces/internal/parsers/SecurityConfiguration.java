@@ -102,6 +102,7 @@ public class SecurityConfiguration extends XIncludeAwareParserConfiguration
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
+    @SuppressWarnings("this-escape")
     public SecurityConfiguration (SymbolTable symbolTable,
                                          XMLGrammarPool grammarPool,
                                          XMLComponentManager parentSettings) {

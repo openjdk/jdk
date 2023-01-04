@@ -194,6 +194,7 @@ public class Contents {
      * @param configuration the configuration in which to find the
      * resources used to look up resource keys, and other details.
      */
+    @SuppressWarnings("this-escape")
     Contents(HtmlConfiguration configuration) {
         this.resources = configuration.getDocResources();
 

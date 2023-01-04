@@ -42,6 +42,7 @@ public class FindClassesAction extends DelegateAction {
     public static final String VALUE_SHORT_DESCRIPTION = "Find classes with given name part";
     public static final String VALUE_LONG_DESCRIPTION = VALUE_SHORT_DESCRIPTION;
 
+    @SuppressWarnings("this-escape")
     public FindClassesAction() {
         super(VALUE_NAME, ActionManager.getIcon(VALUE_SMALL_ICON));
 

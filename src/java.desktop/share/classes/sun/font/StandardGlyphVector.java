@@ -159,14 +159,17 @@ public class StandardGlyphVector extends GlyphVector {
     // Constructors and Factory methods
     /////////////////////////////
 
+    @SuppressWarnings("this-escape")
     public StandardGlyphVector(Font font, String str, FontRenderContext frc) {
         init(font, str.toCharArray(), 0, str.length(), frc, UNINITIALIZED_FLAGS);
     }
 
+    @SuppressWarnings("this-escape")
     public StandardGlyphVector(Font font, char[] text, FontRenderContext frc) {
         init(font, text, 0, text.length, frc, UNINITIALIZED_FLAGS);
     }
 
+    @SuppressWarnings("this-escape")
     public StandardGlyphVector(Font font, char[] text, int start, int count,
                                FontRenderContext frc) {
         init(font, text, start, count, frc, UNINITIALIZED_FLAGS);
@@ -181,6 +184,7 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
      // used by GlyphLayout to construct a glyphvector
+    @SuppressWarnings("this-escape")
     public StandardGlyphVector(Font font, FontRenderContext frc, int[] glyphs, float[] positions,
                                int[] indices, int flags) {
         initGlyphVector(font, frc, glyphs, positions, indices, flags);
@@ -231,6 +235,7 @@ public class StandardGlyphVector extends GlyphVector {
         initFontData();
     }
 
+    @SuppressWarnings("this-escape")
     public StandardGlyphVector(Font font, CharacterIterator iter, FontRenderContext frc) {
         int offset = iter.getBeginIndex();
         char[] text = new char [iter.getEndIndex() - offset];
@@ -242,6 +247,7 @@ public class StandardGlyphVector extends GlyphVector {
         init(font, text, 0, text.length, frc, UNINITIALIZED_FLAGS);
     }
 
+    @SuppressWarnings("this-escape")
     public StandardGlyphVector(Font font, int[] glyphs, FontRenderContext frc) {
         // !!! find callers of this
         // should be able to fully init from raw data, e.g. charmap, flags too.

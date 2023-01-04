@@ -38,6 +38,7 @@ public class ApplyAction extends DelegateAction
         this(VALUE_SMALL_ICON);
     }
 
+    @SuppressWarnings("this-escape")
     public ApplyAction(String iconPath)
     {
         super("Apply", ActionManager.getIcon(iconPath));

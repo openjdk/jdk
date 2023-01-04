@@ -718,6 +718,7 @@ public abstract class Arc2D extends RectangularShape {
      * @see java.awt.geom.Arc2D.Double
      * @since 1.2
      */
+    @SuppressWarnings("this-escape")
     protected Arc2D(int type) {
         setArcType(type);
     }

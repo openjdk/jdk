@@ -153,6 +153,7 @@ public class JMXConnectionNotification extends Notification {
      * @exception IllegalArgumentException if
      * <code>sequenceNumber</code> is negative.
      */
+    @SuppressWarnings("this-escape")
     public JMXConnectionNotification(String type,
                                      Object source,
                                      String connectionId,

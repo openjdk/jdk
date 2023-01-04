@@ -34,6 +34,7 @@ public class PosixSysTerminal extends AbstractPosixTerminal {
     protected final Map<Signal, Object> nativeHandlers = new HashMap<>();
     protected final Task closer;
 
+    @SuppressWarnings("this-escape")
     public PosixSysTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding,
                             boolean nativeSignals, SignalHandler signalHandler) throws IOException {
         super(name, type, pty, encoding, signalHandler);

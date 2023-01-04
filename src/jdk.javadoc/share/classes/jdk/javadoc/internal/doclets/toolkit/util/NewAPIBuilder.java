@@ -44,6 +44,7 @@ public class NewAPIBuilder extends SummaryAPIListBuilder {
 
     public final List<String> releases;
 
+    @SuppressWarnings("this-escape")
     public NewAPIBuilder(BaseConfiguration configuration, List<String> releases) {
         super(configuration, element -> isNewAPI(element, configuration.utils, releases));
         this.releases = releases;

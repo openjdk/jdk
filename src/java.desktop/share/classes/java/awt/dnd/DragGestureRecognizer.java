@@ -121,7 +121,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * @throws IllegalArgumentException
      * if ds is {@code null}.
      */
-
+    @SuppressWarnings("this-escape")
     protected DragGestureRecognizer(DragSource ds, Component c, int sa, DragGestureListener dgl) {
         super();
 

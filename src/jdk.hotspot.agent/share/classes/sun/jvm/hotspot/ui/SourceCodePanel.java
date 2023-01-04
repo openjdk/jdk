@@ -65,6 +65,7 @@ public class SourceCodePanel extends JPanel {
     private int       rowHeight;
     private boolean   initted;
 
+    @SuppressWarnings("this-escape")
     public RowHeader() {
       super();
       initted = true;
@@ -155,6 +156,7 @@ public class SourceCodePanel extends JPanel {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public SourceCodePanel() {
     maybeLoadIcons();
 

@@ -2891,6 +2891,7 @@ public class CSS implements Serializable {
             w3cLengthMapping.put("in", 96f);               // 96px
         }
 
+        @SuppressWarnings("this-escape")
         LengthUnit(String value, short defaultType, float defaultValue) {
             parse(value, defaultType, defaultValue);
         }

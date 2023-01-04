@@ -141,6 +141,7 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      * @revised 1.4
      */
+    @SuppressWarnings("this-escape")
     public Socket() {
         setImpl();
     }
@@ -495,6 +496,7 @@ public class Socket implements java.io.Closeable {
              new InetSocketAddress(0), stream);
     }
 
+    @SuppressWarnings("this-escape")
     private Socket(SocketAddress address, SocketAddress localAddr,
                    boolean stream) throws IOException {
         setImpl();

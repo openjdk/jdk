@@ -50,6 +50,7 @@ class MessageHeader {
         grow();
     }
 
+    @SuppressWarnings("this-escape")
     public MessageHeader (InputStream is) throws java.io.IOException {
         parseHeader(is);
     }

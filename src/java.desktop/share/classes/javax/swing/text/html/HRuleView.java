@@ -44,6 +44,7 @@ class HRuleView extends View  {
      *
      * @param elem the element to create a view for
      */
+    @SuppressWarnings("this-escape")
     public HRuleView(Element elem) {
         super(elem);
         setPropertiesFromAttributes();

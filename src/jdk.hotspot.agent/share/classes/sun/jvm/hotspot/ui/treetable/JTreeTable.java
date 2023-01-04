@@ -230,6 +230,7 @@ public class JTreeTable extends JTable {
          * be painted. */
         protected Border highlightBorder;
 
+        @SuppressWarnings("this-escape")
         public TreeTableCellRenderer(TreeModel model) {
             super(model);
             setCellRenderer(new JTreeTableCellRenderer());
@@ -495,6 +496,7 @@ public class JTreeTable extends JTable {
         /** Set to true when we are updating the ListSelectionModel. */
         protected boolean         updatingListSelectionModel;
 
+        @SuppressWarnings("this-escape")
         public ListToTreeSelectionModelWrapper() {
             super();
             getListSelectionModel().addListSelectionListener

@@ -54,6 +54,7 @@ public abstract class Entity {
     //
 
     /** Default constructor. */
+    @SuppressWarnings("this-escape")
     public Entity() {
         clear();
     } // <init>()
@@ -112,6 +113,7 @@ public abstract class Entity {
         //
 
         /** Default constructor. */
+        @SuppressWarnings("this-escape")
         public InternalEntity() {
             clear();
         } // <init>()
@@ -179,6 +181,7 @@ public abstract class Entity {
         //
 
         /** Default constructor. */
+        @SuppressWarnings("this-escape")
         public ExternalEntity() {
             clear();
         } // <init>()

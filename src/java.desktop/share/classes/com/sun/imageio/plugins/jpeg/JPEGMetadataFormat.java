@@ -40,6 +40,7 @@ abstract class JPEGMetadataFormat extends IIOMetadataFormatImpl {
 
     String resourceBaseName = this.getClass().getName() + "Resources";
 
+    @SuppressWarnings("this-escape")
     JPEGMetadataFormat(String formatName, int childPolicy) {
         super(formatName, childPolicy);
         setResourceBaseName(resourceBaseName);

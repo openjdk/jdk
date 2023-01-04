@@ -83,6 +83,7 @@ public class PropertiesMetalTheme extends DefaultMetalTheme {
      * Colors will be initialized to be the same as the DefaultMetalTheme,
      * and then any colors provided in the properties file will override that.
      */
+    @SuppressWarnings("this-escape")
     public PropertiesMetalTheme(InputStream stream) {
         initColors();
         loadProperties(stream);

@@ -40,6 +40,7 @@ class Extension {
         this.key = key;
     }
 
+    @SuppressWarnings("this-escape")
     Extension(char key, String value) {
         this.key = key;
         setValue(value);

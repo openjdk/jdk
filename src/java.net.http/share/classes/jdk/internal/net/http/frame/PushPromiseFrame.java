@@ -39,6 +39,7 @@ public class PushPromiseFrame extends HeaderFrame {
     public static final int END_HEADERS = 0x4;
     public static final int PADDED = 0x8;
 
+    @SuppressWarnings("this-escape")
     public PushPromiseFrame(int streamid, int flags, int promisedStream, List<ByteBuffer> buffers, int padLength) {
         super(streamid, flags, buffers);
         this.promisedStream = promisedStream;

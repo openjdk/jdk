@@ -104,6 +104,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * @see java.awt.RenderingHints#KEY_INTERPOLATION
      * @see java.awt.RenderingHints#KEY_RENDERING
      */
+    @SuppressWarnings("this-escape")
     public AffineTransformOp(AffineTransform xform, RenderingHints hints){
         validateTransform(xform);
         this.xform = (AffineTransform) xform.clone();
@@ -147,6 +148,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * {@link #TYPE_BICUBIC TYPE_BICUBIC}.
      * @throws ImagingOpException if the transform is non-invertible.
      */
+    @SuppressWarnings("this-escape")
     public AffineTransformOp(AffineTransform xform, int interpolationType) {
         validateTransform(xform);
         this.xform = (AffineTransform)xform.clone();

@@ -69,6 +69,7 @@ class SummaryTab extends Tab {
         return Messages.SUMMARY_TAB_TAB_NAME;
     }
 
+    @SuppressWarnings("this-escape")
     public SummaryTab(VMPanel vmPanel) {
         super(vmPanel, getTabName());
 

@@ -90,6 +90,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @see java.util.Locale#getDefault()
      * @see java.util.Locale#setDefault(java.util.Locale)
      */
+    @SuppressWarnings("this-escape")
     public BeanContextSupport(BeanContext peer, Locale lcle, boolean dTime, boolean visible) {
         super(peer);
 

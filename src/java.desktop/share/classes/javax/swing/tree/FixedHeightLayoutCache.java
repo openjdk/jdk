@@ -77,6 +77,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
     /**
      * Constructs a {@code FixedHeightLayoutCache}.
      */
+    @SuppressWarnings("this-escape")
     public FixedHeightLayoutCache() {
         super();
         tempStacks = new Stack<Stack<TreePath>>();

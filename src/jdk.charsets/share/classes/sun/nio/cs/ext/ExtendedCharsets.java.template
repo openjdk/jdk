@@ -40,6 +40,7 @@ public class ExtendedCharsets extends AbstractCharsetProvider {
 
     static volatile ExtendedCharsets instance = null;
 
+    @SuppressWarnings("this-escape")
     public ExtendedCharsets() {
 
         super("sun.nio.cs.ext");  // identify provider pkg name.

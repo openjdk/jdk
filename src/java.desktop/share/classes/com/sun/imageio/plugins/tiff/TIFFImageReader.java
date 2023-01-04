@@ -73,6 +73,7 @@ public class TIFFImageReader extends ImageReader {
     // True if the file header has been read.
     private boolean gotHeader = false;
 
+    @SuppressWarnings("this-escape")
     private ImageReadParam imageReadParam = getDefaultReadParam();
 
     // Stream metadata, or null.

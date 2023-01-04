@@ -339,6 +339,7 @@ class LambdaForm {
     LambdaForm(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
         this(arity, names, result, forceInline, customized, Kind.GENERIC);
     }
+    @SuppressWarnings("this-escape")
     LambdaForm(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         assert(namesOK(arity, names));
         this.arity = arity;

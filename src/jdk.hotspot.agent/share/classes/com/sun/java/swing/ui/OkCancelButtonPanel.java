@@ -35,6 +35,7 @@ import javax.swing.JPanel;
 public class OkCancelButtonPanel extends JPanel
 {
 
+    @SuppressWarnings("this-escape")
     public OkCancelButtonPanel(ActionListener listener)
     {
         DelegateAction okAction = new OkAction();

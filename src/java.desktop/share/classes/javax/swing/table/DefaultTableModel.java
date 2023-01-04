@@ -129,6 +129,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #setDataVector
      * @see #setValueAt
      */
+    @SuppressWarnings("this-escape")
     public DefaultTableModel(Vector<?> columnNames, int rowCount) {
         setDataVector(newVector(rowCount), columnNames);
     }
@@ -164,7 +165,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #getDataVector
      * @see #setDataVector
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({ "rawtypes", "this-escape" })
     public DefaultTableModel(Vector<? extends Vector> data, Vector<?> columnNames) {
         setDataVector(data, columnNames);
     }
@@ -181,6 +182,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #getDataVector
      * @see #setDataVector
      */
+    @SuppressWarnings("this-escape")
     public DefaultTableModel(Object[][] data, Object[] columnNames) {
         setDataVector(data, columnNames);
     }

@@ -194,6 +194,7 @@ public class RequiredModelMBean
      *          The MBeanInfo passed in parameter is null.
      *
      **/
+    @SuppressWarnings("this-escape")
     public RequiredModelMBean(ModelMBeanInfo mbi)
         throws MBeanException, RuntimeOperationsException {
 

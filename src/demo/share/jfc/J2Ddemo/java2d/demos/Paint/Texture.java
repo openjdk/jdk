@@ -114,6 +114,7 @@ public class Texture extends Surface {
         greendots = new TexturePaint(bi, new Rectangle(0, 0, 2, 2));
     }
 
+    @SuppressWarnings("this-escape")
     public Texture() {
         setBackground(WHITE);
     }

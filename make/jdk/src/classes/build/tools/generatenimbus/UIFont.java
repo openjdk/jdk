@@ -29,6 +29,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 class UIFont extends UIDefault<Typeface> {
+    @SuppressWarnings("this-escape")
     UIFont(XMLStreamReader reader) throws XMLStreamException {
         name = reader.getAttributeValue(null, "name");
         while (reader.hasNext()) {

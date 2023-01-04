@@ -39,6 +39,7 @@ import javax.xml.stream.XMLStreamConstants;
 public class EndDocumentEvent extends DummyEvent
 implements EndDocument {
 
+    @SuppressWarnings("this-escape")
     public EndDocumentEvent() {
         init();
     }

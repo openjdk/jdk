@@ -63,6 +63,7 @@ class ExplodedImage extends SystemImage {
     private final Map<String, PathNode> nodes = Collections.synchronizedMap(new HashMap<>());
     private final BasicFileAttributes modulesDirAttrs;
 
+    @SuppressWarnings("this-escape")
     ExplodedImage(Path modulesDir) throws IOException {
         defaultFS = FileSystems.getDefault();
         String str = defaultFS.getSeparator();

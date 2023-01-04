@@ -238,6 +238,7 @@ class PKIX {
         private List<CertStore> stores;
         private X500Principal targetSubject;
 
+        @SuppressWarnings("this-escape")
         BuilderParams(PKIXBuilderParameters params)
             throws InvalidAlgorithmParameterException
         {

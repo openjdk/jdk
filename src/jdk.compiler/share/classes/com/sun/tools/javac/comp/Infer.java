@@ -1848,6 +1848,7 @@ public class Infer {
             /** the nodes in the inference graph */
             ArrayList<Node> nodes;
 
+            @SuppressWarnings("this-escape")
             InferenceGraph() {
                 initNodes();
             }

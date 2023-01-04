@@ -134,6 +134,7 @@ public class DocumentBuilderImpl extends DocumentBuilder
         this(dbf, dbfAttrs, features, false);
     }
 
+    @SuppressWarnings("this-escape")
     DocumentBuilderImpl(DocumentBuilderFactoryImpl dbf, Map<String, Object> dbfAttrs,
             Map<String, Boolean> features, boolean secureProcessing)
         throws SAXNotRecognizedException, SAXNotSupportedException

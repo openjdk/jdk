@@ -225,6 +225,7 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
     @SuppressWarnings("serial") // Same-version serialization only and
                                 // internal anonymous classes
     static class TaskBar extends JPanel implements ComponentListener, ContainerListener {
+        @SuppressWarnings("this-escape")
         TaskBar() {
             setOpaque(true);
             setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0) {

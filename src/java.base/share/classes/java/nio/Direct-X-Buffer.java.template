@@ -118,6 +118,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     // Primary constructor
     //
+    @SuppressWarnings("this-escape")
     Direct$Type$Buffer$RW$(int cap) {                   // package-private
 #if[rw]
         super(-1, 0, cap, cap, null);
@@ -190,6 +191,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     // For memory-mapped buffers -- invoked by FileChannelImpl via reflection
     //
+    @SuppressWarnings("this-escape")
     protected Direct$Type$Buffer$RW$(int cap, long addr,
                                      FileDescriptor fd,
                                      Runnable unmapper,

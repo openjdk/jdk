@@ -73,6 +73,7 @@ class EventDispatchThread extends Thread {
         throw new UnsupportedOperationException("Must erase locals");
     }
 
+    @SuppressWarnings("this-escape")
     EventDispatchThread(ThreadGroup group, String name, EventQueue queue) {
         super(group, null, name, 0, false);
         setEventQueue(queue);

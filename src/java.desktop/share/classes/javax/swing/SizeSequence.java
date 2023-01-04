@@ -157,6 +157,7 @@ public class SizeSequence {
      * @param numEntries  the number of sizes to track
      * @param value       the initial value of each size
      */
+    @SuppressWarnings("this-escape")
     public SizeSequence(int numEntries, int value) {
         this();
         insertEntries(0, numEntries, value);
@@ -169,6 +170,7 @@ public class SizeSequence {
      * @param sizes  the array of sizes to be contained in
      *               the <code>SizeSequence</code>
      */
+    @SuppressWarnings("this-escape")
     public SizeSequence(int[] sizes) {
         this();
         setSizes(sizes);

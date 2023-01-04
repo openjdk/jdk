@@ -180,6 +180,7 @@ public class KDCOptions extends KerberosFlags {
         return options;
     }
 
+    @SuppressWarnings("this-escape")
     public KDCOptions() {
         super(Krb5.KDC_OPTS_MAX + 1);
         setDefault();

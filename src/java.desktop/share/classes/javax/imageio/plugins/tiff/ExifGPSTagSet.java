@@ -451,6 +451,7 @@ public final class ExifGPSTagSet extends TIFFTagSet {
     }
 
     static class GPSAltitudeRef extends TIFFTag {
+        @SuppressWarnings("this-escape")
         public GPSAltitudeRef() {
             super("GPSAltitudeRef",
                   TAG_GPS_ALTITUDE_REF,
@@ -655,6 +656,7 @@ public final class ExifGPSTagSet extends TIFFTagSet {
     }
 
     static class GPSDifferential extends TIFFTag {
+        @SuppressWarnings("this-escape")
         public GPSDifferential() {
             super("GPSDifferential",
                   TAG_GPS_DIFFERENTIAL,

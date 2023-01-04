@@ -93,6 +93,7 @@ class RevocationChecker extends PKIXRevocationChecker {
         legacy = false;
     }
 
+    @SuppressWarnings("this-escape")
     RevocationChecker(TrustAnchor anchor, ValidatorParams params)
         throws CertPathValidatorException
     {

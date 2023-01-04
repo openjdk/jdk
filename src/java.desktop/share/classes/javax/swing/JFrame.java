@@ -176,6 +176,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see Component#setVisible
      * @see JComponent#getDefaultLocale
      */
+    @SuppressWarnings("this-escape")
     public JFrame() throws HeadlessException {
         super();
         frameInit();
@@ -200,6 +201,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see JComponent#getDefaultLocale
      * @since     1.3
      */
+    @SuppressWarnings("this-escape")
     public JFrame(GraphicsConfiguration gc) {
         super(gc);
         frameInit();
@@ -220,6 +222,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see Component#setVisible
      * @see JComponent#getDefaultLocale
      */
+    @SuppressWarnings("this-escape")
     public JFrame(String title) throws HeadlessException {
         super(title);
         frameInit();
@@ -246,6 +249,7 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see JComponent#getDefaultLocale
      * @since     1.3
      */
+    @SuppressWarnings("this-escape")
     public JFrame(String title, GraphicsConfiguration gc) {
         super(title, gc);
         frameInit();

@@ -65,6 +65,7 @@ public class Gradient extends ControlsSurface {
 
     protected Color innerC, outerC;
 
+    @SuppressWarnings("this-escape")
     public Gradient() {
         setBackground(white);
         innerC = green;

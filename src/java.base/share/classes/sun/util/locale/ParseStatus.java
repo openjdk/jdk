@@ -36,6 +36,7 @@ public class ParseStatus {
     int errorIndex;
     String errorMsg;
 
+    @SuppressWarnings("this-escape")
     public ParseStatus() {
         reset();
     }

@@ -141,6 +141,7 @@ public class X86Frame extends Frame {
 }
 
 
+  @SuppressWarnings("this-escape")
   public X86Frame(Address raw_sp, Address raw_fp, Address pc) {
     initFrame(raw_sp, raw_fp, pc, null, null);
 
@@ -150,6 +151,7 @@ public class X86Frame extends Frame {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public X86Frame(Address raw_sp, Address raw_fp) {
     initFrame(raw_sp, raw_fp, null, null, null);
 
@@ -159,6 +161,7 @@ public class X86Frame extends Frame {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public X86Frame(Address raw_sp, Address raw_unextendedSp, Address raw_fp, Address pc) {
     initFrame(raw_sp, raw_fp, pc, raw_unextendedSp, null);
 
@@ -168,6 +171,7 @@ public class X86Frame extends Frame {
     }
   }
 
+  @SuppressWarnings("this-escape")
   public X86Frame(Address raw_sp, Address raw_fp, Address pc, Address raw_unextendedSp, Address live_bcp) {
     initFrame(raw_sp, raw_fp, pc, raw_unextendedSp, live_bcp);
 

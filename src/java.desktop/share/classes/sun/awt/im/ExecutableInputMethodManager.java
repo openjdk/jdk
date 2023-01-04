@@ -99,6 +99,7 @@ class ExecutableInputMethodManager extends InputMethodManager
     private Hashtable<String, InputMethodLocator> preferredLocatorCache = new Hashtable<>();
     private Preferences userRoot;
 
+    @SuppressWarnings("this-escape")
     ExecutableInputMethodManager() {
 
         // set up host adapter locator

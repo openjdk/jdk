@@ -256,6 +256,7 @@ public class WeakHashMap<K,V>
      * @throws  NullPointerException if the specified map is null
      * @since   1.3
      */
+    @SuppressWarnings("this-escape")
     public WeakHashMap(Map<? extends K, ? extends V> m) {
         this(Math.max((int) Math.ceil(m.size() / (double)DEFAULT_LOAD_FACTOR),
                 DEFAULT_INITIAL_CAPACITY),

@@ -110,6 +110,7 @@ public class JulianCalendar extends BaseCalendar {
         }
     }
 
+    @SuppressWarnings("this-escape")
     JulianCalendar() {
         setEras(eras);
     }

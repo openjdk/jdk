@@ -66,6 +66,7 @@ public class JPEGFlip extends Surface {
 
     private static Image img;
 
+    @SuppressWarnings("this-escape")
     public JPEGFlip() {
         setBackground(WHITE);
         img = getImage("duke.png");

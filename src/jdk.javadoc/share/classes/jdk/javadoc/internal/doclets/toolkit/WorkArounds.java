@@ -345,6 +345,7 @@ public class WorkArounds {
         private static final String WRITEREPLACE = "writeReplace";
         private static final String READOBJECTNODATA = "readObjectNoData";
 
+        @SuppressWarnings("this-escape")
         NewSerializedForm(Utils utils, Elements elements, TypeElement te) {
             this.utils = utils;
             this.elements = elements;

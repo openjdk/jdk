@@ -83,6 +83,7 @@ public abstract class NativeSignatureIterator extends SignatureIterator {
   public abstract void passFloat();
   public abstract void passDouble();
 
+  @SuppressWarnings("this-escape")
   public NativeSignatureIterator(Method method) {
     super(method.getSignature());
     this.method = method;

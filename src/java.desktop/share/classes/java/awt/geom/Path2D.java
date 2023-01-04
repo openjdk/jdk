@@ -274,6 +274,7 @@ public abstract sealed class Path2D implements Shape, Cloneable
          * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
+        @SuppressWarnings("this-escape")
         public Float(Shape s, AffineTransform at) {
             if (s instanceof Path2D) {
                 Path2D p2d = (Path2D) s;
@@ -1160,6 +1161,7 @@ public abstract sealed class Path2D implements Shape, Cloneable
          * @throws NullPointerException if {@code s} is {@code null}
          * @since 1.6
          */
+        @SuppressWarnings("this-escape")
         public Double(Shape s, AffineTransform at) {
             if (s instanceof Path2D) {
                 Path2D p2d = (Path2D) s;

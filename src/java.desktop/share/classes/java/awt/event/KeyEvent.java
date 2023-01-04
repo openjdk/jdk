@@ -1294,7 +1294,7 @@ public non-sealed class KeyEvent extends InputEvent {
      * @see #getKeyLocation()
      * @since 1.4
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "this-escape" })
     public KeyEvent(Component source, int id, long when, int modifiers,
                     int keyCode, char keyChar, int keyLocation) {
         super(source, id, when, modifiers);

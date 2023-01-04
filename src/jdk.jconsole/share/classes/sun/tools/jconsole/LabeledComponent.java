@@ -40,6 +40,7 @@ public class LabeledComponent extends JPanel {
         this(text, 0, comp);
     }
 
+    @SuppressWarnings("this-escape")
     public LabeledComponent(String text, int mnemonic, JComponent comp) {
         super(new BorderLayout(6, 6));
 

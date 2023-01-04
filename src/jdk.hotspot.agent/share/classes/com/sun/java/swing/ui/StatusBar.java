@@ -33,6 +33,7 @@ public class StatusBar extends JPanel
     implements ActionListener, MouseListener
 {
 
+    @SuppressWarnings("this-escape")
     public StatusBar()
     {
         setLayout(new FlowLayout(0));

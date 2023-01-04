@@ -157,6 +157,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Create a JavacFileManager using a given context, optionally registering
      * it as the JavaFileManager for that context.
      */
+    @SuppressWarnings("this-escape")
     public JavacFileManager(Context context, boolean register, Charset charset) {
         super(charset);
         if (register)

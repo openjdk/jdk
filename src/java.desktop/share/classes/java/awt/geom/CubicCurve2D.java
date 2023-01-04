@@ -151,6 +151,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
          *           of the resulting {@code CubicCurve2D}
          * @since 1.2
          */
+        @SuppressWarnings("this-escape")
         public Float(float x1, float y1,
                      float ctrlx1, float ctrly1,
                      float ctrlx2, float ctrly2,
@@ -418,6 +419,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
          *           of the resulting {@code CubicCurve2D}
          * @since 1.2
          */
+        @SuppressWarnings("this-escape")
         public Double(double x1, double y1,
                       double ctrlx1, double ctrly1,
                       double ctrlx2, double ctrly2,

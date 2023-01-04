@@ -38,6 +38,7 @@ public class AlignLeftAction extends StateChangeAction
         this("text/AlignLeft16.gif");
     }
 
+    @SuppressWarnings("this-escape")
     public AlignLeftAction(String iconPath)
     {
         super("Left Align", ActionManager.getIcon(iconPath));

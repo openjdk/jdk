@@ -86,6 +86,7 @@ class SOFMarkerSegment extends MarkerSegment {
         buffer.bufAvail -= length;
     }
 
+    @SuppressWarnings("this-escape")
     SOFMarkerSegment(Node node) throws IIOInvalidTreeException {
         // All attributes are optional, so setup defaults first
         super(JPEG.SOF0);

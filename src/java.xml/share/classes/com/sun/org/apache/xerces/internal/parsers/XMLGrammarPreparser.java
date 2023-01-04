@@ -127,6 +127,7 @@ public class XMLGrammarPreparser {
      *
      * @param symbolTable The symbol table to use.
      */
+    @SuppressWarnings("this-escape")
     public XMLGrammarPreparser (SymbolTable symbolTable) {
         fSymbolTable = symbolTable;
 

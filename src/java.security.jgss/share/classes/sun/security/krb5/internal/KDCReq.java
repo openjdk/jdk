@@ -82,6 +82,7 @@ public class KDCReq {
     public KDCReq() {
     }
 
+    @SuppressWarnings("this-escape")
     public KDCReq(byte[] data, int req_type) throws Asn1Exception,
             IOException, KrbException {
         init(new DerValue(data), req_type);
@@ -96,6 +97,7 @@ public class KDCReq {
      * @exception IOException if an I/O error occurs while reading encoded data.
      * @exception KrbErrException
      */
+    @SuppressWarnings("this-escape")
     public KDCReq(DerValue der, int req_type) throws Asn1Exception,
             IOException, KrbException {
         init(der, req_type);

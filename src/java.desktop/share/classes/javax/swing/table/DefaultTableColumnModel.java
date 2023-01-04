@@ -87,6 +87,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
     /**
      * Creates a default table column model.
      */
+    @SuppressWarnings("this-escape")
     public DefaultTableColumnModel() {
         super();
 

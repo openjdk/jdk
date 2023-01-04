@@ -359,6 +359,7 @@ public class JFileChooser extends JComponent implements Accessible {
      *                         file or directory
      * @param fsv a {@code FileSystemView}
      */
+    @SuppressWarnings("this-escape")
     public JFileChooser(File currentDirectory, FileSystemView fsv) {
         setup(fsv);
         setCurrentDirectory(currentDirectory);
@@ -372,6 +373,7 @@ public class JFileChooser extends JComponent implements Accessible {
      *                             or directory
      * @param fsv a {@code FileSystemView}
      */
+    @SuppressWarnings("this-escape")
     public JFileChooser(String currentDirectoryPath, FileSystemView fsv) {
         setup(fsv);
         if(currentDirectoryPath == null) {

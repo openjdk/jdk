@@ -116,6 +116,7 @@ public class DOM2DTM extends DTMDefaultBaseIterators
    * @param doIndexing true if the caller considers it worth it to use
    *                   indexing schemes.
    */
+  @SuppressWarnings("this-escape")
   public DOM2DTM(DTMManager mgr, DOMSource domSource,
                  int dtmIdentity, DTMWSFilter whiteSpaceFilter,
                  XMLStringFactory xstringfactory,

@@ -613,6 +613,7 @@ public class BufferedImage extends java.awt.Image
  *  SEE THE METHOD DEFINERASTERTYPE @ RASTEROUTPUTMANAGER
  *
  */
+    @SuppressWarnings("this-escape")
     public BufferedImage (ColorModel cm,
                           WritableRaster raster,
                           boolean isRasterPremultiplied,

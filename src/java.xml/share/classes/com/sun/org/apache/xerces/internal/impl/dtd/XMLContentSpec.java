@@ -172,11 +172,13 @@ public class XMLContentSpec {
     //
 
     /** Default constructor. */
+    @SuppressWarnings("this-escape")
     public XMLContentSpec() {
         clear();
     }
 
     /** Constructs a content spec with the specified values. */
+    @SuppressWarnings("this-escape")
     public XMLContentSpec(short type, Object value, Object otherValue) {
         setValues(type, value, otherValue);
     }
@@ -184,6 +186,7 @@ public class XMLContentSpec {
     /**
      * Constructs a content spec from the values in the specified content spec.
      */
+    @SuppressWarnings("this-escape")
     public XMLContentSpec(XMLContentSpec contentSpec) {
         setValues(contentSpec);
     }
@@ -192,6 +195,7 @@ public class XMLContentSpec {
      * Constructs a content spec from the values specified by the given
      * content spec provider and identifier.
      */
+    @SuppressWarnings("this-escape")
     public XMLContentSpec(XMLContentSpec.Provider provider,
                           int contentSpecIndex) {
         setValues(provider, contentSpecIndex);

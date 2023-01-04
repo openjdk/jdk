@@ -53,6 +53,7 @@ public class PropertyEditorSupport implements PropertyEditor {
      * @param source the source used for event firing
      * @since 1.5
      */
+    @SuppressWarnings("this-escape")
     public PropertyEditorSupport(Object source) {
         if (source == null) {
            throw new NullPointerException();

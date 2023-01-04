@@ -16,6 +16,7 @@ public class Size {
     public Size() {
     }
 
+    @SuppressWarnings("this-escape")
     public Size(int columns, int rows) {
         this();
         setColumns(columns);

@@ -29,6 +29,7 @@ import jdk.vm.ci.services.Services;
 /**
  * Used to access AMD64 specific native configuration details.
  */
+@SuppressWarnings("this-escape")
 class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     AMD64HotSpotVMConfig(HotSpotVMConfigStore config) {

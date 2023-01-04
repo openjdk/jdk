@@ -68,6 +68,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
      * @param i
      *            initial instruction
      */
+    @SuppressWarnings("this-escape")
     public InstructionList(final Instruction i) {
         append(i);
     }
@@ -78,6 +79,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
      * @param i
      *            initial instruction
      */
+    @SuppressWarnings("this-escape")
     public InstructionList(final BranchInstruction i) {
         append(i);
     }
@@ -89,6 +91,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
      * @param c
      *            compound instruction (list)
      */
+    @SuppressWarnings("this-escape")
     public InstructionList(final CompoundInstruction c) {
         append(c.getInstructionList());
     }
@@ -162,6 +165,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
      * @param code
      *            byte array containing the instructions
      */
+    @SuppressWarnings("this-escape")
     public InstructionList(final byte[] code) {
         int count = 0; // Contains actual length
         int[] pos;

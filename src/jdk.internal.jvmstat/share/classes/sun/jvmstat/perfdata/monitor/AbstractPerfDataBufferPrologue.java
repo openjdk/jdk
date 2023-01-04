@@ -90,6 +90,7 @@ public abstract class AbstractPerfDataBufferPrologue {
      *
      * @param byteBuffer buffer containing the instrumentation data
      */
+    @SuppressWarnings("this-escape")
     public AbstractPerfDataBufferPrologue(ByteBuffer byteBuffer)
            throws MonitorException  {
         this.byteBuffer = byteBuffer.duplicate();

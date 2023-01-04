@@ -57,6 +57,7 @@ public class StartElementEvent extends DummyEvent
         this(new QName(uri, localpart, prefix));
     }
 
+    @SuppressWarnings("this-escape")
     public StartElementEvent(QName qname) {
         fQName = qname;
         init();

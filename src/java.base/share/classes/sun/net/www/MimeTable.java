@@ -62,6 +62,7 @@ public class MimeTable implements FileNameMap {
 
     private static final String filePreamble = "sun.net.www MIME content-types table";
 
+    @SuppressWarnings("this-escape")
     MimeTable() {
         load();
     }

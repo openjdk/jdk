@@ -55,6 +55,7 @@ public class ObjectListPanel extends SAPanel {
 
   /** Takes a List<Oop> in constructor, and an optional
       HeapProgressThunk used if computing liveness */
+  @SuppressWarnings("this-escape")
   public ObjectListPanel(java.util.List<Oop> els,
                          HeapProgressThunk thunk) {
     super();

@@ -166,6 +166,7 @@ public abstract class lr_parser {
     }
 
   /** Constructor that sets the default scanner. [CSA/davidm] */
+  @SuppressWarnings("this-escape")
   public lr_parser(Scanner s) {
     this(); /* in case default constructor someday does something */
     setScanner(s);

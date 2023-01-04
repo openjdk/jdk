@@ -598,6 +598,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
          *
          * @param size the <code>Dimension</code> of the separator
          */
+        @SuppressWarnings("this-escape")
         public Separator( Dimension size )
         {
             super( JSeparator.HORIZONTAL );
@@ -740,7 +741,6 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
 
         BoxLayout lm;
 
-        @SuppressWarnings("this-escape")
         DefaultToolBarLayout(int orientation) {
             if (orientation == JToolBar.VERTICAL) {
                 lm = new BoxLayout(JToolBar.this, BoxLayout.PAGE_AXIS);

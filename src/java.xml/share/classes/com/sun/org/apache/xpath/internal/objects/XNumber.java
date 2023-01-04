@@ -54,6 +54,7 @@ public class XNumber extends XObject
    *
    * @param num Value of the object
    */
+  @SuppressWarnings("this-escape")
   public XNumber(Number num)
   {
 

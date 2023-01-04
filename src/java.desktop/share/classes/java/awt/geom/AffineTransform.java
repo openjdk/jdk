@@ -511,6 +511,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @since 1.2
      */
     @ConstructorProperties({ "scaleX", "shearY", "shearX", "scaleY", "translateX", "translateY" })
+    @SuppressWarnings("this-escape")
     public AffineTransform(float m00, float m10,
                            float m01, float m11,
                            float m02, float m12) {
@@ -536,6 +537,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * the array is greater than 6, the first 6 values are taken.
      * @since 1.2
      */
+    @SuppressWarnings("this-escape")
     public AffineTransform(float[] flatmatrix) {
         m00 = flatmatrix[0];
         m10 = flatmatrix[1];
@@ -561,6 +563,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param m12 the Y coordinate translation element of the 3x3 matrix
      * @since 1.2
      */
+    @SuppressWarnings("this-escape")
     public AffineTransform(double m00, double m10,
                            double m01, double m11,
                            double m02, double m12) {
@@ -586,6 +589,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * the array is greater than 6, the first 6 values are taken.
      * @since 1.2
      */
+    @SuppressWarnings("this-escape")
     public AffineTransform(double[] flatmatrix) {
         m00 = flatmatrix[0];
         m10 = flatmatrix[1];

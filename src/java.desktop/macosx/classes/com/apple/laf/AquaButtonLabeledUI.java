@@ -57,6 +57,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
 
     protected AquaButtonBorder widgetBorder;
 
+    @SuppressWarnings("this-escape")
     public AquaButtonLabeledUI() {
         widgetBorder = getPainter();
     }

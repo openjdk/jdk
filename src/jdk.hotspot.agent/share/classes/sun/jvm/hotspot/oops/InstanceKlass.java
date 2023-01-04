@@ -113,6 +113,7 @@ public class InstanceKlass extends Klass {
     CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("InstanceKlass::initialization_error").intValue();
   }
 
+  @SuppressWarnings("this-escape")
   public InstanceKlass(Address addr) {
     super(addr);
 

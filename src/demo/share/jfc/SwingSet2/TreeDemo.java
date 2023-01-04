@@ -63,6 +63,7 @@ public class TreeDemo extends DemoModule {
     /**
      * TreeDemo Constructor
      */
+    @SuppressWarnings("this-escape")
     public TreeDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.

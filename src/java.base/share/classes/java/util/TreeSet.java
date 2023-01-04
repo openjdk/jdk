@@ -155,6 +155,7 @@ public class TreeSet<E> extends AbstractSet<E>
      *         not {@link Comparable}, or are not mutually comparable
      * @throws NullPointerException if the specified collection is null
      */
+    @SuppressWarnings("this-escape")
     public TreeSet(Collection<? extends E> c) {
         this();
         addAll(c);
@@ -167,6 +168,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * @param s sorted set whose elements will comprise the new set
      * @throws NullPointerException if the specified sorted set is null
      */
+    @SuppressWarnings("this-escape")
     public TreeSet(SortedSet<E> s) {
         this(s.comparator());
         addAll(s);

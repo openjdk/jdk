@@ -1941,6 +1941,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      */
     static class LeafIterator extends Iterator {
 
+        @SuppressWarnings("this-escape")
         LeafIterator(HTML.Tag t, Document doc) {
             tag = t;
             pos = new ElementIterator(doc);

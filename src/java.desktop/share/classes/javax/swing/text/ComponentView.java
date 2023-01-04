@@ -386,6 +386,7 @@ public class ComponentView extends View  {
         // to do this as JEditorPane has abnormal bindings (it is a focus cycle
         // root) and the children typically don't want these bindings as well.
 
+        @SuppressWarnings("this-escape")
         Invalidator(Component child) {
             setLayout(null);
             add(child);

@@ -107,6 +107,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * @param sdFieldName the name of the species data field, inject the speciesData object
      * @param transformMethods optional list of transformMethods
      */
+    @SuppressWarnings("this-escape")
     protected ClassSpecializer(Class<T> topClass,
                                Class<K> keyType,
                                Class<S> metaType,
@@ -232,6 +233,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         @Stable private List<LambdaForm.NamedFunction> nominalGetters;
         @Stable private final MethodHandle[] transformHelpers = new MethodHandle[transformMethods.size()];
 
+        @SuppressWarnings("this-escape")
         protected SpeciesData(K key) {
             this.key = keyType.cast(Objects.requireNonNull(key));
             List<Class<?>> types = deriveFieldTypes(key);

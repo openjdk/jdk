@@ -49,6 +49,7 @@ class DurationDayTimeImpl
         extends DurationImpl {
     private static final long serialVersionUID = 844792794952655204L;
 
+    @SuppressWarnings("this-escape")
     public DurationDayTimeImpl(
         boolean isPositive,
         BigInteger days,
@@ -97,6 +98,7 @@ class DurationDayTimeImpl
          * @throws UnsupportedOperationException If implementation cannot support requested values.
          * @throws NullPointerException If <code>lexicalRepresentation</code> is <code>null</code>.
          */
+    @SuppressWarnings("this-escape")
     protected DurationDayTimeImpl(String lexicalRepresentation) {
         super(lexicalRepresentation);
 
@@ -146,6 +148,7 @@ class DurationDayTimeImpl
      * @see <a href="http://www.w3.org/TR/xpath-datamodel#dayTimeDuration">
      *   XQuery 1.0 and XPath 2.0 Data Model, xdt:dayTimeDuration</a>
      */
+    @SuppressWarnings("this-escape")
     protected DurationDayTimeImpl(final long durationInMilliseconds) {
             super(durationInMilliseconds);
             convertToCanonicalDayTime();

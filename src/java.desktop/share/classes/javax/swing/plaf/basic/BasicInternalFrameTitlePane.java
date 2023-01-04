@@ -191,6 +191,7 @@ public class BasicInternalFrameTitlePane extends JComponent
      *
      * @param f an instance of {@code JInternalFrame}
      */
+    @SuppressWarnings("this-escape")
     public BasicInternalFrameTitlePane(JInternalFrame f) {
         frame = f;
         installTitlePane();

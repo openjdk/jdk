@@ -62,6 +62,7 @@ public class Rotate extends ControlsSurface {
     protected double increment = 5.0;
     protected int emphasis = 9;
 
+    @SuppressWarnings("this-escape")
     public Rotate() {
         setBackground(WHITE);
         setControls(new Component[] { new DemoControls(this) });

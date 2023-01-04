@@ -150,6 +150,7 @@ public class AttrImpl
      * Attribute has no public constructor. Please use the factory
      * method in the Document class.
      */
+    @SuppressWarnings("this-escape")
     protected AttrImpl(CoreDocumentImpl ownerDocument, String name) {
         super(ownerDocument);
         this.name = name;

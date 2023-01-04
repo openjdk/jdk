@@ -31,6 +31,7 @@ import javax.swing.AbstractAction;
 public class FileMenu extends AbstractAction
 {
 
+    @SuppressWarnings("this-escape")
     public FileMenu()
     {
         super("File");

@@ -53,6 +53,7 @@ public class GlobalPanel extends JPanel implements ChangeListener {
     private JPanel p;
     private int index;
 
+    @SuppressWarnings("this-escape")
     public GlobalPanel(DemoInstVarsAccessor demoInstVars) {
         this.demoInstVars = demoInstVars;
 

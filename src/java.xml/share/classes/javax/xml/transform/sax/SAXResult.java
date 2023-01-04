@@ -57,6 +57,7 @@ public class SAXResult implements Result {
      *
      * @param handler Must be a non-null ContentHandler reference.
      */
+    @SuppressWarnings("this-escape")
     public SAXResult(ContentHandler handler) {
         setHandler(handler);
     }

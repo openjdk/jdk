@@ -310,6 +310,7 @@ public class JdepsConfiguration implements AutoCloseable {
         private final Path root;
         private final Map<String, ModuleReference> systemModules;
 
+        @SuppressWarnings("this-escape")
         SystemModuleFinder() {
             if (Files.isRegularFile(Paths.get(JAVA_HOME, "lib", "modules"))) {
                 // jrt file system
@@ -325,6 +326,7 @@ public class JdepsConfiguration implements AutoCloseable {
             }
         }
 
+        @SuppressWarnings("this-escape")
         SystemModuleFinder(String javaHome) throws IOException {
             if (javaHome == null) {
                 // --system none

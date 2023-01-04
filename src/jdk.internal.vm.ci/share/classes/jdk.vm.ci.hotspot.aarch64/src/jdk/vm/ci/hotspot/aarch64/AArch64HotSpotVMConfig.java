@@ -30,6 +30,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
  *
  * All non-static, public fields in this class are so that they can be compiled as constants.
  */
+@SuppressWarnings("this-escape")
 class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     AArch64HotSpotVMConfig(HotSpotVMConfigStore config) {

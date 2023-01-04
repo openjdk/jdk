@@ -99,6 +99,7 @@ public class StateEdit
      *
      * @see StateEdit
      */
+    @SuppressWarnings("this-escape")
     public StateEdit(StateEditable anObject) {
         super();
         init (anObject,null);
@@ -112,6 +113,7 @@ public class StateEdit
      *
      * @see StateEdit
      */
+    @SuppressWarnings("this-escape")
     public StateEdit(StateEditable anObject, String name) {
         super();
         init (anObject,name);

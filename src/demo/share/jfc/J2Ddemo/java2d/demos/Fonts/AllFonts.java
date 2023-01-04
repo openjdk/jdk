@@ -80,6 +80,7 @@ public class AllFonts extends AnimatingControlsSurface {
     protected int fsize = 14;
     protected List<Font> v = new ArrayList<Font>();
 
+    @SuppressWarnings("this-escape")
     public AllFonts() {
         setBackground(WHITE);
         setSleepAmount(500);

@@ -30,6 +30,7 @@ import javax.xml.stream.XMLStreamReader;
 
 class UIColor extends UIDefault<Matte> {
 
+    @SuppressWarnings("this-escape")
     UIColor(XMLStreamReader reader) throws XMLStreamException {
         name = reader.getAttributeValue(null, "name");
         while (reader.hasNext()) {

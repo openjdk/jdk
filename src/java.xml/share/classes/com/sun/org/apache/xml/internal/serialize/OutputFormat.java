@@ -265,6 +265,7 @@ public class OutputFormat
      * @see #setIndenting
      * @see #setMethod
      */
+    @SuppressWarnings("this-escape")
     public OutputFormat( String method, String encoding, boolean indenting )
     {
         setMethod( method );

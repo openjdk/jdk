@@ -73,6 +73,7 @@ public class MemoryMonitor extends JPanel {
     boolean doControls;
     JTextField tf;
 
+    @SuppressWarnings("this-escape")
     public MemoryMonitor() {
         setLayout(new BorderLayout());
         setBorder(new TitledBorder(new EtchedBorder(), "Memory Monitor"));
@@ -136,6 +137,7 @@ public class MemoryMonitor extends JPanel {
         private Color mfColor = new Color(0, 100, 0);
         private String usedStr;
 
+        @SuppressWarnings("this-escape")
         public Surface() {
             setBackground(BLACK);
             addMouseListener(new MouseAdapter() {

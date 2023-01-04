@@ -117,6 +117,7 @@ public class InstructionHandle {
     }
 
 
+    @SuppressWarnings("this-escape")
     /*private*/protected InstructionHandle(final Instruction i) {
         setInstruction(i);
     }

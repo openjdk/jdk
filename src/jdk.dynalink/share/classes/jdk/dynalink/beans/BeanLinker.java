@@ -88,6 +88,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
  * class adds length and element operations for arrays and collections.
  */
 class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicLinker {
+    @SuppressWarnings("this-escape")
     BeanLinker(final Class<?> clazz) {
         super(clazz, Guards.getClassGuard(clazz), Guards.getInstanceOfGuard(clazz));
         if(clazz.isArray()) {

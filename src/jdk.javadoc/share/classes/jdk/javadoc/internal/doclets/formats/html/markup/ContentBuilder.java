@@ -41,6 +41,7 @@ public class ContentBuilder extends Content {
 
     public ContentBuilder() { }
 
+    @SuppressWarnings("this-escape")
     public ContentBuilder(Content... contents) {
         for (Content c : contents) {
             add(c);

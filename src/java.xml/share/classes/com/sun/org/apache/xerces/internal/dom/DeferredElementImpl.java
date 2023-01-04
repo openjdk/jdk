@@ -76,6 +76,7 @@ public class DeferredElementImpl
      * This is the deferred constructor. Only the fNodeIndex is given here. All
      * other data, can be requested from the ownerDocument via the index.
      */
+    @SuppressWarnings("this-escape")
     DeferredElementImpl(DeferredDocumentImpl ownerDoc, int nodeIndex) {
         super(ownerDoc, null);
 

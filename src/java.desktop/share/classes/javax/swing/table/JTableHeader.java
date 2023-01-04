@@ -173,6 +173,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      * @param cm        the column model for the table
      * @see #createDefaultColumnModel
      */
+    @SuppressWarnings("this-escape")
     public JTableHeader(TableColumnModel cm) {
         super();
 

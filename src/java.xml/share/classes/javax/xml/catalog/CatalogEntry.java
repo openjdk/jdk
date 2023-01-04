@@ -37,6 +37,7 @@ class CatalogEntry extends GroupEntry {
      * @param base The baseURI attribute
      * @param attributes The attributes
      */
+    @SuppressWarnings("this-escape")
     public CatalogEntry(String base, String... attributes) {
         super(base, attributes);
         setType(CatalogEntryType.CATALOGENTRY);

@@ -159,6 +159,7 @@ public class TableRowSorter<M extends TableModel> extends DefaultRowSorter<M, In
      * @param model the underlying <code>TableModel</code> to use,
      *        <code>null</code> is treated as an empty model
      */
+    @SuppressWarnings("this-escape")
     public TableRowSorter(M model) {
         setModel(model);
     }

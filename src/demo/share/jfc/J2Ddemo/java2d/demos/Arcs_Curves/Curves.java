@@ -54,6 +54,7 @@ public class Curves extends Surface {
 
     private static Color[] colors = { BLUE, GREEN, RED };
 
+    @SuppressWarnings("this-escape")
     public Curves() {
         setBackground(WHITE);
     }

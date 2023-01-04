@@ -170,6 +170,7 @@ extends BaseMarkupSerializer {
      * @param writer The writer to use
      * @param format The output format to use, null for the default
      */
+    @SuppressWarnings("this-escape")
     public XMLSerializer( Writer writer, OutputFormat format ) {
         super( format != null ? format : new OutputFormat( Method.XML, null, false ) );
         _format.setMethod( Method.XML );
@@ -185,6 +186,7 @@ extends BaseMarkupSerializer {
      * @param output The output stream to use
      * @param format The output format to use, null for the default
      */
+    @SuppressWarnings("this-escape")
     public XMLSerializer( OutputStream output, OutputFormat format ) {
         super( format != null ? format : new OutputFormat( Method.XML, null, false ) );
         _format.setMethod( Method.XML );

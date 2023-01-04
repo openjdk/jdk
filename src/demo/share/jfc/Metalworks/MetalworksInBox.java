@@ -54,6 +54,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 @SuppressWarnings("serial")
 public class MetalworksInBox extends JInternalFrame {
 
+    @SuppressWarnings("this-escape")
     public MetalworksInBox() {
         super("In Box", true, true, true, true);
 

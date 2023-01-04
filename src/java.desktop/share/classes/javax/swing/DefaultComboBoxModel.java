@@ -55,6 +55,7 @@ public class DefaultComboBoxModel<E> extends AbstractListModel<E> implements Mut
      *
      * @param items  an array of Object objects
      */
+    @SuppressWarnings("this-escape")
     public DefaultComboBoxModel(final E[] items) {
         objects = new Vector<E>(items.length);
 
@@ -73,6 +74,7 @@ public class DefaultComboBoxModel<E> extends AbstractListModel<E> implements Mut
      *
      * @param v  a Vector object ...
      */
+    @SuppressWarnings("this-escape")
     public DefaultComboBoxModel(Vector<E> v) {
         objects = v;
 

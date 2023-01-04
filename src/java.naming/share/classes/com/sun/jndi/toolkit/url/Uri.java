@@ -144,6 +144,7 @@ public class Uri {
     /**
      * Creates a Uri object given a URI string.
      */
+    @SuppressWarnings("this-escape")
     public Uri(String uri) throws MalformedURLException {
         init(uri);
     }

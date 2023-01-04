@@ -60,6 +60,7 @@ public class EntityResolverWrapper
     public EntityResolverWrapper() {}
 
     /** Wraps the specified SAX entity resolver. */
+    @SuppressWarnings("this-escape")
     public EntityResolverWrapper(EntityResolver entityResolver) {
         setEntityResolver(entityResolver);
     } // <init>(EntityResolver)

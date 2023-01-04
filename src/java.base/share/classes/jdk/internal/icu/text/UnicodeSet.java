@@ -367,6 +367,7 @@ public class UnicodeSet {
      * @param end last character, inclusive, of range
      * @stable ICU 2.0
      */
+    @SuppressWarnings("this-escape")
     public UnicodeSet(int start, int end) {
         this();
         complement(start, end);
@@ -380,6 +381,7 @@ public class UnicodeSet {
      * a syntax error.
      * @stable ICU 2.0
      */
+    @SuppressWarnings("this-escape")
     public UnicodeSet(String pattern) {
         this();
         applyPattern(pattern, null);

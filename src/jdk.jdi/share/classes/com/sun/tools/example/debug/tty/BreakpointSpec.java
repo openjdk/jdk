@@ -55,6 +55,7 @@ class BreakpointSpec extends EventRequestSpec {
         this.threadFilter = threadFilter;
     }
 
+    @SuppressWarnings("this-escape")
     BreakpointSpec(ReferenceTypeSpec refSpec, String methodId, ThreadReference threadFilter,
                    List<String> methodArgs) throws MalformedMemberNameException {
         super(refSpec);

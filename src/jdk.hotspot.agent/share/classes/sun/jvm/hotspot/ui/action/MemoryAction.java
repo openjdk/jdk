@@ -43,6 +43,7 @@ public class MemoryAction extends DelegateAction {
     public static final String VALUE_SHORT_DESCRIPTION = "Show Stack Memory";
     public static final String VALUE_LONG_DESCRIPTION = "Show the stack memory for the current thread";
 
+    @SuppressWarnings("this-escape")
     public MemoryAction() {
         super(VALUE_NAME, ActionManager.getIcon(VALUE_SMALL_ICON));
 

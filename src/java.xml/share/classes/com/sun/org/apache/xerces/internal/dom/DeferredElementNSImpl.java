@@ -68,6 +68,7 @@ public class DeferredElementNSImpl
      * This is the deferred constructor. Only the fNodeIndex is given here. All
      * other data, can be requested from the ownerDocument via the index.
      */
+    @SuppressWarnings("this-escape")
     DeferredElementNSImpl(DeferredDocumentImpl ownerDoc, int nodeIndex) {
         super(ownerDoc, null);
 

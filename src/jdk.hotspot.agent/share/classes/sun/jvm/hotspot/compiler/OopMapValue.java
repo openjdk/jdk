@@ -87,9 +87,13 @@ public class OopMapValue {
     protected OopTypes() {}
   }
 
+  @SuppressWarnings("this-escape")
   public OopMapValue()                                  { setValue((short) 0); setContentReg(new VMReg(0)); }
+  @SuppressWarnings("this-escape")
   public OopMapValue(VMReg reg, OopTypes t)             { setReg(reg); setType(t);                      }
+  @SuppressWarnings("this-escape")
   public OopMapValue(VMReg reg, OopTypes t, VMReg reg2) { setReg(reg); setType(t); setContentReg(reg2); }
+  @SuppressWarnings("this-escape")
   public OopMapValue(CompressedReadStream stream)       { readFrom(stream);                             }
 
   public void readFrom(CompressedReadStream stream) {

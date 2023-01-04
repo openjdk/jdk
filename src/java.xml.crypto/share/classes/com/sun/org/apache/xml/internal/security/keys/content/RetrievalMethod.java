@@ -68,6 +68,7 @@ public class RetrievalMethod extends SignatureElementProxy implements KeyInfoCon
      * @param transforms
      * @param Type
      */
+    @SuppressWarnings("this-escape")
     public RetrievalMethod(Document doc, String URI, Transforms transforms, String Type) {
         super(doc);
 

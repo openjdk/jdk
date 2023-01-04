@@ -129,7 +129,7 @@ public class InitialLdapContext extends InitialDirContext implements LdapContext
      * @see #reconnect
      * @see LdapContext#reconnect
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "this-escape" })
     public InitialLdapContext(Hashtable<?,?> environment,
                               Control[] connCtls)
             throws NamingException {

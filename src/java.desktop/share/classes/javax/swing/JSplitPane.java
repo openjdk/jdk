@@ -337,6 +337,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @throws IllegalArgumentException if <code>orientation</code>
      *          is not one of HORIZONTAL_SPLIT or VERTICAL_SPLIT
      */
+    @SuppressWarnings("this-escape")
     public JSplitPane(int newOrientation,
                       boolean newContinuousLayout,
                       Component newLeftComponent,

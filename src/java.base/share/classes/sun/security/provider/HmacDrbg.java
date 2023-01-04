@@ -45,6 +45,7 @@ public class HmacDrbg extends AbstractHashDrbg {
     private byte[] v;
     private byte[] k;
 
+    @SuppressWarnings("this-escape")
     public HmacDrbg(SecureRandomParameters params) {
         mechName = "HMAC_DRBG";
         configure(params);

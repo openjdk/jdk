@@ -42,6 +42,7 @@ public class MotifScrollBarButton extends BasicArrowButton
     private Color lightShadow = UIManager.getColor("controlLtHighlight");
 
 
+    @SuppressWarnings("this-escape")
     public MotifScrollBarButton(int direction)
     {
         super(direction);

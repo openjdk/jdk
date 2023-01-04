@@ -64,6 +64,7 @@ public class GradAnim extends AnimatingControlsSurface {
     private int hue = (int) (Math.random() * MAX_HUE);
     private int gradientType;
 
+    @SuppressWarnings("this-escape")
     public GradAnim() {
         setBackground(Color.white);
         setControls(new Component[] { new DemoControls(this) });

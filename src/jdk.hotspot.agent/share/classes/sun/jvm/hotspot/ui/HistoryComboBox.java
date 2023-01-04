@@ -34,6 +34,7 @@ import javax.swing.event.*;
 public class HistoryComboBox extends JComboBox<String> {
   static final int HISTORY_LENGTH = 15;
 
+  @SuppressWarnings("this-escape")
   public HistoryComboBox() {
     setEditable(true);
     addActionListener(new ActionListener() {

@@ -65,6 +65,7 @@ public class RemoteException extends java.io.IOException {
     /**
      * Constructs a {@code RemoteException}.
      */
+    @SuppressWarnings("this-escape")
     public RemoteException() {
         initCause(null);  // Disallow subsequent initCause
     }
@@ -75,6 +76,7 @@ public class RemoteException extends java.io.IOException {
      *
      * @param s the detail message
      */
+    @SuppressWarnings("this-escape")
     public RemoteException(String s) {
         super(s);
         initCause(null);  // Disallow subsequent initCause
@@ -88,6 +90,7 @@ public class RemoteException extends java.io.IOException {
      * @param s the detail message
      * @param cause the cause
      */
+    @SuppressWarnings("this-escape")
     public RemoteException(String s, Throwable cause) {
         super(s);
         initCause(null);  // Disallow subsequent initCause

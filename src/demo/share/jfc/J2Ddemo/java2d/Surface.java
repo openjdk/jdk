@@ -97,6 +97,7 @@ public abstract class Surface extends JPanel implements Printable {
     private boolean clearOnce;
     private boolean toBeInitialized = true;
 
+    @SuppressWarnings("this-escape")
     public Surface() {
         setDoubleBuffered(this instanceof AnimatingSurface);
         toolkit = getToolkit();

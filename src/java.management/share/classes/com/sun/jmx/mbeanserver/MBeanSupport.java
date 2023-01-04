@@ -122,6 +122,7 @@ import sun.reflect.misc.ReflectUtil;
 public abstract class MBeanSupport<M>
         implements DynamicMBean2, MBeanRegistration {
 
+    @SuppressWarnings("this-escape")
     <T> MBeanSupport(T resource, Class<T> mbeanInterfaceType)
             throws NotCompliantMBeanException {
         if (mbeanInterfaceType == null)

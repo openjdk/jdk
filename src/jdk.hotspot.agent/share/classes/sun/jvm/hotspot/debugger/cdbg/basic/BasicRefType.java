@@ -29,7 +29,8 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 
 public class BasicRefType extends BasicType implements RefType {
   private Type targetType;
-
+ 
+  @SuppressWarnings("this-escape")
   public BasicRefType(String name, int size, Type targetType) {
     this(name, size, targetType, 0);
   }

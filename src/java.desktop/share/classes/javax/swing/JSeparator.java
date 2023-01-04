@@ -101,6 +101,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      *          is neither <code>SwingConstants.HORIZONTAL</code> nor
      *          <code>SwingConstants.VERTICAL</code>
      */
+    @SuppressWarnings("this-escape")
     public JSeparator( int orientation )
     {
         checkOrientation( orientation );

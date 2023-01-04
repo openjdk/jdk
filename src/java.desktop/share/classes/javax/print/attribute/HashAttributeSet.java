@@ -178,6 +178,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @throws ClassCastException if {@code attribute} is not an instance of
      *         {@code interfaceName}
      */
+    @SuppressWarnings("this-escape")
     protected HashAttributeSet(Attribute attribute, Class<?> interfaceName) {
         if (interfaceName == null) {
             throw new NullPointerException("null interface");
@@ -204,6 +205,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @throws ClassCastException if any element of {@code attributes} is not an
      *         instance of {@code interfaceName}
      */
+    @SuppressWarnings("this-escape")
     protected HashAttributeSet(Attribute[] attributes, Class<?> interfaceName) {
         if (interfaceName == null) {
             throw new NullPointerException("null interface");
@@ -228,6 +230,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * @throws ClassCastException if any element of {@code attributes} is not an
      *         instance of {@code interfaceName}
      */
+    @SuppressWarnings("this-escape")
     protected HashAttributeSet(AttributeSet attributes, Class<?> interfaceName) {
       myInterface = interfaceName;
       if (attributes != null) {

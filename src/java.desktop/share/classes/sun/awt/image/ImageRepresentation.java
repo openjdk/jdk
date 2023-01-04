@@ -90,6 +90,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
      * the buffered image.  If null, the src color model will
      * be used.
      */
+    @SuppressWarnings("this-escape")
     public ImageRepresentation(ToolkitImage im, ColorModel cmodel, boolean
                                forceCMhint) {
         image = im;

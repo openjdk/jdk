@@ -426,6 +426,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      *         class is not successfully loaded
      * @throws NullPointerException if {@code mimeType} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public DataFlavor(String mimeType, String humanPresentableName) {
         super();
         if (mimeType == null) {
@@ -465,6 +466,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @throws IllegalArgumentException if {@code mimeType} is invalid
      * @throws NullPointerException if {@code mimeType} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public DataFlavor(String mimeType, String humanPresentableName, ClassLoader classLoader) throws ClassNotFoundException {
         super();
         if (mimeType == null) {
@@ -492,6 +494,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @throws IllegalArgumentException if {@code mimeType} is invalid
      * @throws NullPointerException if {@code mimeType} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public DataFlavor(String mimeType) throws ClassNotFoundException {
         super();
         if (mimeType == null) {

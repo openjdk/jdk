@@ -97,6 +97,7 @@ public class RoleUnresolvedList extends ArrayList<Object> {
      *
      * @see ArrayList#ArrayList(java.util.Collection)
      */
+    @SuppressWarnings("this-escape")
     public RoleUnresolvedList(List<RoleUnresolved> list)
         throws IllegalArgumentException {
         // Check for null parameter

@@ -134,6 +134,7 @@ public class UIDefaults extends Hashtable<Object,Object>
      * @param keyValueList  an array of objects containing the key/value
      *          pairs
      */
+    @SuppressWarnings("this-escape")
     public UIDefaults(Object[] keyValueList) {
         super(keyValueList.length / 2);
         for(int i = 0; i < keyValueList.length; i += 2) {

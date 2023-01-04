@@ -113,6 +113,7 @@ public class FlatteningPathIterator implements PathIterator {
      *          {@code flatness} or {@code limit}
      *          is less than zero
      */
+    @SuppressWarnings("this-escape")
     public FlatteningPathIterator(PathIterator src, double flatness,
                                   int limit) {
         if (flatness < 0.0) {

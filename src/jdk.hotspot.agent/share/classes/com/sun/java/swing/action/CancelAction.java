@@ -38,6 +38,7 @@ public class CancelAction extends DelegateAction
         this(VALUE_SMALL_ICON);
     }
 
+    @SuppressWarnings("this-escape")
     public CancelAction(String iconPath)
     {
         super("Cancel", ActionManager.getIcon(iconPath));

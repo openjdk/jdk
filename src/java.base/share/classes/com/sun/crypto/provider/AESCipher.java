@@ -64,6 +64,7 @@ class AESCipher extends CipherSpi {
     }
 
     static class OidImpl extends AESCipher {
+        @SuppressWarnings("this-escape")
         protected OidImpl(int keySize, String mode, String padding) {
             super(keySize);
             try {

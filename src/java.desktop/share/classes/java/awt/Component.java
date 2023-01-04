@@ -4042,7 +4042,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * {@code true}.
          * @see #createBuffers(int, BufferCapabilities)
          */
-        @SuppressWarnings("removal")
+        @SuppressWarnings({ "removal", "this-escape" })
         protected FlipBufferStrategy(int numBuffers, BufferCapabilities caps)
             throws AWTException
         {
@@ -4362,6 +4362,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * front buffer
          * @param caps the capabilities of the buffers
          */
+        @SuppressWarnings("this-escape")
         protected BltBufferStrategy(int numBuffers, BufferCapabilities caps) {
             this.caps = caps;
             createBackBuffers(numBuffers - 1);

@@ -134,6 +134,7 @@ public class JCheckBox extends JToggleButton implements Accessible {
      * @param a the {@code Action} used to specify the new check box
      * @since 1.3
      */
+    @SuppressWarnings("this-escape")
     public JCheckBox(Action a) {
         this();
         setAction(a);
@@ -172,6 +173,7 @@ public class JCheckBox extends JToggleButton implements Accessible {
      * @param selected a boolean value indicating the initial selection
      *        state. If <code>true</code> the check box is selected
      */
+    @SuppressWarnings("this-escape")
     public JCheckBox (String text, Icon icon, boolean selected) {
         super(text, icon, selected);
         setUIProperty("borderPainted", Boolean.FALSE);

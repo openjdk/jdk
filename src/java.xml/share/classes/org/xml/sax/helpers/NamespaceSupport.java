@@ -139,6 +139,7 @@ public class NamespaceSupport
     /**
      * Create a new Namespace support object.
      */
+    @SuppressWarnings("this-escape")
     public NamespaceSupport ()
     {
         reset();

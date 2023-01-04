@@ -34,6 +34,7 @@ public class OperationEntry extends JPanel {
     private MBeanOperationInfo operation;
     private XTextField inputs[];
 
+    @SuppressWarnings("this-escape")
     public OperationEntry (MBeanOperationInfo operation,
                            boolean isCallable,
                            JButton button,

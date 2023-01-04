@@ -69,6 +69,7 @@ class Prologue {
     private ByteBuffer header;
     private int magic;
 
+    @SuppressWarnings("this-escape")
     Prologue(ByteBuffer b) {
         this.header = b.duplicate();
 

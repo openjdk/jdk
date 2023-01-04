@@ -118,6 +118,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
     /**
      * Creates a new menu bar.
      */
+    @SuppressWarnings("this-escape")
     public JMenuBar() {
         super();
         setFocusTraversalKeysEnabled(false);

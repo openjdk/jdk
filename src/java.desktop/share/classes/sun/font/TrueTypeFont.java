@@ -205,6 +205,7 @@ public class TrueTypeFont extends FileFont {
      * @throws FontFormatException if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
+    @SuppressWarnings("this-escape")
     public TrueTypeFont(String platname, Object nativeNames, int fIndex,
                  boolean javaRasterizer, boolean useFilePool)
         throws FontFormatException {

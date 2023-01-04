@@ -96,6 +96,7 @@ public class JTextPane extends JEditorPane {
      * <code>StyledEditorKit</code> is
      * created and set, and the document model set to <code>null</code>.
      */
+    @SuppressWarnings("this-escape")
     public JTextPane() {
         super();
         EditorKit editorKit = createDefaultEditorKit();
@@ -115,6 +116,7 @@ public class JTextPane extends JEditorPane {
      *
      * @param doc the document model
      */
+    @SuppressWarnings("this-escape")
     public JTextPane(StyledDocument doc) {
         this();
         setStyledDocument(doc);

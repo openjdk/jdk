@@ -38,6 +38,7 @@ public class OkAction extends DelegateAction
         this(VALUE_SMALL_ICON);
     }
 
+    @SuppressWarnings("this-escape")
     public OkAction(String iconPath)
     {
         super("OK", ActionManager.getIcon(iconPath));

@@ -48,6 +48,7 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
 abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
     /*non-public*/
+    @SuppressWarnings("this-escape")
     BoundMethodHandle(MethodType type, LambdaForm form) {
         super(type, form);
         assert(speciesData() == speciesDataFor(form));

@@ -87,6 +87,7 @@ public class NamespaceSupport implements NamespaceContext {
      * Constructs a namespace context object and initializes it with
      * the prefixes declared in the specified context.
      */
+    @SuppressWarnings("this-escape")
     public NamespaceSupport(NamespaceContext context) {
         pushContext();
         // copy declaration in the context

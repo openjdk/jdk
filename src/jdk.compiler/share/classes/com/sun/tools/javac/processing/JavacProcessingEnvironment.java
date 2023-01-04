@@ -1080,6 +1080,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Create the first round. */
+        @SuppressWarnings("this-escape")
         Round(List<JCCompilationUnit> roots,
               List<ClassSymbol> classSymbols,
               Set<JCCompilationUnit> treesToClean,

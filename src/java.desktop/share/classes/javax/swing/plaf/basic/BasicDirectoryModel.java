@@ -67,6 +67,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      *
      * @param filechooser an instance of {JFileChooser}
      */
+    @SuppressWarnings("this-escape")
     public BasicDirectoryModel(JFileChooser filechooser) {
         this.filechooser = filechooser;
         validateFileCache();

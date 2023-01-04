@@ -49,6 +49,7 @@ public class XRTreeFrag extends XObject implements Cloneable
    * Create an XRTreeFrag Object.
    *
    */
+  @SuppressWarnings("this-escape")
   public XRTreeFrag(int root, XPathContext xctxt, ExpressionNode parent)
   {
     super(null);

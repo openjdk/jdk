@@ -50,6 +50,7 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
     /**
      * Constructs a new instance of {@code BasicComboBoxEditor}.
      */
+    @SuppressWarnings("this-escape")
     public BasicComboBoxEditor() {
         editor = createEditorComponent();
     }

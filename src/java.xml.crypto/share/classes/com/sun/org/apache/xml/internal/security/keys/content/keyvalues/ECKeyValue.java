@@ -122,6 +122,7 @@ public class ECKeyValue extends Signature11ElementProxy implements KeyValueConte
      * @param key
      * @throws IllegalArgumentException
      */
+    @SuppressWarnings("this-escape")
     public ECKeyValue(Document doc, Key key) throws IllegalArgumentException {
         super(doc);
 

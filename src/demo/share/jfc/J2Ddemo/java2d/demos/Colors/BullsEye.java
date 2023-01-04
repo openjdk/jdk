@@ -46,6 +46,7 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class BullsEye extends Surface {
 
+    @SuppressWarnings("this-escape")
     public BullsEye() {
         setBackground(WHITE);
     }

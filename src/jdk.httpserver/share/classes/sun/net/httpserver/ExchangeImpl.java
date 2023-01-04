@@ -81,6 +81,7 @@ class ExchangeImpl {
     HttpPrincipal principal;
     ServerImpl server;
 
+    @SuppressWarnings("this-escape")
     ExchangeImpl (
         String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {

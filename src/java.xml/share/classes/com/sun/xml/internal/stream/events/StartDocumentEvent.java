@@ -47,23 +47,28 @@ implements StartDocument {
     private boolean fStandaloneSet = false;
     private boolean nestedCall = false;
 
+    @SuppressWarnings("this-escape")
     public StartDocumentEvent() {
         init("UTF-8","1.0",true,null);
     }
 
+    @SuppressWarnings("this-escape")
     public StartDocumentEvent(String encoding){
         init(encoding,"1.0",true,null);
     }
 
+    @SuppressWarnings("this-escape")
     public StartDocumentEvent(String encoding, String version){
         init(encoding,version,true,null);
     }
 
+    @SuppressWarnings("this-escape")
     public StartDocumentEvent(String encoding, String version, boolean standalone){
         this.fStandaloneSet = true;
         init(encoding,version,standalone,null);
     }
 
+    @SuppressWarnings("this-escape")
     public StartDocumentEvent(String encoding, String version, boolean standalone,Location loc){
         this.fStandaloneSet = true;
         init(encoding, version, standalone, loc);

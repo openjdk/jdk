@@ -332,6 +332,7 @@ public class JRootPane extends JComponent implements Accessible {
      * <code>glassPane</code>, <code>layeredPane</code>,
      * and <code>contentPane</code>.
      */
+    @SuppressWarnings("this-escape")
     public JRootPane() {
         setGlassPane(createGlassPane());
         setLayeredPane(createLayeredPane());

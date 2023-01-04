@@ -143,6 +143,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param a the action of the <code>JMenuItem</code>
      * @since 1.3
      */
+    @SuppressWarnings("this-escape")
     public JMenuItem(Action a) {
         this();
         setAction(a);
@@ -154,6 +155,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param text the text of the <code>JMenuItem</code>
      * @param icon the icon of the <code>JMenuItem</code>
      */
+    @SuppressWarnings("this-escape")
     public JMenuItem(String text, Icon icon) {
         setModel(new DefaultButtonModel());
         init(text, icon);
@@ -167,6 +169,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param text the text of the <code>JMenuItem</code>
      * @param mnemonic the keyboard mnemonic for the <code>JMenuItem</code>
      */
+    @SuppressWarnings("this-escape")
     public JMenuItem(String text, int mnemonic) {
         setModel(new DefaultButtonModel());
         init(text, null);

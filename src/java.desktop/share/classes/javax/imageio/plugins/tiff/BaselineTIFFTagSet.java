@@ -58,6 +58,7 @@ import java.util.List;
  * @since 9
  * @see   <a href="https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf">  TIFF 6.0 Specification</a>
  */
+@SuppressWarnings("this-escape")
 public final class BaselineTIFFTagSet extends TIFFTagSet {
 
     private static BaselineTIFFTagSet theInstance = null;

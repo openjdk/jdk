@@ -102,6 +102,7 @@ public class XIncludeParserConfiguration extends XML11Configuration {
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
+    @SuppressWarnings("this-escape")
     public XIncludeParserConfiguration(
         SymbolTable symbolTable,
         XMLGrammarPool grammarPool,

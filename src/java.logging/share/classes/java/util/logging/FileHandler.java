@@ -268,6 +268,7 @@ public class FileHandler extends StreamHandler {
      *             the caller does not have {@code LoggingPermission("control"))}.
      * @throws  NullPointerException if pattern property is an empty String.
      */
+    @SuppressWarnings("this-escape")
     public FileHandler() throws IOException, SecurityException {
         checkPermission();
         configure();
@@ -296,6 +297,7 @@ public class FileHandler extends StreamHandler {
      *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if pattern is an empty string
      */
+    @SuppressWarnings("this-escape")
     public FileHandler(String pattern) throws IOException, SecurityException {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
@@ -328,6 +330,7 @@ public class FileHandler extends StreamHandler {
      *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if pattern is an empty string
      */
+    @SuppressWarnings("this-escape")
     public FileHandler(String pattern, boolean append) throws IOException,
             SecurityException {
         if (pattern.length() < 1 ) {
@@ -365,6 +368,7 @@ public class FileHandler extends StreamHandler {
      * @throws  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @throws  IllegalArgumentException if pattern is an empty string
      */
+    @SuppressWarnings("this-escape")
     public FileHandler(String pattern, int limit, int count)
                                         throws IOException, SecurityException {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
@@ -437,6 +441,7 @@ public class FileHandler extends StreamHandler {
      * @since 9
      *
      */
+    @SuppressWarnings("this-escape")
     public FileHandler(String pattern, long limit, int count, boolean append)
                                         throws IOException {
         if (limit < 0 || count < 1 || pattern.length() < 1) {

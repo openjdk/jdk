@@ -67,6 +67,7 @@ public class AccessibleRelationSet {
      * @param  relations an array of {@code AccessibleRelation} describing the
      *         relation set
      */
+    @SuppressWarnings("this-escape")
     public AccessibleRelationSet(AccessibleRelation[] relations) {
         if (relations.length != 0) {
             this.relations = new Vector<>(relations.length);

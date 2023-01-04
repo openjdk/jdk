@@ -93,6 +93,7 @@ public class GenericAttachingConnector
      * is used when sub-classing - the resulting connector will have
      * a "timeout" connector argument.
      */
+    @SuppressWarnings("this-escape")
     protected GenericAttachingConnector(TransportService ts) {
         this(ts, false);
     }

@@ -52,6 +52,7 @@ public class Areas extends ControlsSurface {
 
     protected String areaType = "nop";
 
+    @SuppressWarnings("this-escape")
     public Areas() {
         setBackground(WHITE);
         setControls(new Component[] { new DemoControls(this) });

@@ -197,6 +197,7 @@ public abstract class BasicParserConfiguration
      * @param symbolTable    The symbol table to use.
      * @param parentSettings The parent settings.
      */
+    @SuppressWarnings("this-escape")
     protected BasicParserConfiguration(SymbolTable symbolTable,
                                        XMLComponentManager parentSettings) {
         super(parentSettings);

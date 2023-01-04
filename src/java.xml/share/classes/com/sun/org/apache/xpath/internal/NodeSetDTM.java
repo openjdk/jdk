@@ -106,6 +106,7 @@ public class NodeSetDTM extends NodeVector
    *
    * @param nodelist Set of Nodes to be made members of the new set.
    */
+  @SuppressWarnings("this-escape")
   public NodeSetDTM(NodeSetDTM nodelist)
   {
 
@@ -122,6 +123,7 @@ public class NodeSetDTM extends NodeVector
    *
    * @param ni Iterator which yields Nodes to be made members of the new set.
    */
+  @SuppressWarnings("this-escape")
   public NodeSetDTM(DTMIterator ni)
   {
 
@@ -138,6 +140,7 @@ public class NodeSetDTM extends NodeVector
    *
    * @param iterator Iterator which yields Nodes to be made members of the new set.
    */
+  @SuppressWarnings("this-escape")
   public NodeSetDTM(NodeIterator iterator, XPathContext xctxt)
   {
 
@@ -158,6 +161,7 @@ public class NodeSetDTM extends NodeVector
    * given DTMIterator into it.
    *
    */
+  @SuppressWarnings("this-escape")
   public NodeSetDTM(NodeList nodeList, XPathContext xctxt)
   {
 
@@ -181,6 +185,7 @@ public class NodeSetDTM extends NodeVector
    *
    * @param node Single node to be added to the new set.
    */
+  @SuppressWarnings("this-escape")
   public NodeSetDTM(int node, DTMManager dtmManager)
   {
 

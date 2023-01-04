@@ -31,6 +31,7 @@ import javax.swing.AbstractAction;
 public class HelpMenu extends AbstractAction
 {
 
+    @SuppressWarnings("this-escape")
     public HelpMenu()
     {
         super("Help");

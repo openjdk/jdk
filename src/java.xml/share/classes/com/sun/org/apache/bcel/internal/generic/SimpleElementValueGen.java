@@ -54,48 +54,56 @@ public class SimpleElementValueGen extends ElementValueGen
         this.idx = idx;
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final int value)
     {
         super(type, cpGen);
         idx = getConstantPool().addInteger(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final long value)
     {
         super(type, cpGen);
         idx = getConstantPool().addLong(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final double value)
     {
         super(type, cpGen);
         idx = getConstantPool().addDouble(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final float value)
     {
         super(type, cpGen);
         idx = getConstantPool().addFloat(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final short value)
     {
         super(type, cpGen);
         idx = getConstantPool().addInteger(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final byte value)
     {
         super(type, cpGen);
         idx = getConstantPool().addInteger(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final char value)
     {
         super(type, cpGen);
         idx = getConstantPool().addInteger(value);
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final boolean value)
     {
         super(type, cpGen);
@@ -106,6 +114,7 @@ public class SimpleElementValueGen extends ElementValueGen
         }
     }
 
+    @SuppressWarnings("this-escape")
     public SimpleElementValueGen(final int type, final ConstantPoolGen cpGen, final String value)
     {
         super(type, cpGen);

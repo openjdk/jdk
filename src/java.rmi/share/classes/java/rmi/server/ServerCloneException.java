@@ -66,6 +66,7 @@ public class ServerCloneException extends CloneNotSupportedException {
      *
      * @param s the detail message.
      */
+    @SuppressWarnings("this-escape")
     public ServerCloneException(String s) {
         super(s);
         initCause(null);  // Disallow subsequent initCause
@@ -78,6 +79,7 @@ public class ServerCloneException extends CloneNotSupportedException {
      * @param s the detail message.
      * @param cause the cause
      */
+    @SuppressWarnings("this-escape")
     public ServerCloneException(String s, Exception cause) {
         super(s);
         initCause(null);  // Disallow subsequent initCause

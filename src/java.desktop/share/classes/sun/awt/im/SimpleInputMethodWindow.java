@@ -44,6 +44,7 @@ public class SimpleInputMethodWindow
     /**
      * Constructs a simple input method window.
      */
+    @SuppressWarnings("this-escape")
     public SimpleInputMethodWindow(String title, InputContext context) {
         super(title);
         if (context != null) {

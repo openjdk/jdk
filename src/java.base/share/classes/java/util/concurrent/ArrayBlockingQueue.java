@@ -838,6 +838,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         private static final int SHORT_SWEEP_PROBES = 4;
         private static final int LONG_SWEEP_PROBES = 16;
 
+        @SuppressWarnings("this-escape")
         Itrs(Itr initial) {
             register(initial);
         }

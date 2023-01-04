@@ -82,6 +82,7 @@ public class JToolTip extends JComponent implements Accessible {
     JComponent component;
 
     /** Creates a tool tip. */
+    @SuppressWarnings("this-escape")
     public JToolTip() {
         updateUI();
     }

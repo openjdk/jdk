@@ -179,6 +179,7 @@ public class NodeSequence extends XObject
    *
    * @param nodeVector
    */
+  @SuppressWarnings("this-escape")
   public NodeSequence(Object nodeVector)
   {
         super(nodeVector);

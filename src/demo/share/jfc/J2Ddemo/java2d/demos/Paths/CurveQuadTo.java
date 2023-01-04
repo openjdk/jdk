@@ -47,6 +47,7 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class CurveQuadTo extends Surface {
 
+    @SuppressWarnings("this-escape")
     public CurveQuadTo() {
         setBackground(WHITE);
     }

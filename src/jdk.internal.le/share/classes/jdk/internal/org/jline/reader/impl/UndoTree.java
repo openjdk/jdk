@@ -20,6 +20,7 @@ public class UndoTree<T> {
     private final Node parent;
     private Node current;
 
+    @SuppressWarnings("this-escape")
     public UndoTree(Consumer<T> s) {
         state = s;
         parent = new Node(null);

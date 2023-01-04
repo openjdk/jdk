@@ -89,6 +89,7 @@ import java.util.List;
 public class OptionSpecBuilder extends NoArgumentOptionSpec {
     private final OptionParser parser;
 
+    @SuppressWarnings("this-escape")
     OptionSpecBuilder( OptionParser parser, List<String> options, String description ) {
         super( options, description );
 

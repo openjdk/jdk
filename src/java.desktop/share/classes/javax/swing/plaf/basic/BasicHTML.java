@@ -396,6 +396,7 @@ public class BasicHTML {
         /** The host, that is where we are rendering. */
         // private JComponent host;
 
+        @SuppressWarnings("this-escape")
         BasicDocument(StyleSheet s, Font defaultFont, Color foreground) {
             super(s);
             setPreservesUnknownTags(false);

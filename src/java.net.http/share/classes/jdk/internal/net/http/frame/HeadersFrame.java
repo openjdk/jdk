@@ -43,6 +43,7 @@ public class HeadersFrame extends HeaderFrame {
     private int weight;
     private boolean exclusive;
 
+    @SuppressWarnings("this-escape")
     public HeadersFrame(int streamid, int flags, List<ByteBuffer> headerBlocks, int padLength) {
         super(streamid, flags, headerBlocks);
         if (padLength > 0) {

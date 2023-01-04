@@ -45,6 +45,7 @@ public class VariableStack implements Cloneable
   /**
    * Constructor for a variable stack.
    */
+  @SuppressWarnings("this-escape")
   public VariableStack()
   {
     reset();

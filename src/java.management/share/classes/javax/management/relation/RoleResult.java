@@ -126,6 +126,7 @@ public class RoleResult implements Serializable {
      * @param unresolvedList  list of roles not accessed (with problem
      * descriptions).
      */
+    @SuppressWarnings("this-escape")
     public RoleResult(RoleList list,
                       RoleUnresolvedList unresolvedList) {
 

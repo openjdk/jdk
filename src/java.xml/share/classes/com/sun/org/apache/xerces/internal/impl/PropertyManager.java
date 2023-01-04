@@ -96,6 +96,7 @@ public class PropertyManager {
      *
      * @param propertyManager another PropertyManager object
      */
+    @SuppressWarnings("this-escape")
     public PropertyManager(PropertyManager propertyManager) {
 
         HashMap<String, Object> properties = propertyManager.getProperties();

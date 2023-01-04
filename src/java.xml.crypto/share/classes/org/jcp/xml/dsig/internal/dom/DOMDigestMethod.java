@@ -67,6 +67,7 @@ public abstract class DOMDigestMethod extends DOMStructure
      * @throws InvalidAlgorithmParameterException if the parameters are not
      *    appropriate for this digest method
      */
+    @SuppressWarnings("this-escape")
     DOMDigestMethod(AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
@@ -85,6 +86,7 @@ public abstract class DOMDigestMethod extends DOMStructure
      *
      * @param dmElem a DigestMethod element
      */
+    @SuppressWarnings("this-escape")
     DOMDigestMethod(Element dmElem) throws MarshalException {
         Element paramsElem = DOMUtils.getFirstChildElement(dmElem);
         if (paramsElem != null) {

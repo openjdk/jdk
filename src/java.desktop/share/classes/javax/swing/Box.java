@@ -313,6 +313,7 @@ public class Box extends JComponent implements Accessible {
          * @param max   Maximum size
          */
         @ConstructorProperties({"minimumSize", "preferredSize", "maximumSize"})
+        @SuppressWarnings("this-escape")
         public Filler(Dimension min, Dimension pref, Dimension max) {
             setMinimumSize(min);
             setPreferredSize(pref);

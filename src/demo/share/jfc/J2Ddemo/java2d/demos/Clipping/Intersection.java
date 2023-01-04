@@ -69,6 +69,7 @@ public class Intersection extends AnimatingControlsSurface {
     protected boolean threeSixty;
 
 
+    @SuppressWarnings("this-escape")
     public Intersection() {
         setBackground(WHITE);
         setControls(new Component[] { new DemoControls(this) });

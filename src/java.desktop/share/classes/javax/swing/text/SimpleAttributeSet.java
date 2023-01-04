@@ -75,6 +75,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      *
      * @param source the set of attributes
      */
+    @SuppressWarnings("this-escape")
     public SimpleAttributeSet(AttributeSet source) {
         addAttributes(source);
     }

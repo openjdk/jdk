@@ -82,6 +82,7 @@ public class BezierAnim extends AnimatingControlsSurface {
     protected GradientPaint gradient;
     protected BasicStroke stroke;
 
+    @SuppressWarnings("this-escape")
     public BezierAnim() {
         setBackground(WHITE);
         gradient = new GradientPaint(0, 0, RED, 200, 200, YELLOW);

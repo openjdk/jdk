@@ -68,11 +68,13 @@ public class EncASRepPart extends EncKDCRepPart {
         //behavior of other implementations, instead of above
     }
 
+    @SuppressWarnings("this-escape")
     public EncASRepPart(byte[] data) throws Asn1Exception,
             IOException, KrbException {
         init(new DerValue(data));
     }
 
+    @SuppressWarnings("this-escape")
     public EncASRepPart(DerValue encoding) throws Asn1Exception,
             IOException, KrbException {
         init(encoding);

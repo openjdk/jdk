@@ -54,6 +54,7 @@ public class BakedArrayList<E> extends ArrayList<E> {
         super(size);
     }
 
+    @SuppressWarnings("this-escape")
     public BakedArrayList(java.util.List<? extends E> data) {
         this(data.size());
         for (int counter = 0, max = data.size(); counter < max; counter++){

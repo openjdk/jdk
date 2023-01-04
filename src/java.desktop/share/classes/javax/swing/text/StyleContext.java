@@ -100,6 +100,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     /**
      * Creates a new StyleContext object.
      */
+    @SuppressWarnings("this-escape")
     public StyleContext() {
         styles = new NamedStyle(null);
         addStyle(DEFAULT_STYLE, null);
@@ -1244,6 +1245,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         /**
          * Constructs a font key.
          */
+        @SuppressWarnings("this-escape")
         public FontKey(String family, int style, int size) {
             setValue(family, style, size);
         }
@@ -1309,6 +1311,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          * @param parent the parent style, null if none
          * @since 1.4
          */
+        @SuppressWarnings("this-escape")
         public NamedStyle(String name, Style parent) {
             attributes = getEmptySet();
             if (name != null) {

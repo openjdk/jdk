@@ -82,6 +82,7 @@ public class JPanel extends JComponent implements Accessible
      *        uses additional memory space to achieve fast, flicker-free
      *        updates
      */
+    @SuppressWarnings("this-escape")
     public JPanel(LayoutManager layout, boolean isDoubleBuffered) {
         setLayout(layout);
         setDoubleBuffered(isDoubleBuffered);

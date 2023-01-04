@@ -37,6 +37,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppBundler extends AppImageBundler {
+     @SuppressWarnings("this-escape")
      public MacAppBundler() {
         setAppImageSupplier(imageOutDir -> {
             return new MacAppImageBuilder(imageOutDir, isDependentTask());

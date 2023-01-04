@@ -76,6 +76,7 @@ public class Stars3D extends ControlsSurface {
     protected String text = "OpenJDK";
     protected int numStars = 300;
 
+    @SuppressWarnings("this-escape")
     public Stars3D() {
         setBackground(BLACK);
         setControls(new Component[] { new DemoControls(this) });

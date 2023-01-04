@@ -81,6 +81,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      * @param styles resources and style definitions which may
      *  be shared across documents
      */
+    @SuppressWarnings("this-escape")
     public DefaultStyledDocument(Content c, StyleContext styles) {
         super(c, styles);
         listeningStyles = new Vector<Style>();

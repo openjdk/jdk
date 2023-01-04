@@ -57,6 +57,7 @@ public class DemoPanel extends JPanel {
     public Tools tools;
     public String className;
 
+    @SuppressWarnings("this-escape")
     public DemoPanel(Object obj, DemoInstVarsAccessor demoInstVars) {
         this.demoInstVars = demoInstVars;
 

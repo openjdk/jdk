@@ -42,10 +42,12 @@ public class NotationDeclarationImpl extends DummyEvent implements NotationDecla
     String fSystemId = null;
 
     /** Creates a new instance of NotationDeclarationImpl */
+    @SuppressWarnings("this-escape")
     public NotationDeclarationImpl() {
         setEventType(XMLEvent.NOTATION_DECLARATION);
     }
 
+    @SuppressWarnings("this-escape")
     public NotationDeclarationImpl(String name,String publicId,String systemId){
         this.fName = name;
         this.fPublicId = publicId;
@@ -53,6 +55,7 @@ public class NotationDeclarationImpl extends DummyEvent implements NotationDecla
         setEventType(XMLEvent.NOTATION_DECLARATION);
     }
 
+    @SuppressWarnings("this-escape")
     public NotationDeclarationImpl(XMLNotationDecl notation){
         this.fName = notation.name;
         this.fPublicId = notation.publicId;

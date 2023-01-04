@@ -293,6 +293,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
+    @SuppressWarnings("this-escape")
     public SchemaParsingConfig(SymbolTable symbolTable,
             XMLGrammarPool grammarPool,
             XMLComponentManager parentSettings) {

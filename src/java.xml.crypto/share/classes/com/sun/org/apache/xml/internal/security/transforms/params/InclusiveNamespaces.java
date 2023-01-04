@@ -69,6 +69,7 @@ public class InclusiveNamespaces extends ElementProxy implements TransformParam 
      * @param doc
      * @param prefixes
      */
+    @SuppressWarnings("this-escape")
     public InclusiveNamespaces(Document doc, Set<String> prefixes) {
         super(doc);
 

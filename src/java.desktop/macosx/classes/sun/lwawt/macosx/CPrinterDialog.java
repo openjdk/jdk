@@ -31,6 +31,7 @@ import java.awt.*;
 public abstract class CPrinterDialog extends Dialog {
     private final CPrinterJob fPrinterJob; // used from native
 
+    @SuppressWarnings("this-escape")
     CPrinterDialog(Frame parent, CPrinterJob printerJob) {
         super(parent, true);
         fPrinterJob = printerJob;

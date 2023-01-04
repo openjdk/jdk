@@ -70,6 +70,7 @@ public class AttrNSImpl
    /**
      * DOM2: Constructor for Namespace implementation.
      */
+    @SuppressWarnings("this-escape")
     protected AttrNSImpl(CoreDocumentImpl ownerDocument,
                          String namespaceURI,
                          String qualifiedName) {

@@ -266,6 +266,7 @@ public class HttpClient extends NetworkClient {
         this(url, proxyHost, proxyPort, false);
     }
 
+    @SuppressWarnings("this-escape")
     protected HttpClient(URL url, Proxy p, int to) throws IOException {
         proxy = (p == null) ? Proxy.NO_PROXY : p;
         this.host = url.getHost();

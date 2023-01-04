@@ -126,6 +126,7 @@ public class AttributedStr extends Surface {
         as.addAttribute(FONT, font, i, i + 4);
     }
 
+    @SuppressWarnings("this-escape")
     public AttributedStr() {
         setBackground(Color.white);
 

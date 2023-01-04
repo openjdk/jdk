@@ -120,6 +120,7 @@ public class JRadioButton extends JToggleButton implements Accessible {
      * @param a an {@code Action}
      * @since 1.3
      */
+    @SuppressWarnings("this-escape")
     public JRadioButton(Action a) {
         this();
         setAction(a);
@@ -178,6 +179,7 @@ public class JRadioButton extends JToggleButton implements Accessible {
      * @param selected if {@code true}, the button is initially selected
      *                 otherwise, the button is initially unselected
      */
+    @SuppressWarnings("this-escape")
     public JRadioButton (String text, Icon icon, boolean selected) {
         super(text, icon, selected);
         setBorderPainted(false);

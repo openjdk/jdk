@@ -169,6 +169,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * @param min an int giving the minimum value
      * @param max an int giving the maximum value
      */
+    @SuppressWarnings("this-escape")
     public JScrollBar(int orientation, int value, int extent, int min, int max)
     {
         checkOrientation(orientation);

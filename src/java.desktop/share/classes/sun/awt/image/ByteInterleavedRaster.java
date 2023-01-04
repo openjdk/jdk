@@ -184,6 +184,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
+    @SuppressWarnings("this-escape")
     public ByteInterleavedRaster(SampleModel sampleModel,
                                  DataBufferByte dataBuffer,
                                  Rectangle aRegion,

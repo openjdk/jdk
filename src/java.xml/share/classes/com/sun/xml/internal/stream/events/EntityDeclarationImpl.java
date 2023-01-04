@@ -45,6 +45,7 @@ public class EntityDeclarationImpl extends DummyEvent implements EntityDeclarati
     private String fNotationName;
 
     /** Creates a new instance of EntityDeclarationImpl */
+    @SuppressWarnings("this-escape")
     public EntityDeclarationImpl() {
         init();
     }
@@ -54,6 +55,7 @@ public class EntityDeclarationImpl extends DummyEvent implements EntityDeclarati
 
     }
 
+    @SuppressWarnings("this-escape")
     public EntityDeclarationImpl(String entityName, String replacementText, XMLResourceIdentifier resourceIdentifier){
         init();
         fEntityName = entityName;

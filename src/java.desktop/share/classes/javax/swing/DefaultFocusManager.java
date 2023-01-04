@@ -62,6 +62,7 @@ public class DefaultFocusManager extends FocusManager {
     /**
      * Constructs a {@code DefaultFocusManager}.
      */
+    @SuppressWarnings("this-escape")
     public DefaultFocusManager() {
         setDefaultFocusTraversalPolicy(gluePolicy);
     }

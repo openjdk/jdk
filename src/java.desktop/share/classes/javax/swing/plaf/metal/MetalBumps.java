@@ -58,6 +58,7 @@ class MetalBumps implements Icon {
      * If <code>newBackColor</code> is null, the background will be
      * transparent.
      */
+    @SuppressWarnings("this-escape")
     public MetalBumps( int width, int height,
                        Color newTopColor, Color newShadowColor, Color newBackColor ) {
         setBumpArea( width, height );

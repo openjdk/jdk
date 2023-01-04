@@ -180,6 +180,7 @@ public class JSpinner extends JComponent implements Accessible
      * @param model  a model for the new spinner
      * @throws NullPointerException if the model is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public JSpinner(SpinnerModel model) {
         if (model == null) {
             throw new NullPointerException("model cannot be null");
@@ -1047,6 +1048,7 @@ public class JSpinner extends JComponent implements Accessible
          * @see SpinnerDateModel
          * @see java.text.SimpleDateFormat
          */
+        @SuppressWarnings("this-escape")
         public DateEditor(JSpinner spinner, String dateFormatPattern) {
             this(spinner, new SimpleDateFormat(dateFormatPattern,
                                                spinner.getLocale()));
@@ -1234,6 +1236,7 @@ public class JSpinner extends JComponent implements Accessible
          * @see SpinnerNumberModel
          * @see java.text.DecimalFormat
          */
+        @SuppressWarnings("this-escape")
         public NumberEditor(JSpinner spinner, String decimalFormatPattern) {
             this(spinner, new DecimalFormat(decimalFormatPattern));
         }
@@ -1352,6 +1355,7 @@ public class JSpinner extends JComponent implements Accessible
          * @see #getModel
          * @see SpinnerListModel
          */
+        @SuppressWarnings("this-escape")
         public ListEditor(JSpinner spinner) {
             super(spinner);
             if (!(spinner.getModel() instanceof SpinnerListModel)) {

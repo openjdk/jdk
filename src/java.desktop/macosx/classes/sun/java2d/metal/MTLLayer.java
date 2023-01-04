@@ -45,6 +45,7 @@ public class MTLLayer extends CFLayer {
 
     private int scale = 1;
 
+    @SuppressWarnings("this-escape")
     public MTLLayer(LWWindowPeer peer) {
         super(0, true);
 

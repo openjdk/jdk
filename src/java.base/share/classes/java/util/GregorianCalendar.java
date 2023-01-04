@@ -588,6 +588,7 @@ public class GregorianCalendar extends Calendar {
      * in the default time zone with the default
      * {@link Locale.Category#FORMAT FORMAT} locale.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar() {
         this(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
         setZoneShared(true);
@@ -610,6 +611,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @param aLocale the given locale.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(Locale aLocale) {
         this(TimeZone.getDefaultRef(), aLocale);
         setZoneShared(true);
@@ -622,6 +624,7 @@ public class GregorianCalendar extends Calendar {
      * @param zone the given time zone.
      * @param aLocale the given locale.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
         gdate = gcal.newCalendarDate(zone);
@@ -735,6 +738,7 @@ public class GregorianCalendar extends Calendar {
      * @param locale  the given locale
      * @param flag    the flag requesting an empty instance
      */
+    @SuppressWarnings("this-escape")
     GregorianCalendar(TimeZone zone, Locale locale, boolean flag) {
         super(zone, locale);
         gdate = gcal.newCalendarDate(getZone());

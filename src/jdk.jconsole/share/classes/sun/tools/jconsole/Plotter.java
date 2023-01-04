@@ -140,6 +140,7 @@ public class Plotter extends JComponent
 
     // Note: If decimals > 0 then values must be decimally shifted left
     // that many places, i.e. multiplied by Math.pow(10.0, decimals).
+    @SuppressWarnings("this-escape")
     public Plotter(Unit unit, int decimals, boolean displayLegend) {
         this.displayLegend = displayLegend;
         setUnit(unit);
@@ -1057,6 +1058,7 @@ public class Plotter extends JComponent
 
     protected class AccessiblePlotter extends AccessibleJComponent {
         private static final long serialVersionUID = -3847205410473510922L;
+        @SuppressWarnings("this-escape")
         protected AccessiblePlotter() {
             setAccessibleName(Messages.PLOTTER_ACCESSIBLE_NAME);
         }

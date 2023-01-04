@@ -115,6 +115,7 @@ public class Transforms extends SignatureElementProxy {
      * @param doc the {@link Document} in which {@code XMLSignature} will
      * be placed
      */
+    @SuppressWarnings("this-escape")
     public Transforms(Document doc) {
         super(doc);
         addReturnToSelf();

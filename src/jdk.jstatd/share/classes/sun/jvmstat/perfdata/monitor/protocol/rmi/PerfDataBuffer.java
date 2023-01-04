@@ -56,6 +56,7 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
      *
      * @throws MonitorException
      */
+    @SuppressWarnings("this-escape")
     public PerfDataBuffer(RemoteVm rvm, int lvmid) throws MonitorException {
 
         this.rvm = rvm;

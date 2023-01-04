@@ -80,6 +80,7 @@ class SOSMarkerSegment extends MarkerSegment {
         buffer.bufAvail -= length;
     }
 
+    @SuppressWarnings("this-escape")
     SOSMarkerSegment(Node node) throws IIOInvalidTreeException {
         super(JPEG.SOS);
         startSpectralSelection = 0;

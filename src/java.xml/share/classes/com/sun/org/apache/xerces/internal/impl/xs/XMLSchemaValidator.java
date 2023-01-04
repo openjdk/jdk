@@ -1212,6 +1212,7 @@ public class XMLSchemaValidator
 
     /** Schema grammar resolver. */
     private final XSGrammarBucket fGrammarBucket = new XSGrammarBucket();
+    @SuppressWarnings("this-escape")
     private final SubstitutionGroupHandler fSubGroupHandler = new SubstitutionGroupHandler(this);
 
     /** the DV usd to convert xsi:type to a QName */

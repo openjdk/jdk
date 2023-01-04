@@ -35,6 +35,7 @@ class UIComponent extends UIRegion {
 
     private List<UIStateType> stateTypes = new ArrayList<>();
 
+    @SuppressWarnings("this-escape")
     UIComponent(XMLStreamReader reader) throws XMLStreamException {
         super(reader, false);
         componentName = reader.getAttributeValue(null, "componentName");

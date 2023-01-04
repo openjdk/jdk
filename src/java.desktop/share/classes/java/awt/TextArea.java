@@ -256,6 +256,7 @@ public non-sealed class TextArea extends TextComponent {
      *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
+    @SuppressWarnings("this-escape")
     public TextArea(String text, int rows, int columns, int scrollbars)
         throws HeadlessException {
         super(text);

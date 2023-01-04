@@ -55,6 +55,7 @@ import javax.swing.event.*;
 @SuppressWarnings("serial")
 public class MetalworksHelp extends JInternalFrame {
 
+    @SuppressWarnings("this-escape")
     public MetalworksHelp() {
         super("Help", true, true, true, true);
 

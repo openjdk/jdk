@@ -74,6 +74,7 @@ public class XHTMLSerializer
      * @param writer The writer to use
      * @param format The output format to use, null for the default
      */
+    @SuppressWarnings("this-escape")
     public XHTMLSerializer( Writer writer, OutputFormat format )
     {
         super( true, format != null ? format : new OutputFormat( Method.XHTML, null, false ) );
@@ -89,6 +90,7 @@ public class XHTMLSerializer
      * @param output The output stream to use
      * @param format The output format to use, null for the default
      */
+    @SuppressWarnings("this-escape")
     public XHTMLSerializer( OutputStream output, OutputFormat format )
     {
         super( true, format != null ? format : new OutputFormat( Method.XHTML, null, false ) );

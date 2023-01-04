@@ -104,6 +104,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
      * @throws CatalogException If an error happens while parsing the specified
      * catalog file.
      */
+    @SuppressWarnings("this-escape")
     public CatalogImpl(CatalogImpl parent, CatalogFeatures f, URI... uris) throws CatalogException {
         super(CatalogEntryType.CATALOG, parent);
         if (f == null) {

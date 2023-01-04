@@ -52,6 +52,7 @@ public class KeyInfoReference extends Signature11ElementProxy implements KeyInfo
      * @param doc
      * @param uri
      */
+    @SuppressWarnings("this-escape")
     public KeyInfoReference(Document doc, String uri) {
         super(doc);
 

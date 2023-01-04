@@ -54,6 +54,7 @@ public class Tree extends AnimatingSurface {
     private Character theT = Character.valueOf(theC);
     private Character theR = Character.valueOf((char) (theC + 1));
 
+    @SuppressWarnings("this-escape")
     public Tree() {
         setBackground(WHITE);
     }

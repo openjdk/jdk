@@ -447,6 +447,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * @param dataModel the model for the list
      * @throws IllegalArgumentException if the model is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public JList(ListModel<E> dataModel)
     {
         if (dataModel == null) {

@@ -54,6 +54,7 @@ public class JavadocTaskImpl implements DocumentationTask {
     private Locale locale;
     private final List<String> addModules = new ArrayList<>();
 
+    @SuppressWarnings("this-escape")
     public JavadocTaskImpl(Context context,
                            Class<?> docletClass,
                            Iterable<String> options,

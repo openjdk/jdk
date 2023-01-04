@@ -76,6 +76,7 @@ public class DOMNamespaceContext implements NamespaceContext {
 
     private Node context;
 
+    @SuppressWarnings("this-escape")
     public DOMNamespaceContext(Node context) {
         setContext(context);
     }

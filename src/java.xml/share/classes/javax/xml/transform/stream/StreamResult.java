@@ -61,6 +61,7 @@ public class StreamResult implements Result {
      *
      * @param outputStream A valid OutputStream reference.
      */
+    @SuppressWarnings("this-escape")
     public StreamResult(OutputStream outputStream) {
         setOutputStream(outputStream);
     }
@@ -75,6 +76,7 @@ public class StreamResult implements Result {
      *
      * @param writer  A valid Writer reference.
      */
+    @SuppressWarnings("this-escape")
     public StreamResult(Writer writer) {
         setWriter(writer);
     }
@@ -93,6 +95,7 @@ public class StreamResult implements Result {
      *
      * @param f Must a non-null File reference.
      */
+    @SuppressWarnings("this-escape")
     public StreamResult(File f) {
         //convert file to appropriate URI, f.toURI().toASCIIString()
         //converts the URI to string as per rule specified in

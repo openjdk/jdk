@@ -40,11 +40,13 @@ public class TGSReq extends KDCReq {
         super(new_pAData, new_reqBody, Krb5.KRB_TGS_REQ);
     }
 
+    @SuppressWarnings("this-escape")
     public TGSReq(byte[] data) throws Asn1Exception,
     IOException, KrbException {
         init(new DerValue(data));
     }
 
+    @SuppressWarnings("this-escape")
     public TGSReq(DerValue encoding) throws Asn1Exception,
     IOException, KrbException {
         init(encoding);

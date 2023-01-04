@@ -152,6 +152,7 @@ public class JavacTaskPool {
      * or if any of the given compilation units are of other kind than
      * {@linkplain JavaFileObject.Kind#SOURCE source}
      */
+    @SuppressWarnings("this-escape")
     public <Z> Z getTask(Writer out,
                          JavaFileManager fileManager,
                          DiagnosticListener<? super JavaFileObject> diagnosticListener,
@@ -244,6 +245,7 @@ public class JavacTaskPool {
         int useCount;
         long timeStamp;
 
+        @SuppressWarnings("this-escape")
         ReusableContext(List<String> arguments) {
             super();
             this.arguments = arguments;

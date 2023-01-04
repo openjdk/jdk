@@ -75,6 +75,7 @@ public class Dependencies {
             this.className = className;
         }
 
+        @SuppressWarnings("this-escape")
         public ClassFileNotFoundException(String className, Throwable cause) {
             this(className);
             initCause(cause);
@@ -89,6 +90,7 @@ public class Dependencies {
     public static class ClassFileError extends Error {
         private static final long serialVersionUID = 4111110813961313203L;
 
+        @SuppressWarnings("this-escape")
         public ClassFileError(Throwable cause) {
             initCause(cause);
         }

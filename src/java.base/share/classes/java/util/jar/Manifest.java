@@ -96,6 +96,7 @@ public class Manifest implements Cloneable {
      * @param jarFilename the name of the corresponding jar archive if available
      * @throws IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     Manifest(JarVerifier jv, InputStream is, String jarFilename) throws IOException {
         read(is, jarFilename);
         this.jv = jv;

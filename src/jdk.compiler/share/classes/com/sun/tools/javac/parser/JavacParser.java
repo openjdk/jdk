@@ -166,6 +166,7 @@ public class JavacParser implements Parser {
     }
     /** Construct a parser from a given scanner, tree factory and log.
      */
+    @SuppressWarnings("this-escape")
     protected JavacParser(ParserFactory fac,
                      Lexer S,
                      boolean keepDocComments,

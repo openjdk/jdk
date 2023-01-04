@@ -51,6 +51,7 @@ class ServiceNotifier extends Thread {
      * If adding any other constructors, always call the 5-args
      * super-class constructor passing "false" for inherit-locals.
      */
+    @SuppressWarnings("this-escape")
     ServiceNotifier(PrintService service) {
         super(null, null, service.getName() + " notifier", 0, false);
         this.service = service;

@@ -330,6 +330,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * @see #setString
      * @see #setIndeterminate
      */
+    @SuppressWarnings("this-escape")
     public JProgressBar(int orient, int min, int max)
     {
         // Creating the model this way is a bit simplistic, but
@@ -360,6 +361,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * @see #setString
      * @see #setIndeterminate
      */
+    @SuppressWarnings("this-escape")
     public JProgressBar(BoundedRangeModel newModel)
     {
         setModel(newModel);

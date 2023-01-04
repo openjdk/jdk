@@ -79,6 +79,7 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
      * @param params algorithm-specific parameters (may be {@code null})
      * @throws InvalidAlgorithmParameterException if params are inappropriate
      */
+    @SuppressWarnings("this-escape")
     DOMHMACSignatureMethod(AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
@@ -91,6 +92,7 @@ public abstract class DOMHMACSignatureMethod extends AbstractDOMSignatureMethod 
      *
      * @param smElem a SignatureMethod element
      */
+    @SuppressWarnings("this-escape")
     DOMHMACSignatureMethod(Element smElem) throws MarshalException {
         Element paramsElem = DOMUtils.getFirstChildElement(smElem);
         if (paramsElem != null) {

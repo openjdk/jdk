@@ -75,6 +75,7 @@ public class JavaThreadsPanel extends SAPanel implements ActionListener {
         suspended. Subsequent resume and suspend operations of the VM
         will cause the threads panel to clear and fill itself back in,
         respectively. */
+    @SuppressWarnings("this-escape")
     public JavaThreadsPanel() {
         VM.getVM().registerVMResumedObserver(new Observer() {
                 public void update(Observable o, Object data) {

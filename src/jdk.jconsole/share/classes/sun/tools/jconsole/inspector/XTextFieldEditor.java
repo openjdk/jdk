@@ -43,6 +43,7 @@ import javax.swing.table.TableCellEditor;
 public class XTextFieldEditor extends XTextField implements TableCellEditor {
 
     protected EventListenerList evtListenerList = new EventListenerList();
+    @SuppressWarnings("this-escape")
     protected ChangeEvent changeEvent = new ChangeEvent(this);
 
     private FocusListener editorFocusListener = new FocusAdapter() {

@@ -138,6 +138,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * @param a the action of the {@code JCheckBoxMenuItem}
      * @since 1.3
      */
+    @SuppressWarnings("this-escape")
     public JCheckBoxMenuItem(Action a) {
         this();
         setAction(a);
@@ -170,6 +171,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * @param icon the icon of the check box menu item
      * @param b the selected state of the check box menu item
      */
+    @SuppressWarnings("this-escape")
     public JCheckBoxMenuItem(String text, Icon icon, boolean b) {
         super(text, icon);
         setModel(new JToggleButton.ToggleButtonModel());

@@ -39,6 +39,7 @@ public class XNodeSetForDOM extends XNodeSet
   @SuppressWarnings("serial") // Type of field is not Serializable
   Object m_origObj;
 
+  @SuppressWarnings("this-escape")
   public XNodeSetForDOM(Node node, DTMManager dtmMgr)
   {
     m_dtmMgr = dtmMgr;
@@ -60,6 +61,7 @@ public class XNodeSetForDOM extends XNodeSet
         m_origObj = ((XNodeSetForDOM)val).m_origObj;
   }
 
+  @SuppressWarnings("this-escape")
   public XNodeSetForDOM(NodeList nodeList, XPathContext xctxt)
   {
     m_dtmMgr = xctxt.getDTMManager();
@@ -74,6 +76,7 @@ public class XNodeSetForDOM extends XNodeSet
     setObject(nsdtm);
   }
 
+  @SuppressWarnings("this-escape")
   public XNodeSetForDOM(NodeIterator nodeIter, XPathContext xctxt)
   {
     m_dtmMgr = xctxt.getDTMManager();

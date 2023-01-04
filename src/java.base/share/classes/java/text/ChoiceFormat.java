@@ -317,6 +317,7 @@ public class ChoiceFormat extends NumberFormat {
      *            {@code null}
      * @see #applyPattern
      */
+    @SuppressWarnings("this-escape")
     public ChoiceFormat(String newPattern)  {
         applyPattern(newPattern);
     }
@@ -330,6 +331,7 @@ public class ChoiceFormat extends NumberFormat {
      *            is {@code null}
      * @see #setChoices
      */
+    @SuppressWarnings("this-escape")
     public ChoiceFormat(double[] limits, String[] formats) {
         setChoices(limits, formats);
     }

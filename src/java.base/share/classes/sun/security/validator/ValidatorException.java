@@ -70,6 +70,7 @@ public class ValidatorException extends CertificateException {
         super(msg);
     }
 
+    @SuppressWarnings("this-escape")
     public ValidatorException(String msg, Throwable cause) {
         super(msg);
         initCause(cause);
@@ -85,6 +86,7 @@ public class ValidatorException extends CertificateException {
         this.cert = cert;
     }
 
+    @SuppressWarnings("this-escape")
     public ValidatorException(Object type, X509Certificate cert,
             Throwable cause) {
         this(type, cert);
@@ -97,6 +99,7 @@ public class ValidatorException extends CertificateException {
         this.cert = cert;
     }
 
+    @SuppressWarnings("this-escape")
     public ValidatorException(String msg, Object type, X509Certificate cert,
             Throwable cause) {
         this(msg, type, cert);

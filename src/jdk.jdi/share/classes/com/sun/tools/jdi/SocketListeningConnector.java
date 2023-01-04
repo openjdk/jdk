@@ -40,6 +40,7 @@ public class SocketListeningConnector extends GenericListeningConnector {
     static final String ARG_PORT = "port";
     static final String ARG_LOCALADDR = "localAddress";
 
+    @SuppressWarnings("this-escape")
     public SocketListeningConnector() {
         super(new SocketTransportService());
 

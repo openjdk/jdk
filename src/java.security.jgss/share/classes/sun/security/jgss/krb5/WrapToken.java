@@ -116,6 +116,7 @@ class WrapToken extends MessageToken {
      * parsed token will be stored.
      * @throws GSSException if the token is defective
      */
+    @SuppressWarnings("this-escape")
     public WrapToken(Krb5Context context,
                      byte[] tokenBytes, int tokenOffset, int tokenLen,
                      MessageProp prop)  throws GSSException {
@@ -146,6 +147,7 @@ class WrapToken extends MessageToken {
      * @throws GSSException if the token is defective or if there is
      * a problem reading from the InputStream
      */
+    @SuppressWarnings("this-escape")
     public WrapToken(Krb5Context context,
                      InputStream is, MessageProp prop)
         throws GSSException {
@@ -395,6 +397,7 @@ class WrapToken extends MessageToken {
         return pads[padSize];
     }
 
+    @SuppressWarnings("this-escape")
     public WrapToken(Krb5Context context, MessageProp prop,
                      byte[] dataBytes, int dataOffset, int dataLen)
         throws GSSException {

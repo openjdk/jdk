@@ -279,6 +279,7 @@ public class NonValidatingConfiguration
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
+    @SuppressWarnings("this-escape")
     public NonValidatingConfiguration(SymbolTable symbolTable,
                                        XMLGrammarPool grammarPool,
                                        XMLComponentManager parentSettings) {

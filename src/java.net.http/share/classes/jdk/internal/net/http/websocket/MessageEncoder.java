@@ -67,6 +67,7 @@ public class MessageEncoder {
      * the maximum size of a Close frame payload, which is 125 bytes
      * (or Frame.MAX_CONTROL_FRAME_PAYLOAD_LENGTH).
      */
+    @SuppressWarnings("this-escape")
     private final ByteBuffer intermediateBuffer = createIntermediateBuffer(
             Frame.MAX_CONTROL_FRAME_PAYLOAD_LENGTH);
     private final ByteBuffer headerBuffer = ByteBuffer.allocate(

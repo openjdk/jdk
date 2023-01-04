@@ -34,6 +34,7 @@ import sun.jvm.hotspot.runtime.*;
 public class VMVersionInfoPanel extends JPanel {
     private JEditorPane         versionPane;
 
+    @SuppressWarnings("this-escape")
     public VMVersionInfoPanel() {
         initUI();
     }

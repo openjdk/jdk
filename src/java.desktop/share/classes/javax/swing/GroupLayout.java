@@ -372,6 +372,7 @@ public class GroupLayout implements LayoutManager2 {
      *        the {@code LayoutManager} for
      * @throws IllegalArgumentException if host is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public GroupLayout(Container host) {
         if (host == null) {
             throw new IllegalArgumentException("Container must be non-null");

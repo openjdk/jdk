@@ -73,6 +73,7 @@ public class Joins extends ControlsSurface {
     protected JSlider slider;
     protected JLabel label;
 
+    @SuppressWarnings("this-escape")
     public Joins() {
         setBackground(WHITE);
         slider = new JSlider(SwingConstants.VERTICAL, 0, 100,

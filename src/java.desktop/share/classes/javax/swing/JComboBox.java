@@ -212,6 +212,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *          displayed list of items
      * @see DefaultComboBoxModel
      */
+    @SuppressWarnings("this-escape")
     public JComboBox(ComboBoxModel<E> aModel) {
         super();
         setModel(aModel);
@@ -226,6 +227,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @param items  an array of objects to insert into the combo box
      * @see DefaultComboBoxModel
      */
+    @SuppressWarnings("this-escape")
     public JComboBox(E[] items) {
         super();
         setModel(new DefaultComboBoxModel<E>(items));
@@ -240,6 +242,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * @param items  an array of vectors to insert into the combo box
      * @see DefaultComboBoxModel
      */
+    @SuppressWarnings("this-escape")
     public JComboBox(Vector<E> items) {
         super();
         setModel(new DefaultComboBoxModel<E>(items));
@@ -254,6 +257,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @see DefaultComboBoxModel
      */
+    @SuppressWarnings("this-escape")
     public JComboBox() {
         super();
         setModel(new DefaultComboBoxModel<E>());
@@ -1687,6 +1691,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
          * Returns an AccessibleJComboBox instance
          * @since 1.4
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJComboBox() {
             // set the combo box editor's accessible name and description
             JComboBox.this.addPropertyChangeListener(new AccessibleJComboBoxPropertyChangeListener());

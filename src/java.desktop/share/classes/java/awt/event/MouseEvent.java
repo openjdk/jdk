@@ -751,7 +751,7 @@ public non-sealed class MouseEvent extends InputEvent {
      * @see InputEvent#getMaskForButton(int)
      * @since 1.6
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "this-escape" })
     public MouseEvent(Component source, int id, long when, int modifiers,
                       int x, int y, int xAbs, int yAbs,
                       int clickCount, boolean popupTrigger, int button)

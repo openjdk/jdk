@@ -235,6 +235,7 @@ public class Level implements java.io.Serializable {
 
     // private constructor to specify whether this instance should be added
     // to the KnownLevel list from which Level.parse method does its look up
+    @SuppressWarnings("this-escape")
     private Level(String name, int value, String resourceBundleName, boolean visible) {
         if (name == null) {
             throw new NullPointerException();

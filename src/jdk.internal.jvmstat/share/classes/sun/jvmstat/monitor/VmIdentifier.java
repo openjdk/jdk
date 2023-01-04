@@ -191,6 +191,7 @@ public class VmIdentifier {
      * @throws URISyntaxException Thrown when the uriString or its canonical
      *                            form is poorly formed.
      */
+    @SuppressWarnings("this-escape")
     public VmIdentifier(String uriString) throws URISyntaxException {
         URI u;
         try {
@@ -220,6 +221,7 @@ public class VmIdentifier {
      * @throws URISyntaxException Thrown if the URI is missing some
      *                            required component.
      */
+    @SuppressWarnings("this-escape")
     public VmIdentifier(URI uri) throws URISyntaxException {
         this.uri = uri;
         validate();

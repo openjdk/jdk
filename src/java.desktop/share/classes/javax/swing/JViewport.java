@@ -284,6 +284,7 @@ public class JViewport extends JComponent implements Accessible
     private boolean viewChanged;
 
     /** Creates a <code>JViewport</code>. */
+    @SuppressWarnings("this-escape")
     public JViewport() {
         super();
         setLayout(createLayoutManager());

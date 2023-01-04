@@ -226,6 +226,7 @@ public class Hashtable<K,V>
      * @throws NullPointerException if the specified map is null.
      * @since   1.2
      */
+    @SuppressWarnings("this-escape")
     public Hashtable(Map<? extends K, ? extends V> t) {
         this(Math.max(2*t.size(), 11), 0.75f);
         putAll(t);

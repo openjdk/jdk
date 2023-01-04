@@ -67,11 +67,13 @@ public class MemRegion implements Cloneable {
          wordSizeField.getValue(memRegionAddr));
   }
 
+  @SuppressWarnings("this-escape")
   public MemRegion(Address start, long wordSize) {
     setStart(start);
     setWordSize(wordSize);
   }
 
+  @SuppressWarnings("this-escape")
   public MemRegion(Address start, Address limit) {
     setStart(start);
     byteSize = limit.minus(start);

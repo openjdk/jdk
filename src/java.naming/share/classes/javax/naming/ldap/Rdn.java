@@ -129,6 +129,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      * @throws InvalidNameException If contents of {@code attrSet} cannot
      *          be used to construct a valid RDN.
      */
+    @SuppressWarnings("this-escape")
     public Rdn(Attributes attrSet) throws InvalidNameException {
         if (attrSet.size() == 0) {
             throw new InvalidNameException("Attributes cannot be empty");
@@ -194,6 +195,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      *                  construct a valid RDN.
      * @see #toString()
      */
+    @SuppressWarnings("this-escape")
     public Rdn(String type, Object value) throws InvalidNameException {
         if (value == null) {
             throw new NullPointerException("Cannot set value to null");

@@ -51,6 +51,7 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
      * @param doc
      * @param dsaKeyValue
      */
+    @SuppressWarnings("this-escape")
     public KeyValue(Document doc, DSAKeyValue dsaKeyValue) {
         super(doc);
 
@@ -65,6 +66,7 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
      * @param doc
      * @param rsaKeyValue
      */
+    @SuppressWarnings("this-escape")
     public KeyValue(Document doc, RSAKeyValue rsaKeyValue) {
         super(doc);
 
@@ -79,6 +81,7 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
      * @param doc
      * @param unknownKeyValue
      */
+    @SuppressWarnings("this-escape")
     public KeyValue(Document doc, Element unknownKeyValue) {
         super(doc);
 
@@ -93,6 +96,7 @@ public class KeyValue extends SignatureElementProxy implements KeyInfoContent {
      * @param doc
      * @param pk
      */
+    @SuppressWarnings("this-escape")
     public KeyValue(Document doc, PublicKey pk) {
         super(doc);
 

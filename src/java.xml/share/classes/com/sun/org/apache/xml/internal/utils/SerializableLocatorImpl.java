@@ -70,6 +70,7 @@ implements org.xml.sax.Locator, java.io.Serializable
      *
      * @param locator The locator to copy.
      */
+    @SuppressWarnings("this-escape")
     public SerializableLocatorImpl (org.xml.sax.Locator locator)
     {
         setPublicId(locator.getPublicId());

@@ -40,6 +40,7 @@ public abstract class CommonMenuBar extends JMenuBar
         this(manager, StatusBar.getInstance());
     }
 
+    @SuppressWarnings("this-escape")
     protected CommonMenuBar(ActionManager manager, StatusBar status)
     {
         this.manager = manager;

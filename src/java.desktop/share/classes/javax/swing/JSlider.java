@@ -168,6 +168,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @see #addChangeListener
      * @see #createChangeListener
      */
+    @SuppressWarnings("this-escape")
     protected ChangeListener changeListener = createChangeListener();
 
 
@@ -286,6 +287,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @see #setMaximum
      * @see #setValue
      */
+    @SuppressWarnings("this-escape")
     public JSlider(int orientation, int min, int max, int value)
     {
         checkOrientation(orientation);
@@ -301,6 +303,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      *
      * @param brm a {@code BoundedRangeModel} for the slider
      */
+    @SuppressWarnings("this-escape")
     public JSlider(BoundedRangeModel brm)
     {
         this.orientation = JSlider.HORIZONTAL;
@@ -939,6 +942,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             boolean startAtMin = false;
 
             class LabelUIResource extends JLabel implements UIResource {
+                @SuppressWarnings("this-escape")
                 public LabelUIResource( String text, int alignment ) {
                     super( text, alignment );
                     setName("Slider.label");

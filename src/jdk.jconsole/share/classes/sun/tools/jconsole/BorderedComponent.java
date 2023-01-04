@@ -306,6 +306,7 @@ public class BorderedComponent extends JPanel implements ActionListener {
          * @param border  the border
          * @param label  the label the border should display
          */
+        @SuppressWarnings("this-escape")
         public LabeledBorder(Border border, JComponent label) {
             super(border);
 

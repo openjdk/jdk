@@ -42,6 +42,7 @@ public abstract class AquaBorder implements Border, UIResource {
     protected final SizeDescriptor sizeDescriptor;
     protected SizeVariant sizeVariant;
 
+    @SuppressWarnings("this-escape")
     protected AquaBorder(final SizeDescriptor sizeDescriptor) {
         this.sizeDescriptor = sizeDescriptor;
         this.sizeVariant = sizeDescriptor.get(Size.REGULAR);

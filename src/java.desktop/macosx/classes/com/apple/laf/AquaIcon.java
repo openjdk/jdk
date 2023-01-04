@@ -86,6 +86,7 @@ public class AquaIcon {
         protected final SizeDescriptor sizeDescriptor;
         protected SizeVariant sizeVariant;
 
+        @SuppressWarnings("this-escape")
         public DynamicallySizingJRSUIIcon(final SizeDescriptor sizeDescriptor) {
             this.sizeDescriptor = sizeDescriptor;
             this.sizeVariant = sizeDescriptor.regular;

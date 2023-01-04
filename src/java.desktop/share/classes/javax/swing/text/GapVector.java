@@ -57,6 +57,7 @@ abstract class GapVector implements Serializable {
      *
      * @param initialLength the initial size
      */
+    @SuppressWarnings("this-escape")
     public GapVector(int initialLength) {
         array = allocateArray(initialLength);
         g0 = 0;

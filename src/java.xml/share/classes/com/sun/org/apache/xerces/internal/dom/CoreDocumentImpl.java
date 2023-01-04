@@ -323,6 +323,7 @@ public class CoreDocumentImpl
     }
 
     /** For DOM2 support. */
+    @SuppressWarnings("this-escape")
     public CoreDocumentImpl(DocumentType doctype, boolean grammarAccess) {
         this(grammarAccess);
         if (doctype != null) {

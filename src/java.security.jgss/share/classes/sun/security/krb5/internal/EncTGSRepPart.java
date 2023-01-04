@@ -64,11 +64,13 @@ public class EncTGSRepPart extends EncKDCRepPart {
                 Krb5.KRB_ENC_TGS_REP_PART);
     }
 
+    @SuppressWarnings("this-escape")
     public EncTGSRepPart(byte[] data) throws Asn1Exception,
             IOException, KrbException {
         init(new DerValue(data));
     }
 
+    @SuppressWarnings("this-escape")
     public EncTGSRepPart(DerValue encoding) throws Asn1Exception,
             IOException, KrbException {
         init(encoding);

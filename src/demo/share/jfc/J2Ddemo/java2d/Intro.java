@@ -114,6 +114,7 @@ public class Intro extends JPanel {
     private boolean doTable;
     private final Surface surface;
 
+    @SuppressWarnings("this-escape")
     public Intro() {
         EmptyBorder eb = new EmptyBorder(80, 110, 80, 110);
         BevelBorder bb = new BevelBorder(BevelBorder.LOWERED);
@@ -496,6 +497,7 @@ public class Intro extends JPanel {
             Font f2 = new Font(Font.SERIF, Font.PLAIN, 120);
             Font f3 = new Font(Font.SERIF, Font.PLAIN, 72);
 
+            @SuppressWarnings("this-escape")
             public Director(Surface surf) {
                 Object[][][] partsInfo = {
                 { { "J  -  scale text on gradient", "0" },

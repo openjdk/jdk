@@ -104,6 +104,7 @@ public class AttributeListImpl implements AttributeList
      * @param atts The attribute list to copy
      * @see org.xml.sax.DocumentHandler#startElement
      */
+    @SuppressWarnings("this-escape")
     public AttributeListImpl (AttributeList atts)
     {
         setAttributeList(atts);

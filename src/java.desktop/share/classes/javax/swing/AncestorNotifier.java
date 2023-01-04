@@ -49,6 +49,7 @@ class AncestorNotifier implements ComponentListener, PropertyChangeListener, Ser
     EventListenerList listenerList = new EventListenerList();
     JComponent root;
 
+    @SuppressWarnings("this-escape")
     AncestorNotifier(JComponent root) {
         this.root = root;
         addListeners(root, true);

@@ -309,6 +309,7 @@ public class RuleBasedBreakIterator extends BreakIterator {
      *
      * @throws MissingResourceException if the rule data is invalid or corrupted
      */
+    @SuppressWarnings("this-escape")
     public RuleBasedBreakIterator(String ruleFile, byte[] ruleData) {
         ByteBuffer bb = ByteBuffer.wrap(ruleData);
         try {

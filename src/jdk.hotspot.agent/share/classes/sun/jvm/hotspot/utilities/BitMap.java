@@ -28,6 +28,7 @@ import sun.jvm.hotspot.debugger.*;
 
 /** Manages a bitmap of the specified bit size */
 public class BitMap {
+  @SuppressWarnings("this-escape")
   public BitMap(int sizeInBits) {
     this.size = sizeInBits;
     int nofWords = sizeInWords();

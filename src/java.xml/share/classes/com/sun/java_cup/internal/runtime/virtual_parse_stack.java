@@ -49,6 +49,7 @@ public class virtual_parse_stack {
   /*-----------------------------------------------------------*/
 
   /** Constructor to build a virtual stack out of a real stack. */
+  @SuppressWarnings("this-escape")
   public virtual_parse_stack(Stack<Symbol> shadowing_stack) throws java.lang.Exception
     {
       /* sanity check */

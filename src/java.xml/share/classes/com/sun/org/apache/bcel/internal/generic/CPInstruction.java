@@ -54,6 +54,7 @@ public abstract class CPInstruction extends Instruction implements TypedInstruct
     /**
      * @param index to constant pool
      */
+    @SuppressWarnings("this-escape")
     protected CPInstruction(final short opcode, final int index) {
         super(opcode, (short) 3);
         setIndex(index);

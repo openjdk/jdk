@@ -68,6 +68,7 @@ public class XObject extends Expression implements Serializable, Cloneable
    * @param obj Can be any object, should be a specific type
    * for derived classes, or null.
    */
+  @SuppressWarnings("this-escape")
   public XObject(Object obj)
   {
     setObject(obj);

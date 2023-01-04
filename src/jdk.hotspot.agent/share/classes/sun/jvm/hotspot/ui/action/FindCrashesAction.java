@@ -43,6 +43,7 @@ public class FindCrashesAction extends DelegateAction {
     public static final String VALUE_SHORT_DESCRIPTION = "Find Crashes";
     public static final String VALUE_LONG_DESCRIPTION = "Searches the threads for potential crashes";
 
+    @SuppressWarnings("this-escape")
     public FindCrashesAction() {
         super(VALUE_NAME, ActionManager.getIcon(VALUE_SMALL_ICON));
 

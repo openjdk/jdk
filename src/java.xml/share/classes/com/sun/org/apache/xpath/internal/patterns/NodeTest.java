@@ -200,6 +200,7 @@ public class NodeTest extends Expression
    * @param namespace The namespace to be tested.
    * @param name The local name to be tested.
    */
+  @SuppressWarnings("this-escape")
   public NodeTest(int whatToShow, String namespace, String name)
   {
     initNodeTest(whatToShow, namespace, name);
@@ -211,6 +212,7 @@ public class NodeTest extends Expression
    *
    * @param whatToShow Bit set defined mainly by {@link org.w3c.dom.traversal.NodeFilter}.
    */
+  @SuppressWarnings("this-escape")
   public NodeTest(int whatToShow)
   {
     initNodeTest(whatToShow);

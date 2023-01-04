@@ -52,6 +52,7 @@ public class XNodeSet extends NodeSequence
    *
    * @param val Value of the XNodeSet object
    */
+  @SuppressWarnings("this-escape")
   public XNodeSet(DTMIterator val)
   {
         super();
@@ -78,6 +79,7 @@ public class XNodeSet extends NodeSequence
    *
    * @param val Value of the XNodeSet object
    */
+  @SuppressWarnings("this-escape")
   public XNodeSet(XNodeSet val)
   {
         super();

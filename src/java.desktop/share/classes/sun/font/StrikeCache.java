@@ -423,7 +423,7 @@ public final class StrikeCache {
             return disposer;
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({ "unchecked", "this-escape" })
         SoftDisposerRef(FontStrike strike) {
             super(strike, StrikeCache.refQueue);
             disposer = strike.disposer;
@@ -440,7 +440,7 @@ public final class StrikeCache {
             return disposer;
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({ "unchecked", "this-escape" })
         WeakDisposerRef(FontStrike strike) {
             super(strike, StrikeCache.refQueue);
             disposer = strike.disposer;

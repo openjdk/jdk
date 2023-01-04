@@ -95,7 +95,7 @@ public class Notepad extends JPanel {
         }
     }
 
-    @SuppressWarnings("OverridableMethodCallInConstructor")
+    @SuppressWarnings("this-escape")
     Notepad() {
         super(true);
 
@@ -529,6 +529,7 @@ public class Notepad extends JPanel {
 
     class UndoAction extends AbstractAction {
 
+        @SuppressWarnings("this-escape")
         public UndoAction() {
             super("Undo");
             setEnabled(false);
@@ -559,6 +560,7 @@ public class Notepad extends JPanel {
 
     class RedoAction extends AbstractAction {
 
+        @SuppressWarnings("this-escape")
         public RedoAction() {
             super("Redo");
             setEnabled(false);
@@ -733,6 +735,7 @@ public class Notepad extends JPanel {
      */
     class FileLoader extends Thread {
 
+        @SuppressWarnings("this-escape")
         FileLoader(File f, Document doc) {
             setPriority(4);
             this.f = f;
@@ -802,6 +805,7 @@ public class Notepad extends JPanel {
         Document doc;
         File f;
 
+        @SuppressWarnings("this-escape")
         FileSaver(File f, Document doc) {
             setPriority(4);
             this.f = f;

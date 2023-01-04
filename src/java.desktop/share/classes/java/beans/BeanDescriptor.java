@@ -60,6 +60,7 @@ public class BeanDescriptor extends FeatureDescriptor {
      * @param customizerClass  The Class object of the Java class that implements
      *          the bean's Customizer.  For example sun.beans.OurButtonCustomizer.class.
      */
+    @SuppressWarnings("this-escape")
     public BeanDescriptor(Class<?> beanClass, Class<?> customizerClass) {
         this.beanClassRef = getWeakReference(beanClass);
         this.customizerClassRef = getWeakReference(customizerClass);

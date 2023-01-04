@@ -35,6 +35,7 @@ import javax.swing.ImageIcon;
 public abstract class ActionManager
 {
 
+    @SuppressWarnings("this-escape")
     protected ActionManager()
     {
         actions = new HashMap<>();

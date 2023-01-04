@@ -102,6 +102,7 @@ public class InternalFrameDemo extends DemoModule {
     /**
      * InternalFrameDemo Constructor
      */
+    @SuppressWarnings("this-escape")
     public InternalFrameDemo(SwingSet2 swingset) {
         super(swingset, "InternalFrameDemo", "toolbar/JDesktop.gif");
 
@@ -320,6 +321,7 @@ public class InternalFrameDemo extends DemoModule {
 
     class ImageScroller extends JScrollPane {
 
+        @SuppressWarnings("this-escape")
         public ImageScroller(InternalFrameDemo demo, Icon icon, int layer, int count) {
             super();
             JPanel p = new JPanel();

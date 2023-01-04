@@ -313,6 +313,7 @@ public abstract class ClassLoader {
 
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
+    @SuppressWarnings("this-escape")
     private final ProtectionDomain defaultDomain =
         new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
                              null, this, null);
@@ -374,6 +375,7 @@ public abstract class ClassLoader {
         return null;
     }
 
+    @SuppressWarnings("this-escape")
     private ClassLoader(Void unused, String name, ClassLoader parent) {
         this.name = name;
         this.parent = parent;
@@ -2395,6 +2397,7 @@ public abstract class ClassLoader {
         return null;
     }
 
+    @SuppressWarnings("this-escape")
     private final NativeLibraries libraries = NativeLibraries.newInstance(this);
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.

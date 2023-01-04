@@ -750,6 +750,7 @@ public class VisibleMemberTable {
         // Performance optimization
         private final Map<Kind, Map<String, List<Element>>> memberMap;
 
+        @SuppressWarnings("this-escape")
         LocalMemberTable() {
             orderedMembers = new EnumMap<>(Kind.class);
             memberMap = new EnumMap<>(Kind.class);

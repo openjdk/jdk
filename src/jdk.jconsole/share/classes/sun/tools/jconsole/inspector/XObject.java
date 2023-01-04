@@ -38,11 +38,13 @@ public class XObject extends JLabel {
     private Object object;
     private static boolean useHashCodeRepresentation = true;
     public static final XObject NULL_OBJECT = new XObject("null");
+    @SuppressWarnings("this-escape")
     public XObject (Object object, Icon icon) {
         this(object);
         setIcon(icon);
     }
 
+    @SuppressWarnings("this-escape")
     public XObject (Object object) {
         setObject(object);
         setHorizontalAlignment(SwingConstants.LEFT);

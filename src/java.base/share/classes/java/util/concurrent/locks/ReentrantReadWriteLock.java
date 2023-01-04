@@ -335,6 +335,7 @@ public class ReentrantReadWriteLock
         private transient Thread firstReader;
         private transient int firstReaderHoldCount;
 
+        @SuppressWarnings("this-escape")
         Sync() {
             readHolds = new ThreadLocalHoldCounter();
             setState(getState()); // ensures visibility of readHolds

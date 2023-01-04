@@ -201,6 +201,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         }
     }
 
+    @SuppressWarnings("this-escape")
     LWComponentPeer(final T target, final PlatformComponent platformComponent) {
         targetPaintArea = new LWRepaintArea();
         this.target = target;

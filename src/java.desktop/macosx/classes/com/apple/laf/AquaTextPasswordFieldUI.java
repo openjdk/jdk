@@ -85,6 +85,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     }
 
     protected class AquaPasswordView extends PasswordView {
+        @SuppressWarnings("this-escape")
         public AquaPasswordView(final Element elem) {
             super(elem);
             setupDefaultEchoCharacter();

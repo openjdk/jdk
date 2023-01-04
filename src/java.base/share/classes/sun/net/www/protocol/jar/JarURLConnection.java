@@ -56,6 +56,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
     /* the content type for this connection */
     private String contentType;
 
+    @SuppressWarnings("this-escape")
     public JarURLConnection(URL url, Handler handler)
     throws MalformedURLException, IOException {
         super(url);

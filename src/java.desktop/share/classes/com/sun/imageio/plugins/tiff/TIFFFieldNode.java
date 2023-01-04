@@ -54,6 +54,7 @@ public class TIFFFieldNode extends IIOMetadataNode {
 
     private TIFFField field;
 
+    @SuppressWarnings("this-escape")
     public TIFFFieldNode(TIFFField field) {
         super(getNodeName(field));
 

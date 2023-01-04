@@ -52,6 +52,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
 public class CollationData_zh_HK extends ListResourceBundle {
 
     // reparent to zh_TW for traditional Chinese collation sequence
+    @SuppressWarnings("this-escape")
     public CollationData_zh_HK() {
         ResourceBundle bundle = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getCollationData(Locale.TAIWAN);
         setParent(bundle);

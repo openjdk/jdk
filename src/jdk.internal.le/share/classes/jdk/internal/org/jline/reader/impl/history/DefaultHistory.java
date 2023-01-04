@@ -44,6 +44,7 @@ public class DefaultHistory implements History {
     public DefaultHistory() {
     }
 
+    @SuppressWarnings("this-escape")
     public DefaultHistory(LineReader reader) {
         attach(reader);
     }

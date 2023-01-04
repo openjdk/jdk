@@ -111,6 +111,7 @@ public abstract class EmbeddedFrame extends Frame
         this(handle, false);
     }
 
+    @SuppressWarnings("this-escape")
     protected EmbeddedFrame(long handle, boolean supportsXEmbed) {
         this.supportsXEmbed = supportsXEmbed;
         registerListeners();

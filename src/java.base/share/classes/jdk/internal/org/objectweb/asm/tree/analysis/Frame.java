@@ -136,6 +136,7 @@ public class Frame<V extends Value> {
       *
       * @param frame a frame.
       */
+    @SuppressWarnings("this-escape")
     public Frame(final Frame<? extends V> frame) {
         this(frame.numLocals, frame.values.length - frame.numLocals);
         init(frame); // NOPMD(ConstructorCallsOverridableMethod): can't fix for backward compatibility.

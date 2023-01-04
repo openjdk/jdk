@@ -90,6 +90,7 @@ public class ClassGen extends AccessFlags implements Cloneable {
      * @param interfaces implemented interfaces
      * @param cp constant pool to use
      */
+    @SuppressWarnings("this-escape")
     public ClassGen(final String className, final String superClassName, final String fileName, final int accessFlags,
             final String[] interfaces, final ConstantPoolGen cp) {
         super(accessFlags);
@@ -131,6 +132,7 @@ public class ClassGen extends AccessFlags implements Cloneable {
      * Initialize with existing class.
      * @param clazz JavaClass object (e.g. read from file)
      */
+    @SuppressWarnings("this-escape")
     public ClassGen(final JavaClass clazz) {
         super(clazz.getAccessFlags());
         classNameIndex = clazz.getClassNameIndex();

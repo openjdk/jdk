@@ -38,6 +38,7 @@ public class CPrinterDialogPeer extends LWWindowPeer {
 
     Component fTarget;
 
+    @SuppressWarnings("this-escape")
     public CPrinterDialogPeer(CPrinterDialog target, PlatformComponent platformComponent,
                               PlatformWindow platformWindow)
     {

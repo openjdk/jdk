@@ -113,6 +113,7 @@ public class Rotator3D extends AnimatingSurface {
         { { 1, 2 }, { 1, 3 }, { 2, 4, 5 }, { 2, 6, 7 }, { 2, 8, 9 },
             { 2, 10, 11 }, { 2, 12, 13 }, { 2, 14, 15 } }, };
 
+    @SuppressWarnings("this-escape")
     public Rotator3D() {
         setBackground(Color.white);
     }

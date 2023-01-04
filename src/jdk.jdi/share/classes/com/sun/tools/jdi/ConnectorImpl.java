@@ -223,6 +223,7 @@ abstract class ConnectorImpl implements Connector {
     class BooleanArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.BooleanArgument {
         private static final long serialVersionUID = 1624542968639361316L;
+        @SuppressWarnings("this-escape")
         BooleanArgumentImpl(String name, String label, String description,
                             boolean value,
                             boolean mustSpecify) {

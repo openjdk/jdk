@@ -108,6 +108,7 @@ public abstract class SyntaxTreeNode implements Constants {
      * @param prefix The element's namespace prefix
      * @param local The element's local name
      */
+    @SuppressWarnings("this-escape")
     public SyntaxTreeNode(String uri, String prefix, String local) {
         _line = 0;
         setQName(uri, prefix, local);

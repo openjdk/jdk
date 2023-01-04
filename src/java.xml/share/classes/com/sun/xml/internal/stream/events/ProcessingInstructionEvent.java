@@ -46,6 +46,7 @@ implements ProcessingInstruction {
     /** Processing instruction content */
     private String fContent;
 
+    @SuppressWarnings("this-escape")
     public ProcessingInstructionEvent() {
         init();
     }
@@ -54,6 +55,7 @@ implements ProcessingInstruction {
         this(targetName,data,null);
     }
 
+    @SuppressWarnings("this-escape")
     public ProcessingInstructionEvent(String targetName, String data,Location loc) {
         init();
         this.fName = targetName;

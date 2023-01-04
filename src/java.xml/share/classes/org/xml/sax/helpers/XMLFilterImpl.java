@@ -96,6 +96,7 @@ public class XMLFilterImpl
      * @see #setParent
      * @see #getParent
      */
+    @SuppressWarnings("this-escape")
     public XMLFilterImpl (XMLReader parent)
     {
         super();

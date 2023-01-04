@@ -123,6 +123,7 @@ public class HTMLWriter extends AbstractWriter {
      * @param pos the document location from which to fetch the content
      * @param len the amount to write out
      */
+    @SuppressWarnings("this-escape")
     public HTMLWriter(Writer w, HTMLDocument doc, int pos, int len) {
         super(w, doc, pos, len);
         completeDoc = (pos == 0 && len == doc.getLength());

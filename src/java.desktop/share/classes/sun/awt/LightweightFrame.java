@@ -59,6 +59,7 @@ public abstract class LightweightFrame extends Frame {
      * Constructs a new, initially invisible {@code LightweightFrame}
      * instance.
      */
+    @SuppressWarnings("this-escape")
     public LightweightFrame() {
         setUndecorated(true);
         setResizable(true);

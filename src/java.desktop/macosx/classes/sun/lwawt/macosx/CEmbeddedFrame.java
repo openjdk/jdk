@@ -43,6 +43,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
     private CEmbeddedFrame browserWindowFocusedApplet;
     private boolean parentWindowActive = true;
 
+    @SuppressWarnings("this-escape")
     public CEmbeddedFrame() {
         show();
     }

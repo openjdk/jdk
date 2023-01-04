@@ -349,6 +349,7 @@ public class SpringLayout implements LayoutManager2 {
         * @param x  the spring controlling the component's <em>x</em> value
         * @param y  the spring controlling the component's <em>y</em> value
         */
+       @SuppressWarnings("this-escape")
        public Constraints(Spring x, Spring y) {
            setX(x);
            setY(y);
@@ -369,6 +370,7 @@ public class SpringLayout implements LayoutManager2 {
         * @param width  the spring value for the <code>width</code> property
         * @param height  the spring value for the <code>height</code> property
         */
+       @SuppressWarnings("this-escape")
        public Constraints(Spring x, Spring y, Spring width, Spring height) {
            setX(x);
            setY(y);
@@ -392,6 +394,7 @@ public class SpringLayout implements LayoutManager2 {
          * @throws NullPointerException if <code>c</code> is null.
          * @since 1.5
          */
+        @SuppressWarnings("this-escape")
         public Constraints(Component c) {
             this.c = c;
             setX(Spring.constant(c.getX()));

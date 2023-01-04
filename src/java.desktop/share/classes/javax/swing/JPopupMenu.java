@@ -200,6 +200,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param label  the string that a UI may use to display as a title
      * for the popup menu.
      */
+    @SuppressWarnings("this-escape")
     public JPopupMenu(String label) {
         this.label = label;
         lightWeightPopup = getDefaultLightWeightPopupEnabled();

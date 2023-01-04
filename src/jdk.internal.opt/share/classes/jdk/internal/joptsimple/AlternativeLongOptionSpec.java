@@ -69,6 +69,7 @@ import static jdk.internal.joptsimple.ParserRules.*;
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
 class AlternativeLongOptionSpec extends ArgumentAcceptingOptionSpec<String> {
+    @SuppressWarnings("this-escape")
     AlternativeLongOptionSpec() {
         super( singletonList( RESERVED_FOR_EXTENSIONS ),
             true,

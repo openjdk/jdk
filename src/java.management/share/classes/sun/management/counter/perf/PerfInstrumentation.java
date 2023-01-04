@@ -38,6 +38,7 @@ public class PerfInstrumentation {
     private int  nextEntry;
     private SortedMap<String, Counter>  map;
 
+    @SuppressWarnings("this-escape")
     public PerfInstrumentation(ByteBuffer b) {
         prologue = new Prologue(b);
         buffer = b;

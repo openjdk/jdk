@@ -106,6 +106,7 @@ public class JavacMessages implements Messages {
     /** Creates a JavacMessages object.
      * @param bundleName the name to identify the resource bundle of localized messages.
      */
+    @SuppressWarnings("this-escape")
     public JavacMessages(String bundleName, Locale locale) throws MissingResourceException {
         bundleHelpers = List.nil();
         bundleCache = new HashMap<>();

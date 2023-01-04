@@ -44,6 +44,7 @@ public class ProcessListPanel extends JPanel {
   /** Takes a Debugger in constructor. Updates the list once during
       construction; list can be updated automatically by "starting"
       the panel. */
+  @SuppressWarnings("this-escape")
   public ProcessListPanel(Debugger dbg) {
     super();
 

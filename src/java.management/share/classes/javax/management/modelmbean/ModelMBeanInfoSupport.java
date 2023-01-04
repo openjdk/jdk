@@ -214,6 +214,7 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
      * @param mbi the ModelMBeanInfo instance from which the ModelMBeanInfo
      * being created is initialized.
      */
+    @SuppressWarnings("this-escape")
     public ModelMBeanInfoSupport(ModelMBeanInfo  mbi) {
         super(mbi.getClassName(),
                 mbi.getDescription(),
@@ -304,6 +305,7 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
      * descriptor.)
      */
 
+    @SuppressWarnings("this-escape")
     public ModelMBeanInfoSupport(String    className,
             String description,
             ModelMBeanAttributeInfo[] attributes,

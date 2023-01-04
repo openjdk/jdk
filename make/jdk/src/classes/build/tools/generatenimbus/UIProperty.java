@@ -40,6 +40,7 @@ class UIProperty extends UIDefault<String> {
     private Matte matte;
     private Typeface typeface;
 
+    @SuppressWarnings("this-escape")
     UIProperty(XMLStreamReader reader) throws XMLStreamException {
         name = reader.getAttributeValue(null, "name");
         setValue(reader.getAttributeValue(null, "value"));

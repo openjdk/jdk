@@ -357,7 +357,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * <P>
      * @throws SQLException if an error occurs
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings({ "removal", "this-escape" })
     public CachedRowSetImpl() throws SQLException {
 
         try {
@@ -467,6 +467,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * synchronization factory
      * @see SyncProvider
      */
+    @SuppressWarnings("this-escape")
     public CachedRowSetImpl(@SuppressWarnings("rawtypes") Hashtable env) throws SQLException {
 
 

@@ -106,6 +106,7 @@ abstract class BaseEntry {
      * @param type The type of the entry
      * @param base The base URI
      */
+    @SuppressWarnings("this-escape")
     public BaseEntry(CatalogEntryType type, String base) {
         this.type = Objects.requireNonNull(type);
         setBaseURI(base);

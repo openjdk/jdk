@@ -59,6 +59,7 @@ public class Inspector extends SAPanel {
   private LivenessPathList list = null;
   private Oop currentOop = null;
 
+  @SuppressWarnings("this-escape")
   public Inspector() {
     model = new SimpleTreeModel();
     tree = new JTree(model);

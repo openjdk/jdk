@@ -318,6 +318,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private final boolean addModulePackages;
         private ModuleDescriptor descriptor;  // may be different that the original one
 
+        @SuppressWarnings("this-escape")
         ModuleInfo(byte[] bytes, Set<String> packages) throws IOException {
             this.bais = new ByteArrayInputStream(bytes);
             this.packages = packages;
@@ -543,6 +544,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
         // e.g. target modules of qualified exports
+        @SuppressWarnings("this-escape")
         private final DedupSetBuilder dedupSetBuilder
             = new DedupSetBuilder(this::getNextLocalVar);
 

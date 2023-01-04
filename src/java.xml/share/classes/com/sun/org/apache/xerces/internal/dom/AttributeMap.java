@@ -51,6 +51,7 @@ public class AttributeMap extends NamedNodeMapImpl {
     //
 
     /** Constructs a named node map. */
+    @SuppressWarnings("this-escape")
     protected AttributeMap(ElementImpl ownerNode, NamedNodeMapImpl defaults) {
         super(ownerNode);
         if (defaults != null) {

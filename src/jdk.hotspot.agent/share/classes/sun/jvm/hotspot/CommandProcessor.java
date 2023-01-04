@@ -158,6 +158,7 @@ public class CommandProcessor {
             }
         }
 
+        @SuppressWarnings("this-escape")
         Tokens(String cmd) {
             input = cmd;
             // check for quoting

@@ -61,6 +61,7 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
     private JTable     table;
     private java.util.List<Listener> listeners;
 
+    @SuppressWarnings("this-escape")
     public ObjectHistogramPanel(ObjectHistogram histo) {
         dataModel = new ObjectHistogramTableModel(histo);
         statusBar = new StatusBar();

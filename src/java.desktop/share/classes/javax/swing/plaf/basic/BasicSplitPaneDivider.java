@@ -145,6 +145,7 @@ public class BasicSplitPaneDivider extends Container
      *
      * @param ui an instance of {@code BasicSplitPaneUI}
      */
+    @SuppressWarnings("this-escape")
     public BasicSplitPaneDivider(BasicSplitPaneUI ui) {
         oneTouchSize = DefaultLookup.getInt(ui.getSplitPane(), ui,
                 "SplitPane.oneTouchButtonSize", ONE_TOUCH_SIZE);

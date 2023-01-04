@@ -38,6 +38,7 @@ public class OpenAction extends DelegateAction
         this("general/Open16.gif");
     }
 
+    @SuppressWarnings("this-escape")
     public OpenAction(String iconPath)
     {
         super("Open...", ActionManager.getIcon(iconPath));

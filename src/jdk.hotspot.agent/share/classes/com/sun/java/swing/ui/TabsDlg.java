@@ -91,6 +91,7 @@ public class TabsDlg extends JDialog
     }
 
 
+    @SuppressWarnings("this-escape")
     public TabsDlg(String title, Vector panels)
     {
         super(new JFrame(), title, true);

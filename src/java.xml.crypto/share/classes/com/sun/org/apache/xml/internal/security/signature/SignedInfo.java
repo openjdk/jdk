@@ -139,6 +139,7 @@ public class SignedInfo extends Manifest {
      * @param spec AlgorithmParameterSpec to use
      * @throws XMLSecurityException
      */
+    @SuppressWarnings("this-escape")
     public SignedInfo(
         Document doc, String signatureMethodURI,
         int hMACOutputLength, String canonicalizationMethodURI, Provider provider, AlgorithmParameterSpec spec
@@ -176,6 +177,7 @@ public class SignedInfo extends Manifest {
         this(doc, signatureMethodElem, canonicalizationMethodElem, null);
     }
 
+    @SuppressWarnings("this-escape")
     public SignedInfo(
         Document doc, Element signatureMethodElem, Element canonicalizationMethodElem, Provider provider
     ) throws XMLSecurityException {

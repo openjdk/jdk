@@ -53,6 +53,7 @@ class UIRegion {
     List<UIRegion> subRegions = new ArrayList<>();
     public List<UIRegion> getSubRegions() { return subRegions; }
 
+    @SuppressWarnings("this-escape")
     UIRegion(XMLStreamReader reader, boolean parse)
                                                      throws XMLStreamException {
         name = reader.getAttributeValue(null, "name");

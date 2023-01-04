@@ -68,12 +68,14 @@ public class HighPrecisionJScrollBar extends JScrollBar {
   private boolean updating = false;
   private int lastValueSeen = -1;
 
+  @SuppressWarnings("this-escape")
   public HighPrecisionJScrollBar() {
     super();
     initialize();
     installListener();
   }
 
+  @SuppressWarnings("this-escape")
   public HighPrecisionJScrollBar(int orientation) {
     super(orientation);
     initialize();
@@ -81,6 +83,7 @@ public class HighPrecisionJScrollBar extends JScrollBar {
   }
 
   /** value, minimum and maximum should be positive */
+  @SuppressWarnings("this-escape")
   public HighPrecisionJScrollBar(int orientation, BigInteger value, BigInteger minimum, BigInteger maximum) {
     super(orientation);
     initialize(value, minimum, maximum);

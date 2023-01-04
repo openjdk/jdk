@@ -1440,6 +1440,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
         /**
          * AccessibleJScrollPane constructor
          */
+        @SuppressWarnings("this-escape")
         public AccessibleJScrollPane() {
             super();
 

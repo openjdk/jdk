@@ -113,6 +113,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @param      str   the string to copy.
      */
+    @SuppressWarnings("this-escape")
     AbstractStringBuilder(String str) {
         int length = str.length();
         int capacity = (length < Integer.MAX_VALUE - 16)
@@ -132,6 +133,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *
      * @param      seq   the sequence to copy.
      */
+    @SuppressWarnings("this-escape")
     AbstractStringBuilder(CharSequence seq) {
         int length = seq.length();
         if (length < 0) {

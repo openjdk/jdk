@@ -226,6 +226,7 @@ public abstract class OGLSurfaceData extends SurfaceData
         }
     }
 
+    @SuppressWarnings("this-escape")
     protected OGLSurfaceData(OGLGraphicsConfig gc,
                              ColorModel cm, int type)
     {

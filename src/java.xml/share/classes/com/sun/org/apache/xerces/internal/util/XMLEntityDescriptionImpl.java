@@ -50,6 +50,7 @@ public class XMLEntityDescriptionImpl
      * @param baseSystemId The base system identifier.
      * @param expandedSystemId The expanded system identifier.
      */
+    @SuppressWarnings("this-escape")
     public XMLEntityDescriptionImpl(String entityName, String publicId, String literalSystemId,
                                     String baseSystemId, String expandedSystemId) {
         setDescription(entityName, publicId, literalSystemId, baseSystemId, expandedSystemId);
@@ -65,6 +66,7 @@ public class XMLEntityDescriptionImpl
      * @param expandedSystemId The expanded system identifier.
      * @param namespace The namespace.
      */
+    @SuppressWarnings("this-escape")
     public XMLEntityDescriptionImpl(String entityName, String publicId, String literalSystemId,
                                     String baseSystemId, String expandedSystemId, String namespace) {
         setDescription(entityName, publicId, literalSystemId, baseSystemId, expandedSystemId, namespace);

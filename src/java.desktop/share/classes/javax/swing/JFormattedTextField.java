@@ -313,6 +313,7 @@ public class JFormattedTextField extends JTextField {
      * <code>JFormattedTextField</code> to edit a particular type of
      * value.
      */
+    @SuppressWarnings("this-escape")
     public JFormattedTextField() {
         super();
         enableEvents(AWTEvent.FOCUS_EVENT_MASK);
@@ -326,6 +327,7 @@ public class JFormattedTextField extends JTextField {
      *
      * @param value Initial value for the JFormattedTextField
      */
+    @SuppressWarnings("this-escape")
     public JFormattedTextField(Object value) {
         this();
         setValue(value);
@@ -338,6 +340,7 @@ public class JFormattedTextField extends JTextField {
      *
      * @param format Format used to look up an AbstractFormatter
      */
+    @SuppressWarnings("this-escape")
     public JFormattedTextField(java.text.Format format) {
         this();
         setFormatterFactory(getDefaultFormatterFactory(format));
@@ -360,6 +363,7 @@ public class JFormattedTextField extends JTextField {
      *
      * @param factory AbstractFormatterFactory used for formatting.
      */
+    @SuppressWarnings("this-escape")
     public JFormattedTextField(AbstractFormatterFactory factory) {
         this();
         setFormatterFactory(factory);
@@ -373,6 +377,7 @@ public class JFormattedTextField extends JTextField {
      *        formatting.
      * @param currentValue Initial value to use
      */
+    @SuppressWarnings("this-escape")
     public JFormattedTextField(AbstractFormatterFactory factory,
                                Object currentValue) {
         this(currentValue);

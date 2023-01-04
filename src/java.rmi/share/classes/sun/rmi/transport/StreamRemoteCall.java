@@ -62,6 +62,7 @@ public class StreamRemoteCall implements RemoteCall {
         conn = c;
     }
 
+    @SuppressWarnings("this-escape")
     public StreamRemoteCall(Connection c, ObjID id, int op, long hash)
         throws RemoteException
     {

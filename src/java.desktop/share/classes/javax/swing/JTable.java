@@ -676,6 +676,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #createDefaultColumnModel
      * @see #createDefaultSelectionModel
      */
+    @SuppressWarnings("this-escape")
     public JTable(TableModel dm, TableColumnModel cm, ListSelectionModel sm) {
         super();
         setLayout(null);
@@ -5412,6 +5413,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * Default Renderers
      **/
     static class NumberRenderer extends DefaultTableCellRenderer.UIResource {
+        @SuppressWarnings("this-escape")
         public NumberRenderer() {
             super();
             setHorizontalAlignment(JLabel.RIGHT);
@@ -5443,6 +5445,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     static class IconRenderer extends DefaultTableCellRenderer.UIResource {
+        @SuppressWarnings("this-escape")
         public IconRenderer() {
             super();
             setHorizontalAlignment(JLabel.CENTER);
@@ -5455,6 +5458,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     {
         private static final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
 
+        @SuppressWarnings("this-escape")
         public BooleanRenderer() {
             super();
             setHorizontalAlignment(JLabel.CENTER);
@@ -5527,6 +5531,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         java.lang.reflect.Constructor<?> constructor;
         Object value;
 
+        @SuppressWarnings("this-escape")
         public GenericEditor() {
             super(new JTextField());
             getComponent().setName("Table.editor");
@@ -5589,12 +5594,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
     static class NumberEditor extends GenericEditor {
 
+        @SuppressWarnings("this-escape")
         public NumberEditor() {
             ((JTextField)getComponent()).setHorizontalAlignment(JTextField.RIGHT);
         }
     }
 
     static class BooleanEditor extends DefaultCellEditor {
+        @SuppressWarnings("this-escape")
         public BooleanEditor() {
             super(new JCheckBox());
             JCheckBox checkBox = (JCheckBox)getComponent();

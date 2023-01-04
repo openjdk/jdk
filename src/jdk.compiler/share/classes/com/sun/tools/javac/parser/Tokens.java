@@ -310,6 +310,7 @@ public class Tokens {
         /** Comment reader associated with this token */
         public final List<Comment> comments;
 
+        @SuppressWarnings("this-escape")
         Token(TokenKind kind, int pos, int endPos, List<Comment> comments) {
             this.kind = kind;
             this.pos = pos;
