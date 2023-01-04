@@ -293,8 +293,22 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
 //
 // On success, true is returned, false otherwise.
 bool ChunkManager::attempt_enlarge_chunk(Metachunk* c) {
-  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
-  return c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
+  bool enlarged;
+  chunklevel_t old_level;
+
+  {
+    MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
+    old_level = c->level();
+    enlarged = c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
+  }
+
+  if (enlarged) {
+    ASAN_UNPOISON_MEMORY_REGION(c->base() + chunklevel::word_size_for_level(old_level),
+                                (c->word_size() - chunklevel::word_size_for_level(old_level)) *
+                                BytesPerWord);
+  }
+
+  return enlarged;
 }
 
 static void print_word_size_delta(outputStream* st, size_t word_size_1, size_t word_size_2) {
