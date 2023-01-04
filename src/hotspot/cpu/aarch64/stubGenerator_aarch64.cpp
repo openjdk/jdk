@@ -8225,6 +8225,10 @@ typedef uint32_t u32;
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
+    if (UsePolyIntrinsics) {
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+    }
+
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
     generate_atomic_entry_points();
