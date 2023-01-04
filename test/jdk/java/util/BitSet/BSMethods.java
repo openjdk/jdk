@@ -820,6 +820,45 @@ public class BSMethods {
         report("Intersects                  ", failCount);
     }
 
+    private static void testIncludes() {
+        int failCount = 0;
+
+        for (int i=0; i<100; i++) {
+            BitSet b1 = new BitSet(256);
+            BitSet b2 = new BitSet(256);
+
+            // Set some random bits in first set
+            int nextBitToSet = 0;
+            for (int x=0; x<30; x++) {
+                nextBitToSet = generator.nextInt(255);
+                b1.set(nextBitToSet);
+            }
+
+            // Set more random bits in second set
+            for (int x=0; x<30; x++) {
+                nextBitToSet = generator.nextInt(255);
+                b2.set(nextBitToSet);
+            }
+
+            // Make sure b1 includes b2
+            b1.or(b2);
+
+            if (!b1.includes(b2))
+                failCount++;
+
+            // Remove a common set bit
+            b1.clear(b2.nextSetBit(generator.nextInt(b2.length())));
+
+            // Make sure b1 doesn't include b2
+            if (b1.includes(b2))
+                failCount++;
+
+            checkSanity(b1, b2);
+        }
+
+        report("Includes                  ", failCount);
+    }
+
     private static void testCardinality() {
         int failCount = 0;
 
