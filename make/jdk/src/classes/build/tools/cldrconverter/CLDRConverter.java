@@ -607,7 +607,6 @@ public class CLDRConverter {
      * Translate the aliases into the real entries in the bundle map.
      */
     static void handleAliases(Map<String, Object> bundleMap) {
-        Set<String> bundleKeys = bundleMap.keySet();
         for (String key : aliases.keySet()) {
             var source = bundleMap.get(aliases.get(key));
             if (source != null) {
