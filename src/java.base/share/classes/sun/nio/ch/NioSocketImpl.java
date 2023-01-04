@@ -312,7 +312,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             connectionReset = true;
             throw new SocketException("Connection reset");
         } catch (IOException ioe) {
-            throw new SocketException(ioe.getMessage(), ioe);
+            // throw SocketException to maintain compatibility
+            throw asSocketException(ioe);
         } finally {
             endRead(n > 0);
         }
@@ -410,9 +411,8 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         } catch (InterruptedIOException e) {
             throw e;
         } catch (IOException ioe) {
-            var e = new SocketException(ioe.getMessage());
-            e.setStackTrace(ioe.getStackTrace());
-            throw e;
+            // throw SocketException to maintain compatibility
+            throw asSocketException(ioe);
         } finally {
             endWrite(n > 0);
         }
@@ -1086,7 +1086,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             } catch (SocketException e) {
                 throw e;
             } catch (IllegalArgumentException | IOException e) {
-                throw new SocketException(e.getMessage(), e);
+                throw asSocketException(e);
             }
         }
     }
@@ -1138,7 +1138,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             } catch (SocketException e) {
                 throw e;
             } catch (IllegalArgumentException | IOException e) {
-                throw new SocketException(e.getMessage(), e);
+                throw asSocketException(e);
             }
         }
     }
@@ -1249,6 +1249,19 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         if (interrupted)
             Thread.currentThread().interrupt();
         return remainingNanos;
+    }
+
+    /**
+     * Creates a SocketException from the given exception.
+     */
+    private static SocketException asSocketException(Exception e) {
+        if (e instanceof SocketException se) {
+            return se;
+        } else {
+            var se = new SocketException(e.getMessage());
+            se.setStackTrace(e.getStackTrace());
+            return se;
+        }
     }
 
     /**
