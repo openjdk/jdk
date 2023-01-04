@@ -154,6 +154,7 @@ module java.base {
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,
+        jdk.jfr,
         jdk.net,
         jdk.incubator.foreign;
     exports jdk.internal.access.foreign to
