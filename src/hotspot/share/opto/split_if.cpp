@@ -304,7 +304,6 @@ void PhaseIdealLoop::process_load_klass_helper(const Node* n, Node* cmp, int i) 
         }
       }
     }
-
   }
 }
 
