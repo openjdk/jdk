@@ -149,8 +149,6 @@ public class ScaledTextFieldBorderTest {
     private static int borderColor;
     private static int insideColor;
 
-
-
     private static void checkBorder(final int xStart, final int yStart,
                                     final int xStep,  final int yStep,
                                     final int thickness,
