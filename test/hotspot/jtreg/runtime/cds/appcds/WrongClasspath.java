@@ -33,6 +33,9 @@
  */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
@@ -40,7 +43,6 @@ public class WrongClasspath {
 
   public static void main(String[] args) throws Exception {
     String appJar = JarBuilder.getOrCreateHelloJar();
-    String appJarInWorkDir = JarBuilder.getOrCreateHelloJarInWorkDir();
     String unableToUseMsg = "Unable to use shared archive";
     String mismatchMsg = "shared class paths mismatch";
     String hintMsg = "(hint: enable -Xlog:class+path=info to diagnose the failure)";
@@ -48,10 +50,12 @@ public class WrongClasspath {
     // Dump CDS archive with hello.jar
     // Run with a jar file that differs from the original jar file by the first character only: -cp mello.jar
     // Shared class paths mismatch should be detected.
-    String mellojar = appJarInWorkDir.replace("hello.jar", "mello.jar");
-    JarBuilder.copyJar(appJarInWorkDir, mellojar);
-    TestCommon.testDump("hello.jar", TestCommon.list("Hello"));
-    TestCommon.run("-cp", "mello.jar",
+    String hellojar = "hello.jar";
+    String mellojar = "mello.jar";
+    Files.copy(Paths.get(appJar), Paths.get(hellojar), StandardCopyOption.COPY_ATTRIBUTES);
+    Files.copy(Paths.get(appJar), Paths.get(mellojar), StandardCopyOption.COPY_ATTRIBUTES);
+    TestCommon.testDump(hellojar, TestCommon.list("Hello"));
+    TestCommon.run("-cp", mellojar,
         "-Xlog:cds",
         "Hello")
         .assertAbnormalExit(unableToUseMsg, mismatchMsg, hintMsg);
