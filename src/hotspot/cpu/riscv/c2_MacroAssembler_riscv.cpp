@@ -385,6 +385,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   // UL case. We'll re-read last character in inner pre-loop code to have
   // single outer pre-loop load
   const int firstStep = isLL ? 7 : 3;
+
   const int ASIZE = 256;
   const int STORE_BYTES = 8; // 8 bytes stored per instruction(sd)
 
