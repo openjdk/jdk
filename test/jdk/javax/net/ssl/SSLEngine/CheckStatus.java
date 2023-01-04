@@ -43,42 +43,40 @@ import java.nio.*;
 
 public class CheckStatus {
 
-    private static boolean debug = true;
+    private final SSLContext SSL_CONTEXT;
+    private SSLEngine clientEngine;    // client
+    private SSLEngine serverEngine;    // server
 
-    private SSLContext sslc;
-    private SSLEngine ssle1;    // client
-    private SSLEngine ssle2;    // server
+    private static final String PATH_TO_STORES = "../etc";
 
-    private static String pathToStores = "../etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
+    private static final String KEYSTORE_FILE = "keystore";
+    private static final String TRUSTSTORE_FILE = "truststore";
 
-    private static String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+    private static final String keyFilename =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + KEYSTORE_FILE;
+    private static final String trustFilename =
+            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
+                "/" + TRUSTSTORE_FILE;
 
-    private ByteBuffer appOut1;         // write side of ssle1
-    private ByteBuffer appIn1;          // read side of ssle1
-    private ByteBuffer appOut2;         // write side of ssle2
-    private ByteBuffer appIn2;          // read side of ssle2
+    private ByteBuffer clientOut;         // write side of clientEngine
+    private ByteBuffer clientIn;          // read side of clientEngine
+    private ByteBuffer serverOut;         // write side of serverEngine
+    private ByteBuffer serverIn;          // read side of serverEngine
 
-    private ByteBuffer oneToTwo;        // "reliable" transport ssle1->ssle2
-    private ByteBuffer twoToOne;        // "reliable" transport ssle2->ssle1
+    private ByteBuffer clientToServer;        // "reliable" transport clientEngine->serverEngine
+    private ByteBuffer serverToClient;        // "reliable" transport serverEngine->clientEngine
 
     /*
      * Majority of the test case is here, setup is done below.
      */
 
     private void createSSLEngines() throws Exception {
-        ssle1 = sslc.createSSLEngine("client", 1);
-        ssle1.setUseClientMode(true);
+        clientEngine = SSL_CONTEXT.createSSLEngine("client", 1);
+        clientEngine.setUseClientMode(true);
 
-        ssle2 = sslc.createSSLEngine("server", 2);
-        ssle2.setUseClientMode(false);
+        serverEngine = SSL_CONTEXT.createSSLEngine("server", 2);
+        serverEngine.setUseClientMode(false);
     }
 
     private boolean isHandshaking(SSLEngine e) {
@@ -126,141 +124,156 @@ public class CheckStatus {
         createSSLEngines();
         createBuffers();
 
-        SSLEngineResult result1;        // ssle1's results from last operation
-        SSLEngineResult result2;        // ssle2's results from last operation
-
+        SSLEngineResult result1;        // clientEngine's results from last operation
+        SSLEngineResult result2;        // serverEngine's results from last operation
         String [] suite1 = new String [] {
-            "SSL_RSA_WITH_RC4_128_MD5" };
+            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA" };
         String [] suite2 = new String [] {
-            "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA" };
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256" };
 
-        ssle1.setEnabledCipherSuites(suite1);
-        ssle2.setEnabledCipherSuites(suite1);
+        clientEngine.setEnabledCipherSuites(suite1);
+        clientEngine.setEnabledProtocols(new String[]{"TLSv1.2"});
+        serverEngine.setEnabledCipherSuites(suite1);
+        serverEngine.setEnabledProtocols(new String[]{"TLSv1.2"});
 
         log("================");
 
         log("unexpected empty unwrap");
-        twoToOne.limit(0);
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        serverToClient.limit(0);
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.NEED_WRAP, 0, 0);
-        twoToOne.limit(twoToOne.capacity());
+        serverToClient.limit(serverToClient.capacity());
 
         log("======================================");
-        log("client hello");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [ClientHello]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_TASK, result1.bytesProduced(), 0);
-        runDelegatedTasks(ssle2);
+        runDelegatedTasks(serverEngine);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("Check for unwrap when wrap needed");
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
-        checkResult(oneToTwo, appIn2, result2,
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
+        checkResult(clientToServer, serverIn, result2,
             Status.OK, HandshakeStatus.NEED_WRAP, 0, 0);
 
         log("======================================");
-        log("ServerHello");
+        log("Server -> Client [ServerHello]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
-        twoToOne.flip();
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.NEED_TASK, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
-        runDelegatedTasks(ssle1);
+        runDelegatedTasks(clientEngine);
 
         log("======================================");
-        log("Key Exchange");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [ClientKeyExchange]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_TASK, result1.bytesProduced(), 0);
-        runDelegatedTasks(ssle2);
+        runDelegatedTasks(serverEngine);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
-        log("CCS");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [ChangeCipherSpec]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_UNWRAP,
              result1.bytesProduced(), 0);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
-        log("Finished");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [Finished]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_WRAP, result1.bytesProduced(), 0);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
-        log("CCS");
+        log("Server -> Client [NewSessionTicket]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
-        twoToOne.flip();
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.NEED_UNWRAP, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
         log("======================================");
-        log("FINISHED");
+        log("Server -> Client [ChangeCipherSpec]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
-            Status.OK, HandshakeStatus.FINISHED, 0, -1);
-        twoToOne.flip();
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
+            Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
-            Status.OK, HandshakeStatus.FINISHED, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
+            Status.OK, HandshakeStatus.NEED_UNWRAP, result2.bytesProduced(), 0);
+        serverToClient.compact();
+
+        log("======================================");
+        log("Server -> Client [Finished]");
+
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
+                Status.OK, HandshakeStatus.FINISHED, 0, -1);
+        serverToClient.flip();
+
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
+                Status.OK, HandshakeStatus.FINISHED, result2.bytesProduced(), 0);
+        serverToClient.compact();
+
 
         log("======================================");
         log("Check Session/Ciphers");
 
-        String suite = ssle1.getSession().getCipherSuite();
+        String suite = clientEngine.getSession().getCipherSuite();
         if (!suite.equals(suite1[0])) {
             throw new Exception("suites not equal: " + suite + "/" +
                 suite1[0]);
         }
 
-        suite = ssle2.getSession().getCipherSuite();
+        suite = serverEngine.getSession().getCipherSuite();
         if (!suite.equals(suite1[0])) {
             throw new Exception("suites not equal: " + suite + "/" +
                 suite1[0]);
@@ -269,208 +282,221 @@ public class CheckStatus {
         log("======================================");
         log("DATA");
 
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
-            appOut1.capacity(), -1);
-        oneToTwo.flip();
+            clientOut.capacity(), -1);
+        clientToServer.flip();
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
-            appOut2.capacity(), -1);
-        twoToOne.flip();
+            serverOut.capacity(), -1);
+        serverToClient.flip();
 
-        SSLEngineResult result3 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result3,
+        SSLEngineResult result3 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result3,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
             result2.bytesProduced(), result2.bytesConsumed());
-        twoToOne.compact();
+        serverToClient.compact();
 
-        SSLEngineResult result4 = ssle2.unwrap(oneToTwo, appIn2);
-        checkResult(oneToTwo, appIn2, result4,
+        SSLEngineResult result4 = serverEngine.unwrap(clientToServer, serverIn);
+        checkResult(clientToServer, serverIn, result4,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
             result1.bytesProduced(), result1.bytesConsumed());
-        oneToTwo.compact();
+        clientToServer.compact();
 
-        appIn1.clear();
-        appIn2.clear();
-        appOut1.rewind();
-        appOut2.rewind();
+        clientIn.clear();
+        serverIn.clear();
+        clientOut.rewind();
+        serverOut.rewind();
 
         log("======================================");
         log("RENEGOTIATE");
 
-        ssle2.getSession().invalidate();
-        ssle2.setNeedClientAuth(true);
+        serverEngine.getSession().invalidate();
+        serverEngine.setNeedClientAuth(true);
 
-        ssle1.setEnabledCipherSuites(suite2);
-        ssle2.setEnabledCipherSuites(suite2);
+        clientEngine.setEnabledCipherSuites(suite2);
+        serverEngine.setEnabledCipherSuites(suite2);
 
-        ssle2.beginHandshake();
+        serverEngine.beginHandshake();
 
         log("======================================");
-        log("HelloRequest");
+        log("Server -> Client [HelloRequest]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
-        twoToOne.flip();
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.NEED_TASK, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
-        runDelegatedTasks(ssle1);
+        runDelegatedTasks(clientEngine);
 
         log("======================================");
-        log("ClientHello");
+        log("CLient -> Server [ClientHello]");
 
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_TASK, result1.bytesProduced(), 0);
-        runDelegatedTasks(ssle2);
+        runDelegatedTasks(serverEngine);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
         log("CLIENT->SERVER DATA IN MIDDLE OF HANDSHAKE");
 
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
             Status.OK, HandshakeStatus.NEED_UNWRAP,
-            appOut1.capacity(), -1);
-        oneToTwo.flip();
+            clientOut.capacity(), -1);
+        clientToServer.flip();
 
-        result4 = ssle2.unwrap(oneToTwo, appIn2);
-        checkResult(oneToTwo, appIn2, result4,
+        result4 = serverEngine.unwrap(clientToServer, serverIn);
+        checkResult(clientToServer, serverIn, result4,
             Status.OK, HandshakeStatus.NEED_WRAP,
             result1.bytesProduced(), result1.bytesConsumed());
-        oneToTwo.compact();
+        clientToServer.compact();
 
-        appIn2.clear();
-        appOut1.rewind();
+        serverIn.clear();
+        clientOut.rewind();
 
         log("======================================");
-        log("ServerHello");
+        log("Server -> Client [ServerHello]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
-        twoToOne.flip();
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.NEED_TASK, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
-        runDelegatedTasks(ssle1);
+        runDelegatedTasks(clientEngine);
 
         log("======================================");
         log("SERVER->CLIENT DATA IN MIDDLE OF HANDSHAKE");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NEED_UNWRAP,
-            appOut2.capacity(), -1);
-        twoToOne.flip();
+            serverOut.capacity(), -1);
+        serverToClient.flip();
 
-        result3 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result3,
+        result3 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result3,
             Status.OK, HandshakeStatus.NEED_WRAP,
             result2.bytesProduced(), result2.bytesConsumed());
-        twoToOne.compact();
+        serverToClient.compact();
 
-        appIn1.clear();
-        appOut2.rewind();
+        clientIn.clear();
+        serverOut.rewind();
 
         log("======================================");
-        log("Client Cert and Key Exchange");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [Certificate] and [ClientKeyExchange]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_TASK, result1.bytesProduced(), 0);
-        runDelegatedTasks(ssle2);
+        runDelegatedTasks(serverEngine);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
-        log("CCS");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [ChangeCipherSpec]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_UNWRAP,
              result1.bytesProduced(), 0);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
-        log("Finished");
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        log("Client -> Server [Finished]");
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
              Status.OK, HandshakeStatus.NEED_UNWRAP, 0, -1);
 
-        oneToTwo.flip();
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        clientToServer.flip();
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.OK, HandshakeStatus.NEED_WRAP, result1.bytesProduced(), 0);
 
-        oneToTwo.compact();
+        clientToServer.compact();
 
         log("======================================");
-        log("CCS");
+        log("Server -> Client [NewSessionTicket]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
-        twoToOne.flip();
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.NEED_UNWRAP, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
         log("======================================");
-        log("FINISHED");
+        log("Server -> Client [ChangeCipherSpec]");
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
+                Status.OK, HandshakeStatus.NEED_WRAP, 0, -1);
+        serverToClient.flip();
+
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
+                Status.OK, HandshakeStatus.NEED_UNWRAP, result2.bytesProduced(), 0);
+        serverToClient.compact();
+
+        log("======================================");
+        log("Server -> Client [Finished]");
+
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.FINISHED, 0, -1);
-        twoToOne.flip();
+        serverToClient.flip();
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.OK, HandshakeStatus.FINISHED, result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
         log("======================================");
         log("Check Session/Ciphers");
 
-        suite = ssle1.getSession().getCipherSuite();
+        suite = clientEngine.getSession().getCipherSuite();
         if (!suite.equals(suite2[0])) {
             throw new Exception("suites not equal: " + suite + "/" +
                 suite2[0]);
         }
 
-        suite = ssle2.getSession().getCipherSuite();
+        suite = serverEngine.getSession().getCipherSuite();
         if (!suite.equals(suite2[0])) {
             throw new Exception("suites not equal: " + suite + "/" +
                 suite2[0]);
@@ -479,131 +505,131 @@ public class CheckStatus {
         log("======================================");
         log("DATA USING NEW SESSION");
 
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
-            appOut1.capacity(), -1);
-        oneToTwo.flip();
+            clientOut.capacity(), -1);
+        clientToServer.flip();
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
-            appOut2.capacity(), -1);
-        twoToOne.flip();
+            serverOut.capacity(), -1);
+        serverToClient.flip();
 
-        result3 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result3,
+        result3 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result3,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
             result2.bytesProduced(), result2.bytesConsumed());
-        twoToOne.compact();
+        serverToClient.compact();
 
-        result4 = ssle2.unwrap(oneToTwo, appIn2);
-        checkResult(oneToTwo, appIn2, result4,
+        result4 = serverEngine.unwrap(clientToServer, serverIn);
+        checkResult(clientToServer, serverIn, result4,
             Status.OK, HandshakeStatus.NOT_HANDSHAKING,
             result1.bytesProduced(), result1.bytesConsumed());
-        oneToTwo.compact();
+        clientToServer.compact();
 
-        appIn1.clear();
-        appIn2.clear();
-        appOut1.rewind();
-        appOut2.rewind();
+        clientIn.clear();
+        serverIn.clear();
+        clientOut.rewind();
+        serverOut.rewind();
 
         log("======================================");
-        log("CN");
+        log("Server -> Client [CloseNotify]");
 
-        if (isHandshaking(ssle1)) {
-            throw new Exception("ssle1 IS handshaking");
+        if (isHandshaking(clientEngine)) {
+            throw new Exception("clientEngine IS handshaking");
         }
 
-        if (isHandshaking(ssle2)) {
-            throw new Exception("ssle2 IS handshaking");
+        if (isHandshaking(serverEngine)) {
+            throw new Exception("serverEngine IS handshaking");
         }
 
-        ssle2.closeOutbound();
+        serverEngine.closeOutbound();
 
-        if (!isHandshaking(ssle2)) {
-            throw new Exception("ssle1 IS NOT handshaking");
+        if (!isHandshaking(serverEngine)) {
+            throw new Exception("serverEngine IS NOT handshaking");
         }
 
-        appOut1.rewind();
-        appOut2.rewind();
+        clientOut.rewind();
+        serverOut.rewind();
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
-            Status.CLOSED, HandshakeStatus.NEED_UNWRAP, 0, -1);
-        twoToOne.flip();
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
+            Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, -1);
+        serverToClient.flip();
 
-        if (ssle1.isInboundDone()) {
-            throw new Exception("ssle1 inboundDone");
+        if (clientEngine.isInboundDone()) {
+            throw new Exception("clientEngine inboundDone");
         }
 
-        result1 = ssle1.unwrap(twoToOne, appIn1);
-        checkResult(twoToOne, appIn1, result1,
+        result1 = clientEngine.unwrap(serverToClient, clientIn);
+        checkResult(serverToClient, clientIn, result1,
             Status.CLOSED, HandshakeStatus.NEED_WRAP,
             result2.bytesProduced(), 0);
-        twoToOne.compact();
+        serverToClient.compact();
 
-        if (!ssle1.isInboundDone()) {
-            throw new Exception("ssle1 inboundDone");
+        if (!clientEngine.isInboundDone()) {
+            throw new Exception("clientEngine inboundDone");
         }
 
-        if (!isHandshaking(ssle1)) {
-            throw new Exception("ssle1 IS NOT handshaking");
+        if (!isHandshaking(clientEngine)) {
+            throw new Exception("clientEngine IS NOT handshaking");
         }
 
-        result2 = ssle2.wrap(appOut2, twoToOne);
-        checkResult(appOut2, twoToOne, result2,
-            Status.CLOSED, HandshakeStatus.NEED_UNWRAP, 0, 0);
-        twoToOne.flip();
+        result2 = serverEngine.wrap(serverOut, serverToClient);
+        checkResult(serverOut, serverToClient, result2,
+            Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, 0);
+        serverToClient.flip();
 
         log("======================================");
-        log("CN response");
+        log("CloseNotify response");
 
-        if (ssle1.isOutboundDone()) {
-            throw new Exception("ssle1 outboundDone");
+        if (clientEngine.isOutboundDone()) {
+            throw new Exception("clientEngine outboundDone");
         }
 
-        result1 = ssle1.wrap(appOut1, oneToTwo);
-        checkResult(appOut1, oneToTwo, result1,
-             Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, -1);
+        result1 = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientOut, clientToServer, result1,
+                        Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING, 0, -1);
 
-        if (!ssle1.isOutboundDone()) {
-            throw new Exception("ssle1 outboundDone is NOT done");
+        if (!clientEngine.isOutboundDone()) {
+            throw new Exception("clientEngine outboundDone is NOT done");
         }
 
-        if (isHandshaking(ssle1)) {
-            throw new Exception("ssle1 IS handshaking");
+        if (isHandshaking(clientEngine)) {
+            throw new Exception("clientEngine IS handshaking");
         }
 
-        oneToTwo.flip();
+        clientToServer.flip();
 
-        if (!ssle2.isOutboundDone()) {
-            throw new Exception("ssle1 outboundDone");
+        if (!serverEngine.isOutboundDone()) {
+            throw new Exception("clientEngine outboundDone");
         }
 
-        if (ssle2.isInboundDone()) {
-            throw new Exception("ssle1 inboundDone");
+        if (serverEngine.isInboundDone()) {
+            throw new Exception("clientEngine inboundDone");
         }
 
-        result2 = ssle2.unwrap(oneToTwo, appIn2);
+        result2 = serverEngine.unwrap(clientToServer, serverIn);
 
-        checkResult(oneToTwo, appIn2, result2,
+        checkResult(clientToServer, serverIn, result2,
              Status.CLOSED, HandshakeStatus.NOT_HANDSHAKING,
              result1.bytesProduced(), 0);
 
-        if (!ssle2.isOutboundDone()) {
-            throw new Exception("ssle1 outboundDone is NOT done");
+        if (!serverEngine.isOutboundDone()) {
+            throw new Exception("clientEngine outboundDone is NOT done");
         }
 
-        if (!ssle2.isInboundDone()) {
-            throw new Exception("ssle1 inboundDone is NOT done");
+        if (!serverEngine.isInboundDone()) {
+            throw new Exception("clientEngine inboundDone is NOT done");
         }
 
-        if (isHandshaking(ssle2)) {
-            throw new Exception("ssle1 IS handshaking");
+        if (isHandshaking(serverEngine)) {
+            throw new Exception("clientEngine IS handshaking");
         }
 
-        oneToTwo.compact();
+        clientToServer.compact();
     }
 
     public static void main(String args[]) throws Exception {
@@ -614,9 +640,7 @@ public class CheckStatus {
         CheckStatus cs;
 
         cs = new CheckStatus();
-
-        cs.createSSLEngines();
-
+        
         cs.test();
 
         System.out.println("Test Passed.");
@@ -629,7 +653,7 @@ public class CheckStatus {
      */
 
     public CheckStatus() throws Exception {
-        sslc = getSSLContext(keyFilename, trustFilename);
+        SSL_CONTEXT = getSSLContext(keyFilename, trustFilename);
     }
 
     /*
@@ -662,21 +686,21 @@ public class CheckStatus {
     private void createBuffers() {
         // Size the buffers as appropriate.
 
-        SSLSession session = ssle1.getSession();
+        SSLSession session = clientEngine.getSession();
         int appBufferMax = session.getApplicationBufferSize();
         int netBufferMax = session.getPacketBufferSize();
 
-        appIn1 = ByteBuffer.allocateDirect(appBufferMax + 50);
-        appIn2 = ByteBuffer.allocateDirect(appBufferMax + 50);
+        clientIn = ByteBuffer.allocateDirect(appBufferMax + 50);
+        serverIn = ByteBuffer.allocateDirect(appBufferMax + 50);
 
-        oneToTwo = ByteBuffer.allocateDirect(netBufferMax);
-        twoToOne = ByteBuffer.allocateDirect(netBufferMax);
+        clientToServer = ByteBuffer.allocateDirect(netBufferMax);
+        serverToClient = ByteBuffer.allocateDirect(netBufferMax);
 
-        appOut1 = ByteBuffer.wrap("Hi Engine2, I'm SSLEngine1".getBytes());
-        appOut2 = ByteBuffer.wrap("Hello Engine1, I'm SSLEngine2".getBytes());
+        clientOut = ByteBuffer.wrap("Hi Engine2, I'm SSLEngine1".getBytes());
+        serverOut = ByteBuffer.wrap("Hello Engine1, I'm SSLEngine2".getBytes());
 
-        log("AppOut1 = " + appOut1);
-        log("AppOut2 = " + appOut2);
+        log("AppOut1 = " + clientOut);
+        log("AppOut2 = " + serverOut);
         log("");
     }
 
@@ -707,8 +731,6 @@ public class CheckStatus {
     }
 
     private static void log(String str) {
-        if (debug) {
-            System.out.println(str);
-        }
+        System.out.println(str);
     }
 }
