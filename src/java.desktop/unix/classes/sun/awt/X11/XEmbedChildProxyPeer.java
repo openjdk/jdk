@@ -58,6 +58,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     XEmbeddingContainer container;
     XEmbedChildProxy proxy;
     long handle;
+    @SuppressWarnings("this-escape")
     XEmbedChildProxyPeer(XEmbedChildProxy proxy) {
         this.container = proxy.getEmbeddingContainer();
         this.handle = proxy.getHandle();

@@ -38,6 +38,7 @@ public class XQueryTree {
         long children_ptr = unsafe.allocateMemory(Native.getLongSize());
         long nchildren_ptr = unsafe.allocateMemory(Native.getIntSize());
     UnsafeXDisposerRecord disposer;
+        @SuppressWarnings("this-escape")
         public XQueryTree(
                 long w  )
         {

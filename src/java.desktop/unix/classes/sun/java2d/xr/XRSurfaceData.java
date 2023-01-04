@@ -282,6 +282,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
              XRUtils.getPictureFormatForTransparency(transparency), depth, isTexture);
     }
 
+    @SuppressWarnings("this-escape")
     protected XRSurfaceData(X11ComponentPeer peer, XRGraphicsConfig gc,
         SurfaceType sType, ColorModel cm, int depth, int transparency)
     {
@@ -548,6 +549,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
         protected final int scale;
 
+        @SuppressWarnings("this-escape")
         public XRWindowSurfaceData(X11ComponentPeer peer,
                                    XRGraphicsConfig gc, SurfaceType sType) {
             super(peer, gc, sType, peer.getColorModel(),
@@ -649,6 +651,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         int transparency;
         private final int scale;
 
+        @SuppressWarnings("this-escape")
         public XRPixmapSurfaceData(XRGraphicsConfig gc, int width, int height,
                                    Image image, SurfaceType sType,
                                    ColorModel cm, long drawable,

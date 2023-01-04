@@ -92,6 +92,7 @@ class KinitOptions {
         return null;
     }
 
+    @SuppressWarnings("this-escape")
     public KinitOptions(String[] args)
         throws KrbException, RuntimeException, IOException {
         // currently we provide support for -f -p -c principal options

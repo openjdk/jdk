@@ -64,6 +64,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
     /**
      * Create a scrollbar.
      */
+    @SuppressWarnings("this-escape")
     XScrollbarPeer(Scrollbar target) {
         super(target);
         this.target = target;

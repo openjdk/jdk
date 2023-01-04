@@ -56,6 +56,7 @@ public class XRGlyphCache implements GlyphDisposedListener {
 
     static final boolean batchGlyphUpload = true; // Boolean.parseBoolean(System.getProperty("sun.java2d.xrender.batchGlyphUpload"));
 
+    @SuppressWarnings("this-escape")
     public XRGlyphCache(XRCompositeManager maskBuf) {
         this.con = maskBuf.getBackend();
         this.maskBuffer = maskBuf;

@@ -48,6 +48,7 @@ public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
 
     private boolean accelerationEnabled;
 
+    @SuppressWarnings("this-escape")
     public X11VolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         super(vImg, context);
 

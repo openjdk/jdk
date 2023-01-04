@@ -422,6 +422,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 //    private native void initOps(X11ComponentPeer peer,
 //                                X11GraphicsConfig gc, int depth);
 
+    @SuppressWarnings("this-escape")
     protected X11SurfaceData(X11ComponentPeer peer,
                              X11GraphicsConfig gc,
                              SurfaceType sType,
@@ -701,6 +702,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
         private final int scale;
 
+        @SuppressWarnings("this-escape")
         public X11WindowSurfaceData(X11ComponentPeer peer,
                                     X11GraphicsConfig gc,
                                     SurfaceType sType) {
@@ -754,6 +756,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
         private final int transparency;
         private final int scale;
 
+        @SuppressWarnings("this-escape")
         public X11PixmapSurfaceData(X11GraphicsConfig gc,
                                     int width, int height,
                                     Image image,

@@ -39,6 +39,7 @@ public class XTranslateCoordinates {
         long dest_x_ptr = unsafe.allocateMemory(Native.getIntSize());
         long dest_y_ptr = unsafe.allocateMemory(Native.getIntSize());
         long child_ptr = unsafe.allocateMemory(Native.getLongSize());
+        @SuppressWarnings("this-escape")
         public XTranslateCoordinates(
                 long scr_w,
                 long dest_w,

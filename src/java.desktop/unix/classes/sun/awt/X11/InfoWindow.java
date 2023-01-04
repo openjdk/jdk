@@ -63,6 +63,7 @@ public abstract class InfoWindow extends Window {
     private Container container;
     private Closer closer;
 
+    @SuppressWarnings("this-escape")
     protected InfoWindow(Frame parent, Color borderColor) {
         super(parent);
         setType(Window.Type.POPUP);
@@ -191,6 +192,7 @@ public abstract class InfoWindow extends Window {
         private static final Color TOOLTIP_BACKGROUND_COLOR = new Color(255, 255, 220);
         private static final Font TOOLTIP_TEXT_FONT = XWindow.getDefaultFont();
 
+        @SuppressWarnings("this-escape")
         public Tooltip(Frame parent, Object target,
                 LiveArguments liveArguments)
         {
@@ -301,6 +303,7 @@ public abstract class InfoWindow extends Window {
 
         private Displayer displayer = new Displayer();
 
+        @SuppressWarnings("this-escape")
         public Balloon(Frame parent, Object target, LiveArguments liveArguments) {
             super(parent, new Color(90, 80 ,190));
             this.liveArguments = liveArguments;

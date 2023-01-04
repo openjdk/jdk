@@ -70,12 +70,14 @@ public class FcFontConfiguration extends FontConfiguration {
 
     private FcCompFont[] fcCompFonts = null;
 
+    @SuppressWarnings("this-escape")
     public FcFontConfiguration(SunFontManager fm) {
         super(fm);
         init();
     }
 
     /* This isn't called but is needed to satisfy super-class contract. */
+    @SuppressWarnings("this-escape")
     public FcFontConfiguration(SunFontManager fm,
                                boolean preferLocaleFonts,
                                boolean preferPropFonts) {

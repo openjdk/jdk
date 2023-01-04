@@ -59,6 +59,7 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
     }
 
 
+    @SuppressWarnings("this-escape")
     public  XButtonPeer(Button target) {
         super(target);
         pressed = false;
