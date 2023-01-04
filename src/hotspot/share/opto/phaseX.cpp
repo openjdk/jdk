@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1759,19 +1759,24 @@ PhaseCCP::~PhaseCCP() {
 
 
 #ifdef ASSERT
-static bool ccp_type_widens(const Type* t, const Type* t0) {
-  assert(t->meet(t0) == t->remove_speculative(), "Not monotonic");
-  switch (t->base() == t0->base() ? t->base() : Type::Top) {
-  case Type::Int:
-    assert(t0->isa_int()->_widen <= t->isa_int()->_widen, "widen increases");
-    break;
-  case Type::Long:
-    assert(t0->isa_long()->_widen <= t->isa_long()->_widen, "widen increases");
-    break;
-  default:
-    break;
+void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
+  // Skip verification when folding loads from stable fields because the field
+  // may be (re-)initialized during CCP and the different types violate monotonicity.
+  const TypePtr* adr_type = n->adr_type();
+  Compile::AliasType* atp = C->alias_type(adr_type);
+  if (FoldStableValues && n->is_Load() &&
+      ((atp->field() != NULL && atp->field()->is_stable()) ||
+       (adr_type->isa_aryptr() && adr_type->is_aryptr()->is_stable()))) {
+    return;
   }
-  return true;
+  if (tnew->meet(told) != tnew->remove_speculative()) {
+    n->dump(1);
+    tty->print("told = "); told->dump(); tty->cr();
+    tty->print("tnew = "); tnew->dump(); tty->cr();
+    fatal("Not monotonic");
+  }
+  assert(!told->isa_int() || !tnew->isa_int() || told->isa_int()->_widen <= tnew->isa_int()->_widen, "widen increases");
+  assert(!told->isa_long() || !tnew->isa_long() || told->isa_long()->_widen <= tnew->isa_long()->_widen, "widen increases");
 }
 #endif //ASSERT
 
@@ -1806,7 +1811,7 @@ void PhaseCCP::analyze() {
     }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {
-      assert(ccp_type_widens(new_type, type(n)), "ccp type must widen");
+      DEBUG_ONLY(verify_type(n, new_type, type(n));)
       dump_type_and_node(n, new_type);
       set_type(n, new_type);
       push_child_nodes_to_worklist(worklist, n);
@@ -1825,6 +1830,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     const Type* told = type(n);
     const Type* tnew = n->Value(this);
     if (told != tnew) {
+      DEBUG_ONLY(verify_type(n, tnew, told);)
       // Check special cases that are ok
       if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
         const TypeInteger* t0 = told->is_integer(tnew->basic_type());
