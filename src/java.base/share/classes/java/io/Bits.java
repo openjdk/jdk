@@ -97,7 +97,9 @@ final class Bits {
     }
 
     static void putFloat(byte[] b, int off, float val) {
-        FLOAT.set(b, off, val);
+        // Using Float.floatToIntBits collapses NaN values to a single
+        // "canonical" NaN value
+        INT.set(b, off, Float.floatToIntBits(val));
     }
 
     static void putLong(byte[] b, int off, long val) {
@@ -105,7 +107,9 @@ final class Bits {
     }
 
     static void putDouble(byte[] b, int off, double val) {
-        DOUBLE.set(b, off, val);
+        // Using Double.doubleToLongBits collapses NaN values to a single
+        // "canonical" NaN value
+        LONG.set(b, off, Double.doubleToLongBits(val));
     }
 
     private static VarHandle create(Class<?> viewArrayClass) {
