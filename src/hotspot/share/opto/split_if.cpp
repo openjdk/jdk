@@ -71,7 +71,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     assert( n->in(0) != blk1, "Lousy candidate for split-if" );
     return false;
   }
-  if (!at_relevant_ctrl(n, blk1,blk2))
+  if (!at_relevant_ctrl(n, blk1, blk2))
     return false;               // Not block local
   if( n->is_Phi() ) return false; // Local PHIs are expected
 
