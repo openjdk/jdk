@@ -40,7 +40,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "sanitizers/address.h"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
