@@ -52,6 +52,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     /**
      * Attaches to the target VM
      */
+    @SuppressWarnings("this-escape")
     VirtualMachineImpl(AttachProvider provider, String vmid)
         throws AttachNotSupportedException, IOException
     {
