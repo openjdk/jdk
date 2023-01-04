@@ -160,11 +160,13 @@ ShenandoahGenerationSizer::ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_t
 
 size_t ShenandoahGenerationSizer::calculate_min_size(size_t heap_size) {
   size_t default_value = (heap_size * ShenandoahMinYoungPercentage) / 100;
+  default_value &= ~ShenandoahHeapRegion::region_size_bytes_mask();
   return MAX2(ShenandoahHeapRegion::region_size_bytes(), default_value);
 }
 
 size_t ShenandoahGenerationSizer::calculate_max_size(size_t heap_size) {
   size_t default_value = (heap_size * ShenandoahMaxYoungPercentage) / 100;
+  default_value &= ~ShenandoahHeapRegion::region_size_bytes_mask();
   return MAX2(ShenandoahHeapRegion::region_size_bytes(), default_value);
 }
 
