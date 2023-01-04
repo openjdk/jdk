@@ -192,7 +192,7 @@ protected:
   // Only encode if INTERNAL_VALUE_IS_OOP
   template <DecoratorSet idecorators, typename T>
   static inline std::enable_if_t<
-    AccessInternal::MustConvertCompressedOop<idecorators, T>,
+    AccessInternal::MustConvertCompressedOop<idecorators, T>::value,
     typename HeapOopType<idecorators>::type>
   encode_internal(T value);
 
