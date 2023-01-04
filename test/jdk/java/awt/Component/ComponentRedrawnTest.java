@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @key headful
  * @bug 8139581
- * @summary Verify that components are redrawn after removal and addition to a container
+ * @summary Verify that components are redrawn after 
+ * removal and addition to a container
  * @run main ComponentRedrawnTest
  */
 
-import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
@@ -43,7 +43,7 @@ import java.awt.event.MouseEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JButton;
-
+    
 public class ComponentRedrawnTest {
 
     private static Frame frame;
@@ -125,12 +125,8 @@ public class ComponentRedrawnTest {
         frame.validate();
     }
 
-    private static void runTest() throws AWTException {
-        try {
-            EventQueue.invokeAndWait(() -> createGUI());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private static void runTest() throws Exception {
+        EventQueue.invokeAndWait(() -> createGUI());
         robot = new Robot();
         robot.setAutoDelay(500);
         awtPainted.set(0);
@@ -144,7 +140,7 @@ public class ComponentRedrawnTest {
                     + awtButton.getSize().height / 2;
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Unexpected Exception encountered: " + e);
         }
 
         robot.mouseMove(x, y);
@@ -160,7 +156,7 @@ public class ComponentRedrawnTest {
                     + buttonRemove.getSize().height / 2;
             });
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Unexpected Exception encountered: " + e);
         }
 
         robot.mouseMove(x, y);
@@ -177,7 +173,7 @@ public class ComponentRedrawnTest {
             });
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Unexpected Exception encountered: " + e);
         }
         robot.mouseMove(x, y);
         robot.waitForIdle();
@@ -200,4 +196,3 @@ public class ComponentRedrawnTest {
     }
 
 }
-
