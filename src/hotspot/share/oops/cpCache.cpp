@@ -685,7 +685,6 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   // Initialize resolvedinvokedynamicinfo array with available data
   Array<ResolvedIndyInfo>* array;
   if (invokedynamic_info.length()) {
-    if (UseNewIndyCode) { tty->print_cr("Initializing CPCache"); }
     array = MetadataFactory::new_array<ResolvedIndyInfo>(loader_data, invokedynamic_info.length(), CHECK_NULL);
     for (int i = 0; i < invokedynamic_info.length(); i++) {
         array->at_put(i, ResolvedIndyInfo(invokedynamic_info.at(i)._resolved_info_index,
@@ -870,7 +869,6 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
-  if (UseNewIndyCode) { tty->print_cr("In CPCache set_dynamic_call"); }
   ResourceMark rm;
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
 
@@ -928,8 +926,6 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
-    tty->print_cr("UseNewIndyCode Appendix:");
-    appendix()->print_on(tty);
   }
 
   // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info

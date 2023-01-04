@@ -220,12 +220,23 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register cache = rbx;
   const Register index = rcx;
-  __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-
-  const Register flags = cache;
-  __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
-  __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  if (UseNewIndyCode && index_size == sizeof(u4)) {
+    // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+    __ get_cache_index_at_bcp(index, 1, index_size);
+    // Get address of invokedynamic array
+    __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
+    __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+    __ imull(index, index, sizeof(ResolvedIndyInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
+    __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyInfo::num_parameters_offset())));
+    __ lea(rsp, Address(rsp, index, Interpreter::stackElementScale()));
+  } else {
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
+    Register flags = cache;
+    __ movl(flags, Address(cache, index, Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ andl(flags, ConstantPoolCacheEntry::parameter_size_mask);
+    __ lea(rsp, Address(rsp, flags, Interpreter::stackElementScale()));
+  }
 
    const Register java_thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
    if (JvmtiExport::can_pop_frame()) {

@@ -68,7 +68,6 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
   if (UseNewIndyCode) {
-    if (UseNewIndyCode) { tty->print_cr("In Bootstrapinfo resolve previously linked indy"); }
     // Check if method is not null
     if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
       methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());

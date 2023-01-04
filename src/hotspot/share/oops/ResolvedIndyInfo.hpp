@@ -62,6 +62,7 @@ public:
     static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedIndyInfo, _resolved_references_index); }
     static ByteSize result_type_offset()               { return byte_offset_of(ResolvedIndyInfo, _return_type);               }
     static ByteSize has_appendix_offset()              { return byte_offset_of(ResolvedIndyInfo, _has_appendix);              }
+    static ByteSize num_parameters_offset()            { return byte_offset_of(ResolvedIndyInfo, _number_of_parameters);      }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP

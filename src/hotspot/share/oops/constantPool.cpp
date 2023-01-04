@@ -656,11 +656,15 @@ oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int whi
 }
 
 
-bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which, bool is_invokedynamic) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_local_signature();
+  if (UseNewIndyCode && is_invokedynamic) {
+    return cpool->cache()->resolved_indy_info(cache_index)->has_local_signature();
+  } else {
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->has_local_signature();
+  }
 }
 
 Symbol* ConstantPool::impl_name_ref_at(int which, bool uncached) {

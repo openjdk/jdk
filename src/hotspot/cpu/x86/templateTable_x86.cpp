@@ -2719,7 +2719,6 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
 }
 
 void TemplateTable::load_invokedynamic_entry(Register method) {
-  if (UseNewIndyCode) { tty->print_cr("Dispatching load_invokedynamic assembly"); }
   // setup registers
   const Register appendix = rax;
   const Register cache = rcx;
@@ -3992,7 +3991,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ profile_arguments_type(rdx, rbx_method, rbcp, false);
 
   __ verify_oop(rax_callsite);
-  if (UseNewCode) {__ hlt();}
+  if (UseNewCode2) {__ hlt();}
   __ jump_from_interpreted(rbx_method, rdx);
 }
 

@@ -1764,7 +1764,6 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  if (UseNewIndyCode) { tty->print_cr("Resolving invokedynamic in LinkResolver"); }
   int pool_index;
   if (UseNewIndyCode) {
     indy_index = pool->decode_invokedynamic_index(indy_index);

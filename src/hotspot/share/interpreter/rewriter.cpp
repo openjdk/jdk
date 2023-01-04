@@ -231,7 +231,6 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
         if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
                                                          _pool->name_ref_at(cp_index))) {
-          if (UseNewIndyCode) { tty->print_cr("Inside maybe rewrite invokehandle"); }
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
@@ -266,7 +265,7 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
 
 
 void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
-  if (UseNewIndyCode) { tty->print_cr("Rewriting invokedynamic"); }
+  if (UseNewCode) { tty->print_cr("Rewriting invokedynamic"); }
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
@@ -298,7 +297,6 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
   } else {
-    // Add UseNewIndyCode, get indy_index to grab cp index from stuff_to_collect
     if (UseNewIndyCode) {
       int cache_index = ConstantPool::decode_invokedynamic_index(
                           Bytes::get_native_u4(p));

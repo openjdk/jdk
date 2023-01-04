@@ -493,7 +493,7 @@ ciObject* ciBytecodeStream::get_appendix() {
 bool ciBytecodeStream::has_local_signature() {
   GUARDED_VM_ENTRY(
     constantPoolHandle cpool(Thread::current(), _method->get_Method()->constants());
-    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index());
+    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index(), has_index_u4());
   )
 }
 
