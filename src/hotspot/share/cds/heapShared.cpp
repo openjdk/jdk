@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,13 +346,39 @@ oop HeapShared::archive_object(oop obj) {
   return archived_oop;
 }
 
-typedef ResourceHashtable<Klass*, OopHandle,
+class KlassToOopHandleTable: public ResourceHashtable<Klass*, OopHandle,
     36137, // prime number
     AnyObj::C_HEAP,
-    mtClassShared> KlassToOopHandleTable;
-static KlassToOopHandleTable* _klass_to_scratch_java_mirror_table = NULL;
+    mtClassShared> {
+public:
+  oop get_oop(Klass* k) {
+    MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+    OopHandle* handle = get(k);
+    if (handle != NULL) {
+      return handle->resolve();
+    } else {
+      return NULL;
+    }
+  }
+  void set_oop(Klass* k, oop o) {
+    MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+    OopHandle handle(Universe::vm_global(), o);
+    bool is_new = put(k, handle);
+    assert(is_new, "cannot set twice");
+  }
+  void remove_oop(Klass* k) {
+    MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+    OopHandle* handle = get(k);
+    if (handle != NULL) {
+      handle->release(Universe::vm_global());
+      remove(k);
+    }
+  }
+};
 
-void HeapShared::init_scratch_java_mirrors(TRAPS) {
+static KlassToOopHandleTable* _scratch_java_mirror_table = NULL;
+
+void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
     if (!is_reference_type(bt)) {
@@ -360,7 +386,7 @@ void HeapShared::init_scratch_java_mirrors(TRAPS) {
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }
   }
-  _klass_to_scratch_java_mirror_table = new (mtClass)KlassToOopHandleTable();
+  _scratch_java_mirror_table = new (mtClass)KlassToOopHandleTable();
 }
 
 oop HeapShared::scratch_java_mirror(BasicType t) {
@@ -370,43 +396,26 @@ oop HeapShared::scratch_java_mirror(BasicType t) {
 }
 
 oop HeapShared::scratch_java_mirror(Klass* k) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  return scratch_java_mirror_locked(k);
-}
-
-oop HeapShared::scratch_java_mirror_locked(Klass* k) {
-  assert_locked_or_safepoint(DumpTimeTable_lock);
-  OopHandle* handle = _klass_to_scratch_java_mirror_table->get(k);
-  if (handle != NULL) {
-    return handle->resolve();
-  } else {
-    return NULL;
-  }
+  return _scratch_java_mirror_table->get_oop(k);
 }
 
 void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  OopHandle handle(Universe::vm_global(), mirror);
-  bool is_new = _klass_to_scratch_java_mirror_table->put(k, handle);
-  assert(is_new, "cannot set twice");
+  _scratch_java_mirror_table->set_oop(k, mirror);
 }
 
-void HeapShared::unset_scratch_java_mirror(Klass* k) {
-  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  OopHandle* handle = _klass_to_scratch_java_mirror_table->get(k);
-  if (handle != NULL) {
-    handle->release(Universe::vm_global());
-    _klass_to_scratch_java_mirror_table->remove(k);
-  }
+void HeapShared::remove_scratch_objects(Klass* k) {
+  _scratch_java_mirror_table->remove_oop(k);
 }
 
-void HeapShared::archive_klass_objects() {
+void HeapShared::archive_java_mirrors() {
+  init_seen_objects_table();
+
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
     if (!is_reference_type(bt)) {
       oop m = _scratch_basic_type_mirrors[i].resolve();
       assert(m != NULL, "sanity");
-      oop archived_m = HeapShared::archive_object(m);
+      oop archived_m = archive_reachable_objects_from(1, _default_subgraph_info, m, /*is_closed_archive=*/ false);
       assert(archived_m != NULL, "sanity");
 
       log_trace(cds, heap, mirror)(
@@ -417,12 +426,11 @@ void HeapShared::archive_klass_objects() {
     }
   }
 
-  init_seen_objects_table();
   GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
   assert(klasses != NULL, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
     Klass* orig_k = klasses->at(i);
-    oop m = scratch_java_mirror_locked(orig_k);
+    oop m = scratch_java_mirror(orig_k);
     if (m != NULL) {
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
       oop archived_m = archive_reachable_objects_from(1, _default_subgraph_info, m, /*is_closed_archive=*/ false);
@@ -440,6 +448,7 @@ void HeapShared::archive_klass_objects() {
       }
     }
   }
+
   delete_seen_objects_table();
 }
 
@@ -628,7 +637,7 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
 
   G1CollectedHeap::heap()->begin_archive_alloc_range(true /* open */);
 
-  archive_klass_objects();
+  archive_java_mirrors();
 
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,
@@ -1218,9 +1227,11 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
         log_debug(cds, heap)("(%d) %s[" SIZE_FORMAT "] ==> " PTR_FORMAT " size " SIZE_FORMAT " %s", _level,
                              _orig_referencing_obj->klass()->external_name(), field_delta,
                              p2i(obj), obj->size() * HeapWordSize, obj->klass()->external_name());
-        LogTarget(Trace, cds, heap) log;
-        LogStream out(log);
-        obj->print_on(&out);
+        if (log_is_enabled(Trace, cds, heap)) {
+          LogTarget(Trace, cds, heap) log;
+          LogStream out(log);
+          obj->print_on(&out);
+        }
       }
 
       oop archived = HeapShared::archive_reachable_objects_from(
@@ -1515,6 +1526,10 @@ void HeapShared::verify_reachable_objects_from(oop obj, bool is_archived) {
 }
 #endif
 
+// The "default subgraph" contains special objects (see heapShared.hpp) that
+// can be accessed before we load any Java classes (including java/lang/Class).
+// Make sure that these are only instances of the very few specific types
+// that we can handle.
 void HeapShared::check_default_subgraph_classes() {
   GrowableArray<Klass*>* klasses = _default_subgraph_info->subgraph_object_klasses();
   int num = klasses->length();
@@ -1527,8 +1542,6 @@ void HeapShared::check_default_subgraph_classes() {
           i, subgraph_k->external_name());
     }
 
-    // At runtime, the default subgraph contains objects that can be referenced before
-    // any Java classes are loaded. It's safe to use only the following classes.
     guarantee(subgraph_k->name()->equals("java/lang/Class") ||
               subgraph_k->name()->equals("java/lang/String") ||
               subgraph_k->name()->equals("[Ljava/lang/Object;") ||

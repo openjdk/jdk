@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -695,7 +695,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (DumpSharedSpaces) {
-    HeapShared::unset_scratch_java_mirror(this);
+    HeapShared::remove_scratch_objects(this);
   }
 #endif
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1051,14 +1051,16 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
 #if INCLUDE_CDS_JAVA_HEAP
 // The "scratch mirror" stores the states of the mirror object that can be
-// determined at dump time. At runtime, more information is added to it by
+// decided at dump time (such as the initial values of the static fields, the
+// component mirror, etc). At runtime, more information is added to it by
 // java_lang_Class::restore_archived_mirror().
 //
 // Essentially, /*dumptime*/create_scratch_mirror() + /*runtime*/restore_archived_mirror()
 // produces the same result as /*runtime*/create_mirror().
 //
 // Note: we archive the "scratch mirror" instead of k->java_mirror(), because the
-// later may contain dumptime-specific information that cannot be archived (e.g., ClassLoaderData*).
+// later may contain dumptime-specific information that cannot be archived
+// (e.g., ClassLoaderData*, or static fields that are modified by Java code execution).
 void java_lang_Class::create_scratch_mirror(Klass* k, TRAPS) {
   if (k->class_loader() != NULL &&
       k->class_loader() != SystemDictionary::java_platform_loader() &&
@@ -1342,7 +1344,8 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
   } else {
     assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
   }
-  assert(Universe::java_mirror(type) == java_class, "must be consistent");
+  assert(Universe::java_mirror(type) == java_class ||
+         HeapShared::scratch_java_mirror(type) == java_class, "must be consistent");
   return type;
 }
 
