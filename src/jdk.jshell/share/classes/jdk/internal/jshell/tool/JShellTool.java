@@ -136,6 +136,7 @@ import static jdk.internal.jshell.tool.ContinuousCompletionProvider.STARTSWITH_M
  * Command line REPL tool for Java using the JShell API.
  * @author Robert Field
  */
+@SuppressWarnings("this-escape")
 public class JShellTool implements MessageHandler {
 
     private static String PROMPT = "\u0005";
