@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/counters.hpp"
-#include "sanitizers/address.h"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -109,11 +108,7 @@ class BlockTree: public CHeapObj<mtMetaspace> {
       _right(NULL),
       _next(NULL),
       _word_size(word_size)
-    {
-      // Poison the remaining memory region.
-      ASAN_POISON_MEMORY_REGION(reinterpret_cast<char*>(this) + sizeof(Node),
-                                (_word_size * BytesPerWord) - sizeof(Node));
-    }
+    {}
 
 #ifdef ASSERT
     bool valid() const {
@@ -352,12 +347,8 @@ public:
 
   // Add a memory block to the tree. Its content will be overwritten.
   void add_block(MetaWord* p, size_t word_size) {
-#ifndef ADDRESS_SANITIZER
     DEBUG_ONLY(zap_range(p, word_size));
-#endif
     assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
-    // Ensure the memory region for the node is unpoisoned.
-    ASAN_UNPOISON_MEMORY_REGION(p, sizeof(Node));
     Node* n = new(p) Node(word_size);
     if (_root == NULL) {
       _root = n;
@@ -394,9 +385,7 @@ public:
 
       _counter.sub(n->_word_size);
 
-#ifndef ADDRESS_SANITIZER
       DEBUG_ONLY(zap_range(p, n->_word_size));
-#endif
       return p;
     }
     return NULL;

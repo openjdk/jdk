@@ -269,13 +269,13 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(ReservedSpace rs, CommitLimiter*
 VirtualSpaceNode::~VirtualSpaceNode() {
   DEBUG_ONLY(verify_locked();)
 
+  // Undo the poisoning before potentially unmapping memory. This ensures that future mappings at
+  // the same address do not unexpectedly fail with use-after-poison.
+  ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
+
   UL(debug, ": dies.");
   if (_owns_rs) {
     _rs.release();
-  } else {
-    // We do not own the memory region, so we need to unpoison it to undo the previous poisoning in
-    // the constructor.
-    ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
   }
 
   // Update counters in vslist
