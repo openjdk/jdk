@@ -46,6 +46,7 @@ import org.xml.sax.SAXException;
 
 class WixLauncherAsService extends LauncherAsService {
 
+    @SuppressWarnings("this-escape")
     WixLauncherAsService(String name, Map<String, ? super Object> mainParams) {
         super(name, mainParams,
                 createResource("service-install.wxi", mainParams).setCategory(

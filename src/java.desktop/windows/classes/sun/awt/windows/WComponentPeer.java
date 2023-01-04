@@ -797,6 +797,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     private int updateX1, updateY1, updateX2, updateY2;
 
+    @SuppressWarnings("this-escape")
     WComponentPeer(Component target) {
         this.target = target;
         this.paintArea = new RepaintArea();

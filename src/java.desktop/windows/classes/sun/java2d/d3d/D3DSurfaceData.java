@@ -216,6 +216,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         D3DMaskBlit.register();
     }
 
+    @SuppressWarnings("this-escape")
     protected D3DSurfaceData(WComponentPeer peer, D3DGraphicsConfig gc,
                              int width, int height, Image image,
                              ColorModel cm, int numBackBuffers,

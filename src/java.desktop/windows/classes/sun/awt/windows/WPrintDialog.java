@@ -41,12 +41,14 @@ class WPrintDialog extends Dialog {
     protected PrintJob job;
     protected PrinterJob pjob;
 
+    @SuppressWarnings("this-escape")
     WPrintDialog(Frame parent, PrinterJob control) {
         super(parent, true);
         this.pjob = control;
         setLayout(null);
     }
 
+    @SuppressWarnings("this-escape")
     WPrintDialog(Dialog parent, PrinterJob control) {
         super(parent, "", true);
         this.pjob = control;

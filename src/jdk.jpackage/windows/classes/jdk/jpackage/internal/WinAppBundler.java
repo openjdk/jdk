@@ -26,6 +26,7 @@
 package jdk.jpackage.internal;
 
 public class WinAppBundler extends AppImageBundler {
+    @SuppressWarnings("this-escape")
     public WinAppBundler() {
         setAppImageSupplier(WindowsAppImageBuilder::new);
     }

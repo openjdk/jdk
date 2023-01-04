@@ -424,7 +424,7 @@ final class ProcessImpl extends Process {
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({ "removal", "this-escape" })
     private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,

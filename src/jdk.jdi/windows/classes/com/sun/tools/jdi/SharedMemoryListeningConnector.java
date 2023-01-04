@@ -37,6 +37,7 @@ public class SharedMemoryListeningConnector extends GenericListeningConnector {
 
     static final String ARG_NAME = "name";
 
+    @SuppressWarnings("this-escape")
     public SharedMemoryListeningConnector() {
         super(new SharedMemoryTransportService());
 

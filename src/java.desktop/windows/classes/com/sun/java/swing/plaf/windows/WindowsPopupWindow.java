@@ -56,6 +56,7 @@ class WindowsPopupWindow extends JWindow {
 
     private int windowType;
 
+    @SuppressWarnings("this-escape")
     WindowsPopupWindow(Window parent) {
         super(parent);
         setFocusableWindowState(false);

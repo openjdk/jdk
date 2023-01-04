@@ -55,6 +55,7 @@ public class D3DSurfaceDataProxy extends SurfaceDataProxy {
     D3DGraphicsConfig d3dgc;
     int transparency;
 
+    @SuppressWarnings("this-escape")
     public D3DSurfaceDataProxy(D3DGraphicsConfig d3dgc, int transparency) {
         this.d3dgc = d3dgc;
         this.transparency = transparency;

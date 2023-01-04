@@ -220,6 +220,7 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         private Image offscreenImage;
         private int width, height;
 
+        @SuppressWarnings("this-escape")
         public WGLOffScreenSurfaceData(WComponentPeer peer,
                                        WGLGraphicsConfig gc,
                                        int width, int height,
