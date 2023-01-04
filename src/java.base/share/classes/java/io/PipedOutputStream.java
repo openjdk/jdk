@@ -56,6 +56,10 @@ public class PipedOutputStream extends OutputStream {
      * input stream. Data bytes written to this stream will then be
      * available as input from {@code snk}.
      *
+     * @implNote This constructor invokes {@link #connect connect()}.
+     * Subclasses overriding that method should be aware that it is
+     * invoked prior to subclass initialization.
+     *
      * @param      snk   The piped input stream to connect to.
      * @throws     IOException  if an I/O error occurs.
      */

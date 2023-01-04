@@ -113,6 +113,10 @@ public class HashSet<E>
      * (0.75) and an initial capacity sufficient to contain the elements in
      * the specified collection.
      *
+     * @implNote This constructor invokes {@link #add add()} and
+     * {@link #addAll addAll()}. Subclasses overriding those methods should
+     * be aware that they are invoked prior to subclass initialization.
+     *
      * @param c the collection whose elements are to be placed into this set
      * @throws NullPointerException if the specified collection is null
      */

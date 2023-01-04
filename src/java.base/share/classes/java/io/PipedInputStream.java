@@ -116,6 +116,10 @@ public class PipedInputStream extends InputStream {
      * Data bytes written to {@code src} will then
      * be available as input from this stream.
      *
+     * @implNote This constructor invokes {@link #connect connect()}.
+     * Subclasses overriding that method should be aware that it is
+     * invoked prior to subclass initialization.
+     *
      * @param      src   the stream to connect to.
      * @param      pipeSize the size of the pipe's buffer.
      * @throws     IOException  if an I/O error occurs.

@@ -124,6 +124,10 @@ public final class StringBuilder
      * specified string. The initial capacity of the string builder is
      * {@code 16} plus the length of the string argument.
      *
+     * @implNote This constructor invokes {@link #append(CharSequence)}.
+     * Subclasses overriding that method should be aware that it is invoked
+     * prior to subclass initialization.
+     *
      * @param   str   the initial contents of the buffer.
      */
     @IntrinsicCandidate
@@ -136,6 +140,10 @@ public final class StringBuilder
      * as the specified {@code CharSequence}. The initial capacity of
      * the string builder is {@code 16} plus the length of the
      * {@code CharSequence} argument.
+     *
+     * @implNote This constructor invokes {@link #append(CharSequence)}.
+     * Subclasses overriding that method should be aware that it is invoked
+     * prior to subclass initialization.
      *
      * @param      seq   the sequence to copy.
      */

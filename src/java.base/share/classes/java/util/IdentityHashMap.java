@@ -270,6 +270,10 @@ public class IdentityHashMap<K,V>
      * Constructs a new identity hash map containing the keys-value mappings
      * in the specified map.
      *
+     * @implNote This constructor invokes {@link #put put()} and
+     * {@link #putAll putAll()}. Subclasses overriding those methods should
+     * be aware that they are invoked prior to subclass initialization.
+     *
      * @param m the map whose mappings are to be placed into this map
      * @throws NullPointerException if the specified map is null
      */

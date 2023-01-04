@@ -52,6 +52,10 @@ public class PipedWriter extends Writer {
      * reader. Data characters written to this stream will then be
      * available as input from {@code snk}.
      *
+     * @implNote This constructor invokes {@link #connect connect()}.
+     * Subclasses overriding that method should be aware that it is
+     * invoked prior to subclass initialization.
+     *
      * @param      snk   The piped reader to connect to.
      * @throws     IOException  if an I/O error occurs.
      */

@@ -191,6 +191,10 @@ public class LinkedBlockingDeque<E>
      * the given collection, added in traversal order of the
      * collection's iterator.
      *
+     * @implNote This constructor invokes {@link #add add()} and
+     * {@link #addAll addAll()}. Subclasses overriding those methods should
+     * be aware that they are invoked prior to subclass initialization.
+     *
      * @param c the collection of elements to initially contain
      * @throws NullPointerException if the specified collection or any
      *         of its elements are null

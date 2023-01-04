@@ -391,6 +391,10 @@ public class ObjectInputStream
      * the ObjectInputStream.readFields or ObjectInputStream.readUnshared
      * methods.
      *
+     * @implNote This constructor invokes {@link #readStreamHeader}.
+     * Subclasses overriding that method should be aware that it is
+     * invoked prior to subclass initialization.
+     *
      * @param   in input stream to read from
      * @throws  StreamCorruptedException if the stream header is incorrect
      * @throws  IOException if an I/O error occurs while reading stream header

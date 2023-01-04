@@ -150,6 +150,10 @@ public class TreeSet<E> extends AbstractSet<E>
      * {@code ClassCastException} for any elements {@code e1} and
      * {@code e2} in the set.
      *
+     * @implNote This constructor invokes {@link #add add()} and
+     * {@link #addAll addAll()}. Subclasses overriding those methods should
+     * be aware that they are invoked prior to subclass initialization.
+     *
      * @param c collection whose elements will comprise the new set
      * @throws ClassCastException if the elements in {@code c} are
      *         not {@link Comparable}, or are not mutually comparable
@@ -164,6 +168,10 @@ public class TreeSet<E> extends AbstractSet<E>
     /**
      * Constructs a new tree set containing the same elements and
      * using the same ordering as the specified sorted set.
+     *
+     * @implNote This constructor invokes {@link #add add()} and
+     * {@link #addAll addAll()}. Subclasses overriding those methods should
+     * be aware that they are invoked prior to subclass initialization.
      *
      * @param s sorted set whose elements will comprise the new set
      * @throws NullPointerException if the specified sorted set is null
