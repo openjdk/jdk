@@ -1879,7 +1879,7 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
   ctr = _SpinDuration;
   if (ctr <= 0) return 0;
 
-  if (NotRunnable(current, (JavaThread*) owner_raw())) {
+  if (NotRunnable(current, static_cast<JavaThread*>(owner_raw()))) {
     return 0;
   }
 
@@ -1928,9 +1928,9 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
     // the spin without prejudice or apply a "penalty" to the
     // spin count-down variable "ctr", reducing it by 100, say.
 
-    JavaThread* ox = (JavaThread*) owner_raw();
+    JavaThread* ox = static_cast<JavaThread*>(owner_raw());
     if (ox == NULL) {
-      ox = (JavaThread*)try_set_owner_from(NULL, current);
+      ox = static_cast<JavaThread*>(try_set_owner_from(NULL, current));
       if (ox == NULL) {
         // The CAS succeeded -- this thread acquired ownership
         // Take care of some bookkeeping to exit spin state.

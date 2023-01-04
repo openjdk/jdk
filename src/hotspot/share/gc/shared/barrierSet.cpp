@@ -59,7 +59,7 @@ static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_
   } else {
     // The GC needs nmethod entry barriers to deal with continuations
     // and code cache unloading
-    return NOT_ARM32(new BarrierSetNMethod()) ARM32_ONLY(nullptr);
+    return new BarrierSetNMethod();
   }
 }
 
