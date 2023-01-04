@@ -597,17 +597,16 @@ conventions might appear jarring and reduce readability.</p></li>
 <code>std::nothrow</code>, and <code>std::nothrow_t</code>.</li>
 <li><code>#include &lt;limits&gt;</code> to use
 <code>std::numeric_limits</code>.</li>
-<li><code>#include &lt;type_traits&gt;</code> with some considerations,
+<li><code>#include &lt;type_traits&gt;</code> with some restrictions,
 listed below.</li>
 <li><code>#include &lt;cstddef&gt;</code> to use
 <code>std::nullptr_t</code> and <code>std::max_align_t</code>.</li>
 </ul>
-<p>Certain declarations from <code>&lt;type_traits&gt;</code> should be
-avoided.</p>
+<p>Certain restrictions apply to the inclusion of
+<code>&lt;type_traits&gt;</code>.</p>
 <ul>
-<li><code>std::alignment_of&lt;&gt;</code> has been superseded by
-<code>alignof</code>, and the newer operator should be preferred over it
-instead, whenever possible.</li>
+<li>The <code>alignof</code> operator should always be preferred over
+<code>std::alignment_of&lt;&gt;</code>.</li>
 </ul>
 <p>TODO: Rather than directly #including (permitted) Standard Library
 headers, use a convention of #including wrapper headers (in some

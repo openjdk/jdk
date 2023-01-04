@@ -572,13 +572,12 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>` with some considerations, listed below.
+* `#include <type_traits>` with some restrictions, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
 
-Certain declarations from `<type_traits>` should be avoided.
+Certain restrictions apply to the inclusion of `<type_traits>`.
 
-* `std::alignment_of<>` has been superseded by `alignof`, and the newer
-operator should be preferred over it instead, whenever possible.
+* The `alignof` operator should always be preferred over `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
