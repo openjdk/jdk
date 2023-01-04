@@ -59,7 +59,7 @@ public class SAGetopt {
         }
 
         if (! _argv[_optind].isEmpty() && _argv[_optind].charAt(0) == '-') {
-            throw new SAGetoptException("Argument is expected for '" + opt + "'");
+            throw new SAGetoptException("Successor argument without leading - is expected for '" + opt + "' but we got " + _argv[_optind]);
         }
 
         _optarg = _argv[_optind];

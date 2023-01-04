@@ -422,9 +422,6 @@ public class SALauncher {
                 throw new SAGetoptException("Invalid RMI connector port: " + rmiPortString);
             }
         }
-        if (rmiPort < 0) {
-            System.err.println("Warning - negative rmiport " + rmiPort + " can lead to errors");
-        }
 
         final HotSpotAgent agent = new HotSpotAgent();
 
