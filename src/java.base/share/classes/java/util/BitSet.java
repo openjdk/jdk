@@ -128,7 +128,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         assert(wordsInUse == 0 || words[wordsInUse - 1] != 0);
         assert(wordsInUse >= 0 && wordsInUse <= words.length);
         assert(wordsInUse == words.length || words[wordsInUse] == 0);
-        assert(cardinality >= 0 && cardinality <= length());
+        assert(cardinality >= 0 && cardinality -1 <= length() - 1); // -1 is to avoid overflow
     }
 
     /**
