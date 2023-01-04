@@ -32,6 +32,7 @@ import java.io.BitsProxy;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.*;
 
@@ -126,8 +127,7 @@ final class ReadWriteValues {
 
     @Test
     void testGetFloat() {
-        doubles().forEach(d -> {
-            float expected = (float) d;
+        floats().forEach(expected -> {
             RefImpl.putFloat(BUFF, OFFSET, expected);
             float actual = BitsProxy.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
@@ -136,8 +136,7 @@ final class ReadWriteValues {
 
     @Test
     void testPutFloat() {
-        doubles().forEach(d -> {
-            float expected = (float) d;
+        floats().forEach(expected -> {
             BitsProxy.putFloat(BUFF, OFFSET, expected);
             float actual = RefImpl.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
@@ -187,7 +186,28 @@ final class ReadWriteValues {
     }
 
     static DoubleStream doubles() {
-        return ThreadLocalRandom.current().doubles(ITERATIONS);
+        return DoubleStream.concat(
+                ThreadLocalRandom.current().doubles(ITERATIONS),
+                DoubleStream.of(Double.NaN,
+                        Double.NEGATIVE_INFINITY,
+                        Double.POSITIVE_INFINITY,
+                        Double.MAX_VALUE,
+                        Double.MIN_VALUE,
+                        -0.0d
+                        +0.0d)
+        );
+    }
+    static Stream<Float> floats() {
+        return Stream.concat(
+                ThreadLocalRandom.current().doubles(ITERATIONS).mapToObj(d -> (float)d),
+                Stream.of(Float.NaN,
+                        Float.NEGATIVE_INFINITY,
+                        Float.POSITIVE_INFINITY,
+                        Float.MAX_VALUE,
+                        Float.MIN_VALUE,
+                        -0.0f
+                        +0.0f)
+        );
     }
 
     @FunctionalInterface
