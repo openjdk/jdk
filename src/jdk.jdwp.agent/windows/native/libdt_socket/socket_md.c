@@ -268,11 +268,9 @@ int
 dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value)
 {
     if (cmd == TCP_NODELAY) {
-        struct protoent *proto = getprotobyname("TCP");
-        int tcp_level = (proto == 0 ? IPPROTO_TCP: proto->p_proto);
         long onl = (long)on;
 
-        if (setsockopt(fd, tcp_level, TCP_NODELAY,
+        if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
                        (char *)&onl, sizeof(long)) < 0) {
                 return SYS_ERR;
         }
