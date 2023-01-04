@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ public:
   void iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure);
   void allocate(ClassLoaderData* loader_data);
   void init_archived_entries(ClassLoaderData* loader_data);
-  void init_archived_oops(ClassLoaderData* loader_data);
 
   void serialize(SerializeClosure* f) {
     f->do_ptr((void**)&_packages);
@@ -98,14 +97,6 @@ void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data
   if (loader_data != NULL) {
     loader_data->packages()->init_archived_entries(_packages);
     loader_data->modules() ->init_archived_entries(_modules);
-  }
-}
-
-void ArchivedClassLoaderData::init_archived_oops(ClassLoaderData* loader_data) {
-  assert(DumpSharedSpaces, "must be");
-  assert_valid(loader_data);
-  if (loader_data != NULL) {
-    loader_data->modules()->init_archived_oops(_modules);
   }
 }
 
@@ -172,13 +163,6 @@ void ClassLoaderDataShared::init_archived_tables() {
   _archived_platform_loader_data.init_archived_entries(java_platform_loader_data_or_null());
   _archived_system_loader_data.init_archived_entries  (java_system_loader_data_or_null());
   _archived_javabase_moduleEntry = ModuleEntry::get_archived_entry(ModuleEntryTable::javabase_moduleEntry());
-}
-
-void ClassLoaderDataShared::init_archived_oops() {
-  assert(DumpSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
-  _archived_boot_loader_data.init_archived_oops    (null_class_loader_data());
-  _archived_platform_loader_data.init_archived_oops(java_platform_loader_data_or_null());
-  _archived_system_loader_data.init_archived_oops  (java_system_loader_data_or_null());
 }
 
 void ClassLoaderDataShared::serialize(SerializeClosure* f) {

@@ -28,15 +28,16 @@
 
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/isSigned.hpp"
-#include "metaprogramming/removeCV.hpp"
+
 #include <limits>
+#include <type_traits>
 
 // This metafunction returns true iff the type T (irrespective of CV qualifiers)
 // is an integral type. Note that this is false for enums.
 
 template<typename T>
 struct IsIntegral
-  : public IntegralConstant<bool, std::numeric_limits<typename RemoveCV<T>::type>::is_integer>
+  : public IntegralConstant<bool, std::numeric_limits<typename std::remove_cv<T>::type>::is_integer>
 {};
 
 // This metafunction returns true iff the type T (irrespective of CV qualifiers)
