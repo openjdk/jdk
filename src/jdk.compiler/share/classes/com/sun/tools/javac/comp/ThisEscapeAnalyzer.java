@@ -376,10 +376,12 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             // Emit warnings showing the entire stack trace
             JCDiagnostic.Warning key = Warnings.PossibleThisEscape;
-            for (DiagnosticPosition pos : warning) {
+            int remain = warning.length;
+            do {
+                final DiagnosticPosition pos = warning[--remain];
                 this.log.warning(Lint.LintCategory.THIS_ESCAPE, pos, key);
                 key = Warnings.PossibleThisEscapeLocation;
-            }
+            } while (remain > 0);
         }
     }
 
