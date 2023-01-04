@@ -456,6 +456,9 @@ private:
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj);
 
+  // Propagate NSR (Not scalar replaceable) state.
+  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist);
+
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
                             GrowableArray<Node*>& storestore_worklist);
@@ -568,6 +571,11 @@ private:
 
   // Compute the escape information
   bool compute_escape();
+
+  void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
+    ptn->set_scalar_replaceable(false);
+  }
+
 
 public:
   ConnectionGraph(Compile *C, PhaseIterGVN *igvn);
