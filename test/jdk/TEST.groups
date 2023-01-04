@@ -126,6 +126,7 @@ jdk_util = \
 jdk_util_other = \
     java/util \
     sun/util \
+    jdk/internal/util \
     -:jdk_collections \
     -:jdk_concurrent \
     -:jdk_stream
