@@ -363,7 +363,7 @@ public final class ProcessTools {
         if (!noCP) {
             args.add("-cp");
             args.add(System.getProperty("java.class.path"));
-	}
+        }
 
         String mainWrapper = System.getProperty("main.wrapper");
         if (mainWrapper != null) {

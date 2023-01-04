@@ -250,7 +250,7 @@ public class JarBuilder {
         File jarFile = new File(source);
         if (!jarFile.exists()) {
             throw new RuntimeException("jar file to be copied does not exist");
-	}
+        }
         File targetFile = new File(target);
         Files.copy(jarFile.toPath(), targetFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
     }
