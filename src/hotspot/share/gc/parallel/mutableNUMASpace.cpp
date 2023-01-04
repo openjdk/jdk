@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -861,14 +861,11 @@ void MutableNUMASpace::print_on(outputStream* st) const {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
       st->print("    local/remote/unbiased/uncommitted: " SIZE_FORMAT "K/"
-                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT
-                "K, large/small pages: " SIZE_FORMAT "/" SIZE_FORMAT "\n",
+                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT "K\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
                 ls->space_stats()->_unbiased_space / K,
-                ls->space_stats()->_uncommited_space / K,
-                ls->space_stats()->_large_pages,
-                ls->space_stats()->_small_pages);
+                ls->space_stats()->_uncommited_space / K);
     }
   }
 }
@@ -897,9 +894,6 @@ void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
 
     if (os::numa_get_group_ids_for_range(pages, lgrp_ids, npages)) {
       for (size_t i = 0; i < npages; i++) {
-        // No way to distinguish small/large pages on currently supported systems
-        space_stats()->_small_pages++;
-
         if (lgrp_ids[i] < 0)
           space_stats()->_uncommited_space += os::vm_page_size();
         else if (lgrp_ids[i] == lgrp_id())
