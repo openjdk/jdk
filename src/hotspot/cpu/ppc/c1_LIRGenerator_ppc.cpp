@@ -346,7 +346,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // This CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expects object to be unlocked).
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, hdr, scratch, new_register(T_INT), x->monitor_no(), info_for_exception, info);
+  monitor_enter(obj.result(), lock, hdr, scratch, x->monitor_no(), info_for_exception, info);
 }
 
 

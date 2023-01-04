@@ -284,8 +284,8 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 
 // Implementation of MonitorAccessStubs
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, CodeEmitInfo* info)
-  : MonitorAccessStub(obj_reg) {
+MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
+  : MonitorAccessStub(obj_reg, lock_reg) {
   _info = new CodeEmitInfo(info);
 }
 
@@ -295,6 +295,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mr_if_needed(/*scratch_opr()->as_register()*/ R4_ARG2, _obj_reg->as_register());
+  assert(_lock_reg->as_register() == R5_ARG3, "");
   __ mtctr(R0);
   __ bctrl();
   ce->add_call_info_here(_info);
@@ -304,10 +305,13 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  if (_compute_lock) {
+    ce->monitor_address(_monitor_ix, _lock_reg);
+  }
   address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? Runtime1::monitorexit_id : Runtime1::monitorexit_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
-  __ mr_if_needed(/*scratch_opr()->as_register()*/ R4_ARG2, _obj_reg->as_register());
+  assert(_lock_reg->as_register() == R4_ARG2, "");
   __ mtctr(R0);
   __ bctrl();
   __ b(_continuation);

@@ -343,9 +343,9 @@ class SharedRuntime: AllStatic {
   // Find the method that called us.
   static methodHandle find_callee_method(TRAPS);
 
-  static void monitor_enter_helper(oopDesc* obj, JavaThread* thread);
+  static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
-  static void monitor_exit_helper(oopDesc* obj, JavaThread* current);
+  static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
  private:
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
@@ -491,8 +491,8 @@ class SharedRuntime: AllStatic {
   static bool should_fixup_call_destination(address destination, address entry_point, address caller_pc, Method* moop, CodeBlob* cb);
 
   // Slow-path Locking and Unlocking
-  static void complete_monitor_locking_C(oopDesc* obj, JavaThread* current);
-  static void complete_monitor_unlocking_C(oopDesc* obj, JavaThread* current);
+  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
+  static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
   static address resolve_static_call_C     (JavaThread* current);

@@ -337,9 +337,10 @@ class frame {
   // Find receiver out of caller's (compiled) argument list
   oop retrieve_receiver(RegisterMap *reg_map);
 
-  // Return the monitor owner for compiled synchronized
+  // Return the monitor owner and BasicLock for compiled synchronized
   // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
+  BasicLock* get_native_monitor();
   oop        get_native_receiver();
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is

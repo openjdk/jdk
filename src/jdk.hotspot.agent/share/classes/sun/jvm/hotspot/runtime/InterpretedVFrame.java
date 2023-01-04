@@ -113,7 +113,7 @@ public class InterpretedVFrame extends JavaVFrame {
     for (BasicObjectLock current = getFrame().interpreterFrameMonitorEnd();
          current.address().lessThan(getFrame().interpreterFrameMonitorBegin().address());
          current = getFrame().nextMonitorInInterpreterFrame(current)) {
-      result.add(new MonitorInfo(current.obj(), false, false));
+      result.add(new MonitorInfo(current.obj(), current.lock(), false, false));
     }
     return result;
   }

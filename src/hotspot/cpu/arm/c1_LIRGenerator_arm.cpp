@@ -410,6 +410,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   set_no_result(x);
 
   LIR_Opr lock = new_pointer_register();
+  LIR_Opr hdr  = new_pointer_register();
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
@@ -417,7 +418,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   }
 
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), new_register(T_INT), new_register(T_INT),
+  monitor_enter(obj.result(), lock, hdr, LIR_OprFact::illegalOpr,
                 x->monitor_no(), info_for_exception, info);
 }
 

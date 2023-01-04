@@ -13291,13 +13291,13 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 
 instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rdx_RegI scr, rRegI cx1, rRegI cx2) %{
   predicate(Compile::current()->use_rtm());
-  match(Set cr (FastLock object));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, TEMP box);
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, $cx2$$Register, r15_thread,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register,
                  _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
@@ -13305,22 +13305,22 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rax_RegI tmp, rRegP scr, rRegP cx1) %{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr, rRegP cx1) %{
   predicate(!Compile::current()->use_rtm());
-  match(Set cr (FastLock object));
-  effect(TEMP tmp, TEMP scr, TEMP cx1);
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP scr, TEMP cx1, USE_KILL box);
   ins_cost(300);
-  format %{ "fastlock $object\t! kills $tmp,$scr" %}
+  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
-    __ fast_lock($object$$Register, noreg, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, noreg, r15_thread, NULL, NULL, NULL, false, false);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
+                 $scr$$Register, $cx1$$Register, noreg, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
-  match(Set cr (FastUnlock object));
-  effect(TEMP tmp, TEMP box);
+  match(Set cr (FastUnlock object box));
+  effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{

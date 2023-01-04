@@ -769,6 +769,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        frame_complete,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
+                                       in_ByteSize(-1),
                                        (OopMapSet*)NULL);
   }
   // Arguments for JNI method include JNIEnv and Class if static
@@ -802,12 +803,22 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int oop_handle_offset = stack_slots;
   stack_slots += (GPR_PARAMS + 1) * VMRegImpl::slots_per_word;
 
+  // Plus a lock if needed
+  int lock_slot_offset = 0;
+  if (method->is_synchronized()) {
+    lock_slot_offset = stack_slots;
+    assert(sizeof(BasicLock) == wordSize, "adjust this code");
+    stack_slots += VMRegImpl::slots_per_word;
+  }
+
   // Space to save return address and FP
   stack_slots += 2 * VMRegImpl::slots_per_word;
 
   // Calculate the final stack size taking account of alignment
   stack_slots = align_up(stack_slots, StackAlignmentInBytes / VMRegImpl::stack_slot_size);
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
+  int lock_slot_fp_offset = stack_size - 2 * wordSize -
+    lock_slot_offset * VMRegImpl::stack_slot_size;
 
   // Unverified entry point
   address start = __ pc();
@@ -1138,8 +1149,35 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    // TODO: Implement fast-locking.
+    const Register mark = tmp;
+    // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
+    // That would be acceptable as either CAS or slow case path is taken in that case
+
+    __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
+    __ sub(disp_hdr, FP, lock_slot_fp_offset);
+    __ tst(mark, markWord::unlocked_value);
+    __ b(fast_lock, ne);
+
+    // Check for recursive lock
+    // See comments in InterpreterMacroAssembler::lock_object for
+    // explanations on the fast recursive locking check.
+    // Check independently the low bits and the distance to SP
+    // -1- test low 2 bits
+    __ movs(Rtemp, AsmOperand(mark, lsl, 30));
+    // -2- test (hdr - SP) if the low two bits are 0
+    __ sub(Rtemp, mark, SP, eq);
+    __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+    __ b(lock_done, eq);
     __ b(slow_lock);
+
+    __ bind(fast_lock);
+    __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+
+    __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
+
     __ bind(lock_done);
   }
 
@@ -1191,8 +1229,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
-    // TODO: Implement fast-unlocking.
-    __ b(slow_unlock);
+
+    // See C1_MacroAssembler::unlock_object() for more comments
+    __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
+    __ cbz(R2, unlock_done);
+
+    __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
+
     __ bind(unlock_done);
   }
 
@@ -1248,7 +1291,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // last_Java_frame is already set, so do call_VM manually; no exception can occur
     __ mov(R0, sync_obj);
-    __ mov(R1, Rthread);
+    __ mov(R1, disp_hdr);
+    __ mov(R2, Rthread);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C));
 
     pop_param_registers(masm, fp_regs_in_arguments);
@@ -1267,7 +1311,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Register zero = __ zero_register(Rtemp);
     __ str(zero, Address(Rthread, Thread::pending_exception_offset()));
     __ mov(R0, sync_obj);
-    __ mov(R1, Rthread);
+    __ mov(R1, disp_hdr);
+    __ mov(R2, Rthread);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C));
     __ str(Rtmp_save1, Address(Rthread, Thread::pending_exception_offset()));
 
@@ -1284,6 +1329,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                      frame_complete,
                                      stack_slots / VMRegImpl::slots_per_word,
                                      in_ByteSize(method_is_static ? klass_offset : receiver_offset),
+                                     in_ByteSize(lock_slot_offset * VMRegImpl::stack_slot_size),
                                      oop_maps);
 }
 

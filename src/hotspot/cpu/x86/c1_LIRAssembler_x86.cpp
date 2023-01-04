@@ -310,19 +310,24 @@ void LIR_Assembler::osr_entry() {
   { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
     int monitor_offset = BytesPerWord * method()->max_locals() +
       (BasicObjectLock::size() * BytesPerWord) * (number_of_locks - 1);
+    // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
+    // the OSR buffer using 2 word entries: first the lock and then
+    // the oop.
     for (int i = 0; i < number_of_locks; i++) {
-      int slot_offset = monitor_offset - (i * BytesPerWord);
+      int slot_offset = monitor_offset - ((i * 2) * BytesPerWord);
 #ifdef ASSERT
       // verify the interpreter's monitor has a non-null object
       {
         Label L;
-        __ cmpptr(Address(OSR_buf, slot_offset), (int32_t)NULL_WORD);
+        __ cmpptr(Address(OSR_buf, slot_offset + 1*BytesPerWord), NULL_WORD);
         __ jcc(Assembler::notZero, L);
         __ stop("locked object is NULL");
         __ bind(L);
       }
 #endif
-      __ movptr(rbx, Address(OSR_buf, slot_offset));
+      __ movptr(rbx, Address(OSR_buf, slot_offset + 0));
+      __ movptr(frame_map()->address_for_monitor_lock(i), rbx);
+      __ movptr(rbx, Address(OSR_buf, slot_offset + 1*BytesPerWord));
       __ movptr(frame_map()->address_for_monitor_object(i), rbx);
     }
   }
@@ -447,13 +452,12 @@ int LIR_Assembler::emit_unwind_handler() {
   // Perform needed unlocking
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
-    monitor_address(0, FrameMap::rdi_opr);
-    __ movptr(rsi, Address(rdi, BasicObjectLock::obj_offset_in_bytes()));
-    stub = new MonitorExitStub(FrameMap::rsi_oop_opr);
+    monitor_address(0, FrameMap::rax_opr);
+    stub = new MonitorExitStub(FrameMap::rax_opr, true, 0);
     if (UseHeavyMonitors) {
       __ jmp(*stub->entry());
     } else {
-      __ unlock_object(rax, rsi, rdi, *stub->entry());
+      __ unlock_object(rdi, rsi, rax, *stub->entry());
     }
     __ bind(*stub->continuation());
   }
@@ -3500,7 +3504,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  Register tmp = op->scratch_opr()->as_register();
   if (UseHeavyMonitors) {
     if (op->info() != NULL) {
       add_debug_info_for_null_check_here(op->info());
@@ -3508,14 +3511,16 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     }
     __ jmp(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
+    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
     // done
   } else if (op->code() == lir_unlock) {
-    __ unlock_object(hdr, obj, tmp, *op->stub()->entry());
+    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   } else {
     Unimplemented();
   }
@@ -3784,7 +3789,7 @@ void LIR_Assembler::emit_delay(LIR_OpDelay*) {
 
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
-  __ lea(dst->as_register(), frame_map()->address_for_monitor_object(monitor_no));
+  __ lea(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
 
 

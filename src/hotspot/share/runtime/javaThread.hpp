@@ -662,6 +662,11 @@ private:
     return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
+  // Fast-locking support
+  bool is_lock_owned(address adr) const;
+  bool is_lock_owned_current(address adr) const; // virtual if mounted, otherwise whole thread
+  bool is_lock_owned_carrier(address adr) const;
+
   // Accessors for vframe array top
   // The linked list of vframe arrays are sorted on sp. This means when we
   // unpack the head must contain the vframe array to unpack.

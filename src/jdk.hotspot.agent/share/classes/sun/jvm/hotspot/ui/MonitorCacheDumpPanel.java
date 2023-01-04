@@ -75,6 +75,12 @@ public class MonitorCacheDumpPanel extends JPanel {
       JavaThread thread = threads.owningThreadFromMonitor(mon);
       if (thread != null) {
         tty.println("    owning thread: " + thread.getThreadName());
+        if (!thread.getAddress().equals(owner)) {
+          if (!thread.isLockOwned(owner)) {
+            tty.println("    WARNING! _owner doesn't fall in " + thread +
+                        "'s stack space");
+          }
+        }
       }
     }
     tty.println("  _contentions: " + mon.contentions());

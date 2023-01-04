@@ -313,7 +313,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   set_no_result(x);
 
   // "lock" stores the address of the monitor stack slot, so this is not an oop
-  LIR_Opr lock = new_register(T_ADDRESS);
+  LIR_Opr lock = new_register(T_INT);
 
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
@@ -322,8 +322,8 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, syncTempOpr(), new_register(T_INT), new_register(T_INT),
-                x->monitor_no(), info_for_exception, info);
+  monitor_enter(obj.result(), lock, syncTempOpr(), LIR_OprFact::illegalOpr,
+                        x->monitor_no(), info_for_exception, info);
 }
 
 
@@ -333,10 +333,10 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   LIRItem obj(x->obj(), this);
   obj.dont_load_item();
 
-  LIR_Opr lock = new_register(T_ADDRESS);
+  LIR_Opr lock = new_register(T_INT);
   LIR_Opr obj_temp = new_register(T_INT);
   set_no_result(x);
-  monitor_exit(obj_temp, lock, syncTempOpr(), new_register(T_INT), x->monitor_no());
+  monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
 void LIRGenerator::do_NegateOp(NegateOp* x) {

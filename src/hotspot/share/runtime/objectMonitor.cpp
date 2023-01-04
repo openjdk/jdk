@@ -334,7 +334,12 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return true;
   }
 
-  assert(cur == ANONYMOUS_OWNER || !current->is_lock_owned((address)cur), "precondition");
+  if (current->is_lock_owned((address)cur)) {
+    assert(_recursions == 0, "internal state error");
+    _recursions = 1;
+    set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
+    return true;
+  }
 
   // We've encountered genuine contention.
   assert(current->_Stalled == 0, "invariant");
@@ -1146,25 +1151,30 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
-    assert(!current->is_lock_owned((address)cur), "no stack-locking");
-    // Apparent unbalanced locking ...
-    // Naively we'd like to throw IllegalMonitorStateException.
-    // As a practical matter we can neither allocate nor throw an
-    // exception as ::exit() can be called from leaf routines.
-    // see x86_32.ad Fast_Unlock() and the I1 and I2 properties.
-    // Upon deeper reflection, however, in a properly run JVM the only
-    // way we should encounter this situation is in the presence of
-    // unbalanced JNI locking. TODO: CheckJNICalls.
-    // See also: CR4414101
+    if (current->is_lock_owned((address)cur)) {
+      assert(_recursions == 0, "invariant");
+      set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
+      _recursions = 0;
+    } else {
+      // Apparent unbalanced locking ...
+      // Naively we'd like to throw IllegalMonitorStateException.
+      // As a practical matter we can neither allocate nor throw an
+      // exception as ::exit() can be called from leaf routines.
+      // see x86_32.ad Fast_Unlock() and the I1 and I2 properties.
+      // Upon deeper reflection, however, in a properly run JVM the only
+      // way we should encounter this situation is in the presence of
+      // unbalanced JNI locking. TODO: CheckJNICalls.
+      // See also: CR4414101
 #ifdef ASSERT
-    LogStreamHandle(Error, monitorinflation) lsh;
-    lsh.print_cr("ERROR: ObjectMonitor::exit(): thread=" INTPTR_FORMAT
-                  " is exiting an ObjectMonitor it does not own.", p2i(current));
-    lsh.print_cr("The imbalance is possibly caused by JNI locking.");
-    print_debug_style_on(&lsh);
-    assert(false, "Non-balanced monitor enter/exit! " PTR_FORMAT, p2i(object()));
+      LogStreamHandle(Error, monitorinflation) lsh;
+      lsh.print_cr("ERROR: ObjectMonitor::exit(): thread=" INTPTR_FORMAT
+                    " is exiting an ObjectMonitor it does not own.", p2i(current));
+      lsh.print_cr("The imbalance is possibly caused by JNI locking.");
+      print_debug_style_on(&lsh);
+      assert(false, "Non-balanced monitor enter/exit!");
 #endif
-    return;
+      return;
+    }
   }
 
   if (_recursions != 0) {
@@ -1361,7 +1371,11 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
 
   void* cur = owner_raw();
   if (current != cur) {
-    assert(!current->is_lock_owned((address)cur), "no stack-locking");
+    if (current->is_lock_owned((address)cur)) {
+      assert(_recursions == 0, "internal state error");
+      set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
+      _recursions = 0;
+    }
   }
 
   guarantee(current == owner_raw(), "complete_exit not owner");
@@ -1406,8 +1420,12 @@ bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
 bool ObjectMonitor::check_owner(TRAPS) {
   JavaThread* current = THREAD;
   void* cur = owner_raw();
-  assert(cur != ANONYMOUS_OWNER, "no anon owner here");
   if (cur == current) {
+    return true;
+  }
+  if (current->is_lock_owned((address)cur)) {
+    set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
+    _recursions = 0;
     return true;
   }
   THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),
@@ -2010,6 +2028,12 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
 // observed by NotRunnable() might be garbage.  NotRunnable must
 // tolerate this and consider the observed _thread_state value
 // as advisory.
+//
+// Beware too, that _owner is sometimes a BasicLock address and sometimes
+// a thread pointer.
+// Alternately, we might tag the type (thread pointer vs basiclock pointer)
+// with the LSB of _owner.  Another option would be to probabilistically probe
+// the putative _owner->TypeTag value.
 //
 // Checking _thread_state isn't perfect.  Even if the thread is
 // in_java it might be blocked on a page-fault or have been preempted

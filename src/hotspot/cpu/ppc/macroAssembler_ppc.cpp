@@ -2541,6 +2541,7 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
   int owner_offset = ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value;
 
   // Store non-null, using boxReg instead of (intptr_t)markWord::unused_mark().
+  std(boxReg, BasicLock::displaced_header_offset_in_bytes(), boxReg);
   const Register tmpReg = boxReg;
   const Register owner_addr_Reg = mark_word;
   addi(owner_addr_Reg, mark_word, owner_offset);
@@ -2648,8 +2649,32 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   andi_(temp, displaced_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  // Set NE to indicate 'failure' -> take slow-path.
-  crandc(flag, Assembler::equal, flag, Assembler::equal);
+  if (!UseHeavyMonitors) {
+    // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+    ori(displaced_header, displaced_header, markWord::unlocked_value);
+
+    // Load Compare Value application register.
+
+    // Initialize the box. (Must happen before we update the object mark!)
+    std(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
+
+    // Must fence, otherwise, preceding store(s) may float below cmpxchg.
+    // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
+    cmpxchgd(/*flag=*/flag,
+             /*current_value=*/current_header,
+             /*compare_value=*/displaced_header,
+             /*exchange_value=*/box,
+             /*where=*/oop,
+             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock(),
+             noreg,
+             &cas_failed,
+             /*check without membar and ldarx first*/true);
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path.
+    crandc(flag, Assembler::equal, flag, Assembler::equal);
+  }
 
   // If the compare-and-exchange succeeded, then we found an unlocked
   // object and we have now locked it.
@@ -2667,6 +2692,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // If condition is true we are cont and hence we can store 0 as the
   // displaced header in the box, which indicates that it is a recursive lock.
   mcrf(flag,CCR0);
+  std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
   // Handle existing monitor.
   b(cont);
@@ -2693,6 +2719,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
            MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
            MacroAssembler::cmpxchgx_hint_acquire_lock());
 
+  // Store a non-null value into the box.
+  std(box, BasicLock::displaced_header_offset_in_bytes(), box);
   beq(flag, cont);
 
   // Check for recursive locking.
@@ -2734,6 +2762,15 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   }
 #endif
 
+  if (!UseHeavyMonitors) {
+    // Find the lock address and load the displaced header from the stack.
+    ld(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
+
+    // If the displaced header is 0, we have a recursive unlock.
+    cmpdi(flag, displaced_header, 0);
+    beq(flag, cont);
+  }
+
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
   RTM_OPT_ONLY( if (!(UseRTMForStackLocks && use_rtm)) ) // skip load if already done
@@ -2741,8 +2778,24 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   andi_(R0, current_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  // Set NE to indicate 'failure' -> take slow-path.
-  crandc(flag, Assembler::equal, flag, Assembler::equal);
+  if (!UseHeavyMonitors) {
+    // Check if it is still a light weight lock, this is is true if we see
+    // the stack address of the basicLock in the markWord of the object.
+    // Cmpxchg sets flag to cmpd(current_header, box).
+    cmpxchgd(/*flag=*/flag,
+             /*current_value=*/current_header,
+             /*compare_value=*/box,
+             /*exchange_value=*/displaced_header,
+             /*where=*/oop,
+             MacroAssembler::MemBarRel,
+             MacroAssembler::cmpxchgx_hint_release_lock(),
+             noreg,
+             &cont);
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path.
+    crandc(flag, Assembler::equal, flag, Assembler::equal);
+  }
 
   // Handle existing monitor.
   b(cont);

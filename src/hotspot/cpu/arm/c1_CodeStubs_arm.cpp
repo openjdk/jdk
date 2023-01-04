@@ -195,8 +195,8 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of MonitorAccessStubs
 
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, CodeEmitInfo* info)
-: MonitorAccessStub(obj_reg)
+MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
+: MonitorAccessStub(obj_reg, lock_reg)
 {
   _info = new CodeEmitInfo(info);
 }
@@ -205,9 +205,15 @@ MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, CodeEmitInfo* info)
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   const Register obj_reg = _obj_reg->as_pointer_register();
+  const Register lock_reg = _lock_reg->as_pointer_register();
 
   ce->verify_reserved_argument_area_size(2);
-  __ str(obj_reg, Address(SP));
+  if (obj_reg < lock_reg) {
+    __ stmia(SP, RegisterSet(obj_reg) | RegisterSet(lock_reg));
+  } else {
+    __ str(obj_reg, Address(SP));
+    __ str(lock_reg, Address(SP, BytesPerWord));
+  }
 
   Runtime1::StubID enter_id = ce->compilation()->has_fpu_code() ?
                               Runtime1::monitorenter_id :
@@ -221,10 +227,13 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  const Register obj_reg = _obj_reg->as_pointer_register();
+  if (_compute_lock) {
+    ce->monitor_address(_monitor_ix, _lock_reg);
+  }
+  const Register lock_reg = _lock_reg->as_pointer_register();
 
   ce->verify_reserved_argument_area_size(1);
-  __ str(obj_reg, Address(SP));
+  __ str(lock_reg, Address(SP));
 
   // Non-blocking leaf routine - no call info needed
   Runtime1::StubID exit_id = ce->compilation()->has_fpu_code() ?

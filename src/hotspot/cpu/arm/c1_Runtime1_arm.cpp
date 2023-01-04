@@ -626,9 +626,11 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       {
         __ set_info("monitorenter", dont_gc_arguments);
         const Register obj  = R1;
+        const Register lock = R2;
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
         __ ldr(obj, Address(SP, arg1_offset));
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorenter), obj);
+        __ ldr(lock, Address(SP, arg2_offset));
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorenter), obj, lock);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
@@ -641,10 +643,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case monitorexit_id:
       {
         __ set_info("monitorexit", dont_gc_arguments);
-        const Register obj = R1;
+        const Register lock = R1;
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
-        __ ldr(obj, Address(SP, arg1_offset));
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorexit), obj);
+        __ ldr(lock, Address(SP, arg1_offset));
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, monitorexit), lock);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);

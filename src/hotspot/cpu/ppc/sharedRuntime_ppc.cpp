@@ -1658,6 +1658,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                        frame_complete,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
+                                       in_ByteSize(-1),
                                        (OopMapSet*)NULL);
   }
 
@@ -1751,6 +1752,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   if (method_is_static) {                                                         // 4)
     klass_slot_offset  = stack_slots;
     klass_offset       = klass_slot_offset * VMRegImpl::stack_slot_size;
+    stack_slots       += VMRegImpl::slots_per_word;
+  }
+
+  int lock_slot_offset = 0;
+  int lock_offset      = -1;
+  if (method->is_synchronized()) {                                                // 5)
+    lock_slot_offset   = stack_slots;
+    lock_offset        = lock_slot_offset * VMRegImpl::stack_slot_size;
     stack_slots       += VMRegImpl::slots_per_word;
   }
 
@@ -2005,6 +2014,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // class mirror (if the method is static).
     __ ld(r_oop, 0, r_carg2_classorobject);
 
+    // Get the lock box slot's address.
+    __ addi(r_box, R1_SP, lock_offset);
+
     // Try fastpath for locking.
     // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
     __ compiler_fast_lock_object(r_flag, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
@@ -2216,6 +2228,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       assert(receiver_offset != -1, "");
       __ ld(r_oop, receiver_offset, R1_SP);
     }
+    __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
     __ compiler_fast_unlock_object(r_flag, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
@@ -2329,6 +2342,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                             frame_done_pc-start_pc,
                                             stack_slots / VMRegImpl::slots_per_word,
                                             (method_is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
+                                            in_ByteSize(lock_offset),
                                             oop_maps);
 
   return nm;

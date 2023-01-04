@@ -42,6 +42,10 @@
   void initialize_body(Register base, Register index);
   void initialize_body(Register obj, Register tmp1, Register tmp2, int obj_size_in_bytes, int hdr_size_in_bytes);
 
+  // locking/unlocking
+  void lock_object  (Register Rmark, Register Roop, Register Rbox, Register Rscratch, Label& slow_case);
+  void unlock_object(Register Rmark, Register Roop, Register Rbox,                    Label& slow_case);
+
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation
     Register klass,                    // object klass

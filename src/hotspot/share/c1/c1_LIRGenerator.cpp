@@ -606,24 +606,24 @@ void LIRGenerator::logic_op (Bytecodes::Code code, LIR_Opr result_op, LIR_Opr le
 }
 
 
-void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr tmp1, LIR_Opr tmp2, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info) {
+void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info) {
   if (!GenerateSynchronizationCode) return;
   // for slow path, use debug info for state after successful locking
-  CodeStub* slow_path = new MonitorEnterStub(object, info);
+  CodeStub* slow_path = new MonitorEnterStub(object, lock, info);
   __ load_stack_address_monitor(monitor_no, lock);
-  __ move(object, new LIR_Address(lock, BasicObjectLock::obj_offset_in_bytes(), T_ADDRESS));
   // for handling NullPointerException, use debug info representing just the lock stack before this monitorenter
-  __ lock_object(hdr, object, tmp1, tmp2, slow_path, info_for_exception);
+  __ lock_object(hdr, object, lock, scratch, slow_path, info_for_exception);
 }
 
 
 void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, LIR_Opr scratch, int monitor_no) {
   if (!GenerateSynchronizationCode) return;
   // setup registers
-  CodeStub* slow_path = new MonitorExitStub(object);
+  LIR_Opr hdr = lock;
+  lock = new_hdr;
+  CodeStub* slow_path = new MonitorExitStub(lock, !UseHeavyMonitors, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
-  __ move(new LIR_Address(lock, BasicObjectLock::obj_offset_in_bytes(),T_ADDRESS), object);
-  __ unlock_object(new_hdr, object, lock, scratch, slow_path);
+  __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
 
 #ifndef PRODUCT
@@ -2674,9 +2674,14 @@ void LIRGenerator::do_Base(Base* x) {
     assert(obj->is_valid(), "must be valid");
 
     if (method()->is_synchronized() && GenerateSynchronizationCode) {
-      LIR_Opr lock = new_register(T_ADDRESS);
+      LIR_Opr lock = syncLockOpr();
+      __ load_stack_address_monitor(0, lock);
+
       CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL, x->check_flag(Instruction::DeoptimizeOnException));
-      monitor_enter(obj, lock, syncTempOpr(), new_register(T_INT), new_register(T_INT), 0, NULL, info);
+      CodeStub* slow_path = new MonitorEnterStub(obj, lock, info);
+
+      // receiver is guaranteed non-NULL so don't need CodeEmitInfo
+      __ lock_object(syncTempOpr(), obj, lock, new_register(T_OBJECT), slow_path, NULL);
     }
   }
   // increment invocation counters if needed

@@ -87,7 +87,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
       _monitors = new MonitorChunk(list->length());
       vf->thread()->add_monitor_chunk(_monitors);
 
-      // Migrate the BasicObjectLocks from the stack to the monitor chunk
+      // Migrate the BasicLocks from the stack to the monitor chunk
       for (index = 0; index < list->length(); index++) {
         MonitorInfo* monitor = list->at(index);
         assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
@@ -97,6 +97,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
         } else {
           assert(monitor->owner() == NULL || !monitor->owner()->is_unlocked(), "object must be null or locked");
           dest->set_obj(monitor->owner());
+          monitor->lock()->move_to(monitor->owner(), dest->lock());
         }
       }
     }
@@ -307,6 +308,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     top = iframe()->previous_monitor_in_interpreter_frame(top);
     BasicObjectLock* src = _monitors->at(index);
     top->set_obj(src->obj());
+    src->lock()->move_to(src->obj(), top->lock());
   }
   if (ProfileInterpreter) {
     iframe()->interpreter_frame_set_mdp(0); // clear out the mdp.

@@ -905,7 +905,109 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //   object  - Address of the object to be locked.
 //
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+  if (UseHeavyMonitors) {
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+  } else {
+    // template code:
+    //
+    // markWord displaced_header = obj->mark().set_unlocked();
+    // monitor->lock()->set_displaced_header(displaced_header);
+    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
+    //   // We stored the monitor address into the object's mark word.
+    // } else if (THREAD->is_lock_owned((address)displaced_header))
+    //   // Simple recursive case.
+    //   monitor->lock()->set_displaced_header(NULL);
+    // } else {
+    //   // Slow path.
+    //   InterpreterRuntime::monitorenter(THREAD, monitor);
+    // }
+
+    const Register displaced_header = R7_ARG5;
+    const Register object_mark_addr = R8_ARG6;
+    const Register current_header   = R9_ARG7;
+    const Register tmp              = R10_ARG8;
+
+    Label done;
+    Label cas_failed, slow_case;
+
+    assert_different_registers(displaced_header, object_mark_addr, current_header, tmp);
+
+    // markWord displaced_header = obj->mark().set_unlocked();
+
+    // Load markWord from object into displaced_header.
+    ld(displaced_header, oopDesc::mark_offset_in_bytes(), object);
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(tmp, object);
+      lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
+      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+      bne(CCR0, slow_case);
+    }
+
+    // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+    ori(displaced_header, displaced_header, markWord::unlocked_value);
+
+    // monitor->lock()->set_displaced_header(displaced_header);
+
+    // Initialize the box (Must happen before we update the object mark!).
+    std(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
+        BasicLock::displaced_header_offset_in_bytes(), monitor);
+
+    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
+
+    // Store stack address of the BasicObjectLock (this is monitor) into object.
+    addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
+
+    // Must fence, otherwise, preceding store(s) may float below cmpxchg.
+    // CmpxchgX sets CCR0 to cmpX(current, displaced).
+    cmpxchgd(/*flag=*/CCR0,
+             /*current_value=*/current_header,
+             /*compare_value=*/displaced_header, /*exchange_value=*/monitor,
+             /*where=*/object_mark_addr,
+             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock(),
+             noreg,
+             &cas_failed,
+             /*check without membar and ldarx first*/true);
+
+    // If the compare-and-exchange succeeded, then we found an unlocked
+    // object and we have now locked it.
+    b(done);
+    bind(cas_failed);
+
+    // } else if (THREAD->is_lock_owned((address)displaced_header))
+    //   // Simple recursive case.
+    //   monitor->lock()->set_displaced_header(NULL);
+
+    // We did not see an unlocked object so try the fast recursive case.
+
+    // Check if owner is self by comparing the value in the markWord of object
+    // (current_header) with the stack pointer.
+    sub(current_header, current_header, R1_SP);
+
+    assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
+    load_const_optimized(tmp, ~(os::vm_page_size()-1) | markWord::lock_mask_in_place);
+
+    and_(R0/*==0?*/, current_header, tmp);
+    // If condition is true we are done and hence we can store 0 in the displaced
+    // header indicating it is a recursive lock.
+    bne(CCR0, slow_case);
+    std(R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
+        BasicLock::displaced_header_offset_in_bytes(), monitor);
+    b(done);
+
+    // } else {
+    //   // Slow path.
+    //   InterpreterRuntime::monitorenter(THREAD, monitor);
+
+    // None of the above fast optimizations worked so we have to get into the
+    // slow case of monitor enter.
+    bind(slow_case);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    // }
+    align(32, 12);
+    bind(done);
+  }
 }
 
 // Unlocks an object. Used in monitorexit bytecode and remove_activation.
@@ -916,7 +1018,85 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor) {
-  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+  if (UseHeavyMonitors) {
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+  } else {
+
+    // template code:
+    //
+    // if ((displaced_header = monitor->displaced_header()) == NULL) {
+    //   // Recursive unlock. Mark the monitor unlocked by setting the object field to NULL.
+    //   monitor->set_obj(NULL);
+    // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
+    //   // We swapped the unlocked mark in displaced_header into the object's mark word.
+    //   monitor->set_obj(NULL);
+    // } else {
+    //   // Slow path.
+    //   InterpreterRuntime::monitorexit(monitor);
+    // }
+
+    const Register object           = R7_ARG5;
+    const Register displaced_header = R8_ARG6;
+    const Register object_mark_addr = R9_ARG7;
+    const Register current_header   = R10_ARG8;
+
+    Label free_slot;
+    Label slow_case;
+
+    assert_different_registers(object, displaced_header, object_mark_addr, current_header);
+
+    // Test first if we are in the fast recursive case.
+    ld(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
+           BasicLock::displaced_header_offset_in_bytes(), monitor);
+
+    // If the displaced header is zero, we have a recursive unlock.
+    cmpdi(CCR0, displaced_header, 0);
+    beq(CCR0, free_slot); // recursive unlock
+
+    // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
+    //   // We swapped the unlocked mark in displaced_header into the object's mark word.
+    //   monitor->set_obj(NULL);
+
+    // If we still have a lightweight lock, unlock the object and be done.
+
+    // The object address from the monitor is in object.
+    ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
+    addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
+
+    // We have the displaced header in displaced_header. If the lock is still
+    // lightweight, it will contain the monitor address and we'll store the
+    // displaced header back into the object's mark word.
+    // CmpxchgX sets CCR0 to cmpX(current, monitor).
+    cmpxchgd(/*flag=*/CCR0,
+             /*current_value=*/current_header,
+             /*compare_value=*/monitor, /*exchange_value=*/displaced_header,
+             /*where=*/object_mark_addr,
+             MacroAssembler::MemBarRel,
+             MacroAssembler::cmpxchgx_hint_release_lock(),
+             noreg,
+             &slow_case);
+    b(free_slot);
+
+    // } else {
+    //   // Slow path.
+    //   InterpreterRuntime::monitorexit(monitor);
+
+    // The lock has been converted into a heavy lock and hence
+    // we need to get into the slow case.
+    bind(slow_case);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
+    // }
+
+    Label done;
+    b(done); // Monitor register may be overwritten! Runtime has already freed the slot.
+
+    // Exchange worked, do monitor->set_obj(NULL);
+    align(32, 12);
+    bind(free_slot);
+    li(R0, 0);
+    std(R0, BasicObjectLock::obj_offset_in_bytes(), monitor);
+    bind(done);
+  }
 }
 
 // Load compiled (i2c) or interpreter entry when calling from interpreted and

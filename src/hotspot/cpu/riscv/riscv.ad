@@ -2378,16 +2378,40 @@ encode %{
     __ bnez(t0, object_has_monitor);
 
     if (!UseHeavyMonitors) {
-      Label slow;
-      __ fast_lock(oop, disp_hdr, box, tmp, t0, slow);
+      // Set tmp to be (markWord of object | UNLOCK_VALUE).
+      __ ori(tmp, disp_hdr, markWord::unlocked_value);
 
-      // Indicate success at cont.
+      // Initialize the box. (Must happen before we update the object mark!)
+      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+      // Compare object markWord with an unlocked value (tmp) and if
+      // equal exchange the stack address of our box with object markWord.
+      // On failure disp_hdr contains the possibly locked markWord.
+      __ cmpxchg(/*memory address*/oop, /*expected value*/tmp, /*new value*/box, Assembler::int64, Assembler::aq,
+                 Assembler::rl, /*result*/disp_hdr);
       __ mv(flag, zr);
-      __ j(cont);
-      __ bind(slow);
+      __ beq(disp_hdr, tmp, cont); // prepare zero flag and goto cont if we won the cas
+
+      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+
+      // If the compare-and-exchange succeeded, then we found an unlocked
+      // object, will have now locked it will continue at label cont
+      // We did not see an unlocked object so try the fast recursive case.
+
+      // Check if the owner is self by comparing the value in the
+      // markWord of object (disp_hdr) with the stack pointer.
+      __ sub(disp_hdr, disp_hdr, sp);
+      __ mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
+      // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
+      // hence we can store 0 as the displaced header in the box, which indicates that it is a
+      // recursive lock.
+      __ andr(tmp/*==0?*/, disp_hdr, tmp);
+      __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      __ mv(flag, tmp); // we can use the value of tmp as the result here
+    } else {
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
     }
 
-    __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
     __ j(cont);
 
     // Handle existing monitor.
@@ -2399,6 +2423,13 @@ encode %{
     __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value));
     __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
              Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
+
+    // Store a non-null value into the box to avoid looking like a re-entrant
+    // lock. The fast-path monitor unlock code checks for
+    // markWord::monitor_value so use markWord::unused_mark which has the
+    // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
+    __ mv(tmp, (address)markWord::unused_mark().value());
+    __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
     __ beqz(flag, cont); // CAS success means locking succeeded
 
@@ -2426,43 +2457,39 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr, flag);
 
-    // Handle existing monitor.
-    __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
     if (!UseHeavyMonitors) {
-      Label slow;
-      __ andi(t0, tmp, markWord::monitor_value);
-      __ bnez(t0, object_has_monitor);
+      // Find the lock address and load the displaced header from the stack.
+      __ ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
-
-      // Indicate success at cont.
-      __ mv(flag, zr);
-      __ j(cont);
-      __ bind(slow);
+      // If the displaced header is 0, we have a recursive unlock.
+      __ mv(flag, disp_hdr);
+      __ beqz(disp_hdr, cont);
     }
 
-    __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+    // Handle existing monitor.
+    __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
+    __ andi(t0, disp_hdr, markWord::monitor_value);
+    __ bnez(t0, object_has_monitor);
+
+    if (!UseHeavyMonitors) {
+      // Check if it is still a light weight lock, this is true if we
+      // see the stack address of the basicLock in the markWord of the
+      // object.
+
+      __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
+                 Assembler::rl, /*result*/tmp);
+      __ xorr(flag, box, tmp); // box == tmp if cas succeeds
+    } else {
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+    }
     __ j(cont);
+
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-
-    // If the owner is anonymous, we need to fix it -- in the slow-path.
-    {
-      Label L;
-      __ ld(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ mv(t0, (unsigned char)(intptr_t)ANONYMOUS_OWNER);
-      __ bne(disp_hdr, t0, L);
-      __ mv(flag, 1); // Indicate failure at cont -- dive into slow-path.
-      __ j(cont);
-      __ bind(L);
-    }
-
     __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
 
     Label notRecursive;
@@ -10367,8 +10394,8 @@ instruct tlsLoadP(javaThread_RegP dst)
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
 %{
-  match(Set cr (FastLock object));
-  effect(TEMP box, TEMP tmp1, TEMP tmp2);
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp1, TEMP tmp2);
 
   ins_cost(LOAD_COST * 2 + STORE_COST * 3 + ALU_COST * 6 + BRANCH_COST * 3);
   format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2, #@cmpFastLock" %}
@@ -10381,8 +10408,8 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iReg
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
 %{
-  match(Set cr (FastUnlock object));
-  effect(TEMP box, TEMP tmp1, TEMP tmp2);
+  match(Set cr (FastUnlock object box));
+  effect(TEMP tmp1, TEMP tmp2);
 
   ins_cost(LOAD_COST * 2 + STORE_COST + ALU_COST * 2 + BRANCH_COST * 4);
   format %{ "fastunlock $object,$box\t! kills $tmp1, $tmp2, #@cmpFastUnlock" %}

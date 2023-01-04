@@ -27,11 +27,12 @@ package sun.jvm.hotspot.runtime;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-public class BasicObjectLock extends VMObject {
+public class BasicLock extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -41,29 +42,17 @@ public class BasicObjectLock extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type  = db.lookupType("BasicObjectLock");
-    lockField  = type.getField("_lock");
-    objField   = type.getOopField("_obj");
-    size       = (int) type.getSize();
+    Type type  = db.lookupType("BasicLock");
+    displacedHeaderField = type.getCIntegerField("_displaced_header");
   }
 
-  private static sun.jvm.hotspot.types.Field    lockField;
-  private static sun.jvm.hotspot.types.OopField objField;
-  private static int        size;
+  private static CIntegerField displacedHeaderField;
 
-  public BasicObjectLock(Address addr) {
+  public BasicLock(Address addr) {
     super(addr);
   }
 
-  public OopHandle obj()  { return objField.getValue(addr); }
-  public BasicLock lock() { return new BasicLock(addr.addOffsetTo(lockField.getOffset())); }
-
-  /** Note: Use frame::interpreter_frame_monitor_size() for the size
-      of BasicObjectLocks in interpreter activation frames since it
-      includes machine-specific padding. This routine returns a size
-      in BYTES in this system! */
-  public static int size() { return size; }
-
-  /** Helper routine for Frames (also probably needed for iteration) */
-  public Address address() { return addr; }
+  public Mark displacedHeader() {
+    return new Mark(addr.addOffsetTo(displacedHeaderField.getOffset()));
+  }
 }

@@ -29,11 +29,12 @@ import sun.jvm.hotspot.utilities.*;
 
 public class MonitorInfo {
   private OopHandle owner;
+  private BasicLock lock;
   private OopHandle ownerKlass;
   private boolean eliminated;
   private boolean ownerIsScalarReplaced;
 
-  public MonitorInfo(OopHandle owner, boolean eliminated, boolean ownerIsScalarReplaced) {
+  public MonitorInfo(OopHandle owner, BasicLock lock, boolean eliminated, boolean ownerIsScalarReplaced) {
     if (!ownerIsScalarReplaced) {
       this.owner = owner;
       this.ownerKlass = null;
@@ -56,6 +57,7 @@ public class MonitorInfo {
    return ownerKlass;
   }
 
+  public BasicLock lock()  { return lock; }
   public boolean eliminated() { return eliminated; }
   public boolean ownerIsScalarReplaced() { return ownerIsScalarReplaced; }
 }

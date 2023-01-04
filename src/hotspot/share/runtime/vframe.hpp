@@ -50,6 +50,8 @@
 //   - externalVFrame
 //     - entryVFrame        ; special frame created when calling Java from C
 
+// - BasicLock
+
 class StackFrameStream;
 class ContinuationEntry;
 
@@ -253,12 +255,13 @@ class entryVFrame: public externalVFrame {
 class MonitorInfo : public ResourceObj {
  private:
   Handle     _owner; // the object owning the monitor
+  BasicLock* _lock;
   Handle     _owner_klass; // klass (mirror) if owner was scalar replaced
   bool       _eliminated;
   bool       _owner_is_scalar_replaced;
  public:
   // Constructor
-  MonitorInfo(oop owner, bool eliminated, bool owner_is_scalar_replaced);
+  MonitorInfo(oop owner, BasicLock* lock, bool eliminated, bool owner_is_scalar_replaced);
   // Accessors
   oop owner() const {
     assert(!_owner_is_scalar_replaced, "should not be called for scalar replaced object");
@@ -268,6 +271,7 @@ class MonitorInfo : public ResourceObj {
     assert(_owner_is_scalar_replaced, "should not be called for not scalar replaced object");
     return _owner_klass();
   }
+  BasicLock* lock()  const { return _lock;  }
   bool eliminated()  const { return _eliminated; }
   bool owner_is_scalar_replaced()  const { return _owner_is_scalar_replaced; }
 };

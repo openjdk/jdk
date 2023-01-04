@@ -749,25 +749,30 @@ JRT_ENTRY(void, Runtime1::throw_incompatible_class_change_error(JavaThread* curr
 JRT_END
 
 
-JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj))
+JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock))
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _monitorenter_slowcase_cnt++;
   }
 #endif
-  SharedRuntime::monitor_enter_helper(obj, current);
+  if (UseHeavyMonitors) {
+    lock->set_obj(obj);
+  }
+  assert(obj == lock->obj(), "must match");
+  SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
 JRT_END
 
 
-JRT_LEAF(void, Runtime1::monitorexit(JavaThread* current, oopDesc* obj))
+JRT_LEAF(void, Runtime1::monitorexit(JavaThread* current, BasicObjectLock* lock))
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _monitorexit_slowcase_cnt++;
   }
 #endif
   assert(current->last_Java_sp(), "last_Java_sp must be set");
-  assert(oopDesc::is_oop(oop(obj)), "must be NULL or an object: " PTR_FORMAT, p2i(obj));
-  SharedRuntime::monitor_exit_helper(obj, current);
+  oop obj = lock->obj();
+  assert(oopDesc::is_oop(obj), "must be NULL or an object");
+  SharedRuntime::monitor_exit_helper(obj, lock->lock(), current);
 JRT_END
 
 // Cf. OptoRuntime::deoptimize_caller_frame

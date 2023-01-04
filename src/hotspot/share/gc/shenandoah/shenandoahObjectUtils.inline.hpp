@@ -38,23 +38,87 @@
 // code is supposed to observe from-space objects.
 #ifdef _LP64
 markWord ShenandoahObjectUtils::stable_mark(oop obj) {
-  markWord mark = obj->mark_acquire();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  for (;;) {
+    assert(heap->is_in(obj), "object not in heap: " PTR_FORMAT, p2i(obj));
+    markWord mark = obj->mark_acquire();
 
-  if (mark.is_neutral() || mark.is_fast_locked()) {
-    return mark;
-  } else if (mark.is_marked()) {
-    // If object is already forwarded, then resolve it, and try again.
-    if (ShenandoahHeap::heap()->is_full_gc_move_in_progress()) {
-      // In these cases, we want to return the header as-is: the Klass* would not be overloaded.
+    // The mark can be in one of the following states:
+    // *  Inflated     - just return mark from inflated monitor
+    // *  Stack-locked - coerce it to inflating, and then return displaced mark
+    // *  INFLATING    - busy wait for conversion to complete
+    // *  Neutral      - return mark
+    // *  Marked       - object is forwarded, try again on forwardee
+
+    // Most common case first.
+    if (mark.is_neutral()) {
       return mark;
     }
-    return stable_mark(cast_to_oop(mark.decode_pointer()));
-  } else {
-    assert(mark.has_monitor(), "must be inflated here");
-    ObjectMonitor* monitor = mark.monitor();
-    markWord dmw = monitor->header();
-    assert(dmw.is_neutral(), "invariant");
-    return dmw;
+
+    // If object is already forwarded, then resolve it, and try again.
+    if (mark.is_marked()) {
+      if (heap->is_full_gc_move_in_progress()) {
+        // In these cases, we want to return the header as-is: the Klass* would not be overloaded.
+        return mark;
+      }
+      obj = cast_to_oop(mark.decode_pointer());
+      continue;
+    }
+
+    // CASE: inflated
+    if (mark.has_monitor()) {
+      // It is safe to access the object monitor because all Java and GC worker threads
+      // participate in the monitor deflation protocol (i.e, they react to handshakes and STS requests).
+      ObjectMonitor* inf = mark.monitor();
+      markWord dmw = inf->header();
+      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT ", original mark: " INTPTR_FORMAT, dmw.value(), mark.value());
+      return dmw;
+    }
+
+    // CASE: inflating
+    if (mark.is_being_inflated()) {
+      // Interference, try again.
+      continue;
+    }
+
+    // CASE: stack-locked
+    if (mark.has_locker()) {
+      if (Thread::current()->is_lock_owned((address)mark.locker())) {
+        // This thread owns the lock. We can safely access it.
+        markWord dmw = mark.displaced_mark_helper();
+        assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT ", original mark: " INTPTR_FORMAT, dmw.value(), mark.value());
+        return dmw;
+      }
+
+      // Else we try to install INFLATING into the header. This will (temporarily) prevent other
+      // threads from stack-locking or evacuating the object.
+      markWord cmp = obj->cas_set_mark(markWord::INFLATING(), mark);
+      if (cmp != mark) {
+        continue;       // Interference -- just retry
+      }
+
+      // We've successfully installed INFLATING (0) into the mark-word.
+      // This is the only case where 0 will appear in a mark-word.
+      // Only the singular thread that successfully swings the mark-word
+      // to 0 can fetch the stack-lock and safely read the displaced header.
+
+      // fetch the displaced mark from the owner's stack.
+      // The owner can't die or unwind past the lock while our INFLATING
+      // object is in the mark.  Furthermore the owner can't complete
+      // an unlock on the object, either. No other thread can do evacuation, either.
+      markWord dmw = mark.displaced_mark_helper();
+      // Catch if the object's header is not neutral (not locked and
+      // not marked is what we care about here).
+      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
+
+      // Must preserve store ordering. The monitor state must
+      // be stable at the time of publishing the monitor address.
+      guarantee(obj->mark() == markWord::INFLATING(), "invariant");
+      // Release semantics so that above set_object() is seen first.
+      obj->release_set_mark(mark);
+
+      return dmw;
+    }
   }
 }
 #endif
