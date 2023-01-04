@@ -36,10 +36,10 @@
 class ShenandoahMmuTask : public PeriodicTask {
   ShenandoahMmuTracker* _mmu_tracker;
 public:
-  ShenandoahMmuTask(ShenandoahMmuTracker* mmu_tracker) :
+  explicit ShenandoahMmuTask(ShenandoahMmuTracker* mmu_tracker) :
     PeriodicTask(GCPauseIntervalMillis), _mmu_tracker(mmu_tracker) {}
 
-  virtual void task() override {
+  void task() override {
     _mmu_tracker->report();
   }
 };
@@ -48,7 +48,7 @@ class ThreadTimeAccumulator : public ThreadClosure {
  public:
   size_t total_time;
   ThreadTimeAccumulator() : total_time(0) {}
-  virtual void do_thread(Thread* thread) override {
+  void do_thread(Thread* thread) override {
     total_time += os::thread_cpu_time(thread);
   }
 };
@@ -73,6 +73,7 @@ double ShenandoahMmuTracker::process_time_seconds() {
 ShenandoahMmuTracker::ShenandoahMmuTracker() :
     _generational_reference_time_s(0.0),
     _process_reference_time_s(0.0),
+    _collector_reference_time_s(0.0),
     _mmu_periodic_task(new ShenandoahMmuTask(this)),
     _mmu_average(10, ShenandoahAdaptiveDecayFactor) {
 }
@@ -120,7 +121,7 @@ ShenandoahGenerationSizer::ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_t
     _use_adaptive_sizing(true),
     _min_desired_young_size(0),
     _max_desired_young_size(0),
-    _resize_increment(YoungGenerationSizeIncrement / 100.0),
+    _resize_increment(double(YoungGenerationSizeIncrement) / 100.0),
     _mmu_tracker(mmu_tracker) {
 
   if (FLAG_IS_CMDLINE(NewRatio)) {
@@ -201,7 +202,7 @@ void ShenandoahGenerationSizer::heap_size_changed(size_t heap_size) {
   recalculate_min_max_young_length(heap_size);
 }
 
-bool ShenandoahGenerationSizer::adjust_generation_sizes() {
+bool ShenandoahGenerationSizer::adjust_generation_sizes() const {
   shenandoah_assert_generational();
   if (!use_adaptive_sizing()) {
     return false;
@@ -238,7 +239,17 @@ bool ShenandoahGenerationSizer::adjust_generation_sizes() {
   }
 }
 
-bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* from, ShenandoahGeneration* to) {
+bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* target) const {
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
+  if (target->is_young()) {
+    return transfer_capacity(ShenandoahHeap::heap()->old_generation(), target);
+  } else {
+    assert(target->is_old(), "Expected old generation, if not young.");
+    return transfer_capacity(ShenandoahHeap::heap()->young_generation(), target);
+  }
+}
+
+bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* from, ShenandoahGeneration* to) const {
   shenandoah_assert_heaplocked_or_safepoint();
 
   size_t available_regions = from->free_unaffiliated_regions();
@@ -270,10 +281,6 @@ bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* from, Sh
   return true;
 }
 
-size_t round_down_to_multiple_of_region_size(size_t bytes) {
-  return (bytes / ShenandoahHeapRegion::region_size_bytes()) * ShenandoahHeapRegion::region_size_bytes();
-}
-
 size_t ShenandoahGenerationSizer::adjust_transfer_from_young(ShenandoahGeneration* from, size_t bytes_to_transfer) const {
   assert(from->generation_mode() == YOUNG, "Expect to transfer from young");
   size_t new_young_size = from->max_capacity() - bytes_to_transfer;
@@ -283,7 +290,7 @@ size_t ShenandoahGenerationSizer::adjust_transfer_from_young(ShenandoahGeneratio
     assert(minimum_size <= from->max_capacity(), "Young is under minimum capacity.");
     // If the transfer violates the minimum size and there is still some capacity to transfer,
     // adjust the transfer to take the size to the minimum. Note that this may be zero.
-    bytes_to_transfer = round_down_to_multiple_of_region_size(from->max_capacity() - minimum_size);
+    bytes_to_transfer = align_down(from->max_capacity() - minimum_size, ShenandoahHeapRegion::region_size_bytes());
   }
   return bytes_to_transfer;
 }
@@ -297,7 +304,7 @@ size_t ShenandoahGenerationSizer::adjust_transfer_to_young(ShenandoahGeneration*
     assert(maximum_size >= to->max_capacity(), "Young is over maximum capacity");
     // If the transfer violates the maximum size and there is still some capacity to transfer,
     // adjust the transfer to take the size to the maximum. Note that this may be zero.
-    bytes_to_transfer = round_down_to_multiple_of_region_size(maximum_size - to->max_capacity());
+    bytes_to_transfer = align_down(maximum_size - to->max_capacity(), ShenandoahHeapRegion::region_size_bytes());
   }
   return bytes_to_transfer;
 }

@@ -360,7 +360,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  _generation->name(),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  byte_size_in_proper_unit(min_threshold),       proper_unit_for_byte_size(min_threshold));
-    return true;
+    return resize_and_evaluate();
   }
 
   // Check if we need to learn a bit about the application
@@ -458,7 +458,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
 
     _last_trigger = RATE;
-    return true;
+    return resize_and_evaluate();
   }
 
   bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
@@ -470,10 +470,32 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
                  _spike_threshold_sd);
     _last_trigger = SPIKE;
-    return true;
+    return resize_and_evaluate();
   }
 
   return ShenandoahHeuristics::should_start_gc();
+}
+
+bool ShenandoahAdaptiveHeuristics::resize_and_evaluate() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->mode()->is_generational()) {
+    // We only attempt to resize the generations in generational mode.
+    return true;
+  }
+
+  if (_gc_times_learned < ShenandoahLearningSteps) {
+    // We aren't going to attempt to resize our generation until we have 'learned'
+    // something about it. This provides a kind of cool down period after we've made
+    // a change, to help prevent thrashing.
+    return true;
+  }
+
+  if (!heap->generation_sizer()->transfer_capacity(_generation)) {
+    // We could not enlarge our generation, so we must start a gc cycle.
+    return true;
+  }
+
+  return should_start_gc();
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {

@@ -273,7 +273,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   heap->set_old_evac_reserve(old_evacuation_reserve);
   heap->reset_old_evac_expended();
 
-  // Compute the young evauation reserve: This is how much memory is available for evacuating young-gen objects.
+  // Compute the young evacuation reserve: This is how much memory is available for evacuating young-gen objects.
   // We ignore the possible effect of promotions, which reduce demand for young-gen evacuation memory.
   //
   // TODO: We could give special treatment to the regions that have reached promotion age, because we know their
@@ -288,7 +288,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   //    1. (young_gen->capacity() * ShenandoahEvacReserve) / 100
   //    2. (young_gen->available() + old_gen_memory_available_to_be_loaned
   //
-  //  ShenandoahEvacReserve represents the configured taget size of the evacuation region.  We can only honor
+  //  ShenandoahEvacReserve represents the configured target size of the evacuation region.  We can only honor
   //  this target if there is memory available to hold the evacuations.  Memory is available if it is already
   //  free within young gen, or if it can be borrowed from old gen.  Since we have not yet chosen the collection
   //  sets, we do not yet know the exact accounting of how many regions will be freed by this collection pass.
@@ -992,12 +992,13 @@ size_t ShenandoahGeneration::adjusted_unaffiliated_regions() const {
   return (adjusted_capacity() - used_regions_size()) / ShenandoahHeapRegion::region_size_bytes();
 }
 
-
 void ShenandoahGeneration::increase_capacity(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(_max_capacity + increment <= ShenandoahHeap::heap()->max_size_for(this), "Cannot increase generation capacity beyond maximum.");
   _max_capacity += increment;
   _soft_max_capacity += increment;
+  _adjusted_capacity += increment;
+  heuristics()->reset_gc_learning();
 }
 
 void ShenandoahGeneration::decrease_capacity(size_t decrement) {
@@ -1005,6 +1006,8 @@ void ShenandoahGeneration::decrease_capacity(size_t decrement) {
   assert(_max_capacity - decrement >= ShenandoahHeap::heap()->min_size_for(this), "Cannot decrease generation capacity beyond minimum.");
   _max_capacity -= decrement;
   _soft_max_capacity -= decrement;
+  _adjusted_capacity -= decrement;
+  heuristics()->reset_gc_learning();
 }
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {
@@ -1018,6 +1021,7 @@ void ShenandoahGeneration::record_success_degenerated() {
 }
 
 void ShenandoahGeneration::add_collection_time(double time_seconds) {
+  shenandoah_assert_control_or_vm_thread();
   _collection_thread_time_s += time_seconds;
 }
 

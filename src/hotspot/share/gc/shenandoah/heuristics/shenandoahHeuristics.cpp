@@ -330,6 +330,10 @@ void ShenandoahHeuristics::record_allocation_failure_gc() {
 void ShenandoahHeuristics::record_requested_gc() {
   // Assume users call System.gc() when external state changes significantly,
   // which forces us to re-learn the GC timings and allocation rates.
+  reset_gc_learning();
+}
+
+void ShenandoahHeuristics::reset_gc_learning() {
   _gc_times_learned = 0;
 }
 

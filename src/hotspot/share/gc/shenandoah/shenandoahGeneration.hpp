@@ -73,6 +73,10 @@ private:
   ShenandoahGeneration(GenerationMode generation_mode, uint max_workers, size_t max_capacity, size_t soft_max_capacity);
   ~ShenandoahGeneration();
 
+  bool is_young() const  { return _generation_mode == YOUNG; }
+  bool is_old() const    { return _generation_mode == OLD; }
+  bool is_global() const { return _generation_mode == GLOBAL; }
+
   inline GenerationMode generation_mode() const { return _generation_mode; }
 
   inline ShenandoahHeuristics* heuristics() const { return _heuristics; }
@@ -111,6 +115,9 @@ private:
   void reset_bytes_allocated_since_gc_start();
   void increase_allocated(size_t bytes);
 
+  // Changing the size of the generation will reset the times learned for the heuristic. The heuristic will need to
+  // relearn collection performance metrics. This also has the effect of preventing further capacity changes from the
+  // heuristics until at least ShenandoahLearningSteps(5) number of cycles has completed.
   void increase_capacity(size_t increment);
   void decrease_capacity(size_t decrement);
 

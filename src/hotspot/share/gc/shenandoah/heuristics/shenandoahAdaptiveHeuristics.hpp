@@ -99,6 +99,8 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
+  bool resize_and_evaluate();
+
   ShenandoahAllocationRate _allocation_rate;
 
   // The margin of error expressed in standard deviations to add to our

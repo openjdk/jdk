@@ -149,6 +149,8 @@ public:
 
   virtual void record_requested_gc() override;
 
+  virtual void reset_gc_learning() override;
+
   virtual bool can_unload_classes() override;
 
   virtual bool can_unload_classes_normal() override;
