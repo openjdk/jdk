@@ -1245,15 +1245,6 @@ void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
 }
 
-address Method::from_compiled_entry_no_trampoline() const {
-  CompiledMethod *code = Atomic::load_acquire(&_code);
-  if (code) {
-    return code->verified_entry_point();
-  } else {
-    return adapter()->get_c2i_entry();
-  }
-}
-
 // The verified_code_entry() must be called when a invoke is resolved
 // on this method.
 
