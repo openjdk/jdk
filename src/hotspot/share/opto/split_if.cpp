@@ -237,7 +237,6 @@ bool PhaseIdealLoop::process_cmp_loadklass(Node* n, const Node* blk1, const Node
           Node* u2 = u1->out(j);
           if (at_relevant_ctrl(u2, blk1, blk2) && clone_cmp_down(u2, blk1, blk2)) {
             --j;
-
           }
         }
         for (DUIterator_Fast kmax, k = u1->fast_outs(kmax); k < kmax; k++) {
