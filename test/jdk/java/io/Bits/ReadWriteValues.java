@@ -24,10 +24,11 @@
 /*
  * @test
  * @summary Verify that reads and writes of primitives are correct
+ * @compile/module=java.base java/io/BitsProxy.java
  * @run junit/othervm --add-opens java.base/java.io=ALL-UNNAMED ReadWriteValues
  */
 
-import java.lang.reflect.Method;
+import java.io.BitsProxy;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
@@ -165,43 +166,20 @@ final class ReadWriteValues {
 
     @Test
     void testNullArray() {
-        assertThrowsOriginal(NullPointerException.class, () -> method("getInt").invoke(null, null, OFFSET));
-        assertThrowsOriginal(NullPointerException.class, () -> method("putInt", int.class).invoke(null, BUFF, OFFSET, 1));
+        assertThrowsOriginal(NullPointerException.class, () -> BitsProxy.getInt(null, OFFSET));
+        assertThrowsOriginal(NullPointerException.class, () -> BitsProxy.putInt(null, OFFSET, 1));
     }
 
     @Test
     void testNegArg() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> method("getInt").invoke(null, BUFF, -1));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> method("putInt", int.class).invoke(null, BUFF, -1, 1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.getInt(BUFF, -1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.putInt(BUFF, -1, 1));
     }
 
     @Test
     void testOutOfBounds() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> method("getInt").invoke(null, BUFF, BUFF.length));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> method("putInt", int.class).invoke(null, BUFF, BUFF.length, 1));
-    }
-
-    static Method method(String name) {
-        try {
-            Class<?> bits = Class.forName("java.io.Bits");
-            Method method = bits.getDeclaredMethod(name, byte[].class, int.class);
-            method.setAccessible(true);
-            return method;
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
-
-    static Method method(String name,
-                         Class<?> primitiveType) {
-        try {
-            Class<?> bits = Class.forName("java.io.Bits");
-            Method method = bits.getDeclaredMethod(name, byte[].class, int.class, primitiveType);
-            method.setAccessible(true);
-            return method;
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.getInt(BUFF, BUFF.length));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.putInt(BUFF, BUFF.length, 1));
     }
 
     static LongStream longs() {
@@ -229,100 +207,6 @@ final class ReadWriteValues {
                 return;
             }
             throw new AssertionError(e);
-        }
-
-    }
-
-    // Wrapper methods to test package private methods
-
-    private static final class BitsProxy {
-
-        private BitsProxy() {
-        }
-
-        static char getChar(byte[] b, int off) {
-            return (char) invoke("getChar", b, off);
-        }
-
-        static short getShort(byte[] b, int off) {
-            return (short) invoke("getShort", b, off);
-        }
-
-        static int getInt(byte[] b, int off) {
-            return (int) invoke("getInt", b, off);
-        }
-
-        static float getFloat(byte[] b, int off) {
-            return (float) invoke("getFloat", b, off);
-        }
-
-        static long getLong(byte[] b, int off) {
-            return (long) invoke("getLong", b, off);
-        }
-
-        static double getDouble(byte[] b, int off) {
-            return (double) invoke("getDouble", b, off);
-        }
-
-        /*
-         * Methods for packing primitive values into byte arrays starting at given
-         * offsets.
-         */
-
-        static void putChar(byte[] b, int off, char val) {
-            try {
-                method("putChar", char.class).invoke(null, b, off, val);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        static void putShort(byte[] b, int off, short val) {
-            try {
-                method("putShort", short.class).invoke(null, b, off, val);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        static void putInt(byte[] b, int off, int val) {
-            try {
-                method("putInt", int.class).invoke(null, b, off, val);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        static void putFloat(byte[] b, int off, float val) {
-            try {
-                method("putFloat", float.class).invoke(null, b, off, val);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        static void putLong(byte[] b, int off, long val) {
-            try {
-                method("putLong", long.class).invoke(null, b, off, val);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        static void putDouble(byte[] b, int off, double val) {
-            try {
-                method("putDouble", double.class).invoke(null, b, off, val);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        static Object invoke(String name, byte[] b, int off) {
-            try {
-                return method(name).invoke(null, b, off);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
         }
 
     }
