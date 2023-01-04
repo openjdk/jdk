@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@
 // We currently only support ASan with GCC and Clang, but technically MSVC also has ASan so we could
 // support it in the future. Thus we pre-emptively support the MSVC-specific attribute.
 #ifdef _MSC_VER
-#define NO_SANITIE_ADDRESS __declspec(no_sanitize_address)
+#define NO_SANITIZE_ADDRESS __declspec(no_sanitize_address)
 #else
-#define NO_SANITIE_ADDRESS __attribute__((no_sanitize_address))
+#define NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #endif
 #else
-#define NO_SANITIE_ADDRESS
+#define NO_SANITIZE_ADDRESS
 #endif
 
 // ASAN_POISON_MEMORY_REGION()

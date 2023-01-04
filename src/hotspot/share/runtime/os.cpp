@@ -946,9 +946,9 @@ bool os::print_function_and_library_name(outputStream* st,
 // os::print_hex_dump is used from the crash handler and may attempt to do scary things like read
 // parent stack frames, read outside of initialized memory, and etc. So we tell ASan to not
 // instrument this function.
-NO_SANITIE_ADDRESS void os::print_hex_dump(outputStream* st, address start, address end,
-                                           int unitsize, int bytes_per_line,
-                                           address logical_start) {
+NO_SANITIZE_ADDRESS void os::print_hex_dump(outputStream* st, address start, address end,
+                                            int unitsize, int bytes_per_line,
+                                            address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
 
   start = align_down(start, unitsize);
