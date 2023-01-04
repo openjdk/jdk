@@ -281,44 +281,76 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-//------------------------------mul_ring---------------------------------------
-// Compute the product type of two integer ranges into this node.
-const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
+// Helper classes to perform mul_ring() for MulI/MulLNode.
+template <typename IntegerType>
+struct OverflowType : AllStatic {
+  static_assert(IsSame<IntegerType, TypeInt>::value, "must be TypeInteger");
+  static const Type* overflow() { return TypeInt::INT; }
+};
 
-  // Fetch endpoints of all ranges
-  jint lo0 = r0->_lo;
-  double a = (double)lo0;
-  jint hi0 = r0->_hi;
-  double b = (double)hi0;
-  jint lo1 = r1->_lo;
-  double c = (double)lo1;
-  jint hi1 = r1->_hi;
-  double d = (double)hi1;
+template <>
+struct OverflowType<TypeLong> : AllStatic {
+  static const Type* overflow() { return TypeLong::LONG; }
+};
 
-  // Compute all endpoints & check for overflow
-  int32_t A = java_multiply(lo0, lo1);
-  if( (double)A != a*c ) return TypeInt::INT; // Overflow?
-  int32_t B = java_multiply(lo0, hi1);
-  if( (double)B != a*d ) return TypeInt::INT; // Overflow?
-  int32_t C = java_multiply(hi0, lo1);
-  if( (double)C != b*c ) return TypeInt::INT; // Overflow?
-  int32_t D = java_multiply(hi0, hi1);
-  if( (double)D != b*d ) return TypeInt::INT; // Overflow?
+template<typename IntegerType>
+class IntegerMulRing {
+  typedef typename Conditional<IsSame<TypeInt, IntegerType>::value, jint, jlong>::type NativeType;
 
-  if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
-  else { lo0 = B; hi0 = A; }
-  if( C < D ) {
-    if( C < lo0 ) lo0 = C;
-    if( D > hi0 ) hi0 = D;
-  } else {
-    if( D < lo0 ) lo0 = D;
-    if( C > hi0 ) hi0 = C;
+  const IntegerType* _left;
+  const IntegerType* _right;
+  NativeType _min_value = IntegerType::MIN->_lo;
+
+
+  // Check overflow by using arithmetic equality: x = a * b <=> x / a = b. Since a and b are integer numbers, the division
+  // x / a does not underflow/overflow since |x / a| <= |x|. If a * b does underflow/overflow, then we'll get a different
+  // result compared to a * b. Special case MIN_VALUE * -1 whose result is MIN_VALUE.
+  bool does_overflow(const NativeType a, const NativeType b) const {
+    NativeType x = java_multiply(a, b);
+    return (a == -1 && b == _min_value) || // Special case 'MIN_VALUE * -1 = MIN_VALUE'.
+           (a != 0 && x / a != b);
   }
-  return TypeInt::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
+
+ public:
+  IntegerMulRing(const IntegerType* left, const IntegerType* right) : _left(left), _right(right) {}
+
+  // Compute the product type by multiplying the two input type ranges. We take the minimum and maximum of all possible
+  // values (requires 4 multiplications of all possible combinations of the two range boundary values). If any of these
+  // multiplications overflows/underflows, we return the bottom type (full range of values).
+  const Type* compute() const {
+    const NativeType lo_left = _left->_lo;
+    const NativeType hi_left = _left->_hi;
+    const NativeType lo_right = _right->_lo;
+    const NativeType hi_right = _right->_hi;
+
+    if (does_overflow(lo_left, lo_right) ||
+        does_overflow(lo_left, hi_right) ||
+        does_overflow(hi_left, lo_right) ||
+        does_overflow(hi_left, hi_right)) {
+      return OverflowType<IntegerType>::overflow(); // Full range of values - bottom type.
+    }
+
+    NativeType lo_lo_product = java_multiply(lo_left, lo_right);
+    NativeType lo_hi_product = java_multiply(lo_left, hi_right);
+    NativeType hi_lo_product = java_multiply(hi_left, lo_right);
+    NativeType hi_hi_product = java_multiply(hi_left, hi_right);
+    NativeType min = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    NativeType max = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    return IntegerType::make(min, max, MAX2(_left->_widen, _right->_widen));
+  }
+};
+
+// Compute the product type of two integer ranges into this node.
+const Type* MulINode::mul_ring(const Type* type_left, const Type* type_right) const {
+  const IntegerMulRing<TypeInt> integer_mul_ring(type_left->is_int(), type_right->is_int());
+  return integer_mul_ring.compute();
 }
 
+// Compute the product type of two long ranges into this node.
+const Type* MulLNode::mul_ring(const Type* type_left, const Type* type_right) const {
+  const IntegerMulRing<TypeLong> integer_mul_ring(type_left->is_long(), type_right->is_long());
+  return integer_mul_ring.compute();
+}
 
 //=============================================================================
 //------------------------------Ideal------------------------------------------
@@ -375,44 +407,6 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   return res;                   // Return final result
-}
-
-//------------------------------mul_ring---------------------------------------
-// Compute the product type of two integer ranges into this node.
-const Type *MulLNode::mul_ring(const Type *t0, const Type *t1) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  // Fetch endpoints of all ranges
-  jlong lo0 = r0->_lo;
-  double a = (double)lo0;
-  jlong hi0 = r0->_hi;
-  double b = (double)hi0;
-  jlong lo1 = r1->_lo;
-  double c = (double)lo1;
-  jlong hi1 = r1->_hi;
-  double d = (double)hi1;
-
-  // Compute all endpoints & check for overflow
-  jlong A = java_multiply(lo0, lo1);
-  if( (double)A != a*c ) return TypeLong::LONG; // Overflow?
-  jlong B = java_multiply(lo0, hi1);
-  if( (double)B != a*d ) return TypeLong::LONG; // Overflow?
-  jlong C = java_multiply(hi0, lo1);
-  if( (double)C != b*c ) return TypeLong::LONG; // Overflow?
-  jlong D = java_multiply(hi0, hi1);
-  if( (double)D != b*d ) return TypeLong::LONG; // Overflow?
-
-  if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
-  else { lo0 = B; hi0 = A; }
-  if( C < D ) {
-    if( C < lo0 ) lo0 = C;
-    if( D > hi0 ) hi0 = D;
-  } else {
-    if( D < lo0 ) lo0 = D;
-    if( C > hi0 ) hi0 = C;
-  }
-  return TypeLong::make(lo0, hi0, MAX2(r0->_widen,r1->_widen));
 }
 
 //=============================================================================
