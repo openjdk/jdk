@@ -420,7 +420,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
         register_new_node(x, ctrl_or_self(use));
         _igvn.replace_input_of(use, pos, x);
       }
-      _igvn.remove_dead_node(n );
+      _igvn.remove_dead_node(n);
 
       return true;
     }
