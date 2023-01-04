@@ -140,6 +140,7 @@ public class TestFramework {
                     "UseSSE",
                     "UseSVE",
                     "UseZbb",
+                    "UseRVV",
                     "Xlog",
                     "LogCompilation"
             )

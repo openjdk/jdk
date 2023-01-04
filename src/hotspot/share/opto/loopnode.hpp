@@ -355,6 +355,8 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  static bool is_zero_trip_guard_if(const IfNode* iff);
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
@@ -795,6 +797,19 @@ public:
   bool is_residual_iters_large(int unroll_cnt, CountedLoopNode *cl) const {
     return (unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt();
   }
+
+  void collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const;
+
+  bool empty_loop_with_data_nodes(PhaseIdealLoop* phase) const;
+
+  void enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq) const;
+
+  bool process_safepoint(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq,
+                         Node* sfpt) const;
+
+  bool empty_loop_candidate(PhaseIdealLoop* phase) const;
+
+  bool empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase) const;
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------

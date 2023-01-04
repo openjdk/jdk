@@ -117,7 +117,7 @@ final class P11KeyWrapCipher extends CipherSpi {
     private SecureRandom random = JCAUtil.getSecureRandom();
 
     // dataBuffer for storing enc/dec data; cleared upon doFinal calls
-    private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
 
     P11KeyWrapCipher(Token token, String algorithm, long mechanism)
             throws PKCS11Exception, NoSuchAlgorithmException {
