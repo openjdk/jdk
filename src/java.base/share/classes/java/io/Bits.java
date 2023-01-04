@@ -25,11 +25,22 @@
 
 package java.io;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
+
 /**
  * Utility methods for packing/unpacking primitive values in/out of byte arrays
- * using big-endian byte ordering.
+ * using big-endian byte ordering (i.e. "Network Order").
  */
-class Bits {
+final class Bits {
+    private Bits() {}
+
+    private static final VarHandle SHORT = create(short[].class);
+    private static final VarHandle INT = create(int[].class);
+    private static final VarHandle LONG = create(long[].class);
+    private static final VarHandle FLOAT = create(float[].class);
+    private static final VarHandle DOUBLE = create(double[].class);
 
     /*
      * Methods for unpacking primitive values from byte arrays starting at
@@ -41,39 +52,27 @@ class Bits {
     }
 
     static char getChar(byte[] b, int off) {
-        return (char) ((b[off + 1] & 0xFF) +
-                       (b[off] << 8));
+        return (char) (short) SHORT.get(b, off);
     }
 
     static short getShort(byte[] b, int off) {
-        return (short) ((b[off + 1] & 0xFF) +
-                        (b[off] << 8));
+        return (short) SHORT.get(b, off);
     }
 
     static int getInt(byte[] b, int off) {
-        return ((b[off + 3] & 0xFF)      ) +
-               ((b[off + 2] & 0xFF) <<  8) +
-               ((b[off + 1] & 0xFF) << 16) +
-               ((b[off    ]       ) << 24);
+        return (int) INT.get(b, off);
     }
 
     static float getFloat(byte[] b, int off) {
-        return Float.intBitsToFloat(getInt(b, off));
+        return (float) FLOAT.get(b, off);
     }
 
     static long getLong(byte[] b, int off) {
-        return ((b[off + 7] & 0xFFL)      ) +
-               ((b[off + 6] & 0xFFL) <<  8) +
-               ((b[off + 5] & 0xFFL) << 16) +
-               ((b[off + 4] & 0xFFL) << 24) +
-               ((b[off + 3] & 0xFFL) << 32) +
-               ((b[off + 2] & 0xFFL) << 40) +
-               ((b[off + 1] & 0xFFL) << 48) +
-               (((long) b[off])      << 56);
+        return (long) LONG.get(b, off);
     }
 
     static double getDouble(byte[] b, int off) {
-        return Double.longBitsToDouble(getLong(b, off));
+        return (double) DOUBLE.get(b, off);
     }
 
     /*
@@ -86,38 +85,30 @@ class Bits {
     }
 
     static void putChar(byte[] b, int off, char val) {
-        b[off + 1] = (byte) (val      );
-        b[off    ] = (byte) (val >>> 8);
+        SHORT.set(b, off, (short) val);
     }
 
     static void putShort(byte[] b, int off, short val) {
-        b[off + 1] = (byte) (val      );
-        b[off    ] = (byte) (val >>> 8);
+        SHORT.set(b, off, val);
     }
 
     static void putInt(byte[] b, int off, int val) {
-        b[off + 3] = (byte) (val       );
-        b[off + 2] = (byte) (val >>>  8);
-        b[off + 1] = (byte) (val >>> 16);
-        b[off    ] = (byte) (val >>> 24);
+        INT.set(b, off, val);
     }
 
     static void putFloat(byte[] b, int off, float val) {
-        putInt(b, off,  Float.floatToIntBits(val));
+        FLOAT.set(b, off, val);
     }
 
     static void putLong(byte[] b, int off, long val) {
-        b[off + 7] = (byte) (val       );
-        b[off + 6] = (byte) (val >>>  8);
-        b[off + 5] = (byte) (val >>> 16);
-        b[off + 4] = (byte) (val >>> 24);
-        b[off + 3] = (byte) (val >>> 32);
-        b[off + 2] = (byte) (val >>> 40);
-        b[off + 1] = (byte) (val >>> 48);
-        b[off    ] = (byte) (val >>> 56);
+        LONG.set(b, off, val);
     }
 
     static void putDouble(byte[] b, int off, double val) {
-        putLong(b, off, Double.doubleToLongBits(val));
+        DOUBLE.set(b, off, val);
+    }
+
+    private static VarHandle create(Class<?> viewArrayClass) {
+        return MethodHandles.byteArrayViewVarHandle(viewArrayClass, ByteOrder.BIG_ENDIAN);
     }
 }
