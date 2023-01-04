@@ -1595,7 +1595,7 @@ int MethodData::profile_arguments_flag() {
 }
 
 bool MethodData::profile_arguments() {
-  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all;
+  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all && TypeProfileArgsLimit > 0;
 }
 
 bool MethodData::profile_arguments_jsr292_only() {
