@@ -847,7 +847,8 @@ public class BSMethods {
                 failCount++;
 
             // Remove a common set bit
-            b1.clear(b2.nextSetBit(generator.nextInt(b2.length())));
+            nextBitToSet = b2.nextSetBit(generator.nextInt(b2.length()));
+            b1.clear(nextBitToSet);
 
             // Make sure b1 doesn't include b2
             if (b1.includes(b2))
