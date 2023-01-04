@@ -410,7 +410,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         } catch (InterruptedIOException e) {
             throw e;
         } catch (IOException ioe) {
-            throw new SocketException(ioe.getMessage(), ioe);
+            var e = new SocketException(ioe.getMessage());
+            e.setStackTrace(ioe.getStackTrace());
+            throw e;
         } finally {
             endWrite(n > 0);
         }
