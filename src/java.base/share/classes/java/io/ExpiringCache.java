@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
-class ExpiringCache {
+final class ExpiringCache {
     private final long millisUntilExpiration;
     private final Map<String,Entry> map;
     // Clear out old entries every few queries
