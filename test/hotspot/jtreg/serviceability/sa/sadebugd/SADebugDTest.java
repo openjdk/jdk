@@ -102,7 +102,7 @@ public class SADebugDTest {
                 if (useRegistryPort) {
                     registryPort = Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT);
                     if (registryPort == -1) {
-                        throw new RuntimeException("Cannot find an registryPort, findUnreservedFreePort returns -1");
+                        throw new RuntimeException("Cannot find a registryPort, findUnreservedFreePort returns -1");
                     }
                     jhsdbLauncher.addToolArg("--registryport");
                     jhsdbLauncher.addToolArg(Integer.toString(registryPort));

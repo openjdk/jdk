@@ -500,7 +500,7 @@ public class SALauncher {
                 func.accept(oldArgs);
             }
         } catch (SAGetoptException e) {
-            System.err.println("SA agent option related exception occured: " + e.getMessage());
+            System.err.println("SA agent option related exception occurred: " + e.getMessage());
             e.printStackTrace();
             toolHelp(args[0]);
             // Exit with error status
