@@ -6776,10 +6776,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                     loopReturnType + ")");
         }
 
-        if (pred.stream().anyMatch(Objects::isNull)) {
+        if (pred.stream().noneMatch(Objects::nonNull)) {
             throw newIllegalArgumentException("no predicate found", pred);
         }
-        if (pred.stream().map(MethodHandle::type).map(MethodType::returnType).
+        if (pred.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).
                 anyMatch(t -> t != boolean.class)) {
             throw newIllegalArgumentException("predicates must have boolean return type", pred);
         }
