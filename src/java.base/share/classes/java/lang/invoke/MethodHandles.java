@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ import static java.lang.invoke.MethodType.methodType;
  * @since 1.7
  */
 public class MethodHandles {
+
+    private static final Class<?>[] EMPTY = new Class<?>[0];
 
     private MethodHandles() { }  // do not instantiate
 
@@ -6744,25 +6746,19 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     private static List<Class<?>> longestParameterList(Stream<MethodHandle> mhs, int skipSize) {
-        final List<Class<?>> empty = List.of();
-        final List<Class<?>> longest = mhs.filter(Objects::nonNull).
+        final Class<?>[] longest = mhs.filter(Objects::nonNull).
                 // take only those that can contribute to a common suffix because they are longer than the prefix
                         map(MethodHandle::type).
                         filter(t -> t.parameterCount() > skipSize).
-                        map(MethodType::parameterList).
-                        reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
-        return longest.isEmpty() ? empty : longest.subList(skipSize, longest.size());
-    }
-
-    private static List<Class<?>> longestParameterList(List<List<Class<?>>> lists) {
-        final List<Class<?>> empty = List.of();
-        return lists.stream().reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+                        map(MethodType::ptypes).
+                        reduce((p, q) -> p.length >= q.length ? p : q).orElse(EMPTY);
+        return longest.length == 0 ? List.of() : List.of(longest).subList(skipSize, longest.length);
     }
 
     private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
         final List<Class<?>> longest1 = longestParameterList(Stream.of(step, pred, fini).flatMap(List::stream), cpSize);
         final List<Class<?>> longest2 = longestParameterList(init.stream(), 0);
-        return longestParameterList(List.of(longest1, longest2));
+        return longest1.size() >= longest2.size() ? longest1 : longest2;
     }
 
     private static void loopChecks1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
@@ -6780,10 +6776,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                     loopReturnType + ")");
         }
 
-        if (pred.stream().noneMatch(Objects::nonNull)) {
+        if (pred.stream().anyMatch(Objects::isNull)) {
             throw newIllegalArgumentException("no predicate found", pred);
         }
-        if (pred.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::returnType).
+        if (pred.stream().map(MethodHandle::type).map(MethodType::returnType).
                 anyMatch(t -> t != boolean.class)) {
             throw newIllegalArgumentException("predicates must have boolean return type", pred);
         }
