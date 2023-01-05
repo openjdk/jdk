@@ -640,7 +640,6 @@ public class CheckStatus {
         CheckStatus cs;
 
         cs = new CheckStatus();
-        
         cs.test();
 
         System.out.println("Test Passed.");
