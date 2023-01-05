@@ -1144,11 +1144,14 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
   </Event>
 
-  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" stackTrace="true" thread="true">
-    <Field type="string" name="destination" label="Destination" />
+  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" description="Information about a successfully written Java Heap dump"
+    stackTrace="true" thread="true">
+    <Field type="string" name="destination" label="Destination path of the dump" />
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
-    <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
+    <Field type="boolean" name="onOutOfMemoryError" label="Heap dump on Out of Memory Error" />
+    <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump will overwrite previous file location if it exists" />
+    <Field type="int" name="compression" label="Compression Level" description="Compression level of the Dump, if larger than 0 we use gzip compressoion with this level" />
   </Event>
 
   <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
