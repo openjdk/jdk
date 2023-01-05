@@ -396,12 +396,6 @@ void MutableNUMASpace::accumulate_statistics() {
     }
     increment_samples_count();
   }
-
-  if (NUMAStats) {
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      lgrp_spaces()->at(i)->accumulate_statistics(page_size());
-    }
-  }
 }
 
 // Get the current size of a chunk.
