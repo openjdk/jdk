@@ -448,19 +448,20 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 s = 0;
                 break;
             }
-            else if (Thread.interrupted()) {
-                interrupted = true;
-                if ((how & INTERRUPTIBLE) != 0) {
+            else {
+                if (Thread.interrupted())
+                    interrupted = true;
+                if ((s = status) < 0)    // prefer result to IE
+                    break;
+                else if (interrupted && (how & INTERRUPTIBLE) != 0) {
                     s = ABNORMAL;
                     break;
                 }
+                else if (timed)
+                    LockSupport.parkNanos(ns);
+                else
+                    LockSupport.park();
             }
-            else if ((s = status) < 0) // recheck
-                break;
-            else if (timed)
-                LockSupport.parkNanos(ns);
-            else
-                LockSupport.park();
         }
         if (uncompensate)
             p.uncompensate();
@@ -574,13 +575,17 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * necessary in an ExecutionException.
      */
     private void reportExecutionException(int s) {
-        Throwable ex = null, rx;
+        Throwable ex, rx;
         if (s == ABNORMAL)
             ex = new InterruptedException();
         else if (s >= 0)
             ex = new TimeoutException();
         else if ((rx = getThrowableException()) != null)
             ex = new ExecutionException(rx);
+        else if ((status & POOLSUBMIT) != 0)
+            ex = new ExecutionException(new CancellationException());
+        else
+            ex = new CancellationException();
         ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
     }
 
@@ -1504,17 +1509,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         public final void run() { invoke(); }
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            int s; Thread t;
-            if ((s = trySetCancelled()) >= 0) {
-                if (mayInterruptIfRunning && (t = runner) != null) {
-                    try {
-                        t.interrupt();
-                    } catch (Throwable ignore) {
-                    }
+            Thread t;
+            boolean stat = super.cancel(false);
+            if (mayInterruptIfRunning && (t = runner) != null) {
+                try {
+                    t.interrupt();
+                } catch (Throwable ignore) {
                 }
-                return true;
             }
-            return ((s & (ABNORMAL | THROWN)) == ABNORMAL);
+            return stat;
         }
         public String toString() {
             return super.toString() + "[Wrapped task = " + callable + "]";

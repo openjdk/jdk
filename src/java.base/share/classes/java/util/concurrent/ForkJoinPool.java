@@ -582,18 +582,17 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * Shutdown and Termination. A call to shutdownNow invokes
      * tryTerminate to atomically set a mode bit. The calling thread,
-     * as well as every other worker thereafter terminating invokes
-     * helpTerminate, which cancels queued tasks, reactivates idle
-     * workers, and interrupts others (in addtion to deregistering
-     * itself). Calls to non-abrupt shutdown() preface this by
-     * checking canStop before triggering the "STOP" phase of
+     * as well as other workers thereafter terminating, and external
+     * callers checking termination helps cancel queued tasks,
+     * reactivate idle workers, and interrupt others (in addtion to
+     * deregistering itself). Calls to non-abrupt shutdown() preface
+     * this by checking canStop before triggering the "STOP" phase of
      * termination. Like most eveything else, we try to speed up
      * termination by balancing parallelism and contention (which may
      * occur while trying to cancel tasks or unblock workers), by
      * starting task scans at different indices, and by fanning out
      * reactivation of idle workers. The main remaining cost is the
-     * potential need to re-interrupt active workers with tasks that
-     * swallow them.
+     * potential need to re-interrupt active workers.
      *
      * Trimming workers. To release resources after periods of lack of
      * use, a worker starting to wait when the pool is quiescent will
@@ -727,7 +726,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * (ForkJoinTask.cancel) independently from the interrupt status
      * of threads running tasks. (See the public ForkJoinTask
      * documentation for rationale.)  Interrupts are issued internally
-     * only in helpTerminate, when workers should be terminating and
+     * only in tryTerminate, when workers should be terminating and
      * tasks should be cancelled anyway. By default, interrupts are
      * cleared only when necessary to ensure that calls to
      * LockSupport.park do not loop indefinitely (park returns
@@ -1093,8 +1092,8 @@ public class ForkJoinPool extends AbstractExecutorService {
             return U.compareAndSetReference(a, ((long)i << ASHIFT) + ABASE,
                                             c, null);
         }
-        final void forcePhaseActive() {    // clear sign bit
-            U.getAndBitwiseAndInt(this, PHASE, 0x7fffffff);
+        final int forcePhaseActive() {    // clear sign bit
+            return U.getAndBitwiseAndInt(this, PHASE, 0x7fffffff);
         }
         final int getAndSetAccess(int v) {
             return U.getAndSetInt(this, ACCESS, v);
@@ -1453,11 +1452,6 @@ public class ForkJoinPool extends AbstractExecutorService {
 
         // misc
 
-        final void cancelAllTasks() {
-            for (ForkJoinTask<?> t; (t = poll(null)) != null; )
-                ForkJoinTask.cancelIgnoringExceptions(t);
-        }
-
         /**
          * Returns true if owned by a worker thread and not known to be blocked.
          */
@@ -1669,12 +1663,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param ex the exception causing failure, or null if none
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
-        int cfg = 0;
         WorkQueue w = (wt == null) ? null : wt.workQueue;
-        if (w != null) {
-            cfg = w.config;
-            w.access = STOP;                  // may be redundant
-        }
+        int cfg = (w == null) ? 0 : w.config;
         long c = ctl;
         if ((cfg & TRIMMED) == 0)             // decrement counts
             do {} while (c != (c = compareAndExchangeCtl(
@@ -1694,12 +1684,17 @@ public class ForkJoinPool extends AbstractExecutorService {
                 stealCount += ns;             // accumulate steals
                 lock.unlock();
             }
-            w.cancelAllTasks();
             if ((cfg & SRC) != 0)
                 signalWork();                 // possibly replace worker
         }
-        if (ex != null)
+        if (ex != null) {
+            if (w != null) {
+                w.access = STOP;              // cancel tasks
+                for (ForkJoinTask<?> t; (t = w.nextLocalTask(0)) != null; )
+                    ForkJoinTask.cancelIgnoringExceptions(t);
+            }
             ForkJoinTask.rethrow(ex);
+        }
     }
 
     /*
@@ -1824,6 +1819,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
             } while ((src = scan(w, src, r)) >= 0 ||
                      (src = awaitWork(w)) == 0);
+            w.access = STOP;                    // record normal termination
         }
     }
 
@@ -1839,9 +1835,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return the next prevSrc value to use, or negative if none found
      */
     private int scan(WorkQueue w, int prevSrc, int r) {
-        int rs = runState;
         WorkQueue[] qs = queues;
-        int n = (rs < 0 || qs == null || w == null) ? 0 : qs.length;
+        int n = (w == null || qs == null) ? 0 : qs.length;
         for (int step = (r >>> 16) | 1, i = n; i > 0; --i, r += step) {
             int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
             if ((q = qs[j = r & (n - 1)]) != null &&
@@ -1877,7 +1872,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (w == null)
             return -1;                           // currently impossible
         int p = (w.phase + SS_SEQ) & ~INACTIVE;  // advance phase
-        boolean idle = false;                    // true if possibly quiescent
         if (runState < 0)
             return -1;                           // terminating
         long sp = p & SP_MASK, pc = ctl, qc;
@@ -1886,13 +1880,11 @@ public class ForkJoinPool extends AbstractExecutorService {
             w.stackPred = (int)pc;               // set ctl stack link
         } while (pc != (pc = compareAndExchangeCtl(
                             pc, qc = ((pc - RC_UNIT) & UC_MASK) | sp)));
-        if ((qc & RC_MASK) <= 0L) {
-            if (hasTasks(true) && (w.phase >= 0 || reactivate() == w))
-                return 0;                        // check for stragglers
-            if (runState != 0 && tryTerminate(false, false) < 0)
-                return -1;                       // quiescent termination
-            idle = true;
-        }
+        boolean idle;
+        if ((idle = ((qc & RC_MASK) <= 0L)) &&   // possibly quiescent
+            (hasTasks(true) || (runState != 0 && canStop(true))) &&
+            w.phase < 0)
+            reactivate();                        // enable rescan or termination
         WorkQueue[] qs = queues; // spin for expected #accesses in scan+signal
         int spins = ((qs == null) ? 0 : ((qs.length & SMASK) << 1)) | 0xf;
         while ((p = w.phase) < 0 && --spins > 0)
@@ -1924,21 +1916,25 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
         }
-        return 0;
+        return runState & STOP;                  // negative if terminating
     }
 
     /**
      * Non-overridable version of isQuiescent. Returns true if
      * quiescent or already terminating.
      */
-    private boolean canStop() {
-        long c = ctl;
-        do {
+    private boolean canStop(boolean enableTermination) {
+        for (long c = ctl;;) {
             if (runState < 0)
                 break;
             if ((c & RC_MASK) > 0L || hasTasks(false))
                 return false;
-        } while (c != (c = ctl));  // validate
+            if (c == (c = ctl)) {               // validate
+                if (enableTermination)          // transition now
+                    getAndBitwiseOrRunState(STOP);
+                break;
+            }
+        }
         return true;
     }
 
@@ -2276,7 +2272,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 t.doExec();
                 parkTime = 0L;
             }
-            else if (canStop())
+            else if (canStop(false))
                 return 1;
             else if (parkTime == 0L) {
                 parkTime = 1L << 10;
@@ -2493,7 +2489,10 @@ public class ForkJoinPool extends AbstractExecutorService {
     // Termination
 
     /**
-     * Possibly initiates and/or completes pool termination.
+     * Possibly initiates and/or completes pool termination.  If
+     * terminating, helps complete termination by cancelling tasks,
+     * reactivating idle workers or interrupting active workers, and
+     * possibly triggering TERMINATED state.
      *
      * @param now if true, unconditionally terminate, else only
      * if no work and no active workers
@@ -2502,71 +2501,50 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     private int tryTerminate(boolean now, boolean enable) {
         int rs = runState;
-        if ((config & ISCOMMON) == 0) {
-            if (rs >= 0) {
-                if (!now && enable && (rs & SHUTDOWN) == 0)
-                    rs = getAndBitwiseOrRunState(SHUTDOWN) | SHUTDOWN;
-                if (now || ((rs & SHUTDOWN) != 0 && canStop()))
-                    rs = getAndBitwiseOrRunState(SHUTDOWN | STOP) | STOP;
-            }
-            if ((rs < 0 || (rs = runState) < 0) && (rs & TERMINATED) == 0) {
-                helpTerminate();
+        if ((config & ISCOMMON) == 0 && rs >= 0) {
+            if (!now && enable && (rs & SHUTDOWN) == 0)
+                rs = getAndBitwiseOrRunState(SHUTDOWN) | SHUTDOWN;
+            if (now || ((rs & SHUTDOWN) != 0 && canStop(false)))
+                rs = getAndBitwiseOrRunState(SHUTDOWN | STOP) | STOP;
+            else
                 rs = runState;
-            }
         }
-        return rs;
-    }
-
-    /**
-     * Helps complete termination by cancelling tasks, unblocking
-     * workers and possibly triggering TERMINATED state.
-     */
-    private void helpTerminate() {
-        int r = 1;                                  // for queue traversal
+        if ((rs & (STOP | TERMINATED)) != STOP)
+            return rs;                              // not terminating
+        WorkQueue[] qs; WorkQueue q; Thread thread; WorkQueue w;
+        ReentrantLock lock; Condition cond;
+        boolean more = (reactivate() != null);      // try activating idle worker
         Thread current = Thread.currentThread();
-        if (current instanceof ForkJoinWorkerThread) {
-            ForkJoinWorkerThread wt = (ForkJoinWorkerThread)current;
-            WorkQueue w = wt.workQueue;
-            if (wt.pool == this && w != null) {
-                r = w.config;                       // stagger traversals
-                w.access = STOP;                    // may be redundant
-            }
-        }
-        WorkQueue[] qs; WorkQueue q; Thread thread;
+        int r = (((current instanceof ForkJoinWorkerThread) &&
+                  (w = ((ForkJoinWorkerThread)current).workQueue) != null) ?
+                 w.config : 0);                     // stagger traversals
         int n = ((qs = queues) == null) ? 0 : qs.length;
-        for (int i = 0; i < n; ++i) {               // help cancel tasks
-            if ((q = qs[(r + i) & (n - 1)]) != null)
-                q.cancelAllTasks();
-        }
-        if (reactivate() != null)                   // activate <= 2 idle workers
-            reactivate();
-        else if ((runState & TERMINATED) == 0) {    // or unblock active workers
-            boolean canTerminate = true;
-            n = ((qs = queues) == null) ? 0 : qs.length;
-            for (int i = 0; i < n; i += 2) {
-                if ((q = qs[(r + i) & (n - 1)]) != null &&
-                    (thread = q.owner) != null && q.access != STOP) {
-                    canTerminate = false;
-                    q.forcePhaseActive();           // for awaitWork
-                    if (!thread.isInterrupted()) {
-                        try {
-                            thread.interrupt();
-                        } catch (Throwable ignore) {
-                        }
+        for (int i = 0; i < n; ++i) {
+            if ((q = qs[(r + i) & (n - 1)]) != null) {
+                for (ForkJoinTask<?> t; (t = q.poll(null)) != null; )
+                    ForkJoinTask.cancelIgnoringExceptions(t);
+                if (!more && q.access != STOP &&
+                    (thread = q.owner) != null && thread != current &&
+                    (q.forcePhaseActive() < 0 || !thread.isInterrupted())) {
+                    try {
+                        thread.interrupt();         // help unblock others
+                    } catch (Throwable ignore) {
                     }
                 }
             }
-            ReentrantLock lock; Condition cond;     // signal when no workers
-            if (canTerminate && (short)(ctl >>> TC_SHIFT) <= 0 &&
-                (getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0 &&
-                (lock = registrationLock) != null) {
-                lock.lock();
-                if ((cond = termination) != null)
-                    cond.signalAll();
-                lock.unlock();
-                container.close();
-            }
         }
+        if (reactivate() == null &&                 // transition if no workers
+            (short)(ctl >>> TC_SHIFT) <= 0 &&
+            (runState & TERMINATED) == 0 &&
+            (getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0 &&
+            (lock = registrationLock) != null) {
+            lock.lock();
+            if ((cond = termination) != null)
+                cond.signalAll();
+            lock.unlock();
+            container.close();
+        }
+        return runState;
     }
 
     // Exported methods
@@ -3025,12 +3003,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                 futures.add(f);
                 poolSubmit(true, f);
             }
-            for (int i = futures.size() - 1; i >= 0 && runState >= 0; --i)
+            for (int i = futures.size() - 1; i >= 0; --i)
                 ((ForkJoinTask<?>)futures.get(i)).quietlyJoin();
             return futures;
-        } finally {
+        } catch (Throwable t) {
             for (Future<T> e : futures)
                 ForkJoinTask.cancelIgnoringExceptions(e);
+            throw t;
         }
     }
 
@@ -3049,7 +3028,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             long startTime = System.nanoTime(), ns = nanos;
             boolean timedOut = (ns < 0L);
-            for (int i = futures.size() - 1; i >= 0 && runState >= 0; --i) {
+            for (int i = futures.size() - 1; i >= 0; --i) {
                 ForkJoinTask<T> f = (ForkJoinTask<T>)futures.get(i);
                 if (!f.isDone()) {
                     if (!timedOut)
@@ -3061,9 +3040,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
             return futures;
-        } finally {
+        } catch (Throwable t) {
             for (Future<T> e : futures)
                 ForkJoinTask.cancelIgnoringExceptions(e);
+            throw t;
         }
     }
 
@@ -3095,8 +3075,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                     result = v;
                     quietlyComplete();
                 }
-                else if (count.getAndDecrement() <= 1)
-                    trySetThrown(ex != null ? ex : new CancellationException());
+                else if (count.getAndDecrement() <= 1) {
+                    if (ex == null)
+                        cancel(false);
+                    else
+                        trySetThrown(ex);
+                }
             }
         }
         public final boolean exec()         { return false; } // never forked
@@ -3180,11 +3164,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (root.isDone())
                     break;
             }
-            try {
-                return root.get();
-            } catch (CancellationException cx) {
-                throw new ExecutionException(cx);
-            }
+            return root.get();
         } finally {
             for (InvokeAnyTask<T> f : fs)
                 ForkJoinTask.cancelIgnoringExceptions(f);
@@ -3211,11 +3191,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (root.isDone())
                     break;
             }
-            try {
-                return root.get(nanos, TimeUnit.NANOSECONDS);
-            } catch (CancellationException cx) {
-                throw new ExecutionException(cx);
-            }
+            return root.get(nanos, TimeUnit.NANOSECONDS);
         } finally {
             for (InvokeAnyTask<T> f : fs)
                 ForkJoinTask.cancelIgnoringExceptions(f);
@@ -3325,7 +3301,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return {@code true} if all threads are currently idle
      */
     public boolean isQuiescent() {
-        return canStop();
+        return canStop(false);
     }
 
     /**
@@ -3540,7 +3516,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return {@code true} if all tasks have completed following shut down
      */
     public boolean isTerminated() {
-        // reduce false negatives during termination by helping
+        // reduce premature negatives during termination by helping
         return (tryTerminate(false, false) & TERMINATED) != 0;
     }
 
