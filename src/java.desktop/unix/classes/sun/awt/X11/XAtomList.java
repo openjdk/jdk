@@ -58,6 +58,7 @@ class XAtomList {
      * Creates instance of XAtomList and initializes it with
      * the arrays of atoms. Array can contain null atoms.
      */
+    @SuppressWarnings("this-escape")
     public XAtomList(XAtom[] atoms) {
         init(atoms);
     }
