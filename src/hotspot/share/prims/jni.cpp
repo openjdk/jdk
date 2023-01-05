@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2992,7 +2992,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     }
 
     // Get needed field and method IDs
-    directByteBufferConstructor = env->GetMethodID(directByteBufferClass, "<init>", "(JI)V");
+    directByteBufferConstructor = env->GetMethodID(directByteBufferClass, "<init>", "(JJ)V");
     if (env->ExceptionCheck()) {
       env->ExceptionClear();
       directBufferSupportInitializeFailed = 1;
@@ -3044,10 +3044,7 @@ extern "C" jobject JNICALL jni_NewDirectByteBuffer(JNIEnv *env, void* address, j
 
   // Being paranoid about accidental sign extension on address
   jlong addr = (jlong) ((uintptr_t) address);
-  // NOTE that package-private DirectByteBuffer constructor currently
-  // takes int capacity
-  jint  cap  = (jint)  capacity;
-  jobject ret = env->NewObject(directByteBufferClass, directByteBufferConstructor, addr, cap);
+  jobject ret = env->NewObject(directByteBufferClass, directByteBufferConstructor, addr, capacity);
   HOTSPOT_JNI_NEWDIRECTBYTEBUFFER_RETURN(ret);
   return ret;
 }
