@@ -100,7 +100,6 @@ import jdk.internal.net.http.hpack.DecodingCallback;
 class Stream<T> extends ExchangeImpl<T> {
 
     private static final String COOKIE_HEADER = "Cookie";
-    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     final ConcurrentLinkedQueue<Http2Frame> inputQ = new ConcurrentLinkedQueue<>();

@@ -544,7 +544,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
         // e.g. target modules of qualified exports
-        @SuppressWarnings("this-escape")
         private final DedupSetBuilder dedupSetBuilder
             = new DedupSetBuilder(this::getNextLocalVar);
 

@@ -1,0 +1,4 @@
+ThisEscapeReference.java:21:24: compiler.warn.possible.this.escape
+ThisEscapeReference.java:36:24: compiler.warn.possible.this.escape
+ThisEscapeReference.java:60:24: compiler.warn.possible.this.escape
+3 warnings

@@ -744,25 +744,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
         this.refs.replaceExprs(this.depth, ReturnRef::new);
     }
 
-    // For lambda's, we stash any pending warning and the current RefSet, then "invoke"
-    // the lambda (still using the current RefSet) to see if it would leak. Then we restore
-    // the pending warning and the current RefSet. Finally, if the lambda would have leaked,
-    // we create an indirect ExprRef because the lambda must be holding a 'this' reference.
     @Override
     public void visitLambda(JCLambda lambda) {
-        final DiagnosticPosition[] pendingWarningPrev = this.pendingWarning;
-        this.pendingWarning = null;
-        final RefSet<Ref> refsPrev = this.refs.clone();
-        final boolean lambdaLeaks;
-        try {
-            this.visitScoped(lambda, false, super::visitLambda);
-            lambdaLeaks = this.pendingWarning != null;
-        } finally {
-            this.refs = refsPrev;
-            this.pendingWarning = pendingWarningPrev;
-        }
-        if (lambdaLeaks)
-            this.refs.add(ExprRef.indirect(this.depth));
+        this.visitDeferred(() -> this.visitScoped(lambda, false, super::visitLambda));
     }
 
     @Override
@@ -840,32 +824,41 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitReference(JCMemberReference tree) {
+
+        // Scan target expression and extract 'this' references, if any
         this.scan(tree.expr);
-        final boolean ref;
+        final boolean direct = this.refs.remove(ExprRef.direct(this.depth));
+        final boolean indirect = this.refs.remove(ExprRef.indirect(this.depth));
+
+        // Gather receiver references for deferred invocation
+        final RefSet<Ref> receiverRefs = RefSet.newEmpty();
         switch (tree.kind) {
         case UNBOUND:
         case STATIC:
         case TOPLEVEL:
         case ARRAY_CTOR:
-            this.refs.discardExprs(this.depth);
-            ref = false;
             return;
         case SUPER:
-            this.refs.discardExprs(this.depth);
-            ref = this.refs.contains(ThisRef.direct()) || this.refs.contains(ThisRef.indirect());
+            if (this.refs.contains(ThisRef.direct()))
+                receiverRefs.add(ThisRef.direct());
+            if (this.refs.contains(ThisRef.indirect()))
+                receiverRefs.add(ThisRef.indirect());
             break;
         case BOUND:
-            ref = this.refs.discardExprs(this.depth);
+            if (direct)
+                receiverRefs.add(ThisRef.direct());
+            if (indirect)
+                receiverRefs.add(ThisRef.indirect());
             break;
         case IMPLICIT_INNER:
-            this.refs.discardExprs(this.depth);
-            ref = !this.outerThisRefs(null, tree.expr.type).isEmpty();
+            receiverRefs.addAll(this.outerThisRefs(null, tree.expr.type));
             break;
         default:
             throw new RuntimeException("non-exhaustive?");
         }
-        if (ref)
-            this.refs.add(ExprRef.indirect(this.depth));
+
+        // Treat method reference just like the equivalent lambda
+        this.visitDeferred(() -> this.invoke(tree, (MethodSymbol)tree.sym, List.nil(), receiverRefs));
     }
 
     @Override
@@ -1076,6 +1069,28 @@ class ThisEscapeAnalyzer extends TreeScanner {
     }
 
 // Helper methods
+
+    // Recurse through indirect code that might get executed later, e.g., a lambda.
+    // We stash any pending warning and the current RefSet, then recurse into the deferred
+    // code (still using the current RefSet) to see if it would leak. Then we restore the
+    // pending warning and the current RefSet. Finally, if the deferred code would have
+    // leaked, we create an indirect ExprRef because it must be holding a 'this' reference.
+    // If the deferred code would not leak, then obviously no leak is possible, period.
+    private <T extends JCTree> void visitDeferred(Runnable recurse) {
+        final DiagnosticPosition[] pendingWarningPrev = this.pendingWarning;
+        this.pendingWarning = null;
+        final RefSet<Ref> refsPrev = this.refs.clone();
+        final boolean deferredCodeLeaks;
+        try {
+            recurse.run();
+            deferredCodeLeaks = this.pendingWarning != null;
+        } finally {
+            this.refs = refsPrev;
+            this.pendingWarning = pendingWarningPrev;
+        }
+        if (deferredCodeLeaks)
+            this.refs.add(ExprRef.indirect(this.depth));
+    }
 
     // Repeat loop as needed until the current set of references converges
     private <T extends JCTree> void visitLooped(T tree, Consumer<T> visitor) {

@@ -89,7 +89,6 @@ import java.util.function.IntBinaryOperator;
  */
 public class SSLFlowDelegate {
 
-    @SuppressWarnings("this-escape")
     final Logger debug =
             Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
@@ -689,7 +688,6 @@ public class SSLFlowDelegate {
         // queues of buffers received from upstream waiting
         // to be processed by the SSLEngine
         final List<ByteBuffer> writeList;
-        @SuppressWarnings("this-escape")
         final Logger debugw =  Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
         volatile boolean completing;
         boolean completed; // only accessed in processData

@@ -56,7 +56,6 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
  */
 class Http1Exchange<T> extends ExchangeImpl<T> {
 
-    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     final HttpRequestImpl request; // main request
     final Http1Request requestAction;
