@@ -883,7 +883,7 @@ unsigned int FileMapInfo::longest_common_app_classpath_prefix_len(int num_paths,
       // search backward for the pos before the file separator char
       while (pos > 0) {
         if (rp_array->at(0)[--pos] == *os::file_separator()) {
-          return pos+1;
+          return pos + 1;
         }
       }
       return 0;
