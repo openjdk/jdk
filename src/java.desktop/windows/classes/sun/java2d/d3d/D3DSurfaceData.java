@@ -924,6 +924,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     public static class D3DWindowSurfaceData extends D3DSurfaceData {
         StateTracker dirtyTracker;
 
+        @SuppressWarnings("this-escape")
         public D3DWindowSurfaceData(WComponentPeer peer,
                                     D3DGraphicsConfig gc)
         {

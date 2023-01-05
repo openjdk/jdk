@@ -113,6 +113,7 @@ public class X11GraphicsConfig extends GraphicsConfiguration
     private native void init(int visualNum, int screen);
     private native ColorModel makeColorModel();
 
+    @SuppressWarnings("this-escape")
     protected X11GraphicsConfig(X11GraphicsDevice device,
                                 int visualnum, int depth,
                                 int colormap, boolean doubleBuffer)
