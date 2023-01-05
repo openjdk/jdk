@@ -432,7 +432,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
-    oop old_oop = cpool->set_resolved_references_at(appendix_index, appendix());
+    oop old_oop = cpool->set_resolved_reference_at(appendix_index, appendix());
     assert(old_oop == nullptr, "init just once");
   }
 
@@ -529,7 +529,7 @@ oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool
   if (!has_appendix())
     return NULL;
   const int ref_index = f2_as_index();
-  return cpool->resolved_references_at(ref_index);
+  return cpool->resolved_reference_at(ref_index);
 }
 
 

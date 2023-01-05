@@ -194,7 +194,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::
     if (rindex < 0)
       rindex = m->constants()->cp_to_object_index(ldc2.pool_index());
     if (rindex >= 0) {
-      oop coop = m->constants()->resolved_references_at(rindex);
+      oop coop = m->constants()->resolved_reference_at(rindex);
       oop roop = (result == NULL ? Universe::the_null_sentinel() : result);
       assert(roop == coop, "expected result for assembly code");
     }

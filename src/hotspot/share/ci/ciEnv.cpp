@@ -692,7 +692,7 @@ ciConstant ciEnv::unbox_primitive_value(ciObject* cibox, BasicType expected_bt) 
 //
 ciConstant ciEnv::get_resolved_constant(const constantPoolHandle& cpool, int obj_index) {
   assert(obj_index >= 0, "");
-  oop obj = cpool->resolved_references_at(obj_index);
+  oop obj = cpool->resolved_reference_at(obj_index);
   if (obj == NULL) {
     // Unresolved constant. It is resolved when the corresponding slot contains a non-null reference.
     // Null constant is represented as a sentinel (non-null) value.
