@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/bitCast.hpp"
 #include "unittest.hpp"
 
@@ -120,4 +121,39 @@ TEST(BitCast, round_trip_ptr) {
 
   EXPECT_EQ(cpfive, bit_cast<const int*>(bit_cast<SIP>(cpfive)));
   EXPECT_EQ(cpfive, bit_cast<const int*>(bit_cast<UIP>(cpfive)));
+}
+
+TEST(BitCast, round_trip_const_ptr) {
+  int five = 5;
+  int* pfive = &five;
+  const int* cpfive = &five;
+
+  EXPECT_EQ(pfive, bit_cast<int*>(cpfive));
+  EXPECT_EQ(cpfive, bit_cast<const int*>(pfive));
+}
+
+TEST(BitCast, round_trip_volatile_ptr) {
+  int five = 5;
+  int* pfive = &five;
+  volatile int* vpfive = &five;
+
+  EXPECT_EQ(pfive, bit_cast<int*>(vpfive));
+  EXPECT_EQ(vpfive, bit_cast<volatile int*>(pfive));
+}
+
+class BitCastTest : public AllStatic {
+ public:
+  struct TrivialStruct1 {
+    int member;
+  };
+
+  struct TrivialStruct2 {
+    int member;
+  };
+};
+
+TEST(BitCast, round_trip_trivial_struct) {
+  BitCastTest::TrivialStruct1 s1 = {5};
+  BitCastTest::TrivialStruct2 s2 = bit_cast<BitCastTest::TrivialStruct2>(s1);
+  EXPECT_EQ(s1.member, s2.member);
 }
