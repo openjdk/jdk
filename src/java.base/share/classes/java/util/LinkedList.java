@@ -1273,7 +1273,7 @@ public class LinkedList<E>
     /**
      * {@inheritDoc}
      * @return a reverse-ordered view of this LinkedList
-     * @since 20
+     * @since 21
      */
     public LinkedList<E> reversed() {
         return new ReverseOrderLinkedListView<>(this, super.reversed(), Deque.super.reversed());

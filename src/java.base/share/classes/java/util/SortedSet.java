@@ -270,7 +270,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * @implSpec
      * The implementation in this class always throws {@code UnsupportedOperationException}.
      * @throws UnsupportedOperationException always
-     * @since 20
+     * @since 21
      */
     default void addFirst(E e) { throw new UnsupportedOperationException(); }
 
@@ -280,25 +280,25 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * @implSpec
      * The implementation in this class always throws {@code UnsupportedOperationException}.
      * @throws UnsupportedOperationException always
-     * @since 20
+     * @since 21
      */
     default void addLast(E e) { throw new UnsupportedOperationException(); }
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     default E getFirst() { return this.first(); }
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     default E getLast() { return this.last(); }
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     default E removeFirst() {
         E e = this.first();
@@ -308,7 +308,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     default E removeLast() {
         E e = this.last();
@@ -324,7 +324,7 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * SortedSet that delegates its operations to this SortedSet.
      *
      * @return a reverse-ordered view of this collection, as a {@code SortedSet}
-     * @since 20
+     * @since 21
      */
     default SortedSet<E> reversed() {
         return ReverseOrderSortedSetView.of(this);

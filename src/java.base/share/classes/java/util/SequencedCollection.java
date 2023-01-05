@@ -79,7 +79,7 @@ package java.util;
  * collection.
  *
  * @param <E> the type of elements in this collection
- * @since 20
+ * @since 21
  */
 public interface SequencedCollection<E> extends Collection<E> {
     /**

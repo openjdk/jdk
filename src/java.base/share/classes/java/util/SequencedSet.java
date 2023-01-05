@@ -45,7 +45,7 @@ package java.util;
  * Java Collections Framework</a>.
  *
  * @param <E> the type of elements in this sequenced set
- * @since 20
+ * @since 21
  */
 public interface SequencedSet<E> extends SequencedCollection<E>, Set<E> {
     /**

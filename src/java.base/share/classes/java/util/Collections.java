@@ -1138,7 +1138,7 @@ public class Collections {
      * @param  c the collection for which an unmodifiable view is to be
      *         returned.
      * @return an unmodifiable view of the specified collection.
-     * @since 20
+     * @since 21
      */
     @SuppressWarnings("unchecked")
     public static <T> SequencedCollection<T> unmodifiableSequencedCollection(SequencedCollection<? extends T> c) {
@@ -1244,7 +1244,7 @@ public class Collections {
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified sequenced set.
-     * @since 20
+     * @since 21
      */
     @SuppressWarnings("unchecked")
     public static <T> SequencedSet<T> unmodifiableSequencedSet(SequencedSet<? extends T> s) {
@@ -1956,7 +1956,7 @@ public class Collections {
      * @param <V> the class of the map values
      * @param  m the map for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified map.
-     * @since 20
+     * @since 21
      */
     @SuppressWarnings("unchecked")
     public static <K,V> SequencedMap<K,V> unmodifiableSequencedMap(SequencedMap<? extends K, ? extends V> m) {
@@ -5955,7 +5955,7 @@ public class Collections {
      * @param map the backing map
      * @return the set backed by the map
      * @throws IllegalArgumentException if {@code map} is not empty
-     * @since 20
+     * @since 21
      */
     public static <E> SequencedSet<E> newSequencedSetFromMap(SequencedMap<E, Boolean> map) {
         return new SequencedSetFromMap<>(map);

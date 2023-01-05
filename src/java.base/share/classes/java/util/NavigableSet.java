@@ -331,7 +331,7 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * {@code descendingSet} method.
      *
      * @return a reverse-ordered view of this collection, as a {@code NavigableSet}
-     * @since 20
+     * @since 21
      */
     default NavigableSet<E> reversed() {
         return this.descendingSet();

@@ -229,7 +229,7 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     public void addFirst(E e) {
         map().putFirst(e, PRESENT);
@@ -237,7 +237,7 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     public void addLast(E e) {
         map().putLast(e, PRESENT);
@@ -245,7 +245,7 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     public E getFirst() {
         return map().sequencedKeySet().getFirst();
@@ -253,7 +253,7 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     public E getLast() {
         return map().sequencedKeySet().getLast();
@@ -262,7 +262,7 @@ public class LinkedHashSet<E>
     /**
      * {@inheritDoc}
      *
-     * @since 20
+     * @since 21
      */
     public E removeFirst() {
         return map().sequencedKeySet().removeFirst();
@@ -270,7 +270,7 @@ public class LinkedHashSet<E>
 
     /**
      * {@inheritDoc}
-     * @since 20
+     * @since 21
      */
     public E removeLast() {
         return map().sequencedKeySet().removeLast();
@@ -285,7 +285,7 @@ public class LinkedHashSet<E>
      * Modifications to this set are visible in the returned view.
      *
      * @return a reverse-ordered view of this set
-     * @since 20
+     * @since 21
      */
     public SequencedSet<E> reversed() {
         class ReverseLinkedHashSetView extends AbstractSet<E> implements SequencedSet<E> {

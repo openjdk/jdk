@@ -101,7 +101,7 @@ package java.util;
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
- * @since 20
+ * @since 21
  */
 public interface SequencedMap<K, V> extends Map<K, V> {
     /**
