@@ -36,11 +36,7 @@
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
-    FULL_MEM_BARRIER;
-    return res;
-  }
+  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
   D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
@@ -48,25 +44,129 @@ struct Atomic::PlatformAdd {
   }
 };
 
-template<size_t byte_size>
+template<>
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
+                                               atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
+
+  D result;
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  __asm__ __volatile__ (
+    " amoadd.w %1, %2, %0  \n\t"
+    " addw     %1, %1, %2  \n\t"
+    : /*%0*/"+A" (*dest), /*%1*/"=&r" (result)
+    : /*%2*/"r" (add_value)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  return result;
+}
+
+
+template<>
+template<typename D, typename I>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
+                                               atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(I));
+  STATIC_ASSERT(8 == sizeof(D));
+
+  D result;
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  __asm__ __volatile__ (
+    " amoadd.d %1, %2, %0  \n\t"
+    " add      %1, %1, %2  \n\t"
+    : /*%0*/"+A" (*dest), /*%1*/"=&r" (result)
+    : /*%2*/"r" (add_value)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  return result;
+}
+
+template<>
 template<typename T>
-inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
-                                                     T exchange_value,
-                                                     atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
-  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELEASE);
-  FULL_MEM_BARRIER;
-  return res;
+inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
+                                             T exchange_value,
+                                             atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
+
+  T old_value;
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  __asm__ __volatile__ (
+    " amoswap.w %1, %2, %0  \n\t"
+    : /*%0*/"+A" (*dest), /*%1*/"=&r" (old_value)
+    : /*%2*/"r" (exchange_value)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  return old_value;
+}
+
+template<>
+template<typename T>
+inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
+                                             T exchange_value,
+                                             atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+
+  T old_value;
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  __asm__ __volatile__ (
+    " amoswap.d %1, %2, %0  \n\t"
+    : /*%0*/"+A" (*dest), /*%1*/"=&r" (old_value)
+    : /*%2*/"r" (exchange_value)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  return old_value;
 }
 
 // __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
-template<size_t byte_size>
+template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
-                                                        T compare_value,
-                                                        T exchange_value,
-                                                        atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
+inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(1 == sizeof(T));
   T value = compare_value;
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
@@ -88,26 +188,66 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
+
+  T old_value;
+  long rc;
+
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
   }
-  T rv;
-  int tmp;
-  __asm volatile(
-    "1:\n\t"
-    " addiw     %[tmp], %[cv], 0\n\t" // make sure compare_value signed_extend
-    " lr.w.aq   %[rv], (%[dest])\n\t"
-    " bne       %[rv], %[tmp], 2f\n\t"
-    " sc.w.rl   %[tmp], %[ev], (%[dest])\n\t"
-    " bnez      %[tmp], 1b\n\t"
-    "2:\n\t"
-    : [rv] "=&r" (rv), [tmp] "=&r" (tmp)
-    : [ev] "r" (exchange_value), [dest] "r" (dest), [cv] "r" (compare_value)
-    : "memory");
+
+  __asm__ __volatile__ (
+    "1:  sext.w    %1, %3      \n\t" // sign-extend compare_value
+    "    lr.w      %0, %2      \n\t"
+    "    bne       %0, %1, 2f  \n\t"
+    "    sc.w      %1, %4, %2  \n\t"
+    "    bnez      %1, 1b      \n\t"
+    "2:                        \n\t"
+    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc), /*%2*/"+A" (*dest)
+    : /*%3*/"r" (compare_value), /*%4*/"r" (exchange_value)
+    : "memory" );
+
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
   }
-  return rv;
+
+  return old_value;
+}
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest __attribute__((unused)),
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+
+  T old_value;
+  long rc;
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  __asm__ __volatile__ (
+    "1:  lr.d      %0, %2      \n\t"
+    "    bne       %0, %3, 2f  \n\t"
+    "    sc.d      %1, %4, %2  \n\t"
+    "    bnez      %1, 1b      \n\t"
+    "2:                        \n\t"
+    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc), /*%2*/"+A" (*dest)
+    : /*%3*/"r" (compare_value), /*%4*/"r" (exchange_value)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    __asm__ __volatile__ (
+      " fence iorw, iorw  \n\t" : : : "memory" );
+  }
+
+  return old_value;
 }
 
 template<size_t byte_size>
