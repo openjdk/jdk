@@ -29,8 +29,10 @@
 // C++14 compatible implementation of std::bit_cast introduced in C++20.
 
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <type_traits>
@@ -104,16 +106,49 @@ constexpr To bit_cast(const From& from) {
 #endif
 }
 
-// From or To is a pointer.
+// From and To are pointers.
 template <typename To, typename From,
           ENABLE_IF(sizeof(To) == sizeof(From) &&
                     !std::is_same<From, To>::value &&
-                    (std::is_pointer<From>::value || std::is_pointer<To>::value))>
+                    std::is_pointer<From>::value &&
+                    std::is_pointer<To>::value)>
 inline To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
-  return reinterpret_cast<To>(from);
+  STATIC_ASSERT(sizeof(uintptr_t) == sizeof(From));
+  STATIC_ASSERT(sizeof(uintptr_t) == sizeof(To));
+  return reinterpret_cast<To>(reinterpret_cast<uintptr_t>(from));
+#endif
+}
+
+// From is a pointer.
+template <typename To, typename From,
+          ENABLE_IF(sizeof(To) == sizeof(From) &&
+                    !std::is_same<From, To>::value &&
+                    std::is_pointer<From>::value &&
+                    !std::is_pointer<To>::value)>
+inline To bit_cast(const From& from) {
+#if HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
+#else
+  STATIC_ASSERT(sizeof(uintptr_t) == sizeof(From));
+  return bit_cast<To>(reinterpret_cast<uintptr_t>(from));
+#endif
+}
+
+// To is a pointer.
+template <typename To, typename From,
+          ENABLE_IF(sizeof(To) == sizeof(From) &&
+                    !std::is_same<From, To>::value &&
+                    !std::is_pointer<From>::value &&
+                    std::is_pointer<To>::value)>
+inline To bit_cast(const From& from) {
+#if HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
+#else
+  STATIC_ASSERT(sizeof(uintptr_t) == sizeof(To));
+  return reinterpret_cast<To>(bit_cast<uintptr_t>(from));
 #endif
 }
 
