@@ -152,7 +152,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private final ArrayDeque<DiagnosticPosition> callStack = new ArrayDeque<>();
 
-    /** Used to terminate recursion in {@link #invoke invoke()}.
+    /** Used to terminate recursion in {@link #invokeInvokable invokeInvokable()}.
      */
     private final Set<Pair<JCTree, RefSet<Ref>>> invocations = new HashSet<>();
 
