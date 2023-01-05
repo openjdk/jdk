@@ -133,7 +133,7 @@ public class FilterOutputStream extends OutputStream {
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        Objects.checkFromToIndex(off, len, b.length);
+        Objects.checkFromIndexSize(off, len, b.length);
 
         for (int i = 0 ; i < len ; i++) {
             write(b[off + i]);

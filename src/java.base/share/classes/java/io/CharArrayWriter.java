@@ -98,7 +98,7 @@ public class CharArrayWriter extends Writer {
      *          of the given array
      */
     public void write(char[] c, int off, int len) {
-        Objects.checkFromToIndex(off, len, c.length);
+        Objects.checkFromIndexSize(off, len, c.length);
         if (len == 0) {
             return;
         }

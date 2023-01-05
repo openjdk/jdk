@@ -132,7 +132,7 @@ public class LineNumberInputStream extends FilterInputStream {
         if (b == null) {
             throw new NullPointerException();
         }
-        Objects.checkFromToIndex(off, len, b.length);
+        Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return 0;
         }
