@@ -529,7 +529,7 @@ class Invokers {
     static void checkExactType(MethodHandle mh, MethodType expected) {
         MethodType actual = mh.type();
         if (actual != expected)
-            throw newWrongMethodTypeException(expected, actual);
+            throw newWrongMethodTypeException(actual, expected);
     }
 
     /** Static definition of MethodHandle.invokeGeneric checking code.
