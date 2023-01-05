@@ -4100,9 +4100,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         //     floor(bitLength*log(2)/log(radix)) + 1
         // plus an additional character for the sign if negative.
         int b = abs.bitLength();
-        int numChars = (int)(Math.floor(b*LOG_TWO/logCache[radix]) + 1) +
-            (signum < 0 ? 1 : 0);
-        StringBuilder sb = new StringBuilder(numChars);
+        StringBuilder sb = new StringBuilder(numChars(radix));
 
         if (signum < 0) {
             sb.append('-');
@@ -4112,6 +4110,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         toString(abs, sb, radix, 0);
 
         return sb.toString();
+    }
+
+    int numChars(int radix) {
+        return (int)(Math.floor(b*LOG_TWO/logCache[radix]) + 1) +
+        (signum < 0 ? 1 : 0);
     }
 
     /**
