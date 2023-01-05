@@ -123,9 +123,10 @@ public class ThreadLocal<T> {
      * @implSpec
      * This implementation simply returns {@code null}; if the
      * programmer desires thread-local variables to have an initial
-     * value other than {@code null}, then either {@code ThreadLocal} can be
-     * subclassed and this method overridden or {@link ThreadLocal#withInitial(Supplier)} method
-     * can be used to construct a {@code ThreadLocal}.
+     * value other than {@code null}, then either {@code ThreadLocal}
+     * can be subclassed and this method overridden or the method
+     * {@link ThreadLocal#withInitial(Supplier)} can be used to
+     * construct a {@code ThreadLocal}.
      *
      * @return the initial value for this thread-local
      * @see #withInitial(java.util.function.Supplier)
