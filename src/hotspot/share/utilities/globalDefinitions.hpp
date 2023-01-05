@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "utilities/bitCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -54,11 +55,6 @@ class oopDesc;
 #ifndef ATTRIBUTE_FLATTEN
 #define ATTRIBUTE_FLATTEN
 #endif
-
-// bit_cast is used to implement some macros and functions in this header but bit_cast also needs
-// some macros defined here. To work around this we include bit_cast after the definition of the
-// macros it needs but before it is referenced.
-#include "utilities/bitCast.hpp"
 
 // These are #defines to selectively turn on/off the Print(Opto)Assembly
 // capabilities. Choices should be led by a tradeoff between
