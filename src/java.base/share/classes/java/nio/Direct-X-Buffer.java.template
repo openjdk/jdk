@@ -246,8 +246,8 @@ class Direct$Type$Buffer$RW$$BO$
         try {
             return Math.toIntExact(capacity);
         } catch (ArithmeticException ignore) {
-            throw new IllegalArgumentException("capacity " + capacity
-                + " overflows int range");
+            throw new IllegalArgumentException("capacity " + capacity +
+                " in upcall from JNI NewDirectByteBuffer overflows int range");
         }
     }
 
