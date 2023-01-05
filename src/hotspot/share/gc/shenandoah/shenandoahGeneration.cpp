@@ -990,7 +990,7 @@ size_t ShenandoahGeneration::adjusted_capacity() const {
 size_t ShenandoahGeneration::adjusted_unaffiliated_regions() const {
   assert(adjusted_capacity() >= used_regions_size(), "adjusted_unaffiliated_regions() cannot return negative");
   assert((adjusted_capacity() - used_regions_size()) % ShenandoahHeapRegion::region_size_bytes() == 0,
-         "adjusted_capacity (" SIZE_FORMAT ") and used regions size (" SIZE_FORMAT ") should be multiples of region_size_bytes",
+         "adjusted capacity (" SIZE_FORMAT ") and used regions size (" SIZE_FORMAT ") should be multiples of region_size_bytes",
          adjusted_capacity(), used_regions_size());
   return (adjusted_capacity() - used_regions_size()) / ShenandoahHeapRegion::region_size_bytes();
 }

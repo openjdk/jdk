@@ -44,18 +44,25 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   uintptr_t addr_as_int = (uintptr_t) obj;
 
   size_t unalignment_bytes = addr_as_int % alignment_in_bytes;
-  size_t unalignment_words = unalignment_bytes / HeapWordSize;
-  if (pointer_delta(end(), obj + unalignment_words) >= size) {
-    if (unalignment_words > 0) {
-      size_t pad_words = (alignment_in_bytes / HeapWordSize) - unalignment_words;
-      if (pad_words < ShenandoahHeap::min_fill_size()) {
-        pad_words += (alignment_in_bytes / HeapWordSize);
-      }
+  assert(unalignment_bytes % HeapWordSize == 0, "top should be multiple of HeapWordSize");
+
+  size_t pad_words = 0;
+  if (unalignment_bytes > 0) {
+    pad_words = (alignment_in_bytes - unalignment_bytes) / HeapWordSize;
+  }
+  if ((pad_words > 0) && (pad_words < ShenandoahHeap::min_fill_size())) {
+    pad_words += alignment_in_bytes / HeapWordSize;
+  }
+  if (pointer_delta(end(), obj + pad_words) >= size) {
+    if (pad_words > 0) {
       ShenandoahHeap::fill_with_object(obj, pad_words);
+      // register the filled pad object
       ShenandoahHeap::heap()->card_scan()->register_object(obj);
       obj += pad_words;
     }
 
+    // We don't need to register the PLAB.  Its content will be registered as objects are allocated within it and/or
+    // when the PLAB is retired.
     make_regular_allocation(req.affiliation());
     adjust_alloc_metadata(req.type(), size);
 

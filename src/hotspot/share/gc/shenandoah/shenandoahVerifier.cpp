@@ -792,9 +792,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
 
     ShenandoahCalculateRegionStatsClosure cl;
     _heap->heap_region_iterate(&cl);
-
     size_t heap_used = _heap->used();
-
     guarantee(cl.used() == heap_used,
               "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
               label,
