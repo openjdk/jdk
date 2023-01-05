@@ -2297,12 +2297,14 @@ public final class WPrinterJob extends RasterPrinterJob
 
 @SuppressWarnings("serial") // JDK-implementation class
 static class PrintToFileErrorDialog extends Dialog implements ActionListener {
+    @SuppressWarnings("this-escape")
     public PrintToFileErrorDialog(Frame parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);
         init (parent, title, message, buttonText);
     }
 
+    @SuppressWarnings("this-escape")
     public PrintToFileErrorDialog(Dialog parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);
