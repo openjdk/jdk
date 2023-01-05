@@ -22,37 +22,31 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/disableStackTracingMark.hpp"
-#include "runtime/javaThread.hpp"
+#ifndef SHARE_RUNTIME_DISABLESTACKTRACINGMARK_HPP
+#define SHARE_RUNTIME_DISABLESTACKTRACINGMARK_HPP
 
-DEBUG_ONLY(THREAD_LOCAL bool DisableStackTracingMark::_is_active = false;)
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
-DisableStackTracingMark::DisableStackTracingMark(JavaThread* jt)
-  : _jt(nullptr),
-    _sp(nullptr) {
-  if (jt == Thread::current()) {
-    _jt = jt;
-    _sp = begin(jt);
-  }
-}
+class JavaThread;
 
-DisableStackTracingMark::~DisableStackTracingMark() {
-  if (_jt != nullptr) {
-    end(_jt, _sp);
-  }
-}
+// Use this class to mark a section of code where stack tracing from the
+// current thread is not safe and should be avoided.
+class ClearFrameAnchorMark : public StackObj {
+  DEBUG_ONLY(static THREAD_LOCAL bool _is_active;)
+  JavaThread* _jt;
+  intptr_t* _sp;
 
-intptr_t* DisableStackTracingMark::begin(JavaThread* jt) {
-  assert(!_is_active, "nesting not supported");
-  DEBUG_ONLY(_is_active = true;)
-  intptr_t* sp = jt->frame_anchor()->last_Java_sp();
-  jt->frame_anchor()->set_last_Java_sp(NULL);
-  return sp;
-}
+  static intptr_t* begin(JavaThread* jt);
+  static void end(JavaThread* jt, intptr_t* sp);
 
-void DisableStackTracingMark::end(JavaThread* jt, intptr_t* sp) {
-  assert(_is_active, "mismatched begin and end");
-  jt->frame_anchor()->set_last_Java_sp(sp);
-  DEBUG_ONLY(_is_active = false;)
-}
+public:
+  ClearFrameAnchorMark(JavaThread* jt);
+  ~ClearFrameAnchorMark();
+
+  DEBUG_ONLY(static bool is_active() { return _is_active; })
+};
+
+
+#endif // SHARE_RUNTIME_DISABLESTACKTRACINGMARK_HPP
