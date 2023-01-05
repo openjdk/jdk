@@ -54,7 +54,11 @@ template <typename To, typename From,
                     std::is_integral<From>::value &&
                     std::is_integral<To>::value)>
 constexpr To bit_cast(const From& from) {
+#if HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
+#else
   return static_cast<To>(from);
+#endif
 }
 
 // From is an integral and To is a enum. We can simply static_cast using the underlying type.
@@ -64,7 +68,11 @@ template <typename To, typename From,
                     std::is_integral<From>::value &&
                     std::is_enum<To>::value)>
 constexpr To bit_cast(const From& from) {
+#if HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
+#else
   return static_cast<To>(bit_cast<std::underlying_type_t<To>>(from));
+#endif
 }
 
 // From is an enum and To is an integral. We can simply static_cast using the underlying type.
@@ -74,7 +82,11 @@ template <typename To, typename From,
                     std::is_enum<From>::value &&
                     std::is_integral<To>::value)>
 constexpr To bit_cast(const From& from) {
+#if HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
+#else
   return bit_cast<To>(static_cast<std::underlying_type_t<From>>(from));
+#endif
 }
 
 // From is an enum and To is an enum. We can simply static_cast using the underlying type.
@@ -84,8 +96,12 @@ template <typename To, typename From,
                     std::is_enum<From>::value &&
                     std::is_enum<To>::value)>
 constexpr To bit_cast(const From& from) {
+#if HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
+#else
   return static_cast<To>(bit_cast<std::underlying_type_t<To>>(
       static_cast<std::underlying_type_t<From>>(from)));
+#endif
 }
 
 // From or To is a pointer.
