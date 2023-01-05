@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  *
  */
 
-#ifndef SHARE_METAPROGRAMMING_ISARRAY_HPP
-#define SHARE_METAPROGRAMMING_ISARRAY_HPP
+// Intentionally no #include guard.  May be included multiple times for effect.
 
-#include "metaprogramming/integralConstant.hpp"
+// See vmassert_uninstall.hpp for usage.
 
-template <typename T> struct IsArray: public FalseType {};
+// Remove possible stdlib assert macro (or any others, for that matter).
+#undef assert
 
-template <typename T> struct IsArray<T[]>: public TrueType {};
-template <typename T, size_t S> struct IsArray<T[S]>: public TrueType {};
+// Reinstall HotSpot's assert macro, if previously defined.
+#ifdef vmassert
+#define assert(p, ...) vmassert(p, __VA_ARGS__)
+#endif
 
-#endif // SHARE_METAPROGRAMMING_ISARRAY_HPP

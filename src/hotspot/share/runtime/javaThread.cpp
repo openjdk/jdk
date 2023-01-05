@@ -99,6 +99,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -1673,14 +1674,23 @@ oop JavaThread::current_park_blocker() {
   return NULL;
 }
 
-// Print stack trace for checked JNI warnings and JNI fatal errors.
-// This is the external format from above, but selecting the platform
-// or vthread as applicable.
+// Print current stack trace for checked JNI warnings and JNI fatal errors.
+// This is the external format, selecting the platform or vthread
+// as applicable, and allowing for a native-only stack.
 void JavaThread::print_jni_stack() {
-  if (is_vthread_mounted()) {
-    print_vthread_stack_on(tty);
+  assert(this == JavaThread::current(), "Can't print stack of other threads");
+  if (!has_last_Java_frame()) {
+    ResourceMark rm(this);
+    char* buf = NEW_RESOURCE_ARRAY_RETURN_NULL(char, O_BUFLEN);
+    if (buf == nullptr) {
+      tty->print_cr("Unable to print native stack - out of memory");
+      return;
+    }
+    frame f = os::current_frame();
+    VMError::print_native_stack(tty, f, this, true /*print_source_info */,
+                                -1 /* max stack */, buf, O_BUFLEN);
   } else {
-    print_stack_on(tty);
+    print_active_stack_on(tty);
   }
 }
 
