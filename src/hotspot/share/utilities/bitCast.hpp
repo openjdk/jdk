@@ -34,7 +34,6 @@
 
 #include <string.h>
 
-#include <memory>
 #include <type_traits>
 
 // Trivial implementation when To and From are the same.
@@ -148,7 +147,13 @@ ALWAYSINLINE To bit_cast(const From& from) {
 #else
   // Most modern compilers will produce optimal code for memcpy.
   To to;
-  ::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
+#if HAS_BUILTIN(__builtin_addressof)
+  ::memcpy(__builtin_addressof(to), __builtin_addressof(from), sizeof(To));
+#else
+  ::memcpy(reinterpret_cast<To*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(to))),
+           reinterpret_cast<From*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(from))),
+           sizeof(To));
+#endif
   return to;
 #endif
 }

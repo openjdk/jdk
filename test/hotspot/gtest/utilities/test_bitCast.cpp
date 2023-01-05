@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/bit_cast.hpp"
+#include "utilities/bitCast.hpp"
 #include "unittest.hpp"
 
 TEST(BitCast, round_trip_int) {
