@@ -30,10 +30,12 @@
  */
 
 import java.io.IOError;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import jdk.jshell.JShell;
@@ -43,6 +45,8 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class ConsoleTest extends KullaTesting {
+
+    private static final int LARGE_COUNT = 10_000;
 
     //TODO: should also test System.console() without setting console to JShell
     @Test
@@ -111,6 +115,60 @@ public class ConsoleTest extends KullaTesting {
             }
         };
         assertEval("System.console().readLine(\"expected\")", "\"AB\"");
+    }
+
+    @Test
+    public void testConsoleLargeWritingTest() {
+        StringBuilder sb = new StringBuilder();
+        console = new ThrowingJShellConsole() {
+            @Override
+            public PrintWriter writer() {
+                return new PrintWriter(new Writer() {
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        sb.append(cbuf, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {}
+                    @Override
+                    public void close() throws IOException {}
+                });
+            }
+        };
+        assertEval("for (int i = 0; i < " + LARGE_COUNT + "; i++) System.console().writer().write(\"A\");");
+        String expected = "A".repeat(LARGE_COUNT);
+        assertEquals(sb.toString(), expected);
+    }
+
+    @Test
+    public void testConsoleMultiThreading() {
+        StringBuilder sb = new StringBuilder();
+        console = new ThrowingJShellConsole() {
+            @Override
+            public PrintWriter writer() {
+                return new PrintWriter(new Writer() {
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        sb.append(cbuf, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {}
+                    @Override
+                    public void close() throws IOException {}
+                });
+            }
+        };
+        assertEval("""
+                   try (var b = java.util.concurrent.Executors.newCachedThreadPool()) {
+                       b.execute(() -> {
+                           for (int j = 0; j < LARGE_COUNT; j++) {
+                               System.console().writer().write("A");
+                           }
+                       });
+                   }
+                   """.replace("LARGE_COUNT", "" + LARGE_COUNT));
+        String expected = "A".repeat(LARGE_COUNT);
+        assertEquals(sb.toString(), expected);
     }
 
     @Override

@@ -70,8 +70,15 @@ public class ConsoleImpl {
     }
 
     private static final class RemoteConsole implements JdkConsole {
-        private InputStream remoteOutput;
-        private OutputStream remoteInput;
+        private final InputStream remoteOutput;
+        private final OutputStream remoteInput;
+        private PrintWriter writer;
+        private Reader reader;
+
+        public RemoteConsole(InputStream remoteOutput, OutputStream remoteInput) {
+            this.remoteOutput = remoteOutput;
+            this.remoteInput = remoteInput;
+        }
 
         private void sendChars(char[] data, int off, int len) throws IOException {
             ConsoleImpl.sendChars(remoteInput, data, off, len);
@@ -112,43 +119,57 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public PrintWriter writer() {
-            return new PrintWriter(new Writer() {
-                @Override
-                public void write(char[] cbuf, int off, int len) throws IOException {
-                    remoteInput.write(Task.WRITE_CHARS.ordinal());
-                    sendChars(cbuf, off, len);
-                    remoteOutput.read();
-                }
+        public synchronized PrintWriter writer() {
+            if (writer == null) {
+                writer = new PrintWriter(new Writer() {
+                    int i;
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        sendAndReceive(() -> {
+                            remoteInput.write(Task.WRITE_CHARS.ordinal());
+                            sendChars(cbuf, off, len);
+                            remoteOutput.read();
+                            return null;
+                        });
+                    }
 
-                @Override
-                public void flush() throws IOException {
-                    remoteInput.write(Task.FLUSH_OUTPUT.ordinal());
-                    remoteOutput.read();
-                }
+                    @Override
+                    public void flush() throws IOException {
+                        sendAndReceive(() -> {
+                            remoteInput.write(Task.FLUSH_OUTPUT.ordinal());
+                            remoteOutput.read();
+                            return null;
+                        });
+                    }
 
-                @Override
-                public void close() throws IOException {
-                }
-            });
+                    @Override
+                    public void close() throws IOException {
+                    }
+                });
+            }
+            return writer;
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public Reader reader() {
-            return new Reader() {
-                @Override
-                public int read(char[] cbuf, int off, int len) throws IOException {
-                    remoteInput.write(Task.READ_CHARS.ordinal());
-                    return readChars(cbuf, off, len);
-                }
+        public synchronized Reader reader() {
+            if (reader == null) {
+                reader = new Reader() {
+                    @Override
+                    public int read(char[] cbuf, int off, int len) throws IOException {
+                        return sendAndReceive(() -> {
+                            remoteInput.write(Task.READ_CHARS.ordinal());
+                            return readChars(cbuf, off, len);
+                        });
+                    }
 
-                @Override
-                public void close() throws IOException {
-                }
-            };
+                    @Override
+                    public void close() throws IOException {
+                    }
+                };
+            } return reader;
         }
 
         /**
@@ -172,14 +193,16 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public synchronized String readLine(String fmt, Object ... args) {
+        public String readLine(String fmt, Object ... args) {
             try {
-                remoteInput.write(Task.READ_LINE.ordinal());
-                String prompt = fmt.formatted(args);
-                char[] chars = prompt.toCharArray();
-                sendChars(chars, 0, chars.length);
-                char[] line = readChars();
-                return new String(line);
+                return sendAndReceive(() -> {
+                    remoteInput.write(Task.READ_LINE.ordinal());
+                    String prompt = fmt.formatted(args);
+                    char[] chars = prompt.toCharArray();
+                    sendChars(chars, 0, chars.length);
+                    char[] line = readChars();
+                    return new String(line);
+                });
             } catch (IOException ex) {
                 throw new IOError(ex);
             }
@@ -197,13 +220,15 @@ public class ConsoleImpl {
          * {@inheritDoc}
          */
         @Override
-        public synchronized char[] readPassword(String fmt, Object ... args) {
+        public char[] readPassword(String fmt, Object ... args) {
             try {
-                remoteInput.write(Task.READ_PASSWORD.ordinal());
-                String prompt = fmt.formatted(args);
-                char[] chars = prompt.toCharArray();
-                sendChars(chars, 0, chars.length);
-                return readChars();
+                return sendAndReceive(() -> {
+                    remoteInput.write(Task.READ_PASSWORD.ordinal());
+                    String prompt = fmt.formatted(args);
+                    char[] chars = prompt.toCharArray();
+                    sendChars(chars, 0, chars.length);
+                    return readChars();
+                });
             } catch (IOException ex) {
                 throw new IOError(ex);
             }
@@ -223,8 +248,11 @@ public class ConsoleImpl {
         @Override
         public void flush() {
             try {
-                remoteInput.write(Task.FLUSH_CONSOLE.ordinal());
-                remoteOutput.read();
+                sendAndReceive(() -> {
+                    remoteInput.write(Task.FLUSH_CONSOLE.ordinal());
+                    remoteOutput.read();
+                    return null;
+                });
             } catch (IOException ex) {
                 throw new IOError(ex);
             }
@@ -235,9 +263,16 @@ public class ConsoleImpl {
             return StandardCharsets.UTF_8; //TODO: pass a "real" charset? What does it mean?
         }
 
-        public RemoteConsole(InputStream remoteOutput, OutputStream remoteInput) {
-            this.remoteOutput = remoteOutput;
-            this.remoteInput = remoteInput;
+        private synchronized <R, E extends Exception> R sendAndReceive(SendAndReceive<R, E> task) throws IOException, E {
+            R result = task.run();
+
+            this.remoteInput.flush();
+
+            return result;
+        }
+
+        interface SendAndReceive<R, E extends Exception> {
+            R run() throws E;
         }
 
     }
@@ -258,7 +293,7 @@ public class ConsoleImpl {
         }
 
         @Override
-        public void write(int b) throws IOException {
+        public synchronized void write(int b) throws IOException {
             if (bp + 1 >= buffer.length) {
                 buffer = Arrays.copyOf(buffer, 2 * buffer.length);
             }
