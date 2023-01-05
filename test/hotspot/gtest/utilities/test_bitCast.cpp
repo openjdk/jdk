@@ -145,10 +145,18 @@ class BitCastTest : public AllStatic {
  public:
   struct TrivialStruct1 {
     int member;
+
+    const TrivialStruct1* operator&() const { return nullptr; }
+
+    TrivialStruct1* operator&() { return nullptr; }
   };
 
   struct TrivialStruct2 {
     int member;
+
+    const TrivialStruct2* operator&() const { return nullptr; }
+
+    TrivialStruct2* operator&() { return nullptr; }
   };
 };
 
