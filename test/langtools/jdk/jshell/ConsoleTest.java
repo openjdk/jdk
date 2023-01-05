@@ -46,7 +46,6 @@ import static org.testng.Assert.*;
 
 public class ConsoleTest extends KullaTesting {
 
-    //TODO: should also test System.console() without setting console to JShell
     @Test
     public void testConsole1() {
         console = new ThrowingJShellConsole() {
