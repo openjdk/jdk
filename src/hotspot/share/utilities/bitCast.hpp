@@ -29,7 +29,6 @@
 // C++14 compatible implementation of std::bit_cast introduced in C++20.
 
 #include "metaprogramming/enableIf.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <string.h>
@@ -94,7 +93,7 @@ template <typename To, typename From,
           ENABLE_IF(sizeof(To) == sizeof(From) &&
                     !std::is_same<From, To>::value &&
                     (std::is_pointer<From>::value || std::is_pointer<To>::value))>
-ALWAYSINLINE To bit_cast(const From& from) {
+inline To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -107,7 +106,7 @@ template <typename To, typename From,
           ENABLE_IF(sizeof(To) == sizeof(From) &&
                     !std::is_same<From, To>::value &&
                     (std::is_floating_point<From>::value || std::is_floating_point<To>::value))>
-ALWAYSINLINE To bit_cast(const From& from) {
+inline To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -141,7 +140,7 @@ template <typename To, typename From,
                     !std::is_enum<To>::value &&
                     !std::is_pointer<To>::value &&
                     !std::is_floating_point<To>::value)>
-ALWAYSINLINE To bit_cast(const From& from) {
+inline To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
