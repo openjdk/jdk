@@ -185,7 +185,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 //
 // Scratch registers: t1 = r10, t2 = r11
 //
-address C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
+void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int hdr_size_in_bytes, Register t1, Register t2) {
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   assert(t1 == r10 && t2 == r11, "must be");
 
@@ -200,22 +200,25 @@ address C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, 
   lea(t1, Address(obj, hdr_size_in_bytes));
   lsr(t2, rscratch1, LogBytesPerWord);
   address tpc = zero_words(t1, t2);
+
   bind(done);
-  return tpc;
+  if (tpc == nullptr) {
+    Compilation::current()->bailout("no space for trampoline stub");
+  }
 }
 
 
-address C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, int header_size, int object_size, Register klass, Label& slow_case) {
   assert_different_registers(obj, t1, t2); // XXX really?
   assert(header_size >= 0 && object_size >= header_size, "illegal sizes");
 
   try_allocate(obj, noreg, object_size * BytesPerWord, t1, t2, slow_case);
 
-  return initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
+  initialize_object(obj, klass, noreg, object_size * HeapWordSize, t1, t2, UseTLAB);
 }
 
 // Scratch registers: t1 = r10, t2 = r11
-address C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
+void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
   const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
@@ -227,16 +230,17 @@ address C1_MacroAssembler::initialize_object(Register obj, Register klass, Regis
      const Register index = t2;
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
-       address tpc = initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
-       if (tpc == nullptr) {
-         return nullptr;
+       initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
+       if (Compilation::current()->bailed_out()) {
+         return;
        }
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
        address tpc = zero_words(t1, con_size_in_bytes / BytesPerWord);
        if (tpc == nullptr) {
-         return nullptr;
+         Compilation::current()->bailout("no space for trampoline stub");
+         return;
        }
      }
   }
@@ -249,10 +253,8 @@ address C1_MacroAssembler::initialize_object(Register obj, Register klass, Regis
   }
 
   verify_oop(obj);
-  return pc();
 }
-address C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case) {
-  address tpc = nullptr;
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case) {
   assert_different_registers(obj, len, t1, t2, klass);
 
   // determine alignment mask
@@ -274,7 +276,10 @@ address C1_MacroAssembler::allocate_array(Register obj, Register len, Register t
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  tpc = initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  if (Compilation::current()->bailed_out()) {
+    return;
+  }
 
   membar(StoreStore);
 
@@ -284,7 +289,6 @@ address C1_MacroAssembler::allocate_array(Register obj, Register len, Register t
   }
 
   verify_oop(obj);
-  return tpc;
 }
 
 

@@ -1194,17 +1194,13 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
     add_debug_info_for_null_check_here(op->stub()->info());
     __ br(Assembler::NE, *op->stub()->entry());
   }
-  address tpc = __ allocate_object(op->obj()->as_register(),
-                                   op->tmp1()->as_register(),
-                                   op->tmp2()->as_register(),
-                                   op->header_size(),
-                                   op->object_size(),
-                                   op->klass()->as_register(),
-                                   *op->stub()->entry());
-  if (tpc == nullptr) {
-    bailout("no space for trampoline stub");
-    return;
-  }
+  __ allocate_object(op->obj()->as_register(),
+                     op->tmp1()->as_register(),
+                     op->tmp2()->as_register(),
+                     op->header_size(),
+                     op->object_size(),
+                     op->klass()->as_register(),
+                     *op->stub()->entry());
   __ bind(*op->stub()->continuation());
 }
 
@@ -1229,18 +1225,14 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
     } else {
       __ mov(tmp3, len);
     }
-    address tpc = __ allocate_array(op->obj()->as_register(),
-                                    len,
-                                    tmp1,
-                                    tmp2,
-                                    arrayOopDesc::header_size(op->type()),
-                                    array_element_size(op->type()),
-                                    op->klass()->as_register(),
-                                    *op->stub()->entry());
-    if (tpc == nullptr) {
-      bailout("no space for trampoline stub");
-      return;
-    }
+    __ allocate_array(op->obj()->as_register(),
+                      len,
+                      tmp1,
+                      tmp2,
+                      arrayOopDesc::header_size(op->type()),
+                      array_element_size(op->type()),
+                      op->klass()->as_register(),
+                      *op->stub()->entry());
   }
   __ bind(*op->stub()->continuation());
 }
