@@ -4095,6 +4095,11 @@ public class JShellTool implements MessageHandler {
         public void flush() {
             writer().flush();
         }
+
+        @Override
+        public Charset charset() {
+            return input.charset();
+        }
     }
 }
 

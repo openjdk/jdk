@@ -27,6 +27,7 @@ package jdk.jshell;
 import java.io.IOError;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.nio.charset.Charset;
 
 /**
  * An interface providing functionality for {@link java.io.Console} in the user's snippet.
@@ -98,5 +99,16 @@ public interface JShellConsole {
      * @see java.io.Console#flush()
      */
     public void flush();
+
+    /**
+     * Returns the {@link java.nio.charset.Charset Charset} object used for
+     * the {@code Console}.
+     *
+     * @return a {@link java.nio.charset.Charset Charset} object used for the
+     *          {@code Console}
+     *
+     * @see java.io.Console#charset()
+     */
+    public Charset charset();
 
 }

@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1020,6 +1021,11 @@ class ConsoleIOContext extends IOContext {
     public char[] readPassword(String prompt) throws IOException {
         //TODO: correct behavior w.r.t. pre-read stuff?
         return doReadUserLine(prompt, '\0').toCharArray();
+    }
+
+    @Override
+    public Charset charset() {
+        return in.getTerminal().encoding();
     }
 
     @Override

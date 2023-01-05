@@ -267,7 +267,14 @@ public class ConsoleImpl {
 
         @Override
         public Charset charset() {
-            return StandardCharsets.UTF_8; //TODO: pass a "real" charset? What does it mean?
+            try {
+                return sendAndReceive(() -> {
+                    remoteInput.write(Task.CHARSET.ordinal());
+                    return Charset.forName(new String(readChars()));
+                });
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
         }
 
         private synchronized <R, E extends Exception> R sendAndReceive(SendAndReceive<R, E> task) throws IOException, E {
@@ -348,6 +355,11 @@ public class ConsoleImpl {
                     sinkOutput.write(0);
                     bp = 0;
                 }
+                case CHARSET -> {
+                    char[] name = console.charset().name().toCharArray();
+                    sendChars(sinkOutput, name, 0, name.length);
+                    bp = 0;
+                }
             }
         }
 
@@ -402,6 +414,7 @@ public class ConsoleImpl {
         READ_LINE,
         READ_PASSWORD,
         FLUSH_CONSOLE,
+        CHARSET,
         ;
     }
 }

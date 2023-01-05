@@ -36,6 +36,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import jdk.jshell.JShell;
@@ -48,6 +50,13 @@ public class ConsoleTest extends KullaTesting {
 
     @Test
     public void testConsole1() {
+        console = new ThrowingJShellConsole() {
+            @Override
+            public Charset charset() {
+                return StandardCharsets.US_ASCII;
+            }
+        };
+        assertEval("System.console().charset().name()", "\"US-ASCII\"");
         console = new ThrowingJShellConsole() {
             @Override
             public String readLine(String prompt) throws IOError {
@@ -197,6 +206,10 @@ public class ConsoleTest extends KullaTesting {
             public void flush() {
                 console.flush();
             }
+            @Override
+            public Charset charset() {
+                return console.charset();
+            }
         })));
     }
 
@@ -221,6 +234,10 @@ public class ConsoleTest extends KullaTesting {
         }
         @Override
         public void flush() {
+            throw new IllegalStateException("Not expected!");
+        }
+        @Override
+        public Charset charset() {
             throw new IllegalStateException("Not expected!");
         }
     }

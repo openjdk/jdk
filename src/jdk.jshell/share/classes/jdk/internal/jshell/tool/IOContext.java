@@ -27,6 +27,7 @@ package jdk.internal.jshell.tool;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import jdk.internal.org.jline.reader.UserInterruptException;
 
 /**
@@ -75,6 +76,10 @@ abstract class IOContext implements AutoCloseable {
     }
 
     public void setIndent(int indent) {}
+
+    public Charset charset() {
+        throw new UnsupportedOperationException();
+    }
 
     class InputInterruptedException extends Exception {
         private static final long serialVersionUID = 1L;
