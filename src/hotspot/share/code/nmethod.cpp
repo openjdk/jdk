@@ -451,6 +451,42 @@ void nmethod::init_defaults() {
 #endif
 }
 
+#ifdef ASSERT
+class CheckForOopsClosure : public OopClosure {
+  bool _found_oop = false;
+ public:
+  virtual void do_oop(oop* o) { _found_oop = true; }
+  virtual void do_oop(narrowOop* o) { _found_oop = true; }
+  bool found_oop() { return _found_oop; }
+};
+class CheckForMetadataClosure : public MetadataClosure {
+  bool _found_metadata = false;
+  Metadata* _ignore = nullptr;
+ public:
+  CheckForMetadataClosure(Metadata* ignore) : _ignore(ignore) {}
+  virtual void do_metadata(Metadata* md) { if (md != _ignore) _found_metadata = true; }
+  bool found_metadata() { return _found_metadata; }
+};
+
+static void assert_no_oops_or_metadata(nmethod* nm) {
+  if (nm == nullptr) return;
+  assert(nm->oop_maps() == nullptr, "expectation");
+
+  CheckForOopsClosure cfo;
+  nm->oops_do(&cfo);
+  assert(!cfo.found_oop(), "no oops allowed");
+
+  // We allow an exception for the own Method, but require its class to be permanent.
+  Method* own_method = nm->method();
+  CheckForMetadataClosure cfm(/* ignore reference to own Method */ own_method);
+  nm->metadata_do(&cfm);
+  assert(!cfm.found_metadata(), "no metadata allowed");
+
+  assert(own_method->method_holder()->class_loader_data()->is_permanent_class_loader_data(),
+         "Method's class needs to be permanent");
+}
+#endif
+
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int compile_id,
   CodeBuffer *code_buffer,
@@ -474,14 +510,19 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     if (exception_handler != -1) {
       offsets.set_value(CodeOffsets::Exceptions, exception_handler);
     }
-    nm = new (native_nmethod_size, CompLevel_none)
+
+    // MH intrinsics are dispatch stubs which are compatible with NonNMethod space.
+    // IsUnloadingBehaviour::is_unloading needs to handle them separately.
+    bool allow_NonNMethod_space = method->can_be_allocated_in_NonNMethod_space();
+    nm = new (native_nmethod_size, allow_NonNMethod_space)
     nmethod(method(), compiler_none, native_nmethod_size,
             compile_id, &offsets,
             code_buffer, frame_size,
             basic_lock_owner_sp_offset,
             basic_lock_sp_offset,
             oop_maps);
-    NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
+    DEBUG_ONLY( if (allow_NonNMethod_space) assert_no_oops_or_metadata(nm); )
+    NOT_PRODUCT(if (nm != NULL) native_nmethod_stats.note_native_nmethod(nm));
   }
 
   if (nm != NULL) {
@@ -714,6 +755,14 @@ nmethod::nmethod(
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
+}
+
+void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {
+  // Try MethodNonProfiled and MethodProfiled.
+  void* return_value = CodeCache::allocate(nmethod_size, CodeBlobType::MethodNonProfiled);
+  if (return_value != nullptr || !allow_NonNMethod_space) return return_value;
+  // Try NonNMethod or give up.
+  return CodeCache::allocate(nmethod_size, CodeBlobType::NonNMethod);
 }
 
 nmethod::nmethod(
@@ -1413,14 +1462,14 @@ oop nmethod::oop_at(int index) const {
   if (index == 0) {
     return NULL;
   }
-  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
+  return NMethodAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
 }
 
 oop nmethod::oop_at_phantom(int index) const {
   if (index == 0) {
     return NULL;
   }
-  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
+  return NMethodAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
 }
 
 //

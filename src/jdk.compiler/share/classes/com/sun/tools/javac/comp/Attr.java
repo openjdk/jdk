@@ -4204,13 +4204,15 @@ public class Attr extends JCTree.Visitor {
             }
         }
         tree.type = tree.deconstructor.type = type;
-        Type site = types.removeWildcards(tree.type);
+        Type site = types.capture(tree.type);
         List<Type> expectedRecordTypes;
         if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
             expectedRecordTypes = record.getRecordComponents()
                                         .stream()
-                                        .map(rc -> types.memberType(site, rc)).collect(List.collector());
+                                        .map(rc -> types.memberType(site, rc))
+                                        .map(t -> types.upward(t, types.captures(t)).baseType())
+                                        .collect(List.collector());
             tree.record = record;
         } else {
             log.error(tree.pos(), Errors.DeconstructionPatternOnlyRecords(site.tsym));

@@ -8086,7 +8086,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         {
             return true;
         }
-    };
+    }
 
     static synchronized void setRequestFocusController(RequestFocusController requestController)
     {

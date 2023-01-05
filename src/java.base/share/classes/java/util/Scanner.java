@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,24 +51,28 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * various {@code next} methods.
  *
  * <p>For example, this code allows a user to read a number from
- * {@code System.in}:
- * <blockquote><pre>{@code
- *     Scanner sc = new Scanner(System.in);
- *     int i = sc.nextInt();
- * }</pre></blockquote>
+ * the console.
+ * {@snippet :
+ *     var con = System.console();
+ *     if (con != null) {
+ *         // @link substring="reader()" target="java.io.Console#reader()" :
+ *         Scanner sc = new Scanner(con.reader());
+ *         int i = sc.nextInt();
+ *     }
+ * }
  *
  * <p>As another example, this code allows {@code long} types to be
  * assigned from entries in a file {@code myNumbers}:
- * <blockquote><pre>{@code
+ * {@snippet :
  *      Scanner sc = new Scanner(new File("myNumbers"));
  *      while (sc.hasNextLong()) {
  *          long aLong = sc.nextLong();
  *      }
- * }</pre></blockquote>
+ * }
  *
  * <p>The scanner can also use delimiters other than whitespace. This
  * example reads several items in from a string:
- * <blockquote><pre>{@code
+ * {@snippet :
  *     String input = "1 fish 2 fish red fish blue fish";
  *     Scanner s = new Scanner(input).useDelimiter("\\s*fish\\s*");
  *     System.out.println(s.nextInt());
@@ -76,7 +80,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     System.out.println(s.next());
  *     System.out.println(s.next());
  *     s.close();
- * }</pre></blockquote>
+ * }
  * <p>
  * prints the following output:
  * <blockquote><pre>{@code
@@ -88,7 +92,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p>The same output can be generated with this code, which uses a regular
  * expression to parse all four tokens at once:
- * <blockquote><pre>{@code
+ * {@snippet :
  *     String input = "1 fish 2 fish red fish blue fish";
  *     Scanner s = new Scanner(input);
  *     s.findInLine("(\\d+) fish (\\d+) fish (\\w+) fish (\\w+)");
@@ -96,7 +100,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     for (int i=1; i<=result.groupCount(); i++)
  *         System.out.println(result.group(i));
  *     s.close();
- * }</pre></blockquote>
+ * }
  *
  * <p>The <a id="default-delimiter">default whitespace delimiter</a> used
  * by a scanner is as recognized by {@link Character#isWhitespace(char)

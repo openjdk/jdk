@@ -103,12 +103,6 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  // public for use by the internal non-product debugger.
-  NOT_PRODUCT(public:)
-  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
-                                 char* buf, int buf_size);
-  NOT_PRODUCT(private:)
-
   static const char* get_filename_only() {
     char separator = os::file_separator()[0];
     const char* p = strrchr(_filename, separator);
@@ -143,6 +137,12 @@ class VMError : public AllStatic {
   static void clear_step_start_time();
 
 public:
+
+  // print_source_info: if true, we try to resolve the source information on platforms that support it
+  //  (useful but may slow down, timeout or misfunction in error situations)
+  // max_frames: if not -1, overrides StackPrintLimit
+  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
+                                 int max_frames, char* buf, int buf_size);
 
   // return a string to describe the error
   static char* error_string(char* buf, int buflen);

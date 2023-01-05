@@ -465,9 +465,8 @@ public abstract class ColorModel implements Transparency{
      * @param componentIdx the index of the color/alpha component
      * @return the number of bits for the color/alpha component at the
      *          specified index.
-     * @throws ArrayIndexOutOfBoundsException if {@code componentIdx}
-     *         is greater than the number of components or
-     *         less than zero
+     * @throws ArrayIndexOutOfBoundsException if {@code componentIdx} is greater
+     *         than or equal to the number of components or less than zero
      * @throws NullPointerException if the number of bits array is
      *         {@code null}
      */

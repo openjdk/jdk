@@ -174,7 +174,7 @@ TEST(LogDecorators, combine_with) {
 
   // Select first and third decorator for dec1
   char input[64];
-  sprintf(input, "%s,%s", decorator_name_array[0], decorator_name_array[3]);
+  os::snprintf_checked(input, sizeof(input), "%s,%s", decorator_name_array[0], decorator_name_array[3]);
   dec1.parse(input);
   EXPECT_TRUE(dec1.is_decorator(decorator_array[0]));
   EXPECT_TRUE(dec1.is_decorator(decorator_array[3]));
