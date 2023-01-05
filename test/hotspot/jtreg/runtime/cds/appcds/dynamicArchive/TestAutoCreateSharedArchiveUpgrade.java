@@ -75,7 +75,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
         // Earliest testable version is 19
         // Only run once if using the default boot jdk
         int n = java.lang.Runtime.version().major();
-        System.out.println("Version: " + n);
 
         // Test only previous version unless specified in gmk
         if (System.getProperty("test.autocreatesharedarchive.all.jdk.versions") == null) {
@@ -88,7 +87,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     static void testJDK(int version) throws Throwable {
-        System.out.println("Testing JDK " + version);
         BOOT_JDK = fetchBootJDK(version);
         setupJVMs();
         doTest();
