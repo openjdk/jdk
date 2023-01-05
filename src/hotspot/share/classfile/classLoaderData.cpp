@@ -1056,7 +1056,7 @@ void ClassLoaderData::verify() {
     for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
       Metadata* m = _deallocate_list->at(i);
       if (m->is_klass()) {
-        ((InstanceKlass*)m)->verify();
+        ((Klass*)m)->verify();
       }
     }
   }
