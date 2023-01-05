@@ -267,8 +267,8 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     /*
-     * Repeates task "max" times and waits for "wait" seconds between each
-     * execution until the task not throws an exception.
+     * Repeates a "task" "max" times and waits for "wait" seconds between each
+     * execution until the "task" returns without throwing an exception.
      */
     public static <T> T tryRunMultipleTimes(Supplier<T> task, int max, int wait) {
         RuntimeException lastException = null;
