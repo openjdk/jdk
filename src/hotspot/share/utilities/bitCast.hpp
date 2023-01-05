@@ -56,7 +56,7 @@ template <typename To, typename From,
                     std::is_integral<From>::value &&
                     std::is_integral<To>::value)>
 constexpr To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   return static_cast<To>(from);
@@ -70,7 +70,7 @@ template <typename To, typename From,
                     std::is_integral<From>::value &&
                     std::is_enum<To>::value)>
 constexpr To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   return static_cast<To>(bit_cast<std::underlying_type_t<To>>(from));
@@ -84,7 +84,7 @@ template <typename To, typename From,
                     std::is_enum<From>::value &&
                     std::is_integral<To>::value)>
 constexpr To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   return bit_cast<To>(static_cast<std::underlying_type_t<From>>(from));
@@ -98,7 +98,7 @@ template <typename To, typename From,
                     std::is_enum<From>::value &&
                     std::is_enum<To>::value)>
 constexpr To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   return static_cast<To>(bit_cast<std::underlying_type_t<To>>(
@@ -113,7 +113,7 @@ template <typename To, typename From,
                     std::is_pointer<From>::value &&
                     std::is_pointer<To>::value)>
 inline To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(From));
@@ -129,7 +129,7 @@ template <typename To, typename From,
                     std::is_pointer<From>::value &&
                     !std::is_pointer<To>::value)>
 inline To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(From));
@@ -144,7 +144,7 @@ template <typename To, typename From,
                     !std::is_pointer<From>::value &&
                     std::is_pointer<To>::value)>
 inline To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(To));
@@ -158,7 +158,7 @@ template <typename To, typename From,
                     !std::is_same<From, To>::value &&
                     (std::is_floating_point<From>::value || std::is_floating_point<To>::value))>
 inline To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   // Use the union trick. The union trick is technically UB, but is
@@ -191,7 +191,7 @@ template <typename To, typename From,
                     !std::is_pointer<To>::value &&
                     !std::is_floating_point<To>::value)>
 inline To bit_cast(const From& from) {
-#if HAS_BUILTIN(__builtin_bit_cast)
+#if HAS_BUILTIN(__builtin_bit_cast) && !defined(__APPLE__)
   return __builtin_bit_cast(To, from);
 #else
   // Most modern compilers will produce optimal code for memcpy.
