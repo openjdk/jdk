@@ -1150,7 +1150,7 @@
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
     <Field type="boolean" name="onOutOfMemoryError" label="Heap dump on Out of Memory Error" />
-    <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump will overwrite previous file location if it exists" />
+    <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump overwrites previous file location if it exists" />
     <Field type="int" name="compression" label="Compression Level" description="Compression level of the Dump, if larger than 0 we use gzip compressoion with this level" />
   </Event>
 
