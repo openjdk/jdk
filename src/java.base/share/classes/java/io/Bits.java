@@ -39,8 +39,6 @@ final class Bits {
     private static final VarHandle SHORT = create(short[].class);
     private static final VarHandle INT = create(int[].class);
     private static final VarHandle LONG = create(long[].class);
-    private static final VarHandle FLOAT = create(float[].class);
-    private static final VarHandle DOUBLE = create(double[].class);
 
     /*
      * Methods for unpacking primitive values from byte arrays starting at
@@ -64,7 +62,9 @@ final class Bits {
     }
 
     static float getFloat(byte[] b, int off) {
-        return (float) FLOAT.get(b, off);
+        // Using Float.floatToIntBits collapses NaN values to a single
+        // "canonical" NaN value
+        return Float.intBitsToFloat((int) INT.get(b, off));
     }
 
     static long getLong(byte[] b, int off) {
@@ -72,7 +72,9 @@ final class Bits {
     }
 
     static double getDouble(byte[] b, int off) {
-        return (double) DOUBLE.get(b, off);
+        // Using Double.doubleToLongBits collapses NaN values to a single
+        // "canonical" NaN value
+        return Double.longBitsToDouble((long) LONG.get(b, off));
     }
 
     /*
