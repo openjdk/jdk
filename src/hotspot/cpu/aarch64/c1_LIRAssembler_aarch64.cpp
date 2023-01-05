@@ -1202,7 +1202,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
                                    op->klass()->as_register(),
                                    *op->stub()->entry());
   if (tpc == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("no space for trampoline stub");
     return;
   }
   __ bind(*op->stub()->continuation());
@@ -1238,7 +1238,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                                     op->klass()->as_register(),
                                     *op->stub()->entry());
     if (tpc == nullptr) {
-      bailout("trampoline stub overflow");
+      bailout("no space for trampoline stub");
       return;
     }
   }
