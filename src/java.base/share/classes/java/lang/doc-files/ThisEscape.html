@@ -31,7 +31,7 @@
 <body>
 <h1 id="ThisEscape">{@index "This Escape"}</h1>
 
-<h3>What is a "This Escape"?</h3>
+<h2>What is a "This Escape"?</h2>
 
 <p>
 The Java language requires subclass constructors to invoke a superclass constructor before
@@ -48,7 +48,7 @@ import java.util.*;
 import java.util.function.*;
 
 /**
- * A {@link Set} that only allows elements matching some {@link Predicate}.
+ * A &#123;&#64;link Set} that only allows elements matching some &#123;&#64;link Predicate}.
  */
 public class FilteredSet&lt;E&gt; extends HashSet&lt;E&gt; {
 
@@ -59,7 +59,7 @@ public class FilteredSet&lt;E&gt; extends HashSet&lt;E&gt; {
         this.filter = filter;
     }
 
-    @Override
+    &#64;Override
     public boolean add(E elem) {
         if (!this.filter.test(elem))
             throw new IllegalArgumentException("disallowed element");
@@ -80,13 +80,13 @@ Moreover, how this error happens is due to a tricky interplay of three different
     <li>The <code>FilteredSet</code> constructor invokes the <code>HashSet(Collection)</code> superclass constructor;
     <li><code>HashSet(Collection)</code> constructor invokes <code>AbstractCollection.addAll()</code>;
     <li><code>AbstractCollection.addAll()</code> invokes <code>add()</code> for each element;
-    <li><code>FilteredSet.add()</code> invokes <code>this.filter</code>, but that <code>this.filter</code> is still null.
+    <li><code>FilteredSet.add()</code> invokes <code>this.filter.test()</code>, but that <code>this.filter</code> is still null.
 </ol>
 
 <p>
-This kind of bug is due to what's called a <em>'this' escape</em>. This term refers to any time a reference to
-the unitialized <code>this</code> instance "escapes" from a superclass constructor's control to some other code
-before it has been fully initialized.
+This bug is possible because the <code>HashSet(Collection)</code> constructor has a <em>'this'
+escape</em>. This term refers to any time a reference to <code>this</code> "escapes"
+from a superclass constructor's control to some other code before it has been fully initialized.
 
 <p>
 The example above illustrates a key difficulty with 'this' escape bugs, which is that they
@@ -100,21 +100,29 @@ subclass overrides <code>hashCode()</code> to include one or more of its own fie
 <code>HashSet</code> will record the object under the wrong hash value, because at that time those
 subclass fields won't be initialized yet.
 
-<h3>Compiler Warnings</h3>
+<h2>Compiler Warnings</h2>
 
 <p>
 The Java compiler can warn about possible 'this' escapes. To enable 'this' escape detection,
 include the <code>-Xlint:this-escape</code> flag on the command line.
 
 <p>
-'This' escape warnings are only reported for constructors that could be invoked by a subclass
-defined in a different source file. So, for example, private constructors and constructors in
-private classes will not generate warnings.
+The 'this' escape warning only looks for "escapes" in which some <em>subclass</em> might still be
+uninitialized. It doesn't look for escapes in which the class doing the leaking might itself be
+uninitialized. In other words, the warning assumes any individual constructor knows what it's
+doing. Instead, it only looks for potential problems that necessarily span multiple classes.
 
 <p>
-Use <code>@SuppressWarnings("this-escape")</code> to suppress this warning as needed.
+In fact, the boundary is actually larger than that: potential problems must span multiple
+<em>source code files</em>. Warnings are only reported for constructors that could be invoked from
+some subclass defined in a different file. So, for example, private constructors and constructors
+in private classes don't generate warnings. This design choice reflects the "key difficulty" of
+'this' escape bugs mentioned above.
 
-<h3>Mitigation Strategies</h3>
+<p>
+Use <code>&#64;SuppressWarnings("this-escape")</code> to suppress this warning as needed.
+
+<h2>Mitigation Strategies</h2>
 
 <p>
 To avoid 'this' escapes in superclasses, consider the following strategies:
@@ -127,7 +135,7 @@ To avoid 'this' escapes in superclasses, consider the following strategies:
 
 <p>
 If a 'this' escape can't be avoided, ideally it should be documented in the constructor's API Javadoc
-so that subclasses know how they can work around it.
+so that subclasses work around it if needed.
 
 <!-- Uncomment when JDK-8194743 is implemented
 <p>

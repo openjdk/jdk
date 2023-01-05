@@ -252,7 +252,7 @@ public class Throwable implements Serializable {
      * call to {@link #initCause}.
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable; see
+     * the stack trace data in the newly created throwable; see also
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      */
     @SuppressWarnings("this-escape")
@@ -266,7 +266,7 @@ public class Throwable implements Serializable {
      * a call to {@link #initCause}.
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable; see
+     * the stack trace data in the newly created throwable; see also
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param   message   the detail message. The detail message is saved for
@@ -285,7 +285,7 @@ public class Throwable implements Serializable {
      * this throwable's detail message.
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable; see
+     * the stack trace data in the newly created throwable; see also
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  message the detail message (which is saved for later retrieval
@@ -312,7 +312,7 @@ public class Throwable implements Serializable {
      * java.security.PrivilegedActionException}).
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable; see
+     * the stack trace data in the newly created throwable; see also
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  cause the cause (which is saved for later retrieval by the
@@ -357,8 +357,8 @@ public class Throwable implements Serializable {
      * flow between two sub-systems, is another situation where
      * immutable throwable objects would be appropriate.
      *
-     * <p>Subclasses overriding {@link #fillInStackTrace()} should be
-     * aware that it may be invoked prior to subclass initialization.
+     * <p>This constructor may invoke {@link #fillInStackTrace()}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  message the detail message.
      * @param cause the cause.  (A {@code null} value is permitted,
