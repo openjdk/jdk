@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/clearFrameAnchorMark.hpp"
+#include "runtime/clearLastJavaFrameMark.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
@@ -756,7 +756,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
     // We set the last_Java frame. But the stack isn't really parsable here. So we
     // clear it to make sure JFR understands not to try and walk stacks from events
     // in here.
-    ClearFrameAnchorMark dstm(thread);
+    ClearLastJavaFrameMark dstm(thread);
 
     // Unpack the interpreter frames and any adapter frame (c2 only) we might create.
     array->unpack_to_stack(stub_frame, exec_mode, info->caller_actual_parameters());

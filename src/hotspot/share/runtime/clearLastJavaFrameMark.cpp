@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/clearFrameAnchorMark.hpp"
+#include "runtime/clearLastJavaFrameMark.hpp"
 #include "runtime/javaThread.hpp"
 
-DEBUG_ONLY(THREAD_LOCAL bool ClearFrameAnchorMark::_is_active = false;)
+DEBUG_ONLY(THREAD_LOCAL bool ClearLastJavaFrameMark::_is_active = false;)
 
-ClearFrameAnchorMark::ClearFrameAnchorMark(JavaThread* jt)
+ClearLastJavaFrameMark::ClearLastJavaFrameMark(JavaThread* jt)
   : _jt(nullptr),
     _sp(nullptr) {
   if (jt == Thread::current()) {
@@ -41,13 +41,13 @@ ClearFrameAnchorMark::ClearFrameAnchorMark(JavaThread* jt)
   }
 }
 
-ClearFrameAnchorMark::~ClearFrameAnchorMark() {
+ClearLastJavaFrameMark::~ClearLastJavaFrameMark() {
   if (_jt != nullptr) {
     end(_jt, _sp);
   }
 }
 
-intptr_t* ClearFrameAnchorMark::begin(JavaThread* jt) {
+intptr_t* ClearLastJavaFrameMark::begin(JavaThread* jt) {
   assert(!_is_active, "nesting not supported");
   DEBUG_ONLY(_is_active = true;)
   intptr_t* sp = jt->frame_anchor()->last_Java_sp();
@@ -55,7 +55,7 @@ intptr_t* ClearFrameAnchorMark::begin(JavaThread* jt) {
   return sp;
 }
 
-void ClearFrameAnchorMark::end(JavaThread* jt, intptr_t* sp) {
+void ClearLastJavaFrameMark::end(JavaThread* jt, intptr_t* sp) {
   assert(_is_active, "mismatched begin and end");
   jt->frame_anchor()->set_last_Java_sp(sp);
   DEBUG_ONLY(_is_active = false;)

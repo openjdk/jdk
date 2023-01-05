@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_DISABLESTACKTRACINGMARK_HPP
-#define SHARE_RUNTIME_DISABLESTACKTRACINGMARK_HPP
+#ifndef SHARE_RUNTIME_CLEARLASTJAVAFRAMEMARK_HPP
+#define SHARE_RUNTIME_CLEARLASTJAVAFRAMEMARK_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -33,7 +33,7 @@ class JavaThread;
 
 // Use this class to mark a section of code where stack tracing from the
 // current thread is not safe and should be avoided.
-class ClearFrameAnchorMark : public StackObj {
+class ClearLastJavaFrameMark : public StackObj {
   DEBUG_ONLY(static THREAD_LOCAL bool _is_active;)
   JavaThread* _jt;
   intptr_t* _sp;
@@ -42,11 +42,11 @@ class ClearFrameAnchorMark : public StackObj {
   static void end(JavaThread* jt, intptr_t* sp);
 
 public:
-  ClearFrameAnchorMark(JavaThread* jt);
-  ~ClearFrameAnchorMark();
+  ClearLastJavaFrameMark(JavaThread* jt);
+  ~ClearLastJavaFrameMark();
 
   DEBUG_ONLY(static bool is_active() { return _is_active; })
 };
 
 
-#endif // SHARE_RUNTIME_DISABLESTACKTRACINGMARK_HPP
+#endif // SHARE_RUNTIME_CLEARLASTJAVAFRAMEMARK_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zVerify.hpp"
 #include "memory/resourceArea.inline.hpp"
-#include "runtime/clearFrameAnchorMark.hpp"
+#include "runtime/clearLastJavaFrameMark.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -72,7 +72,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
   {
     // It isn't safe to trace through this code as that might involve walking through
     // continuation oops that have not been fixed up yet.
-    ClearFrameAnchorMark dstm(_jt);
+    ClearLastJavaFrameMark dstm(_jt);
 
     // Verify the head (no_frames) of the thread is bad before fixing it.
     ZVerify::verify_thread_head_bad(_jt);
@@ -103,7 +103,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
 void ZStackWatermark::process(const frame& fr, RegisterMap& register_map, void* context) {
   // It isn't safe to trace through this code as that might involve walking through
   // continuation oops that have not been fixed up yet.
-  ClearFrameAnchorMark dstm(_jt);
+  ClearLastJavaFrameMark dstm(_jt);
 
   ZVerify::verify_frame_bad(fr, register_map);
   fr.oops_do(closure_from_context(context), &_cb_cl, &register_map, DerivedPointerIterationMode::_directly);
