@@ -153,7 +153,7 @@ public class PipedWriter extends Writer {
         if (sink == null) {
             throw new IOException("Pipe not connected");
         }
-        Objects.checkFromToIndex(off, len, cbuf.length);
+        Objects.checkFromIndexSize(off, len, cbuf.length);
         sink.receive(cbuf, off, len);
     }
 
