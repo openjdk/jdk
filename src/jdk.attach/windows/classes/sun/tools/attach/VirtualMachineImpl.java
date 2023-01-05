@@ -126,12 +126,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
 
         @Override
-        protected int readImpl(long fd, byte[] bs, int off, int len) throws IOException {
+        protected int read(long fd, byte[] bs, int off, int len) throws IOException {
             return VirtualMachineImpl.readPipe(fd, bs, off, len);
         }
 
         @Override
-        protected void closeImpl(long fd) throws IOException {
+        protected void close(long fd) throws IOException {
             VirtualMachineImpl.closePipe(fd);
         }
     }

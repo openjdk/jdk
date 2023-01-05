@@ -369,6 +369,9 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         return message.toString();
     }
 
+    /*
+     * Utility method to process the completion status after command execution
+     */
     void processCompletionStatus(IOException ioe, String cmd, InputStream sis) throws AgentLoadException, IOException {
         // Read the command completion status
         int completionStatus;
@@ -421,8 +424,8 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             this.fd = fd;
         }
 
-        protected abstract int readImpl(long fd, byte[] bs, int off, int len) throws IOException;
-        protected abstract void closeImpl(long fd) throws IOException;
+        protected abstract int read(long fd, byte[] bs, int off, int len) throws IOException;
+        protected abstract void close(long fd) throws IOException;
 
         public synchronized int read() throws IOException {
             byte b[] = new byte[1];
@@ -441,12 +444,12 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             } else if (len == 0) {
                 return 0;
             }
-            return readImpl(fd, bs, off, len);
+            return read(fd, bs, off, len);
         }
 
         public synchronized void close() throws IOException {
             if (fd != -1) {
-                closeImpl(fd);
+                close(fd);
             }
         }
     }
