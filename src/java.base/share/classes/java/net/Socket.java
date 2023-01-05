@@ -531,8 +531,10 @@ public class Socket implements java.io.Closeable {
         try {
             impl.create(stream);
             created = true;
+        } catch (SocketException e) {
+            throw e;
         } catch (IOException e) {
-            throw new SocketException(e.getMessage());
+            throw new SocketException(e.getMessage(), e);
         }
     }
 

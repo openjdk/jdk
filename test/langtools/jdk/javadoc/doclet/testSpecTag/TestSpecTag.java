@@ -41,8 +41,8 @@ import toolbox.ToolBox;
 
 public class TestSpecTag extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSpecTag tester = new TestSpecTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestSpecTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();

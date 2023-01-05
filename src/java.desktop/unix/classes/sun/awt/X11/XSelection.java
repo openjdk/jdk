@@ -767,7 +767,7 @@ final class XSelection {
             }
             }
         }
-    };
+    }
 
     private static class IncrementalDataProvider implements XEventDispatcher {
         private final long requestor;
@@ -876,5 +876,5 @@ final class XSelection {
                 break;
             }
         }
-    };
+    }
 }
