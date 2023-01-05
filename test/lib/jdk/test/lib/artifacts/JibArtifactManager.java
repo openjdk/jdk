@@ -114,19 +114,10 @@ public class JibArtifactManager implements ArtifactManager {
     @Override
     public Path resolve(Artifact artifact) throws ArtifactResolverException {
         HashMap<String, Object> artifactDescription = new HashMap<>();
-        if (artifact.server().equals("jpg")) {
-            artifactDescription.put("server", artifact.server());
-            artifactDescription.put("product", artifact.product());
-            artifactDescription.put("version", artifact.version());
-            artifactDescription.put("build_number", artifact.build_number());
-            artifactDescription.put("file", artifact.file());
-        } else {
-            artifactDescription.put("module", artifact.name());
-            artifactDescription.put("organization", artifact.organization());
-            artifactDescription.put("ext", artifact.extension());
-            artifactDescription.put("revision", artifact.revision());
-        }
-
+        artifactDescription.put("module", artifact.name());
+        artifactDescription.put("organization", artifact.organization());
+        artifactDescription.put("ext", artifact.extension());
+        artifactDescription.put("revision", artifact.revision());
         if (artifact.classifier().length() > 0) {
             artifactDescription.put("classifier", artifact.classifier());
         }
