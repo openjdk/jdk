@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @bug 8139581
- * @summary Verify that components are redrawn after 
+ * @summary Verify that components are redrawn after
  * removal and addition to a container
  * @run main ComponentRedrawnTest
  */
@@ -43,7 +43,7 @@ import java.awt.event.MouseEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JButton;
-    
+
 public class ComponentRedrawnTest {
 
     private static Frame frame;
