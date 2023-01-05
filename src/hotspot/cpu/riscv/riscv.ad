@@ -1845,7 +1845,7 @@ const bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ConvF2HF:
     case Op_ConvHF2F:
-      return UseZfh;
+      return UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -8142,7 +8142,7 @@ instruct convL2F_reg_reg(fRegF dst, iRegL src) %{
 // float <-> half float
 
 instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, fRegF tmp) %{
-  predicate(UseZfh);
+  predicate(UseZfhmin);
   match(Set dst (ConvHF2F src));
   effect(TEMP tmp);
 
@@ -8160,7 +8160,7 @@ instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, fRegF tmp) %{
 %}
 
 instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF tmp) %{
-  predicate(UseZfh);
+  predicate(UseZfhmin);
   match(Set dst (ConvF2HF src));
   effect(TEMP tmp);
 
