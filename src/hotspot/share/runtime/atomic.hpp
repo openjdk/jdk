@@ -35,6 +35,7 @@
 #include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
+#include "utilities/bitCast.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
 
@@ -740,8 +741,8 @@ struct Atomic::AddImpl<
 
 template<typename Type, typename Fn, typename D, typename I>
 inline D Atomic::add_using_helper(Fn fn, D volatile* dest, I add_value) {
-  return PrimitiveConversions::cast<D>(
-    fn(PrimitiveConversions::cast<Type>(add_value),
+  return bit_cast<D>(
+    fn(bit_cast<Type>(add_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
 
@@ -839,10 +840,10 @@ inline T Atomic::cmpxchg_using_helper(Fn fn,
                                       T compare_value,
                                       T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
-  return PrimitiveConversions::cast<T>(
-    fn(PrimitiveConversions::cast<Type>(exchange_value),
+  return bit_cast<T>(
+    fn(bit_cast<Type>(exchange_value),
        reinterpret_cast<Type volatile*>(dest),
-       PrimitiveConversions::cast<Type>(compare_value)));
+       bit_cast<Type>(compare_value)));
 }
 
 inline uint32_t Atomic::CmpxchgByteUsingInt::set_byte_in_int(uint32_t n,
@@ -895,7 +896,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
     // if our byte is still as cur we loop and try again
   } while (get_byte_in_int(cur, idx) == canon_compare_value);
 
-  return PrimitiveConversions::cast<T>(get_byte_in_int(cur, idx));
+  return bit_cast<T>(get_byte_in_int(cur, idx));
 }
 
 // Handle xchg for integral types.
@@ -958,8 +959,8 @@ inline T Atomic::xchg_using_helper(Fn fn,
                                    T exchange_value) {
   STATIC_ASSERT(sizeof(Type) == sizeof(T));
   // Notice the swapped order of arguments. Change when/if stubs are rewritten.
-  return PrimitiveConversions::cast<T>(
-    fn(PrimitiveConversions::cast<Type>(exchange_value),
+  return bit_cast<T>(
+    fn(bit_cast<Type>(exchange_value),
        reinterpret_cast<Type volatile*>(dest)));
 }
 

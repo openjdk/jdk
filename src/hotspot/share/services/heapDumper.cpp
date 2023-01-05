@@ -57,6 +57,7 @@
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
+#include "utilities/bitCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -1000,13 +1001,6 @@ u4 DumperSupport::sig2size(Symbol* sig) {
     case JVM_SIGNATURE_DOUBLE: return 8;
     default: ShouldNotReachHere(); /* to shut up compiler */ return 0;
   }
-}
-
-template<typename T, typename F> T bit_cast(F from) { // replace with the real thing when we can use c++20
-  T to;
-  static_assert(sizeof(to) == sizeof(from), "must be of the same size");
-  memcpy(&to, &from, sizeof(to));
-  return to;
 }
 
 // dump a jfloat

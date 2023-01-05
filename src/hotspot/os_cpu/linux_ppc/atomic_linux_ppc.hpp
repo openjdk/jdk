@@ -32,6 +32,7 @@
 
 #include "orderAccess_linux_ppc.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/bitCast.hpp"
 
 // Implementation of class atomic
 
@@ -300,7 +301,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
 
   post_membar(order);
 
-  return PrimitiveConversions::cast<T>((unsigned char)old_value);
+  return bit_cast<T>((unsigned char)old_value);
 }
 
 template<>

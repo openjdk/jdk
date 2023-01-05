@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/bitCast.hpp"
 
 // Implementation of class atomic
 
@@ -80,7 +81,7 @@ template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return PrimitiveConversions::cast<T>(
+  return bit_cast<T>(
     (*ARMAtomicFuncs::_load_long_func)(reinterpret_cast<const volatile int64_t*>(src)));
 }
 
@@ -90,7 +91,7 @@ inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   (*ARMAtomicFuncs::_store_long_func)(
-    PrimitiveConversions::cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
+    bit_cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
 // As per atomic.hpp all read-modify-write operations have to provide two-way

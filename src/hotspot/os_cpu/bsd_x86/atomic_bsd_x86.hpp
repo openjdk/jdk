@@ -25,6 +25,8 @@
 #ifndef OS_CPU_BSD_X86_ATOMIC_BSD_X86_HPP
 #define OS_CPU_BSD_X86_ATOMIC_BSD_X86_HPP
 
+#include "utilities/bitCast.hpp"
+
 // Implementation of class atomic
 
 template<size_t byte_size>
@@ -159,7 +161,7 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   volatile int64_t dest;
   _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
-  return PrimitiveConversions::cast<T>(dest);
+  return bit_cast<T>(dest);
 }
 
 template<>

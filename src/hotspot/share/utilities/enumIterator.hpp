@@ -30,6 +30,7 @@
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
+#include "utilities/bitCast.hpp"
 #include "utilities/debug.hpp"
 
 // Iteration support for enums.
@@ -141,8 +142,8 @@ public:
   // The (deduced) type V is expected to be either T or Underlying.
   template<typename V>
   static constexpr void assert_in_range(V value,
-                                        V start = PrimitiveConversions::cast<V>(_start),
-                                        V end = PrimitiveConversions::cast<V>(_end)) {
+                                        V start = bit_cast<V>(_start),
+                                        V end = bit_cast<V>(_end)) {
     assert(start <= value, "out of range");
     assert(value <= end, "out of range");
   }

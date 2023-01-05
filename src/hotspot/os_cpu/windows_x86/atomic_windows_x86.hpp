@@ -27,6 +27,7 @@
 
 #include <intrin.h>
 #include "runtime/os.hpp"
+#include "utilities/bitCast.hpp"
 
 // Note that in MSVC, volatile memory accesses are explicitly
 // guaranteed to have acquire release semantics (w.r.t. compiler
@@ -60,9 +61,9 @@ struct Atomic::PlatformAdd {
                                                                      I add_value, \
                                                                      atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(D));                    \
-    return PrimitiveConversions::cast<D>(                                 \
+    return bit_cast<D>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
-                    PrimitiveConversions::cast<IntrinsicType>(add_value))); \
+                    bit_cast<IntrinsicType>(add_value))); \
   }
 
 DEFINE_INTRINSIC_ADD(InterlockedAdd,   long)
@@ -77,9 +78,9 @@ DEFINE_INTRINSIC_ADD(InterlockedAdd64, __int64)
                                                                    T exchange_value, \
                                                                    atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
-    return PrimitiveConversions::cast<T>(                                 \
+    return bit_cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
-                    PrimitiveConversions::cast<IntrinsicType>(exchange_value))); \
+                    bit_cast<IntrinsicType>(exchange_value))); \
   }
 
 DEFINE_INTRINSIC_XCHG(InterlockedExchange,   long)
@@ -99,10 +100,10 @@ DEFINE_INTRINSIC_XCHG(InterlockedExchange64, __int64)
                                                                       T exchange_value, \
                                                                       atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(T));                    \
-    return PrimitiveConversions::cast<T>(                                 \
+    return bit_cast<T>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \
-                    PrimitiveConversions::cast<IntrinsicType>(exchange_value), \
-                    PrimitiveConversions::cast<IntrinsicType>(compare_value))); \
+                    bit_cast<IntrinsicType>(exchange_value), \
+                    bit_cast<IntrinsicType>(compare_value))); \
   }
 
 DEFINE_INTRINSIC_CMPXCHG(_InterlockedCompareExchange8, char) // Use the intrinsic as InterlockedCompareExchange8 does not exist
