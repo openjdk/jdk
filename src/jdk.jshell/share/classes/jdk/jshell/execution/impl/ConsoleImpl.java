@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution.impl;
 
+import java.io.BufferedOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,8 +77,14 @@ public class ConsoleImpl {
         private Reader reader;
 
         public RemoteConsole(InputStream remoteOutput, OutputStream remoteInput) {
-            this.remoteOutput = remoteOutput;
-            this.remoteInput = remoteInput;
+            this.remoteInput = new BufferedOutputStream(remoteInput);
+            this.remoteOutput = new InputStream() {
+                @Override
+                public int read() throws IOException {
+                    RemoteConsole.this.remoteInput.flush();
+                    return remoteOutput.read();
+                }
+            };
         }
 
         private void sendChars(char[] data, int off, int len) throws IOException {
@@ -264,11 +271,7 @@ public class ConsoleImpl {
         }
 
         private synchronized <R, E extends Exception> R sendAndReceive(SendAndReceive<R, E> task) throws IOException, E {
-            R result = task.run();
-
-            this.remoteInput.flush();
-
-            return result;
+            return task.run();
         }
 
         interface SendAndReceive<R, E extends Exception> {

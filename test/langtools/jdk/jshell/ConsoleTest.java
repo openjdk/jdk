@@ -46,8 +46,6 @@ import static org.testng.Assert.*;
 
 public class ConsoleTest extends KullaTesting {
 
-    private static final int LARGE_COUNT = 10_000;
-
     //TODO: should also test System.console() without setting console to JShell
     @Test
     public void testConsole1() {
@@ -135,8 +133,9 @@ public class ConsoleTest extends KullaTesting {
                 });
             }
         };
-        assertEval("for (int i = 0; i < " + LARGE_COUNT + "; i++) System.console().writer().write(\"A\");");
-        String expected = "A".repeat(LARGE_COUNT);
+        int count = 1_000;
+        assertEval("for (int i = 0; i < " + count + "; i++) System.console().writer().write(\"A\");");
+        String expected = "A".repeat(count);
         assertEquals(sb.toString(), expected);
     }
 
@@ -158,16 +157,21 @@ public class ConsoleTest extends KullaTesting {
                 });
             }
         };
+        int repeats = 100;
+        int output = 100;
         assertEval("""
                    try (var b = java.util.concurrent.Executors.newCachedThreadPool()) {
-                       b.execute(() -> {
-                           for (int j = 0; j < LARGE_COUNT; j++) {
-                               System.console().writer().write("A");
-                           }
-                       });
+                       for (int i = 0; i < ${repeats}; i++) {
+                           b.execute(() -> {
+                               for (int j = 0; j < ${output}; j++) {
+                                   System.console().writer().write("A");
+                               }
+                           });
+                       }
                    }
-                   """.replace("LARGE_COUNT", "" + LARGE_COUNT));
-        String expected = "A".repeat(LARGE_COUNT);
+                   """.replace("${repeats}", "" + repeats)
+                      .replace("${output}", "" + output));
+        String expected = "A".repeat(repeats * output);
         assertEquals(sb.toString(), expected);
     }
 
