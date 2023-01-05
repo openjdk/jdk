@@ -54,9 +54,9 @@ public interface SocketOptions {
      * <BR><PRE>
      * SocketImpl s;
      * ...
-     * s.setOption(SO_LINGER, new Integer(10));
+     * s.setOption(SO_LINGER, Integer.valueOf(10));
      *    // OK - set SO_LINGER w/ timeout of 10 sec.
-     * s.setOption(SO_LINGER, new Double(10));
+     * s.setOption(SO_LINGER, Double.valueOf(10));
      *    // ERROR - expects java.lang.Integer
      *</PRE>
      * If the requested option is binary, it can be set using this method by
