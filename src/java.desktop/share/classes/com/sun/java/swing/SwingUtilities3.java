@@ -26,7 +26,6 @@
 package com.sun.java.swing;
 
 import java.applet.Applet;
-import java.awt.BasicStroke;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Graphics;
@@ -39,7 +38,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import javax.swing.JComponent;
-import javax.swing.JInternalFrame;
 import javax.swing.RepaintManager;
 
 import sun.awt.AppContext;
@@ -149,7 +147,7 @@ public class SwingUtilities3 {
     @FunctionalInterface
     public interface UnscaledBorderPainter {
         void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                 int w, int h, double scaleFactor, int strokeWidth);
+                                 int w, int h, double scaleFactor);
     }
 
     public static void paintBorder(Component c, Graphics g, int x, int y,
@@ -159,7 +157,6 @@ public class SwingUtilities3 {
         AffineTransform at = null;
         Stroke oldStk = null;
         boolean resetTransform = false;
-        int strokeWidth = 1;
         double scaleFactor = 1;
 
         int xtranslation = x;
@@ -184,10 +181,6 @@ public class SwingUtilities3 {
                  * pixel coordinate system instead of the logical coordinate system.
                  */
                 g2d.setTransform(new AffineTransform());
-                strokeWidth = (c instanceof JInternalFrame) ?
-                        clipRound(scaleFactor) : (int) Math.floor(scaleFactor);
-                g2d.setStroke(new BasicStroke((float) strokeWidth));
-
                 double xx = at.getScaleX() * x + at.getTranslateX();
                 double yy = at.getScaleY() * y + at.getTranslateY();
                 xtranslation = clipRound(xx);
@@ -200,7 +193,7 @@ public class SwingUtilities3 {
         g.translate(xtranslation, ytranslation);
 
         // Step 2: Call respective paintBorder with transformed values
-        painter.paintUnscaledBorder(c, g, x, y, width, height, scaleFactor, strokeWidth);
+        painter.paintUnscaledBorder(c, g, x, y, width, height, scaleFactor);
 
         // Step 3: Restore Transform
         g.translate(-xtranslation, -ytranslation);

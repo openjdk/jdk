@@ -147,7 +147,7 @@ public class LineBorder extends AbstractBorder
     }
 
     private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                     int width, int height, double scaleFactor, int strokeWidth) {
+                                     int w, int h, double scaleFactor) {
         if ((this.thickness > 0) && (g instanceof Graphics2D)) {
             Graphics2D g2d = (Graphics2D) g;
             int offs = this.thickness * (int) scaleFactor;
@@ -159,12 +159,12 @@ public class LineBorder extends AbstractBorder
             int size = offs + offs;
             if (this.roundedCorners) {
                 float arc = .2f * offs;
-                outer = new RoundRectangle2D.Float(0, 0, width, height, offs, offs);
-                inner = new RoundRectangle2D.Float(offs, offs, width - size, height - size, arc, arc);
+                outer = new RoundRectangle2D.Float(0, 0, w, h, offs, offs);
+                inner = new RoundRectangle2D.Float(offs, offs, w - size, h - size, arc, arc);
             }
             else {
-                outer = new Rectangle2D.Float(0, 0, width, height);
-                inner = new Rectangle2D.Float(offs, offs, width - size, height - size);
+                outer = new Rectangle2D.Float(0, 0, w, h);
+                inner = new Rectangle2D.Float(offs, offs, w - size, h - size);
             }
 
             Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);

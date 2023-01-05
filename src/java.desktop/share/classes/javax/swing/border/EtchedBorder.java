@@ -24,13 +24,14 @@
  */
 package javax.swing.border;
 
-import com.sun.java.swing.SwingUtilities3;
-
+import java.awt.BasicStroke;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Component;
 import java.beans.ConstructorProperties;
+import com.sun.java.swing.SwingUtilities3;
 
 /**
  * A class which implements a simple etched border which can
@@ -152,14 +153,19 @@ public class EtchedBorder extends AbstractBorder
     }
 
     private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                    int width, int height, double scaleFactor, int stkWidth) {
+                                    int w, int h, double scaleFactor) {
+        int stkWidth = (int) Math.floor(scaleFactor);
+        if (g instanceof Graphics2D) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setStroke(new BasicStroke((float) stkWidth));
+        }
 
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
                                                    : getShadowColor(c),
-                          width, height, stkWidth);
+                          w, h, stkWidth);
         paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
                                                       : getHighlightColor(c),
-                             width, height, stkWidth);
+                             w, h, stkWidth);
     }
 
     /**

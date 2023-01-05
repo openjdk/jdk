@@ -25,11 +25,13 @@
 
 package javax.swing.plaf.metal;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Window;
 
@@ -61,6 +63,8 @@ import javax.swing.text.JTextComponent;
 import com.sun.java.swing.SwingUtilities3;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
+
+import static sun.java2d.pipe.Region.clipRound;
 
 
 /**
@@ -250,7 +254,7 @@ public class MetalBorders {
         }
 
         private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                         int width, int height, double scaleFactor, int strokeWidth) {
+                                         int width, int height, double scaleFactor) {
             Color background;
             Color highlight;
             Color shadow;
@@ -278,11 +282,17 @@ public class MetalBorders {
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
                 int midPoint = thickness / 2;
-                int offset = (((scaleFactor - strokeWidth) >= 0) && ((strokeWidth % 2) != 0)) ? 1 : 0;
-                int loc1 = thickness % 2 == 0 ? midPoint + strokeWidth / 2 - strokeWidth : midPoint;
-                int loc2 = thickness % 2 == 0 ? midPoint + strokeWidth / 2 : midPoint + strokeWidth;
+                int stkWidth = clipRound(scaleFactor);
+                int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
+                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
+                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
                 // scaled corner
                 int corner = (int) Math.round(CORNER * scaleFactor);
+
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2d = (Graphics2D) g;
+                    g2d.setStroke(new BasicStroke((float) stkWidth));
+                }
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
