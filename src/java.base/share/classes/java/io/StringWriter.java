@@ -63,7 +63,7 @@ public class StringWriter extends Writer {
      *         If {@code initialSize} is negative
      */
     public StringWriter(int initialSize) {
-        super(new StringBuffer(checkSize(initialSize)));
+        super(new StringBuffer(requireNonNegative(initialSize, "Negative buffer size: ")));
         buf = (StringBuffer) lock;
     }
 
@@ -240,11 +240,11 @@ public class StringWriter extends Writer {
     public void close() throws IOException {
     }
 
-    private static int checkSize(int initialSize) {
-        if (initialSize < 0) {
-            throw new IllegalArgumentException("Negative buffer size");
+    private static int requireNonNegative(int value, String message) {
+        if (value < 0) {
+            throw new IllegalArgumentException(message + value);
         }
-        return initialSize;
+        return value;
     }
 
 }
