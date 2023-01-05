@@ -510,8 +510,10 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
-// Thread start routine for all newly created threads
-static unsigned __stdcall thread_native_entry(Thread* thread) {
+// Thread start routine for all newly created threads.
+// Called with the associated Thread* as the argument.
+unsigned __stdcall os::win32::thread_native_entry(void* t) {
+  Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
   thread->initialize_thread_current();
@@ -744,7 +746,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(NULL,
                              (unsigned)stack_size,
-                             (unsigned (__stdcall *)(void*)) thread_native_entry,
+                             &os::win32::thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
