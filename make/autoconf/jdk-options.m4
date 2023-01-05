@@ -426,7 +426,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         # ASan is simply incompatible with gcc -Wstringop-truncation. See
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
         # It's harmless to be suppressed in clang as well.
-        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -DADDRESS_SANITIZER"
+        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
         ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
