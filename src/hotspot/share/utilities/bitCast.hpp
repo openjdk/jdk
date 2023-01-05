@@ -119,8 +119,7 @@ inline To bit_cast(const From& from) {
   union {
     From from;
     To to;
-  } converter;
-  converter.from = from;
+  } converter = { from };
   return converter.to;
 #endif
 }
