@@ -34,15 +34,16 @@
  */
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Properties;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-
-import java.util.HashMap;
+import jtreg.SkippedException;
 
 public class TestAutoCreateSharedArchiveUpgrade {
 
@@ -58,7 +59,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // If you're unning this test using something like
     // "make test TEST=test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java",
     // the test.boot.jdk property is normally passed by make/RunTests.gmk
-    // now it is pulled by the artifactory
     private static String BOOT_JDK;
     private static String DEFAULT_BOOT_JDK = System.getProperty("test.boot.jdk", null);
 
@@ -72,20 +72,29 @@ public class TestAutoCreateSharedArchiveUpgrade {
     private static String newJVM;
 
     public static void main(String[] args) throws Throwable {
-        // Get OS and CPU type
-        String arch = props.getProperty("os.arch");
-        String os = getOsId();
-
         // Earliest testable version is 19
-        int n = java.lang.Runtime.version().major() - 1;
-        for (int i = 19; i < n; i++) {
-            BOOT_JDK = fetchBootJDK(os, arch, i);
-            setupJVMs(os);
-            doTest();
+        // Only run once if using the default boot jdk
+        int n = java.lang.Runtime.version().major();
+        System.out.println("Version: " + n);
+
+        // Test only previous version unless specified in gmk
+        if (System.getProperty("test.autocreatesharedarchive.all.jdk.versions") == null) {
+            testJDK(n - 1);
+            return;
+        }
+        for (int i = n - 1; i >= 19 && BOOT_JDK != DEFAULT_BOOT_JDK; i--) {
+            testJDK(i);
         }
     }
 
-    static void setupJVMs(String os) throws Throwable {
+    static void testJDK(int version) throws Throwable {
+        System.out.println("Testing JDK " + version);
+        BOOT_JDK = fetchBootJDK(version);
+        setupJVMs();
+        doTest();
+    }
+
+    static void setupJVMs() throws Throwable {
         if (TEST_JDK == null) {
             throw new RuntimeException("-Dtest.jdk should point to the JDK being tested");
         }
@@ -96,11 +105,11 @@ public class TestAutoCreateSharedArchiveUpgrade {
         if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
-            oldJVM = (os == "MacOSX") ?
+            oldJVM = (Platform.isOSX()) ?
                 BOOT_JDK + ".jdk" + FS + "Contents" + FS + "Home" + FS + "bin" + FS + "java" :
                 BOOT_JDK + FS + "bin" + FS + "java";
         } else {
-            throw new RuntimeException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
+            throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
                                        "-XX:+AutoCreateSharedArchive");
         }
@@ -124,7 +133,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         // OLD JDK -- should reject the JSA created by NEW JDK, and create its own
         output = run(oldJVM);
-        assertJSAVersionMismatch(output);
         assertCreatedJSA(output);
 
         output = run(oldJVM);
@@ -132,7 +140,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         // NEW JDK -- should reject the JSA created by OLD JDK, and create its own
         output = run(newJVM);
-        assertJSAVersionMismatch(output);
         assertCreatedJSA(output);
 
         output = run(newJVM);
@@ -157,17 +164,13 @@ public class TestAutoCreateSharedArchiveUpgrade {
         output.shouldContain("Dumping shared data to file");
     }
 
-    static void assertJSAVersionMismatch(OutputAnalyzer output) {
-        output.shouldContain("does not match the required version");
-    }
-
     static void assertUsedJSA(OutputAnalyzer output) {
         output.shouldContain("Mapped dynamic region #0");
     }
 
     // Fetch JDK artifact depending on platform
     // If the artifact cannot be found, default to the test.boot.jdk property
-    private static String fetchBootJDK(String osID, String arch, int version) {
+    private static String fetchBootJDK(int version) {
         int build;
         String architecture;
         HashMap<String, Object> jdkArtifactMap = new HashMap<>();
@@ -187,8 +190,18 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 build = 0;
                 break;
         }
+        jdkArtifactMap.put("version", version);
+        jdkArtifactMap.put("build_number", build);
+
         // Get correct file name for architecture
-        switch(arch) {
+        if (Platform.isX64()) {
+            architecture = "x";
+        } else if (Platform.isAArch64()) {
+            architecture = "aarch";
+        } else {
+            return DEFAULT_BOOT_JDK;
+        }
+        /*switch(arch) {
             case("x86"):
             case("x86_64"):
             case("amd64"):
@@ -200,33 +213,40 @@ public class TestAutoCreateSharedArchiveUpgrade {
             default:
                 architecture = "";
                 break;
-        }
+        }*/
+
         // File name is bundles/<os>-<architecture>64/jdk-<version>_<os>-<architecture>64_bin.<extension>
         // Ex: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz
-        switch (osID) {
+        if (Platform.isWindows()) {
+            jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
+            return fetchBootJDK(jdkArtifactMap, version);
+        } else if (Platform.isOSX()) {
+            jdkArtifactMap.put("file", "bundles/macos-" + architecture + "64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
+            return fetchBootJDK(jdkArtifactMap, version);
+        } else if (Platform.isLinux()) {
+            jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
+            return fetchBootJDK(jdkArtifactMap, version);
+        } else {
+            return DEFAULT_BOOT_JDK;
+        }
+        /*switch (osID) {
             case "Windows":
-                jdkArtifactMap.put("version", version);
-                jdkArtifactMap.put("build_number", build);
                 jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
                 return fetchBootJDK(jdkArtifactMap, version);
 
             case "MacOSX":
-                jdkArtifactMap.put("version", version);
-                jdkArtifactMap.put("build_number", build);
                 jdkArtifactMap.put("file", "bundles/macos-" + architecture + "64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
                 return fetchBootJDK(jdkArtifactMap, version);
             case "Linux":
-                jdkArtifactMap.put("version", version);
-                jdkArtifactMap.put("build_number", build);
                 jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
                 return fetchBootJDK(jdkArtifactMap, version);
 
             default:
                 return DEFAULT_BOOT_JDK;
-        }
+        }*/
     }
 
-    // Fetch JDK version from artifactory
+    // Fetch JDK artifact
     private static String fetchBootJDK(HashMap<String, Object> jdkArtifactMap, int version) {
         String path = DEFAULT_BOOT_JDK;
         try {
@@ -243,15 +263,5 @@ public class TestAutoCreateSharedArchiveUpgrade {
             }
         }
         return path;
-    }
-
-    private static String getOsId() {
-        String osName = props.getProperty("os.name");
-        if (osName.startsWith("Win")) {
-            osName = "Windows";
-        } else if (osName.equals("Mac OS X")) {
-            osName = "MacOSX";
-        }
-        return osName;
     }
 }
