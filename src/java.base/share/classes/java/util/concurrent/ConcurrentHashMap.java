@@ -845,9 +845,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Creates a new map with the same mappings as the given map.
      *
-     * @implNote This constructor invokes {@link #put put()} and
-     * {@link #putAll putAll()}. Subclasses overriding those methods should
-     * be aware that they are invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #put put()} and {@link #putAll putAll()};
+     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param m the map
      */

@@ -1090,9 +1090,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * sorted according to the {@linkplain Comparable natural ordering} of
      * the keys.
      *
-     * @implNote This constructor invokes {@link #put put()} and
-     * {@link #putAll putAll()}. Subclasses overriding those methods should
-     * be aware that they are invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #put put()} and {@link #putAll putAll()};
+     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  m the map whose mappings are to be placed in this map
      * @throws ClassCastException if the keys in {@code m} are not

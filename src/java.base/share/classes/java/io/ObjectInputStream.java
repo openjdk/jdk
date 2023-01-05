@@ -391,9 +391,8 @@ public class ObjectInputStream
      * the ObjectInputStream.readFields or ObjectInputStream.readUnshared
      * methods.
      *
-     * @implNote This constructor invokes {@link #readStreamHeader}.
-     * Subclasses overriding that method should be aware that it is
-     * invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #readStreamHeader}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param   in input stream to read from
      * @throws  StreamCorruptedException if the stream header is incorrect

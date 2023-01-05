@@ -124,9 +124,8 @@ public final class StringBuilder
      * specified string. The initial capacity of the string builder is
      * {@code 16} plus the length of the string argument.
      *
-     * @implNote This constructor invokes {@link #append(CharSequence)}.
-     * Subclasses overriding that method should be aware that it is invoked
-     * prior to subclass initialization.
+     * @implNote This constructor invokes {@link #append(CharSequence)}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param   str   the initial contents of the buffer.
      */
@@ -141,9 +140,8 @@ public final class StringBuilder
      * the string builder is {@code 16} plus the length of the
      * {@code CharSequence} argument.
      *
-     * @implNote This constructor invokes {@link #append(CharSequence)}.
-     * Subclasses overriding that method should be aware that it is invoked
-     * prior to subclass initialization.
+     * @implNote This constructor invokes {@link #append(CharSequence)}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param      seq   the sequence to copy.
      */

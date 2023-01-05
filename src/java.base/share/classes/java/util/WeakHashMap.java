@@ -252,9 +252,8 @@ public class WeakHashMap<K,V>
      * load factor (0.75) and an initial capacity sufficient to hold the
      * mappings in the specified map.
      *
-     * @implNote This constructor invokes {@link #put put()} and
-     * {@link #putAll putAll()}. Subclasses overriding those methods should
-     * be aware that they are invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #put put()} and {@link #putAll putAll()};
+     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param   m the map whose mappings are to be placed in this map
      * @throws  NullPointerException if the specified map is null

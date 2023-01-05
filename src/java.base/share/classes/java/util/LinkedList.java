@@ -116,8 +116,8 @@ public class LinkedList<E>
      * iterator.
      *
      * @implNote This constructor invokes {@link #add(Object) add()} and
-     * {@link #addAll(Collection) addAll()}. Subclasses overriding those methods
-     * should be aware that they are invoked prior to subclass initialization.
+     * {@link #addAll(Collection) addAll()}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  c the collection whose elements are to be placed into this list
      * @throws NullPointerException if the specified collection is null

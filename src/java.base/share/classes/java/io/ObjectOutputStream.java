@@ -233,9 +233,8 @@ public class ObjectOutputStream
      * the ObjectOutputStream.putFields or ObjectOutputStream.writeUnshared
      * methods.
      *
-     * @implNote This constructor invokes {@link #writeStreamHeader}.
-     * Subclasses overriding that method should be aware that it is
-     * invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #writeStreamHeader}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param   out output stream to write to
      * @throws  IOException if an I/O error occurs while writing stream header

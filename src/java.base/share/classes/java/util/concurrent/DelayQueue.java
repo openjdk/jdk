@@ -114,9 +114,8 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * Creates a {@code DelayQueue} initially containing the elements of the
      * given collection of {@link Delayed} instances.
      *
-     * @implNote This constructor invokes {@link #add add()} and
-     * {@link #addAll addAll()}. Subclasses overriding those methods should
-     * be aware that they are invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #add add()} and {@link #addAll addAll()};
+     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param c the collection of elements to initially contain
      * @throws NullPointerException if the specified collection or any

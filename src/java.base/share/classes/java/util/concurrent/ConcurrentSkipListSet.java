@@ -131,9 +131,8 @@ public class ConcurrentSkipListSet<E>
      * collection, that orders its elements according to their
      * {@linkplain Comparable natural ordering}.
      *
-     * @implNote This constructor invokes {@link #add add()} and
-     * {@link #addAll addAll()}. Subclasses overriding those methods should
-     * be aware that they are invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #add add()} and {@link #addAll addAll()};
+     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param c The elements that will comprise the new set
      * @throws ClassCastException if the elements in {@code c} are
@@ -151,9 +150,8 @@ public class ConcurrentSkipListSet<E>
      * Constructs a new set containing the same elements and using the
      * same ordering as the specified sorted set.
      *
-     * @implNote This constructor invokes {@link #add add()} and
-     * {@link #addAll addAll()}. Subclasses overriding those methods should
-     * be aware that they are invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #add add()} and {@link #addAll addAll()};
+     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param s sorted set whose elements will comprise the new set
      * @throws NullPointerException if the specified sorted set or any

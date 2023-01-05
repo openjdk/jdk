@@ -202,9 +202,8 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * iterator becomes the first element, or <i>front</i> of the
      * deque.)
      *
-     * @implNote This constructor invokes {@link #addLast addLast()}.
-     * Subclasses overriding that method should be aware that it is
-     * invoked prior to subclass initialization.
+     * @implNote This constructor invokes {@link #addLast addLast()}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param c the collection whose elements are to be placed into the deque
      * @throws NullPointerException if the specified collection is null

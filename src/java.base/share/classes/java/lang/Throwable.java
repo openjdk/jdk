@@ -252,9 +252,8 @@ public class Throwable implements Serializable {
      * call to {@link #initCause}.
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable. Subclasses
-     * overriding {@link #fillInStackTrace()} should be aware that it is
-     * invoked prior to subclass initialization.
+     * the stack trace data in the newly created throwable; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      */
     @SuppressWarnings("this-escape")
     public Throwable() {
@@ -267,9 +266,8 @@ public class Throwable implements Serializable {
      * a call to {@link #initCause}.
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable. Subclasses
-     * overriding {@link #fillInStackTrace()} should be aware that it is
-     * invoked prior to subclass initialization.
+     * the stack trace data in the newly created throwable; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param   message   the detail message. The detail message is saved for
      *          later retrieval by the {@link #getMessage()} method.
@@ -287,9 +285,8 @@ public class Throwable implements Serializable {
      * this throwable's detail message.
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable. Subclasses
-     * overriding {@link #fillInStackTrace()} should be aware that it is
-     * invoked prior to subclass initialization.
+     * the stack trace data in the newly created throwable; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  message the detail message (which is saved for later retrieval
      *         by the {@link #getMessage()} method).
@@ -315,9 +312,8 @@ public class Throwable implements Serializable {
      * java.security.PrivilegedActionException}).
      *
      * <p>The {@link #fillInStackTrace()} method is called to initialize
-     * the stack trace data in the newly created throwable. Subclasses
-     * overriding {@link #fillInStackTrace()} should be aware that it is
-     * invoked prior to subclass initialization.
+     * the stack trace data in the newly created throwable; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  cause the cause (which is saved for later retrieval by the
      *         {@link #getCause()} method).  (A {@code null} value is
