@@ -26,6 +26,7 @@
 package jdk.jpackage.internal;
 
 public class LinuxAppBundler extends AppImageBundler {
+    @SuppressWarnings("this-escape")
     public LinuxAppBundler() {
         setAppImageSupplier(LinuxAppImageBuilder::new);
     }
