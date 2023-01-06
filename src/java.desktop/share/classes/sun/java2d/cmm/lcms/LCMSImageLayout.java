@@ -25,6 +25,7 @@
 
 package sun.java2d.cmm.lcms;
 
+import java.awt.color.CMMException;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -37,39 +38,32 @@ import sun.awt.image.ShortComponentRaster;
 
 final class LCMSImageLayout {
 
-    public static int BYTES_SH(int x) {
+    static int BYTES_SH(int x) {
         return x;
     }
 
-    public static int EXTRA_SH(int x) {
+    private static int EXTRA_SH(int x) {
         return x << 7;
     }
 
-    public static int CHANNELS_SH(int x) {
+    static int CHANNELS_SH(int x) {
         return x << 3;
     }
-    public static final int SWAPFIRST = 1 << 14;
-    public static final int DOSWAP = 1 << 10;
-    public static final int PT_RGB_8 =
-            CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_GRAY_8 =
-            CHANNELS_SH(1) | BYTES_SH(1);
-    public static final int PT_GRAY_16 =
-            CHANNELS_SH(1) | BYTES_SH(2);
-    public static final int PT_RGBA_8 =
-            EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_ARGB_8 =
-            EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1) | SWAPFIRST;
-    public static final int PT_BGR_8 =
-            DOSWAP | CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_ABGR_8 =
-            DOSWAP | EXTRA_SH(1) | CHANNELS_SH(3) | BYTES_SH(1);
-    public static final int PT_BGRA_8 = EXTRA_SH(1) | CHANNELS_SH(3)
-            | BYTES_SH(1) | DOSWAP | SWAPFIRST;
-    public static final int DT_BYTE = 0;
-    public static final int DT_SHORT = 1;
-    public static final int DT_INT = 2;
-    public static final int DT_DOUBLE = 3;
+    private static final int SWAPFIRST  = 1 << 14;
+    private static final int DOSWAP     = 1 << 10;
+    private static final int PT_GRAY_8  = CHANNELS_SH(1) | BYTES_SH(1);
+    private static final int PT_GRAY_16 = CHANNELS_SH(1) | BYTES_SH(2);
+    private static final int PT_RGB_8   = CHANNELS_SH(3) | BYTES_SH(1);
+    private static final int PT_RGBA_8  = PT_RGB_8  | EXTRA_SH(1);
+    private static final int PT_ARGB_8  = PT_RGBA_8 | SWAPFIRST;
+    private static final int PT_BGR_8   = PT_RGB_8  | DOSWAP;
+    private static final int PT_ABGR_8  = PT_BGR_8  | EXTRA_SH(1);
+//  private static final int PT_BGRA_8  = PT_ABGR_8 | SWAPFIRST;
+
+    private static final int DT_BYTE = 0;
+    private static final int DT_SHORT = 1;
+    private static final int DT_INT = 2;
+    private static final int DT_DOUBLE = 3;
     boolean isIntPacked = false;
     int pixelType;
     int dataType;
@@ -83,9 +77,7 @@ final class LCMSImageLayout {
 
     private int dataArrayLength; /* in bytes */
 
-    private LCMSImageLayout(int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    private LCMSImageLayout(int np, int pixelType, int pixelSize) {
         this.pixelType = pixelType;
         width = np;
         height = 1;
@@ -94,9 +86,7 @@ final class LCMSImageLayout {
         offset = 0;
     }
 
-    private LCMSImageLayout(int width, int height, int pixelType,
-                            int pixelSize)
-            throws ImageLayoutException
+    private LCMSImageLayout(int width, int height, int pixelType, int pixelSize)
     {
         this.pixelType = pixelType;
         this.width = width;
@@ -106,10 +96,7 @@ final class LCMSImageLayout {
         offset = 0;
     }
 
-
-    public LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    LCMSImageLayout(byte[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_BYTE;
         dataArray = data;
@@ -118,9 +105,7 @@ final class LCMSImageLayout {
         verify();
     }
 
-    public LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    LCMSImageLayout(short[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_SHORT;
         dataArray = data;
@@ -129,9 +114,7 @@ final class LCMSImageLayout {
         verify();
     }
 
-    public LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    LCMSImageLayout(int[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_INT;
         dataArray = data;
@@ -140,9 +123,7 @@ final class LCMSImageLayout {
         verify();
     }
 
-    public LCMSImageLayout(double[] data, int np, int pixelType, int pixelSize)
-            throws ImageLayoutException
-    {
+    LCMSImageLayout(double[] data, int np, int pixelType, int pixelSize) {
         this(np, pixelType, pixelSize);
         dataType = DT_DOUBLE;
         dataArray = data;
@@ -157,7 +138,7 @@ final class LCMSImageLayout {
     /* This method creates a layout object for given image.
      * Returns null if the image is not supported by current implementation.
      */
-    public static LCMSImageLayout createImageLayout(BufferedImage image) throws ImageLayoutException {
+    static LCMSImageLayout createImageLayout(BufferedImage image) {
         LCMSImageLayout l = new LCMSImageLayout();
 
         switch (image.getType()) {
@@ -288,7 +269,7 @@ final class LCMSImageLayout {
         ARBITRARY,
         UNKNOWN;
 
-        public static BandOrder getBandOrder(int[] bandOffsets) {
+        static BandOrder getBandOrder(int[] bandOffsets) {
             BandOrder order = UNKNOWN;
 
             int numBands = bandOffsets.length;
@@ -320,10 +301,10 @@ final class LCMSImageLayout {
         }
     }
 
-    private void verify() throws ImageLayoutException {
+    private void verify() {
         checkIndex(offset, dataArrayLength);
         if (nextPixelOffset != getBytesPerPixel(pixelType)) {
-            throw new ImageLayoutException("Invalid image layout");
+            throw new CMMException("Invalid image layout");
         }
 
         int lastScanOffset = safeMult(nextRowOffset, (height - 1));
@@ -333,27 +314,19 @@ final class LCMSImageLayout {
         checkIndex(off, dataArrayLength);
     }
 
-    private static int checkIndex(long index, int length)
-            throws ImageLayoutException
-    {
+    private static int checkIndex(long index, int length) {
         if (index < 0 || index >= length) {
-            throw new ImageLayoutException("Invalid image layout");
+            throw new CMMException("Invalid image layout");
         }
         return (int) index;
     }
 
-    private static int safeMult(int a, int b) throws ImageLayoutException {
+    private static int safeMult(int a, int b) {
         long res = (long) a * b;
         return checkIndex(res, Integer.MAX_VALUE);
     }
 
-    @SuppressWarnings("serial") // JDK-implementation class
-    public static class ImageLayoutException extends Exception {
-        public ImageLayoutException(String message) {
-            super(message);
-        }
-    }
-    public static LCMSImageLayout createImageLayout(Raster r) {
+    static LCMSImageLayout createImageLayout(Raster r) {
         LCMSImageLayout l = new LCMSImageLayout();
         if (r instanceof ByteComponentRaster &&
                 r.getSampleModel() instanceof ComponentSampleModel) {
