@@ -56,7 +56,7 @@ import javax.xml.transform.Result;
  * <p>The following paragraphs describe the namespace and prefix repair algorithm:
  *
  * <p>The property can be set with the following code line:
- * {@code setProperty("javax.xml.stream.isRepairingNamespaces", Boolean.TRUE|Boolean.FALSE);}
+ * {@code setProperty("javax.xml.stream.isRepairingNamespaces", Boolean.TRUE);}
  *
  * <p>This property specifies that the writer default namespace prefix declarations.
  * The default value is false.
