@@ -4095,11 +4095,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             radix = 10;
 
         BigInteger abs = this.abs();
-
-        // Ensure buffer capacity sufficient to contain string representation
-        //     floor(bitLength*log(2)/log(radix)) + 1
-        // plus an additional character for the sign if negative.
-        int b = abs.bitLength();
         StringBuilder sb = new StringBuilder(numChars(radix));
 
         if (signum < 0) {
@@ -4112,8 +4107,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return sb.toString();
     }
 
+    // Ensure buffer capacity sufficient to contain string representation
+    //     floor(bitLength*log(2)/log(radix)) + 1
+    // plus an additional character for the sign if negative.
     int numChars(int radix) {
-        return (int)(Math.floor(b*LOG_TWO/logCache[radix]) + 1) +
+        return (int)(Math.floor(abs.bitLength()*LOG_TWO/logCache[radix]) + 1) +
         (signum < 0 ? 1 : 0);
     }
 
