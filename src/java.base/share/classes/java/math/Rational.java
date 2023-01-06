@@ -87,7 +87,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (res[1].signum() != 0)
             throw new ArithmeticException("Rounding necessary");
         
-        return res[0];
+        return signum == -1 ? res[0].negate() : res[0];
     }
 
     /**
@@ -103,7 +103,8 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return this {@code Rational} converted to a {@code BigDecimal}.
      */
     public BigDecimal toBigDecimal(MathContext mc) {
-        return new BigDecimal(numerator).divide(denominator, mc);
+        BigDecimal absVal = new BigDecimal(numerator).divide(denominator, mc);
+        return signum == -1 ? absVal.negate() : absVal;
     }
 
     /**
@@ -158,7 +159,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public float floatValue() {
-        return (float) doubleValue();
+        return toBigDecimal(MathContext.DECIMAL32).floatValue();
     }
 
     /**
