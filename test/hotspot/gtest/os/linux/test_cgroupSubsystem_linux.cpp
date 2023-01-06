@@ -189,7 +189,7 @@ TEST(cgroupTest, SubSystemFileLineContentsSingleLine) {
   fill_file(test_file, "1337");
   err = subsystem_file_line_contents(&my_controller, test_file, nullptr, JULONG_FORMAT, &z);
   EXPECT_EQ(err, 0);
-  EXPECT_EQ(z, 1337) << "Wrong value for z";
+  EXPECT_EQ(z, (julong)1337) << "Wrong value for z";
 }
 
 #endif // LINUX
