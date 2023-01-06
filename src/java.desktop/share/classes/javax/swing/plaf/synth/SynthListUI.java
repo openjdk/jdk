@@ -140,7 +140,7 @@ public class SynthListUI extends BasicListUI
     }
 
     private void updateStyle(JComponent c) {
-        SynthContext context = getContext(list, ENABLED);
+        SynthContext context = getContext(c, ENABLED);
         SynthStyle oldStyle = style;
 
         style = SynthLookAndFeel.updateStyle(context, this);

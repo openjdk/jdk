@@ -128,7 +128,7 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
     }
 
     private void updateStyle(JComponent c) {
-        SynthContext context = getContext(this, ENABLED);
+        SynthContext context = getContext(c, ENABLED);
         SynthStyle oldStyle = style;
         style = SynthLookAndFeel.updateStyle(context, this);
         if (style != oldStyle) {
