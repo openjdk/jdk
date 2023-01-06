@@ -181,7 +181,52 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public int intValue() {
-        return (int) longValue();
+        return toBigInteger().intValue();
+    }
+
+    /**
+     * Converts this {@code Rational} to an {@code int}, checking
+     * for lost information.  If this {@code Rational} has a
+     * nonzero fractional part or is out of the possible range for an
+     * {@code int} result then an {@code ArithmeticException} is
+     * thrown.
+     *
+     * @return this {@code Rational} converted to an {@code int}.
+     * @throws ArithmeticException if {@code this} has a nonzero
+     *         fractional part, or will not fit in an {@code int}.
+     */
+    public int intValueExact() {
+        return toBigIntegerExact().intValueExact();
+    }
+
+    /**
+     * Converts this {@code Rational} to a {@code short}, checking
+     * for lost information.  If this {@code Rational} has a
+     * nonzero fractional part or is out of the possible range for a
+     * {@code short} result then an {@code ArithmeticException} is
+     * thrown.
+     *
+     * @return this {@code Rational} converted to a {@code short}.
+     * @throws ArithmeticException if {@code this} has a nonzero
+     *         fractional part, or will not fit in a {@code short}.
+     */
+    public short shortValueExact() {
+        return toBigIntegerExact().shortValueExact();
+    }
+
+    /**
+     * Converts this {@code Rational} to a {@code byte}, checking
+     * for lost information.  If this {@code Rational} has a
+     * nonzero fractional part or is out of the possible range for a
+     * {@code byte} result then an {@code ArithmeticException} is
+     * thrown.
+     *
+     * @return this {@code Rational} converted to a {@code byte}.
+     * @throws ArithmeticException if {@code this} has a nonzero
+     *         fractional part, or will not fit in a {@code byte}.
+     */
+    public byte byteValueExact() {
+        return toBigIntegerExact().byteValueExact();
     }
 
     /**
@@ -204,6 +249,21 @@ public class Rational extends Number implements Comparable<Rational> {
     @Override
     public long longValue() {
         return toBigInteger().longValue();
+    }
+
+    /**
+     * Converts this {@code Rational} to a {@code long}, checking
+     * for lost information.  If this {@code Rational} has a
+     * nonzero fractional part or is out of the possible range for a
+     * {@code long} result then an {@code ArithmeticException} is
+     * thrown.
+     *
+     * @return this {@code Rational} converted to a {@code long}.
+     * @throws ArithmeticException if {@code this} has a nonzero
+     *         fractional part, or will not fit in a {@code long}.
+     */
+    public long longValueExact() {
+        return toBigIntegerExact().longValueExact();
     }
 
     /**
