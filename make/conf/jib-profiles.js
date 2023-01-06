@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1032,7 +1032,7 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
-        macosx: "Xcode12.4+1.0",
+        macosx: "Xcode12.4+1.1",
         windows_x64: "VS2022-17.1.0+1.0",
         linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
