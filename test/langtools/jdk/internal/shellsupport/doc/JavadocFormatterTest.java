@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8131019 8169561 8261450
  * @summary Test JavadocFormatter
  * @library /tools/lib
- * @modules jdk.compiler/jdk.internal.shellsupport.doc
+ * @modules jdk.jshell/jdk.internal.shellsupport.doc
  * @run testng JavadocFormatterTest
  */
 
@@ -411,6 +411,35 @@ public class JavadocFormatterTest {
                          """;
 
             new JavadocFormatter(60, true).formatJavadoc(header, javadoc);
+    }
+
+    public void testMarkDown() {
+        String header = "test";
+        String javadoc = """
+                         md
+
+                         MarkDown test.
+
+                          1. first list item
+                          1. testing {@code code} inside a list
+                          1. another list item
+                         """;
+
+        String actual;
+        String expected;
+
+        actual = new JavadocFormatter(60, false).formatJavadoc(header, javadoc);
+        expected = """
+                   test
+                   MarkDown test.
+                    1. first list item
+                    2. testing code inside a list
+                    3. another list item
+                   """;
+
+        if (!Objects.equals(actual, expected)) {
+            throw new AssertionError("Incorrect output: " + actual);
+        }
     }
 
 }

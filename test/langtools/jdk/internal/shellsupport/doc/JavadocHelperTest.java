@@ -298,6 +298,19 @@ public class JavadocHelperTest {
                       "@return value\n");
     }
 
+    public void testMarkDown() throws Exception {
+        doTestJavadoc("    /**md Test.*/\n",
+                      getSubTest,
+                      "md Test." +
+                      "@param p1 param1\n" +
+                      "@param p2 param2\n" +
+                      "@param p3 param3\n" +
+                      "@throws java.lang.IllegalStateException exc1\n" +
+                      "@throws java.lang.IllegalArgumentException exc2\n" +
+                      "@throws java.lang.IllegalAccessException exc3\n" +
+                      "@return value\n");
+    }
+
     private void doTestJavadoc(String origJavadoc, Function<JavacTask, Element> getElement, String expectedJavadoc) throws Exception {
         doTestJavadoc(origJavadoc,
                       "    /**\n" +

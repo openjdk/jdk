@@ -33,10 +33,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Stack;
+import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 
 import javax.lang.model.element.Name;
 import javax.tools.JavaFileObject.Kind;
@@ -51,6 +54,7 @@ import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.MarkdownTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.StartElementTree;
@@ -62,6 +66,9 @@ import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils;
+import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.Parser;
+import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
 
 /**A javadoc to plain text formatter.
  *
@@ -110,7 +117,8 @@ public class JavadocFormatter {
             DocCommentTree docComment = trees.getDocCommentTree(new SimpleJavaFileObject(new URI("mem://doc.html"), Kind.HTML) {
                 @Override @DefinedBy(Api.COMPILER)
                 public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                    return "<body>" + javadoc + "</body>";
+                    boolean isMarkDown = javadoc.startsWith("md") && Character.isWhitespace(javadoc.charAt(2)); //TODO: constant
+                    return isMarkDown ? javadoc : "<body>" + javadoc + "</body>";
                 }
             });
 
@@ -214,7 +222,20 @@ public class JavadocFormatter {
             } else {
                 text = text.replaceAll("\n", "\n" + indentString(indent));
             }
-            result.append(text);
+            boolean first = true;
+            for (String part : text.split(Pattern.quote("" + FFFC), -1)) {
+                if (!first) {
+                    DocTree nested = injects.remove(0);
+                    scan(nested, null);
+                    if (part.length() > 0 && Character.isWhitespace(part.charAt(0))) {
+                        part = part.substring(1);
+                    }
+                    result.append(part);
+                } else {
+                    result.append(part);
+                    first = false;
+                }
+            }
             return null;
         }
 
@@ -571,6 +592,61 @@ public class JavadocFormatter {
             result.append(value == null ? node.toString() : value);
             return super.visitEntity(node, p);
 
+        }
+
+        private static final char FFFC = '\uFFFC'; // Unicode Object Replacement Character
+        private List<DocTree> injects = null;
+
+        @Override
+        public Object scan(Iterable<? extends DocTree> nodes, Object p) {
+            boolean hasMarkDown = StreamSupport.stream(nodes.spliterator(), false)
+                                               .anyMatch(t -> t.getKind() == DocTree.Kind.MARKDOWN);
+            if (!hasMarkDown) {
+                return super.scan(nodes, p);
+            }
+
+            List<DocTree> prevInjects = injects;
+            Map<StartElementTree, Integer> prevTableColumns = tableColumns;
+            try {
+                StringBuilder realMarkDownContent = new StringBuilder();
+
+                injects = new LinkedList<>();
+
+                for (DocTree node : nodes) {
+                    if (node.getKind() == DocTree.Kind.MARKDOWN) {
+                        //TODO: handle FFFC in the markdown text itself:
+                        realMarkDownContent.append(((MarkdownTree) node).getCode());
+                    } else {
+                        realMarkDownContent.append(FFFC);
+                        injects.add(node);
+                    }
+                }
+
+                Parser parser = Parser.builder().build();
+                Node document = parser.parse(realMarkDownContent.toString());
+                HtmlRenderer renderer = HtmlRenderer.builder().build();
+                String markdownOutput = renderer.render(document);
+                DocCommentTree docComment = trees.getDocCommentTree(new SimpleJavaFileObject(new URI("mem://doc.html"), Kind.HTML) {
+                    @Override @DefinedBy(Api.COMPILER)
+                    public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+                        return "<body>" + markdownOutput + "</body>";
+                    }
+                });
+
+                tableColumns = countTableColumns(docComment);
+                scan(docComment.getFullBody(), p);
+            } catch (URISyntaxException ex) {
+                throw new InternalError(ex);
+            } finally {
+                tableColumns = prevTableColumns;
+                injects = prevInjects;
+            }
+            return null;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Object visitMarkdown(MarkdownTree node, Object p) {
+            throw new IllegalStateException("Should not get here.");
         }
 
         private DocTree lastNode;

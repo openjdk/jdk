@@ -135,7 +135,7 @@ public class DocCommentParser {
         bp = -1 + (isMarkdown ? MARKDOWN_PREFIX.length() : 0);
         nextChar();
 
-        List<DCTree> preamble = isFileContent ? blockContent(Phase.PREAMBLE) : List.nil();
+        List<DCTree> preamble = isFileContent && !isMarkdown ? blockContent(Phase.PREAMBLE) : List.nil();
         List<DCTree> body = blockContent(Phase.BODY);
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isFileContent ? blockContent(Phase.POSTAMBLE) : List.nil();
