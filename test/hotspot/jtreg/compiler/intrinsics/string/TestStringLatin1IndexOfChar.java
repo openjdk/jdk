@@ -41,7 +41,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL_char compiler.intrinsics.string.TestStringLatin1IndexOfChar
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseSSE=0 compiler.intrinsics.string.TestStringLatin1IndexOfChar
+ *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 compiler.intrinsics.string.TestStringLatin1IndexOfChar
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1 compiler.intrinsics.string.TestStringLatin1IndexOfChar
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
