@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1817,11 +1817,11 @@ public final class Spliterators {
 
         /**
          * Creates a spliterator using the given
-         * collection's {@link java.util.Collection#iterator()) for traversal,
-         * and reporting its {@link java.util.Collection#size()) as its initial
+         * collection's {@link java.util.Collection#iterator() iterator} for traversal,
+         * and reporting its {@link java.util.Collection#size() size} as its initial
          * size.
          *
-         * @param c the collection
+         * @param collection the collection
          * @param characteristics properties of this spliterator's
          *        source or elements.
          */
