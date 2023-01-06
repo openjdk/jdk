@@ -27,12 +27,39 @@ public class Rational extends Number implements Comparable<Rational> {
     private static final long serialVersionUID = 669815459941734258L;
 
     /**
-     * Constructs a Rational whose value is represented by the fraction
+     * Returns a Rational whose value is represented by the fraction
      * with the specified numerator and denominator.
-     * @param numerator the numerator
+     * @param num the numerator of the fraction to represent
+     * @param den the denominator of the fraction to represent
+     * @return a Rational whose value is represented by the fraction
+     * with the specified numerator and denominator
+     * @throws ArithmeticException if the specified denominator is zero
      */
-    public Rational(BigInteger numerator, BigInteger denominator) {
-        
+    public static Rational valueOf(BigInteger num, BigInteger den) {
+        if (den.signum == 0)
+            throw new ArithmeticException("Denominator is zero");
+
+        int signum = num.signum * den.signum;
+        num = num.abs();
+        den = den.abs();
+
+        if (num.signum == 0)
+            return new Rational(signum, num, BigInteger.ONE);
+
+        if (num.equals(BigInteger.ONE) || den.equals(BigInteger.ONE))
+            return new Rational(signum, num, den);
+
+        return new Rational(signum, num.divide(gcd), den.divide(gcd));
+    }
+
+    /**
+     * Constructs a new Rational with the specified values.
+     * This constructor assumes that the values passed are always valid
+     */
+    private Rational(int sign, BigInteger num, BigInteger den) {
+        signum = sign;
+        numerator = num;
+        denominator = den;
     }
 
     /**
@@ -312,7 +339,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public int hashCode() {
-        return signum * Objects.hash(numerator, denominator);
+        return signum == 0 ? 0 : signum * Objects.hash(numerator, denominator);
     }
 
     /**
