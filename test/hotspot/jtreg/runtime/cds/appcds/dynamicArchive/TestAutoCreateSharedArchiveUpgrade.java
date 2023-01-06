@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Check that -XX:+AutoCreateSharedArchive automatically recreates an archive when you change the JDK version.
- * @requires vm.cds
+ * @requires vm.cds & vm.bits == "64"
  * @library /test/lib
  * @compile -source 1.8 -target 1.8 ../test-classes/HelloJDK8.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar Hello.jar HelloJDK8
