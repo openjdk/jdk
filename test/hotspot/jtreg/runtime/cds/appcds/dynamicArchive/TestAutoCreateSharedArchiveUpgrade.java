@@ -112,9 +112,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (OLD_JDK != null) {
-            oldJVM = (Platform.isOSX()) ?
-                OLD_JDK + ".jdk" + FS + "Contents" + FS + "Home" + FS + "bin" + FS + "java" :
-                OLD_JDK + FS + "bin" + FS + "java";
+            oldJVM = OLD_JDK + FS + "bin" + FS + "java";
         } else {
             throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
@@ -216,7 +214,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
             return fetchOldJDK(jdkArtifactMap, version);
         } else if (Platform.isOSX()) {
             jdkArtifactMap.put("file", "bundles/macos-" + architecture + "64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
-            return fetchOldJDK(jdkArtifactMap, version);
+            return fetchOldJDK(jdkArtifactMap, version) +  ".jdk" + FS + "Contents" + FS + "Home";
         } else if (Platform.isLinux()) {
             jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
             return fetchOldJDK(jdkArtifactMap, version);
