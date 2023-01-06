@@ -39,6 +39,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.Writer;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
@@ -4045,7 +4046,20 @@ public class JShellTool implements MessageHandler {
         @Override
         public synchronized PrintWriter writer() {
             if (writer == null) {
-                writer = new PrintWriter(input.userOutput());
+                writer = new PrintWriter(new Writer() {
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        input.userOutput().write(cbuf, off, len);
+                    }
+                    @Override
+                    public void flush() throws IOException {
+                        input.userOutput().flush();
+                    }
+                    @Override
+                    public void close() throws IOException {
+                        input.userOutput().close();
+                    }
+                });
             }
             return writer;
         }
