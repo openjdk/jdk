@@ -310,7 +310,6 @@ import java.util.Locale;
  * Object[] objs = {Double.valueOf(3.1415)};
  * String result = mf.format( objs );
  * // result now equals "3.14, 3.1"
- * objs = null;
  * objs = mf.parse(result, new ParsePosition(0));
  * // objs now equals {Double.valueOf(3.1)}
  * </pre></blockquote>
