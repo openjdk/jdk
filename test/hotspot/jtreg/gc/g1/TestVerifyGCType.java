@@ -272,22 +272,26 @@ public class TestVerifyGCType {
             partialFree(used);
 
             used = alloc1M();
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-            partialFree(used);
 
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
+            wb.concurrentGCAcquireControl();
+            try {
+                wb.concurrentGCRunTo(wb.AFTER_MARKING_STARTED);
+                partialFree(used);
+
+                wb.concurrentGCRunToIdle();
+
+                // Trigger two young GCs while preventing a new concurrent GC.
+                // First will be young-prepare-mixed, second will be mixed.
+                used = alloc1M();
+                wb.youngGC(); // young-prepare-mixed
+                partialFree(used);
+
+                used = alloc1M();
+                wb.youngGC(); // mixed
+                partialFree(used);
+            } finally {
+                wb.concurrentGCReleaseControl();
             }
-
-            // Trigger two young GCs, first will be young-prepare-mixed, second will be mixed.
-            used = alloc1M();
-            wb.youngGC(); // young-prepare-mixed
-            partialFree(used);
-
-            used = alloc1M();
-            wb.youngGC(); // mixed
-            partialFree(used);
         }
 
         private static Object[] alloc1M() {
