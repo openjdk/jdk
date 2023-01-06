@@ -68,7 +68,7 @@ abstract class IOContext implements AutoCloseable {
     }
 
     public Writer userOutput() {
-        return null; //XXX
+        throw new UnsupportedOperationException();
     }
 
     public char[] readPassword(String prompt) throws IOException {
