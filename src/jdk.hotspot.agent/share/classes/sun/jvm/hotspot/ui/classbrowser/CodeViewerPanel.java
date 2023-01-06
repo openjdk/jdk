@@ -40,7 +40,7 @@ public class CodeViewerPanel extends JPanel {
     protected HistoryComboBox address;
     protected HTMLGenerator  htmlGen;
     protected JScrollPane    scrollPane;
- 
+
     @SuppressWarnings("this-escape")
     public CodeViewerPanel() {
         htmlGen = new HTMLGenerator();
