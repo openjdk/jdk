@@ -1012,15 +1012,15 @@ void ClassLoaderData::print_on(outputStream* out) const {
 void ClassLoaderData::print() const { print_on(tty); }
 
 class VerifyHandleOops : public OopClosure {
+  VerifyOopClosure vc;
  public:
   virtual void do_oop(oop* p) {
     if (p != nullptr && *p != nullptr) {
       oop o = *p;
       if (!java_lang_Class::is_instance(o)) {
-        guarantee(oopDesc::is_oop(o), "Should be some oop");
-      }
-      if (o->is_objArray()) {
-        VerifyOopClosure vc;
+        // is_instance will assert for an invalid oop.
+        // Walk the resolved_references array and other assorted oops in the
+        // CLD::_handles field.  The mirror oops have other heap roots to follow.
         o->oop_iterate(&vc);
       }
     }
