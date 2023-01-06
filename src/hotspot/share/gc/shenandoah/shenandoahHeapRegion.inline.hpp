@@ -35,43 +35,66 @@
 // so that returned object is aligned on an address that is a multiple of alignment_in_words.  Requested
 // size is in words.  It is assumed that this->is_old().  A pad object is allocated, filled, and registered
 // if necessary to assure the new allocation is properly aligned.
-HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest req, size_t alignment_in_bytes) {
+HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest &req, size_t alignment_in_bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
+  assert(req.is_lab_alloc(), "allocate_aligned() only applies to LAB allocations");
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
   assert(is_old(), "aligned allocations are only taken from OLD regions to support PLABs");
 
-  HeapWord* obj = top();
-  uintptr_t addr_as_int = (uintptr_t) obj;
+  HeapWord* orig_top = top();
+  size_t addr_as_int = (uintptr_t) orig_top;
 
+  // unalignment_bytes is the amount by which current top() exceeds the desired alignment point.  We subtract this amount
+  // from alignment_in_bytes to determine padding required to next alignment point.
+
+  // top is HeapWord-aligned so unalignment_bytes is a multiple of HeapWordSize
   size_t unalignment_bytes = addr_as_int % alignment_in_bytes;
-  assert(unalignment_bytes % HeapWordSize == 0, "top should be multiple of HeapWordSize");
+  size_t unalignment_words = unalignment_bytes / HeapWordSize;
 
-  size_t pad_words = 0;
-  if (unalignment_bytes > 0) {
-    pad_words = (alignment_in_bytes - unalignment_bytes) / HeapWordSize;
+  size_t pad_words;
+  HeapWord* aligned_obj;
+  if (unalignment_words > 0) {
+    pad_words = (alignment_in_bytes / HeapWordSize) - unalignment_words;
+    if (pad_words < ShenandoahHeap::min_fill_size()) {
+      pad_words += (alignment_in_bytes / HeapWordSize);
+    }
+    aligned_obj = orig_top + pad_words;
+  } else {
+    pad_words = 0;
+    aligned_obj = orig_top;
   }
-  if ((pad_words > 0) && (pad_words < ShenandoahHeap::min_fill_size())) {
-    pad_words += alignment_in_bytes / HeapWordSize;
+
+  if (pointer_delta(end(), aligned_obj) < size) {
+    size = pointer_delta(end(), aligned_obj);
+    // Force size to align on multiple of alignment_in_bytes
+    size_t byte_size = size * HeapWordSize;
+    size_t excess_bytes = byte_size % alignment_in_bytes;
+    // Note: excess_bytes is a multiple of HeapWordSize because it is the difference of HeapWord-aligned end
+    //       and proposed HeapWord-aligned object address.
+    if (excess_bytes > 0) {
+      size -= excess_bytes / HeapWordSize;
+    }
   }
-  if (pointer_delta(end(), obj + pad_words) >= size) {
+
+  // Both originally requested size and adjusted size must be properly aligned
+  assert ((size * HeapWordSize) % alignment_in_bytes == 0, "Size must be multiple of alignment constraint");
+  if (size >= req.min_size()) {
+    // Even if req.min_size() is not a multiple of card size, we know that size is.
     if (pad_words > 0) {
-      ShenandoahHeap::fill_with_object(obj, pad_words);
-      // register the filled pad object
-      ShenandoahHeap::heap()->card_scan()->register_object(obj);
-      obj += pad_words;
+      ShenandoahHeap::fill_with_object(orig_top, pad_words);
+      ShenandoahHeap::heap()->card_scan()->register_object(orig_top);
     }
 
-    // We don't need to register the PLAB.  Its content will be registered as objects are allocated within it and/or
-    // when the PLAB is retired.
     make_regular_allocation(req.affiliation());
     adjust_alloc_metadata(req.type(), size);
 
-    HeapWord* new_top = obj + size;
+    HeapWord* new_top = aligned_obj + size;
+    assert(new_top <= end(), "PLAB cannot span end of heap region");
     set_top(new_top);
+    req.set_actual_size(size);
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
-    assert(is_aligned(obj, alignment_in_bytes), "obj is not aligned: " PTR_FORMAT, p2i(obj));
-
-    return obj;
+    assert(is_aligned(aligned_obj, alignment_in_bytes), "obj is not aligned: " PTR_FORMAT, p2i(aligned_obj));
+    return aligned_obj;
   } else {
     return NULL;
   }
