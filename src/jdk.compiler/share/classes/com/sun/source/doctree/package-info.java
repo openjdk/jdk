@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@
  * which may represent {@linkplain TextTree plain text}, {@linkplain EntityTree entities},
  * {@linkplain InlineTagTree inline} and {@linkplain BlockTagTree block} tags,
  * {@linkplain StartElementTree start} and {@linkplain EndElementTree end} HTML elements,
- * and {@linkplain MarkdownTree Markdown code}. In such lists, if there is at least
+ * and {@linkplain MarkdownTree Markdown content}. In such lists, if there is at least
  * one Markdown node, the entire list will be treated as Markdown, although all
  * non-Markdown nodes will be treated as opaque objects and will not be parsed as
- * part of the Markdown code.
+ * part of the Markdown content.
  *
  * @author Jonathan Gibbons
  * @since 1.8

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.nio.file.Path;
 public class TestMarkdown extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMarkdown tester = new TestMarkdown();
+        var tester = new TestMarkdown();
         tester.runTests();
     }
 

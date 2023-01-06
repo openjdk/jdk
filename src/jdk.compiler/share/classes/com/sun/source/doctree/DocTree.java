@@ -155,7 +155,7 @@ public interface DocTree {
 
         /**
          * Used for instances of {@link MarkdownTree}
-         * representing a fragment of Markdown code.
+         * representing a fragment of Markdown content.
          *
          * @since 21
          */

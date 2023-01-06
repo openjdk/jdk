@@ -29,8 +29,9 @@ package com.sun.source.doctree;
  * A tree node for an {@code @inheritDoc} inline tag.
  *
  * @apiNote
- * There is no requirement that the comment containing the tag and the comment containing the inherited documentation
- * should either be both Markdown comments or both normal (not Markdown) comments.
+ * There is no requirement that the comment containing the tag and the comment
+ * containing the inherited documentation should either be both Markdown comments
+ * or both normal (not Markdown) comments.
  *
  * <pre>
  *    {&#064;inheritDoc}

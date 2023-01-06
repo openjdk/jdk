@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package com.sun.source.doctree;
 
 /**
- * A tree node for a fragment of Markdown code.
+ * A tree node for a fragment of Markdown content.
  *
  * <p>
- * The code may contain plain text, entities and HTML elements,
- * all represented directly in the text of the code,
+ * The content may contain plain text, entities and HTML elements,
+ * all represented directly in the text of the content,
  * but not {@linkplain InlineTagTree inline tags}.
  *
  * @apiNote
@@ -50,7 +50,7 @@ package com.sun.source.doctree;
  */
 public interface MarkdownTree extends DocTree {
     /**
-     * {@return the code}
+     * {@return the content}
      */
-    String getCode();
+    String getContent();
 }

@@ -1091,6 +1091,11 @@ public class DPrinter {
             return visitInlineTag(node, null);
         }
 
+        public Void visitMarkdown(MarkdownTree node, Void p) {
+            printLimitedEscapedString("content", node.getContent());
+            return visitTree(node, null);
+        }
+
         public Void visitParam(ParamTree node, Void p) {
             printString("isTypeParameter", String.valueOf(node.isTypeParameter()));
             printString("kind", node.getKind().name());

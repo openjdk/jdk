@@ -237,7 +237,7 @@ public interface DocTreeFactory {
     LiteralTree newLiteralTree(TextTree text);
 
     /**
-     * Creates a new {@code MarkdownTree} object, to represent a fragment of Markdown code.
+     * Creates a new {@code MarkdownTree} object, to represent a fragment of Markdown content.
      * @param code the code
      * @return a {@code MarkdownTree} object
      *

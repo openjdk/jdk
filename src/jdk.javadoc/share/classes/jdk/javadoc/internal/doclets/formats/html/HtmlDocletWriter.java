@@ -1246,21 +1246,24 @@ public class HtmlDocletWriter {
     }
 
     private class MarkdownHandler {
-        private static final char FFFC = '\uFFFC'; // Unicode Object Replacement Character
+        private static final char PLACEHOLDER = '\uFFFC'; // Unicode Object Replacement Character
         StringBuilder markdownInput = new StringBuilder() ;
         ArrayList<Content> fffcObjects = new ArrayList<>();
+
+        Parser parser = Parser.builder().build();
+        HtmlRenderer renderer = HtmlRenderer.builder().build();
 
         boolean handle(DocTree tree, InlineVisitor visitor) {
             boolean allDone;
             if (tree instanceof MarkdownTree t) {
-                String code = t.getCode();
+                String code = t.getContent();
                 // handle the (unlikely) case of FFFC characters existing in the code
                 int start = 0;
                 int pos;
-                while ((pos = code.indexOf(FFFC, start)) != -1) {
+                while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
                     markdownInput.append(code.substring(start, pos));
-                    markdownInput.append(FFFC);
-                    fffcObjects.add(Text.of(String.valueOf(FFFC)));
+                    markdownInput.append(PLACEHOLDER);
+                    fffcObjects.add(Text.of(String.valueOf(PLACEHOLDER)));
                     start = pos + 1;
                 }
                 markdownInput.append(code.substring(start));
@@ -1269,21 +1272,19 @@ public class HtmlDocletWriter {
                 Content embeddedContent = new ContentBuilder();
                 allDone = visitor.visit(tree, embeddedContent);
                 fffcObjects.add(embeddedContent);
-                markdownInput.append(FFFC);
+                markdownInput.append(PLACEHOLDER);
             }
             return allDone;
         }
 
         void addContent(Content result) {
-            Parser parser = Parser.builder().build();
             Node document = parser.parse(markdownInput.toString());
-            HtmlRenderer renderer = HtmlRenderer.builder().build();
             String markdownOutput = unwrap(renderer.render(document));
 
             int start = 0;
             int pos;
             int fffcObjectIndex = 0;
-            while ((pos = markdownOutput.indexOf(FFFC, start)) != -1) {
+            while ((pos = markdownOutput.indexOf(PLACEHOLDER, start)) != -1) {
                 result.add(RawHtml.markdown(markdownOutput.substring(start, pos)));
                 result.add(fffcObjects.get(fffcObjectIndex++));
                 start = pos + 1;

@@ -211,8 +211,8 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 boolean first = true;
                 for (DocTree node : nodes) {
                     Boolean b = scan(node, ignore);
-                    if (b != null && b.equals(Boolean.TRUE)) {
-                        return true;
+                    if (b == Boolean.TRUE) {
+                        return b;
                     }
                 }
             }
@@ -382,7 +382,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitMarkdown(MarkdownTree node, Void p) {
         try {
-            print(node.getCode());
+            print(node.getContent());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

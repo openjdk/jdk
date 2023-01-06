@@ -511,7 +511,7 @@ public class DocCommentTester {
             }
 
             public Void visitMarkdown(MarkdownTree node, Void p) {
-                header(node, compress(node.getCode()));
+                header(node, compress(node.getContent()));
                 return null;
             }
 

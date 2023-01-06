@@ -553,7 +553,7 @@ public class DocTreeMaker implements DocTreeFactory {
                     // TODO: merge MARKDOWN and TEXT code, perhaps with generic method
                     case MARKDOWN -> {
                         DCMarkdown mt = (DCMarkdown) dt;
-                        String s = mt.getCode();
+                        String s = mt.getContent();
                         DocTree peekedNext = itr.hasNext()
                                 ? alist.get(itr.nextIndex())
                                 : null;
@@ -563,9 +563,9 @@ public class DocTreeMaker implements DocTreeFactory {
                             DCMarkdown text = this.at(spos).newMarkdownTree(s);
                             fs.add(text);
                             foundFirstSentence = true;
-                            int nwPos = skipWhiteSpace(mt.getCode(), sbreak);
+                            int nwPos = skipWhiteSpace(mt.getContent(), sbreak);
                             if (nwPos > 0) {
-                                DCMarkdown text2 = this.at(spos + nwPos).newMarkdownTree(mt.getCode().substring(nwPos));
+                                DCMarkdown text2 = this.at(spos + nwPos).newMarkdownTree(mt.getContent().substring(nwPos));
                                 body.add(text2);
                             }
                             continue;

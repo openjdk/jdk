@@ -213,9 +213,14 @@ public interface DocTreeVisitor<R,P> {
      * @param p a parameter value
      * @return a result value
      *
+     * @implSpec Visits the provided {@code MarkdownTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
      * @since 21
      */
-    R visitMarkdown(MarkdownTree node, P p);
+    default R visitMarkdown(MarkdownTree node, P p) {
+        return visitOther(node, p);
+    }
 
     /**
      * Visits a {@code ParamTree} node.

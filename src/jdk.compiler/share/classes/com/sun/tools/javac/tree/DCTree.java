@@ -819,7 +819,7 @@ public abstract class DCTree implements DocTree {
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public String getCode() {
+        public String getContent() {
             return code;
         }
     }
