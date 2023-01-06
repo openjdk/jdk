@@ -2265,6 +2265,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param d the dimension specifying the new size
      *          of this component
      * @throws NullPointerException if {@code d} is {@code null}
+     * @see #setSize(int, int)
      * @see #getSize
      * @see #setBounds
      * @see #invalidate
