@@ -589,7 +589,7 @@ public class ConnectionTest {
         }
 
     }
-    
+
     private static void log(Object msg) {
         System.out.println(msg);
     }
