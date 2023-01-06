@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,6 +520,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * @return the specified {@code TimeZone}, or the GMT zone if the given ID
      * cannot be understood.
+     * @throws NullPointerException if {@code ID} is {@code null}
      */
     public static synchronized TimeZone getTimeZone(String ID) {
         return getTimeZone(ID, true);
