@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,6 @@ Java_java_awt_image_SinglePixelPackedSampleModel_initIDs(JNIEnv *env, jclass cls
 
 JNIEXPORT void JNICALL
 Java_java_awt_image_ColorModel_initIDs(JNIEnv *env, jclass cls) {
-    CHECK_NULL(g_CMpDataID = (*env)->GetFieldID (env, cls, "pData", "J"));
     CHECK_NULL(g_CMnBitsID  = (*env)->GetFieldID(env, cls, "nBits", "[I"));
     CHECK_NULL(g_CMcspaceID = (*env)->GetFieldID(env, cls, "colorSpace",
                                     "Ljava/awt/color/ColorSpace;"));
