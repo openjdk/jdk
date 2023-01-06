@@ -22,10 +22,10 @@
  */
 
 /*
-public class NoSuchFieldPrimitive {
+public class NoSuchFieldMultiArray {
     static double[][] a;
-    static {
-       System.out.println("a = " + a);
+    public NoSuchFieldMultiArray() {
+        a = new double[1][1];
     }
 }
 */
@@ -36,25 +36,15 @@ super public class NoSuchFieldMultiArray
   // REMOVED static Field a:"[[D";
 
   public Method "<init>":"()V"
-	stack 1 locals 1
+	stack 2 locals 1
   {
 		aload_0;
 		invokespecial	Method java/lang/Object."<init>":"()V";
+		iconst_1;
+		iconst_1;
+		multianewarray	class "[[D",  2;
+		putstatic	Field a:"[[D";
 		return;
   }
-  static Method "<clinit>":"()V"
-	stack 2 locals 0
-  {
-		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
-		getstatic	Field a:"[[D";
-		invokestatic	Method java/lang/String.valueOf:"(Ljava/lang/Object;)Ljava/lang/String;";
-		invokedynamic	InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":makeConcatWithConstants:"(Ljava/lang/String;)Ljava/lang/String;" {
-			String "a = "
-		};
-		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
-		return;
-  }
-
-  public static final InnerClass Lookup=class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
 
 } // end Class NoSuchFieldMultiArray

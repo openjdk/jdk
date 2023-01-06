@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,9 +23,9 @@
 
 /*
 public class NoSuchFieldArray {
-    static char[] z = {1, 2, 3};
-    static {
-       System.out.println("z = " + z);
+    static char[] z;
+    public NoSuchFieldArray() {
+        z = new char[1];
     }
 }
 */
@@ -41,36 +40,10 @@ super public class NoSuchFieldArray
   {
 		aload_0;
 		invokespecial	Method java/lang/Object."<init>":"()V";
-		return;
-  }
-  static Method "<clinit>":"()V"
-	stack 4 locals 0
-  {
-		iconst_3;
+		iconst_1;
 		newarray char;
-		dup;
-		iconst_0;
-		iconst_1;
-		castore;
-		dup;
-		iconst_1;
-		iconst_2;
-		castore;
-		dup;
-		iconst_2;
-		iconst_3;
-		castore;
 		putstatic	Field z:"[C";
-		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
-		getstatic	Field z:"[C";
-		invokestatic	Method java/lang/String.valueOf:"(Ljava/lang/Object;)Ljava/lang/String;";
-		invokedynamic	InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":makeConcatWithConstants:"(Ljava/lang/String;)Ljava/lang/String;" {
-			String "z = "
-		};
-		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
 		return;
   }
-
-  public static final InnerClass Lookup=class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
 
 } // end Class NoSuchFieldArray

@@ -23,9 +23,9 @@
 
 /*
 public class NoSuchFieldPrimitive {
-    static int x = 123;
-    static {
-       System.out.println("x = " + x);
+    // static int x;
+    public NoSuchFieldPrimitive() {
+       x = 123;
     }
 }
 */
@@ -40,22 +40,9 @@ super public class NoSuchFieldPrimitive
   {
 		aload_0;
 		invokespecial	Method java/lang/Object."<init>":"()V";
-		return;
-  }
-  static Method "<clinit>":"()V"
-	stack 2 locals 0
-  {
 		bipush	123;
 		putstatic	Field x:"I";
-		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
-		getstatic	Field x:"I";
-		invokedynamic	InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":makeConcatWithConstants:"(I)Ljava/lang/String;" {
-			String "x = "
-		};
-		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
 		return;
   }
-
-  public static final InnerClass Lookup=class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
 
 } // end Class NoSuchFieldPrimitive

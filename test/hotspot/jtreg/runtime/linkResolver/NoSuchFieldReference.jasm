@@ -24,8 +24,8 @@
 /*
 public class NoSuchFieldReference {
     static TestClass y;
-    static {
-       System.out.println("y = " + y);
+    public NoSuchFieldReference() {
+        y = new TestClass();
     }
 }
 */
@@ -36,25 +36,15 @@ super public class NoSuchFieldReference
   // REMOVED static Field y:"LTestClass;";
 
   public Method "<init>":"()V"
-	stack 1 locals 1
+	stack 2 locals 1
   {
 		aload_0;
 		invokespecial	Method java/lang/Object."<init>":"()V";
+		new	class TestClass;
+		dup;
+		invokespecial	Method TestClass."<init>":"()V";
+		putstatic	Field y:"LTestClass;";
 		return;
   }
-  static Method "<clinit>":"()V"
-	stack 2 locals 0
-  {
-		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
-		getstatic	Field y:"LTestClass;";
-		invokestatic	Method java/lang/String.valueOf:"(Ljava/lang/Object;)Ljava/lang/String;";
-		invokedynamic	InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":makeConcatWithConstants:"(Ljava/lang/String;)Ljava/lang/String;" {
-			String "y = "
-		};
-		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
-		return;
-  }
-
-  public static final InnerClass Lookup=class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
 
 } // end Class NoSuchFieldReference
