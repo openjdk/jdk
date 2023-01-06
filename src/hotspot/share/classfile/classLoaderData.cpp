@@ -1020,7 +1020,7 @@ class VerifyHandleOops : public OopClosure {
       if (!java_lang_Class::is_instance(o)) {
         // is_instance will assert for an invalid oop.
         // Walk the resolved_references array and other assorted oops in the
-        // CLD::_handles field.  The mirror oops have other heap roots to follow.
+        // CLD::_handles field.  The mirror oops are followed by other heap roots.
         o->oop_iterate(&vc);
       }
     }
