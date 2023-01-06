@@ -56,7 +56,6 @@ class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
-class Int_Array;
 class Matcher;
 class MachConstantNode;
 class MachConstantBaseNode;
@@ -77,12 +76,10 @@ class PhaseCCP;
 class PhaseOutput;
 class RootNode;
 class relocInfo;
-class Scope;
 class StartNode;
 class SafePointNode;
 class JVMState;
 class Type;
-class TypeData;
 class TypeInt;
 class TypeInteger;
 class TypeKlassPtr;
@@ -164,7 +161,6 @@ class CloneMap {
   void set_clone_idx(int x)                      { _clone_idx = x; }
   bool is_debug()                 const          { return _debug; }
   void set_debug(bool debug)                     { _debug = debug; }
-  static const char* debug_option_name;
 
   bool same_idx(node_idx_t k1, node_idx_t k2)  const { return idx(k1) == idx(k2); }
   bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
