@@ -26,6 +26,21 @@ public class Rational extends Number implements Comparable<Rational> {
     @java.io.Serial
     private static final long serialVersionUID = 669815459941734258L;
 
+    /**
+     * Constructs a Rational whose value is represented by the fraction
+     * with the specified numerator and denominator.
+     * @param numerator the numerator
+     */
+    public Rational(BigInteger numerator, BigInteger denominator) {
+        
+    }
+
+    /**
+     * Returns the signum function of this {@code Rational}.
+     *
+     * @return -1, 0, or 1 as the value of this {@code Rational}
+     *         is negative, zero, or positive.
+     */
     public int signum() {
         return signum;
     }
@@ -347,16 +362,41 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0) // values are both zero
             return 0;
 
-        int absComp;
+        final int absComp;
 
         // compare absolute values
         if (denominator.equals(val.denominator))
             absComp = numerator.compareTo(val.numerator); // a/b < c/b <=> a < c
         else if (numerator.equals(val.numerator))
             absComp = val.denominator.compareTo(denominator); // a/b < a/c <=> c < b
-        else // a/b < c/d <=> a*d < b*c
-            absComp = numerator.multiply(val.denominator).compareTo(denominator.multiply(val.numerator));
+        else {
+            // compare to one
+            int unitComp = numerator.compareTo(denominator);
+            int valUnitComp = val.numerator.compareTo(val.denominator);
+
+            if (unitComp != valUnitComp)
+                absComp = unitComp > valUnitComp ? 1 : -1;
+            else{
+                // compare using least common denominator
+                // trying to pospone the overflow as as late as possible
+                BigInteger gcd = denominator.gcd(val.denominator);
+                BigInteger lcdNum = lcdNumerator(val.denominator, gcd);
+                BigInteger valLcdNum = val.lcdNumerator(denominator, gcd);
+                absComp = lcdNum.compareTo(valLcdNum);
+            }
+        }
 
         return signum * absComp; // adjust comparison with signum
+    }
+
+    /**
+     * Computes the numerator of this rational, relative to the least common denominator
+     * of {@code this.denominator} and {@code otherDenominator}
+     * @param gcd the greatest common divisor of
+     * {@code this.denominator} and {@code otherDenominator}
+     */
+    private BigInteger lcdNumerator(BigInteger otherDenominator, BigInteger gcd) {
+        // lcm(a, b) == a * b / gcd(a, b) => n/a == n * (b / gcd(a, b)) / lcm(a, b)
+        return otherDenominator.divide(gcd).multiply(numerator);
     }
 }
