@@ -130,7 +130,6 @@ public class JDesktopPane extends JLayeredPane implements Accessible
     /**
      * Creates a new <code>JDesktopPane</code>.
      */
-    @SuppressWarnings("this-escape")
     public JDesktopPane() {
         setUIProperty("opaque", Boolean.TRUE);
         setFocusCycleRoot(true);

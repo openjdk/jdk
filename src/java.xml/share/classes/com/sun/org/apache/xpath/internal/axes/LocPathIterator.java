@@ -67,7 +67,6 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * @param nscontext The namespace context for this iterator,
    * should be OK if null.
    */
-  @SuppressWarnings("this-escape")
   protected LocPathIterator(PrefixResolver nscontext)
   {
 
@@ -108,7 +107,6 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    *
    * @throws javax.xml.transform.TransformerException
    */
-  @SuppressWarnings("this-escape")
   protected LocPathIterator(
           Compiler compiler, int opPos, int analysis, boolean shouldLoadWalkers)
             throws javax.xml.transform.TransformerException
@@ -930,7 +928,6 @@ public abstract class LocPathIterator extends PredicatedNodeTest
    * because the hold running state, and thus the original iterator
    * expression from the stylesheet pool can not be used.
    */
-  @SuppressWarnings("this-escape")
   transient protected IteratorPool m_clones = new IteratorPool(this);
 
   /**

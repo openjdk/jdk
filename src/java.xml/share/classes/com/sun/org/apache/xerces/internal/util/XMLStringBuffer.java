@@ -70,28 +70,24 @@ extends XMLString {
     } // <init>(int)
 
     /** Constructs a string buffer from a char. */
-    @SuppressWarnings("this-escape")
     public XMLStringBuffer(char c) {
         this(1);
         append(c);
     } // <init>(char)
 
     /** Constructs a string buffer from a String. */
-    @SuppressWarnings("this-escape")
     public XMLStringBuffer(String s) {
         this(s.length());
         append(s);
     } // <init>(String)
 
     /** Constructs a string buffer from the specified character array. */
-    @SuppressWarnings("this-escape")
     public XMLStringBuffer(char[] ch, int offset, int length) {
         this(length);
         append(ch, offset, length);
     } // <init>(char[],int,int)
 
     /** Constructs a string buffer from the specified XMLString. */
-    @SuppressWarnings("this-escape")
     public XMLStringBuffer(XMLString s) {
         this(s.length);
         append(s);

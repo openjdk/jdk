@@ -65,7 +65,6 @@ class WindowsAsynchronousServerSocketChannelImpl
     private AtomicBoolean accepting = new AtomicBoolean();
 
 
-    @SuppressWarnings("this-escape")
     WindowsAsynchronousServerSocketChannelImpl(Iocp iocp) throws IOException {
         super(iocp);
 

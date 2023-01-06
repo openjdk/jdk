@@ -198,7 +198,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param opFlags the operation flags for the new stage, described in
      * {@link StreamOpFlag}
      */
-    @SuppressWarnings("this-escape")
     AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
         if (previousStage.linkedOrConsumed)
             throw new IllegalStateException(MSG_STREAM_LINKED);

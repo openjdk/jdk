@@ -58,7 +58,6 @@ public class PerformanceMonitor extends JPanel {
 
     Surface surf;
 
-    @SuppressWarnings("this-escape")
     public PerformanceMonitor() {
         setLayout(new BorderLayout());
         setBorder(new TitledBorder(new EtchedBorder(), "Performance"));
@@ -73,7 +72,6 @@ public class PerformanceMonitor extends JPanel {
         private Font font = new Font(Font.SERIF, Font.PLAIN, 12);
         private JPanel panel;
 
-        @SuppressWarnings("this-escape")
         public Surface() {
             setBackground(Color.black);
             addMouseListener(new MouseAdapter() {

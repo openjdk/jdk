@@ -140,7 +140,6 @@ public abstract class AbstractDocument implements Document, Serializable {
      * @param data the content
      * @param context the attribute context
      */
-    @SuppressWarnings("this-escape")
     protected AbstractDocument(Content data, AttributeContext context) {
         this.data = data;
         this.context = context;
@@ -1814,7 +1813,6 @@ public abstract class AbstractDocument implements Document, Serializable {
          * @param a the attributes for the element
          * @since 1.4
          */
-        @SuppressWarnings("this-escape")
         public AbstractElement(Element parent, AttributeSet a) {
             this.parent = parent;
             attributes = getAttributeContext().getEmptySet();
@@ -2722,7 +2720,6 @@ public abstract class AbstractDocument implements Document, Serializable {
         /**
          * Creates a new BidiElement.
          */
-        @SuppressWarnings("this-escape")
         BidiElement(Element parent, int start, int end, int level) {
             super(parent, new SimpleAttributeSet(), start, end);
             addAttribute(StyleConstants.BidiLevel, Integer.valueOf(level));

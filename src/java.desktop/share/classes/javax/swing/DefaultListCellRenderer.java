@@ -93,7 +93,6 @@ public class DefaultListCellRenderer extends JLabel
      * Constructs a default renderer object for an item
      * in a list.
      */
-    @SuppressWarnings("this-escape")
     public DefaultListCellRenderer() {
         super();
         setOpaque(true);

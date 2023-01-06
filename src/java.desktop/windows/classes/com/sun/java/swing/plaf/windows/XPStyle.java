@@ -696,7 +696,6 @@ class XPStyle {
     static class GlyphButton extends JButton {
         protected Skin skin;
 
-        @SuppressWarnings("this-escape")
         public GlyphButton(Component parent, Part part) {
             XPStyle xp = getXP();
             skin = xp != null ? xp.getSkin(parent, part) : null;

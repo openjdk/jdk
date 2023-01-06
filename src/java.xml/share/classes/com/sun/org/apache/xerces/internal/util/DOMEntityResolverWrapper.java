@@ -70,7 +70,6 @@ public class DOMEntityResolverWrapper
     public DOMEntityResolverWrapper() {}
 
     /** Wraps the specified DOM entity resolver. */
-    @SuppressWarnings("this-escape")
     public DOMEntityResolverWrapper(LSResourceResolver entityResolver) {
         setEntityResolver(entityResolver);
     } // LSResourceResolver

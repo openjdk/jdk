@@ -214,7 +214,6 @@ public class StandardParserConfiguration
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     public StandardParserConfiguration(SymbolTable symbolTable,
                                        XMLGrammarPool grammarPool,
                                        XMLComponentManager parentSettings) {

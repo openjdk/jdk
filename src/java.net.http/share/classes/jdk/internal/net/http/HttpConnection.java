@@ -66,7 +66,6 @@ import static jdk.internal.net.http.common.Utils.ProxyHeaders;
  */
 abstract class HttpConnection implements Closeable {
 
-    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
             () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
@@ -79,7 +78,6 @@ abstract class HttpConnection implements Closeable {
     private final TrailingOperations trailingOperations;
     private final long id;
 
-    @SuppressWarnings("this-escape")
     HttpConnection(InetSocketAddress address, HttpClientImpl client) {
         this.address = address;
         this.client = client;

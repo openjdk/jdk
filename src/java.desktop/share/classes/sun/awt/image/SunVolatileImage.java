@@ -63,7 +63,6 @@ public class SunVolatileImage extends VolatileImage
     private int width, height;
     private int forcedAccelSurfaceType;
 
-    @SuppressWarnings("this-escape")
     protected SunVolatileImage(Component comp,
                                GraphicsConfiguration graphicsConfig,
                                int width, int height, Object context,

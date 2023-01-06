@@ -55,7 +55,6 @@ import javax.swing.event.*;
 @SuppressWarnings("serial")
 public class MetalworksHelp extends JInternalFrame {
 
-    @SuppressWarnings("this-escape")
     public MetalworksHelp() {
         super("Help", true, true, true, true);
 
@@ -72,7 +71,7 @@ class HtmlPane extends JScrollPane implements HyperlinkListener {
 
     JEditorPane html;
 
-    @SuppressWarnings("this-escape")
+    @SuppressWarnings("LeakingThisInConstructor")
     public HtmlPane() {
         try {
             URL url = getClass().getResource("/resources/HelpFiles/toc.html");

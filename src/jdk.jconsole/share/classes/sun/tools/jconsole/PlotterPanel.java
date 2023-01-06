@@ -34,7 +34,6 @@ import javax.swing.*;
 public class PlotterPanel extends BorderedComponent {
     Plotter plotter;
 
-    @SuppressWarnings("this-escape")
     public PlotterPanel(String labelStr, Plotter.Unit unit, boolean collapsible) {
         super(labelStr, new Plotter(unit), collapsible);
 
@@ -43,7 +42,6 @@ public class PlotterPanel extends BorderedComponent {
         init();
     }
 
-    @SuppressWarnings("this-escape")
     public PlotterPanel(String labelStr) {
         super(labelStr, null);
 

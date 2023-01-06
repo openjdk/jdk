@@ -232,7 +232,6 @@ public class LineReaderImpl implements LineReader, Flushable
 
     protected KillRing killRing = new KillRing();
 
-    @SuppressWarnings("this-escape")
     protected UndoTree<Buffer> undo = new UndoTree<>(this::setBuffer);
     protected boolean isUndo;
 
@@ -289,7 +288,6 @@ public class LineReaderImpl implements LineReader, Flushable
         this(terminal, appName, null);
     }
 
-    @SuppressWarnings("this-escape")
     public LineReaderImpl(Terminal terminal, String appName, Map<String, Object> variables) {
         Objects.requireNonNull(terminal, "terminal can not be null");
         this.terminal = terminal;

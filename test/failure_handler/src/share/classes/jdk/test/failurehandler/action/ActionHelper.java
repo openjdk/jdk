@@ -59,7 +59,6 @@ public class ActionHelper {
 
     private final PatternAction getChildren;
 
-    @SuppressWarnings("this-escape")
     public ActionHelper(Path workDir, String prefix, Properties properties,
                         Path... jdks) throws InvalidValueException {
         this.workDir = workDir.toAbsolutePath();

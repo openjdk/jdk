@@ -1247,7 +1247,6 @@ public abstract class NumberFormat extends Format  {
          *
          * @param name Name of the attribute
          */
-        @SuppressWarnings("this-escape")
         protected Field(String name) {
             super(name);
             if (this.getClass() == NumberFormat.Field.class) {

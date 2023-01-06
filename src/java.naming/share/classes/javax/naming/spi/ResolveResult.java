@@ -94,7 +94,6 @@ public class ResolveResult implements java.io.Serializable {
       * @param robj The non-null Object resolved to.
       * @param rname The non-null remaining name that has yet to be resolved.
       */
-    @SuppressWarnings("this-escape")
     public ResolveResult(Object robj, Name rname) {
         resolvedObj = robj;
         setRemainingName(rname);

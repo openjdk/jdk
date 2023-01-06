@@ -48,7 +48,6 @@ public class XMLDTDDescription extends XMLResourceIdentifierImpl
     protected List<String> fPossibleRoots = null;
 
     // Constructors:
-    @SuppressWarnings("this-escape")
     public XMLDTDDescription(XMLResourceIdentifier id, String rootName) {
         this.setValues(id.getPublicId(), id.getLiteralSystemId(),
                 id.getBaseSystemId(), id.getExpandedSystemId());
@@ -56,7 +55,6 @@ public class XMLDTDDescription extends XMLResourceIdentifierImpl
         this.fPossibleRoots = null;
     } // init(XMLResourceIdentifier, String)
 
-    @SuppressWarnings("this-escape")
     public XMLDTDDescription(String publicId, String literalId,
                 String baseId, String expandedId, String rootName) {
         this.setValues(publicId, literalId, baseId, expandedId);
@@ -64,7 +62,6 @@ public class XMLDTDDescription extends XMLResourceIdentifierImpl
         this.fPossibleRoots = null;
     } // init(String, String, String, String, String)
 
-    @SuppressWarnings("this-escape")
     public XMLDTDDescription(XMLInputSource source) {
         this.setValues(source.getPublicId(), null,
                 source.getBaseSystemId(), source.getSystemId());

@@ -61,7 +61,6 @@ public class Tokens {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);
@@ -310,7 +309,6 @@ public class Tokens {
         /** Comment reader associated with this token */
         public final List<Comment> comments;
 
-        @SuppressWarnings("this-escape")
         Token(TokenKind kind, int pos, int endPos, List<Comment> comments) {
             this.kind = kind;
             this.pos = pos;

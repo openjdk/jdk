@@ -425,7 +425,6 @@ public class Frame extends Window implements MenuContainer {
      * @see java.awt.Component#setVisible(boolean)
      * @see java.awt.GraphicsConfiguration#getBounds
      */
-    @SuppressWarnings("this-escape")
     public Frame(String title) throws HeadlessException {
         init(title, null);
     }
@@ -451,7 +450,6 @@ public class Frame extends Window implements MenuContainer {
      * @see java.awt.GraphicsConfiguration#getBounds
      * @since 1.3
      */
-    @SuppressWarnings("this-escape")
     public Frame(String title, GraphicsConfiguration gc) {
         super(gc);
         init(title, gc);

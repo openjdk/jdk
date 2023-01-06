@@ -63,7 +63,6 @@ public class ProgressBarDemo extends DemoModule {
     /**
      * ProgressBarDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public ProgressBarDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.
@@ -72,7 +71,6 @@ public class ProgressBarDemo extends DemoModule {
         createProgressPanel();
     }
 
-    @SuppressWarnings("this-escape")
     javax.swing.Timer timer = new javax.swing.Timer(18, createTextLoadAction());
     Action loadAction;
     Action stopAction;
@@ -152,7 +150,6 @@ public class ProgressBarDemo extends DemoModule {
 
     int textLocation = 0;
 
-    @SuppressWarnings("this-escape")
     String text = getString("ProgressBarDemo.text");
 
     public Action createTextLoadAction() {
@@ -173,7 +170,6 @@ public class ProgressBarDemo extends DemoModule {
 
 
     class MyTextArea extends JTextArea {
-        @SuppressWarnings("this-escape")
         public MyTextArea() {
             super(null, 0, 0);
             setEditable(false);

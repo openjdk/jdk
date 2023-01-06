@@ -106,7 +106,6 @@ public class ACrules extends AnimatingSurface {
     private BufferedImage dBI, sBI;
     private GradientPaint gradientDst, gradientSrc;
 
-    @SuppressWarnings("this-escape")
     public ACrules() {
         setBackground(Color.white);
     }

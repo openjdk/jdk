@@ -139,7 +139,6 @@ public final class TextureChooser extends JPanel {
         private boolean enterExitFrame = false;
         private Object t;
 
-        @SuppressWarnings("this-escape")
         public Surface(final Object t, final TextureChooser tc, int num) {
             setBackground(WHITE);
             this.t = t;

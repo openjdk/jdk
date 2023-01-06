@@ -1093,7 +1093,6 @@ abstract class AttributeTrackingDestination implements Destination
      *  more efficient use */
     MutableAttributeSet sectionAttributes;
 
-    @SuppressWarnings("this-escape")
     public AttributeTrackingDestination()
     {
         characterAttributes = rootCharacterAttributes();

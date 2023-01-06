@@ -93,7 +93,6 @@ public class GenericListeningConnector
      * when sub-classing - the resulting connector will a "timeout" connector
      * argument.
      */
-    @SuppressWarnings("this-escape")
     protected GenericListeningConnector(TransportService ts) {
         this(ts, false);
     }

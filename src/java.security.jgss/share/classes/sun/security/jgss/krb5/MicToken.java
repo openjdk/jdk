@@ -66,7 +66,6 @@ class MicToken extends MessageToken {
       verify(dataBytes, 0, dataBytes.length);
   }
 
-  @SuppressWarnings("this-escape")
   public MicToken(Krb5Context context, MessageProp prop,
                   byte[] data, int pos, int len)
         throws GSSException {
@@ -78,7 +77,6 @@ class MicToken extends MessageToken {
         genSignAndSeqNumber(prop, null, data, pos, len, null);
   }
 
-  @SuppressWarnings("this-escape")
   public MicToken(Krb5Context context, MessageProp prop,
                   InputStream data)
         throws GSSException, IOException {

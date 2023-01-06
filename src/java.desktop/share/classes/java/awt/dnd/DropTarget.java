@@ -93,7 +93,6 @@ public class DropTarget implements DropTargetListener, Serializable {
      *            returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("this-escape")
     public DropTarget(Component c, int ops, DropTargetListener dtl,
                       boolean act, FlavorMap fm)
         throws HeadlessException
@@ -655,7 +654,6 @@ public class DropTarget implements DropTargetListener, Serializable {
          * @param p the {@code Point}
          */
 
-        @SuppressWarnings("this-escape")
         protected DropTargetAutoScroller(Component c, Point p) {
             super();
 

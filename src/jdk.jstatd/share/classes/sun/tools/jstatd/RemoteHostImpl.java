@@ -57,7 +57,6 @@ public class RemoteHostImpl implements RemoteHost, HostListener {
         this(0);
     }
 
-    @SuppressWarnings("this-escape")
     public RemoteHostImpl(int rmiPort) throws MonitorException {
         this.rmiPort = rmiPort;
         try {

@@ -43,7 +43,6 @@ public class LDC extends CPInstruction implements PushInstruction, ExceptionThro
     }
 
 
-    @SuppressWarnings("this-escape")
     public LDC(final int index) {
         super(com.sun.org.apache.bcel.internal.Const.LDC_W, index);
         setSize();

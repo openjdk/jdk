@@ -37,7 +37,6 @@ public class SaveAsAction extends DelegateAction
         this("general/SaveAs16.gif");
     }
 
-    @SuppressWarnings("this-escape")
     public SaveAsAction(String iconPath)
     {
         super("Save As", ActionManager.getIcon(iconPath));

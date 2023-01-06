@@ -121,7 +121,6 @@ public class JarInputStream extends ZipInputStream {
      * it is signed.
      * @throws    IOException if an I/O error has occurred
      */
-    @SuppressWarnings("this-escape")
     public JarInputStream(InputStream in, boolean verify) throws IOException {
         super(in);
         this.doVerify = verify;

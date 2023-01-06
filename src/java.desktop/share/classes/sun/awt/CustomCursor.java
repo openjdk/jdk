@@ -38,7 +38,6 @@ public abstract class CustomCursor extends Cursor {
 
     protected Image image;
 
-    @SuppressWarnings("this-escape")
     public CustomCursor(Image cursor, Point hotSpot, String name)
             throws IndexOutOfBoundsException {
         super(name);

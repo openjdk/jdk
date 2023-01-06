@@ -71,7 +71,6 @@ public class DepsAnalyzer {
     // parsed archives
     final Set<Archive> archives = new LinkedHashSet<>();
 
-    @SuppressWarnings("this-escape")
     public DepsAnalyzer(JdepsConfiguration config,
                         JdepsFilter filter,
                         JdepsWriter writer,

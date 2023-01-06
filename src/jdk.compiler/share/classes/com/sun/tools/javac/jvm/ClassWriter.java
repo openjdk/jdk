@@ -162,7 +162,6 @@ public class ClassWriter extends ClassFile {
 
     /** Construct a class writer, given an options table.
      */
-    @SuppressWarnings("this-escape")
     protected ClassWriter(Context context) {
         context.put(classWriterKey, this);
 

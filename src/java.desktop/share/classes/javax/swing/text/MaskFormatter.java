@@ -199,7 +199,6 @@ public class MaskFormatter extends DefaultFormatter {
     /**
      * Creates a MaskFormatter with no mask.
      */
-    @SuppressWarnings("this-escape")
     public MaskFormatter() {
         setAllowsInvalid(false);
         containsLiteralChars = true;
@@ -214,7 +213,6 @@ public class MaskFormatter extends DefaultFormatter {
      * @param mask the mask
      * @throws ParseException if mask does not contain valid mask characters
      */
-    @SuppressWarnings("this-escape")
     public MaskFormatter(String mask) throws ParseException {
         this();
         setMask(mask);

@@ -325,7 +325,6 @@ public class Flow {
         }
     }
 
-    @SuppressWarnings("this-escape")
     protected Flow(Context context) {
         context.put(flowKey, this);
         names = Names.instance(context);

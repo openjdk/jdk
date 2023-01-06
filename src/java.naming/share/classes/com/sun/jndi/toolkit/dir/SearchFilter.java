@@ -63,7 +63,6 @@ public class SearchFilter implements AttrFilter {
     protected static final char         EXTEND_TOKEN = ':';
     protected static final char         WILDCARD_TOKEN = '*';
 
-    @SuppressWarnings("this-escape")
     public SearchFilter(String filter) throws InvalidSearchFilterException {
         this.filter = filter;
         pos = 0;

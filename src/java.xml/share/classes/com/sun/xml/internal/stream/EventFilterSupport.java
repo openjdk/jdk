@@ -42,7 +42,6 @@ public class EventFilterSupport extends EventReaderDelegate {
     //maintain a reference to EventFilter
     EventFilter fEventFilter ;
     /** Creates a new instance of EventFilterSupport */
-    @SuppressWarnings("this-escape")
     public EventFilterSupport(XMLEventReader eventReader, EventFilter eventFilter) {
         setParent(eventReader);
         fEventFilter = eventFilter;

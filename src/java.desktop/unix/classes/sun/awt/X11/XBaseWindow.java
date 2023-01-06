@@ -255,7 +255,6 @@ public class XBaseWindow {
         }));
     }
 
-    @SuppressWarnings("this-escape")
     public XBaseWindow (XCreateWindowParams params) {
         init(params);
     }

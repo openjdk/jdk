@@ -315,7 +315,6 @@ public class XML11NonValidatingConfiguration extends ParserConfigurationSettings
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     public XML11NonValidatingConfiguration(
         SymbolTable symbolTable,
         XMLGrammarPool grammarPool,

@@ -568,7 +568,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
         private static Thread comThread;
 
-        @SuppressWarnings({ "removal", "this-escape" })
+        @SuppressWarnings("removal")
         private ComInvoker() {
             super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<>());
             allowCoreThreadTimeOut(false);

@@ -184,7 +184,6 @@ public abstract class DTMDefaultBase implements DTM
    * @param usePrevsib true if we want to build the previous sibling node array.
    * @param newNameTable true if we want to use a new ExpandedNameTable for this DTM.
    */
-  @SuppressWarnings("this-escape")
   public DTMDefaultBase(DTMManager mgr, Source source, int dtmIdentity,
                         DTMWSFilter whiteSpaceFilter,
                         XMLStringFactory xstringfactory, boolean doIndexing,

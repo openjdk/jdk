@@ -38,7 +38,6 @@ public class XSCMUniOp extends CMNode {
     // -------------------------------------------------------------------
     //  Constructors
     // -------------------------------------------------------------------
-    @SuppressWarnings("this-escape")
     public XSCMUniOp(int type, CMNode childNode) {
         super(type);
 

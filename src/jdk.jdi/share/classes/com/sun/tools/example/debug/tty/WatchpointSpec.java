@@ -37,7 +37,6 @@ package com.sun.tools.example.debug.tty;
 abstract class WatchpointSpec extends EventRequestSpec {
     final String fieldId;
 
-    @SuppressWarnings("this-escape")
     WatchpointSpec(ReferenceTypeSpec refSpec, String fieldId)
                                        throws MalformedMemberNameException {
         super(refSpec);

@@ -61,7 +61,6 @@ public class DSAKeyValue extends SignatureElementProxy implements KeyValueConten
      * @param G
      * @param Y
      */
-    @SuppressWarnings("this-escape")
     public DSAKeyValue(Document doc, BigInteger P, BigInteger Q, BigInteger G, BigInteger Y) {
         super(doc);
 
@@ -79,7 +78,6 @@ public class DSAKeyValue extends SignatureElementProxy implements KeyValueConten
      * @param key
      * @throws IllegalArgumentException
      */
-    @SuppressWarnings("this-escape")
     public DSAKeyValue(Document doc, Key key) throws IllegalArgumentException {
         super(doc);
 

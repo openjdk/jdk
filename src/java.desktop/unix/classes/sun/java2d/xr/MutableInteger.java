@@ -34,7 +34,6 @@ package sun.java2d.xr;
 public class MutableInteger {
     private int value;
 
-    @SuppressWarnings("this-escape")
     public MutableInteger(int value) {
         this.setValue(value);
     }

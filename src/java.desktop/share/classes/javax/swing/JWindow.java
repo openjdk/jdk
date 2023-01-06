@@ -157,7 +157,6 @@ public class JWindow extends Window implements Accessible,
      *
      * @since  1.3
      */
-    @SuppressWarnings("this-escape")
     public JWindow(GraphicsConfiguration gc) {
         this(null, gc);
         super.setFocusableWindowState(false);
@@ -180,7 +179,6 @@ public class JWindow extends Window implements Accessible,
      * @see #isFocusableWindow
      * @see JComponent#getDefaultLocale
      */
-    @SuppressWarnings("this-escape")
     public JWindow(Frame owner) {
         super(owner == null? SwingUtilities.getSharedOwnerFrame() : owner);
         if (owner == null) {
@@ -207,7 +205,6 @@ public class JWindow extends Window implements Accessible,
      * @see #isFocusableWindow
      * @see JComponent#getDefaultLocale
      */
-    @SuppressWarnings("this-escape")
     public JWindow(Window owner) {
         super(owner == null ? (Window)SwingUtilities.getSharedOwnerFrame() :
               owner);
@@ -246,7 +243,6 @@ public class JWindow extends Window implements Accessible,
      *
      * @since  1.3
      */
-    @SuppressWarnings("this-escape")
     public JWindow(Window owner, GraphicsConfiguration gc) {
         super(owner == null ? (Window)SwingUtilities.getSharedOwnerFrame() :
               owner, gc);

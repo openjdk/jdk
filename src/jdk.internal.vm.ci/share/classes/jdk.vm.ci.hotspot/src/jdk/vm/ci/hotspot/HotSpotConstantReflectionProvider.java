@@ -45,7 +45,6 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
     protected final HotSpotMethodHandleAccessProvider methodHandleAccess;
     private final HotSpotMemoryAccessProviderImpl memoryAccess;
 
-    @SuppressWarnings("this-escape")
     public HotSpotConstantReflectionProvider(HotSpotJVMCIRuntime runtime) {
         this.runtime = runtime;
         this.methodHandleAccess = new HotSpotMethodHandleAccessProvider(this);

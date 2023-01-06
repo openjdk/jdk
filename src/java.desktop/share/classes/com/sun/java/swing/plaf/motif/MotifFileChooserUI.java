@@ -682,7 +682,6 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifDirectoryListModel extends AbstractListModel<File> implements ListDataListener {
-        @SuppressWarnings("this-escape")
         public MotifDirectoryListModel() {
             getModel().addListDataListener(this);
         }
@@ -720,7 +719,6 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifFileListModel extends AbstractListModel<File> implements ListDataListener {
-        @SuppressWarnings("this-escape")
         public MotifFileListModel() {
             getModel().addListDataListener(this);
         }

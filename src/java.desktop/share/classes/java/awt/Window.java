@@ -497,7 +497,6 @@ public class Window extends Container implements Accessible {
         return gc;
     }
 
-    @SuppressWarnings("this-escape")
     private void init(GraphicsConfiguration gc) {
         GraphicsEnvironment.checkHeadless();
 
@@ -550,7 +549,6 @@ public class Window extends Container implements Accessible {
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("this-escape")
     Window() throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
         init((GraphicsConfiguration)null);
@@ -576,7 +574,6 @@ public class Window extends Container implements Accessible {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #isShowing
      */
-    @SuppressWarnings("this-escape")
     public Window(Frame owner) {
         this(owner == null ? (GraphicsConfiguration)null :
             owner.getGraphicsConfiguration());
@@ -607,7 +604,6 @@ public class Window extends Container implements Accessible {
      *
      * @since     1.2
      */
-    @SuppressWarnings("this-escape")
     public Window(Window owner) {
         this(owner == null ? (GraphicsConfiguration)null :
             owner.getGraphicsConfiguration());
@@ -642,7 +638,6 @@ public class Window extends Container implements Accessible {
      * @see       #isShowing
      * @since     1.3
      */
-    @SuppressWarnings("this-escape")
     public Window(Window owner, GraphicsConfiguration gc) {
         this(gc);
         ownedInit(owner);

@@ -56,7 +56,6 @@ public class Caps extends Surface {
     private static int[] cap = { CAP_BUTT, CAP_ROUND, CAP_SQUARE };
     private static String[] desc = { "Butt Cap", "Round Cap", "Square Cap" };
 
-    @SuppressWarnings("this-escape")
     public Caps() {
         setBackground(WHITE);
     }

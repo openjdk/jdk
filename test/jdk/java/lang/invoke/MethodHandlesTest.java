@@ -413,7 +413,7 @@ public abstract class MethodHandlesTest {
         final String name;
         public Example() { name = "Example#"+nextArg(); }
         protected Example(String name) { this.name = name; }
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("LeakingThisInConstructor")
         protected Example(int x) { this(); called("protected <init>", this, x); }
         //Example(Void x) { does not exist; lookup elicts NoSuchMethodException }
         @Override public String toString() { return name; }
@@ -464,7 +464,7 @@ public abstract class MethodHandlesTest {
     static class SubExample extends Example {
         @Override public void  v0()     { called("Sub/v0", this); }
         @Override void         pkg_v0() { called("Sub/pkg_v0", this); }
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("LeakingThisInConstructor")
         private      SubExample(int x)  { called("<init>", this, x); }
         public SubExample() { super("SubExample#"+nextArg()); }
     }

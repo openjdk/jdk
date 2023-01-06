@@ -41,7 +41,6 @@ class OverviewTab extends Tab {
         return Messages.OVERVIEW;
     }
 
-    @SuppressWarnings("this-escape")
     public OverviewTab(VMPanel vmPanel) {
         super(vmPanel, getTabName());
 

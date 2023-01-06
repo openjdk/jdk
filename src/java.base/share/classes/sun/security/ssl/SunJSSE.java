@@ -60,7 +60,6 @@ public class SunJSSE extends java.security.Provider {
         "(PKCS12, SunX509/PKIX key/trust factories, " +
         "SSLv3/TLSv1/TLSv1.1/TLSv1.2/TLSv1.3/DTLSv1.0/DTLSv1.2)";
 
-    @SuppressWarnings("this-escape")
     public SunJSSE() {
         super("SunJSSE", PROVIDER_VER, info);
         registerAlgorithms();

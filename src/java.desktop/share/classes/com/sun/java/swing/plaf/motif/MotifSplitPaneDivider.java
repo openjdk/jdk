@@ -72,7 +72,6 @@ public class MotifSplitPaneDivider extends BasicSplitPaneDivider
     /**
      * Creates a new Motif SplitPaneDivider
      */
-    @SuppressWarnings("this-escape")
     public MotifSplitPaneDivider(BasicSplitPaneUI ui) {
         super(ui);
         highlightColor = UIManager.getColor("SplitPane.highlight");

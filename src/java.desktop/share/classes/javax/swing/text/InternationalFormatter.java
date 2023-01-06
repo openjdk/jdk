@@ -166,7 +166,6 @@ public class InternationalFormatter extends DefaultFormatter {
      * Creates an <code>InternationalFormatter</code> with no
      * <code>Format</code> specified.
      */
-    @SuppressWarnings("this-escape")
     public InternationalFormatter() {
         setOverwriteMode(false);
     }
@@ -177,7 +176,6 @@ public class InternationalFormatter extends DefaultFormatter {
      *
      * @param format Format instance used for converting from/to Strings
      */
-    @SuppressWarnings("this-escape")
     public InternationalFormatter(Format format) {
         this();
         setFormat(format);

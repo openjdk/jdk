@@ -613,7 +613,6 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
     /**
      * Constructor for special events like VM disconnected
      */
-    @SuppressWarnings("this-escape")
     EventSetImpl(VirtualMachine aVm, byte eventCmd) {
         this(aVm, null);
         suspendPolicy = JDWP.SuspendPolicy.NONE;

@@ -35,7 +35,6 @@ import sun.jvm.hotspot.runtime.*;
 public class SysPropsPanel extends JPanel {
     private SAEditorPane         flagsPane;
 
-    @SuppressWarnings("this-escape")
     public SysPropsPanel() {
         initUI();
     }

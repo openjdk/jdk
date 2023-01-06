@@ -79,7 +79,6 @@ public class AttrRecover {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected AttrRecover(Context context) {
         context.put(attrRepairKey, this);
 

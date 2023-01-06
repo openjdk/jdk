@@ -244,7 +244,6 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *   naturally results from the component implementation
      * @throws IllegalArgumentException if <code>columns</code> &lt; 0
      */
-    @SuppressWarnings("this-escape")
     public JTextField(Document doc, String text, int columns) {
         if (columns < 0) {
             throw new IllegalArgumentException("columns less than zero.");

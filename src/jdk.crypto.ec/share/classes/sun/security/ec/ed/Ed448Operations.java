@@ -49,7 +49,6 @@ public class Ed448Operations extends EdECOperations {
     private static final BigInteger FIVE = BigInteger.valueOf(5);
     private final BigInteger sizeMinus3;
 
-    @SuppressWarnings("this-escape")
     public Ed448Operations(ImmutableIntegerModuloP d, BigInteger baseX,
                            BigInteger baseY) {
 

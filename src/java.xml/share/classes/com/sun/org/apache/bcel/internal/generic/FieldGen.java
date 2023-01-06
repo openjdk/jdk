@@ -75,7 +75,6 @@ public class FieldGen extends FieldGenOrMethodGen {
      * @param name field name
      * @param cp constant pool
      */
-    @SuppressWarnings("this-escape")
     public FieldGen(final int access_flags, final Type type, final String name, final ConstantPoolGen cp) {
         super(access_flags);
         setType(type);
@@ -90,7 +89,6 @@ public class FieldGen extends FieldGenOrMethodGen {
      * @param field Field object
      * @param cp constant pool (must contain the same entries as the field's constant pool)
      */
-    @SuppressWarnings("this-escape")
     public FieldGen(final Field field, final ConstantPoolGen cp) {
         this(field.getAccessFlags(), Type.getType(field.getSignature()), field.getName(), cp);
         final Attribute[] attrs = field.getAttributes();

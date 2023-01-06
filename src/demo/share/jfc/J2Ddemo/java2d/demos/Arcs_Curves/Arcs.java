@@ -59,7 +59,6 @@ public class Arcs extends AnimatingSurface {
     private int mouth = CLOSE;
     private int direction = FORWARD;
 
-    @SuppressWarnings("this-escape")
     public Arcs() {
         setBackground(WHITE);
     }

@@ -38,12 +38,10 @@ public class CommentEvent extends DummyEvent implements Comment {
     /* String data for this event */
     private String fText ;
 
-    @SuppressWarnings("this-escape")
     public CommentEvent() {
         init();
     }
 
-    @SuppressWarnings("this-escape")
     public CommentEvent(String text) {
         init();
         fText = text;

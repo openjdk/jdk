@@ -242,7 +242,6 @@ public class GDIWindowSurfaceData extends SurfaceData {
     private native void initOps(WComponentPeer peer, int depth, int redMask,
                                 int greenMask, int blueMask, int screen);
 
-    @SuppressWarnings("this-escape")
     private GDIWindowSurfaceData(WComponentPeer peer, SurfaceType sType) {
         super(sType, peer.getDeviceColorModel());
         ColorModel cm = peer.getDeviceColorModel();

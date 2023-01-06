@@ -224,7 +224,6 @@ public class Names {
 
     public final Name.Table table;
 
-    @SuppressWarnings("this-escape")
     public Names(Context context) {
         Options options = Options.instance(context);
         table = createTable(options);

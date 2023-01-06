@@ -169,7 +169,6 @@ public class AquaUtilControlSize {
         SizeVariant small;
         SizeVariant mini;
 
-        @SuppressWarnings("this-escape")
         public SizeDescriptor(final SizeVariant variant) {
             regular = deriveRegular(variant);
             small = deriveSmall(new SizeVariant(regular));

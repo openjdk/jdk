@@ -63,7 +63,6 @@ class ResourceRecords {
      * Returns a representation of the resource records in a DNS message.
      * Does not modify or store a reference to the msg array.
      */
-    @SuppressWarnings("this-escape")
     ResourceRecords(byte[] msg, int msgLen, Header hdr, boolean zoneXfer)
             throws NamingException {
         if (zoneXfer) {

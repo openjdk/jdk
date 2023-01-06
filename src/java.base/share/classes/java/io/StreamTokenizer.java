@@ -185,7 +185,6 @@ public class StreamTokenizer {
     public double nval;
 
     /** Private constructor that initializes everything except the streams. */
-    @SuppressWarnings("this-escape")
     private StreamTokenizer() {
         wordChars('a', 'z');
         wordChars('A', 'Z');

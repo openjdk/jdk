@@ -490,7 +490,6 @@ public class AWTEventMonitor {
          * @see EventQueueMonitor
          * @see AWTEventMonitor
          */
-        @SuppressWarnings("this-escape")
         public AWTEventsListener() {
             initializeIntrospection();
             installListeners();

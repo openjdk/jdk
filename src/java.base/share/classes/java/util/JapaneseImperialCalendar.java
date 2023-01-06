@@ -338,7 +338,6 @@ class JapaneseImperialCalendar extends Calendar {
      * @param zone the given time zone.
      * @param aLocale the given locale.
      */
-    @SuppressWarnings("this-escape")
     JapaneseImperialCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
         jdate = jcal.newCalendarDate(zone);

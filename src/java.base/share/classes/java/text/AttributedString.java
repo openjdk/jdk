@@ -69,7 +69,6 @@ public class AttributedString {
      * AttributedString from.
      * @throws NullPointerException if iterators is null
      */
-    @SuppressWarnings("this-escape")
     AttributedString(AttributedCharacterIterator[] iterators) {
         if (iterators == null) {
             throw new NullPointerException("Iterators must not be null");
@@ -224,7 +223,6 @@ public class AttributedString {
      * beginIndex and endIndex is out of the text range.
      * @see java.text.Annotation
      */
-    @SuppressWarnings("this-escape")
     public AttributedString(AttributedCharacterIterator text,
                             int beginIndex,
                             int endIndex,

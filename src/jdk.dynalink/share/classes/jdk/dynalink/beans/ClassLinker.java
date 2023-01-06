@@ -72,7 +72,6 @@ import jdk.dynalink.linker.support.Lookup;
  */
 class ClassLinker extends BeanLinker {
 
-    @SuppressWarnings("this-escape")
     ClassLinker() {
         super(Class.class);
         // Map "classObject.static" to StaticClass.forClass(classObject). Can use EXACT_CLASS since class Class is final.

@@ -96,7 +96,6 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
         return Messages.MEMORY;
     }
 
-    @SuppressWarnings("this-escape")
     public MemoryTab(VMPanel vmPanel) {
         super(vmPanel, getTabName());
 

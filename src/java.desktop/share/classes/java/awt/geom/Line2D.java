@@ -92,7 +92,6 @@ public abstract class Line2D implements Shape, Cloneable {
          * @param y2 the Y coordinate of the end point
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Float(float x1, float y1, float x2, float y2) {
             setLine(x1, y1, x2, y2);
         }
@@ -104,7 +103,6 @@ public abstract class Line2D implements Shape, Cloneable {
          * @param p2 the end {@code Point2D} of this line segment
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Float(Point2D p1, Point2D p2) {
             setLine(p1, p2);
         }
@@ -263,7 +261,6 @@ public abstract class Line2D implements Shape, Cloneable {
          * @param y2 the Y coordinate of the end point
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Double(double x1, double y1, double x2, double y2) {
             setLine(x1, y1, x2, y2);
         }
@@ -275,7 +272,6 @@ public abstract class Line2D implements Shape, Cloneable {
          * @param p2 the end {@code Point2D} of this line segment
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Double(Point2D p1, Point2D p2) {
             setLine(p1, p2);
         }

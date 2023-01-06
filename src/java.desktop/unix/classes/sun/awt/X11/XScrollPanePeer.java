@@ -63,7 +63,6 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
         }
     }
 
-    @SuppressWarnings("this-escape")
     XScrollPanePeer(ScrollPane target) {
         super(target);
 

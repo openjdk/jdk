@@ -292,7 +292,6 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @param hsbPolicy an integer that specifies the horizontal
      *          scrollbar policy
      */
-    @SuppressWarnings("this-escape")
     public JScrollPane(Component view, int vsbPolicy, int hsbPolicy)
     {
         setLayout(new ScrollPaneLayout.UIResource());
@@ -700,7 +699,6 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
          *      orientation values shown above
          * @since 1.4
          */
-        @SuppressWarnings("this-escape")
         public ScrollBar(int orientation) {
             super(orientation);
             this.putClientProperty("JScrollBar.fastWheelScrolling",
@@ -1440,7 +1438,6 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
         /**
          * AccessibleJScrollPane constructor
          */
-        @SuppressWarnings("this-escape")
         public AccessibleJScrollPane() {
             super();
 

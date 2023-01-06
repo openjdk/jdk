@@ -124,7 +124,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Constructor for the "standard" print dialog (containing all relevant
      * tabs)
      */
-    @SuppressWarnings("this-escape")
     public ServiceDialog(GraphicsConfiguration gc,
                          int x, int y,
                          PrintService[] services,
@@ -228,7 +227,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
    /**
      * Constructor for the solitary "page setup" dialog
      */
-    @SuppressWarnings("this-escape")
     public ServiceDialog(GraphicsConfiguration gc,
                          int x, int y,
                          PrintService ps,

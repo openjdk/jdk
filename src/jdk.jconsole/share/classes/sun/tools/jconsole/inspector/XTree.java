@@ -63,7 +63,6 @@ public class XTree extends JTree {
         this(new DefaultMutableTreeNode("MBeanTreeRootNode"), mbeansTab);
     }
 
-    @SuppressWarnings("this-escape")
     public XTree(TreeNode root, MBeansTab mbeansTab) {
         super(root, true);
         this.mbeansTab = mbeansTab;

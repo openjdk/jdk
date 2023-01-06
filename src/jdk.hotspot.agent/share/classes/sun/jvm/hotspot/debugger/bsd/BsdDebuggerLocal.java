@@ -129,7 +129,6 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
        WorkerThreadTask task;
        DebuggerException lastException;
 
-       @SuppressWarnings("this-escape")
        public BsdDebuggerLocalWorkerThread(BsdDebuggerLocal debugger) {
          this.debugger = debugger;
          setDaemon(true);
@@ -185,7 +184,6 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     <P> useCache should be set to true if debugging is being done
     locally, and to false if the debugger is being created for the
     purpose of supporting remote debugging. </P> */
-    @SuppressWarnings("this-escape")
     public BsdDebuggerLocal(MachineDescription machDesc,
                               boolean useCache) throws DebuggerException {
         this.machDesc = machDesc;

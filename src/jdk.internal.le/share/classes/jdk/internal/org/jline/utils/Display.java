@@ -49,7 +49,6 @@ public class Display {
     protected final boolean delayedWrapAtEol;
     protected final boolean cursorDownIsNewLine;
 
-    @SuppressWarnings("this-escape")
     public Display(Terminal terminal, boolean fullscreen) {
         this.terminal = terminal;
         this.fullScreen = fullscreen;

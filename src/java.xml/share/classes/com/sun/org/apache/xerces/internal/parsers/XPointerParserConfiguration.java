@@ -108,7 +108,6 @@ public class XPointerParserConfiguration extends XML11Configuration {
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     public XPointerParserConfiguration(
         SymbolTable symbolTable,
         XMLGrammarPool grammarPool,

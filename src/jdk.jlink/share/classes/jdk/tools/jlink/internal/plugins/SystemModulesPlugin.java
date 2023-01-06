@@ -318,7 +318,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private final boolean addModulePackages;
         private ModuleDescriptor descriptor;  // may be different that the original one
 
-        @SuppressWarnings("this-escape")
         ModuleInfo(byte[] bytes, Set<String> packages) throws IOException {
             this.bais = new ByteArrayInputStream(bytes);
             this.packages = packages;

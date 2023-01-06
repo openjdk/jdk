@@ -139,7 +139,6 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
      * @param name the name ({@code Action.NAME}) for the action; a
      *        value of {@code null} is ignored
      */
-    @SuppressWarnings("this-escape")
     public AbstractAction(String name) {
         putValue(Action.NAME, name);
     }
@@ -152,7 +151,6 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
      * @param icon the small icon ({@code Action.SMALL_ICON}) for the action; a
      *        value of {@code null} is ignored
      */
-    @SuppressWarnings("this-escape")
     public AbstractAction(String name, Icon icon) {
         this(name);
         putValue(Action.SMALL_ICON, icon);

@@ -76,7 +76,6 @@ public class PerfDataBufferPrologue extends AbstractPerfDataBufferPrologue {
      *
      * @param byteBuffer the buffer containing the binary header data
      */
-    @SuppressWarnings("this-escape")
     public PerfDataBufferPrologue(ByteBuffer byteBuffer)
            throws MonitorException  {
         super(byteBuffer);

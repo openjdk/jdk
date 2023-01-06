@@ -262,7 +262,6 @@ public class DescriptorSupport
        bogus strings without noticing they are bogus, and second, that we
        split the string being parsed at characters like > even if they
        occur in the middle of a field value. */
-    @SuppressWarnings("this-escape")
     public DescriptorSupport(String inStr)
             throws MBeanException, RuntimeOperationsException,
                    XMLParseException {
@@ -375,7 +374,6 @@ public class DescriptorSupport
      * exception will be thrown.
      *
      */
-    @SuppressWarnings("this-escape")
     public DescriptorSupport(String[] fieldNames, Object[] fieldValues)
             throws RuntimeOperationsException {
         if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {
@@ -437,7 +435,6 @@ public class DescriptorSupport
      * this exception will be thrown.
      *
      */
-    @SuppressWarnings("this-escape")
     public DescriptorSupport(String... fields)
     {
         if (MODELMBEAN_LOGGER.isLoggable(Level.TRACE)) {

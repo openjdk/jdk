@@ -152,7 +152,6 @@ public class MBeanServerFileAccessController
      * @exception IllegalArgumentException if any of the supplied access
      * level values differs from "readonly" or "readwrite".
      */
-    @SuppressWarnings("this-escape")
     public MBeanServerFileAccessController(String accessFileName,
                                            MBeanServer mbs)
         throws IOException {
@@ -215,7 +214,6 @@ public class MBeanServerFileAccessController
      * <code>null</code> or if any of the supplied access level values differs
      * from "readonly" or "readwrite".
      */
-    @SuppressWarnings("this-escape")
     public MBeanServerFileAccessController(Properties accessFileProps,
                                            MBeanServer mbs)
         throws IOException {

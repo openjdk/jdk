@@ -81,7 +81,6 @@ public class AttributesImpl implements Attributes
      *
      * @param atts The existing Attributes object.
      */
-    @SuppressWarnings("this-escape")
     public AttributesImpl (Attributes atts)
     {
         setAttributes(atts);

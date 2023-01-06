@@ -154,7 +154,6 @@ public class RelationService extends NotificationBroadcasterSupport
      * when the purgeRelations method will be explicitly called.
      * <P>true is immediate purge.
      */
-    @SuppressWarnings("this-escape")
     public RelationService(boolean immediatePurgeFlag) {
 
         RELATION_LOGGER.log(Level.TRACE, "ENTRY");

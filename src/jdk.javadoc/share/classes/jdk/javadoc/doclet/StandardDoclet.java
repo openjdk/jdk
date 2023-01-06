@@ -74,7 +74,6 @@ public class StandardDoclet implements Doclet {
      * Creates an instance of the standard doclet, used to generate HTML-formatted
      * documentation.
      */
-    @SuppressWarnings("this-escape")
     public StandardDoclet() {
         htmlDoclet = new HtmlDoclet(this);
     }

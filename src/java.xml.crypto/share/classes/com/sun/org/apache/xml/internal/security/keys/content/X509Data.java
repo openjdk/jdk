@@ -49,7 +49,6 @@ public class X509Data extends SignatureElementProxy implements KeyInfoContent {
      *
      * @param doc
      */
-    @SuppressWarnings("this-escape")
     public X509Data(Document doc) {
         super(doc);
 
@@ -63,7 +62,6 @@ public class X509Data extends SignatureElementProxy implements KeyInfoContent {
      * @param baseURI
      * @throws XMLSecurityException
      */
-    @SuppressWarnings("this-escape")
     public X509Data(Element element, String baseURI) throws XMLSecurityException {
         super(element, baseURI);
 

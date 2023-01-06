@@ -81,7 +81,6 @@ public class OutputStreamWriter extends Writer {
      * If the writer type is trusted then an internal lock can be used. If the
      * writer type is not trusted then the writer object is the lock.
      */
-    @SuppressWarnings("this-escape")
     private static Object lockFor(OutputStreamWriter writer) {
         Class<?> clazz = writer.getClass();
         if (clazz == OutputStreamWriter.class || clazz == FileWriter.class) {

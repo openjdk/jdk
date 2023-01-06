@@ -295,7 +295,6 @@ public class RuleBasedCollator extends Collator{
      * example, build rule "a < ? < d" will cause the constructor to
      * throw the ParseException because the '?' is not quoted.
      */
-    @SuppressWarnings("this-escape")
     RuleBasedCollator(String rules, int decomp) throws ParseException {
         setStrength(Collator.TERTIARY);
         setDecomposition(decomp);

@@ -91,7 +91,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      */
     private HashMap<D3DWindowSurfaceData, GDIWindowSurfaceData> gdiSurfaces;
 
-    @SuppressWarnings({ "removal", "this-escape" })
+    @SuppressWarnings("removal")
     public D3DScreenUpdateManager() {
         done = false;
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {

@@ -54,7 +54,6 @@ class NativeBuffer implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("this-escape")
     NativeBuffer(int size) {
         this.address = unsafe.allocateMemory(size);
         this.size = size;

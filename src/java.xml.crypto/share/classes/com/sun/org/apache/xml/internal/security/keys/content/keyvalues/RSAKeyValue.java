@@ -58,7 +58,6 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
      * @param modulus
      * @param exponent
      */
-    @SuppressWarnings("this-escape")
     public RSAKeyValue(Document doc, BigInteger modulus, BigInteger exponent) {
         super(doc);
 
@@ -74,7 +73,6 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
      * @param key
      * @throws IllegalArgumentException
      */
-    @SuppressWarnings("this-escape")
     public RSAKeyValue(Document doc, Key key) throws IllegalArgumentException {
         super(doc);
 

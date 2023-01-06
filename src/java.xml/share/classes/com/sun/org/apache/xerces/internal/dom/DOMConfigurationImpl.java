@@ -298,7 +298,6 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
      * @param symbolTable    The symbol table to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     protected DOMConfigurationImpl(SymbolTable symbolTable,
                                     XMLComponentManager parentSettings) {
         super(parentSettings);

@@ -100,7 +100,6 @@ public class MenuItemLayoutHelper {
     protected MenuItemLayoutHelper() {
     }
 
-    @SuppressWarnings("this-escape")
     public MenuItemLayoutHelper(JMenuItem mi, Icon checkIcon, Icon arrowIcon,
                       Rectangle viewRect, int gap, String accDelimiter,
                       boolean isLeftToRight, Font font, Font accFont,

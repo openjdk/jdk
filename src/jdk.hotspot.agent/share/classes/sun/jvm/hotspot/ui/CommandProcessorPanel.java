@@ -52,7 +52,6 @@ public class CommandProcessorPanel extends JPanel {
     ByteArrayOutputStream baos = new ByteArrayOutputStream(10240);
 
 
-    @SuppressWarnings("this-escape")
     public CommandProcessorPanel(CommandProcessor cp) {
 
         commands = cp;

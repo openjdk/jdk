@@ -396,7 +396,6 @@ public class BasicHTML {
         /** The host, that is where we are rendering. */
         // private JComponent host;
 
-        @SuppressWarnings("this-escape")
         BasicDocument(StyleSheet s, Font defaultFont, Color foreground) {
             super(s);
             setPreservesUnknownTags(false);
@@ -421,7 +420,6 @@ public class BasicHTML {
      */
     static class Renderer extends View {
 
-        @SuppressWarnings("this-escape")
         Renderer(JComponent c, ViewFactory f, View v) {
             super(null);
             host = c;

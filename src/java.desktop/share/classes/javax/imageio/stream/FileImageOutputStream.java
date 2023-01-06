@@ -78,7 +78,6 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
      * @throws IllegalArgumentException if {@code raf} is
      * {@code null}.
      */
-    @SuppressWarnings("this-escape")
     public FileImageOutputStream(RandomAccessFile raf) {
         if (raf == null) {
             throw new IllegalArgumentException("raf == null!");

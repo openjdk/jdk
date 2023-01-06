@@ -1400,7 +1400,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @exception NullPointerException The <code>name</code> parameter
      * is null.
      */
-    @SuppressWarnings("this-escape")
     public ObjectName(String name)
         throws MalformedObjectNameException {
         construct(name);
@@ -1420,7 +1419,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      */
-    @SuppressWarnings("this-escape")
     public ObjectName(String domain, String key, String value)
         throws MalformedObjectNameException {
         // If key or value are null a NullPointerException
@@ -1446,7 +1444,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * quoting, or the domain's length exceeds the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      */
-    @SuppressWarnings("this-escape")
     public ObjectName(String domain, Hashtable<String,String> table)
             throws MalformedObjectNameException {
         construct(domain, table);

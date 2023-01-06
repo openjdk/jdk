@@ -68,7 +68,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         final Set<DiagnosticFlag> defaultErrorFlags;
 
         /** Create a new diagnostic factory. */
-        @SuppressWarnings("this-escape")
         protected Factory(Context context) {
             this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);

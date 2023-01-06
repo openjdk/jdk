@@ -448,7 +448,6 @@ class SpinedBuffer<E>
          * @throws IllegalArgumentException if the specified initial capacity
          *         is negative
          */
-        @SuppressWarnings("this-escape")
         OfPrimitive(int initialCapacity) {
             super(initialCapacity);
             curChunk = newArray(1 << initialChunkPower);
@@ -457,7 +456,6 @@ class SpinedBuffer<E>
         /**
          * Constructs an empty list with an initial capacity of sixteen.
          */
-        @SuppressWarnings("this-escape")
         OfPrimitive() {
             super();
             curChunk = newArray(1 << initialChunkPower);

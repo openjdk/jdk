@@ -199,7 +199,6 @@ public class Ruler extends JFrame {
         }
     };
 
-    @SuppressWarnings("this-escape")
     public Ruler() {
         setUndecorated(true);
 

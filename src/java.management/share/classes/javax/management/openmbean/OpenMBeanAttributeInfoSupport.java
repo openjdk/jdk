@@ -167,7 +167,6 @@ public class OpenMBeanAttributeInfoSupport
      *
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public OpenMBeanAttributeInfoSupport(String name,
                                          String description,
                                          OpenType<?> openType,
@@ -397,7 +396,6 @@ public class OpenMBeanAttributeInfoSupport
              defaultValue, null, minValue, maxValue);
     }
 
-    @SuppressWarnings("this-escape")
     private <T> OpenMBeanAttributeInfoSupport(String name,
                                               String description,
                                               OpenType<T> openType,

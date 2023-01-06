@@ -72,7 +72,6 @@ public class LineAnim extends AnimatingSurface {
     private float size;
     private Ellipse2D ellipse = new Ellipse2D.Double();
 
-    @SuppressWarnings("this-escape")
     public LineAnim() {
         setBackground(WHITE);
     }

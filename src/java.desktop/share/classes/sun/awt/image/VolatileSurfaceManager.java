@@ -99,7 +99,6 @@ public abstract class VolatileSurfaceManager
      */
     protected Object context;
 
-    @SuppressWarnings("this-escape")
     protected VolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         this.vImg = vImg;
         this.context = context;

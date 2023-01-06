@@ -49,7 +49,6 @@ public class Script  {
      *
      * @param code the code
      */
-    @SuppressWarnings("this-escape")
     public Script(String code) {
         this();
         append(code);

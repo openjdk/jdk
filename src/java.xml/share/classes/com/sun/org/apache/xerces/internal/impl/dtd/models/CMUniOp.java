@@ -34,7 +34,6 @@ public class CMUniOp extends CMNode
     // -------------------------------------------------------------------
     //  Constructors
     // -------------------------------------------------------------------
-    @SuppressWarnings("this-escape")
     public CMUniOp(int type, CMNode childNode)
     {
         super(type);

@@ -148,7 +148,6 @@ public class Env {
     /** A map containing the info derived from {@code @SuppressWarnings} for an element. */
     Map<Element, Set<Messages.Group>> suppressWarnings = new HashMap<>();
 
-    @SuppressWarnings("this-escape")
     Env() {
         messages = new Messages(this);
     }

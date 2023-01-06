@@ -182,7 +182,6 @@ class DatagramChannelImpl
                 interruptible);
     }
 
-    @SuppressWarnings("this-escape")
     DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family, boolean interruptible)
         throws IOException
     {
@@ -231,7 +230,6 @@ class DatagramChannelImpl
         this.cleaner = CleanerFactory.cleaner().register(this, releaser);
     }
 
-    @SuppressWarnings("this-escape")
     DatagramChannelImpl(SelectorProvider sp, FileDescriptor fd)
         throws IOException
     {

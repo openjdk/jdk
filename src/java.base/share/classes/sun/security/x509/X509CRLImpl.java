@@ -125,7 +125,6 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
          *
          * @exception CRLException on parsing/construction errors.
          */
-        @SuppressWarnings("this-escape")
         public TBSCertList(X500Name issuer, Date thisDate, Date nextDate,
                            X509CRLEntry[] badCerts)
                 throws CRLException
@@ -176,7 +175,6 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         /**
          * Constructs from the encoding.
          */
-        @SuppressWarnings("this-escape")
         public TBSCertList(DerValue value) throws IOException, CRLException {
 
             if (value.tag != DerValue.tag_Sequence)

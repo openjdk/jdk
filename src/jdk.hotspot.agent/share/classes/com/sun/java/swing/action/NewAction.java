@@ -38,7 +38,6 @@ public class NewAction extends DelegateAction
         this("general/New16.gif");
     }
 
-    @SuppressWarnings("this-escape")
     public NewAction(String iconPath)
     {
         super("New", ActionManager.getIcon(iconPath));

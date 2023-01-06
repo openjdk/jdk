@@ -153,7 +153,6 @@ public class RenderingHints
          * pre-existing instance of that subclass of Key.
          * @param privatekey the specified key
          */
-        @SuppressWarnings("this-escape")
         protected Key(int privatekey) {
             this.privatekey = privatekey;
             recordIdentity(this);

@@ -75,7 +75,6 @@ public class TabbedPaneDemo extends DemoModule implements ActionListener {
     /**
      * TabbedPaneDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public TabbedPaneDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.
@@ -164,7 +163,6 @@ public class TabbedPaneDemo extends DemoModule implements ActionListener {
 
         double[] scale = new double[numImages];
 
-        @SuppressWarnings("this-escape")
         public HeadSpin() {
             setBackground(Color.black);
             icon[0] = createImageIcon("tabbedpane/ewan.gif", getString("TabbedPaneDemo.ewan"));

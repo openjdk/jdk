@@ -101,7 +101,6 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  @SuppressWarnings("this-escape")
   public QName(String namespaceURI, String localName, boolean validate)
   {
 
@@ -149,7 +148,6 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  @SuppressWarnings("this-escape")
   public QName(String namespaceURI, String prefix, String localName, boolean validate)
   {
 
@@ -200,7 +198,6 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  @SuppressWarnings("this-escape")
   public QName(String localName, boolean validate)
   {
 
@@ -246,7 +243,6 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  @SuppressWarnings("this-escape")
   public QName(String qname, Stack<NameSpace> namespaces, boolean validate)
   {
 
@@ -341,7 +337,6 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  @SuppressWarnings("this-escape")
   public QName(String qname, Element namespaceContext,
                PrefixResolver resolver, boolean validate)
   {
@@ -428,7 +423,6 @@ public class QName implements java.io.Serializable
    * @param validate If true the new QName will be validated and an IllegalArgumentException will
    *                 be thrown if it is invalid.
    */
-  @SuppressWarnings("this-escape")
   public QName(String qname, PrefixResolver resolver, boolean validate)
   {
 

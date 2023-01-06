@@ -52,7 +52,6 @@ public class DescendantIterator extends LocPathIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
-  @SuppressWarnings("this-escape")
   DescendantIterator(Compiler compiler, int opPos, int analysis)
           throws javax.xml.transform.TransformerException
   {
@@ -132,7 +131,6 @@ public class DescendantIterator extends LocPathIterator
    * Create a DescendantIterator object.
    *
    */
-  @SuppressWarnings("this-escape")
   public DescendantIterator()
   {
     super(null);

@@ -65,7 +65,6 @@ public class SliderDemo extends DemoModule {
     /**
      * SliderDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public SliderDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.

@@ -178,7 +178,6 @@ public class ModelMBeanAttributeInfo
          * @serial The {@link Descriptor} containing the metadata corresponding to
          * this attribute
          */
-        @SuppressWarnings("this-escape")
         private Descriptor attrDescriptor = validDescriptor(null);
 
         private static final String currClass = "ModelMBeanAttributeInfo";
@@ -201,7 +200,6 @@ public class ModelMBeanAttributeInfo
          *
          */
 
-        @SuppressWarnings("this-escape")
         public ModelMBeanAttributeInfo(String name,
                                        String description,
                                        Method getter,
@@ -249,7 +247,6 @@ public class ModelMBeanAttributeInfo
          *
          */
 
-        @SuppressWarnings("this-escape")
         public ModelMBeanAttributeInfo(String name,
                                        String description,
                                        Method getter,
@@ -279,7 +276,6 @@ public class ModelMBeanAttributeInfo
          * @param isIs True if the attribute has an "is" getter, false otherwise.
          *
          */
-        @SuppressWarnings("this-escape")
         public ModelMBeanAttributeInfo(String name,
                                        String type,
                                        String description,
@@ -320,7 +316,6 @@ public class ModelMBeanAttributeInfo
          * "descriptorType" is not equal to "attribute".
          *
          */
-        @SuppressWarnings("this-escape")
         public ModelMBeanAttributeInfo(String name,
                                        String type,
                                        String description,
@@ -347,7 +342,6 @@ public class ModelMBeanAttributeInfo
          * @param inInfo the ModelMBeanAttributeInfo to be duplicated
          */
 
-        @SuppressWarnings("this-escape")
         public ModelMBeanAttributeInfo(ModelMBeanAttributeInfo inInfo)
         {
                 super(inInfo.getName(),

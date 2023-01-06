@@ -49,7 +49,6 @@ public class ThreadGroupReferenceImpl extends ObjectReferenceImpl
         return new Cache();
     }
 
-    @SuppressWarnings("this-escape")
     ThreadGroupReferenceImpl(VirtualMachine aVm, long aRef) {
         super(aVm, aRef);
         vm.state().addListener(this);

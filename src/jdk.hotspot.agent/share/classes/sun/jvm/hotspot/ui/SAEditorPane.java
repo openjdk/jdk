@@ -37,7 +37,6 @@ import javax.swing.text.*;
 
 public class SAEditorPane extends JEditorPane {
 
-  @SuppressWarnings("this-escape")
   public SAEditorPane() {
     setEditable(false);
     setContentType("text/html");

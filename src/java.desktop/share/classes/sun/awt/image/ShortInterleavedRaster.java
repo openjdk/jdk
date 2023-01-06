@@ -123,7 +123,6 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
-    @SuppressWarnings("this-escape")
     public ShortInterleavedRaster(SampleModel sampleModel,
                                   DataBufferUShort dataBuffer,
                                   Rectangle aRegion,

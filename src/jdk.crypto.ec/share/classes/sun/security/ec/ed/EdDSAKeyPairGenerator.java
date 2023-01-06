@@ -50,7 +50,6 @@ public class EdDSAKeyPairGenerator extends KeyPairGeneratorSpi {
     private EdDSAOperations ops = null;
     private EdDSAParameters lockedParams = null;
 
-    @SuppressWarnings("this-escape")
     public EdDSAKeyPairGenerator() {
         initialize(SecurityProviderConstants.DEF_ED_KEY_SIZE, null);
     }

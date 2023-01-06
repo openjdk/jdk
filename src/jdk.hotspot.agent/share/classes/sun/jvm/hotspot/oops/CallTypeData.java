@@ -48,7 +48,6 @@ public class CallTypeData<K,M> extends CounterData implements CallTypeDataInterf
     return uintAt(cellCountGlobalOffset());
   }
 
-  @SuppressWarnings("this-escape")
   public CallTypeData(MethodDataInterface<K,M> methodData, DataLayout layout) {
     super(layout);
     args = new TypeStackSlotEntries<K,M>(methodData, this, CounterData.staticCellCount()+TypeEntriesAtCall.headerCellCount(), numberOfArguments());

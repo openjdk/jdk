@@ -34,7 +34,6 @@ import sun.jvm.hotspot.runtime.*;
 public class VMFlagsPanel extends JPanel {
     private JEditorPane         flagsPane;
 
-    @SuppressWarnings("this-escape")
     public VMFlagsPanel() {
         initUI();
     }

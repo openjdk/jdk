@@ -174,7 +174,6 @@ public class XMLEntityScanner implements XMLLocator  {
      *    @see getEntityScanner()
      *    @see getEntityScanner(ScannedEntity)
      */
-    @SuppressWarnings("this-escape")
     public XMLEntityScanner(PropertyManager propertyManager, XMLEntityManager entityManager) {
         fEntityManager = entityManager ;
         reset(propertyManager);

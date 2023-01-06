@@ -73,7 +73,6 @@ public class Balls extends AnimatingControlsSurface {
     protected boolean clearToggle;
     protected JComboBox<String> combo;
 
-    @SuppressWarnings("this-escape")
     public Balls() {
         setBackground(WHITE);
         for (int i = 0; i < colors.length; i++) {
@@ -266,7 +265,7 @@ public class Balls extends AnimatingControlsSurface {
         Balls demo;
         JToolBar toolbar;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(Balls demo) {
             super(demo.name);
             this.demo = demo;

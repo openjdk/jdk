@@ -71,7 +71,6 @@ import com.sun.tools.javac.util.Options;
  * java.io.File or java.nio.file.Path.
  */
 public abstract class BaseFileManager implements JavaFileManager {
-    @SuppressWarnings("this-escape")
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();

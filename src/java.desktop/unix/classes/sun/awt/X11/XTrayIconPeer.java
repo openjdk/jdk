@@ -66,7 +66,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     static final int TRAY_ICON_WIDTH = 24;
     static final int TRAY_ICON_HEIGHT = 24;
 
-    @SuppressWarnings({ "removal", "this-escape" })
+    @SuppressWarnings("removal")
     XTrayIconPeer(TrayIcon target)
       throws AWTException
     {

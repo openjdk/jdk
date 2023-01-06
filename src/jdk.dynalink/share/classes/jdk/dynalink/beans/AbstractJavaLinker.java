@@ -108,7 +108,6 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         this(clazz, classGuard, classGuard);
     }
 
-    @SuppressWarnings("this-escape")
     AbstractJavaLinker(final Class<?> clazz, final MethodHandle classGuard, final MethodHandle assignableGuard) {
         this.clazz = clazz;
         this.classGuard = classGuard;
@@ -806,7 +805,6 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
     private static final MethodHandle GET_PROPERTY_GETTER_HANDLE = MethodHandles.dropArguments(privateLookup.findOwnSpecial(
             "getPropertyGetterHandle", Object.class, Object.class), 1, Object.class);
-    @SuppressWarnings("this-escape")
     private final MethodHandle getPropertyGetterHandle = GET_PROPERTY_GETTER_HANDLE.bindTo(this);
 
     /**
@@ -825,7 +823,6 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             privateLookup.findOwnSpecial("getPropertySetterHandle", MethodHandle.class, CallSiteDescriptor.class,
                     LinkerServices.class, Object.class), 3, Object.class), 5, Object.class);
     // Type is MethodHandle(MethodType, LinkerServices, Object, String, Object)
-    @SuppressWarnings("this-escape")
     private final MethodHandle getPropertySetterHandle = GET_PROPERTY_SETTER_HANDLE.bindTo(this);
 
     @SuppressWarnings("unused")
@@ -836,7 +833,6 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
     private static final MethodHandle GET_DYNAMIC_METHOD = MethodHandles.dropArguments(privateLookup.findOwnSpecial(
             "getDynamicMethod", Object.class, Object.class), 1, Object.class);
-    @SuppressWarnings("this-escape")
     private final MethodHandle getDynamicMethod = GET_DYNAMIC_METHOD.bindTo(this);
 
     @SuppressWarnings("unused")

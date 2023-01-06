@@ -102,7 +102,6 @@ public class GSSNameElement implements GSSNameSpi {
     }
 
     // Warning: called by NativeUtil.c
-    @SuppressWarnings("this-escape")
     GSSNameElement(long pNativeName, GSSLibStub stub) throws GSSException {
         assert(stub != null);
         if (pNativeName == 0) {
@@ -116,7 +115,6 @@ public class GSSNameElement implements GSSNameSpi {
         cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
     }
 
-    @SuppressWarnings("this-escape")
     GSSNameElement(byte[] nameBytes, Oid nameType, GSSLibStub stub)
         throws GSSException {
         assert(stub != null);

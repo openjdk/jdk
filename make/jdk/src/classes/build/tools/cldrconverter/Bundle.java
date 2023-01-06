@@ -138,7 +138,7 @@ class Bundle {
         return bundles.get(id);
     }
 
-    @SuppressWarnings({ "ConvertToStringSwitch", "this-escape" })
+    @SuppressWarnings("ConvertToStringSwitch")
     Bundle(String id, String cldrPath, String bundles, String currencies) {
         this.id = id;
         this.cldrPath = cldrPath;

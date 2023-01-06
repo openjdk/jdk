@@ -45,12 +45,10 @@ public class DTDEvent extends DummyEvent implements DTD {
     /**
      * Creates a new instance of DTDEvent
      */
-    @SuppressWarnings("this-escape")
     public DTDEvent() {
         init();
     }
 
-    @SuppressWarnings("this-escape")
     public DTDEvent(String doctypeDeclaration) {
         init();
         fDoctypeDeclaration = doctypeDeclaration;

@@ -110,7 +110,6 @@ public abstract class Trie
      * @throws IOException thrown when input stream does not have the
      *                        right header.
      */
-    @SuppressWarnings("this-escape")
     protected Trie(InputStream inputStream,
                    DataManipulate  dataManipulate) throws IOException
     {

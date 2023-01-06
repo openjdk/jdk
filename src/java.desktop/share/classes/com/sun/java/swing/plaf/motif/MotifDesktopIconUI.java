@@ -206,7 +206,6 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
     protected class IconLabel extends JPanel {
         JInternalFrame frame;
 
-        @SuppressWarnings("this-escape")
         IconLabel(JInternalFrame f) {
             super();
             this.frame = f;
@@ -304,7 +303,6 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
     protected class IconButton extends JButton {
         Icon icon;
 
-        @SuppressWarnings("this-escape")
         IconButton(Icon icon) {
             super(icon);
             this.icon = icon;

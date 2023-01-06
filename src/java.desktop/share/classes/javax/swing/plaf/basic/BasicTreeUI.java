@@ -3592,7 +3592,6 @@ public class BasicTreeUI extends TreeUI
             this(source, destination, event, null);
         }
 
-        @SuppressWarnings("this-escape")
         MouseInputHandler(Component source, Component destination,
                           MouseEvent event, Component focusComponent) {
             this.source = source;

@@ -237,7 +237,6 @@ public class FileDialog extends Dialog {
      * @see       java.awt.FileDialog#LOAD
      * @see       java.awt.FileDialog#SAVE
      */
-    @SuppressWarnings("this-escape")
     public FileDialog(Frame parent, String title, int mode) {
         super(parent, title, true);
         this.setMode(mode);
@@ -336,7 +335,6 @@ public class FileDialog extends Dialog {
      * @see       java.awt.FileDialog#SAVE
      * @since     1.5
      */
-    @SuppressWarnings("this-escape")
     public FileDialog(Dialog parent, String title, int mode) {
         super(parent, title, true);
         this.setMode(mode);

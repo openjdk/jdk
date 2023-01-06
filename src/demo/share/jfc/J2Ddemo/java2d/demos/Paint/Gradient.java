@@ -65,7 +65,6 @@ public class Gradient extends ControlsSurface {
 
     protected Color innerC, outerC;
 
-    @SuppressWarnings("this-escape")
     public Gradient() {
         setBackground(white);
         innerC = green;
@@ -111,7 +110,7 @@ public class Gradient extends ControlsSurface {
         ColoredSquare[] squares = new ColoredSquare[colors.length];
         JMenu imenu, omenu;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(Gradient demo) {
             super(demo.name);
             this.demo = demo;

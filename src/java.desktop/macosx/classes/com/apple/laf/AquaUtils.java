@@ -318,7 +318,6 @@ final class AquaUtils {
     static class SlicedShadowBorder extends ShadowBorder {
         private final SlicedImageControl slices;
 
-        @SuppressWarnings("this-escape")
         SlicedShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur, final int templateWidth, final int templateHeight, final int leftCut, final int topCut, final int rightCut, final int bottomCut) {
             super(prePainter, postPainter, offsetX, offsetY, distance, intensity, blur);
 

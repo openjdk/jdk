@@ -44,7 +44,6 @@ public class XRGlyphCacheEntry {
 
     int glyphSet;
 
-    @SuppressWarnings("this-escape")
     public XRGlyphCacheEntry(long glyphInfoPtr, GlyphList gl) {
         this.glyphInfoPtr = glyphInfoPtr;
 

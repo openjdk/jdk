@@ -1831,7 +1831,6 @@ public class JOptionPane extends JComponent implements Accessible
      *                  <code>null</code>, then nothing will be initially selected;
      *                  only meaningful if <code>options</code> is used
      */
-    @SuppressWarnings("this-escape")
     public JOptionPane(Object message, int messageType, int optionType,
                        Icon icon, Object[] options, Object initialValue) {
 

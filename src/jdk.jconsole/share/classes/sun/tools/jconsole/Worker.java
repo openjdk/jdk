@@ -31,7 +31,6 @@ public class Worker extends Thread {
     ArrayList<Runnable> jobs = new ArrayList<Runnable>();
     private volatile boolean stopped = false;
 
-    @SuppressWarnings("this-escape")
     public Worker(String name) {
         super("Worker-"+name);
 

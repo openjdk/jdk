@@ -115,7 +115,6 @@ implements EntityReference {
     //
 
     /** Factory constructor. */
-    @SuppressWarnings("this-escape")
     public EntityReferenceImpl(CoreDocumentImpl ownerDoc, String name) {
         super(ownerDoc);
         this.name = name;

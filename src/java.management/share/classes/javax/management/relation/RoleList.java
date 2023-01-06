@@ -98,7 +98,6 @@ public class RoleList extends ArrayList<Object> {
      *
      * @see ArrayList#ArrayList(java.util.Collection)
      */
-    @SuppressWarnings("this-escape")
     public RoleList(List<Role> list) throws IllegalArgumentException {
         // Check for null parameter
         //

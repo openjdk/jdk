@@ -251,7 +251,6 @@ public class JEditorPane extends JTextComponent {
      * Creates a new <code>JEditorPane</code>.
      * The document model is set to <code>null</code>.
      */
-    @SuppressWarnings("this-escape")
     public JEditorPane() {
         super();
         setFocusCycleRoot(true);
@@ -316,7 +315,6 @@ public class JEditorPane extends JTextComponent {
      * @throws IOException if the URL is <code>null</code>
      *          or cannot be accessed
      */
-    @SuppressWarnings("this-escape")
     public JEditorPane(URL initialPage) throws IOException {
         this();
         setPage(initialPage);
@@ -330,7 +328,6 @@ public class JEditorPane extends JTextComponent {
      * @throws IOException if the URL is <code>null</code> or
      *          cannot be accessed
      */
-    @SuppressWarnings("this-escape")
     public JEditorPane(String url) throws IOException {
         this();
         setPage(url);
@@ -346,7 +343,6 @@ public class JEditorPane extends JTextComponent {
      * @throws NullPointerException if the <code>type</code> parameter
      *          is <code>null</code>
      */
-    @SuppressWarnings("this-escape")
     public JEditorPane(String type, String text) {
         this();
         setContentType(type);
@@ -2210,7 +2206,6 @@ public class JEditorPane extends JTextComponent {
          */
         static class PlainParagraph extends javax.swing.text.ParagraphView {
 
-            @SuppressWarnings("this-escape")
             PlainParagraph(Element elem) {
                 super(elem);
                 layoutPool = new LogicalView(elem);

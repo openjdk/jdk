@@ -50,7 +50,6 @@ class DRIMarkerSegment extends MarkerSegment {
         buffer.bufAvail -= length;
     }
 
-    @SuppressWarnings("this-escape")
     DRIMarkerSegment(Node node) throws IIOInvalidTreeException {
         super(JPEG.DRI);
         updateFromNativeNode(node, true);

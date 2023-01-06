@@ -2181,7 +2181,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      * events that can possibly invoke popup on the component
      */
     class AWTEventHelper implements AWTEventListener,PrivilegedAction<Object> {
-        @SuppressWarnings({ "removal", "this-escape" })
+        @SuppressWarnings("removal")
         AWTEventHelper() {
             super();
             AccessController.doPrivileged(this);

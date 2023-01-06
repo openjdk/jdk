@@ -2251,7 +2251,6 @@ public class RegularExpression implements java.io.Serializable {
      * @param options A String consisted of "i" "m" "s" "u" "w" "," "X"
      * @exception org.apache.xerces.utils.regex.ParseException <VAR>regex</VAR> is not conforming to the syntax.
      */
-    @SuppressWarnings("this-escape")
     public RegularExpression(String regex, String options) throws ParseException {
         this.setPattern(regex, options);
     }
@@ -2263,7 +2262,6 @@ public class RegularExpression implements java.io.Serializable {
      * @param options A String consisted of "i" "m" "s" "u" "w" "," "X"
      * @exception org.apache.xerces.utils.regex.ParseException <VAR>regex</VAR> is not conforming to the syntax.
      */
-    @SuppressWarnings("this-escape")
     public RegularExpression(String regex, String options, Locale locale) throws ParseException {
         this.setPattern(regex, options, locale);
     }

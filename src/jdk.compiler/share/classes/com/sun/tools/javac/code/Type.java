@@ -1658,7 +1658,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
          */
         public Type lower;
 
-        @SuppressWarnings("this-escape")
         public TypeVar(Name name, Symbol owner, Type lower) {
             super(null, TypeMetadata.EMPTY);
             Assert.checkNonNull(lower);
@@ -1671,7 +1670,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this(tsym, bound, lower, TypeMetadata.EMPTY);
         }
 
-        @SuppressWarnings("this-escape")
         public TypeVar(TypeSymbol tsym, Type bound, Type lower,
                        TypeMetadata metadata) {
             super(tsym, metadata);
@@ -1748,7 +1746,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
 
         public WildcardType wildcard;
 
-        @SuppressWarnings("this-escape")
         public CapturedType(Name name,
                             Symbol owner,
                             Type upper,
@@ -1987,7 +1984,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             return v.visitUndetVar(this, s);
         }
 
-        @SuppressWarnings("this-escape")
         public UndetVar(TypeVar origin, UndetVarListener listener, Types types) {
             // This is a synthesized internal type, so we cannot annotate it.
             super(UNDETVAR, origin);

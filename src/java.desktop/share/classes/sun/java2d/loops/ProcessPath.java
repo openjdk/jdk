@@ -57,7 +57,6 @@ public class ProcessPath {
 
         public int strokeControl;
 
-        @SuppressWarnings("this-escape")
         public DrawHandler(int xMin, int yMin, int xMax, int yMax,
                            int strokeControl)
         {

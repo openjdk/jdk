@@ -164,7 +164,6 @@ public class Type1Font extends FileFont {
      * @throws FontFormatException if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
-    @SuppressWarnings("this-escape")
     public Type1Font(String platname, Object nativeNames, boolean createdCopy)
         throws FontFormatException {
         super(platname, nativeNames);

@@ -61,7 +61,6 @@ class WinNTFileSystem extends FileSystem {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public WinNTFileSystem() {
         Properties props = GetPropertyAction.privilegedGetProperties();
         slash = props.getProperty("file.separator").charAt(0);

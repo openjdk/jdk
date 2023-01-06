@@ -48,7 +48,6 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class Append extends Surface {
 
-    @SuppressWarnings("this-escape")
     public Append() {
         setBackground(WHITE);
     }

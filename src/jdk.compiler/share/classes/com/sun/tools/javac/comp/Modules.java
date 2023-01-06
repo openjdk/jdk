@@ -181,7 +181,6 @@ public class Modules extends JCTree.Visitor {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Modules(Context context) {
         context.put(Modules.class, this);
         log = Log.instance(context);

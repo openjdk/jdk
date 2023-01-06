@@ -233,7 +233,6 @@ public class JdkXmlFeatures {
      * Instantiate JdkXmlFeatures and initialize the fields
      * @param secureProcessing
      */
-    @SuppressWarnings("this-escape")
     public JdkXmlFeatures(boolean secureProcessing) {
         featureValues = new boolean[XmlFeature.values().length];
         states = new State[XmlFeature.values().length];

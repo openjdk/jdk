@@ -56,7 +56,6 @@ public class ContextEnumerator implements NamingEnumeration<Binding> {
         this(context, scope, "", scope != SearchControls.ONELEVEL_SCOPE);
    }
 
-    @SuppressWarnings("this-escape")
     protected ContextEnumerator(Context context, int scope, String contextName,
                              boolean returnSelf)
         throws NamingException {

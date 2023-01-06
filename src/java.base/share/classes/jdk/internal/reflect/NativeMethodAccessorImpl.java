@@ -41,7 +41,6 @@ class NativeMethodAccessorImpl extends MethodAccessorImpl {
     private int numInvocations;
     private volatile int generated;
 
-    @SuppressWarnings("this-escape")
     NativeMethodAccessorImpl(Method method) {
         this.method = method;
         this.parent = new DelegatingMethodAccessorImpl(this);

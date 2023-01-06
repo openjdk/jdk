@@ -231,7 +231,6 @@ class DurationImpl
      *    seconds parameters are all <code>null</code>. Or if any
      *    of those parameters are negative.
      */
-    @SuppressWarnings("this-escape")
     protected DurationImpl(
         boolean isPositive,
         BigInteger years,
@@ -444,7 +443,6 @@ class DurationImpl
      * @throws NullPointerException
      *      If the given string is null.
      */
-    @SuppressWarnings("this-escape")
     protected DurationImpl(String lexicalRepresentation)
         throws IllegalArgumentException {
         // only if I could use the JDK1.4 regular expression ....

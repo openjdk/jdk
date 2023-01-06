@@ -41,7 +41,6 @@ public class SortHeaderCellRenderer extends DefaultTableCellRenderer {
 
     private SortableTableModel model;
 
-    @SuppressWarnings("this-escape")
     public SortHeaderCellRenderer(JTableHeader header, SortableTableModel model) {
         this.model = model;
 

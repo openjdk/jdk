@@ -85,11 +85,9 @@ class RegexParser {
     boolean hasBackReferences;
     ArrayList<ReferencePosition> references = null;
 
-    @SuppressWarnings("this-escape")
     public RegexParser() {
         this.setLocale(Locale.getDefault());
     }
-    @SuppressWarnings("this-escape")
     public RegexParser(Locale locale) {
         this.setLocale(locale);
     }

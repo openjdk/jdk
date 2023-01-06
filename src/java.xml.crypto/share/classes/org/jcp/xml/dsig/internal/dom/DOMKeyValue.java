@@ -79,7 +79,6 @@ public abstract class DOMKeyValue<K extends PublicKey> extends DOMStructure impl
      *
      * @param kvtElem a KeyValue child element
      */
-    @SuppressWarnings("this-escape")
     public DOMKeyValue(Element kvtElem) throws MarshalException {
         this.publicKey = unmarshalKeyValue(kvtElem);
     }

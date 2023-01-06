@@ -47,7 +47,6 @@ public class ClassBrowserPanel extends JPanel implements ActionListener {
    private SAEditorPane        contentEditor;
    private HTMLGenerator       htmlGen;
 
-   @SuppressWarnings("this-escape")
    public ClassBrowserPanel() {
       htmlGen = new HTMLGenerator();
 

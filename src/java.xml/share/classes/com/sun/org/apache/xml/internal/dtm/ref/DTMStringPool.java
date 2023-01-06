@@ -68,7 +68,6 @@ public class DTMStringPool
    *
    * @param chainSize The size of the hash chain vector
    */
-  @SuppressWarnings("this-escape")
   public DTMStringPool(int chainSize)
     {
       m_intToString = new ArrayList<>();

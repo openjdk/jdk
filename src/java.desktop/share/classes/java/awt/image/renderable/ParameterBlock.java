@@ -116,7 +116,6 @@ public class ParameterBlock implements Cloneable, Serializable {
      * of sources.
      * @param sources a {@code Vector} of source images
      */
-    @SuppressWarnings("this-escape")
     public ParameterBlock(Vector<Object> sources) {
         setSources(sources);
     }
@@ -128,7 +127,6 @@ public class ParameterBlock implements Cloneable, Serializable {
      * @param parameters a {@code Vector} of parameters to be used in the
      *        rendering operation
      */
-    @SuppressWarnings("this-escape")
     public ParameterBlock(Vector<Object> sources,
                           Vector<Object> parameters)
     {

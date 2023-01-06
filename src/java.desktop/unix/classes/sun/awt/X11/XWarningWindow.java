@@ -140,7 +140,6 @@ class XWarningWindow extends XWindow {
         return getSecurityIconInfo(currentSize, currentIcon);
     }
 
-    @SuppressWarnings("this-escape")
     XWarningWindow(final Window ownerWindow, long parentWindow, XWindowPeer ownerPeer) {
         super(new XCreateWindowParams(new Object[] {
                         TARGET, ownerWindow,

@@ -68,7 +68,6 @@ public class MethodDescriptor extends FeatureDescriptor {
      * @param parameterDescriptors  Descriptive information for each of the
      *                          method's parameters.
      */
-    @SuppressWarnings("this-escape")
     public MethodDescriptor(Method method,
                 ParameterDescriptor[] parameterDescriptors) {
         setName(method.getName());

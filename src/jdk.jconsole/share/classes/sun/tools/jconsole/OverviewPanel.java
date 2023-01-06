@@ -51,7 +51,6 @@ abstract class OverviewPanel extends PlotterPanel {
         this(title, null, null, null);
     }
 
-    @SuppressWarnings("this-escape")
     public OverviewPanel(String title, String plotterKey,
                          String plotterName, Plotter.Unit plotterUnit) {
         super(title);

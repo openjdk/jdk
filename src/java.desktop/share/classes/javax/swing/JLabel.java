@@ -173,7 +173,6 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *           <code>LEADING</code> or
      *           <code>TRAILING</code>.
      */
-    @SuppressWarnings("this-escape")
     public JLabel(String text, Icon icon, int horizontalAlignment) {
         setText(text);
         setIcon(icon);

@@ -35,7 +35,6 @@ import sun.jvm.hotspot.runtime.*;
     about card marking table (was present before GC interface). */
 
 public class HeapParametersPanel extends JPanel {
-  @SuppressWarnings("this-escape")
   public HeapParametersPanel() {
     super();
 

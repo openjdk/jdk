@@ -132,7 +132,6 @@ public class SysexMessage extends MidiMessage {
      * @see #getData()
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     public SysexMessage(byte[] data, int length)
             throws InvalidMidiDataException {
         super(null);
@@ -157,7 +156,6 @@ public class SysexMessage extends MidiMessage {
      * @see #getData()
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     public SysexMessage(int status, byte[] data, int length)
             throws InvalidMidiDataException {
         super(null);

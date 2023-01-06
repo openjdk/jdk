@@ -79,7 +79,6 @@ public class DemoGroup extends JPanel
     public JPanel[] clonePanels;
     public JTabbedPane tabbedPane;
 
-    @SuppressWarnings("this-escape")
     public DemoGroup(String name, DemoInstVarsAccessor demoInstVars) {
 
         groupName = name;

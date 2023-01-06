@@ -545,7 +545,6 @@ public class PNGImageDecoder extends ImageDecoder
     PNGFilterInputStream inputStream;
     InputStream underlyingInputStream;
 
-  @SuppressWarnings("this-escape")
   public PNGImageDecoder(InputStreamImageSource src, InputStream input) throws IOException {
     super(src, input);
     inputStream = new PNGFilterInputStream(this, input);

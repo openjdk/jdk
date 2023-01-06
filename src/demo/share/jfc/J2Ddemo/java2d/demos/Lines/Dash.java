@@ -55,7 +55,6 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class Dash extends Surface {
 
-    @SuppressWarnings("this-escape")
     public Dash() {
         setBackground(WHITE);
     }

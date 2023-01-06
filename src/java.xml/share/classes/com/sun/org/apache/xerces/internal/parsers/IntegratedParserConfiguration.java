@@ -134,7 +134,6 @@ extends StandardParserConfiguration {
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     public IntegratedParserConfiguration(SymbolTable symbolTable,
                                          XMLGrammarPool grammarPool,
                                          XMLComponentManager parentSettings) {

@@ -194,7 +194,6 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         private int width, height;
         private final int scale;
 
-        @SuppressWarnings("this-escape")
         public GLXOffScreenSurfaceData(X11ComponentPeer peer,
                                        GLXGraphicsConfig gc,
                                        int width, int height,

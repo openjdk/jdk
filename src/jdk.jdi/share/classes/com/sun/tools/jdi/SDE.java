@@ -241,13 +241,11 @@ class SDE {
     String defaultStratumId = null;
     boolean isValid = false;
 
-    @SuppressWarnings("this-escape")
     SDE(String sourceDebugExtension) {
         this.sourceDebugExtension = sourceDebugExtension;
         decode();
     }
 
-    @SuppressWarnings("this-escape")
     SDE() {
         this.sourceDebugExtension = null;
         createProxyForAbsentSDE();

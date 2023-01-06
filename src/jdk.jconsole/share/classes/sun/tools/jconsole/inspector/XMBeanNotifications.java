@@ -75,7 +75,6 @@ public class XMBeanNotifications extends JTable implements NotificationListener 
     private static TableCellEditor editor =
             new Utils.ReadOnlyTableCellEditor(new JTextField());
 
-    @SuppressWarnings("this-escape")
     public XMBeanNotifications() {
         super(new TableSorter(columnNames, 0));
         setColumnSelectionAllowed(false);
@@ -606,7 +605,6 @@ public class XMBeanNotifications extends JTable implements NotificationListener 
         private volatile boolean unregistered;
         private ArrayList<Object[]> data = new ArrayList<Object[]>();
 
-        @SuppressWarnings("this-escape")
         public XMBeanNotificationsListener(
                 XMBeanNotifications notifications,
                 XMBean xmbean,

@@ -139,7 +139,6 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     // Listeners - synchronized on vm.state()
     private List<WeakReference<ThreadListener>> listeners = new ArrayList<>();
 
-    @SuppressWarnings("this-escape")
     ThreadReferenceImpl(VirtualMachine aVm, long aRef) {
         super(aVm, aRef);
         resetLocalCache();

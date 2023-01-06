@@ -91,7 +91,6 @@ public class JarIndex {
      *
      * @param is the input stream containing the index data
      */
-    @SuppressWarnings("this-escape")
     public JarIndex(InputStream is) throws IOException {
         this();
         read(is);
@@ -102,7 +101,6 @@ public class JarIndex {
      *
      * @param files the list of jar files to construct the index from.
      */
-    @SuppressWarnings("this-escape")
     public JarIndex(String[] files) throws IOException {
         this();
         this.jarFiles = files;

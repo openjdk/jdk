@@ -81,7 +81,6 @@ public class JdiInitiator {
      * @param customConnectorArgs custom arguments passed to the connector.
      * These are JDI com.sun.jdi.connect.Connector arguments.
      */
-    @SuppressWarnings("this-escape")
     public JdiInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
             boolean isLaunch, String host, int timeout,
             Map<String, String> customConnectorArgs) {

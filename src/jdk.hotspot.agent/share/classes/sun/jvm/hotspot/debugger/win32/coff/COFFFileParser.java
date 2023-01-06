@@ -96,7 +96,6 @@ public class COFFFileParser {
         }
       };
 
-    @SuppressWarnings("this-escape")
     COFFFileImpl(DataSource file) throws COFFException {
       this.file = file;
       initialize();
@@ -2235,7 +2234,6 @@ public class COFFFileParser {
           private int   typeRecordSize;
           private int   typeStringLeaf;
 
-          @SuppressWarnings("this-escape")
           DebugVC50TypeIteratorImpl(DebugVC50SSGlobalTypes parent, int base, int numTypes) {
             this(parent, base, numTypes, 0, base);
           }

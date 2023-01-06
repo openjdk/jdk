@@ -242,7 +242,6 @@ public abstract sealed class Buffer
     // Creates a new buffer with the given mark, position, limit, and capacity,
     // after checking invariants.
     //
-    @SuppressWarnings("this-escape")
     Buffer(int mark, int pos, int lim, int cap, MemorySegment segment) {       // package-private
         if (cap < 0)
             throw createCapacityException(cap);

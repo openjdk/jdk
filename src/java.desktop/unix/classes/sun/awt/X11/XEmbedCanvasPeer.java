@@ -842,7 +842,6 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
             this.modifiers = modifiers;
         }
 
-        @SuppressWarnings("this-escape")
         GrabbedKey(KeyEvent ev) {
             init(ev);
         }

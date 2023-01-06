@@ -328,7 +328,6 @@ public class AquaTreeUI extends BasicTreeUI {
         Insets fInsets;
         Color fBackground;
 
-        @SuppressWarnings("this-escape")
         TreeArrowMouseInputHandler(final TreePath path) {
             fTrackingPath = path;
             fIsPressed = true;

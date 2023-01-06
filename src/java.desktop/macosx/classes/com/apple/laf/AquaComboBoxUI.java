@@ -230,7 +230,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class AquaCustomComboTextField extends JTextField {
-        @SuppressWarnings({ "serial", "this-escape" }) // anonymous class
+        @SuppressWarnings("serial") // anonymous class
         public AquaCustomComboTextField() {
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);

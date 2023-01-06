@@ -401,7 +401,6 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @see #setValues
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("this-escape")
     public Scrollbar(int orientation, int value, int visible, int minimum,
         int maximum) throws HeadlessException {
         GraphicsEnvironment.checkHeadless();

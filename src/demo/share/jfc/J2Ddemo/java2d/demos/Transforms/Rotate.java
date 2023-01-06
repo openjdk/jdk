@@ -62,7 +62,6 @@ public class Rotate extends ControlsSurface {
     protected double increment = 5.0;
     protected int emphasis = 9;
 
-    @SuppressWarnings("this-escape")
     public Rotate() {
         setBackground(WHITE);
         setControls(new Component[] { new DemoControls(this) });
@@ -110,7 +109,7 @@ public class Rotate extends ControlsSurface {
         Rotate demo;
         JTextField tf1, tf2;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(Rotate demo) {
             super(demo.name);
             this.demo = demo;

@@ -203,7 +203,6 @@ public class ShortMessage extends MidiMessage {
      * @see #getStatus()
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     public ShortMessage(int status) throws InvalidMidiDataException {
         super(null);
         setMessage(status); // can throw InvalidMidiDataException
@@ -229,7 +228,6 @@ public class ShortMessage extends MidiMessage {
      * @see #getData2()
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     public ShortMessage(int status, int data1, int data2)
             throws InvalidMidiDataException {
         super(null);
@@ -259,7 +257,6 @@ public class ShortMessage extends MidiMessage {
      * @see #getData2()
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     public ShortMessage(int command, int channel, int data1, int data2)
             throws InvalidMidiDataException {
         super(null);

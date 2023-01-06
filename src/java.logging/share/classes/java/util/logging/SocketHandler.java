@@ -91,7 +91,6 @@ public class SocketHandler extends StreamHandler {
      * @throws IOException if we are unable to connect to the target
      *         host and port.
      */
-    @SuppressWarnings("this-escape")
     public SocketHandler() throws IOException {
         // configure with specific defaults for SocketHandler
         super(Level.ALL, new XMLFormatter(), null);
@@ -124,7 +123,6 @@ public class SocketHandler extends StreamHandler {
      * @throws IOException if we are unable to connect to the target
      *         host and port.
      */
-    @SuppressWarnings("this-escape")
     public SocketHandler(String host, int port) throws IOException {
         // configure with specific defaults for SocketHandler
         super(Level.ALL, new XMLFormatter(), null);

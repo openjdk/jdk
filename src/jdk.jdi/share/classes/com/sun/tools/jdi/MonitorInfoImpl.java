@@ -44,7 +44,6 @@ public class MonitorInfoImpl extends MirrorImpl
     ThreadReference thread;
     int stack_depth;
 
-    @SuppressWarnings("this-escape")
     MonitorInfoImpl(VirtualMachine vm, ObjectReference mon,
                     ThreadReferenceImpl thread, int dpth) {
         super(vm);

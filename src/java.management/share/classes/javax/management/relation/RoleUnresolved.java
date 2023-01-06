@@ -146,7 +146,6 @@ public class RoleUnresolved implements Serializable {
      * @exception IllegalArgumentException  if null parameter or incorrect
      * problem type
      */
-    @SuppressWarnings("this-escape")
     public RoleUnresolved(String name,
                           List<ObjectName> value,
                           int pbType)

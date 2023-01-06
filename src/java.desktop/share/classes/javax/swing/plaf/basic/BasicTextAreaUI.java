@@ -229,7 +229,6 @@ public class BasicTextAreaUI extends BasicTextUI {
      */
     static class PlainParagraph extends ParagraphView {
 
-        @SuppressWarnings("this-escape")
         PlainParagraph(Element elem) {
             super(elem);
             layoutPool = new LogicalView(elem);

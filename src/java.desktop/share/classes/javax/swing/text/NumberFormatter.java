@@ -116,7 +116,6 @@ public class NumberFormatter extends InternationalFormatter {
      *
      * @param format Format used to dictate legal values
      */
-    @SuppressWarnings("this-escape")
     public NumberFormatter(NumberFormat format) {
         super(format);
         setFormat(format);

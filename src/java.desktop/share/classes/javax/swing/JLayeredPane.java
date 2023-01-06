@@ -188,7 +188,6 @@ public class JLayeredPane extends JComponent implements Accessible {
 //// Container Override methods
 //////////////////////////////////////////////////////////////////////////////
     /** Create a new JLayeredPane */
-    @SuppressWarnings("this-escape")
     public JLayeredPane() {
         setLayout(null);
     }

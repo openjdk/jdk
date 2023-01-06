@@ -55,7 +55,6 @@ public class ParagraphView extends FlowView implements TabExpander {
      *
      * @param elem the element that this view is responsible for
      */
-    @SuppressWarnings("this-escape")
     public ParagraphView(Element elem) {
         super(elem, View.Y_AXIS);
         setPropertiesFromAttributes();

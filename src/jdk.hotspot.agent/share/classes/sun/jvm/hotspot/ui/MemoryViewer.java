@@ -33,7 +33,6 @@ import sun.jvm.hotspot.debugger.*;
     address. */
 
 public class MemoryViewer extends JPanel {
-  @SuppressWarnings("this-escape")
   public MemoryViewer(final Debugger debugger, boolean isAnnotated, boolean is64Bit) {
     super();
     final MemoryPanel memory = new MemoryPanel(debugger, isAnnotated, is64Bit);

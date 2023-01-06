@@ -73,7 +73,6 @@ public class Joins extends ControlsSurface {
     protected JSlider slider;
     protected JLabel label;
 
-    @SuppressWarnings("this-escape")
     public Joins() {
         setBackground(WHITE);
         slider = new JSlider(SwingConstants.VERTICAL, 0, 100,
@@ -130,7 +129,7 @@ public class Joins extends ControlsSurface {
         JoinIcon[] icons = new JoinIcon[joinType.length];
         JToolBar toolbar;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(Joins demo) {
             super(demo.name);
             setBorder(new CompoundBorder(getBorder(),

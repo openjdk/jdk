@@ -88,7 +88,6 @@ public class ChunkedOutputStream extends OutputStream {
         this(o, DEFAULT_CHUNK_SIZE);
     }
 
-    @SuppressWarnings("this-escape")
     public ChunkedOutputStream(PrintStream o, int size) {
         out = o;
 

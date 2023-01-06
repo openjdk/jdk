@@ -120,7 +120,6 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     class Dock extends JComponent implements Border {
         static final int DOCK_EDGE_SLACK = 8;
 
-        @SuppressWarnings("this-escape")
         Dock(final JComponent parent) {
             setBorder(this);
             setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));

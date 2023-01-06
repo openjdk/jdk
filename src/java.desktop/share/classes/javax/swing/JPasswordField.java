@@ -150,7 +150,6 @@ public class JPasswordField extends JTextField {
      *   preferred width will be whatever naturally results from
      *   the component implementation
      */
-    @SuppressWarnings("this-escape")
     public JPasswordField(Document doc, String txt, int columns) {
         super(doc, txt, columns);
         // We could either leave this on, which wouldn't be secure,

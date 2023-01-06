@@ -139,7 +139,6 @@ public class SignedInfo extends Manifest {
      * @param spec AlgorithmParameterSpec to use
      * @throws XMLSecurityException
      */
-    @SuppressWarnings("this-escape")
     public SignedInfo(
         Document doc, String signatureMethodURI,
         int hMACOutputLength, String canonicalizationMethodURI, Provider provider, AlgorithmParameterSpec spec
@@ -177,7 +176,6 @@ public class SignedInfo extends Manifest {
         this(doc, signatureMethodElem, canonicalizationMethodElem, null);
     }
 
-    @SuppressWarnings("this-escape")
     public SignedInfo(
         Document doc, Element signatureMethodElem, Element canonicalizationMethodElem, Provider provider
     ) throws XMLSecurityException {
@@ -242,7 +240,6 @@ public class SignedInfo extends Manifest {
      * @see <A HREF="http://lists.w3.org/Archives/Public/w3c-ietf-xmldsig/2001OctDec/0054.html">
      * Answer</A>
      */
-    @SuppressWarnings("this-escape")
     public SignedInfo(
         Element element, String baseURI, boolean secureValidation, Provider provider
     ) throws XMLSecurityException {

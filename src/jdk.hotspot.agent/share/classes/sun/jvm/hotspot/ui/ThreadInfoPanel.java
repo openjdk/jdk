@@ -37,7 +37,6 @@ public class ThreadInfoPanel extends JPanel {
 
     private JTextArea textArea;
 
-    @SuppressWarnings("this-escape")
     public ThreadInfoPanel() {
         initUI();
     }
@@ -56,7 +55,6 @@ public class ThreadInfoPanel extends JPanel {
     }
 
 
-    @SuppressWarnings("this-escape")
     public ThreadInfoPanel(final JavaThread thread) {
         initUI();
         setJavaThread(thread);

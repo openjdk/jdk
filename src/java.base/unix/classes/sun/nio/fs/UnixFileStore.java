@@ -63,7 +63,6 @@ abstract class UnixFileStore
         }
     }
 
-    @SuppressWarnings("this-escape")
     UnixFileStore(UnixPath file) throws IOException {
         this.file = file;
         this.dev = devFor(file);

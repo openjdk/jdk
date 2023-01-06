@@ -528,6 +528,7 @@ final class MemberName implements Member, Cloneable {
     public MemberName(Method m) {
         this(m, false);
     }
+    @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Method m, boolean wantSpecial) {
         Objects.requireNonNull(m);
         // fill in vmtarget, vmindex while we have m in hand:
@@ -613,6 +614,7 @@ final class MemberName implements Member, Cloneable {
         return result;
     }
     /** Create a name for the given reflected constructor.  The resulting name will be in a resolved state. */
+    @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Constructor<?> ctor) {
         Objects.requireNonNull(ctor);
         // fill in vmtarget, vmindex while we have ctor in hand:
@@ -631,6 +633,7 @@ final class MemberName implements Member, Cloneable {
         // the following MemberName constructor relies on these ranges matching up
         assert((REF_putStatic - REF_getStatic) == (REF_putField - REF_getField));
     }
+    @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Field fld, boolean makeSetter) {
         Objects.requireNonNull(fld);
         // fill in vmtarget, vmindex while we have fld in hand:

@@ -40,7 +40,6 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
 
     private final AtomicBoolean enabled = new AtomicBoolean(true);
 
-    @SuppressWarnings("this-escape")
     public CMenuItem(MenuItem target) {
         super(target);
         initialize(target);

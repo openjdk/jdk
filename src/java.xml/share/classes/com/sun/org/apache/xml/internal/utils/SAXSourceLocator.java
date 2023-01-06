@@ -56,7 +56,6 @@ public class SAXSourceLocator extends LocatorImpl
    *
    * @param locator Source locator
    */
-  @SuppressWarnings("this-escape")
   public SAXSourceLocator(Locator locator)
   {
     m_locator = locator;
@@ -72,7 +71,6 @@ public class SAXSourceLocator extends LocatorImpl
    *
    * @param locator Source locator
    */
-  @SuppressWarnings("this-escape")
   public SAXSourceLocator(javax.xml.transform.SourceLocator locator)
   {
     m_locator = null;
@@ -89,7 +87,6 @@ public class SAXSourceLocator extends LocatorImpl
    *
    * @param spe SAXParseException exception.
    */
-  @SuppressWarnings("this-escape")
   public SAXSourceLocator(SAXParseException spe)
   {
     this.setLineNumber( spe.getLineNumber() );

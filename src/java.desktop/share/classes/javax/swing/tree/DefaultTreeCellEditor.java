@@ -138,7 +138,6 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * @param renderer  a <code>DefaultTreeCellRenderer</code> object
      * @param editor    a <code>TreeCellEditor</code> object
      */
-    @SuppressWarnings("this-escape")
     public DefaultTreeCellEditor(JTree tree, DefaultTreeCellRenderer renderer,
                                  TreeCellEditor editor) {
         this.renderer = renderer;
@@ -582,7 +581,6 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
          * @param border  a <code>Border</code> object
          * @since 1.4
          */
-        @SuppressWarnings("this-escape")
         public DefaultTextField(Border border) {
             setBorder(border);
         }
@@ -655,7 +653,6 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
         /**
          * Constructs an <code>EditorContainer</code> object.
          */
-        @SuppressWarnings("this-escape")
         public EditorContainer() {
             setLayout(null);
         }

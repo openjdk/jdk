@@ -31,7 +31,6 @@ import java.util.HashMap;
 public class XCreateWindowParams extends HashMap<Object, Object> {
     public XCreateWindowParams() {
     }
-    @SuppressWarnings("this-escape")
     public XCreateWindowParams(Object[] map) {
         init(map);
     }

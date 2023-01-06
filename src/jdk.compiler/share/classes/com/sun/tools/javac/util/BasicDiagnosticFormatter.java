@@ -221,7 +221,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
         protected Map<BasicFormatKind, String> availableFormats;
         protected SourcePosition sourcePosition;
 
-        @SuppressWarnings({ "fallthrough", "this-escape" })
+        @SuppressWarnings("fallthrough")
         public BasicConfiguration(Options options) {
             super(options, EnumSet.of(DiagnosticPart.SUMMARY,
                             DiagnosticPart.DETAILS,
@@ -272,7 +272,6 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
             }
         }
 
-        @SuppressWarnings("this-escape")
         public BasicConfiguration() {
             super(EnumSet.of(DiagnosticPart.SUMMARY,
                   DiagnosticPart.DETAILS,

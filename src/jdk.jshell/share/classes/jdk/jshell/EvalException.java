@@ -45,7 +45,6 @@ package jdk.jshell;
 public class EvalException extends JShellException {
     private final String exceptionClass;
 
-    @SuppressWarnings("this-escape")
     EvalException(String message, String exceptionClass,
             StackTraceElement[] stackElements, JShellException cause) {
         super(message, cause);

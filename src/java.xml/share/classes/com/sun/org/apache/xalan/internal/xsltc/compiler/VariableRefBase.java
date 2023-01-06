@@ -42,7 +42,6 @@ class VariableRefBase extends Expression {
      */
     protected Closure _closure = null;
 
-    @SuppressWarnings("this-escape")
     public VariableRefBase(VariableBase variable) {
         _variable = variable;
         variable.addReference(this);

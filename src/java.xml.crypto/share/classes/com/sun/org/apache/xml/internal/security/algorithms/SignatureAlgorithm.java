@@ -79,7 +79,6 @@ public class SignatureAlgorithm extends Algorithm {
         this(doc, algorithmURI, provider, null);
     }
 
-    @SuppressWarnings("this-escape")
     public SignatureAlgorithm(Document doc, String algorithmURI, Provider provider, AlgorithmParameterSpec parameterSpec) throws XMLSecurityException {
         super(doc, algorithmURI);
         this.algorithmURI = algorithmURI;
@@ -105,7 +104,6 @@ public class SignatureAlgorithm extends Algorithm {
         this(doc, algorithmURI, hmacOutputLength, null);
     }
 
-    @SuppressWarnings("this-escape")
     public SignatureAlgorithm(
         Document doc, String algorithmURI, int hmacOutputLength, Provider provider
     ) throws XMLSecurityException {
@@ -147,7 +145,6 @@ public class SignatureAlgorithm extends Algorithm {
         this(element, baseURI, secureValidation, null);
     }
 
-    @SuppressWarnings("this-escape")
     public SignatureAlgorithm(
         Element element, String baseURI, boolean secureValidation, Provider provider
     ) throws XMLSecurityException {

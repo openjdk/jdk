@@ -422,7 +422,7 @@ public class RicochetTest {
         java.util.Random random;
         final MethodHandle[] fns;
         int depth;
-        @SuppressWarnings({ "LeakingThisInConstructor", "this-escape" })
+        @SuppressWarnings("LeakingThisInConstructor")
         RFCB(int seed) throws Throwable {
             this.random = new java.util.Random(seed);
             this.fns = new MethodHandle[Math.max(29, (1 << MAX_DEPTH-2)/3)];

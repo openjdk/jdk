@@ -44,7 +44,6 @@ class WindowDimensions {
      * If isClient is true, the bounds represent the client window area.
      * Otherwise, they represent the entire window area, with the insets included
      */
-    @SuppressWarnings("this-escape")
     public WindowDimensions(Rectangle rec, Insets ins, boolean isClient) {
         if (rec == null) {
             throw new IllegalArgumentException("Client bounds can't be null");

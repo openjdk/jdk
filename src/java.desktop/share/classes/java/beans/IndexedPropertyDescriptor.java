@@ -97,7 +97,6 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
-    @SuppressWarnings("this-escape")
     public IndexedPropertyDescriptor(String propertyName, Class<?> beanClass,
                 String readMethodName, String writeMethodName,
                 String indexedReadMethodName, String indexedWriteMethodName)
@@ -133,7 +132,6 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
-    @SuppressWarnings("this-escape")
     public IndexedPropertyDescriptor(String propertyName, Method readMethod, Method writeMethod,
                                             Method indexedReadMethod, Method indexedWriteMethod)
                 throws IntrospectionException {
@@ -156,7 +154,6 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      *
      * @since 9
      */
-    @SuppressWarnings("this-escape")
     IndexedPropertyDescriptor(Entry<String,PropertyInfo> entry, boolean bound) {
         super(entry, bound);
         PropertyInfo info = entry.getValue().getIndexed();
@@ -439,7 +436,6 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @param y  The second (higher priority) PropertyDescriptor
      */
 
-    @SuppressWarnings("this-escape")
     IndexedPropertyDescriptor(PropertyDescriptor x, PropertyDescriptor y) {
         super(x,y);
         Method tr = null;

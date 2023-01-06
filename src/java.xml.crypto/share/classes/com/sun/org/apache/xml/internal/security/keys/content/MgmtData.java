@@ -50,7 +50,6 @@ public class MgmtData extends SignatureElementProxy implements KeyInfoContent {
      * @param doc
      * @param mgmtData
      */
-    @SuppressWarnings("this-escape")
     public MgmtData(Document doc, String mgmtData) {
         super(doc);
 

@@ -246,7 +246,6 @@ public class ObjectOutputStream
      * @see     ObjectOutputStream#putFields()
      * @see     ObjectInputStream#ObjectInputStream(InputStream)
      */
-    @SuppressWarnings("this-escape")
     public ObjectOutputStream(OutputStream out) throws IOException {
         verifySubclass();
         bout = new BlockDataOutputStream(out);

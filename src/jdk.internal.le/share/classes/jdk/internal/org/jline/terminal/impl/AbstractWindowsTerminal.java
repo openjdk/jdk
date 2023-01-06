@@ -81,7 +81,6 @@ public abstract class AbstractWindowsTerminal extends AbstractTerminal {
     protected boolean focusTracking = false;
     private volatile boolean closing;
 
-    @SuppressWarnings("this-escape")
     public AbstractWindowsTerminal(Writer writer, String name, String type, Charset encoding, int codepage, boolean nativeSignals, SignalHandler signalHandler, Function<InputStream, InputStream> inputStreamWrapper) throws IOException {
         super(name, type, selectCharset(encoding, codepage), signalHandler);
         NonBlockingPumpReader reader = NonBlocking.nonBlockingPumpReader();

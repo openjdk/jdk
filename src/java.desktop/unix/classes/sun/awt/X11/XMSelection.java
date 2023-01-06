@@ -253,7 +253,6 @@ public class  XMSelection {
     * just owner ship changes, They would specify a zero extra mask.
     */
 
-    @SuppressWarnings("this-escape")
     public XMSelection (String selname, long extraMask) {
 
         synchronized (this) {

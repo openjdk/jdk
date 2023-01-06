@@ -2203,7 +2203,6 @@ public class MetalLookAndFeel extends BasicLookAndFeel
 
         private String key = SunToolkit.DESKTOPFONTHINTS;
 
-        @SuppressWarnings("this-escape")
         AATextListener(LookAndFeel laf) {
             super(laf, queue);
             Toolkit tk = Toolkit.getDefaultToolkit();

@@ -242,7 +242,6 @@ public abstract class Parser {
     /**
      * Constructor.
      */
-    @SuppressWarnings("this-escape")
     protected Parser() {
         mPh = PH_BEFORE_DOC;  // before parsing
 

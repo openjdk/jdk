@@ -48,7 +48,6 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class WindingRule extends Surface {
 
-    @SuppressWarnings("this-escape")
     public WindingRule() {
         setBackground(WHITE);
     }

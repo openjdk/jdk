@@ -197,7 +197,6 @@ public class Timer implements Serializable
      * @see #setInitialDelay
      * @see #setRepeats
      */
-    @SuppressWarnings("this-escape")
     public Timer(int delay, ActionListener listener) {
         super();
         this.delay = delay;

@@ -39,7 +39,6 @@ public class DumbTerminal extends AbstractTerminal {
         this(name, type, in, out, encoding, SignalHandler.SIG_DFL);
     }
 
-    @SuppressWarnings("this-escape")
     public DumbTerminal(String name, String type, InputStream in, OutputStream out, Charset encoding, SignalHandler signalHandler) throws IOException {
         super(name, type, encoding, signalHandler);
         NonBlockingInputStream nbis = NonBlocking.nonBlocking(getName(), in);

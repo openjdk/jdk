@@ -296,7 +296,6 @@ public class DTDConfiguration
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     public DTDConfiguration(SymbolTable symbolTable,
                                        XMLGrammarPool grammarPool,
                                        XMLComponentManager parentSettings) {

@@ -77,7 +77,6 @@ public class BasicArrowButton extends JButton implements SwingConstants
          * @param highlight the color of the highlight
          * @since 1.4
          */
-        @SuppressWarnings("this-escape")
         public BasicArrowButton(int direction, Color background, Color shadow,
                          Color darkShadow, Color highlight) {
             super();

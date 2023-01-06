@@ -101,7 +101,6 @@ public class AttributeWriter extends BasicWriter
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected AttributeWriter(Context context) {
         super(context);
         context.put(AttributeWriter.class, this);

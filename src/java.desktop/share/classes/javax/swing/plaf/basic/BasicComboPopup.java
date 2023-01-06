@@ -357,7 +357,6 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      *
      * @param combo an instance of {@code JComboBox}
      */
-    @SuppressWarnings("this-escape")
     public BasicComboPopup( JComboBox<Object> combo ) {
         super();
         setName("ComboPopup.popup");

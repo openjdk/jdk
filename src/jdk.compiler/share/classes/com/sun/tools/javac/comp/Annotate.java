@@ -103,7 +103,6 @@ public class Annotate {
     private final Attribute theUnfinishedDefaultValue;
     private final String sourceName;
 
-    @SuppressWarnings("this-escape")
     protected Annotate(Context context) {
         context.put(annotateKey, this);
 

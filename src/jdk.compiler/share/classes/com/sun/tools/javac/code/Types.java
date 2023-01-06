@@ -108,7 +108,6 @@ public class Types {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Types(Context context) {
         context.put(typesKey, this);
         syms = Symtab.instance(context);

@@ -57,7 +57,6 @@ public class ProcessAttachingConnector
     com.sun.tools.attach.VirtualMachine vm;
     Transport transport;
 
-    @SuppressWarnings("this-escape")
     public ProcessAttachingConnector() {
         addStringArgument(
             ARG_PID,

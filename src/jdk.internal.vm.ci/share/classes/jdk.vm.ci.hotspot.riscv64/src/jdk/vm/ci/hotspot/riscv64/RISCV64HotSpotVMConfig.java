@@ -31,7 +31,6 @@ import jdk.vm.ci.services.Services;
  *
  * All non-static, public fields in this class are so that they can be compiled as constants.
  */
-@SuppressWarnings("this-escape")
 class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     RISCV64HotSpotVMConfig(HotSpotVMConfigStore config) {

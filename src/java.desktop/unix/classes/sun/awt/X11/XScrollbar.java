@@ -894,7 +894,6 @@ class XScrollRepeater implements Runnable {
      * Creates a new scroll repeater.
      * @param sb the scrollbar that this thread will scroll
      */
-    @SuppressWarnings("this-escape")
     XScrollRepeater(XScrollbar sb) {
         this.setScrollbar(sb);
         newScroll = true;

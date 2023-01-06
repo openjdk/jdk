@@ -47,7 +47,6 @@ public class PosixPtyTerminal extends AbstractPosixTerminal {
         this(name, type, pty, in, out, encoding, signalHandler, false);
     }
 
-    @SuppressWarnings("this-escape")
     public PosixPtyTerminal(String name, String type, Pty pty, InputStream in, OutputStream out, Charset encoding, SignalHandler signalHandler, boolean paused) throws IOException {
         super(name, type, pty, encoding, signalHandler);
         this.in = Objects.requireNonNull(in);

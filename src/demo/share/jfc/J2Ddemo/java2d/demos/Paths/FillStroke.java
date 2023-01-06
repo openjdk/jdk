@@ -49,7 +49,6 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class FillStroke extends Surface {
 
-    @SuppressWarnings("this-escape")
     public FillStroke() {
         setBackground(WHITE);
     }

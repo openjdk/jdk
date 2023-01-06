@@ -188,7 +188,6 @@ public class DragSourceContext
      * @throws NullPointerException if dscp, trigger, or t are null, or
      *         if dragImage is non-null and offset is null
      */
-    @SuppressWarnings("this-escape")
     public DragSourceContext(DragGestureEvent trigger, Cursor dragCursor,
                              Image dragImage, Point offset, Transferable t,
                              DragSourceListener dsl) {

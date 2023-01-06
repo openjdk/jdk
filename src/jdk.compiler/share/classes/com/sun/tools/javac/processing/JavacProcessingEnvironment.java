@@ -199,7 +199,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected JavacProcessingEnvironment(Context context) {
         this.context = context;
         context.put(JavacProcessingEnvironment.class, this);
@@ -1079,7 +1078,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         /** Create the first round. */
-        @SuppressWarnings("this-escape")
         Round(List<JCCompilationUnit> roots,
               List<ClassSymbol> classSymbols,
               Set<JCCompilationUnit> treesToClean,

@@ -89,7 +89,6 @@ public class ListDemo extends DemoModule {
     /**
      * ListDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public ListDemo(SwingSet2 swingset) {
         super(swingset, "ListDemo", "toolbar/JList.gif");
 

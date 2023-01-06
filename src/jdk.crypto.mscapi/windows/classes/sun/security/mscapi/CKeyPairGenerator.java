@@ -50,7 +50,6 @@ public abstract class CKeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     public static class RSA extends CKeyPairGenerator {
-        @SuppressWarnings("this-escape")
         public RSA() {
             super("RSA");
             // initialize to default in case the app does not call initialize()

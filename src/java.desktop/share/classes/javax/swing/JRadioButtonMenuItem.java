@@ -135,7 +135,6 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
      *
      * @since 1.3
      */
-    @SuppressWarnings("this-escape")
     public JRadioButtonMenuItem(Action a) {
         this();
         setAction(a);
@@ -159,7 +158,6 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
      * @param text the text of the <code>CheckBoxMenuItem</code>
      * @param selected the selected state of the <code>CheckBoxMenuItem</code>
      */
-    @SuppressWarnings("this-escape")
     public JRadioButtonMenuItem(String text, boolean selected) {
         this(text);
         setSelected(selected);
@@ -187,7 +185,6 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
      * @param selected if {@code true}, the button is initially selected,
      *                 otherwise, the button is initially unselected
      */
-    @SuppressWarnings("this-escape")
     public JRadioButtonMenuItem(String text, Icon icon, boolean selected) {
         super(text, icon);
         setModel(new JToggleButton.ToggleButtonModel());

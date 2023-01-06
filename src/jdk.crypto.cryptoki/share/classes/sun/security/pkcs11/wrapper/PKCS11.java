@@ -150,7 +150,6 @@ public class PKCS11 {
      * @preconditions (pkcs11ModulePath <> null)
      * @postconditions
      */
-    @SuppressWarnings("this-escape")
     PKCS11(String pkcs11ModulePath, String functionList)
             throws IOException {
         this.version = connect(pkcs11ModulePath, functionList);

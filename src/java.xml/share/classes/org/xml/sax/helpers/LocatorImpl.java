@@ -86,7 +86,6 @@ public class LocatorImpl implements Locator
      *
      * @param locator The locator to copy.
      */
-    @SuppressWarnings("this-escape")
     public LocatorImpl (Locator locator)
     {
         setPublicId(locator.getPublicId());

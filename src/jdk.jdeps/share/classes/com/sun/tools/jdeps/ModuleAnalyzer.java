@@ -56,7 +56,6 @@ public class ModuleAnalyzer {
     private final DependencyFinder dependencyFinder;
     private final Map<Module, ModuleDeps> modules;
 
-    @SuppressWarnings("this-escape")
     public ModuleAnalyzer(JdepsConfiguration config,
                           PrintWriter log,
                           Set<String> names) {

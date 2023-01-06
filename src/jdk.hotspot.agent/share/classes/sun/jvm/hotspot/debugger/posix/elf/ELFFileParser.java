@@ -67,7 +67,6 @@ public class ELFFileParser {
         private ELFHeader header;
         private byte ident[] = new byte[16];
 
-        @SuppressWarnings("this-escape")
         ELFFileImpl(DataSource file) throws ELFException {
             this.file = file;
             int bytesRead = readBytes(ident);
@@ -645,7 +644,6 @@ public class ELFFileParser {
             /** Offset from the beginning of the file to this symbol. */
             private long offset;
 
-            @SuppressWarnings("this-escape")
             ELFSymbolImpl(long offset, int section_type) throws ELFException {
                 seek(offset);
                 this.offset = offset;

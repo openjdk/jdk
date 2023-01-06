@@ -141,7 +141,6 @@ public class Locations {
     List<Closeable> closeables = new ArrayList<>();
     private Map<String,String> fsEnv = Collections.emptyMap();
 
-    @SuppressWarnings("this-escape")
     Locations() {
         initHandlers();
     }

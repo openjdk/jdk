@@ -58,7 +58,6 @@ public class ToolTipDemo extends DemoModule {
     /**
      * ToolTipDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public ToolTipDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.
@@ -86,7 +85,6 @@ public class ToolTipDemo extends DemoModule {
     class Cow extends JLabel {
         Polygon cowgon = new Polygon();
 
-        @SuppressWarnings("this-escape")
         public Cow() {
             super(createImageIcon("tooltip/cow.gif", getString("ToolTipDemo.bessie")));
             setAlignmentX(CENTER_ALIGNMENT);

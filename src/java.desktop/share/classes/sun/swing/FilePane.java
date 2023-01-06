@@ -364,7 +364,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private DetailsTableModel detailsTableModel;
     private DetailsTableRowSorter rowSorter;
 
-    @SuppressWarnings("this-escape")
     public FilePane(FileChooserUIAccessor fileChooserUIAccessor) {
         super(new BorderLayout());
 
@@ -475,7 +474,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     class ViewTypeAction extends AbstractAction {
         private int viewType;
 
-        @SuppressWarnings("this-escape")
         ViewTypeAction(int viewType) {
             super(viewTypeActionNames[viewType]);
             this.viewType = viewType;
@@ -778,7 +776,6 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         ShellFolderColumnInfo[] columns;
         int[] columnMap;
 
-        @SuppressWarnings("this-escape")
         DetailsTableModel(JFileChooser fc) {
             this.chooser = fc;
             directoryModel = getModel();

@@ -50,7 +50,6 @@ public abstract class BranchInstruction extends Instruction implements Instructi
      * @param opcode Instruction opcode
      * @param target instruction to branch to
      */
-    @SuppressWarnings("this-escape")
     protected BranchInstruction(final short opcode, final InstructionHandle target) {
         super(opcode, (short) 3);
         setTarget(target);

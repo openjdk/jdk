@@ -48,7 +48,6 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
         return new Cache();
     }
 
-    @SuppressWarnings("this-escape")
     ClassLoaderReferenceImpl(VirtualMachine aVm, long ref) {
         super(aVm, ref);
         vm.state().addListener(this);

@@ -36,19 +36,16 @@ import javax.xml.XMLConstants;
  */
 public class NamespaceImpl extends AttributeImpl implements Namespace{
 
-    @SuppressWarnings("this-escape")
     public NamespaceImpl( ) {
         init();
     }
 
     /** Creates a new instance of NamespaceImpl */
-    @SuppressWarnings("this-escape")
     public NamespaceImpl(String namespaceURI) {
         super(XMLConstants.XMLNS_ATTRIBUTE,XMLConstants.XMLNS_ATTRIBUTE_NS_URI,XMLConstants.DEFAULT_NS_PREFIX,namespaceURI,null);
         init();
     }
 
-    @SuppressWarnings("this-escape")
     public NamespaceImpl(String prefix, String namespaceURI){
         super(XMLConstants.XMLNS_ATTRIBUTE,XMLConstants.XMLNS_ATTRIBUTE_NS_URI,prefix,namespaceURI,null);
         init();

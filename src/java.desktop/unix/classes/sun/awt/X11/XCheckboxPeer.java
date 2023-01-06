@@ -69,7 +69,6 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     String label;
     CheckboxGroup checkBoxGroup;
 
-    @SuppressWarnings("this-escape")
     XCheckboxPeer(Checkbox target) {
         super(target);
         pressed = false;

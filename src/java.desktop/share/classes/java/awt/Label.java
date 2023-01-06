@@ -151,7 +151,6 @@ public class Label extends Component implements Accessible {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("this-escape")
     public Label(String text, int alignment) throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
         this.text = text;

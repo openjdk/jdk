@@ -116,7 +116,6 @@ class _AppEventHandler {
 
     QuitStrategy defaultQuitAction = QuitStrategy.NORMAL_EXIT;
 
-    @SuppressWarnings("this-escape")
     _AppEventHandler() {
         final String strategyProp = System.getProperty("apple.eawt.quitStrategy");
         if (strategyProp == null) return;

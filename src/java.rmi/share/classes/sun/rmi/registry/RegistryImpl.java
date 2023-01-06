@@ -157,7 +157,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * Construct a new RegistryImpl on the specified port with the
      * given custom socket factory pair and ObjectInputFilter.
      */
-    @SuppressWarnings({ "removal", "this-escape" })
+    @SuppressWarnings("removal")
     public RegistryImpl(int port,
                         RMIClientSocketFactory csf,
                         RMIServerSocketFactory ssf,
@@ -186,7 +186,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     /**
      * Construct a new RegistryImpl on the specified port.
      */
-    @SuppressWarnings({ "removal", "this-escape" })
+    @SuppressWarnings("removal")
     public RegistryImpl(int port)
         throws RemoteException
     {

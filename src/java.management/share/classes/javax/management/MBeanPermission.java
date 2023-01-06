@@ -399,7 +399,6 @@ public class MBeanPermission extends Permission {
      * @exception IllegalArgumentException if the <code>name</code> or
      * <code>actions</code> is invalid.
      */
-    @SuppressWarnings("this-escape")
     public MBeanPermission(String name, String actions) {
         super(name);
 

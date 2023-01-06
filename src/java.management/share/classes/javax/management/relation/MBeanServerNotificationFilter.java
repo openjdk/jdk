@@ -156,7 +156,6 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
      * Creates a filter selecting all MBeanServerNotification notifications for
      * all ObjectNames.
      */
-    @SuppressWarnings("this-escape")
     public MBeanServerNotificationFilter() {
 
         super();

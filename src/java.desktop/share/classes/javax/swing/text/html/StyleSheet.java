@@ -2698,7 +2698,6 @@ public class StyleSheet extends StyleContext {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     class ViewAttributeSet extends MuxingAttributeSet {
-        @SuppressWarnings("this-escape")
         ViewAttributeSet(View v) {
             host = v;
 

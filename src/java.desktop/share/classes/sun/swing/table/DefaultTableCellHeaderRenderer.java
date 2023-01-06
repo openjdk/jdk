@@ -46,7 +46,6 @@ public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
     private Icon sortArrow;
     private EmptyIcon emptyIcon = new EmptyIcon();
 
-    @SuppressWarnings("this-escape")
     public DefaultTableCellHeaderRenderer() {
         setHorizontalAlignment(JLabel.CENTER);
     }

@@ -181,7 +181,6 @@ public class HtmlConfiguration extends BaseConfiguration {
      * @param locale   the locale for the generated documentation
      * @param reporter the reporter to use for console messages
      */
-    @SuppressWarnings("this-escape")
     public HtmlConfiguration(Doclet doclet, Locale locale, Reporter reporter) {
         super(doclet, locale, reporter);
 

@@ -1352,7 +1352,6 @@ public class List extends Component implements ItemSelectable, Accessible {
         /**
          * Constructs new {@code AccessibleAWTList}
          */
-        @SuppressWarnings("this-escape")
         public AccessibleAWTList() {
             super();
             List.this.addActionListener(this);
@@ -1569,7 +1568,6 @@ public class List extends Component implements ItemSelectable, Accessible {
              * @param  parent the parent {@code List}
              * @param  indexInParent the index in the parent
              */
-            @SuppressWarnings("this-escape")
             public AccessibleAWTListChild(List parent, int indexInParent)  {
                 this.parent = parent;
                 this.setAccessibleParent(parent);

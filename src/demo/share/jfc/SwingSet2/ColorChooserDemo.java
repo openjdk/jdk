@@ -73,7 +73,6 @@ public class ColorChooserDemo extends DemoModule {
     /**
      * ColorChooserDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public ColorChooserDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.

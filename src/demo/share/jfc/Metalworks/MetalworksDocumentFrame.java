@@ -69,7 +69,6 @@ public class MetalworksDocumentFrame extends JInternalFrame {
     static int openFrameCount = 0;
     static final int offset = 30;
 
-    @SuppressWarnings("this-escape")
     public MetalworksDocumentFrame() {
         super("", true, true, true, true);
         openFrameCount++;

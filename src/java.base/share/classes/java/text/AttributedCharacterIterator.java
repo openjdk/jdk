@@ -104,7 +104,6 @@ public interface AttributedCharacterIterator extends CharacterIterator {
          *
          * @param name the name of {@code Attribute}
          */
-        @SuppressWarnings("this-escape")
         protected Attribute(String name) {
             this.name = name;
             if (this.getClass() == Attribute.class) {

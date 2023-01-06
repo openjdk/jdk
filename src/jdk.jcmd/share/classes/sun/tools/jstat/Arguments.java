@@ -141,7 +141,6 @@ public class Arguments {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public Arguments(String[] args) throws IllegalArgumentException {
         int argc = 0;
 

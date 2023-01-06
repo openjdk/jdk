@@ -38,7 +38,6 @@ public abstract class Algorithm extends SignatureElementProxy {
      * @param doc
      * @param algorithmURI is the URI of the algorithm as String
      */
-    @SuppressWarnings("this-escape")
     public Algorithm(Document doc, String algorithmURI) {
         super(doc);
         this.setAlgorithmURI(algorithmURI);

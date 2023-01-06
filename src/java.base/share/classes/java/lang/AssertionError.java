@@ -71,7 +71,6 @@ public class AssertionError extends Error {
      * @param detailMessage value to be used in constructing detail message
      * @see   Throwable#getCause()
      */
-    @SuppressWarnings("this-escape")
     public AssertionError(Object detailMessage) {
         this(String.valueOf(detailMessage));
         if (detailMessage instanceof Throwable)

@@ -222,7 +222,6 @@ public final class SheetDialog {
 
 
     static class SheetOptionPane extends JOptionPane {
-        @SuppressWarnings("this-escape")
         SheetOptionPane(Object message, int messageType, int optionType,
                         Icon icon, Object[] options, Object initialValue) {
             super(message, messageType, optionType, icon, options, initialValue);

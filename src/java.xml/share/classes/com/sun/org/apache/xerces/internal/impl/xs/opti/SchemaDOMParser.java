@@ -78,7 +78,6 @@ public class SchemaDOMParser extends DefaultXMLDocumentHandler {
     //
 
     /** Default constructor. */
-    @SuppressWarnings("this-escape")
     public SchemaDOMParser(XMLParserConfiguration config) {
         this.config = config;
         config.setDocumentHandler(this);

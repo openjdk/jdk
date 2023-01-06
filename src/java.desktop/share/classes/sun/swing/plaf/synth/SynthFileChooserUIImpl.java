@@ -738,7 +738,6 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         JFileChooser chooser = getFileChooser();
         FileSystemView fsv = chooser.getFileSystemView();
 
-        @SuppressWarnings("this-escape")
         public DirectoryComboBoxModel() {
             // Add the current directory to the model, and make it the
             // selectedDirectory

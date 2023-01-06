@@ -56,7 +56,6 @@ import jdk.internal.net.http.common.Utils;
  */
 class Http1AsyncReceiver {
 
-    @SuppressWarnings("this-escape")
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     /**
@@ -167,7 +166,6 @@ class Http1AsyncReceiver {
 
     private final ConcurrentLinkedDeque<ByteBuffer> queue
             = new ConcurrentLinkedDeque<>();
-    @SuppressWarnings("this-escape")
     private final SequentialScheduler scheduler =
             SequentialScheduler.lockingScheduler(this::flush);
     final MinimalFuture<Void> whenFinished;

@@ -159,7 +159,6 @@ public class XMLDecoder implements AutoCloseable {
      *
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     private XMLDecoder(InputSource is, Object owner, ExceptionListener el, ClassLoader cl) {
         this.input = is;
         this.owner = owner;

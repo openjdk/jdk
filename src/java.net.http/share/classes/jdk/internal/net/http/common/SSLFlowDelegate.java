@@ -133,7 +133,6 @@ public class SSLFlowDelegate {
      * Flow.Subscriber requires an associated {@link CompletableFuture}
      * for errors that need to be signaled from downstream to upstream.
      */
-    @SuppressWarnings("this-escape")
     public SSLFlowDelegate(SSLEngine engine,
             Executor exec,
             Consumer<ByteBuffer> recycler,
@@ -607,7 +606,6 @@ public class SSLFlowDelegate {
             }
         }
 
-        @SuppressWarnings("this-escape")
         Monitor() {
             super("Monitor");
             setDaemon(true);

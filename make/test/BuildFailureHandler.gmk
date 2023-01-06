@@ -51,7 +51,7 @@ $(eval $(call SetupJavaCompilation, BUILD_FAILURE_HANDLER, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(FH_BASEDIR)/src/share/classes $(FH_BASEDIR)/src/share/conf, \
     BIN := $(FH_SUPPORT)/classes, \
-    DISABLED_WARNINGS := options serial try, \
+    DISABLED_WARNINGS := options serial try this-escape, \
     COPY := .properties, \
     CLASSPATH := $(JTREG_JAR) $(TOOLS_JAR), \
     JAR := $(FH_JAR), \

@@ -49,7 +49,6 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
 
     XMSelection settings;
 
-    @SuppressWarnings("this-escape")
     public XAWTXSettings() {
         initXSettings();
 

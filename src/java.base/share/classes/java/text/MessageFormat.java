@@ -366,7 +366,6 @@ public class MessageFormat extends Format {
      * @throws    NullPointerException if {@code pattern} is
      *            {@code null}
      */
-    @SuppressWarnings("this-escape")
     public MessageFormat(String pattern) {
         this.locale = Locale.getDefault(Locale.Category.FORMAT);
         applyPattern(pattern);
@@ -387,7 +386,6 @@ public class MessageFormat extends Format {
      *            {@code null}
      * @since 1.4
      */
-    @SuppressWarnings("this-escape")
     public MessageFormat(String pattern, Locale locale) {
         this.locale = locale;
         applyPattern(pattern);

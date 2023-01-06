@@ -119,7 +119,6 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
          * @param y2 the Y coordinate of the end point
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Float(float x1, float y1,
                      float ctrlx, float ctrly,
                      float x2, float y2)
@@ -321,7 +320,6 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
          * @param y2 the Y coordinate of the end point
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Double(double x1, double y1,
                       double ctrlx, double ctrly,
                       double x2, double y2)

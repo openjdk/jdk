@@ -50,7 +50,6 @@ class TypeEnvs {
     }
 
     private HashMap<TypeSymbol,Env<AttrContext>> map;
-    @SuppressWarnings("this-escape")
     protected TypeEnvs(Context context) {
         map = new HashMap<>();
         context.put(typeEnvsKey, this);

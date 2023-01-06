@@ -55,7 +55,6 @@ import java.net.URL;
  * @see Parser
  * @author Arthur van Hoff
  */
-@SuppressWarnings("this-escape")
 public
 class DTD implements DTDConstants {
 

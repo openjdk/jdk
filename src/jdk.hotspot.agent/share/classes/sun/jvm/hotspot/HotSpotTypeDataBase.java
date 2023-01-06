@@ -78,7 +78,6 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
       VMStructs table in the remote VM; this may indicate that the
       remote process is not actually a HotSpot VM. </P>
   */
-  @SuppressWarnings("this-escape")
   public HotSpotTypeDataBase(MachineDescription machDesc,
                              VtblAccess vtblAccess,
                              Debugger symbolLookup,

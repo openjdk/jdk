@@ -87,7 +87,6 @@ public class NodeSet
    *
    * @param nodelist List of Nodes to be made members of the new set.
    */
-  @SuppressWarnings("this-escape")
   public NodeSet(NodeList nodelist)
   {
 
@@ -102,7 +101,6 @@ public class NodeSet
    *
    * @param nodelist Set of Nodes to be made members of the new set.
    */
-  @SuppressWarnings("this-escape")
   public NodeSet(NodeSet nodelist)
   {
 
@@ -117,7 +115,6 @@ public class NodeSet
    *
    * @param ni Iterator which yields Nodes to be made members of the new set.
    */
-  @SuppressWarnings("this-escape")
   public NodeSet(NodeIterator ni)
   {
 
@@ -131,7 +128,6 @@ public class NodeSet
    *
    * @param node Single node to be added to the new set.
    */
-  @SuppressWarnings("this-escape")
   public NodeSet(Node node)
   {
 

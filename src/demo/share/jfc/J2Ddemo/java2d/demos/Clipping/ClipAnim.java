@@ -69,7 +69,6 @@ public class ClipAnim extends AnimatingControlsSurface {
     private int strX, strY;
     private int dukeX, dukeY, dukeWidth, dukeHeight;
 
-    @SuppressWarnings("this-escape")
     public ClipAnim() {
         cimg = getImage("clouds.jpg");
         dimg = getImage("duke.png");

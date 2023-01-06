@@ -391,7 +391,7 @@ public final class TransformAnim extends AnimatingControlsSurface {
         JToolBar toolbar;
         ButtonBorder buttonBorder = new ButtonBorder();
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(TransformAnim demo) {
             super(demo.name);
             this.demo = demo;

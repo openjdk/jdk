@@ -53,7 +53,6 @@ public class FindInHeapPanel extends JPanel {
 
   static final double minUpdateFraction = 0.05;
 
-  @SuppressWarnings("this-escape")
   public FindInHeapPanel() {
     super();
 

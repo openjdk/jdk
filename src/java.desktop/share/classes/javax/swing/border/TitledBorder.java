@@ -234,7 +234,6 @@ public class TitledBorder extends AbstractBorder
      * @param titleColor the color of the title
      */
     @ConstructorProperties({"border", "title", "titleJustification", "titlePosition", "titleFont", "titleColor"})
-    @SuppressWarnings("this-escape")
     public TitledBorder(Border border,
                         String title,
                         int titleJustification,

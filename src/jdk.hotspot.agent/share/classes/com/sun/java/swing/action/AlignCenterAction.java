@@ -38,7 +38,6 @@ public class AlignCenterAction extends StateChangeAction
         this("text/AlignCenter16.gif");
     }
 
-    @SuppressWarnings("this-escape")
     public AlignCenterAction(String iconPath)
     {
         super("Center", ActionManager.getIcon(iconPath));

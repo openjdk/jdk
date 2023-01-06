@@ -671,7 +671,6 @@ public class Dialog extends Window {
      *
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public Dialog(Window owner, String title, ModalityType modalityType) {
         super(owner);
 
@@ -723,7 +722,6 @@ public class Dialog extends Window {
      *
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public Dialog(Window owner, String title, ModalityType modalityType,
                   GraphicsConfiguration gc) {
         super(owner, gc);

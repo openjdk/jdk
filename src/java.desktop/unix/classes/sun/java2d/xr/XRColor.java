@@ -53,7 +53,6 @@ public class XRColor {
         this.blue = blue;
     }
 
-    @SuppressWarnings("this-escape")
     public XRColor(Color color) {
         setColorValues(color);
     }

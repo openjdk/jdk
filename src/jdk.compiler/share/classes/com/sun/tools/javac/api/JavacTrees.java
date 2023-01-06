@@ -198,7 +198,6 @@ public class JavacTrees extends DocTrees {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected JavacTrees(Context context) {
         this.breakIterator = null;
         context.put(JavacTrees.class, this);

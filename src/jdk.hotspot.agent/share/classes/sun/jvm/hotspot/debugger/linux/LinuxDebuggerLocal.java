@@ -148,7 +148,6 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
        WorkerThreadTask task;
        DebuggerException lastException;
 
-       @SuppressWarnings("this-escape")
        public LinuxDebuggerLocalWorkerThread(LinuxDebuggerLocal debugger) {
          this.debugger = debugger;
          setDaemon(true);
@@ -204,7 +203,6 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     <P> useCache should be set to true if debugging is being done
     locally, and to false if the debugger is being created for the
     purpose of supporting remote debugging. </P> */
-    @SuppressWarnings("this-escape")
     public LinuxDebuggerLocal(MachineDescription machDesc,
                               boolean useCache) throws DebuggerException {
         this.machDesc = machDesc;

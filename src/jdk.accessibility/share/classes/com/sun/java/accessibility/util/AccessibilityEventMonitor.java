@@ -120,7 +120,6 @@ public class AccessibilityEventMonitor {
          * @see EventQueueMonitor
          * @see AccessibilityEventMonitor
          */
-        @SuppressWarnings("this-escape")
         public AccessibilityEventListener() {
             EventQueueMonitor.addTopLevelWindowListener(this);
         }

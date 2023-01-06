@@ -97,7 +97,6 @@ public class Gen extends JCTree.Visitor {
      */
     final PoolWriter poolWriter;
 
-    @SuppressWarnings("this-escape")
     protected Gen(Context context) {
         context.put(genKey, this);
 

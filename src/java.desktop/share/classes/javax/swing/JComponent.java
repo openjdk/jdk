@@ -646,7 +646,6 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @see #getDefaultLocale
      */
-    @SuppressWarnings("this-escape")
     public JComponent() {
         super();
         // We enable key events on all JComponents so that accessibility

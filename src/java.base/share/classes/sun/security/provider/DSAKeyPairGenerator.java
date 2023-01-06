@@ -60,7 +60,6 @@ class DSAKeyPairGenerator extends KeyPairGenerator {
     /* The source of random bits to use */
     private SecureRandom random;
 
-    @SuppressWarnings("this-escape")
     DSAKeyPairGenerator(int defaultKeySize) {
         super("DSA");
         initialize(defaultKeySize, null);

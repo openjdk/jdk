@@ -125,7 +125,6 @@ public class PipedInputStream extends InputStream {
      * @throws     IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
-    @SuppressWarnings("this-escape")
     public PipedInputStream(PipedOutputStream src, int pipeSize)
             throws IOException {
          initPipe(pipeSize);

@@ -69,7 +69,6 @@ class UnixAsynchronousServerSocketChannelImpl
     private AccessControlContext acceptAcc;
 
 
-    @SuppressWarnings("this-escape")
     UnixAsynchronousServerSocketChannelImpl(Port port)
         throws IOException
     {

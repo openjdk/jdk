@@ -353,7 +353,6 @@ public class XMLDocumentFragmentScannerImpl
     protected Driver fDriver;
 
     /** Content driver. */
-    @SuppressWarnings("this-escape")
     protected Driver fContentDriver = createContentDriver();
 
     // temporary variables

@@ -98,13 +98,11 @@ public class AnnotatedMemoryPanel extends JPanel {
     this(debugger, false);
   }
 
-  @SuppressWarnings("this-escape")
   public AnnotatedMemoryPanel(Debugger debugger, boolean is64Bit, Address addrValue, Address addrLow, Address addrHigh) {
     super();
     init(debugger, is64Bit, addressToBigInt(addrValue), addressToBigInt(addrLow), addressToBigInt(addrHigh));
   }
 
-  @SuppressWarnings("this-escape")
   public AnnotatedMemoryPanel(Debugger debugger, boolean is64Bit ) {
     super();
     init(debugger, is64Bit, defaultMemoryLocation(is64Bit), defaultMemoryLow(is64Bit), defaultMemoryHigh(is64Bit));

@@ -216,7 +216,6 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         D3DMaskBlit.register();
     }
 
-    @SuppressWarnings("this-escape")
     protected D3DSurfaceData(WComponentPeer peer, D3DGraphicsConfig gc,
                              int width, int height, Image image,
                              ColorModel cm, int numBackBuffers,
@@ -924,7 +923,6 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     public static class D3DWindowSurfaceData extends D3DSurfaceData {
         StateTracker dirtyTracker;
 
-        @SuppressWarnings("this-escape")
         public D3DWindowSurfaceData(WComponentPeer peer,
                                     D3DGraphicsConfig gc)
         {

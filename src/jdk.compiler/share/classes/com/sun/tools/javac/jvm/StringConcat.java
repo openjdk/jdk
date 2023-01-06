@@ -105,7 +105,6 @@ public abstract class StringConcat {
         }
     }
 
-    @SuppressWarnings("this-escape")
     protected StringConcat(Context context) {
         context.put(concatKey, this);
         gen = Gen.instance(context);

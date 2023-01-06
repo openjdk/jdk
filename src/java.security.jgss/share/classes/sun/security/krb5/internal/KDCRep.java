@@ -96,13 +96,11 @@ public class KDCRep {
     public KDCRep() {
     }
 
-    @SuppressWarnings("this-escape")
     public KDCRep(byte[] data, int req_type) throws Asn1Exception,
             KrbApErrException, RealmException, IOException {
         init(new DerValue(data), req_type);
     }
 
-    @SuppressWarnings("this-escape")
     public KDCRep(DerValue encoding, int req_type) throws Asn1Exception,
             RealmException, KrbApErrException, IOException {
         init(encoding, req_type);

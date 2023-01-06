@@ -58,7 +58,6 @@ public class SchemaDOM extends DefaultDocument {
     // for annotation support:
     private StringBuffer fAnnotationBuffer = null;
 
-    @SuppressWarnings("this-escape")
     public SchemaDOM() {
         reset();
     }

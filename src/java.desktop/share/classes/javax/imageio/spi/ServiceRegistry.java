@@ -107,7 +107,6 @@ public class ServiceRegistry {
      * {@code categories} is {@code null}, or if
      * one of the categories is not an allowed service type.
      */
-    @SuppressWarnings("this-escape")
     public ServiceRegistry(Iterator<Class<?>> categories) {
         if (categories == null) {
             throw new IllegalArgumentException("categories == null!");

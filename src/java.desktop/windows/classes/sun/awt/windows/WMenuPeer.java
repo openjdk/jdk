@@ -40,7 +40,6 @@ class WMenuPeer extends WMenuItemPeer implements MenuPeer {
 
     WMenuPeer() {}   // used by subclasses.
 
-    @SuppressWarnings("this-escape")
     WMenuPeer(Menu target) {
         this.target = target;
         MenuContainer parent = target.getParent();

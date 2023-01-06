@@ -112,7 +112,6 @@ public class SQLClientInfoException extends SQLException {
      *
      * @since 1.6
      */
-        @SuppressWarnings("this-escape")
         public SQLClientInfoException(Map<String, ClientInfoStatus> failedProperties,
                                                            Throwable cause) {
 
@@ -167,7 +166,6 @@ public class SQLClientInfoException extends SQLException {
      *
      * @since 1.6
      */
-        @SuppressWarnings("this-escape")
         public SQLClientInfoException(String reason,
                                                            Map<String, ClientInfoStatus> failedProperties,
                                                            Throwable cause) {
@@ -223,7 +221,6 @@ public class SQLClientInfoException extends SQLException {
      *
      * @since 1.6
      */
-        @SuppressWarnings("this-escape")
         public SQLClientInfoException(String reason,
                                                            String SQLState,
                                                            Map<String, ClientInfoStatus> failedProperties,
@@ -283,7 +280,6 @@ public class SQLClientInfoException extends SQLException {
      *
      * @since 1.6
      */
-        @SuppressWarnings("this-escape")
         public SQLClientInfoException(String reason,
                                                            String SQLState,
                                                            int vendorCode,

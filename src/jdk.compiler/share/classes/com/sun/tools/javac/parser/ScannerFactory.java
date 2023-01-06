@@ -63,7 +63,6 @@ public class ScannerFactory {
     final Lint lint;
 
     /** Create a new scanner factory. */
-    @SuppressWarnings("this-escape")
     protected ScannerFactory(Context context) {
         context.put(scannerFactoryKey, this);
         this.log = Log.instance(context);

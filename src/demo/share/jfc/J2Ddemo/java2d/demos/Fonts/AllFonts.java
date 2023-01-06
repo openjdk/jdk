@@ -80,7 +80,6 @@ public class AllFonts extends AnimatingControlsSurface {
     protected int fsize = 14;
     protected List<Font> v = new ArrayList<Font>();
 
-    @SuppressWarnings("this-escape")
     public AllFonts() {
         setBackground(WHITE);
         setSleepAmount(500);
@@ -140,7 +139,7 @@ public class AllFonts extends AnimatingControlsSurface {
         JMenuItem[] menuitem = new JMenuItem[fsize.length];
         Font[] font = new Font[fsize.length];
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(AllFonts demo) {
             this.demo = demo;
             setBackground(GRAY);

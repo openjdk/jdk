@@ -34,7 +34,6 @@ import jdk.internal.misc.Unsafe;
  *
  * All non-static, public fields in this class are so that they can be compiled as constants.
  */
-@SuppressWarnings("this-escape")
 class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     /**

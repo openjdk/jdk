@@ -44,7 +44,6 @@ public abstract class AbstractTerminal implements Terminal {
     protected final Set<Capability> bools = new HashSet<>();
     protected final Map<Capability, Integer> ints = new HashMap<>();
     protected final Map<Capability, String> strings = new HashMap<>();
-    @SuppressWarnings("this-escape")
     protected final ColorPalette palette = new ColorPalette(this);
     protected Status status;
     protected Runnable onClose;

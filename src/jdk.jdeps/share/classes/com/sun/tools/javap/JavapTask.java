@@ -345,7 +345,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     };
 
-    @SuppressWarnings("this-escape")
     public JavapTask() {
         context = new Context();
         context.put(Messages.class, this);
@@ -362,7 +361,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         this.diagnosticListener = diagnosticListener;
     }
 
-    @SuppressWarnings("this-escape")
     public JavapTask(Writer out,
             JavaFileManager fileManager,
             DiagnosticListener<? super JavaFileObject> diagnosticListener,

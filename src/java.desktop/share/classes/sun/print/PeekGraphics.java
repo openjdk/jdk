@@ -1872,7 +1872,6 @@ public class PeekGraphics extends Graphics2D
         private int mHeight;
         private boolean badImage = false;
 
-        @SuppressWarnings("this-escape")
         ImageWaiter(Image img) {
             waitForDimensions(img);
         }

@@ -58,7 +58,6 @@ public abstract class SubscriberWrapper
     implements FlowTube.TubeSubscriber, Closeable, Flow.Processor<List<ByteBuffer>,List<ByteBuffer>>
                 // TODO: SSLTube Subscriber will never change? Does this really need to be a TS?
 {
-    @SuppressWarnings("this-escape")
     final Logger debug =
             Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
@@ -88,7 +87,6 @@ public abstract class SubscriberWrapper
      * completion can be signaled at any time, but normal completion must not be
      * signaled before onComplete() is called.
      */
-    @SuppressWarnings("this-escape")
     public SubscriberWrapper()
     {
         this.outputQ = new ConcurrentLinkedQueue<>();

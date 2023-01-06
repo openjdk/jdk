@@ -73,7 +73,6 @@ public class SignatureDSA extends SignatureAlgorithmSpi {
         this(null);
     }
 
-    @SuppressWarnings("this-escape")
     public SignatureDSA(Provider provider) throws XMLSignatureException {
         String algorithmID = JCEMapper.translateURItoJCEID(engineGetURI());
         LOG.debug("Created SignatureDSA using {}", algorithmID);

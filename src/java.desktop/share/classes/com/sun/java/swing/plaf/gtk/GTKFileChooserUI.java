@@ -1021,7 +1021,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class GTKDirectoryListModel extends AbstractListModel<File> implements ListDataListener {
         File curDir;
-        @SuppressWarnings("this-escape")
         public GTKDirectoryListModel() {
             getModel().addListDataListener(this);
             directoryChanged();
@@ -1066,7 +1065,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class GTKFileListModel extends AbstractListModel<File> implements ListDataListener {
-        @SuppressWarnings("this-escape")
         public GTKFileListModel() {
             getModel().addListDataListener(this);
         }
@@ -1197,7 +1195,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         JFileChooser chooser = getFileChooser();
         FileSystemView fsv = chooser.getFileSystemView();
 
-        @SuppressWarnings("this-escape")
         public DirectoryComboBoxModel() {
             // Add the current directory to the model, and make it the
             // selectedDirectory

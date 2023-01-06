@@ -38,7 +38,6 @@ public class HelpAction extends DelegateAction
         this("general/Help16.gif");
     }
 
-    @SuppressWarnings("this-escape")
     public HelpAction(String iconPath)
     {
         super("Help", ActionManager.getIcon(iconPath));

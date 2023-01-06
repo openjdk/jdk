@@ -104,7 +104,6 @@ public class Infer {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Infer(Context context) {
         context.put(inferKey, this);
 
@@ -1848,7 +1847,6 @@ public class Infer {
             /** the nodes in the inference graph */
             ArrayList<Node> nodes;
 
-            @SuppressWarnings("this-escape")
             InferenceGraph() {
                 initNodes();
             }

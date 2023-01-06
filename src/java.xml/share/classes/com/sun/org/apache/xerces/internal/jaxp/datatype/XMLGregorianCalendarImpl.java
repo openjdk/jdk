@@ -376,7 +376,6 @@ public class XMLGregorianCalendarImpl
      * @throws NullPointerException
      *      If the given string is null.
      */
-    @SuppressWarnings("this-escape")
     protected XMLGregorianCalendarImpl(String lexicalRepresentation)
             throws IllegalArgumentException {
 
@@ -505,7 +504,6 @@ public class XMLGregorianCalendarImpl
      * @param timezone of <code>XMLGregorianCalendar</code> to be created.
      *
      */
-    @SuppressWarnings("this-escape")
     protected XMLGregorianCalendarImpl(
         BigInteger year,
         int month,
@@ -646,7 +644,6 @@ public class XMLGregorianCalendarImpl
          *
          * @param cal <code>java.util.GregorianCalendar</code> used to create <code>XMLGregorianCalendar</code>
          */
-    @SuppressWarnings("this-escape")
     public XMLGregorianCalendarImpl(GregorianCalendar cal) {
 
         int year1 = cal.get(Calendar.YEAR);

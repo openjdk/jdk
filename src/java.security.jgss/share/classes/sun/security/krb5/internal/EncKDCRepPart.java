@@ -111,13 +111,11 @@ public class EncKDCRepPart {
     public EncKDCRepPart() {
     }
 
-    @SuppressWarnings("this-escape")
     public EncKDCRepPart(byte[] data, int rep_type)
             throws Asn1Exception, IOException, RealmException {
         init(new DerValue(data), rep_type);
     }
 
-    @SuppressWarnings("this-escape")
     public EncKDCRepPart(DerValue encoding, int rep_type)
             throws Asn1Exception, IOException, RealmException {
         init(encoding, rep_type);

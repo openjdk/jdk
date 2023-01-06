@@ -200,7 +200,6 @@ public class ModelMBeanNotificationInfo
      *    descriptor field "descriptorType" is not equal to "notification".
      *
      **/
-    @SuppressWarnings("this-escape")
     public ModelMBeanNotificationInfo(String[] notifTypes,
                                       String name,
                                       String description,

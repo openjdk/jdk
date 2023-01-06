@@ -120,7 +120,6 @@ public class DeferredCompletionFailureHandler {
 
     private Handler handler = javacCodeHandler;
 
-    @SuppressWarnings("this-escape")
     protected DeferredCompletionFailureHandler(Context context) {
         context.put(deferredCompletionFailureHandlerKey, this);
     }

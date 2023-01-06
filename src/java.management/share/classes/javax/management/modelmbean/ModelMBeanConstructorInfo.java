@@ -150,7 +150,6 @@ public class ModelMBeanConstructorInfo
         /**
          * @serial The {@link Descriptor} containing the metadata for this instance
          */
-        @SuppressWarnings("this-escape")
         private Descriptor consDescriptor = validDescriptor(null);
 
         private static final String currClass = "ModelMBeanConstructorInfo";
@@ -167,7 +166,6 @@ public class ModelMBeanConstructorInfo
         * @param constructorMethod The java.lang.reflect.Constructor object
         * describing the MBean constructor.
         */
-        @SuppressWarnings("this-escape")
         public ModelMBeanConstructorInfo(String description,
                                          Constructor<?> constructorMethod)
     {
@@ -209,7 +207,6 @@ public class ModelMBeanConstructorInfo
         * present but not equal to "constructor".
         */
 
-        @SuppressWarnings("this-escape")
         public ModelMBeanConstructorInfo(String description,
                                          Constructor<?> constructorMethod,
                                          Descriptor descriptor)
@@ -232,7 +229,6 @@ public class ModelMBeanConstructorInfo
         * @param signature MBeanParameterInfo object array describing the parameters(arguments) of the constructor.
         */
 
-        @SuppressWarnings("this-escape")
         public ModelMBeanConstructorInfo(String name,
                                          String description,
                                          MBeanParameterInfo[] signature)
@@ -266,7 +262,6 @@ public class ModelMBeanConstructorInfo
         * present but not equal to "constructor".
         */
 
-        @SuppressWarnings("this-escape")
         public ModelMBeanConstructorInfo(String name,
                                          String description,
                                          MBeanParameterInfo[] signature,
@@ -288,7 +283,6 @@ public class ModelMBeanConstructorInfo
          * @param old the ModelMBeanConstructorInfo to be duplicated
          *
          */
-        @SuppressWarnings("this-escape")
         ModelMBeanConstructorInfo(ModelMBeanConstructorInfo old)
         {
                 super(old.getName(), old.getDescription(), old.getSignature());

@@ -116,7 +116,6 @@ public class Resolve {
 
     WriteableScope polymorphicSignatureScope;
 
-    @SuppressWarnings("this-escape")
     protected Resolve(Context context) {
         context.put(resolveKey, this);
         syms = Symtab.instance(context);

@@ -255,7 +255,6 @@ public class Throwable implements Serializable {
      * the stack trace data in the newly created throwable; see also
      * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      */
-    @SuppressWarnings("this-escape")
     public Throwable() {
         fillInStackTrace();
     }
@@ -272,7 +271,6 @@ public class Throwable implements Serializable {
      * @param   message   the detail message. The detail message is saved for
      *          later retrieval by the {@link #getMessage()} method.
      */
-    @SuppressWarnings("this-escape")
     public Throwable(String message) {
         fillInStackTrace();
         detailMessage = message;
@@ -296,7 +294,6 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
-    @SuppressWarnings("this-escape")
     public Throwable(String message, Throwable cause) {
         fillInStackTrace();
         detailMessage = message;
@@ -321,7 +318,6 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
-    @SuppressWarnings("this-escape")
     public Throwable(Throwable cause) {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
@@ -371,7 +367,6 @@ public class Throwable implements Serializable {
      * @see ArithmeticException
      * @since 1.7
      */
-    @SuppressWarnings("this-escape")
     protected Throwable(String message, Throwable cause,
                         boolean enableSuppression,
                         boolean writableStackTrace) {

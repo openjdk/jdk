@@ -76,7 +76,6 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
      * @throws InvalidAlgorithmParameterException if the parameters are not
      *    appropriate for this signature method
      */
-    @SuppressWarnings("this-escape")
     DOMRSAPSSSignatureMethod(AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
@@ -99,7 +98,6 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
      *
      * @param smElem a SignatureMethod element
      */
-    @SuppressWarnings("this-escape")
     DOMRSAPSSSignatureMethod(Element smElem) throws MarshalException {
         Element paramsElem = DOMUtils.getFirstChildElement(smElem);
         if (paramsElem != null) {

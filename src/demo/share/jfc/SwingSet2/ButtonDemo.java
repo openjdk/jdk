@@ -101,7 +101,6 @@ public class ButtonDemo extends DemoModule implements ChangeListener {
     /**
      * ButtonDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public ButtonDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.

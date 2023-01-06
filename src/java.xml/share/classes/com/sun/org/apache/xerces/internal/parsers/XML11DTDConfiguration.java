@@ -374,7 +374,6 @@ public class XML11DTDConfiguration extends ParserConfigurationSettings
      * @param grammarPool    The grammar pool to use.
      * @param parentSettings The parent settings.
      */
-    @SuppressWarnings("this-escape")
     public XML11DTDConfiguration(
         SymbolTable symbolTable,
         XMLGrammarPool grammarPool,

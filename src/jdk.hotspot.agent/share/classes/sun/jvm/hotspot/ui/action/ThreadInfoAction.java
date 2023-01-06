@@ -42,7 +42,6 @@ public class ThreadInfoAction extends StateChangeAction {
     public static final String VALUE_SHORT_DESCRIPTION = "Show Thread Information";
     public static final String VALUE_LONG_DESCRIPTION = "Show information about the current thread";
 
-    @SuppressWarnings("this-escape")
     public ThreadInfoAction() {
         super(VALUE_NAME, ActionManager.getIcon(VALUE_SMALL_ICON));
 

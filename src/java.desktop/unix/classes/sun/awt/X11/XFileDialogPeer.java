@@ -866,7 +866,7 @@ class Separator extends Canvas {
     public static final int VERTICAL = 1;
     int orientation;
 
-    @SuppressWarnings({ "deprecation", "this-escape" })
+    @SuppressWarnings("deprecation")
     public Separator(int length, int thickness, int orient) {
         super();
         orientation = orient;

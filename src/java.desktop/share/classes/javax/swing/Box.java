@@ -90,7 +90,6 @@ public class Box extends JComponent implements Accessible {
      * @see #createHorizontalBox
      * @see #createVerticalBox
      */
-    @SuppressWarnings("this-escape")
     public Box(int axis) {
         super();
         super.setLayout(new BoxLayout(this, axis));
@@ -313,7 +312,6 @@ public class Box extends JComponent implements Accessible {
          * @param max   Maximum size
          */
         @ConstructorProperties({"minimumSize", "preferredSize", "maximumSize"})
-        @SuppressWarnings("this-escape")
         public Filler(Dimension min, Dimension pref, Dimension max) {
             setMinimumSize(min);
             setPreferredSize(pref);

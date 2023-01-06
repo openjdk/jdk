@@ -76,7 +76,6 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         () -> Boolean.getBoolean("apple.awt.enableTemplateImages")
     );
 
-    @SuppressWarnings("this-escape")
     CTrayIcon(TrayIcon target) {
         super(0, true);
 

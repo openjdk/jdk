@@ -44,7 +44,6 @@ class XAtomList {
      * the contents pointer by {@code data}.
      * Uses default display to initialize atoms.
      */
-    @SuppressWarnings("this-escape")
     public XAtomList(long data, int count) {
         init(data, count);
     }
@@ -58,7 +57,6 @@ class XAtomList {
      * Creates instance of XAtomList and initializes it with
      * the arrays of atoms. Array can contain null atoms.
      */
-    @SuppressWarnings("this-escape")
     public XAtomList(XAtom[] atoms) {
         init(atoms);
     }

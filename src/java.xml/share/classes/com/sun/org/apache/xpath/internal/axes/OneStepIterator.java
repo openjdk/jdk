@@ -74,7 +74,6 @@ public class OneStepIterator extends ChildTestIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
-  @SuppressWarnings("this-escape")
   public OneStepIterator(DTMAxisIterator iterator, int axis)
           throws javax.xml.transform.TransformerException
   {

@@ -33,13 +33,11 @@ class CharArrayIterator implements CharacterIterator {
     private int pos;
     private int begin;
 
-    @SuppressWarnings("this-escape")
     CharArrayIterator(char[] chars) {
 
         reset(chars, 0);
     }
 
-    @SuppressWarnings("this-escape")
     CharArrayIterator(char[] chars, int begin) {
 
         reset(chars, begin);

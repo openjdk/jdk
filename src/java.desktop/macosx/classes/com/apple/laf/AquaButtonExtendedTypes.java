@@ -81,7 +81,6 @@ public class AquaButtonExtendedTypes {
             this(name, widget, variant, 0, 0, 0, 0);
         }
 
-        @SuppressWarnings("this-escape")
         BorderDefinedTypeSpecifier(final String name, final Widget widget, final SizeVariant variant, final int smallW, final int smallH, final int miniW, final int miniH) {
             super(name, false);
             border = initBorder(widget, new SizeDescriptor(variant) {

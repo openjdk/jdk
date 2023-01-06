@@ -61,7 +61,6 @@ class DefaultSwatchChooserPanel extends AbstractColorChooserPanel {
     private KeyListener mainSwatchKeyListener;
     private KeyListener recentSwatchKeyListener;
 
-    @SuppressWarnings("this-escape")
     public DefaultSwatchChooserPanel() {
         super();
         setInheritsPopupMenu(true);
@@ -278,7 +277,6 @@ class SwatchPanel extends JPanel {
     private int selRow;
     private int selCol;
 
-    @SuppressWarnings("this-escape")
     public SwatchPanel() {
         initValues();
         initColors();

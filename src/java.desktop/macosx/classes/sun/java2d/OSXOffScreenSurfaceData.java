@@ -454,7 +454,6 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
     }
 
     // Makes the constructor package private instead of public.
-    @SuppressWarnings("this-escape")
     OSXOffScreenSurfaceData(BufferedImage bufImg, SurfaceType sType) {
         super(sType, bufImg.getColorModel());
         setBounds(0, 0, bufImg.getWidth(), bufImg.getHeight());

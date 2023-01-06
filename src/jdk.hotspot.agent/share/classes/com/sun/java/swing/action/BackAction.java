@@ -38,7 +38,6 @@ public class BackAction extends DelegateAction
         this(VALUE_SMALL_ICON);
     }
 
-    @SuppressWarnings("this-escape")
     public BackAction(String iconPath)
     {
         super("< Back", ActionManager.getIcon(iconPath));

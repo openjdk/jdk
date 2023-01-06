@@ -51,7 +51,6 @@ public class XDHKeyPairGenerator extends KeyPairGeneratorSpi {
     private XECOperations ops = null;
     private XECParameters lockedParams = null;
 
-    @SuppressWarnings("this-escape")
     XDHKeyPairGenerator() {
         tryInitialize(DEFAULT_PARAM_SPEC);
     }

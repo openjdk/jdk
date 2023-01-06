@@ -69,7 +69,6 @@ public class HotSpotSignature implements Signature {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public HotSpotSignature(HotSpotJVMCIRuntime runtime, ResolvedJavaType returnType, ResolvedJavaType... parameterTypes) {
         this.runtime = runtime;
         this.parameterTypes = parameterTypes.clone();

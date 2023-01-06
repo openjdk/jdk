@@ -783,7 +783,6 @@ public class TTY implements EventNotifier {
     }
 
 
-    @SuppressWarnings("this-escape")
     public TTY() throws Exception {
 
         MessageOutput.println("Initializing progname", progname);

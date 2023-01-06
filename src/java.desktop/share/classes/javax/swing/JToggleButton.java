@@ -152,7 +152,6 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * @param a an instance of an {@code Action}
      * @since 1.3
      */
-    @SuppressWarnings("this-escape")
     public JToggleButton(Action a) {
         this();
         setAction(a);
@@ -178,7 +177,6 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * @param selected  if true, the button is initially selected;
      *                  otherwise, the button is initially unselected
      */
-    @SuppressWarnings("this-escape")
     public JToggleButton (String text, Icon icon, boolean selected) {
         // Create the model
         setModel(new ToggleButtonModel());
@@ -496,7 +494,6 @@ public class JToggleButton extends AbstractButton implements Accessible {
         /**
          * Constructs {@code AccessibleJToggleButton}
          */
-        @SuppressWarnings("this-escape")
         public AccessibleJToggleButton() {
             super();
             JToggleButton.this.addItemListener(this);

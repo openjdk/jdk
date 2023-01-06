@@ -91,7 +91,6 @@ class BezierAnimationPanel extends JPanel implements Runnable {
     /**
      * BezierAnimationPanel Constructor
      */
-    @SuppressWarnings("this-escape")
     public BezierAnimationPanel() {
         addHierarchyListener(
             new HierarchyListener() {

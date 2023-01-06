@@ -40,12 +40,10 @@ public class ASReq extends KDCReq {
         super(new_pAData, new_reqBody, Krb5.KRB_AS_REQ);
     }
 
-    @SuppressWarnings("this-escape")
     public ASReq(byte[] data) throws Asn1Exception, KrbException, IOException {
         init(new DerValue(data));
     }
 
-    @SuppressWarnings("this-escape")
     public ASReq(DerValue encoding) throws Asn1Exception, KrbException, IOException {
         init(encoding);
     }

@@ -53,7 +53,6 @@ public class XMLX509SubjectName extends SignatureElementProxy implements XMLX509
      * @param doc
      * @param X509SubjectNameString
      */
-    @SuppressWarnings("this-escape")
     public XMLX509SubjectName(Document doc, String X509SubjectNameString) {
         super(doc);
 

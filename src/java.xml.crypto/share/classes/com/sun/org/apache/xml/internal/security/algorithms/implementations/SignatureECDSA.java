@@ -93,7 +93,6 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
         this(null);
     }
 
-    @SuppressWarnings("this-escape")
     public SignatureECDSA(Provider provider) throws XMLSignatureException {
         String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
         LOG.debug("Created SignatureECDSA using {}", algorithmID);

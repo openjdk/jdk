@@ -638,7 +638,6 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @param value  an array of <code>Object</code>s
      * @see DefaultTreeModel#asksAllowsChildren
      */
-    @SuppressWarnings("this-escape")
     public JTree(Object[] value) {
         this(createTreeModel(value));
         this.setRootVisible(false);
@@ -655,7 +654,6 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @param value  a <code>Vector</code>
      * @see DefaultTreeModel#asksAllowsChildren
      */
-    @SuppressWarnings("this-escape")
     public JTree(Vector<?> value) {
         this(createTreeModel(value));
         this.setRootVisible(false);
@@ -673,7 +671,6 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @param value  a <code>Hashtable</code>
      * @see DefaultTreeModel#asksAllowsChildren
      */
-    @SuppressWarnings("this-escape")
     public JTree(Hashtable<?,?> value) {
         this(createTreeModel(value));
         this.setRootVisible(false);
@@ -717,7 +714,6 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @param newModel  the <code>TreeModel</code> to use as the data model
      */
     @ConstructorProperties({"model"})
-    @SuppressWarnings("this-escape")
     public JTree(TreeModel newModel) {
         super();
         expandedStack = new Stack<Stack<TreePath>>();
@@ -4102,7 +4098,6 @@ public class JTree extends JComponent implements Scrollable, Accessible
          *              <code>null</code>,
          *              then the node is not allowed to have children
          */
-        @SuppressWarnings("this-escape")
         public DynamicUtilTreeNode(Object value, Object children) {
             super(value);
             loadedChildren = false;
@@ -4279,7 +4274,6 @@ public class JTree extends JComponent implements Scrollable, Accessible
         /**
          * Constructs {@code AccessibleJTree}
          */
-        @SuppressWarnings("this-escape")
         public AccessibleJTree() {
             // Add a tree model listener for JTree
             TreeModel model = JTree.this.getModel();

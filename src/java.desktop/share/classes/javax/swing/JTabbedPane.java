@@ -221,7 +221,6 @@ public class JTabbedPane extends JComponent
      * @see #addTab
      * @since 1.4
      */
-    @SuppressWarnings("this-escape")
     public JTabbedPane(int tabPlacement, int tabLayoutPolicy) {
         setTabPlacement(tabPlacement);
         setTabLayoutPolicy(tabLayoutPolicy);
@@ -1973,7 +1972,6 @@ public class JTabbedPane extends JComponent
         /**
          *  Constructs an AccessibleJTabbedPane
          */
-        @SuppressWarnings("this-escape")
         public AccessibleJTabbedPane() {
             super();
             JTabbedPane.this.model.addChangeListener(this);

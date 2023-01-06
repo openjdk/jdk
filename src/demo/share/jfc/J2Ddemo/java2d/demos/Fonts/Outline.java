@@ -57,7 +57,6 @@ import java2d.Surface;
 @SuppressWarnings("serial")
 public class Outline extends Surface {
 
-    @SuppressWarnings("this-escape")
     public Outline() {
         setBackground(WHITE);
     }

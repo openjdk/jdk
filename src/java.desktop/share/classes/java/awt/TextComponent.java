@@ -146,7 +146,6 @@ public sealed class TextComponent extends Component implements Accessible
      * @see        java.awt.GraphicsEnvironment#isHeadless
      * @see        java.awt.Cursor
      */
-    @SuppressWarnings("this-escape")
     TextComponent(String text) throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
         this.text = (text != null) ? text : "";
@@ -890,7 +889,6 @@ public sealed class TextComponent extends Component implements Accessible
          * Constructs an AccessibleAWTTextComponent.  Adds a listener to track
          * caret change.
          */
-        @SuppressWarnings("this-escape")
         public AccessibleAWTTextComponent() {
             TextComponent.this.addTextListener(this);
         }

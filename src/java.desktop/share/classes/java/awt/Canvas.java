@@ -72,7 +72,6 @@ public class Canvas extends Component implements Accessible {
      * @see GraphicsConfiguration
      * @see Component#getGraphicsConfiguration()
      */
-    @SuppressWarnings("this-escape")
     public Canvas(GraphicsConfiguration config) {
         this();
         setGraphicsConfiguration(config);

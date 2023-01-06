@@ -68,7 +68,6 @@ public class SQLException extends java.lang.Exception
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      * @param vendorCode a database vendor-specific exception code
      */
-    @SuppressWarnings("this-escape")
     public SQLException(String reason, String SQLState, int vendorCode) {
         super(reason);
         this.SQLState = SQLState;
@@ -95,7 +94,6 @@ public class SQLException extends java.lang.Exception
      * @param reason a description of the exception
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      */
-    @SuppressWarnings("this-escape")
     public SQLException(String reason, String SQLState) {
         super(reason);
         this.SQLState = SQLState;
@@ -119,7 +117,6 @@ public class SQLException extends java.lang.Exception
      *
      * @param reason a description of the exception
      */
-    @SuppressWarnings("this-escape")
     public SQLException(String reason) {
         super(reason);
         this.SQLState = null;
@@ -141,7 +138,6 @@ public class SQLException extends java.lang.Exception
      * {@link Throwable#initCause(java.lang.Throwable)} method.
      *
      */
-    @SuppressWarnings("this-escape")
     public SQLException() {
         super();
         this.SQLState = null;
@@ -167,7 +163,6 @@ public class SQLException extends java.lang.Exception
      * may be null indicating the cause is non-existent or unknown.
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public SQLException(Throwable cause) {
         super(cause);
 
@@ -190,7 +185,6 @@ public class SQLException extends java.lang.Exception
      * may be null indicating the cause is non-existent or unknown.
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public SQLException(String reason, Throwable cause) {
         super(reason,cause);
 
@@ -214,7 +208,6 @@ public class SQLException extends java.lang.Exception
      *     the cause is non-existent or unknown.
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public SQLException(String reason, String sqlState, Throwable cause) {
         super(reason,cause);
 
@@ -241,7 +234,6 @@ public class SQLException extends java.lang.Exception
      * may be null indicating the cause is non-existent or unknown.
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public SQLException(String reason, String sqlState, int vendorCode, Throwable cause) {
         super(reason,cause);
 

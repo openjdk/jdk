@@ -67,7 +67,6 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected TypeAnnotationWriter(Context context) {
         super(context);
         context.put(TypeAnnotationWriter.class, this);

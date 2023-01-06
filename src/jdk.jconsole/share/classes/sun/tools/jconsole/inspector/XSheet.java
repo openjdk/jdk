@@ -82,7 +82,6 @@ public class XSheet extends JPanel
     // Reference to MBeans tab
     private MBeansTab mbeansTab;
 
-    @SuppressWarnings("this-escape")
     public XSheet(MBeansTab mbeansTab) {
         this.mbeansTab = mbeansTab;
         setupScreen();

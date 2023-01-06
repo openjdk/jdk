@@ -129,7 +129,6 @@ public abstract class AbstractWriter {
      *   content.
      * @param len The amount to write out.
      */
-    @SuppressWarnings("this-escape")
     protected AbstractWriter(Writer w, Document doc, int pos, int len) {
         this.doc = doc;
         it = new ElementIterator(doc.getDefaultRootElement());

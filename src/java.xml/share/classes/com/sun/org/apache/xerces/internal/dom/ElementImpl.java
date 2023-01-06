@@ -81,7 +81,6 @@ public class ElementImpl
     //
 
     /** Factory constructor. */
-    @SuppressWarnings("this-escape")
     public ElementImpl(CoreDocumentImpl ownerDoc, String name) {
         super(ownerDoc);
         this.name = name;

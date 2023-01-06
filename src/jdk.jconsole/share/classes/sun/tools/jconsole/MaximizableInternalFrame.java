@@ -50,7 +50,6 @@ public class MaximizableInternalFrame extends JInternalFrame {
     private Border normalBorder;
     private PropertyChangeListener pcl;
 
-    @SuppressWarnings("this-escape")
     public MaximizableInternalFrame(String title, boolean resizable,
                                     boolean closable, boolean maximizable,
                                     boolean iconifiable) {

@@ -131,7 +131,6 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * to calling the {@code execute} method; [2] if invalid JDBC driver
      * properties are set or [3] if no connection to a data source exists.
      */
-    @SuppressWarnings("this-escape")
     public JdbcRowSetImpl() {
         conn = null;
         ps   = null;
@@ -253,7 +252,6 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * to calling the {@code execute} method, [2] if invalid JDBC driver
      * properties are set, or [3] if no connection to a data source exists.
      */
-    @SuppressWarnings("this-escape")
     public JdbcRowSetImpl(Connection con) throws SQLException {
 
         conn = con;
@@ -329,7 +327,6 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @throws SQLException if a database access error occurs
      *
      */
-    @SuppressWarnings("this-escape")
     public JdbcRowSetImpl(String url, String user, String password) throws SQLException {
         conn = null;
         ps = null;
@@ -408,7 +405,6 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @throws SQLException if a database access occurs due to a non
      * valid ResultSet handle.
      */
-    @SuppressWarnings("this-escape")
     public JdbcRowSetImpl(ResultSet res) throws SQLException {
 
         // A ResultSet handle encapsulates a connection handle.

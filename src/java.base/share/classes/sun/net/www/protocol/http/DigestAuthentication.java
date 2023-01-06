@@ -177,7 +177,6 @@ class DigestAuthentication extends AuthenticationInfo {
             random = new Random();
         }
 
-        @SuppressWarnings("this-escape")
         Parameters () {
             serverQop = false;
             opaque = null;

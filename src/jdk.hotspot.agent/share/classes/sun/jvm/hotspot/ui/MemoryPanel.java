@@ -81,7 +81,6 @@ public class MemoryPanel extends JPanel {
     }
   }
 
-  @SuppressWarnings("this-escape")
   public MemoryPanel(final Debugger debugger, boolean isAnnotated, boolean is64Bit) {
     super();
     this.debugger = debugger;

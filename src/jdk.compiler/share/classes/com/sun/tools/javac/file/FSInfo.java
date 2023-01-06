@@ -70,7 +70,6 @@ public class FSInfo {
     protected FSInfo() {
     }
 
-    @SuppressWarnings("this-escape")
     protected FSInfo(Context context) {
         context.put(FSInfo.class, this);
     }

@@ -72,7 +72,6 @@ public class EventSetDescriptor extends FeatureDescriptor {
      * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
-    @SuppressWarnings("this-escape")
     public EventSetDescriptor(Class<?> sourceClass, String eventSetName,
                 Class<?> listenerType, String listenerMethodName)
                 throws IntrospectionException {
@@ -151,7 +150,6 @@ public class EventSetDescriptor extends FeatureDescriptor {
      *              introspection.
      * @since 1.4
      */
-    @SuppressWarnings("this-escape")
     public EventSetDescriptor(Class<?> sourceClass,
                 String eventSetName,
                 Class<?> listenerType,
@@ -243,7 +241,6 @@ public class EventSetDescriptor extends FeatureDescriptor {
      *              introspection.
      * @since 1.4
      */
-    @SuppressWarnings("this-escape")
     public EventSetDescriptor(String eventSetName,
                 Class<?> listenerType,
                 Method[] listenerMethods,
@@ -259,7 +256,6 @@ public class EventSetDescriptor extends FeatureDescriptor {
         setListenerType(listenerType);
     }
 
-    @SuppressWarnings("this-escape")
     EventSetDescriptor(String base, EventSetInfo info, Method... methods) {
         setName(Introspector.decapitalize(base));
         setListenerMethods(methods);
@@ -287,7 +283,6 @@ public class EventSetDescriptor extends FeatureDescriptor {
      * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
-    @SuppressWarnings("this-escape")
     public EventSetDescriptor(String eventSetName,
                 Class<?> listenerType,
                 MethodDescriptor[] listenerMethodDescriptors,

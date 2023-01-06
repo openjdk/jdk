@@ -1031,7 +1031,6 @@ abstract class XorPixelWriter extends PixelWriter {
     public static class ByteData extends XorPixelWriter {
         byte[] xorData;
 
-        @SuppressWarnings("this-escape")
         ByteData(Object srcPixel, Object xorPixel) {
             this.xorData = (byte[]) srcPixel;
             xorPixel(xorPixel);
@@ -1049,7 +1048,6 @@ abstract class XorPixelWriter extends PixelWriter {
     public static class ShortData extends XorPixelWriter {
         short[] xorData;
 
-        @SuppressWarnings("this-escape")
         ShortData(Object srcPixel, Object xorPixel) {
             this.xorData = (short[]) srcPixel;
             xorPixel(xorPixel);
@@ -1067,7 +1065,6 @@ abstract class XorPixelWriter extends PixelWriter {
     public static class IntData extends XorPixelWriter {
         int[] xorData;
 
-        @SuppressWarnings("this-escape")
         IntData(Object srcPixel, Object xorPixel) {
             this.xorData = (int[]) srcPixel;
             xorPixel(xorPixel);

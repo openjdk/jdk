@@ -120,7 +120,6 @@ public class ArgumentAttr extends JCTree.Visitor {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected ArgumentAttr(Context context) {
         context.put(methodAttrKey, this);
         deferredAttr = DeferredAttr.instance(context);

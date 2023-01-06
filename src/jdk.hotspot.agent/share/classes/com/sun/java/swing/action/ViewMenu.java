@@ -31,7 +31,6 @@ import javax.swing.AbstractAction;
 public class ViewMenu extends AbstractAction
 {
 
-    @SuppressWarnings("this-escape")
     public ViewMenu()
     {
         super("View");

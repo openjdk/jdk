@@ -90,7 +90,6 @@ public final class FaxTIFFTagSet extends TIFFTagSet {
 
     static class CleanFaxData extends TIFFTag {
 
-        @SuppressWarnings("this-escape")
         public CleanFaxData() {
             super("CleanFaxData",
                   TAG_CLEAN_FAX_DATA,

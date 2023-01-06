@@ -104,7 +104,6 @@ public class XMBeanAttributes extends XTable {
     private static TableCellEditor editor =
             new Utils.ReadOnlyTableCellEditor(new JTextField());
 
-    @SuppressWarnings("this-escape")
     public XMBeanAttributes(MBeansTab mbeansTab) {
         super();
         this.mbeansTab = mbeansTab;

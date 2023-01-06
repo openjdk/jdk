@@ -184,7 +184,6 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
     } // <init>(String, XSDDescription)
 
     // Clone an existing schema grammar
-    @SuppressWarnings("this-escape")
     public SchemaGrammar(SchemaGrammar grammar) {
         fTargetNamespace = grammar.fTargetNamespace;
         fGrammarDescription = grammar.fGrammarDescription.makeClone();
@@ -279,7 +278,6 @@ public class SchemaGrammar implements XSGrammar, XSNamespaceItem {
          *
          * @param grammar
          */
-        @SuppressWarnings("this-escape")
         public BuiltinSchemaGrammar(int grammar, short schemaVersion) {
             SchemaDVFactory schemaFactory;
             if (schemaVersion == Constants.SCHEMA_VERSION_1_0) {

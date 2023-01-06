@@ -48,7 +48,6 @@ public class StyledText {
     private Styles styles;
     private List<WeakReference<SubText>> subtexts;
 
-    @SuppressWarnings("this-escape")
     public StyledText() {
         init();
     }

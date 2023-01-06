@@ -81,7 +81,6 @@ implements java.security.interfaces.DSAPublicKey, Serializable {
      * @param q DSA parameter q, may be null if all of p, q, and g are null.
      * @param g DSA parameter g, may be null if all of p, q, and g are null.
      */
-    @SuppressWarnings("this-escape")
     public DSAPublicKey(BigInteger y, BigInteger p, BigInteger q,
                         BigInteger g) {
         this.y = y;
@@ -96,7 +95,6 @@ implements java.security.interfaces.DSAPublicKey, Serializable {
     /**
      * Make a DSA public key from its DER encoding (X.509).
      */
-    @SuppressWarnings("this-escape")
     public DSAPublicKey(byte[] encoded) throws InvalidKeyException {
         decode(encoded);
     }

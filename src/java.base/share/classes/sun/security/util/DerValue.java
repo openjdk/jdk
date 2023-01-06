@@ -357,7 +357,6 @@ public class DerValue {
      * @throws IOException if it's an invalid encoding or there are extra bytes
      *                     after the encoded datum and {@code allowMore} is false.
      */
-    @SuppressWarnings("this-escape")
     DerValue(byte[] buf, int offset, int len, boolean allowBER, boolean allowMore)
             throws IOException {
 
@@ -440,7 +439,6 @@ public class DerValue {
 
     // Get an ASN1/DER encoded datum from an input stream w/ additional
     // arg to control whether DER checks are enforced.
-    @SuppressWarnings("this-escape")
     DerValue(InputStream in, boolean allowBER) throws IOException {
         this.tag = (byte)in.read();
         if ((tag & 0x1f) == 0x1f) {

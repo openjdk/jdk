@@ -197,7 +197,6 @@ class RuleBasedBreakIteratorBuilder {
      * This is the main function for setting up the BreakIterator's tables. It
      * just vectors different parts of the job off to other functions.
      */
-    @SuppressWarnings("this-escape")
     public RuleBasedBreakIteratorBuilder(String description) {
         Vector<String> tempRuleList = buildRuleList(description);
         buildCharCategories(tempRuleList);

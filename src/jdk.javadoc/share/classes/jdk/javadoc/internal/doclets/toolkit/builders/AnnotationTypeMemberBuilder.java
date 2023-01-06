@@ -65,7 +65,6 @@ public class AnnotationTypeMemberBuilder extends AbstractMemberBuilder {
      * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
-    @SuppressWarnings("this-escape")
     protected AnnotationTypeMemberBuilder(Context context,
                                           TypeElement typeElement,
                                           AnnotationTypeMemberWriter writer) {

@@ -100,7 +100,6 @@ public class Lint
 
     private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
 
-    @SuppressWarnings("this-escape")
     protected Lint(Context context) {
         // initialize values according to the lint options
         Options options = Options.instance(context);

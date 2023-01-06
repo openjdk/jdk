@@ -61,7 +61,6 @@ public class SunCommandLineLauncher extends AbstractLauncher {
         return transport;
     }
 
-    @SuppressWarnings("this-escape")
     public SunCommandLineLauncher() {
         super();
 

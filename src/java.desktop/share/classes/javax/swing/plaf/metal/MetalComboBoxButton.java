@@ -118,7 +118,6 @@ public class MetalComboBoxButton extends JButton {
      */
     public final void setIconOnly( boolean isIconOnly ) { iconOnly = isIconOnly;}
 
-    @SuppressWarnings("this-escape")
     MetalComboBoxButton() {
         super( "" );
         DefaultButtonModel model = new DefaultButtonModel() {
@@ -137,7 +136,6 @@ public class MetalComboBoxButton extends JButton {
      * @param pane an instance of {@code CellRendererPane}
      * @param list an instance of {@code JList}
      */
-    @SuppressWarnings("this-escape")
     public MetalComboBoxButton( JComboBox<Object> cb, Icon i,
                                 CellRendererPane pane, JList<Object> list ) {
         this();

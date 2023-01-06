@@ -68,7 +68,6 @@ public class ACimages extends Surface {
     private static Color[] colors = { BLUE, CYAN, GREEN,
         MAGENTA, ORANGE, PINK, RED, YELLOW, LIGHT_GRAY };
 
-    @SuppressWarnings("this-escape")
     public ACimages() {
         setBackground(WHITE);
         for (int i = 0; i < imgs.length; i++) {

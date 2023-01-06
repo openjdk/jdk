@@ -130,7 +130,6 @@ public class Inflater {
      *
      * @param nowrap if true then support GZIP compatible compression
      */
-    @SuppressWarnings("this-escape")
     public Inflater(boolean nowrap) {
         this.zsRef = new InflaterZStreamRef(this, init(nowrap));
     }

@@ -178,7 +178,6 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @since 1.3
      */
-    @SuppressWarnings("this-escape")
     public JMenu(Action a) {
         this();
         setAction(a);

@@ -62,7 +62,6 @@ implements ListCellRenderer<Object>, Serializable {
     /**
      * Constructs a new instance of {@code BasicComboBoxRenderer}.
      */
-    @SuppressWarnings("this-escape")
     public BasicComboBoxRenderer() {
         super();
         setOpaque(true);

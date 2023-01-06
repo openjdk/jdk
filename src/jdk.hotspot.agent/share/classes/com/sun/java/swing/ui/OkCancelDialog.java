@@ -44,7 +44,6 @@ public class OkCancelDialog extends JDialog
         this(title, panel, true);
     }
 
-    @SuppressWarnings("this-escape")
     public OkCancelDialog(String title, JPanel panel, boolean modal)
     {
         setTitle(title);

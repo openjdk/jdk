@@ -164,7 +164,6 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      *
      * @exception AWTException if XOpenIM() failed.
      */
-    @SuppressWarnings("this-escape")
     public X11InputMethodBase() throws AWTException {
         // supports only the locale in which the VM is started
         locale = X11InputMethodDescriptor.getSupportedLocale();

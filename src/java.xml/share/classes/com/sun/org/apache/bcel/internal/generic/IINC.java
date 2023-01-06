@@ -48,7 +48,6 @@ public class IINC extends LocalVariableInstruction {
      * @param n index of local variable
      * @param c increment factor
      */
-    @SuppressWarnings("this-escape")
     public IINC(final int n, final int c) {
         super(); // Default behavior of LocalVariableInstruction causes error
         super.setOpcode(com.sun.org.apache.bcel.internal.Const.IINC);

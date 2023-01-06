@@ -76,7 +76,6 @@ public class Stars3D extends ControlsSurface {
     protected String text = "OpenJDK";
     protected int numStars = 300;
 
-    @SuppressWarnings("this-escape")
     public Stars3D() {
         setBackground(BLACK);
         setControls(new Component[] { new DemoControls(this) });
@@ -258,7 +257,7 @@ public class Stars3D extends ControlsSurface {
         Stars3D demo;
         JTextField tf1, tf2;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(Stars3D demo) {
             super(demo.name);
             this.demo = demo;

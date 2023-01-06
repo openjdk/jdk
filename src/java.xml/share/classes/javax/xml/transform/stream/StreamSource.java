@@ -77,7 +77,6 @@ public class StreamSource implements Source {
      *
      * @param inputStream A valid InputStream reference to an XML stream.
      */
-    @SuppressWarnings("this-escape")
     public StreamSource(InputStream inputStream) {
         setInputStream(inputStream);
     }
@@ -95,7 +94,6 @@ public class StreamSource implements Source {
      * @param inputStream A valid InputStream reference to an XML stream.
      * @param systemId Must be a String that conforms to the URI syntax.
      */
-    @SuppressWarnings("this-escape")
     public StreamSource(InputStream inputStream, String systemId) {
         setInputStream(inputStream);
         setSystemId(systemId);
@@ -111,7 +109,6 @@ public class StreamSource implements Source {
      *
      * @param reader A valid Reader reference to an XML character stream.
      */
-    @SuppressWarnings("this-escape")
     public StreamSource(Reader reader) {
         setReader(reader);
     }
@@ -127,7 +124,6 @@ public class StreamSource implements Source {
      * @param reader A valid Reader reference to an XML character stream.
      * @param systemId Must be a String that conforms to the URI syntax.
      */
-    @SuppressWarnings("this-escape")
     public StreamSource(Reader reader, String systemId) {
         setReader(reader);
         setSystemId(systemId);
@@ -147,7 +143,6 @@ public class StreamSource implements Source {
      *
      * @param f Must a non-null File reference.
      */
-    @SuppressWarnings("this-escape")
     public StreamSource(File f) {
         //convert file to appropriate URI, f.toURI().toASCIIString()
         //converts the URI to string as per rule specified in

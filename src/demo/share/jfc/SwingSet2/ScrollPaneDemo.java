@@ -57,7 +57,6 @@ public class ScrollPaneDemo extends DemoModule {
     /**
      * ScrollPaneDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public ScrollPaneDemo(SwingSet2 swingset) {
         super(swingset, "ScrollPaneDemo", "toolbar/JScrollPane.gif");
 
@@ -71,7 +70,6 @@ public class ScrollPaneDemo extends DemoModule {
      * and corners.
      */
     class ImageScroller extends JScrollPane {
-        @SuppressWarnings("this-escape")
         public ImageScroller(ScrollPaneDemo demo, Icon icon) {
             super();
 

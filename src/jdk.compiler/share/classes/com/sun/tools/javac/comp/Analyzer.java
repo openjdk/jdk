@@ -119,7 +119,6 @@ public class Analyzer {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Analyzer(Context context) {
         context.put(analyzerKey, this);
         types = Types.instance(context);

@@ -37,7 +37,6 @@ import sun.jvm.hotspot.oops.*;
 /** Provides information about monitor cache. */
 
 public class MonitorCacheDumpPanel extends JPanel {
-  @SuppressWarnings("this-escape")
   public MonitorCacheDumpPanel() {
     super();
 

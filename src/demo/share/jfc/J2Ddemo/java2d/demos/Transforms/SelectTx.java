@@ -77,7 +77,7 @@ public class SelectTx extends AnimatingControlsSurface {
     protected int direction = RIGHT;
     protected int transformToggle;
 
-    @SuppressWarnings("this-escape")
+    @SuppressWarnings("LeakingThisInConstructor")
     public SelectTx() {
         setBackground(WHITE);
         original = getImage("painting.png");

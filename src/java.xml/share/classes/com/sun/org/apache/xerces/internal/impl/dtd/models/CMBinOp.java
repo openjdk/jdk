@@ -34,7 +34,6 @@ public class CMBinOp extends CMNode
     // -------------------------------------------------------------------
     //  Constructors
     // -------------------------------------------------------------------
-    @SuppressWarnings("this-escape")
     public CMBinOp(int type, CMNode leftNode, CMNode rightNode)
     {
         super(type);

@@ -118,7 +118,6 @@ public class InputContext extends java.awt.im.InputContext
     /**
      * Constructs an InputContext.
      */
-    @SuppressWarnings("this-escape")
     protected InputContext() {
         InputMethodManager imm = InputMethodManager.getInstance();
         synchronized (InputContext.class) {

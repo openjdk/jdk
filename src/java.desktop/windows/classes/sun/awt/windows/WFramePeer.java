@@ -191,7 +191,6 @@ class WFramePeer extends WWindowPeer implements FramePeer {
 
     // Toolkit & peer internals
 
-    @SuppressWarnings("this-escape")
     WFramePeer(Frame target) {
         super(target);
 

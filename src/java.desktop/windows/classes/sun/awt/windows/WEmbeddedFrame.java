@@ -76,7 +76,6 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         this((long)handle);
     }
 
-    @SuppressWarnings("this-escape")
     public WEmbeddedFrame(long handle) {
         this.handle = handle;
         if (handle != 0) {

@@ -153,7 +153,6 @@ class Metacity implements SynthConstants {
     // Reusable clip shape object
     private RoundRectClipShape roundedClipShape;
 
-    @SuppressWarnings("this-escape")
     protected Metacity(String themeName) throws IOException, ParserConfigurationException, SAXException {
         this.themeName = themeName;
         themeDir = getThemeDir(themeName);
@@ -1949,7 +1948,6 @@ class Metacity implements SynthConstants {
     static class PeekableStringTokenizer extends StringTokenizer {
         String token = null;
 
-        @SuppressWarnings("this-escape")
         public PeekableStringTokenizer(String str, String delim,
                                        boolean returnDelims) {
             super(str, delim, returnDelims);
@@ -2004,7 +2002,6 @@ class Metacity implements SynthConstants {
         public RoundRectClipShape() {
         }
 
-        @SuppressWarnings("this-escape")
         public RoundRectClipShape(int x, int y, int w, int h,
                                   int arcw, int arch, int corners) {
             setRoundedRect(x, y, w, h, arcw, arch, corners);

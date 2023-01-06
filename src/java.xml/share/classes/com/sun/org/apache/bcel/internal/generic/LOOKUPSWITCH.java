@@ -41,7 +41,6 @@ public class LOOKUPSWITCH extends Select {
     }
 
 
-    @SuppressWarnings("this-escape")
     public LOOKUPSWITCH(final int[] match, final InstructionHandle[] targets,
             final InstructionHandle defaultTarget) {
         super(com.sun.org.apache.bcel.internal.Const.LOOKUPSWITCH, match, targets, defaultTarget);

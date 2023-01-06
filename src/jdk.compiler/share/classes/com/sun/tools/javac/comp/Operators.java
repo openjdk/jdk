@@ -89,7 +89,6 @@ public class Operators {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Operators(Context context) {
         context.put(operatorsKey, this);
         syms = Symtab.instance(context);

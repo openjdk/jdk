@@ -31,7 +31,6 @@ import javax.swing.ImageIcon;
 public class SplashScreen extends Window
 {
 
-    @SuppressWarnings("this-escape")
     public SplashScreen(Frame f)
     {
         super(f);

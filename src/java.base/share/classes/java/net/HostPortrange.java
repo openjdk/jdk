@@ -57,7 +57,6 @@ class HostPortrange {
         return hostname.hashCode() + portrange[0] + portrange[1];
     }
 
-    @SuppressWarnings("this-escape")
     HostPortrange(String scheme, String str) {
         // Parse the host name.  A name has up to three components, the
         // hostname, a port number, or two numbers representing a port

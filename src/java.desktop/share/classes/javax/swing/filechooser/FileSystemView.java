@@ -110,7 +110,6 @@ public abstract class FileSystemView {
     /**
      * Constructs a FileSystemView.
      */
-    @SuppressWarnings("this-escape")
     public FileSystemView() {
         final WeakReference<FileSystemView> weakReference = new WeakReference<>(this);
         final PropertyChangeListener pcl = evt -> {

@@ -54,7 +54,6 @@ public class DeferredCommentImpl
      * This is the deferred constructor. Only the fNodeIndex is given here. All other data,
      * can be requested from the ownerDocument via the index.
      */
-    @SuppressWarnings("this-escape")
     DeferredCommentImpl(DeferredDocumentImpl ownerDocument, int nodeIndex) {
         super(ownerDocument, null);
 

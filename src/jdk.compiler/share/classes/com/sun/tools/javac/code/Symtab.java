@@ -392,7 +392,6 @@ public class Symtab {
     /** Constructor; enters all predefined identifiers and operators
      *  into symbol table.
      */
-    @SuppressWarnings("this-escape")
     protected Symtab(Context context) throws CompletionFailure {
         context.put(symtabKey, this);
 

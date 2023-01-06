@@ -47,7 +47,6 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
 
     private long targetEnterServerTime = XConstants.CurrentTime;
 
-    @SuppressWarnings("this-escape")
     protected MotifDnDDragSourceProtocol(XDragSourceProtocolListener listener) {
         super(listener);
         XToolkit.addEventDispatcher(XWindow.getXAWTRootWindow().getWindow(), this);

@@ -75,7 +75,6 @@ abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     // FIPS 186-4 and later
     private boolean useNew;
 
-    @SuppressWarnings("this-escape")
     RSAKeyPairGenerator(KeyType type, int defKeySize) {
         this.type = type;
         // initialize to default in case the app does not call initialize()

@@ -309,7 +309,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * is used, because layout is managed by the view subsystem of text.
      * The document model is set to <code>null</code>.
      */
-    @SuppressWarnings("this-escape")
     public JTextComponent() {
         super();
         // enable InputMethodEvent for on-the-spot pre-editing
@@ -2568,7 +2567,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
          * Constructs an AccessibleJTextComponent.  Adds a listener to track
          * caret change.
          */
-        @SuppressWarnings("this-escape")
         public AccessibleJTextComponent() {
             Document doc = JTextComponent.this.getDocument();
             if (doc != null) {

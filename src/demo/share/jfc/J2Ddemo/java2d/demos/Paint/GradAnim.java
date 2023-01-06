@@ -64,7 +64,6 @@ public class GradAnim extends AnimatingControlsSurface {
     private int hue = (int) (Math.random() * MAX_HUE);
     private int gradientType;
 
-    @SuppressWarnings("this-escape")
     public GradAnim() {
         setBackground(Color.white);
         setControls(new Component[] { new DemoControls(this) });
@@ -269,7 +268,7 @@ public class GradAnim extends AnimatingControlsSurface {
         GradAnim demo;
         JComboBox<String> combo;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(GradAnim demo) {
             super(demo.name);
             this.demo = demo;

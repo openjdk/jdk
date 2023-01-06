@@ -78,7 +78,6 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      *
      * @param initialLength the initial size
      */
-    @SuppressWarnings("this-escape")
     public GapContent(int initialLength) {
         super(Math.max(initialLength,2));
         char[] implied = new char[1];

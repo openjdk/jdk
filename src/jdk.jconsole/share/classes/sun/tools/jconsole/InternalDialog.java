@@ -40,7 +40,6 @@ import static javax.swing.JLayeredPane.*;
 public class InternalDialog extends JInternalFrame {
     protected JLabel statusBar;
 
-    @SuppressWarnings("this-escape")
     public InternalDialog(JConsole jConsole, String title, boolean modal) {
         super(title, true, true, false, false);
 

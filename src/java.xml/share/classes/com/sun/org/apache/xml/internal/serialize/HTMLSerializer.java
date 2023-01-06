@@ -155,7 +155,6 @@ public class HTMLSerializer
      * @param writer The writer to use
      * @param format The output format to use, null for the default
      */
-    @SuppressWarnings("this-escape")
     public HTMLSerializer( Writer writer, OutputFormat format )
     {
         this( false, format != null ? format : new OutputFormat( Method.HTML, "ISO-8859-1", false ) );
@@ -171,7 +170,6 @@ public class HTMLSerializer
      * @param output The output stream to use
      * @param format The output format to use, null for the default
      */
-    @SuppressWarnings("this-escape")
     public HTMLSerializer( OutputStream output, OutputFormat format )
     {
         this( false, format != null ? format : new OutputFormat( Method.HTML, "ISO-8859-1", false ) );

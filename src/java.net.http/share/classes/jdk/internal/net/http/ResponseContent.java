@@ -131,7 +131,6 @@ class ResponseContent {
     class ChunkedBodyParser implements BodyParser {
         final ByteBuffer READMORE = Utils.EMPTY_BYTEBUFFER;
         final Consumer<Throwable> onComplete;
-        @SuppressWarnings("this-escape")
         final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
         final String dbgTag = ResponseContent.this.dbgTag + "/ChunkedBodyParser";
 
@@ -464,7 +463,6 @@ class ResponseContent {
 
     class UnknownLengthBodyParser implements BodyParser {
         final Consumer<Throwable> onComplete;
-        @SuppressWarnings("this-escape")
         final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
         final String dbgTag = ResponseContent.this.dbgTag + "/UnknownLengthBodyParser";
         volatile Throwable closedExceptionally;
@@ -542,7 +540,6 @@ class ResponseContent {
     class FixedLengthBodyParser implements BodyParser {
         final long contentLength;
         final Consumer<Throwable> onComplete;
-        @SuppressWarnings("this-escape")
         final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
         final String dbgTag = ResponseContent.this.dbgTag + "/FixedLengthBodyParser";
         volatile long remaining;

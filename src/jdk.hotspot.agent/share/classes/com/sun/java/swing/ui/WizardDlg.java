@@ -116,7 +116,6 @@ public class WizardDlg extends JDialog
     }
 
 
-    @SuppressWarnings("this-escape")
     public WizardDlg(JFrame frame, String title, Vector panels, Vector images)
     {
         super(frame, title, true);

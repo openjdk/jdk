@@ -124,7 +124,6 @@ public class XMBeanInfo extends JPanel {
         }
     }
 
-    @SuppressWarnings("this-escape")
     public XMBeanInfo() {
         // Use the grid layout to display the two tables
         //

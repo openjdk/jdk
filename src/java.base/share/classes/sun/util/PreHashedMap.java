@@ -106,7 +106,6 @@ public abstract class PreHashedMap<V>
      * @param mask
      *        The value with which hash codes are masked after being shifted
      */
-    @SuppressWarnings("this-escape")
     protected PreHashedMap(int rows, int size, int shift, int mask) {
         this.rows = rows;
         this.size = size;

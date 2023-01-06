@@ -115,7 +115,6 @@ public class JButton extends AbstractButton implements Accessible {
      *
      * @since 1.3
      */
-    @SuppressWarnings("this-escape")
     public JButton(Action a) {
         this();
         setAction(a);
@@ -127,7 +126,6 @@ public class JButton extends AbstractButton implements Accessible {
      * @param text  the text of the button
      * @param icon  the Icon image to display on the button
      */
-    @SuppressWarnings("this-escape")
     public JButton(String text, Icon icon) {
         // Create the model
         setModel(new DefaultButtonModel());

@@ -63,7 +63,6 @@ public class BorderedComponent extends JPanel implements ActionListener {
         this(text, comp, false);
     }
 
-    @SuppressWarnings("this-escape")
     public BorderedComponent(String text, JComponent comp, boolean collapsible) {
         super(null);
 
@@ -306,7 +305,6 @@ public class BorderedComponent extends JPanel implements ActionListener {
          * @param border  the border
          * @param label  the label the border should display
          */
-        @SuppressWarnings("this-escape")
         public LabeledBorder(Border border, JComponent label) {
             super(border);
 
@@ -527,7 +525,6 @@ public class BorderedComponent extends JPanel implements ActionListener {
         private Color focusColor;
         private boolean focusLostTemporarily = false;
 
-        @SuppressWarnings("this-escape")
         public FocusBorder(Component comp) {
             this.comp = comp;
 

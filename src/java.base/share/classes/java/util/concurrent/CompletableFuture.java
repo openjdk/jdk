@@ -1971,7 +1971,6 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Creates a new complete CompletableFuture with given encoded result.
      */
-    @SuppressWarnings("this-escape")
     CompletableFuture(Object r) {
         RESULT.setRelease(this, r);
     }

@@ -56,7 +56,6 @@ public class KrbCred {
     private KerberosTime timeStamp = null;
 
          // Used in InitialToken with null key
-    @SuppressWarnings("this-escape")
     public KrbCred(Credentials tgt,
                    Credentials serviceTicket,
                    EncryptionKey key)

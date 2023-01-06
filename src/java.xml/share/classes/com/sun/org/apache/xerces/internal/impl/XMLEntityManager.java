@@ -431,7 +431,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     /**
      * If this constructor is used to create the object, reset() should be invoked on this object
      */
-    @SuppressWarnings("this-escape")
     public XMLEntityManager() {
         //for entity managers not created by parsers
         fSecurityManager = new XMLSecurityManager(true);
@@ -440,7 +439,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     } // <init>()
 
     /** Default constructor. */
-    @SuppressWarnings("this-escape")
     public XMLEntityManager(PropertyManager propertyManager) {
         fPropertyManager = propertyManager ;
         //pass a reference to current entity being scanned

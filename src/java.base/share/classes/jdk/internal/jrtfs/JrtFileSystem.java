@@ -78,7 +78,6 @@ import static java.util.stream.Collectors.toList;
 class JrtFileSystem extends FileSystem {
 
     private final JrtFileSystemProvider provider;
-    @SuppressWarnings("this-escape")
     private final JrtPath rootPath = new JrtPath(this, "/");
     private volatile boolean isOpen;
     private volatile boolean isClosable;

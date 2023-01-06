@@ -41,7 +41,6 @@ public class DwarfParser {
     init0();
   }
 
-  @SuppressWarnings("this-escape")
   public DwarfParser(Address lib) {
     p_dwarf_context = createDwarfContext(lib.asLongValue());
 

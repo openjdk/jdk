@@ -93,7 +93,6 @@ public class LineDisciplineTerminal extends AbstractTerminal {
         this(name, type, masterOutput, encoding, SignalHandler.SIG_DFL);
     }
 
-    @SuppressWarnings("this-escape")
     public LineDisciplineTerminal(String name,
                                   String type,
                                   OutputStream masterOutput,

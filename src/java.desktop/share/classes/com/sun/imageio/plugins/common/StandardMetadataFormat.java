@@ -40,7 +40,6 @@ public class StandardMetadataFormat extends IIOMetadataFormatImpl {
         addAttribute(elementName, "value", dataType, true, null);
     }
 
-    @SuppressWarnings("this-escape")
     public StandardMetadataFormat() {
         super(standardMetadataFormatName, CHILD_POLICY_SOME);
         List<String> values;

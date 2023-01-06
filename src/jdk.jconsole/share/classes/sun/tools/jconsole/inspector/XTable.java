@@ -40,7 +40,6 @@ public abstract class XTable extends JTable {
     private Color defaultColor, editableColor, errorColor;
     private Font normalFont, boldFont;
 
-    @SuppressWarnings("this-escape")
     public XTable () {
         super();
         @SuppressWarnings("serial")

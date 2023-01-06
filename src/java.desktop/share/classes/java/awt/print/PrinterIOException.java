@@ -61,7 +61,6 @@ public class PrinterIOException extends PrinterException {
      * {@link IOException}.
      * @param exception the specified {@code IOException}
      */
-    @SuppressWarnings("this-escape")
     public PrinterIOException(IOException exception) {
         initCause(null);  // Disallow subsequent initCause
         mException = exception;

@@ -33,7 +33,6 @@ import javax.swing.text.*;
 public class HTMLPane extends JEditorPane {
     private boolean hasSelection = false;
 
-    @SuppressWarnings("this-escape")
     public HTMLPane() {
         setContentType("text/html");
         setEditable(false);

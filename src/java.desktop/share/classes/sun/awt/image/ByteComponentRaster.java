@@ -147,7 +147,6 @@ public class ByteComponentRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      */
-    @SuppressWarnings("this-escape")
     public ByteComponentRaster(SampleModel sampleModel,
                                DataBufferByte dataBuffer,
                                Rectangle aRegion,

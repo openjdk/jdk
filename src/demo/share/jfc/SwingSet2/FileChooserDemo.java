@@ -83,7 +83,6 @@ public class FileChooserDemo extends DemoModule {
     /**
      * FileChooserDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public FileChooserDemo(SwingSet2 swingset) {
         // Set the title for this demo, and an icon used to represent this
         // demo inside the SwingSet2 app.
@@ -404,7 +403,6 @@ public class FileChooserDemo extends DemoModule {
 class FilePreviewer extends JComponent implements PropertyChangeListener {
     ImageIcon thumbnail = null;
 
-    @SuppressWarnings("this-escape")
     public FilePreviewer(JFileChooser fc) {
         setPreferredSize(new Dimension(100, 50));
         fc.addPropertyChangeListener(this);

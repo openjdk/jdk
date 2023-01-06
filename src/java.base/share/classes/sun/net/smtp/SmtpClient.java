@@ -155,7 +155,6 @@ public class SmtpClient extends TransferProtocolClient {
     }
 
     /** New SMTP client connected to host <i>host</i>. */
-    @SuppressWarnings("this-escape")
     public SmtpClient (String host) throws IOException {
         super();
         if (host != null) {
@@ -189,7 +188,6 @@ public class SmtpClient extends TransferProtocolClient {
         this(null);
     }
 
-    @SuppressWarnings("this-escape")
     public SmtpClient(int to) throws IOException {
         super();
         setConnectTimeout(to);

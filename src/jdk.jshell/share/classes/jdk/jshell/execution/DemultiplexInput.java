@@ -45,7 +45,6 @@ class DemultiplexInput extends Thread {
     private final Map<String, OutputStream> io;
     private final Iterable<OutputStream> closeList;
 
-    @SuppressWarnings("this-escape")
     DemultiplexInput(InputStream input, Map<String, OutputStream> io, Iterable<OutputStream> closeList) {
         super("output reader");
         setDaemon(true);

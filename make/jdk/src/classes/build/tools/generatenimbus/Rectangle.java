@@ -59,7 +59,6 @@ class Rectangle extends Shape {
         return getRounding() > 0;
     }
 
-    @SuppressWarnings("this-escape")
     Rectangle(XMLStreamReader reader) throws XMLStreamException {
         x1 = Double.parseDouble(reader.getAttributeValue(null, "x1"));
         x2 = Double.parseDouble(reader.getAttributeValue(null, "x2"));

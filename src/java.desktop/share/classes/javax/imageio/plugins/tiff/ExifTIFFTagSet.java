@@ -41,7 +41,6 @@ import java.util.List;
  *
  * @since 9
  */
-@SuppressWarnings("this-escape")
 public final class ExifTIFFTagSet extends TIFFTagSet {
 
     private static ExifTIFFTagSet theInstance = null;

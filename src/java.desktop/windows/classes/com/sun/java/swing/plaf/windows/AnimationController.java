@@ -93,7 +93,6 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         return (AnimationController) obj;
     }
 
-    @SuppressWarnings("this-escape")
     private AnimationController() {
         timer.setRepeats(true);
         timer.setCoalesce(true);

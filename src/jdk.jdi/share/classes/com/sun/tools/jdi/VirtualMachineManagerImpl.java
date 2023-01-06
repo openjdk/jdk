@@ -74,7 +74,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
         return vmm;
     }
 
-    @SuppressWarnings("this-escape")
     protected VirtualMachineManagerImpl() {
 
         /*

@@ -108,7 +108,6 @@ public class GarbageCollectionNotificationInfo implements  CompositeDataView {
      * @param gcCause The cause of the garbage collection action
      * @param gcInfo  a GcInfo object providing statistics about the GC cycle
      */
-    @SuppressWarnings("this-escape")
     public GarbageCollectionNotificationInfo(String gcName,
                                              String gcAction,
                                              String gcCause,

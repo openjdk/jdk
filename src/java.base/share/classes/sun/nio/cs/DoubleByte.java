@@ -677,7 +677,6 @@ public class DoubleByte {
                 return encodeBufferLoop(src, dst);
         }
 
-        @SuppressWarnings("this-escape")
         protected byte[] repl = replacement();
         protected void implReplaceWith(byte[] newReplacement) {
             repl = newReplacement;

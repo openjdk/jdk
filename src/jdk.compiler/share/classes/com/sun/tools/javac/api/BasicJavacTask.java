@@ -86,7 +86,6 @@ public class BasicJavacTask extends JavacTask {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     public BasicJavacTask(Context c, boolean register) {
         context = c;
         options = Options.instance(c);

@@ -110,7 +110,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
      */
     protected abstract void square(long[] a, long[] r);
 
-    @SuppressWarnings("this-escape")
     IntegerPolynomial(int bitsPerLimb,
                       int numLimbs,
                       int maxAdds,

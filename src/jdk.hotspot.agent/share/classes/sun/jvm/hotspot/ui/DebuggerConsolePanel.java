@@ -46,7 +46,6 @@ public class DebuggerConsolePanel extends JPanel {
   // Don't run the "main" method of this class unless this flag is set to true first
   private static final boolean DEBUGGING = false;
 
-  @SuppressWarnings("this-escape")
   public DebuggerConsolePanel(Debugger debugger) {
     this.debugger = debugger;
     if (!DEBUGGING) {

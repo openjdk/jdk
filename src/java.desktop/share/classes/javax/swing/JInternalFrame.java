@@ -348,7 +348,6 @@ public class JInternalFrame extends JComponent implements
      * @param maximizable if <code>true</code>, the internal frame can be maximized
      * @param iconifiable if <code>true</code>, the internal frame can be iconified
      */
-    @SuppressWarnings("this-escape")
     public JInternalFrame(String title, boolean resizable, boolean closable,
                                 boolean maximizable, boolean iconifiable) {
 
@@ -2163,7 +2162,6 @@ public class JInternalFrame extends JComponent implements
          * @param f  the <code>JInternalFrame</code>
          *              for which the icon is created
          */
-        @SuppressWarnings("this-escape")
         public JDesktopIcon(JInternalFrame f) {
             setVisible(false);
             setInternalFrame(f);

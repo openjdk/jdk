@@ -42,7 +42,6 @@ public abstract class CommonToolBar extends JToolBar
         this(manager, StatusBar.getInstance());
     }
 
-    @SuppressWarnings("this-escape")
     protected CommonToolBar(ActionManager manager, StatusBar status)
     {
         this.manager = manager;

@@ -41,7 +41,6 @@ public class JavaStackTraceAction extends DelegateAction {
     public static final String VALUE_SHORT_DESCRIPTION = "Show Java stack trace for selected thread";
     public static final String VALUE_LONG_DESCRIPTION = VALUE_SHORT_DESCRIPTION;
 
-    @SuppressWarnings("this-escape")
     public JavaStackTraceAction() {
         super(VALUE_NAME, ActionManager.getIcon(VALUE_SMALL_ICON));
 

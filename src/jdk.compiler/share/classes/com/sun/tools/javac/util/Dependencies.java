@@ -71,7 +71,6 @@ public abstract class Dependencies {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected Dependencies(Context context) {
         context.put(dependenciesKey, this);
     }
@@ -125,7 +124,6 @@ public abstract class Dependencies {
         /**
          * Build a Dependencies instance.
          */
-        @SuppressWarnings("this-escape")
         GraphDependencies(Context context) {
             super(context);
             //fetch filename

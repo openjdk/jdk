@@ -1207,7 +1207,6 @@ public class TransferHandler implements Serializable {
      */
     static class SwingDropTarget extends DropTarget implements UIResource {
 
-        @SuppressWarnings("this-escape")
         SwingDropTarget(Component c) {
             super(c, COPY_OR_MOVE | LINK, null);
             try {

@@ -139,7 +139,6 @@ public class KrbApReq {
      *          (e.g. socket operations)
      */
      // Used in InitSecContextToken (for AP_REQ and not TGS REQ)
-    @SuppressWarnings("this-escape")
     public KrbApReq(byte[] message,
                     Krb5AcceptCredential cred,
                     InetAddress initiator)

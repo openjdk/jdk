@@ -63,7 +63,6 @@ public class DateFormatter extends InternationalFormatter {
      *
      * @param format Format used to dictate legal values
      */
-    @SuppressWarnings("this-escape")
     public DateFormatter(DateFormat format) {
         super(format);
         setFormat(format);

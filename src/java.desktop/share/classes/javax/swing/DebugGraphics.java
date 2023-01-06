@@ -109,7 +109,6 @@ public class DebugGraphics extends Graphics {
      * @param graphics  the Graphics context to slow down
      * @param component the JComponent to draw slowly
      */
-    @SuppressWarnings("this-escape")
     public DebugGraphics(Graphics graphics, JComponent component) {
         this(graphics);
         setDebugOptions(component.shouldDebugGraphics());

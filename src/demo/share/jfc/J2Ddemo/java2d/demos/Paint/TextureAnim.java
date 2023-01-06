@@ -305,7 +305,7 @@ public final class TextureAnim extends AnimatingControlsSurface {
         int iconSize = 20;
         ButtonBorder buttonBorder = new ButtonBorder();
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(TextureAnim demo) {
             super(demo.name);
             this.demo = demo;

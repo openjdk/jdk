@@ -158,7 +158,6 @@ public class SctpChannelImpl extends SctpChannel
     /**
      * Constructor for sockets obtained from branching
      */
-    @SuppressWarnings("this-escape")
     public SctpChannelImpl(SelectorProvider provider,
                            FileDescriptor fd,
                            Association association)

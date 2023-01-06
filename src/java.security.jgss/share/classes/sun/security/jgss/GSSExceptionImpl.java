@@ -45,7 +45,6 @@ public class GSSExceptionImpl extends GSSException {
      * A constructor that takes the majorCode as well as the mech oid that
      * will be appended to the standard message defined in its super class.
      */
-    @SuppressWarnings("this-escape")
     GSSExceptionImpl(int majorCode, Oid mech) {
         super(majorCode);
         this.majorMessage = super.getMajorString() + ": " + mech;
@@ -63,7 +62,6 @@ public class GSSExceptionImpl extends GSSException {
     /**
      * A constructor that takes the majorCode and the exception cause.
      */
-    @SuppressWarnings("this-escape")
     public GSSExceptionImpl(int majorCode, Exception cause) {
         super(majorCode);
         initCause(cause);
@@ -73,7 +71,6 @@ public class GSSExceptionImpl extends GSSException {
      * A constructor that takes the majorCode, the message that
      * corresponds to it, and the exception cause.
      */
-    @SuppressWarnings("this-escape")
     public GSSExceptionImpl(int majorCode, String majorMessage,
         Exception cause) {
         this(majorCode, majorMessage);

@@ -292,7 +292,6 @@ class PlainHttpConnection extends HttpConnection {
         return tube;
     }
 
-    @SuppressWarnings("this-escape")
     PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client) {
         super(addr, client);
         try {

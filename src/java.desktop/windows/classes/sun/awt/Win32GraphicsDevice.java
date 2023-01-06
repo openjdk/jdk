@@ -112,7 +112,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     native float getNativeScaleX(int screen);
     native float getNativeScaleY(int screen);
 
-    @SuppressWarnings("this-escape")
     public Win32GraphicsDevice(int screennum) {
         this.screen = screennum;
         // we cache the strings because we want toString() and getIDstring

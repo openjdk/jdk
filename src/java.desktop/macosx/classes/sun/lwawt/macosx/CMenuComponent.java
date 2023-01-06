@@ -34,7 +34,6 @@ abstract class CMenuComponent extends CFRetainedResource
 
     private final MenuComponent target;
 
-    @SuppressWarnings("this-escape")
     CMenuComponent(final MenuComponent target) {
         super(0, true);
         this.target = target;

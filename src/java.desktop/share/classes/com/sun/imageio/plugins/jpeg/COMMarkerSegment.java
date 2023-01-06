@@ -52,7 +52,6 @@ class COMMarkerSegment extends MarkerSegment {
      * data from an {@code ImageInputStream}.  This is used when
      * reading metadata from a stream.
      */
-    @SuppressWarnings("this-escape")
     COMMarkerSegment(JPEGBuffer buffer) throws IOException {
         super(buffer);
         loadData(buffer);

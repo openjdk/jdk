@@ -46,7 +46,6 @@ public class DeprecatedAPIListBuilder extends SummaryAPIListBuilder {
      * @param configuration the current configuration of the doclet
      * @param since list of releases passed via <code>--since</code> option
      */
-    @SuppressWarnings("this-escape")
     public DeprecatedAPIListBuilder(BaseConfiguration configuration, List<String> since) {
         super(configuration, configuration.utils::isDeprecated);
         this.foundReleases = new HashSet<>();

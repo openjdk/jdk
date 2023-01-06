@@ -120,7 +120,6 @@ public class MethodGen extends FieldGenOrMethodGen {
      * abstract or native methods
      * @param cp constant pool
      */
-    @SuppressWarnings("this-escape")
     public MethodGen(final int access_flags, final Type return_type, final Type[] argTypes, String[] argNames,
             final String method_name, final String className, final InstructionList il, final ConstantPoolGen cp) {
         super(access_flags);
@@ -178,7 +177,6 @@ public class MethodGen extends FieldGenOrMethodGen {
      * @param className class name containing this method
      * @param cp constant pool
      */
-    @SuppressWarnings("this-escape")
     public MethodGen(final Method method, final String className, final ConstantPoolGen cp) {
         this(method.getAccessFlags(), Type.getReturnType(method.getSignature()),
             Type.getArgumentTypes(method.getSignature()), null /* may be overridden anyway */

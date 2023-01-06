@@ -79,7 +79,6 @@ public class SaslException extends IOException {
      * @see java.lang.Throwable#getMessage
      * @see #getCause
      */
-    @SuppressWarnings("this-escape")
     public SaslException (String detail, Throwable ex) {
         super(detail);
         if (ex != null) {

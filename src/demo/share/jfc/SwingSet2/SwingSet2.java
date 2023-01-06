@@ -150,7 +150,6 @@ public class SwingSet2 extends JPanel {
     /**
      * SwingSet2 Constructor
      */
-    @SuppressWarnings("this-escape")
     public SwingSet2(GraphicsConfiguration gc) {
         String lafClassName = UIManager.getLookAndFeel().getClass().getName();
         lookAndFeelData = getInstalledLookAndFeelData();
@@ -1207,7 +1206,6 @@ public class SwingSet2 extends JPanel {
         ImageIcon aboutimage = null;
         SwingSet2 swingset = null;
 
-        @SuppressWarnings("this-escape")
         public AboutPanel(SwingSet2 swingset) {
             this.swingset = swingset;
             aboutimage = swingset.createImageIcon("About.jpg", "AboutBox.accessible_description");

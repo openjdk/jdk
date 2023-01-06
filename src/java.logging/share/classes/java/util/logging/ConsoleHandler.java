@@ -74,7 +74,6 @@ public class ConsoleHandler extends StreamHandler {
      * {@code LogManager} properties (or their default values).
      *
      */
-    @SuppressWarnings("this-escape")
     public ConsoleHandler() {
         // configure with specific defaults for ConsoleHandler
         super(Level.INFO, new SimpleFormatter(), null);

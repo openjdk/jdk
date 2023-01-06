@@ -114,7 +114,7 @@ public class BezierScroller extends AnimatingControlsSurface {
         return bi;
     }
 
-    @SuppressWarnings("this-escape")
+    @SuppressWarnings("LeakingThisInConstructor")
     public BezierScroller() {
         setBackground(WHITE);
         doShape = doText = true;

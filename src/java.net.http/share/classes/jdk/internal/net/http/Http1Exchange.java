@@ -240,7 +240,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         return request;
     }
 
-    @SuppressWarnings("this-escape")
     Http1Exchange(Exchange<T> exchange, HttpConnection connection)
         throws IOException
     {

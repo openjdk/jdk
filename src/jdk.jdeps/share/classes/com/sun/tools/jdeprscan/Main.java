@@ -469,7 +469,6 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * @param out the stream to which the tool's output is sent
      * @param err the stream to which error messages are sent
      */
-    @SuppressWarnings("this-escape")
     Main(PrintStream out, PrintStream err) {
         this.out = out;
         this.err = err;

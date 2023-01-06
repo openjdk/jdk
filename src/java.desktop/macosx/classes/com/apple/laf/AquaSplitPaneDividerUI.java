@@ -43,7 +43,6 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
     final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIStateFactory.getSplitPaneDivider());
 
-    @SuppressWarnings("this-escape")
     public AquaSplitPaneDividerUI(final AquaSplitPaneUI ui) {
         super(ui);
         setLayout(new AquaSplitPaneDividerUI.DividerLayout());

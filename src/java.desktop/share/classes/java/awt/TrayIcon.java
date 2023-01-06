@@ -144,7 +144,6 @@ public class TrayIcon {
             });
     }
 
-    @SuppressWarnings("this-escape")
     private TrayIcon()
       throws UnsupportedOperationException, HeadlessException, SecurityException
     {
@@ -176,7 +175,6 @@ public class TrayIcon {
      * @see SecurityManager#checkPermission
      * @see AWTPermission
      */
-    @SuppressWarnings("this-escape")
     public TrayIcon(Image image) {
         this();
         if (image == null) {
@@ -206,7 +204,6 @@ public class TrayIcon {
      * @see SecurityManager#checkPermission
      * @see AWTPermission
      */
-    @SuppressWarnings("this-escape")
     public TrayIcon(Image image, String tooltip) {
         this(image);
         setToolTip(tooltip);
@@ -237,7 +234,6 @@ public class TrayIcon {
      * @see SecurityManager#checkPermission
      * @see AWTPermission
      */
-    @SuppressWarnings("this-escape")
     public TrayIcon(Image image, String tooltip, PopupMenu popup) {
         this(image, tooltip);
         setPopupMenu(popup);

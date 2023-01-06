@@ -759,7 +759,6 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         Window grabbedWindow;
         MenuElement[] lastPathSelected;
 
-        @SuppressWarnings("this-escape")
         public MouseGrabber() {
             MenuSelectionManager msm = MenuSelectionManager.defaultManager();
             msm.addChangeListener(this);

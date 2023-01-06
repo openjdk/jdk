@@ -42,7 +42,6 @@ public class InternalEventHandler implements Runnable
     EventQueueImpl queue;
     VirtualMachineImpl vm;
 
-    @SuppressWarnings("this-escape")
     InternalEventHandler(VirtualMachineImpl vm, EventQueueImpl queue) {
         this.vm = vm;
         this.queue = queue;

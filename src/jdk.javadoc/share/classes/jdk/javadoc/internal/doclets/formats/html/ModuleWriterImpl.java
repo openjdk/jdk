@@ -159,7 +159,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param configuration the configuration of the doclet.
      * @param mdle        Module under consideration.
      */
-    @SuppressWarnings("this-escape")
     public ModuleWriterImpl(HtmlConfiguration configuration, ModuleElement mdle) {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;

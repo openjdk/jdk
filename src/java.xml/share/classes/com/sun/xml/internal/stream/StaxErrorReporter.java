@@ -49,7 +49,6 @@ public class StaxErrorReporter extends XMLErrorReporter {
     protected XMLReporter fXMLReporter = null ;
 
     /** Creates a new instance of StaxErrorReporter */
-    @SuppressWarnings("this-escape")
     public StaxErrorReporter(PropertyManager propertyManager) {
         super();
         putMessageFormatter(XMLMessageFormatter.XML_DOMAIN, new XMLMessageFormatter());
@@ -59,7 +58,6 @@ public class StaxErrorReporter extends XMLErrorReporter {
     /** Creates a new instance of StaxErrorReporter
      * If this constructor is used to create the object, one must invoke reset() on this object.
      */
-    @SuppressWarnings("this-escape")
     public StaxErrorReporter() {
         super();
         putMessageFormatter(XMLMessageFormatter.XML_DOMAIN, new XMLMessageFormatter());

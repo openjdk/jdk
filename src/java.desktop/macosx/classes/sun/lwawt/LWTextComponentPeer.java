@@ -54,7 +54,6 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
 
     private volatile boolean firstChangeSkipped;
 
-    @SuppressWarnings("this-escape")
     LWTextComponentPeer(final T target,
                         final PlatformComponent platformComponent) {
         super(target, platformComponent);

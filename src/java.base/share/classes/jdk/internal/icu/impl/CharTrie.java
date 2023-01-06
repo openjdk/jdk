@@ -62,7 +62,6 @@ public class CharTrie extends Trie
      * @throws IOException thrown when data reading fails
      * @draft 2.1
      */
-    @SuppressWarnings("this-escape")
     public CharTrie(InputStream inputStream,
                     DataManipulate dataManipulate) throws IOException
     {

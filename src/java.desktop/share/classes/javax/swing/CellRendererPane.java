@@ -75,7 +75,6 @@ public class CellRendererPane extends Container implements Accessible
     /**
      * Construct a CellRendererPane object.
      */
-    @SuppressWarnings("this-escape")
     public CellRendererPane() {
         super();
         setLayout(null);

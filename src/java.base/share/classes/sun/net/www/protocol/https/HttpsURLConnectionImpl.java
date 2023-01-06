@@ -77,7 +77,6 @@ public class HttpsURLConnectionImpl
         return u;
     }
 
-    @SuppressWarnings("this-escape")
     HttpsURLConnectionImpl(URL u, Proxy p, Handler handler) throws IOException {
         super(checkURL(u));
         delegate = new DelegateHttpsURLConnection(url, p, handler, this);

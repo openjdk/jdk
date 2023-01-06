@@ -46,7 +46,6 @@ public class HashDrbg extends AbstractHashDrbg {
     private byte[] v;
     private byte[] c;
 
-    @SuppressWarnings("this-escape")
     public HashDrbg(SecureRandomParameters params) {
         mechName = "Hash_DRBG";
         configure(params);

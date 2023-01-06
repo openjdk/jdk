@@ -61,7 +61,6 @@ public class APOptions extends KerberosFlags {
         super(Krb5.AP_OPTS_MAX + 1);
     }
 
-    @SuppressWarnings("this-escape")
     public APOptions(int oneBit) throws Asn1Exception {
         super(Krb5.AP_OPTS_MAX + 1);
         set(oneBit, true);

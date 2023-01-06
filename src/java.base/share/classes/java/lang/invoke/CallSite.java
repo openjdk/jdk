@@ -130,7 +130,6 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
      * @throws Throwable anything else thrown by the hook function
      */
     /*package-private*/
-    @SuppressWarnings("this-escape")
     CallSite(MethodType targetType, MethodHandle createTargetHook) throws Throwable {
         this(targetType); // need to initialize target to make CallSite.type() work in createTargetHook
         ConstantCallSite selfCCS = (ConstantCallSite) this;
@@ -143,7 +142,6 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
      * {@code CallSite} dependency context.
      * JVM uses CallSite.context to store nmethod dependencies on the call site target.
      */
-    @SuppressWarnings("this-escape")
     private final MethodHandleNatives.CallSiteContext context = MethodHandleNatives.CallSiteContext.make(this);
 
     /**

@@ -428,7 +428,6 @@ public interface ExecutionControl extends AutoCloseable {
 
         private final String causeExceptionClass;
 
-        @SuppressWarnings("this-escape")
         public UserException(String message, String causeExceptionClass, StackTraceElement[] stackElements) {
             super(message);
             this.causeExceptionClass = causeExceptionClass;
@@ -468,7 +467,6 @@ public interface ExecutionControl extends AutoCloseable {
          * @param id An internal identifier of the specific method
          * @param stackElements the stack trace
          */
-        @SuppressWarnings("this-escape")
         public ResolutionException(int id, StackTraceElement[] stackElements) {
             super("resolution exception: " + id);
             this.id = id;

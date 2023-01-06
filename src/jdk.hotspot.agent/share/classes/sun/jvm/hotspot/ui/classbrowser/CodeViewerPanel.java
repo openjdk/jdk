@@ -41,7 +41,6 @@ public class CodeViewerPanel extends JPanel {
     protected HTMLGenerator  htmlGen;
     protected JScrollPane    scrollPane;
 
-    @SuppressWarnings("this-escape")
     public CodeViewerPanel() {
         htmlGen = new HTMLGenerator();
         contentEditor = new SAEditorPane();

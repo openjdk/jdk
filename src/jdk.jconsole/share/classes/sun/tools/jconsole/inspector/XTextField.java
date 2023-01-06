@@ -52,7 +52,6 @@ public class XTextField extends JPanel
     private XOperations operation;
 
     //used in XTestFieldEditor
-    @SuppressWarnings("this-escape")
     public XTextField() {
         super(new BorderLayout());
         add(textField = new JTextField(),BorderLayout.CENTER);
@@ -68,7 +67,6 @@ public class XTextField extends JPanel
         this(value,value.getClass(),colWidth, true, null, null);
     }
 
-    @SuppressWarnings("this-escape")
     public XTextField(Object value,
                       Class<?> expectedClass,
                       int colWidth,

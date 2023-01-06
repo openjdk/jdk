@@ -218,7 +218,6 @@ public class DefaultMetalTheme extends MetalTheme {
     /**
      * Creates and returns an instance of {@code DefaultMetalTheme}.
      */
-    @SuppressWarnings("this-escape")
     public DefaultMetalTheme() {
         install();
     }

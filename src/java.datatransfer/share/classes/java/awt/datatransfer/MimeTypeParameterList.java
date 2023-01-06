@@ -46,7 +46,6 @@ class MimeTypeParameterList implements Cloneable {
         parameters = new Hashtable<>();
     }
 
-    @SuppressWarnings("this-escape")
     public MimeTypeParameterList(String rawdata)
         throws MimeTypeParseException
     {

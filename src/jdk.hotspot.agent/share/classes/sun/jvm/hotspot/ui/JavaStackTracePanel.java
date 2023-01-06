@@ -39,7 +39,6 @@ public class JavaStackTracePanel extends JPanel {
     private SAEditorPane        contentEditor;
     private HTMLGenerator htmlGen = new HTMLGenerator();
 
-    @SuppressWarnings("this-escape")
     public JavaStackTracePanel() {
         initUI();
     }

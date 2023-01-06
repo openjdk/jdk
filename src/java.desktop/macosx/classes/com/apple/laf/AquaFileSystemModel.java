@@ -60,7 +60,6 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     public static final String SORT_BY_CHANGED = "sortByChanged";
     public static final String SORT_ASCENDING_CHANGED = "sortAscendingChanged";
 
-    @SuppressWarnings("this-escape")
     public AquaFileSystemModel(final JFileChooser filechooser, final JTable filelist, final String[] colNames) {
         fileCacheLock = new Object();
         this.filechooser = filechooser;
@@ -389,7 +388,6 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         int fid;
         Thread loadThread;
 
-        @SuppressWarnings("this-escape")
         public FilesLoader(final File currentDirectory, final int fid) {
             this.currentDirectory = currentDirectory;
             this.fid = fid;

@@ -46,7 +46,6 @@ public class EndElementEvent extends DummyEvent
     List<Namespace> fNamespaces = null;
     QName fQName;
 
-    @SuppressWarnings("this-escape")
     public EndElementEvent() {
         init();
     }
@@ -60,7 +59,6 @@ public class EndElementEvent extends DummyEvent
         this(new QName(uri, localpart, prefix));
     }
 
-    @SuppressWarnings("this-escape")
     public EndElementEvent(QName qname) {
         this.fQName = qname;
         init();

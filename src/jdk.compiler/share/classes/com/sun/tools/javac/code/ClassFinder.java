@@ -180,7 +180,6 @@ public class ClassFinder {
     }
 
     /** Construct a new class finder. */
-    @SuppressWarnings("this-escape")
     protected ClassFinder(Context context) {
         context.put(classFinderKey, this);
         reader = ClassReader.instance(context);

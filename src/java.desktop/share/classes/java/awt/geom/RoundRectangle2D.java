@@ -123,7 +123,6 @@ public abstract class RoundRectangle2D extends RectangularShape {
          *             {@code RoundRectangle2D}
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Float(float x, float y, float w, float h,
                      float arcw, float arch)
         {
@@ -338,7 +337,6 @@ public abstract class RoundRectangle2D extends RectangularShape {
          *             {@code RoundRectangle2D}
          * @since 1.2
          */
-        @SuppressWarnings("this-escape")
         public Double(double x, double y, double w, double h,
                       double arcw, double arch)
         {

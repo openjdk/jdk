@@ -106,7 +106,6 @@ public class EntityImpl
     //
 
     /** Factory constructor. */
-    @SuppressWarnings("this-escape")
     public EntityImpl(CoreDocumentImpl ownerDoc, String name) {
         super(ownerDoc);
         this.name = name;

@@ -68,7 +68,6 @@ public class InputStreamReader extends Reader {
      * If the reader type is trusted then an internal lock can be used. If the
      * reader type is not trusted then the reader object is the lock.
      */
-    @SuppressWarnings("this-escape")
     private static Object lockFor(InputStreamReader reader) {
         Class<?> clazz = reader.getClass();
         if (clazz == InputStreamReader.class || clazz == FileReader.class) {

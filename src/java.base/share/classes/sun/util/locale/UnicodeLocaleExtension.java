@@ -57,7 +57,6 @@ public class UnicodeLocaleExtension extends Extension {
         keywords = Collections.singletonMap(key, value);
     }
 
-    @SuppressWarnings("this-escape")
     UnicodeLocaleExtension(SortedSet<String> attributes, SortedMap<String, String> keywords) {
         super(SINGLETON);
         if (attributes != null) {

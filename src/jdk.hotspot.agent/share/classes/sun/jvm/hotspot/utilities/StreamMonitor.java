@@ -90,7 +90,6 @@ public class StreamMonitor implements Runnable {
     this(istr, null, false);
   }
 
-  @SuppressWarnings("this-escape")
   public StreamMonitor(InputStream istr, String prefixString, boolean printContents) {
     input = new BufferedReader(new InputStreamReader(istr));
     this.prefixString = prefixString;

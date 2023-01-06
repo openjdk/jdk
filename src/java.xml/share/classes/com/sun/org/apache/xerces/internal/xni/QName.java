@@ -71,19 +71,16 @@ implements Cloneable {
     //
 
     /** Default constructor. */
-    @SuppressWarnings("this-escape")
     public QName() {
         clear();
     } // <init>()
 
     /** Constructs a QName with the specified values. */
-    @SuppressWarnings("this-escape")
     public QName(String prefix, String localpart, String rawname, String uri) {
         setValues(prefix, localpart, rawname, uri);
     } // <init>(String,String,String,String)
 
     /** Constructs a copy of the specified QName. */
-    @SuppressWarnings("this-escape")
     public QName(QName qname) {
         setValues(qname);
     } // <init>(QName)

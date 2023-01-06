@@ -40,7 +40,6 @@ public class StringTokenIterator {
     private int end;
     private boolean done;
 
-    @SuppressWarnings("this-escape")
     public StringTokenIterator(String text, String dlms) {
         this.text = text;
         if (dlms.length() == 1) {

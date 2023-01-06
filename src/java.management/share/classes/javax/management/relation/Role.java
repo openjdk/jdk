@@ -137,7 +137,6 @@ public class Role implements Serializable {
      *
      * @exception IllegalArgumentException  if null parameter
      */
-    @SuppressWarnings("this-escape")
     public Role(String roleName,
                 List<ObjectName> roleValue)
         throws IllegalArgumentException {

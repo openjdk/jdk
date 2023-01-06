@@ -53,7 +53,6 @@ class Commands {
     abstract static class AsyncExecution {
         abstract void action();
 
-        @SuppressWarnings("this-escape")
         AsyncExecution() {
             execute();
         }

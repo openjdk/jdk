@@ -40,14 +40,12 @@ import org.xml.sax.ext.LexicalHandler;
 public abstract class ToSAXHandler extends SerializerBase {
     public ToSAXHandler() { }
 
-    @SuppressWarnings("this-escape")
     public ToSAXHandler(ContentHandler hdlr, LexicalHandler lex, String encoding) {
         setContentHandler(hdlr);
         setLexHandler(lex);
         setEncoding(encoding);
     }
 
-    @SuppressWarnings("this-escape")
     public ToSAXHandler(ContentHandler handler, String encoding) {
         setContentHandler(handler);
         setEncoding(encoding);

@@ -33,7 +33,6 @@ import javax.swing.KeyStroke;
 public class ExitAction extends DelegateAction
 {
 
-    @SuppressWarnings("this-escape")
     public ExitAction()
     {
         super("Exit", ActionManager.getIcon(VALUE_SMALL_ICON));

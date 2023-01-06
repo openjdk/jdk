@@ -74,7 +74,6 @@ public class ClassFile {
         return new ClassFile(in, attributeFactory);
     }
 
-    @SuppressWarnings("this-escape")
     ClassFile(InputStream in, Attribute.Factory attributeFactory) throws IOException, ConstantPoolException {
         ClassReader cr = new ClassReader(this, in, attributeFactory);
         magic = cr.readInt();

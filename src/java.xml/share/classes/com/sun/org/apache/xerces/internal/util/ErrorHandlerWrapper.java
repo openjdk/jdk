@@ -55,7 +55,6 @@ public class ErrorHandlerWrapper
     public ErrorHandlerWrapper() {}
 
     /** Wraps the specified SAX error handler. */
-    @SuppressWarnings("this-escape")
     public ErrorHandlerWrapper(ErrorHandler errorHandler) {
         setErrorHandler(errorHandler);
     } // <init>(ErrorHandler)

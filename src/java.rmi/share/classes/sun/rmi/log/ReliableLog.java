@@ -132,7 +132,7 @@ public class ReliableLog {
      * if an exception occurs during invocation of the handler's
      * snapshot method or if other IOException occurs.
      */
-    @SuppressWarnings({ "removal", "this-escape" })
+    @SuppressWarnings("removal")
     public ReliableLog(String dirPath,
                      LogHandler handler,
                      boolean pad)
@@ -797,7 +797,6 @@ public class ReliableLog {
         /**
          * Constructs a LogFile and initializes the file descriptor.
          **/
-        @SuppressWarnings("this-escape")
         public LogFile(String name, String mode)
             throws FileNotFoundException, IOException
         {

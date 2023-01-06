@@ -37,7 +37,6 @@ public class AboutAction extends DelegateAction
         this("general/About16.gif");
     }
 
-    @SuppressWarnings("this-escape")
     public AboutAction(String iconPath)
     {
         super("About...", ActionManager.getIcon(iconPath));

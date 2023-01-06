@@ -185,7 +185,6 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     private AquaFileSystemModel model;
 
-    @SuppressWarnings("this-escape")
     final AquaFileView fileView = new AquaFileView(this);
 
     boolean selectionInProgress = false;
@@ -1084,7 +1083,6 @@ public class AquaFileChooserUI extends FileChooserUI {
     protected class MacFCTableCellRenderer extends DefaultTableCellRenderer {
         boolean fIsSelected = false;
 
-        @SuppressWarnings("this-escape")
         public MacFCTableCellRenderer(final Font f) {
             super();
             setFont(f);
@@ -1270,7 +1268,6 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         File fSelectedDirectory = null;
 
-        @SuppressWarnings("this-escape")
         public DirectoryComboBoxModel() {
             super();
             // Add the current directory to the model, and make it the
@@ -1485,7 +1482,6 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Sorting Table operations
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class JSortingTableHeader extends JTableHeader {
-        @SuppressWarnings("this-escape")
         public JSortingTableHeader(final TableColumnModel cm) {
             super(cm);
             setReorderingAllowed(true); // This causes mousePress to call setDraggedColumn

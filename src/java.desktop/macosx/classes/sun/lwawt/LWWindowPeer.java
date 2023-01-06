@@ -157,7 +157,6 @@ public class LWWindowPeer
      */
     private LWWindowPeer blocker;
 
-    @SuppressWarnings("this-escape")
     public LWWindowPeer(Window target, PlatformComponent platformComponent,
                         PlatformWindow platformWindow, PeerType peerType)
     {

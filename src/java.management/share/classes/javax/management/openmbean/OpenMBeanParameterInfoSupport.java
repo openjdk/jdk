@@ -144,7 +144,6 @@ public class OpenMBeanParameterInfoSupport
      *
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public OpenMBeanParameterInfoSupport(String name,
                                          String description,
                                          OpenType<?> openType,
@@ -333,7 +332,6 @@ public class OpenMBeanParameterInfoSupport
              defaultValue, null, minValue, maxValue);
     }
 
-    @SuppressWarnings("this-escape")
     private <T> OpenMBeanParameterInfoSupport(String name,
                                               String description,
                                               OpenType<T> openType,

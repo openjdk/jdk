@@ -41,7 +41,6 @@ class NativeConstructorAccessorImpl extends ConstructorAccessorImpl {
     private int numInvocations;
     private volatile int generated;
 
-    @SuppressWarnings("this-escape")
     NativeConstructorAccessorImpl(Constructor<?> c) {
         this.c = c;
         this.parent = new DelegatingConstructorAccessorImpl(this);

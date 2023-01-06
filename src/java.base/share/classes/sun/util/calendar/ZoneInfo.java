@@ -194,7 +194,6 @@ public class ZoneInfo extends TimeZone {
      * SimpleTimeZone
      * @param willGMTOffsetChange the value of willGMTOffsetChange
      */
-    @SuppressWarnings("this-escape")
     ZoneInfo(String ID,
              int rawOffset,
              int dstSavings,

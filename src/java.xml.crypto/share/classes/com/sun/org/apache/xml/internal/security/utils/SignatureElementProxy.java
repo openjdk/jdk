@@ -40,7 +40,6 @@ public abstract class SignatureElementProxy extends ElementProxy {
      *
      * @param doc
      */
-    @SuppressWarnings("this-escape")
     public SignatureElementProxy(Document doc) {
         if (doc == null) {
             throw new RuntimeException("Document is null");

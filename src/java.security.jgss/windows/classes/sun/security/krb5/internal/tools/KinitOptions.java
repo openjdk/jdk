@@ -68,7 +68,6 @@ class KinitOptions {
     private boolean useKeytab = false; // default = false.
     private String ktabName; // keytab file name
 
-    @SuppressWarnings("this-escape")
     public KinitOptions() throws RuntimeException, RealmException {
         // no args were specified in the command line;
         // use default values
@@ -92,7 +91,6 @@ class KinitOptions {
         return null;
     }
 
-    @SuppressWarnings("this-escape")
     public KinitOptions(String[] args)
         throws KrbException, RuntimeException, IOException {
         // currently we provide support for -f -p -c principal options

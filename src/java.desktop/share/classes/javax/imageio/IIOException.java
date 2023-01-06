@@ -73,7 +73,6 @@ public class IIOException extends IOException {
      * @see #getCause
      * @see #getMessage
      */
-    @SuppressWarnings("this-escape")
     public IIOException(String message, Throwable cause) {
         super(message);
         initCause(cause);

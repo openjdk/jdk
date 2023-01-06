@@ -207,7 +207,6 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      *    if the given <var>implementation</var> does not implement the
      *    specified interface.
      **/
-    @SuppressWarnings("this-escape")
     public <T> StandardMBean(T implementation, Class<T> mbeanInterface)
         throws NotCompliantMBeanException {
         construct(implementation, mbeanInterface, false, false);
@@ -228,7 +227,6 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      *    does not follow JMX design patterns for Management Interfaces, or
      *    if <var>this</var> does not implement the specified interface.
      **/
-    @SuppressWarnings("this-escape")
     protected StandardMBean(Class<?> mbeanInterface)
         throws NotCompliantMBeanException {
         construct(null, mbeanInterface, true, false);
@@ -265,7 +263,6 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      *
      * @since 1.6
      **/
-    @SuppressWarnings("this-escape")
     public <T> StandardMBean(T implementation, Class<T> mbeanInterface,
                              boolean isMXBean) {
         try {
@@ -298,7 +295,6 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      *
      * @since 1.6
      **/
-    @SuppressWarnings("this-escape")
     protected StandardMBean(Class<?> mbeanInterface, boolean isMXBean) {
         try {
             construct(null, mbeanInterface, true, isMXBean);

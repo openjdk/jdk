@@ -32,7 +32,6 @@ import sun.jvm.hotspot.runtime.*;
 /** A JPanel to show information about Java-level deadlocks. */
 
 public class DeadlockDetectionPanel extends JPanel {
-    @SuppressWarnings("this-escape")
     public DeadlockDetectionPanel() {
         super();
 

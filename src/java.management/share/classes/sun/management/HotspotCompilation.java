@@ -46,7 +46,6 @@ class HotspotCompilation
     /**
      * Constructor of HotspotRuntime class.
      */
-    @SuppressWarnings("this-escape")
     HotspotCompilation(VMManagement vm) {
         jvm = vm;
         initCompilerCounters();

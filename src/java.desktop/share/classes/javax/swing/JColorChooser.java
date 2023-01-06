@@ -261,7 +261,6 @@ public class JColorChooser extends JComponent implements Accessible {
      *
      * @param model the <code>ColorSelectionModel</code> to be used
      */
-    @SuppressWarnings("this-escape")
     public JColorChooser(ColorSelectionModel model) {
         selectionModel = model;
         updateUI();
@@ -658,7 +657,6 @@ class ColorChooserDialog extends JDialog {
     private JColorChooser chooserPane;
     private JButton cancelButton;
 
-    @SuppressWarnings("this-escape")
     public ColorChooserDialog(Dialog owner, String title, boolean modal,
         Component c, JColorChooser chooserPane,
         ActionListener okListener, ActionListener cancelListener)
@@ -667,7 +665,6 @@ class ColorChooserDialog extends JDialog {
         initColorChooserDialog(c, chooserPane, okListener, cancelListener);
     }
 
-    @SuppressWarnings("this-escape")
     public ColorChooserDialog(Frame owner, String title, boolean modal,
         Component c, JColorChooser chooserPane,
         ActionListener okListener, ActionListener cancelListener)

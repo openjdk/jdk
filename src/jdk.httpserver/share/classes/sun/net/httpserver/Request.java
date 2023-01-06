@@ -45,7 +45,6 @@ class Request {
     private InputStream is;
     private OutputStream os;
 
-    @SuppressWarnings("this-escape")
     Request (InputStream rawInputStream, OutputStream rawout) throws IOException {
         is = rawInputStream;
         os = rawout;

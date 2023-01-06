@@ -46,7 +46,6 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
 
-    @SuppressWarnings("this-escape")
     public RET(final int index) {
         super(com.sun.org.apache.bcel.internal.Const.RET, (short) 2);
         setIndex(index); // May set wide as side effect

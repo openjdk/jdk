@@ -78,7 +78,6 @@ public class DOMValidateContext extends DOMCryptoContext
      * @throws NullPointerException if <code>ks</code> or <code>node</code> is
      *    <code>null</code>
      */
-    @SuppressWarnings("this-escape")
     public DOMValidateContext(KeySelector ks, Node node) {
         if (ks == null) {
             throw new NullPointerException("key selector is null");
@@ -98,7 +97,6 @@ public class DOMValidateContext extends DOMCryptoContext
      * @throws NullPointerException if <code>validatingKey</code> or
      *    <code>node</code> is <code>null</code>
      */
-    @SuppressWarnings("this-escape")
     public DOMValidateContext(Key validatingKey, Node node) {
         if (validatingKey == null) {
             throw new NullPointerException("validatingKey is null");

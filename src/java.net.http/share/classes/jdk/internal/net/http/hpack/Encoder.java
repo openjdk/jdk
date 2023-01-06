@@ -149,7 +149,6 @@ public class Encoder {
      * @throws IllegalArgumentException
      *         if maxCapacity is negative
      */
-    @SuppressWarnings("this-escape")
     public Encoder(int maxCapacity) {
         id = ENCODERS_IDS.incrementAndGet();
         this.logger = HPACK.getLogger().subLogger("Encoder#" + id);

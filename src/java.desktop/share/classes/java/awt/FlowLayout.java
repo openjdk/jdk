@@ -235,7 +235,6 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *                     and between the components and the
      *                     borders of the {@code Container}
      */
-    @SuppressWarnings("this-escape")
     public FlowLayout(int align, int hgap, int vgap) {
         this.hgap = hgap;
         this.vgap = vgap;

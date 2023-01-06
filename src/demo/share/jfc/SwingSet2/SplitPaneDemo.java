@@ -78,7 +78,6 @@ public class SplitPaneDemo extends DemoModule {
     /**
      * SplitPaneDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public SplitPaneDemo(SwingSet2 swingset) {
         super(swingset, "SplitPaneDemo", "toolbar/JSplitPane.gif");
 

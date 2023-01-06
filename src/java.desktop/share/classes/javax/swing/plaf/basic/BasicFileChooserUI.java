@@ -1059,7 +1059,6 @@ public class BasicFileChooserUI extends FileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ChangeToParentDirectoryAction extends AbstractAction {
         /** Constructs a {@code ChangeToParentDirectoryAction}. */
-        @SuppressWarnings("this-escape")
         protected ChangeToParentDirectoryAction() {
             super("Go Up");
             putValue(Action.ACTION_COMMAND_KEY, FilePane.ACTION_CHANGE_TO_PARENT_DIRECTORY);

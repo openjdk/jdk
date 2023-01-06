@@ -143,7 +143,6 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
      * @param reader The {@code JPEGImageReader} calling this
      * constructor, to which warnings should be sent.
      */
-    @SuppressWarnings("this-escape")
     JPEGMetadata(boolean isStream,
                  boolean isThumb,
                  ImageInputStream iis,
@@ -367,7 +366,6 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
      * Constructs a default stream {@code JPEGMetadata} object appropriate
      * for the given write parameters.
      */
-    @SuppressWarnings("this-escape")
     JPEGMetadata(ImageWriteParam param, JPEGImageWriter writer) {
         this(true, false);
 
@@ -401,7 +399,6 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
      * Constructs a default image {@code JPEGMetadata} object appropriate
      * for the given image type and write parameters.
      */
-    @SuppressWarnings("this-escape")
     JPEGMetadata(ImageTypeSpecifier imageType,
                  ImageWriteParam param,
                  JPEGImageWriter writer) {

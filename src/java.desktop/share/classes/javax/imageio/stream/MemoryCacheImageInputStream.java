@@ -64,7 +64,6 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      * @throws IllegalArgumentException if {@code stream} is
      * {@code null}.
      */
-    @SuppressWarnings("this-escape")
     public MemoryCacheImageInputStream(InputStream stream) {
         if (stream == null) {
             throw new IllegalArgumentException("stream == null!");

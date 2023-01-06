@@ -381,7 +381,6 @@ public class ClassFileReader implements Closeable {
         JarFileIterator(JarFileReader reader) {
             this(reader, null);
         }
-        @SuppressWarnings("this-escape")
         JarFileIterator(JarFileReader reader, JarFile jarfile) {
             this.reader = reader;
             setJarFile(jarfile);

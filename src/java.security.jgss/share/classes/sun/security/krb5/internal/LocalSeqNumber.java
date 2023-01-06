@@ -36,17 +36,14 @@ import sun.security.krb5.Confounder;
 public class LocalSeqNumber implements SeqNumber {
     private int lastSeqNumber;
 
-    @SuppressWarnings("this-escape")
     public LocalSeqNumber() {
         randInit();
     }
 
-    @SuppressWarnings("this-escape")
     public LocalSeqNumber(int start) {
         init(start);
     }
 
-    @SuppressWarnings("this-escape")
     public LocalSeqNumber(Integer start) {
         init(start.intValue());
     }

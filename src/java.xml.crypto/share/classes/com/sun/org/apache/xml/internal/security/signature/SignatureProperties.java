@@ -44,7 +44,6 @@ public class SignatureProperties extends SignatureElementProxy {
      *
      * @param doc
      */
-    @SuppressWarnings("this-escape")
     public SignatureProperties(Document doc) {
         super(doc);
 
@@ -57,7 +56,6 @@ public class SignatureProperties extends SignatureElementProxy {
      * @param baseURI the URI of the resource where the XML instance was stored
      * @throws XMLSecurityException
      */
-    @SuppressWarnings("this-escape")
     public SignatureProperties(Element element, String baseURI) throws XMLSecurityException {
         super(element, baseURI);
 

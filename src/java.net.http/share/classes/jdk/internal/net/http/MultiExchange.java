@@ -151,7 +151,6 @@ class MultiExchange<T> implements Cancelable {
     /**
      * MultiExchange with one final response.
      */
-    @SuppressWarnings("this-escape")
     MultiExchange(HttpRequest userRequest,
                   HttpRequestImpl requestImpl,
                   HttpClientImpl client,

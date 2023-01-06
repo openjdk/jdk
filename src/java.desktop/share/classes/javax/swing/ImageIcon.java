@@ -170,7 +170,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param description a brief textual description of the image
      * @see #ImageIcon(String)
      */
-    @SuppressWarnings("this-escape")
     public ImageIcon(String filename, String description) {
         image = Toolkit.getDefaultToolkit().getImage(filename);
         if (image == null) {
@@ -210,7 +209,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param description a brief textual description of the image
      * @see #ImageIcon(String)
      */
-    @SuppressWarnings("this-escape")
     public ImageIcon(URL location, String description) {
         image = Toolkit.getDefaultToolkit().getImage(location);
         if (image == null) {
@@ -252,7 +250,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @see #getDescription
      * @see java.awt.Image#getProperty
      */
-    @SuppressWarnings("this-escape")
     public ImageIcon (Image image) {
         this.image = image;
         Object o = image.getProperty("comment", imageObserver);
@@ -275,7 +272,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param  description a brief textual description of the image
      * @see    java.awt.Toolkit#createImage
      */
-    @SuppressWarnings("this-escape")
     public ImageIcon (byte[] imageData, String description) {
         this.image = Toolkit.getDefaultToolkit().createImage(imageData);
         if (image == null) {
@@ -301,7 +297,6 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @see #getDescription
      * @see java.awt.Image#getProperty
      */
-    @SuppressWarnings("this-escape")
     public ImageIcon (byte[] imageData) {
         this.image = Toolkit.getDefaultToolkit().createImage(imageData);
         if (image == null) {

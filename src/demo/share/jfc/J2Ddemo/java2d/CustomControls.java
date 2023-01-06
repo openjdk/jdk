@@ -59,7 +59,6 @@ public abstract class CustomControls extends JPanel implements Runnable {
     private static final Color blue = new Color(204, 204, 255);
 
 
-    @SuppressWarnings("this-escape")
     public CustomControls() {
         setBorder(new EtchedBorder());
         addMouseListener(new MouseAdapter() {

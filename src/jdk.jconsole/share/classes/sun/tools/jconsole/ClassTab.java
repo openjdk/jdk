@@ -81,7 +81,6 @@ class ClassTab extends Tab implements ActionListener {
         return Messages.CLASSES;
     }
 
-    @SuppressWarnings("this-escape")
     public ClassTab(VMPanel vmPanel) {
         super(vmPanel, getTabName());
 

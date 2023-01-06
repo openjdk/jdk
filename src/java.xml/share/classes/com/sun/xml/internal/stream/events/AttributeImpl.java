@@ -59,11 +59,9 @@ public class AttributeImpl extends DummyEvent implements Attribute
     //of its element or was defaulted from the schema.
     private boolean fIsSpecified;
 
-    @SuppressWarnings("this-escape")
     public AttributeImpl(){
         init();
     }
-    @SuppressWarnings("this-escape")
     public AttributeImpl(String name, String value) {
         init();
         fQName = new QName(name);
@@ -83,7 +81,6 @@ public class AttributeImpl extends DummyEvent implements Attribute
     }
 
 
-    @SuppressWarnings("this-escape")
     public AttributeImpl(QName qname, String value, String nonNormalizedvalue, String type, boolean isSpecified) {
         init();
         fQName = qname ;

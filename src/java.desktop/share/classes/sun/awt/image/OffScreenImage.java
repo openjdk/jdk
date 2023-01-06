@@ -56,7 +56,6 @@ public class OffScreenImage extends BufferedImage {
      * The component is used to obtain the foreground color, background
      * color and font.
      */
-    @SuppressWarnings("this-escape")
     public OffScreenImage(Component c, ColorModel cm, WritableRaster raster,
                           boolean isRasterPremultiplied)
     {

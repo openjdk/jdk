@@ -132,7 +132,6 @@ public class TableDemo extends DemoModule {
     /**
      * TableDemo Constructor
      */
-    @SuppressWarnings("this-escape")
     public TableDemo(SwingSet2 swingset) {
         super(swingset, "TableDemo", "toolbar/JTable.gif");
 

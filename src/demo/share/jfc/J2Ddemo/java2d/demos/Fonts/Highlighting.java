@@ -62,7 +62,6 @@ public class Highlighting extends AnimatingSurface {
     private TextLayout[] layouts;
     private Font[] fonts;
 
-    @SuppressWarnings("this-escape")
     public Highlighting() {
         setBackground(WHITE);
         fonts = new Font[2];

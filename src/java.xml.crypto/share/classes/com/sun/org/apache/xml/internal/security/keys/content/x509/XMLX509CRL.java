@@ -47,7 +47,6 @@ public class XMLX509CRL extends SignatureElementProxy implements XMLX509DataCont
      * @param doc
      * @param crlBytes
      */
-    @SuppressWarnings("this-escape")
     public XMLX509CRL(Document doc, byte[] crlBytes) {
         super(doc);
 

@@ -123,7 +123,6 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
      * @param nested the AWTEvent which this SequencedEvent's dispatch()
      *        method will dispatch
      */
-    @SuppressWarnings("this-escape")
     public SequencedEvent(AWTEvent nested) {
         super(nested.getSource(), ID);
         this.nested = nested;

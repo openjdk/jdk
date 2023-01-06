@@ -524,7 +524,6 @@ public class Region {
      *           if this is a subregion.
      * @param subregion Whether or not this is a subregion.
      */
-    @SuppressWarnings("this-escape")
     protected Region(String name, String ui, boolean subregion) {
         this(name, subregion);
         if (ui != null) {

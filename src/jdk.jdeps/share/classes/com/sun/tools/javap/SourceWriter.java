@@ -65,7 +65,6 @@ public class SourceWriter extends InstructionDetailWriter {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected SourceWriter(Context context) {
         super(context);
         context.put(SourceWriter.class, this);

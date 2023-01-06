@@ -102,7 +102,6 @@ public class UnicodeReader {
      * @param array   array containing contents of source.
      * @param length  length of meaningful content in buffer.
      */
-    @SuppressWarnings("this-escape")
     protected UnicodeReader(ScannerFactory sf, char[] array, int length) {
         this.buffer = array;
         this.length = length;

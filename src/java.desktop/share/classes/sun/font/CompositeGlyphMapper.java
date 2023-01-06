@@ -57,7 +57,6 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
     int[][] glyphMaps;
     private boolean hasExcludes;
 
-    @SuppressWarnings("this-escape")
     public CompositeGlyphMapper(CompositeFont compFont) {
         font = compFont;
         initMapper();

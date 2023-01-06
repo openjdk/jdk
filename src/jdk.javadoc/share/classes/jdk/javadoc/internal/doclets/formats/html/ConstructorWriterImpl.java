@@ -61,7 +61,6 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * @param writer The writer for the class that the constructors belong to.
      * @param typeElement the class being documented.
      */
-    @SuppressWarnings("this-escape")
     public ConstructorWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
 

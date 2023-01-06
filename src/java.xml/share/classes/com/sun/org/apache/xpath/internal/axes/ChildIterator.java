@@ -47,7 +47,6 @@ public class ChildIterator extends LocPathIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
-  @SuppressWarnings("this-escape")
   ChildIterator(Compiler compiler, int opPos, int analysis)
           throws javax.xml.transform.TransformerException
   {

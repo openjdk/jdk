@@ -62,7 +62,6 @@ class Iocp extends AsynchronousChannelGroupImpl {
     // received in a timely manner after the channel is closed.
     private final Set<Long> staleIoSet = new HashSet<Long>();
 
-    @SuppressWarnings("this-escape")
     Iocp(AsynchronousChannelProvider provider, ThreadPool pool)
         throws IOException
     {
@@ -72,7 +71,6 @@ class Iocp extends AsynchronousChannelGroupImpl {
         this.nextCompletionKey = 1;
     }
 
-    @SuppressWarnings("this-escape")
     Iocp start() {
         startThreads(new EventHandlerTask());
         return this;

@@ -45,7 +45,6 @@ class GIFWritableStreamMetadata extends GIFStreamMetadata {
     static final String
     NATIVE_FORMAT_NAME = "javax_imageio_gif_stream_1.0";
 
-    @SuppressWarnings("this-escape")
     public GIFWritableStreamMetadata() {
         super(true,
               NATIVE_FORMAT_NAME,

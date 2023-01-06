@@ -63,7 +63,6 @@ class DurationYearMonthImpl
      *    If years, months parameters are all <code>null</code>. Or if any
      *    of those parameters are negative.
      */
-    @SuppressWarnings("this-escape")
     public DurationYearMonthImpl(
         boolean isPositive,
         BigInteger years,
@@ -133,7 +132,6 @@ class DurationYearMonthImpl
          *
          * @param durationInMilliseconds Milliseconds of <code>Duration</code> to create.
          */
-    @SuppressWarnings("this-escape")
     protected DurationYearMonthImpl(long durationInMilliseconds) {
 
         super(durationInMilliseconds);
@@ -169,7 +167,6 @@ class DurationYearMonthImpl
          * @throws UnsupportedOperationException If implementation cannot support requested values.
          * @throws NullPointerException If <code>lexicalRepresentation</code> is <code>null</code>.
          */
-    @SuppressWarnings("this-escape")
     protected DurationYearMonthImpl(String lexicalRepresentation) {
         super(lexicalRepresentation);
         if (getDays() > 0 || getHours() > 0

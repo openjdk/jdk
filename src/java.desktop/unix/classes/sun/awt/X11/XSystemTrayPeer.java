@@ -49,7 +49,6 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     private static final XAtom _NET_WM_ICON = XAtom.get("_NET_WM_ICON");
     private static final long SYSTEM_TRAY_REQUEST_DOCK = 0;
 
-    @SuppressWarnings("this-escape")
     XSystemTrayPeer(SystemTray target) {
         this.target = target;
         peerInstance = this;

@@ -71,7 +71,6 @@ public abstract class BasicTestIterator extends LocPathIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
-  @SuppressWarnings("this-escape")
   protected BasicTestIterator(Compiler compiler, int opPos, int analysis)
           throws javax.xml.transform.TransformerException
   {

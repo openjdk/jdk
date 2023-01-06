@@ -311,7 +311,6 @@ import java.util.Objects;
   * @exception MalformedURIException if p_uriSpec violates any syntax
   *                                  rules
   */
-  @SuppressWarnings("this-escape")
   public URI(URI p_base, String p_uriSpec) throws MalformedURIException {
     initialize(p_base, p_uriSpec);
   }
@@ -333,7 +332,6 @@ import java.util.Objects;
    * @exception MalformedURIException if p_uriSpec violates any syntax
    *                                  rules
    */
-  @SuppressWarnings("this-escape")
   public URI(URI p_base, String p_uriSpec, boolean allowNonAbsoluteURI) throws MalformedURIException {
       initialize(p_base, p_uriSpec, allowNonAbsoluteURI);
   }
@@ -350,7 +348,6 @@ import java.util.Objects;
   * @exception MalformedURIException if p_scheme violates any
   *                                  syntax rules
   */
-  @SuppressWarnings("this-escape")
   public URI(String p_scheme, String p_schemeSpecificPart)
              throws MalformedURIException {
     if (p_scheme == null || p_scheme.trim().length() == 0) {
@@ -418,7 +415,6 @@ import java.util.Objects;
   * @exception MalformedURIException if any of the parameters violates
   *                                  syntax rules or semantic rules
   */
-  @SuppressWarnings("this-escape")
   public URI(String p_scheme, String p_userinfo,
              String p_host, int p_port, String p_path,
              String p_queryString, String p_fragment)

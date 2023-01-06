@@ -53,7 +53,6 @@ public class LocalVariableGen implements InstructionTargeter, NamedAndTyped, Clo
      * @param start from where the instruction is valid (null means from the start)
      * @param end until where the instruction is valid (null means to the end)
      */
-    @SuppressWarnings("this-escape")
     public LocalVariableGen(final int index, final String name, final Type type, final InstructionHandle start,
             final InstructionHandle end) {
         if ((index < 0) || (index > Const.MAX_SHORT)) {

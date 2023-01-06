@@ -70,7 +70,6 @@ public abstract class AbstractRepository<T extends Tree> {
      * @param f - a factory that will provide instances of reflective
      * objects when this repository converts its AST
      */
-    @SuppressWarnings("this-escape")
     protected AbstractRepository(String rawSig, GenericsFactory f) {
         tree = parse(rawSig);
         factory = f;

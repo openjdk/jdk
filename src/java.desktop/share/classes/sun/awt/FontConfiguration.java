@@ -80,7 +80,6 @@ public abstract class FontConfiguration {
     /* A default FontConfiguration must be created before an alternate
      * one to ensure proper static initialisation takes place.
      */
-    @SuppressWarnings("this-escape")
     public FontConfiguration(SunFontManager fm) {
         if (FontUtilities.debugFonts()) {
             FontUtilities.logInfo("Creating standard Font Configuration");
@@ -110,7 +109,6 @@ public abstract class FontConfiguration {
         return true;
     }
 
-    @SuppressWarnings("this-escape")
     public FontConfiguration(SunFontManager fm,
                              boolean preferLocaleFonts,
                              boolean preferPropFonts) {

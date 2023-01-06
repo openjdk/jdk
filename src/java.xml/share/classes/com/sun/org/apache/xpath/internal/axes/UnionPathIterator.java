@@ -156,7 +156,6 @@ public class UnionPathIterator extends LocPathIterator
    *
    * @throws javax.xml.transform.TransformerException
    */
-  @SuppressWarnings("this-escape")
   public UnionPathIterator(Compiler compiler, int opPos)
           throws javax.xml.transform.TransformerException
   {

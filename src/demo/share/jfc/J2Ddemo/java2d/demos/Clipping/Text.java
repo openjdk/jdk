@@ -87,7 +87,6 @@ public class Text extends ControlsSurface {
     private String clipType = "Lines";
     protected boolean doClip = true;
 
-    @SuppressWarnings("this-escape")
     public Text() {
         setBackground(WHITE);
         img = getImage("clouds.jpg");

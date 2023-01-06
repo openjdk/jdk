@@ -114,7 +114,6 @@ public class Intro extends JPanel {
     private boolean doTable;
     private final Surface surface;
 
-    @SuppressWarnings("this-escape")
     public Intro() {
         EmptyBorder eb = new EmptyBorder(80, 110, 80, 110);
         BevelBorder bb = new BevelBorder(BevelBorder.LOWERED);
@@ -203,7 +202,7 @@ public class Intro extends JPanel {
         private JTable table;
         private TableModel dataModel;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public ScenesTable(final Intro intro) {
             this.intro = intro;
 
@@ -337,7 +336,7 @@ public class Intro extends JPanel {
         public long sleepAmt = 30;
         private Thread thread;
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public Surface() {
             setBackground(myBlack);
             setLayout(new BorderLayout());
@@ -497,7 +496,6 @@ public class Intro extends JPanel {
             Font f2 = new Font(Font.SERIF, Font.PLAIN, 120);
             Font f3 = new Font(Font.SERIF, Font.PLAIN, 72);
 
-            @SuppressWarnings("this-escape")
             public Director(Surface surf) {
                 Object[][][] partsInfo = {
                 { { "J  -  scale text on gradient", "0" },

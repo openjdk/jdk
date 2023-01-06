@@ -87,7 +87,6 @@ public class PlainDocument extends AbstractDocument {
      *
      * @param c  the container for the content
      */
-    @SuppressWarnings("this-escape")
     public PlainDocument(Content c) {
         super(c);
         putProperty(tabSizeAttribute, Integer.valueOf(8));

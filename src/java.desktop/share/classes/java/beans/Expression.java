@@ -93,7 +93,6 @@ public class Expression extends Statement {
      *
      * @see #setValue
      */
-    @SuppressWarnings("this-escape")
     public Expression(Object value, Object target, String methodName, Object[] arguments) {
         this(target, methodName, arguments);
         setValue(value);

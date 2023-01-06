@@ -146,7 +146,6 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      *          <code>HORIZONTAL</code> nor <code>VERTICAL</code>
      * @since 1.3
      */
-    @SuppressWarnings("this-escape")
     public JToolBar( String name , int orientation) {
         setName(name);
         checkOrientation( orientation );
@@ -598,7 +597,6 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
          *
          * @param size the <code>Dimension</code> of the separator
          */
-        @SuppressWarnings("this-escape")
         public Separator( Dimension size )
         {
             super( JSeparator.HORIZONTAL );

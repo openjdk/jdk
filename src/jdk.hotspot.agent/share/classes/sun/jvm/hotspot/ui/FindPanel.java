@@ -43,7 +43,6 @@ public class FindPanel extends JPanel {
   private JTextArea  textArea;
   private JLabel statusLabel;
 
-  @SuppressWarnings("this-escape")
   public FindPanel() {
     super();
 

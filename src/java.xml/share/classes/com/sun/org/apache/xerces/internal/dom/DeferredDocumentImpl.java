@@ -157,7 +157,6 @@ public class DeferredDocumentImpl
     } // <init>(boolean)
 
     /** Experimental constructor. */
-    @SuppressWarnings("this-escape")
     public DeferredDocumentImpl(boolean namespaces, boolean grammarAccess) {
         super(grammarAccess);
 

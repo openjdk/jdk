@@ -131,7 +131,6 @@ public class FindInCodeCachePanel extends SAPanel {
   }
 
 
-  @SuppressWarnings("this-escape")
   public FindInCodeCachePanel() {
     super();
 

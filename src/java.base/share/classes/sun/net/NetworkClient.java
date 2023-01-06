@@ -229,7 +229,6 @@ public class NetworkClient {
     }
 
     /** Create connection with host <i>host</i> on port <i>port</i> */
-    @SuppressWarnings("this-escape")
     public NetworkClient(String host, int port) throws IOException {
         openServer(host, port);
     }

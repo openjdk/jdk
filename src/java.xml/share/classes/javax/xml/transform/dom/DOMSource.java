@@ -82,7 +82,6 @@ public class DOMSource implements Source {
      *
      * @param n The DOM node that will contain the Source tree.
      */
-    @SuppressWarnings("this-escape")
     public DOMSource(Node n) {
         setNode(n);
     }
@@ -94,7 +93,6 @@ public class DOMSource implements Source {
      * @param node The DOM node that will contain the Source tree.
      * @param systemID Specifies the base URI associated with node.
      */
-    @SuppressWarnings("this-escape")
     public DOMSource(Node node, String systemID) {
         setNode(node);
         setSystemId(systemID);

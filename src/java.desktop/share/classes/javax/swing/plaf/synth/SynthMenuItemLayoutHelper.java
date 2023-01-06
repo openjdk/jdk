@@ -103,7 +103,6 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
     private boolean alignAcceleratorText;
     private int maxAccOrArrowWidth;
 
-    @SuppressWarnings("this-escape")
     public SynthMenuItemLayoutHelper(SynthContext context, SynthContext accContext,
                                      JMenuItem mi, Icon checkIcon, Icon arrowIcon,
                                      Rectangle viewRect, int gap, String accDelimiter,

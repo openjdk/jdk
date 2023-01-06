@@ -92,7 +92,6 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
       <P> useCache should be set to true if debugging is being done
       locally, and to false if the debugger is being created for the
       purpose of supporting remote debugging. </P> */
-  @SuppressWarnings("this-escape")
   public WindbgDebuggerLocal(MachineDescription machDesc,
                             boolean useCache) throws DebuggerException {
     this.machDesc = machDesc;

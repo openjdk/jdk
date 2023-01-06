@@ -30,7 +30,6 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 public class BasicPointerType extends BasicType implements PointerType {
   private Type targetType;
 
-  @SuppressWarnings("this-escape")
   public BasicPointerType(int size, Type targetType) {
     this(null, size, targetType, 0);
   }

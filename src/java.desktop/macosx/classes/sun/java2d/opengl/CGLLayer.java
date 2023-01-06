@@ -41,7 +41,6 @@ public class CGLLayer extends CFLayer {
 
     private int scale = 1;
 
-    @SuppressWarnings("this-escape")
     public CGLLayer(LWWindowPeer peer) {
         super(0, true);
 

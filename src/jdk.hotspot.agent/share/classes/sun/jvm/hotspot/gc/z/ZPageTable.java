@@ -123,7 +123,6 @@ public class ZPageTable extends VMObject {
         private ZPagesIterator iter = new ZPagesIterator();
         private ZPageFilter filter;
 
-        @SuppressWarnings("this-escape")
         ZPagesFilteredIterator(ZPageFilter filter) {
             this.filter = filter;
             positionToNext();

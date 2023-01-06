@@ -122,7 +122,6 @@ public class AttributeList extends ArrayList<Object> {
      *
      * @since 1.6
      */
-    @SuppressWarnings("this-escape")
     public AttributeList(List<Attribute> list) {
         // Check for null parameter
         //

@@ -140,7 +140,6 @@ public class JApplet extends Applet implements Accessible,
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see JComponent#getDefaultLocale
      */
-    @SuppressWarnings("this-escape")
     public JApplet() throws HeadlessException {
         super();
         // Check the timerQ and restart if necessary.

@@ -159,7 +159,6 @@ public class XMenuWindow extends XBaseMenuWindow {
      * Constructs XMenuWindow for specified XMenuPeer
      * null for XPopupMenuWindow
      */
-    @SuppressWarnings("this-escape")
     XMenuWindow(XMenuPeer menuPeer) {
         if (menuPeer != null) {
             this.menuPeer = menuPeer;

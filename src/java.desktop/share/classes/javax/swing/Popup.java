@@ -84,7 +84,6 @@ public class Popup {
      * @param y        Initial y screen coordinate
      * @throws IllegalArgumentException if contents is null
      */
-    @SuppressWarnings("this-escape")
     protected Popup(Component owner, Component contents, int x, int y) {
         this();
         if (contents == null) {
@@ -235,7 +234,6 @@ public class Popup {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class HeavyWeightWindow extends JWindow implements ModalExclude {
-        @SuppressWarnings("this-escape")
         HeavyWeightWindow(Window parent) {
             super(parent);
             setFocusableWindowState(false);

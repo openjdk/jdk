@@ -55,7 +55,6 @@ public class XMLX509IssuerSerial extends SignatureElementProxy implements XMLX50
      * @param x509IssuerName
      * @param x509SerialNumber
      */
-    @SuppressWarnings("this-escape")
     public XMLX509IssuerSerial(Document doc, String x509IssuerName, BigInteger x509SerialNumber) {
         super(doc);
         addReturnToSelf();

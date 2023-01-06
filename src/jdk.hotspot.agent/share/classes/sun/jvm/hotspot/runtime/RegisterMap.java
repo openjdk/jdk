@@ -80,7 +80,6 @@ public abstract class RegisterMap implements Cloneable {
     locationValidSize = (regCount + locationValidTypeSize - 1) / locationValidTypeSize;
   }
 
-  @SuppressWarnings("this-escape")
   protected RegisterMap(JavaThread thread, boolean updateMap) {
     this.thread    = thread;
     this.updateMap = updateMap;
@@ -90,7 +89,6 @@ public abstract class RegisterMap implements Cloneable {
   }
 
   /** Makes a copy of map into this */
-  @SuppressWarnings("this-escape")
   protected RegisterMap(RegisterMap map) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map != null, "RegisterMap must be present");

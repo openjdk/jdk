@@ -51,7 +51,6 @@ implements Characters {
     /*used to prevent scanning of  data multiple times */
     private boolean fCheckIfSpaceNeeded = true;
 
-    @SuppressWarnings("this-escape")
     public CharacterEvent() {
         fIsCData = false;
         init();
@@ -61,7 +60,6 @@ implements Characters {
      *
      * @param data Character Data.
      */
-    @SuppressWarnings("this-escape")
     public CharacterEvent(String data) {
         fIsCData = false;
         init();
@@ -73,7 +71,6 @@ implements Characters {
      * @param data Character Data.
      * @param flag true if CData
      */
-    @SuppressWarnings("this-escape")
     public CharacterEvent(String data, boolean flag) {
         init();
         fData = data;
@@ -86,7 +83,6 @@ implements Characters {
      * @param flag true if CData
      * @param isIgnorableWhiteSpace true if data is ignorable whitespace.
      */
-    @SuppressWarnings("this-escape")
     public CharacterEvent(String data, boolean flag, boolean isIgnorableWhiteSpace) {
         init();
         fData = data;

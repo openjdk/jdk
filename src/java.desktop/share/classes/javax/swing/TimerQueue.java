@@ -60,7 +60,6 @@ class TimerQueue implements Runnable
     /**
      * Constructor for TimerQueue.
      */
-    @SuppressWarnings("this-escape")
     public TimerQueue() {
         super();
         queue = new DelayQueue<DelayedTimer>();

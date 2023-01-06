@@ -73,7 +73,6 @@ public class LocalVariableTableWriter extends  InstructionDetailWriter {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     protected LocalVariableTableWriter(Context context) {
         super(context);
         context.put(LocalVariableTableWriter.class, this);

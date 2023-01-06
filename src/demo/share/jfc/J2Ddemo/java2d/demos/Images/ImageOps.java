@@ -111,7 +111,7 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
         }
     }
 
-    @SuppressWarnings("this-escape")
+    @SuppressWarnings("LeakingThisInConstructor")
     public ImageOps() {
         setDoubleBuffered(true);
         setBackground(Color.white);
@@ -191,7 +191,7 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
         JComboBox<String> imgCombo, opsCombo;
         Font font = new Font(Font.SERIF, Font.PLAIN, 10);
 
-        @SuppressWarnings("this-escape")
+        @SuppressWarnings("LeakingThisInConstructor")
         public DemoControls(ImageOps demo) {
             super(demo.name);
             this.demo = demo;

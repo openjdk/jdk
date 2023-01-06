@@ -145,7 +145,6 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         assert callerSaved.size() >= allocatable.size();
     }
 
-    @SuppressWarnings("this-escape")
     public AMD64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean windowsOS) {
         this.target = target;
         this.windowsOS = windowsOS;

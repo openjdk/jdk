@@ -55,7 +55,6 @@ public class InvalidPropertiesFormatException extends IOException {
      * @param  cause the cause (which is saved for later retrieval by the
      *         {@link Throwable#getCause()} method).
      */
-    @SuppressWarnings("this-escape")
     public InvalidPropertiesFormatException(Throwable cause) {
         super(cause==null ? null : cause.toString());
         this.initCause(cause);
