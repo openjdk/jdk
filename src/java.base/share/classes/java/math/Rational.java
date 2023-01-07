@@ -160,15 +160,15 @@ public class Rational extends Number implements Comparable<Rational> {
     public Rational(BigDecimal val, MathContext mc) {
         val = val.round(mc);
         final int scale = val.scale();
-        final BigInteger intVal = val.unscaledValue().abs();
+        final BigInteger signif = val.unscaledValue().abs();
         final Rational res;
 
         if (scale > 0)
-            res = valueOf(val.signum(), intVal, BigInteger.TEN.pow(scale));
+            res = valueOf(val.signum(), signif, BigInteger.TEN.pow(scale));
         else if (scale < 0)
-            res = valueOf(val.signum(), intVal.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
+            res = valueOf(val.signum(), signif.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
         else
-            res = valueOf(val.signum(), intVal, BigInteger.ONE);
+            res = valueOf(val.signum(), signif, BigInteger.ONE);
 
         signum = res.signum;
         numerator = res.numerator;
