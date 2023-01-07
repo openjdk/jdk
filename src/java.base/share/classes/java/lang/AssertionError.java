@@ -68,9 +68,6 @@ public class AssertionError extends Error {
      * If the specified object is an instance of {@code Throwable}, it
      * becomes the <i>cause</i> of the newly constructed assertion error.
      *
-     * @implNote This constructor invokes {@link #initCause initCause()}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param detailMessage value to be used in constructing detail message
      * @see   Throwable#getCause()
      */

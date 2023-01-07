@@ -391,9 +391,6 @@ public class ObjectInputStream
      * the ObjectInputStream.readFields or ObjectInputStream.readUnshared
      * methods.
      *
-     * @implNote This constructor invokes {@link #readStreamHeader}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param   in input stream to read from
      * @throws  StreamCorruptedException if the stream header is incorrect
      * @throws  IOException if an I/O error occurs while reading stream header

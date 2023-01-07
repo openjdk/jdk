@@ -151,9 +151,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      * specified string. The initial capacity of the string buffer is
      * {@code 16} plus the length of the string argument.
      *
-     * @implNote This constructor invokes {@link #append(CharSequence)}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param   str   the initial contents of the buffer.
      */
     @IntrinsicCandidate
@@ -166,9 +163,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      * as the specified {@code CharSequence}. The initial capacity of
      * the string buffer is {@code 16} plus the length of the
      * {@code CharSequence} argument.
-     *
-     * @implNote This constructor invokes {@link #append(CharSequence)}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param      seq   the sequence to copy.
      * @since 1.5

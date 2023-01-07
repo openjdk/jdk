@@ -169,9 +169,6 @@ public class LinkedHashSet<E>
      * capacity sufficient to hold the elements in the specified collection
      * and the default load factor (0.75).
      *
-     * @implNote This constructor invokes {@link #add add()} and {@link #addAll addAll()};
-     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param c  the collection whose elements are to be placed into
      *           this set
      * @throws NullPointerException if the specified collection is null

@@ -177,9 +177,6 @@ public class TreeMap<K,V>
      * a {@code ClassCastException} for any keys {@code k1} and
      * {@code k2} in the map.  This method runs in n*log(n) time.
      *
-     * @implNote This constructor invokes {@link #put put()} and {@link #putAll putAll()};
-     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param  m the map whose mappings are to be placed in this map
      * @throws ClassCastException if the keys in m are not {@link Comparable},
      *         or are not mutually comparable

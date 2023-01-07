@@ -160,9 +160,6 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * must contain at least one mapping (in order to determine the new
      * enum map's key type).
      *
-     * @implNote This constructor invokes {@link #put put()} and {@link #putAll putAll()};
-     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param m the map from which to initialize this enum map
      * @throws IllegalArgumentException if {@code m} is not an
      *     {@code EnumMap} instance and contains no mappings

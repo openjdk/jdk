@@ -56,9 +56,6 @@ public class PipedOutputStream extends OutputStream {
      * input stream. Data bytes written to this stream will then be
      * available as input from {@code snk}.
      *
-     * @implNote This constructor invokes {@link #connect connect()}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param      snk   The piped input stream to connect to.
      * @throws     IOException  if an I/O error occurs.
      */

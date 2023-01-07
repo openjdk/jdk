@@ -163,9 +163,6 @@ public abstract class Charset$Coder$ {
      * Initializes a new $coder$.  The new $coder$ will have the given
      * $otypes-per-itype$ and replacement values.
      *
-     * @implNote This constructor invokes {@link #implReplaceWith implReplaceWith()}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param  cs
      *         The charset that created this $coder$
      *
@@ -214,9 +211,6 @@ public abstract class Charset$Coder$ {
      * Initializes a new $coder$.  The new $coder$ will have the given
      * $otypes-per-itype$ values and its replacement will be the
      * $replTypeName$ $defaultReplName$.
-     *
-     * @implNote This constructor invokes {@link #implReplaceWith implReplaceWith()}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      *
      * @param  cs
      *         The charset that created this $coder$

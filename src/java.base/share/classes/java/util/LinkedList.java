@@ -115,10 +115,6 @@ public class LinkedList<E>
      * collection, in the order they are returned by the collection's
      * iterator.
      *
-     * @implNote This constructor invokes {@link #add(Object) add()} and
-     * {@link #addAll(Collection) addAll()}; see
-     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param  c the collection whose elements are to be placed into this list
      * @throws NullPointerException if the specified collection is null
      */

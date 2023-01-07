@@ -222,9 +222,6 @@ public class Hashtable<K,V>
      * Map.  The hashtable is created with an initial capacity sufficient to
      * hold the mappings in the given Map and a default load factor (0.75).
      *
-     * @implNote This constructor invokes {@link #put put()} and {@link #putAll putAll()};
-     * see <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
-     *
      * @param t the map whose mappings are to be placed in this map.
      * @throws NullPointerException if the specified map is null.
      * @since   1.2
