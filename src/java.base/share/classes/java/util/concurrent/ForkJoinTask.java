@@ -575,17 +575,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * necessary in an ExecutionException.
      */
     private void reportExecutionException(int s) {
-        Throwable ex, rx;
+        Throwable ex = null, rx;
         if (s == ABNORMAL)
             ex = new InterruptedException();
         else if (s >= 0)
             ex = new TimeoutException();
         else if ((rx = getThrowableException()) != null)
             ex = new ExecutionException(rx);
-        else if ((status & POOLSUBMIT) != 0)
-            ex = new ExecutionException(new CancellationException());
-        else
-            ex = new CancellationException();
         ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
     }
 
@@ -1476,6 +1472,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         private static final long serialVersionUID = 2838392045355241008L;
     }
 
+    /**
+     * Adapter for Callable-based tasks that are designed to be
+     * interruptible when cancelled, including cases of cancellation
+     * upon pool termination. In addition to recording the running
+     * thread to enable interrupt in cancel(true), the task checks for
+     * termination before executing the compute method, to cover
+     * shutdown races in which the task has not yet been cancelled on
+     * entry but might not otherwise be re-interrupted by others.
+     */
     static final class AdaptedInterruptibleCallable<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
         @SuppressWarnings("serial") // Conditionally serializable
@@ -1490,12 +1495,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         public final boolean exec() {
-            ForkJoinPool p; // for termination check
             Thread.interrupted();
             runner = Thread.currentThread();
+            ForkJoinPool p = getPool();
             try {
-                if ((p = getPool()) != null && p.runState < 0)
-                    trySetCancelled();
+                if (p != null && p.runState < 0)
+                    trySetCancelled();    // termination check
                 else if (!isDone())
                     result = callable.call();
                 return true;
