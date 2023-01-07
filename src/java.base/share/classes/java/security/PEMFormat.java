@@ -160,12 +160,12 @@ public class PEMFormat {
     /**
      * From pem format.
      *
-     * @param eks the data
+     * @param data the data
      * @return the pem format
      * @throws IOException the io exception
      */
-    public static PEMFormat from(byte[] eks) throws IOException {
-        return new PEMFormat(eks);
+    public static PEMFormat from(byte[] data) throws IOException {
+        return new PEMFormat(data.clone());
     }
 
     /**
@@ -176,7 +176,7 @@ public class PEMFormat {
      * @throws IOException the io exception
      */
     public static PEMFormat from(String data) throws IOException {
-        byte[] pembytes = data.getBytes().clone();
+        byte[] pembytes = data.getBytes();
         if (pembytes[0] != '-') {
             throw new IOException("PEM format not detected, lacks header");
         }
@@ -373,7 +373,7 @@ public class PEMFormat {
         byte[] encodedBytes;
 
         if (pemDataOAS == null) {
-            encodedBytes = pemData.data();
+            encodedBytes = pemData.data;
         } else {
             encodedBytes = PKCS8Key.getEncoded(pemData.data, pemDataOAS.data);
         }
@@ -408,13 +408,17 @@ public class PEMFormat {
     }
 
     /**
-     * Gets PEM encoding
+     * Return encoded data.  Typically used when decoding form PEM to get the
+     * underlying PKCS8 or X509 binary encoding.
      *
      * @return the key spec
      * @throws IOException the io exception
      */
     public byte[] getEncoded() throws IOException {
-        return encodeString().getBytes();
+        if (!pemData.isComplete()) {
+            pemData = decode(pemData);
+        }
+        return pemData.data.clone();
     }
 
     /**
@@ -580,6 +584,14 @@ public class PEMFormat {
         return decrypt(password, null);
     }
 
+    /**
+     * Decrypt pem format.
+     *
+     * @param password the password
+     * @param p        the p
+     * @return the pem format
+     * @throws IOException the io exception
+     */
     public PEMFormat decrypt(char[] password, Provider p) throws IOException {
         return new PEMFormat(decodeEncrypted(pemData.data(), password, p), KeyType.PRIVATE);
     }
@@ -602,9 +614,10 @@ public class PEMFormat {
     /**
      * Encrypt pem format.
      *
-     * @param password  the password
-     * @param pbeAlgo the algorithm
-     * @param aps       the aps
+     * @param password the password
+     * @param pbeAlgo  the algorithm
+     * @param aps      the aps
+     * @param p        the p
      * @return the pem format
      * @throws IOException the io exception
      */

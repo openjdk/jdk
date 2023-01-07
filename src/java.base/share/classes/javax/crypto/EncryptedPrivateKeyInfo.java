@@ -99,7 +99,7 @@ public class EncryptedPrivateKeyInfo {
     private final byte[] encoded;
 
     //
-    public static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
+    private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
 
     /**
      * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
@@ -343,8 +343,9 @@ public class EncryptedPrivateKeyInfo {
      *
      * @param encodedBytes the encoded bytes
      * @param password     the password
-     * @param pbeAlgo    the algorithm
+     * @param pbeAlgo      the algorithm
      * @param aps          the aps
+     * @param p            the p
      * @return the byte [ ]
      * @throws IOException the io exception
      */
