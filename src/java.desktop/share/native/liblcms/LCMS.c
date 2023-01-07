@@ -498,7 +498,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
     cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
 
     if (sTrans == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_colorConvert: transform == NULL");
         JNU_ThrowByName(env, "java/awt/color/CMMException",
                         "Cannot get color transform");
         return;
