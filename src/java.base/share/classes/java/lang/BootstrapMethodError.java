@@ -75,6 +75,9 @@ public class BootstrapMethodError extends LinkageError {
      * Constructs a {@code BootstrapMethodError} with the specified
      * cause.
      *
+     * @implNote This constructor invokes {@link #initCause initCause()}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
+     *
      * @param cause the cause, may be {@code null}.
      */
     public BootstrapMethodError(Throwable cause) {

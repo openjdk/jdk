@@ -51,6 +51,9 @@ public class ExceptionInInitializerError extends LinkageError {
      * {@code null} as its detail message string and with no saved
      * throwable object.
      * A detail message is a String that describes this particular exception.
+     *
+     * @implNote This constructor invokes {@link #initCause initCause()}; see
+     * <a href="{@docRoot}/java.base/java/lang/doc-files/ThisEscape.html">This Escape</a>.
      */
     public ExceptionInInitializerError() {
         initCause(null); // Disallow subsequent initCause
