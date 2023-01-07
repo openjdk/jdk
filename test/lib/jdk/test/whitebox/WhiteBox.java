@@ -165,7 +165,52 @@ public class WhiteBox {
   }
 
   // G1
+
   public native boolean g1InConcurrentMark();
+  public native int g1CompletedConcurrentMarkCycles();
+
+  // Perform a complete concurrent GC cycle, using concurrent GC breakpoints.
+  // Completes any in-progress cycle before performing the requested cycle.
+  // Returns true if the cycle completed successfully.  If the cycle was not
+  // successful (e.g. it was aborted), then throws RuntimeException if
+  // errorIfFail is true, returning false otherwise.
+  public boolean g1RunConcurrentGC(boolean errorIfFail) {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      int count = g1CompletedConcurrentMarkCycles();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+      concurrentGCRunToIdle();
+      if (count < g1CompletedConcurrentMarkCycles()) {
+        return true;
+      } else if (errorIfFail) {
+        throw new RuntimeException("Concurrent GC aborted");
+      } else {
+        return false;
+      }
+    } finally {
+      concurrentGCReleaseControl();
+    }
+  }
+
+  public void g1RunConcurrentGC() {
+    g1RunConcurrentGC(true);
+  }
+
+  // Start a concurrent GC cycle, using concurrent GC breakpoints.
+  // The concurrent GC will continue in parallel with the caller.
+  // Completes any in-progress cycle before starting the requested cycle.
+  public void g1StartConcurrentGC() {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+    } finally {
+      // Release control, permitting the cycle to complete.
+      concurrentGCReleaseControl();
+    }
+  }
+
   public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
@@ -539,10 +584,6 @@ public class WhiteBox {
       return false;
     }
   }
-
-  // Method tries to start concurrent mark cycle.
-  // It returns false if CM Thread is always in concurrent cycle.
-  public native boolean g1StartConcMarkCycle();
 
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
