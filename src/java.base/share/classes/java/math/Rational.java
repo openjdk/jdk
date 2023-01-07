@@ -26,6 +26,43 @@ public class Rational extends Number implements Comparable<Rational> {
     @java.io.Serial
     private static final long serialVersionUID = 669815459941734258L;
 
+    // Constants
+    /**
+     * The value 0.
+     */
+    public static final Rational ZERO =
+        new Rational(0, BigInteger.ZERO, BigInteger.ONE);
+
+    /**
+     * The value 1.
+     */
+    public static final Rational ONE =
+        new Rational(1, BigInteger.ONE, BigInteger.ONE);
+
+    /**
+     * The value 2.
+     */
+    public static final Rational TWO =
+        new Rational(1, BigInteger.TWO, BigInteger.ONE);
+
+    /**
+     * The value 10.
+     */
+    public static final Rational TEN =
+        new Rational(1, BigInteger.TEN, BigInteger.ONE);
+
+    // Constructors
+
+    /**
+     * Constructs a new Rational with the specified values.
+     * This constructor assumes that the values passed are always valid
+     */
+    private Rational(int sign, BigInteger num, BigInteger den) {
+        signum = sign;
+        numerator = num;
+        denominator = den;
+    }
+
     /**
      * Returns a Rational whose value is represented by the fraction
      * with the specified numerator and denominator.
@@ -39,27 +76,26 @@ public class Rational extends Number implements Comparable<Rational> {
         if (den.signum == 0)
             throw new ArithmeticException("Denominator is zero");
 
+        if (num.signum == 0)
+            return ZERO;
+
         int signum = num.signum * den.signum;
         num = num.abs();
         den = den.abs();
 
-        if (num.signum == 0)
-            return new Rational(signum, num, BigInteger.ONE);
-
         if (num.equals(BigInteger.ONE) || den.equals(BigInteger.ONE))
             return new Rational(signum, num, den);
 
-        return new Rational(signum, num.divide(gcd), den.divide(gcd));
+        BigInteger[] frac = simplify(num, den);
+        return new Rational(signum, frac[0], frac[1]);
     }
 
     /**
-     * Constructs a new Rational with the specified values.
-     * This constructor assumes that the values passed are always valid
+     * returns the simplification of the specified fraction
      */
-    private Rational(int sign, BigInteger num, BigInteger den) {
-        signum = sign;
-        numerator = num;
-        denominator = den;
+    private static BigInteger[] simplify(BigInteger num, BigInteger den) {
+        BigInteger gcd = num.gcd(den);
+        return new BigInteger[] {num.divide(gcd), den.divide(gcd)};
     }
 
     /**
