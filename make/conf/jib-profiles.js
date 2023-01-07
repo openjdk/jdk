@@ -944,7 +944,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: input.build_cpu,
             dependencies: [
                 "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJdk,
-                testedProfileTest, testedProfile + ".jdk_symbols",
+                testedProfileTest,
             ],
             src: "src.conf",
             make_args: testOnlyMake,
@@ -958,6 +958,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             labels: "test"
         }
     };
+    if (!testedProfile.endsWith("-jcov")) {
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
+    }
 
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
