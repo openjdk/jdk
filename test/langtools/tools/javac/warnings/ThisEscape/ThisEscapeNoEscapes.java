@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8194743
+ * @bug 8015831
  * @summary Verify 'this' escape detection doesn't generate certain false positives
  */
 public class ThisEscapeNoEscapes {

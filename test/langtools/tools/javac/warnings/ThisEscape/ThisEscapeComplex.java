@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeComplex.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeComplex.java
  * @summary Verify 'this' escape detection can follow references through various Java code structures
  */

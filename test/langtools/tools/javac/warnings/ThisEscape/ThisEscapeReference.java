@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeReference.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeReference.java
  * @summary Verify proper handling of 'this' escape warnings from method references
  */

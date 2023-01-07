@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeUnqualified.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeUnqualified.java
  * @summary Verify proper 'this' escape interpretation of unqualified non-static method invocations.
  */

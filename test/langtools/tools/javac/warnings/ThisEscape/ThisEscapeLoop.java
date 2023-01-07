@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeLoop.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeLoop.java
  * @summary Verify 'this' escape detection properly handles loop convergence
  */

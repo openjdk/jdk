@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeOuterThis.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeOuterThis.java
  * @summary Verify 'this' escape detection handles leaks via outer 'this'
  */

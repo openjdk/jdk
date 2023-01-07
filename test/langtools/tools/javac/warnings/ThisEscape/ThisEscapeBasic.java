@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeBasic.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeBasic.java
  * @summary Verify basic 'this' escape detection
  */

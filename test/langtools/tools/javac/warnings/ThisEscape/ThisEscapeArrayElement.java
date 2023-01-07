@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeArrayElement.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeArrayElement.java
  * @summary Verify 'this' escape detection can follow references embedded as array elements
  */

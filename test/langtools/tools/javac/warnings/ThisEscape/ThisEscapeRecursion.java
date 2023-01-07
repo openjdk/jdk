@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeRecursion.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeRecursion.java
  * @summary Verify 'this' escape detection properly handles leaks via recursive methods
  */

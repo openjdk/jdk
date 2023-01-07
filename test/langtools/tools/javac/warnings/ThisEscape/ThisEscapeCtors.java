@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8194743
+ * @bug 8015831
  * @compile/ref=ThisEscapeCtors.out -Xlint:this-escape -XDrawDiagnostics ThisEscapeCtors.java
  * @summary Verify pruning of 'this' escape warnings for various constructors
  */
