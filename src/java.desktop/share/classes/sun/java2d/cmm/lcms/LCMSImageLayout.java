@@ -31,10 +31,13 @@ import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.ComponentSampleModel;
 import java.awt.image.Raster;
+import java.nio.ByteOrder;
 
 import sun.awt.image.ByteComponentRaster;
 import sun.awt.image.IntegerComponentRaster;
 import sun.awt.image.ShortComponentRaster;
+
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 final class LCMSImageLayout {
 
@@ -59,12 +62,12 @@ final class LCMSImageLayout {
     private static final int PT_BGR_8   = PT_RGB_8  | DOSWAP;
     private static final int PT_ABGR_8  = PT_BGR_8  | EXTRA_SH(1);
 //  private static final int PT_BGRA_8  = PT_ABGR_8 | SWAPFIRST;
-
+    private static final int SWAP_ENDIAN =
+            ByteOrder.nativeOrder() == LITTLE_ENDIAN ? DOSWAP : 0;
     private static final int DT_BYTE = 0;
     private static final int DT_SHORT = 1;
     private static final int DT_INT = 2;
     private static final int DT_DOUBLE = 3;
-    boolean isIntPacked = false;
     int pixelType;
     int dataType;
     int width;
@@ -143,16 +146,13 @@ final class LCMSImageLayout {
 
         switch (image.getType()) {
             case BufferedImage.TYPE_INT_RGB:
-                l.pixelType = PT_ARGB_8;
-                l.isIntPacked = true;
+                l.pixelType = PT_ARGB_8 ^ SWAP_ENDIAN;
                 break;
             case BufferedImage.TYPE_INT_ARGB:
-                l.pixelType = PT_ARGB_8;
-                l.isIntPacked = true;
+                l.pixelType = PT_ARGB_8 ^ SWAP_ENDIAN;
                 break;
             case BufferedImage.TYPE_INT_BGR:
-                l.pixelType = PT_ABGR_8;
-                l.isIntPacked = true;
+                l.pixelType = PT_ABGR_8 ^ SWAP_ENDIAN;
                 break;
             case BufferedImage.TYPE_3BYTE_BGR:
                 l.pixelType = PT_BGR_8;

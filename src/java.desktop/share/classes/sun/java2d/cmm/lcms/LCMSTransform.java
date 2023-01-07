@@ -53,15 +53,10 @@ final class LCMSTransform implements ColorTransform {
     private static final class NativeTransform {
         private long ID;
         private int inFormatter;
-        private boolean isInIntPacked;
         private int outFormatter;
-        private boolean isOutIntPacked;
 
         private boolean match(LCMSImageLayout in, LCMSImageLayout out) {
-            return inFormatter == in.pixelType
-                    && isInIntPacked == in.isIntPacked
-                    && outFormatter == out.pixelType
-                    && isOutIntPacked == out.isIntPacked;
+            return inFormatter == in.pixelType && outFormatter == out.pixelType;
         }
     }
 
@@ -115,16 +110,10 @@ final class LCMSTransform implements ColorTransform {
                 if (tfm == null || !tfm.match(in, out)) {
                     tfm = new NativeTransform();
                     tfm.inFormatter = in.pixelType;
-                    tfm.isInIntPacked = in.isIntPacked;
-
                     tfm.outFormatter = out.pixelType;
-                    tfm.isOutIntPacked = out.isIntPacked;
-
                     tfm.ID = LCMS.createTransform(lcmsProfiles, renderingIntent,
                                                   tfm.inFormatter,
-                                                  tfm.isInIntPacked,
-                                                  tfm.outFormatter,
-                                                  tfm.isOutIntPacked, tfm);
+                                                  tfm.outFormatter, tfm);
                     // Disposer will destroy forgotten transform
                     transform = tfm;
                 }
