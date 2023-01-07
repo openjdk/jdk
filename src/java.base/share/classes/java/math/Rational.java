@@ -150,102 +150,29 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Translates a character array representation of a
-     * decimal number into a {@code Rational}, accepting the
-     * same sequence of characters as the {@link #Rational(String)}
-     * constructor, while allowing a sub-array to be specified.
+     * Translates a {@code BigDecimal} into a {@code Rational}
+     * rounding according to the context settings.
      *
-     * @implNote If the sequence of characters is already available
-     * within a character array, using this constructor is faster than
-     * converting the {@code char} array to string and using the
-     * {@code Rational(String)} constructor.
-     *
-     * @param  in {@code char} array that is the source of characters.
-     * @param  offset first character in the array to inspect.
-     * @param  len number of characters to consider.
-     * @throws NumberFormatException if {@code in} is not a valid
-     *         representation of a decimal number or the defined subarray
-     *         is not wholly within {@code in}.
+     * @param val {@code BigDecimal} value to be converted to
+     *            {@code Rational}.
+     * @param  mc the context to use.
      */
-    public Rational(char[] in, int offset, int len) {
-        // protect against huge length, negative values, and integer overflow
-        try {
-            Objects.checkFromIndexSize(offset, len, in.length);
-        } catch (IndexOutOfBoundsException e) {
-            throw new NumberFormatException
-                ("Bad offset or len arguments for char[] input.");
-        }
+    public Rational(BigDecimal val, MathContext mc) {
+        val = val.round(mc);
+        final int scale = val.scale();
+        final BigInteger intVal = val.unscaledValue().abs();
+        final Rational res;
 
-        final int scale;
-        final char[] intVal;
-        final int sign;
-        // use array bounds checking to handle too-long, len == 0,
-        // bad offset, etc.
-        try {
-            // handle the sign
-            sign = in[offset] == '-' ? -1 : 1;
+        if (scale > 0)
+            res = valueOf(val.signum(), intVal, BigInteger.TEN.pow(scale));
+        else if (scale < 0)
+            res = valueOf(val.signum(), intVal.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
+        else
+            res = valueOf(val.signum(), intVal, BigInteger.ONE);
 
-            if (in[offset] == '-' || in[offset] == '+') { // leading + allowed
-                offset++;
-                len--;
-            }
-
-            // should now be at numeric part of the significand
-            final int start = offset;
-            // search for dot
-            for (; len > 0 && in[offset] != '.' && !expIndicator(in, offset); offset++, len--);
-
-            if (len > 0 && in[offset] == '.') { // there's a fractional part
-                final int dotPos = offset;
-                offset++;
-                len--;
-
-                // search for exponent indicator
-                for (; len > 0 && !expIndicator(in, offset); offset++, len--);
-
-                final int fracDigits = offset - (dotPos + 1);
-                scale = fracDigits - (len > 0 ? parseExp(in, offset, len) : 0);
-
-                intVal = new char[(offset - start) - 1];
-                System.arraycopy(in, start, intVal, 0, dotPos - start); // copy integer part
-                System.arraycopy(in, dotPos + 1, intVal, dotPos - start, fracDigits); // copy fractional part
-            } else {  // there's not a fractional part
-                scale = len > 0 ? -parseExp(in, offset, len) : 0;
-                intVal = Arrays.copyOfRange(in, start, offset);
-            }
-        } catch (ArrayIndexOutOfBoundsException | NegativeArraySizeException e) {
-            NumberFormatException nfe = new NumberFormatException();
-            nfe.initCause(e);
-            throw nfe;
-        }
-
-        BigInteger significand = new BigInteger(intVal, 1, intVal.length);
-
-        if (significand.signum == 0) {
-            signum = 0;
-            numerator = BigInteger.ZERO;
-            denominator = BigInteger.ONE;
-        } else {
-            Rational res;
-            
-            if (scale > 0)
-                res = valueOf(sign, significand, BigInteger.TEN.pow(scale));
-            else if (scale < 0)
-                res = valueOf(sign, significand.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
-            else
-                res = valueOf(sign, significand, BigInteger.ONE);
-
-            signum = res.signum;
-            numerator = res.numerator;
-            denominator = res.denominator;
-        }
-    }
-
-    /**
-     * Returns true if the character at the specified index is 'e' or 'E'
-     */
-    private static boolean expIndicator(char[] in, int index) {
-        return in[index] == 'e' || in[index] == 'E';
+        signum = res.signum;
+        numerator = res.numerator;
+        denominator = res.denominator;
     }
 
     /**
