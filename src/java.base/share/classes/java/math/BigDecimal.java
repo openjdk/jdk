@@ -701,7 +701,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /*
      * parse exponent
      */
-    private static long parseExp(char[] in, int offset, int len){
+    static long parseExp(char[] in, int offset, int len){
         long exp = 0;
         offset++;
         char c = in[offset];

@@ -1,6 +1,7 @@
 
 package java.math;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class Rational extends Number implements Comparable<Rational> {
@@ -30,38 +31,24 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * The value 0.
      */
-    public static final Rational ZERO =
-        new Rational(0, BigInteger.ZERO, BigInteger.ONE);
+    public static final Rational ZERO = new Rational(0, BigInteger.ZERO, BigInteger.ONE);
 
     /**
      * The value 1.
      */
-    public static final Rational ONE =
-        new Rational(1, BigInteger.ONE, BigInteger.ONE);
+    public static final Rational ONE = new Rational(1, BigInteger.ONE, BigInteger.ONE);
 
     /**
      * The value 2.
      */
-    public static final Rational TWO =
-        new Rational(1, BigInteger.TWO, BigInteger.ONE);
+    public static final Rational TWO = new Rational(1, BigInteger.TWO, BigInteger.ONE);
 
     /**
      * The value 10.
      */
-    public static final Rational TEN =
-        new Rational(1, BigInteger.TEN, BigInteger.ONE);
+    public static final Rational TEN = new Rational(1, BigInteger.TEN, BigInteger.ONE);
 
     // Constructors
-
-    /**
-     * Constructs a new Rational with the specified values.
-     * This constructor assumes that the values passed are always valid
-     */
-    private Rational(int sign, BigInteger num, BigInteger den) {
-        signum = sign;
-        numerator = num;
-        denominator = den;
-    }
 
     /**
      * Translates a {@code double} into a {@code Rational} which
@@ -79,7 +66,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * 0.1000000000000000055511151231257827021181583404541015625.
      * This is because 0.1 cannot be represented exactly as a
      * {@code double} (or, for that matter, as a binary fraction of
-     * any finite length).  Thus, the value that is being passed
+     * any finite length). Thus, the value that is being passed
      * <em>in</em> to the constructor is not exactly equal to 0.1,
      * appearances notwithstanding.
      *
@@ -87,7 +74,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * The {@code String} constructor, on the other hand, is
      * perfectly predictable: writing {@code new Rational("0.1")}
      * creates a {@code Rational} which is <em>exactly</em> equal to
-     * 0.1, as one would expect.  Therefore, it is generally
+     * 0.1, as one would expect. Therefore, it is generally
      * recommended that the {@linkplain #Rational(String)
      * String constructor} be used in preference to this one.
      *
@@ -97,15 +84,15 @@ public class Rational extends Number implements Comparable<Rational> {
      * exact conversion; it does not give the same result as
      * converting the {@code double} to a {@code String} using the
      * {@link Double#toString(double)} method and then using the
-     * {@link #Rational(String)} constructor.  To get that result,
+     * {@link #Rational(String)} constructor. To get that result,
      * use the {@code static} {@link #valueOf(double)} method.
      * </ol>
      *
      * @param val {@code double} value to be converted to
-     *        {@code Rational}.
+     *            {@code Rational}.
      * @throws NumberFormatException if {@code val} is infinite or NaN.
      */
-    public BigDecimal(double val) {
+    public Rational(double val) {
         if (Double.isInfinite(val) || Double.isNaN(val))
             throw new NumberFormatException("Infinite or NaN");
         // Translate the double into sign, exponent and significand, according
@@ -123,7 +110,7 @@ public class Rational extends Number implements Comparable<Rational> {
             signum = 0;
             numerator = BigInteger.ZERO;
             denominator = BigInteger.ONE;
-        }else if (exponent < 0) {
+        } else if (exponent < 0) {
             // Simplify even significands
             int zeros = Long.numberOfTrailingZeros(significand);
             significand >>= zeros;
@@ -142,12 +129,133 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Translates a {@code long} into a {@code Rational}.
+     *
+     * @param val {@code long} value to be converted to
+     *            {@code Rational}.
+     */
+    public Rational(long val) {
+        denominator = BigInteger.ONE;
+
+        if (val > 0) {
+            signum = 1;
+            numerator = BigInteger.valueOf(val);
+        } else if (val < 0) {
+            signum = -1;
+            numerator = BigInteger.valueOf(-val);
+        } else {
+            signum = 0;
+            numerator = BigInteger.ZERO;
+        }
+    }
+
+    /**
+     * Translates a character array representation of a
+     * decimal number into a {@code Rational}, accepting the
+     * same sequence of characters as the {@link #Rational(String)}
+     * constructor, while allowing a sub-array to be specified.
+     *
+     * @implNote If the sequence of characters is already available
+     * within a character array, using this constructor is faster than
+     * converting the {@code char} array to string and using the
+     * {@code Rational(String)} constructor.
+     *
+     * @param  in {@code char} array that is the source of characters.
+     * @param  offset first character in the array to inspect.
+     * @param  len number of characters to consider.
+     * @throws NumberFormatException if {@code in} is not a valid
+     *         representation of a decimal number or the defined subarray
+     *         is not wholly within {@code in}.
+     */
+    public Rational(char[] in, int offset, int len) {
+        // protect against huge length, negative values, and integer overflow
+        try {
+            Objects.checkFromIndexSize(offset, len, in.length);
+        } catch (IndexOutOfBoundsException e) {
+            throw new NumberFormatException
+                ("Bad offset or len arguments for char[] input.");
+        }
+
+        final int scale;
+        final char[] intVal;
+        final int sign;
+        // use array bounds checking to handle too-long, len == 0,
+        // bad offset, etc.
+        try {
+            // handle the sign
+            sign = in[offset] == '-' ? -1 : 1;
+
+            if (in[offset] == '-' || in[offset] == '+') { // leading + allowed
+                offset++;
+                len--;
+            }
+
+            // should now be at numeric part of the significand
+            final int start = offset;
+            // search for dot
+            for (; len > 0 && in[offset] != '.' && !expIndicator(in, offset); offset++, len--);
+
+            if (len > 0 && in[offset] == '.') { // there's a fractional part
+                final int dotPos = offset;
+                offset++;
+                len--;
+
+                // search for exponent indicator
+                for (; len > 0 && !expIndicator(in, offset); offset++, len--);
+
+                final int fracDigits = offset - (dotPos + 1);
+                scale = fracDigits - (len > 0 ? parseExp(in, offset, len) : 0);
+
+                intVal = new char[(offset - start) - 1];
+                System.arraycopy(in, start, intVal, 0, dotPos - start); // copy integer part
+                System.arraycopy(in, dotPos + 1, intVal, dotPos - start, fracDigits); // copy fractional part
+            } else {  // there's not a fractional part
+                scale = len > 0 ? -parseExp(in, offset, len) : 0;
+                intVal = Arrays.copyOfRange(in, start, offset);
+            }
+        } catch (ArrayIndexOutOfBoundsException | NegativeArraySizeException e) {
+            NumberFormatException nfe = new NumberFormatException();
+            nfe.initCause(e);
+            throw nfe;
+        }
+
+        BigInteger significand = new BigInteger(intVal, 1, intVal.length);
+
+        if (significand.signum == 0) {
+            signum = 0;
+            numerator = BigInteger.ZERO;
+            denominator = BigInteger.ONE;
+        } else {
+            Rational res;
+            
+            if (scale > 0)
+                res = valueOf(sign, significand, BigInteger.TEN.pow(scale));
+            else if (scale < 0)
+                res = valueOf(sign, significand.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
+            else
+                res = valueOf(sign, significand, BigInteger.ONE);
+
+            signum = res.signum;
+            numerator = res.numerator;
+            denominator = res.denominator;
+        }
+    }
+
+    /**
+     * Returns true if the character at the specified index is 'e' or 'E'
+     */
+    private static boolean expIndicator(char[] in, int index) {
+        return in[index] == 'e' || in[index] == 'E';
+    }
+
+    /**
      * Returns a Rational whose value is represented by the fraction
      * with the specified numerator and denominator.
+     * 
      * @param num the numerator of the fraction to represent
      * @param den the denominator of the fraction to represent
      * @return a Rational whose value is represented by the fraction
-     * with the specified numerator and denominator
+     *         with the specified numerator and denominator
      * @throws ArithmeticException if the specified denominator is zero
      */
     public static Rational valueOf(BigInteger num, BigInteger den) {
@@ -157,15 +265,30 @@ public class Rational extends Number implements Comparable<Rational> {
         if (num.signum == 0)
             return ZERO;
 
-        int signum = num.signum * den.signum;
-        num = num.abs();
-        den = den.abs();
+        return valueOf(num.signum * den.signum, num.abs(), den.abs());
+    }
 
+    /**
+     * Returns a Rational whose value is represented by the specified parameters.
+     * Assumes that {@code signum != 0} and that the denominator and
+     * the numerator are positive.
+     */
+    private static Rational valueOf(int sign, BigInteger num, BigInteger den) {
         if (num.equals(BigInteger.ONE) || den.equals(BigInteger.ONE))
-            return new Rational(signum, num, den);
+            return new Rational(sign, num, den);
 
         BigInteger[] frac = simplify(num, den);
-        return new Rational(signum, frac[0], frac[1]);
+        return new Rational(sign, frac[0], frac[1]);
+    }
+
+    /**
+     * Constructs a new Rational with the specified values.
+     * This constructor assumes that the values passed are always valid
+     */
+    private Rational(int sign, BigInteger num, BigInteger den) {
+        signum = sign;
+        numerator = num;
+        denominator = den;
     }
 
     /**
@@ -173,7 +296,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     private static BigInteger[] simplify(BigInteger num, BigInteger den) {
         BigInteger gcd = num.gcd(den);
-        return new BigInteger[] {num.divide(gcd), den.divide(gcd)};
+        return new BigInteger[] { num.divide(gcd), den.divide(gcd) };
     }
 
     /**
@@ -187,9 +310,11 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns the least non-negative denominator necessary to represent this Rational.
+     * Returns the least non-negative denominator necessary to represent this
+     * Rational.
      * 
-     * @return the least non-negative denominator necessary to represent this Rational.
+     * @return the least non-negative denominator necessary to represent this
+     *         Rational.
      */
     public BigInteger getNumerator() {
         return numerator;
@@ -211,7 +336,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * {@code long} as defined in
      * <cite>The Java Language Specification</cite>:
      * any fractional part of this
-     * {@code Rational} will be discarded.  Note that this
+     * {@code Rational} will be discarded. Note that this
      * conversion can lose information about the precision of the
      * {@code Rational} value.
      * <p>
@@ -229,12 +354,12 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Converts this {@code Rational} to a {@code BigInteger},
-     * checking for lost information.  An exception is thrown if this
+     * checking for lost information. An exception is thrown if this
      * {@code Rational} has a nonzero fractional part.
      *
      * @return this {@code Rational} converted to a {@code BigInteger}.
      * @throws ArithmeticException if {@code this} has a nonzero
-     *         fractional part
+     *                             fractional part
      */
     public BigInteger toBigIntegerExact() {
         // round to an integer, with Exception if decimal part non-0
@@ -242,7 +367,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (res[1].signum() != 0)
             throw new ArithmeticException("Rounding necessary");
-        
+
         return signum == -1 ? res[0].negate() : res[0];
     }
 
@@ -255,7 +380,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * other words if a nonzero fractional part is discarded), use the
      * {@link #toBigDecimalExact()} method.
      *
-     * @param  mc the context to use.
+     * @param mc the context to use.
      * @return this {@code Rational} converted to a {@code BigDecimal}.
      */
     public BigDecimal toBigDecimal(MathContext mc) {
@@ -265,12 +390,12 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Converts this {@code Rational} to a {@code BigDecimal},
-     * checking for lost information.  An exception is thrown if
+     * checking for lost information. An exception is thrown if
      * a nonzero fractional part is discarded.
      *
      * @return this {@code Rational} converted to a {@code BigDecimal}.
      * @throws ArithmeticException if a nonzero fractional part is discarded.
-     * @since  1.5
+     * @since 1.5
      */
     public BigDecimal toBigDecimalExact() {
         return toBigDecimal(MathContext.UNLIMITED);
@@ -285,7 +410,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * if this {@code Rational} has too great a
      * magnitude represent as a {@code double}, it will be
      * converted to {@link Double#NEGATIVE_INFINITY} or {@link
-     * Double#POSITIVE_INFINITY} as appropriate.  Note that even when
+     * Double#POSITIVE_INFINITY} as appropriate. Note that even when
      * the return value is finite, this conversion can lose
      * information about the {@code Rational} value.
      *
@@ -294,7 +419,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public double doubleValue() {
-         return toBigDecimal(MathContext.DECIMAL64).doubleValue();
+        return toBigDecimal(MathContext.DECIMAL64).doubleValue();
     }
 
     /**
@@ -306,7 +431,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * if this {@code Rational} has too great a
      * magnitude to represent as a {@code float}, it will be
      * converted to {@link Float#NEGATIVE_INFINITY} or {@link
-     * Float#POSITIVE_INFINITY} as appropriate.  Note that even when
+     * Float#POSITIVE_INFINITY} as appropriate. Note that even when
      * the return value is finite, this conversion can lose
      * information about the {@code Rational} value.
      *
@@ -342,14 +467,15 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Converts this {@code Rational} to an {@code int}, checking
-     * for lost information.  If this {@code Rational} has a
+     * for lost information. If this {@code Rational} has a
      * nonzero fractional part or is out of the possible range for an
      * {@code int} result then an {@code ArithmeticException} is
      * thrown.
      *
      * @return this {@code Rational} converted to an {@code int}.
      * @throws ArithmeticException if {@code this} has a nonzero
-     *         fractional part, or will not fit in an {@code int}.
+     *                             fractional part, or will not fit in an
+     *                             {@code int}.
      */
     public int intValueExact() {
         return toBigIntegerExact().intValueExact();
@@ -357,14 +483,15 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Converts this {@code Rational} to a {@code short}, checking
-     * for lost information.  If this {@code Rational} has a
+     * for lost information. If this {@code Rational} has a
      * nonzero fractional part or is out of the possible range for a
      * {@code short} result then an {@code ArithmeticException} is
      * thrown.
      *
      * @return this {@code Rational} converted to a {@code short}.
      * @throws ArithmeticException if {@code this} has a nonzero
-     *         fractional part, or will not fit in a {@code short}.
+     *                             fractional part, or will not fit in a
+     *                             {@code short}.
      */
     public short shortValueExact() {
         return toBigIntegerExact().shortValueExact();
@@ -372,14 +499,15 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Converts this {@code Rational} to a {@code byte}, checking
-     * for lost information.  If this {@code Rational} has a
+     * for lost information. If this {@code Rational} has a
      * nonzero fractional part or is out of the possible range for a
      * {@code byte} result then an {@code ArithmeticException} is
      * thrown.
      *
      * @return this {@code Rational} converted to a {@code byte}.
      * @throws ArithmeticException if {@code this} has a nonzero
-     *         fractional part, or will not fit in a {@code byte}.
+     *                             fractional part, or will not fit in a
+     *                             {@code byte}.
      */
     public byte byteValueExact() {
         return toBigIntegerExact().byteValueExact();
@@ -409,14 +537,15 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Converts this {@code Rational} to a {@code long}, checking
-     * for lost information.  If this {@code Rational} has a
+     * for lost information. If this {@code Rational} has a
      * nonzero fractional part or is out of the possible range for a
      * {@code long} result then an {@code ArithmeticException} is
      * thrown.
      *
      * @return this {@code Rational} converted to a {@code long}.
      * @throws ArithmeticException if {@code this} has a nonzero
-     *         fractional part, or will not fit in a {@code long}.
+     *                             fractional part, or will not fit in a
+     *                             {@code long}.
      */
     public long longValueExact() {
         return toBigIntegerExact().longValueExact();
@@ -425,7 +554,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Compares this Rational with the specified Object for equality.
      *
-     * @param  obj Object to which this Rational is to be compared.
+     * @param obj Object to which this Rational is to be compared.
      * @return {@code true} if and only if the specified Object is a
      *         Rational whose value is numerically equal to this Rational.
      */
@@ -436,13 +565,13 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (!(obj instanceof Rational r))
             return false;
-        
+
         if (signum != r.signum)
             return false;
-        
+
         if (signum == 0)
             return true;
-        
+
         return numerator.equals(r.numerator) && denominator.equals(r.denominator);
     }
 
@@ -517,7 +646,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
             if (unitComp != valUnitComp)
                 absComp = unitComp > valUnitComp ? 1 : -1;
-            else{
+            else {
                 // compare using least common denominator
                 // trying to pospone the overflow as as late as possible
                 BigInteger gcd = denominator.gcd(val.denominator);
@@ -531,10 +660,12 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Computes the numerator of this rational, relative to the least common denominator
+     * Computes the numerator of this rational, relative to the least common
+     * denominator
      * of {@code this.denominator} and {@code otherDenominator}
+     * 
      * @param gcd the greatest common divisor of
-     * {@code this.denominator} and {@code otherDenominator}
+     *            {@code this.denominator} and {@code otherDenominator}
      */
     private BigInteger lcdNumerator(BigInteger otherDenominator, BigInteger gcd) {
         // lcm(a, b) == a * b / gcd(a, b) => n/a == n * (b / gcd(a, b)) / lcm(a, b)
