@@ -64,6 +64,84 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Translates a {@code double} into a {@code Rational} which
+     * is the exact fractional representation of the {@code double}'s
+     * binary floating-point value.
+     * <p>
+     * <b>Notes:</b>
+     * <ol>
+     * <li>
+     * The results of this constructor can be somewhat unpredictable.
+     * One might assume that writing {@code new Rational(0.1)} in
+     * Java creates a {@code Rational} which is exactly equal to
+     * 0.1 (1/10), but it is
+     * actually equal to
+     * 0.1000000000000000055511151231257827021181583404541015625.
+     * This is because 0.1 cannot be represented exactly as a
+     * {@code double} (or, for that matter, as a binary fraction of
+     * any finite length).  Thus, the value that is being passed
+     * <em>in</em> to the constructor is not exactly equal to 0.1,
+     * appearances notwithstanding.
+     *
+     * <li>
+     * The {@code String} constructor, on the other hand, is
+     * perfectly predictable: writing {@code new Rational("0.1")}
+     * creates a {@code Rational} which is <em>exactly</em> equal to
+     * 0.1, as one would expect.  Therefore, it is generally
+     * recommended that the {@linkplain #Rational(String)
+     * String constructor} be used in preference to this one.
+     *
+     * <li>
+     * When a {@code double} must be used as a source for a
+     * {@code Rational}, note that this constructor provides an
+     * exact conversion; it does not give the same result as
+     * converting the {@code double} to a {@code String} using the
+     * {@link Double#toString(double)} method and then using the
+     * {@link #Rational(String)} constructor.  To get that result,
+     * use the {@code static} {@link #valueOf(double)} method.
+     * </ol>
+     *
+     * @param val {@code double} value to be converted to
+     *        {@code Rational}.
+     * @throws NumberFormatException if {@code val} is infinite or NaN.
+     */
+    public BigDecimal(double val) {
+        if (Double.isInfinite(val) || Double.isNaN(val))
+            throw new NumberFormatException("Infinite or NaN");
+        // Translate the double into sign, exponent and significand, according
+        // to the formulae in JLS, Section 20.10.22.
+        long valBits = Double.doubleToLongBits(val);
+        int sign = ((valBits >> 63) == 0 ? 1 : -1);
+        int exponent = (int) ((valBits >> 52) & 0x7ffL);
+        long significand = (exponent == 0
+                ? (valBits & ((1L << 52) - 1)) << 1
+                : (valBits & ((1L << 52) - 1)) | (1L << 52));
+        exponent -= 1075;
+        // At this point, val == sign * significand * 2**exponent.
+
+        if (significand == 0) {
+            signum = 0;
+            numerator = BigInteger.ZERO;
+            denominator = BigInteger.ONE;
+        }else if (exponent < 0) {
+            // Simplify even significands
+            int zeros = Long.numberOfTrailingZeros(significand);
+            significand >>= zeros;
+            exponent += zeros;
+
+            // now the significand and the denominator are relative primes
+            // the significand is odd and the denominator is a power of two
+            signum = sign;
+            numerator = BigInteger.valueOf(significand);
+            denominator = BigInteger.ONE.shiftLeft(-exponent);
+        } else {
+            signum = sign;
+            numerator = BigInteger.valueOf(significand).shiftLeft(exponent);
+            denominator = BigInteger.ONE;
+        }
+    }
+
+    /**
      * Returns a Rational whose value is represented by the fraction
      * with the specified numerator and denominator.
      * @param num the numerator of the fraction to represent
@@ -91,7 +169,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * returns the simplification of the specified fraction
+     * Returns the simplification of the specified fraction.
      */
     private static BigInteger[] simplify(BigInteger num, BigInteger den) {
         BigInteger gcd = num.gcd(den);
