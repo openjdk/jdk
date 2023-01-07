@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.awt.Rectangle;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -48,14 +47,19 @@ import javax.swing.plaf.basic.BasicToolBarUI;
  *
  * @since 1.7
  */
-public class SynthToolBarUI extends BasicToolBarUI
-                            implements PropertyChangeListener, SynthUI {
+public class SynthToolBarUI extends BasicToolBarUI implements SynthUI {
     private Icon handleIcon = null;
     private Rectangle contentRect = new Rectangle();
 
     private SynthStyle style;
     private SynthStyle contentStyle;
     private SynthStyle dragWindowStyle;
+
+    private final PropertyChangeListener toolBarListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JToolBar) e.getSource());
+        }
+    };
 
     /**
      *
@@ -88,7 +92,7 @@ public class SynthToolBarUI extends BasicToolBarUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        toolBar.addPropertyChangeListener(this);
+        toolBar.addPropertyChangeListener(toolBarListener);
     }
 
     /**
@@ -97,7 +101,7 @@ public class SynthToolBarUI extends BasicToolBarUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        toolBar.removePropertyChangeListener(this);
+        toolBar.removePropertyChangeListener(toolBarListener);
     }
 
     private void updateStyle(JToolBar c) {
@@ -323,20 +327,6 @@ public class SynthToolBarUI extends BasicToolBarUI
                                                            dragWindow.getOrientation());
         context.getPainter().paintToolBarDragWindowBorder(context, g, 0, 0, w, h,
                                                           dragWindow.getOrientation());
-    }
-
-    //
-    // PropertyChangeListener
-    //
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JToolBar)e.getSource());
-        }
     }
 
 

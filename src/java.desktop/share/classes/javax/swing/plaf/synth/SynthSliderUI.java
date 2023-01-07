@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ import sun.swing.SwingUtilities2;
  * @author Joshua Outwater
  * @since 1.7
  */
-public class SynthSliderUI extends BasicSliderUI
-                           implements PropertyChangeListener, SynthUI {
+public class SynthSliderUI extends BasicSliderUI implements SynthUI {
     private Rectangle valueRect = new Rectangle();
     private boolean paintValue;
 
@@ -79,6 +78,12 @@ public class SynthSliderUI extends BasicSliderUI
     /** Used to determine the color to paint the thumb. */
     private transient boolean thumbActive; //happens on rollover, and when pressed
     private transient boolean thumbPressed; //happens when mouse was depressed while over thumb
+
+    private final PropertyChangeListener sliderListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JSlider)e.getSource());
+        }
+    };
 
     ///////////////////////////////////////////////////
     // ComponentUI Interface Implementation methods
@@ -133,7 +138,7 @@ public class SynthSliderUI extends BasicSliderUI
     @Override
     protected void installListeners(JSlider slider) {
         super.installListeners(slider);
-        slider.addPropertyChangeListener(this);
+        slider.addPropertyChangeListener(sliderListener);
     }
 
     /**
@@ -141,7 +146,7 @@ public class SynthSliderUI extends BasicSliderUI
      */
     @Override
     protected void uninstallListeners(JSlider slider) {
-        slider.removePropertyChangeListener(this);
+        slider.removePropertyChangeListener(sliderListener);
         super.uninstallListeners(slider);
     }
 
@@ -883,16 +888,6 @@ public class SynthSliderUI extends BasicSliderUI
         context.getPainter().paintSliderTrackBorder(context, g,
                 trackBounds.x, trackBounds.y, trackBounds.width,
                 trackBounds.height, orientation);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JSlider)e.getSource());
-        }
     }
 
     //////////////////////////////////////////////////

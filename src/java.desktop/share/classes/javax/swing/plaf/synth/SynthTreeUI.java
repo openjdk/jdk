@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
 
@@ -57,8 +56,7 @@ import javax.swing.tree.TreePath;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthTreeUI extends BasicTreeUI
-                         implements PropertyChangeListener, SynthUI {
+public class SynthTreeUI extends BasicTreeUI implements SynthUI {
     private SynthStyle style;
     private SynthStyle cellStyle;
 
@@ -74,6 +72,18 @@ public class SynthTreeUI extends BasicTreeUI
     private boolean useTreeColors;
 
     private Icon expandedIconWrapper = new ExpandedIconWrapper();
+
+    private final PropertyChangeListener treeListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JTree) e.getSource());
+        }
+
+        if ("dropLocation" == e.getPropertyName()) {
+            JTree.DropLocation oldValue = (JTree.DropLocation) e.getOldValue();
+            repaintDropLocation(oldValue);
+            repaintDropLocation(tree.getDropLocation());
+        }
+    };
 
     /**
      *
@@ -166,7 +176,7 @@ public class SynthTreeUI extends BasicTreeUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        tree.addPropertyChangeListener(this);
+        tree.addPropertyChangeListener(treeListener);
     }
 
     /**
@@ -246,7 +256,7 @@ public class SynthTreeUI extends BasicTreeUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        tree.removePropertyChangeListener(this);
+        tree.removePropertyChangeListener(treeListener);
     }
 
     /**
@@ -615,22 +625,6 @@ public class SynthTreeUI extends BasicTreeUI
         SynthGraphicsUtils.paintIcon(icon, paintContext, graphics,
                             findCenteredX(x, w),
                             y - h/2, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-        if (SynthLookAndFeel.shouldUpdateStyle(event)) {
-            updateStyle((JTree)event.getSource());
-        }
-
-        if ("dropLocation" == event.getPropertyName()) {
-            JTree.DropLocation oldValue = (JTree.DropLocation)event.getOldValue();
-            repaintDropLocation(oldValue);
-            repaintDropLocation(tree.getDropLocation());
-        }
     }
 
     /**

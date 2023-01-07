@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,27 @@ import java.beans.*;
  * @author Rich Schiavi
  * @since 1.7
  */
-public class SynthInternalFrameUI extends BasicInternalFrameUI
-                                  implements SynthUI, PropertyChangeListener {
+public class SynthInternalFrameUI extends BasicInternalFrameUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener frameListener = evt -> {
+        SynthStyle oldStyle = style;
+        JInternalFrame f = (JInternalFrame)evt.getSource();
+        String prop = evt.getPropertyName();
+
+        if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
+            updateStyle(f);
+        }
+
+        if (style == oldStyle &&
+                (prop == JInternalFrame.IS_MAXIMUM_PROPERTY ||
+                        prop == JInternalFrame.IS_SELECTED_PROPERTY)) {
+            // Border (and other defaults) may need to change
+            SynthContext context = getContext(f, ENABLED);
+            style.uninstallDefaults(context);
+            style.installDefaults(context, this);
+        }
+    };
 
     /**
      * Creates a new UI object for the given component.
@@ -79,7 +97,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        frame.addPropertyChangeListener(this);
+        frame.addPropertyChangeListener(frameListener);
     }
 
     /**
@@ -98,7 +116,7 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
      */
     @Override
     protected void uninstallListeners() {
-        frame.removePropertyChangeListener(this);
+        frame.removePropertyChangeListener(frameListener);
         super.uninstallListeners();
     }
 
@@ -250,28 +268,5 @@ public class SynthInternalFrameUI extends BasicInternalFrameUI
                             int y, int w, int h) {
         context.getPainter().paintInternalFrameBorder(context,
                                                             g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        SynthStyle oldStyle = style;
-        JInternalFrame f = (JInternalFrame)evt.getSource();
-        String prop = evt.getPropertyName();
-
-        if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle(f);
-        }
-
-        if (style == oldStyle &&
-            (prop == JInternalFrame.IS_MAXIMUM_PROPERTY ||
-             prop == JInternalFrame.IS_SELECTED_PROPERTY)) {
-            // Border (and other defaults) may need to change
-            SynthContext context = getContext(f, ENABLED);
-            style.uninstallDefaults(context);
-            style.installDefaults(context, this);
-        }
     }
 }

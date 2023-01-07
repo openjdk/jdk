@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,14 @@ import javax.swing.plaf.DimensionUIResource;
  * @author Joshua Outwater
  * @since 1.7
  */
-public class SynthSeparatorUI extends SeparatorUI
-                              implements PropertyChangeListener, SynthUI {
+public class SynthSeparatorUI extends SeparatorUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener separatorListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JSeparator) e.getSource());
+        }
+    };
 
     /**
      *
@@ -136,7 +141,7 @@ public class SynthSeparatorUI extends SeparatorUI
      * {@code LookAndFeel}.
      */
     public void installListeners(JSeparator c) {
-        c.addPropertyChangeListener(this);
+        c.addPropertyChangeListener(separatorListener);
     }
 
     /**
@@ -147,7 +152,7 @@ public class SynthSeparatorUI extends SeparatorUI
      * {@code LookAndFeel}.
      */
     public void uninstallListeners(JSeparator c) {
-        c.removePropertyChangeListener(this);
+        c.removePropertyChangeListener(separatorListener);
     }
 
     /**
@@ -262,11 +267,5 @@ public class SynthSeparatorUI extends SeparatorUI
 
     private SynthContext getContext(JComponent c, int state) {
         return SynthContext.getContext(c, style, state);
-    }
-
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle((JSeparator)evt.getSource());
-        }
     }
 }

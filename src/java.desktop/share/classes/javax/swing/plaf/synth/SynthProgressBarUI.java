@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
+
 import sun.swing.SwingUtilities2;
 
 /**
@@ -41,8 +41,7 @@ import sun.swing.SwingUtilities2;
  * @author Joshua Outwater
  * @since 1.7
  */
-public class SynthProgressBarUI extends BasicProgressBarUI
-                                implements SynthUI, PropertyChangeListener {
+public class SynthProgressBarUI extends BasicProgressBarUI implements SynthUI {
     private SynthStyle style;
     private int progressPadding;
     private boolean rotateText; // added for Nimbus LAF
@@ -51,6 +50,13 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     private int tileWidth; //the width of each tile
     private Dimension minBarSize; // minimal visible bar size
     private int glowWidth; // Glow around the bar foreground
+
+    private final PropertyChangeListener progressBarListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e) ||
+                "indeterminate".equals(e.getPropertyName())) {
+            updateStyle((JProgressBar)e.getSource());
+        }
+    };
 
     /**
      *
@@ -74,7 +80,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        progressBar.addPropertyChangeListener(this);
+        progressBar.addPropertyChangeListener(progressBarListener);
     }
 
     /**
@@ -83,7 +89,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        progressBar.removePropertyChangeListener(this);
+        progressBar.removePropertyChangeListener(progressBarListener);
     }
 
     /**
@@ -400,17 +406,6 @@ public class SynthProgressBarUI extends BasicProgressBarUI
                             int y, int w, int h) {
         context.getPainter().paintProgressBarBorder(context, g, x, y, w, h,
                                                     progressBar.getOrientation());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e) ||
-                "indeterminate".equals(e.getPropertyName())) {
-            updateStyle((JProgressBar)e.getSource());
-        }
     }
 
     /**

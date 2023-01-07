@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package javax.swing.plaf.synth;
 
 import javax.swing.*;
 import java.awt.Graphics;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
@@ -38,9 +37,14 @@ import javax.swing.plaf.basic.*;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthMenuBarUI extends BasicMenuBarUI
-                            implements PropertyChangeListener, SynthUI {
+public class SynthMenuBarUI extends BasicMenuBarUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener menuBarListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JMenuBar) e.getSource());
+        }
+    };
 
     /**
      *
@@ -76,7 +80,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        menuBar.addPropertyChangeListener(this);
+        menuBar.addPropertyChangeListener(menuBarListener);
     }
 
     private void updateStyle(JMenuBar c) {
@@ -108,7 +112,7 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        menuBar.removePropertyChangeListener(this);
+        menuBar.removePropertyChangeListener(menuBarListener);
     }
 
     /**
@@ -182,15 +186,5 @@ public class SynthMenuBarUI extends BasicMenuBarUI
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintMenuBarBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JMenuBar)e.getSource());
-        }
     }
 }

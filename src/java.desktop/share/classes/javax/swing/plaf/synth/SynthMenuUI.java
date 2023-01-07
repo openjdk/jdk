@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,16 @@ import sun.swing.MenuItemLayoutHelper;
  * @author Arnaud Weber
  * @since 1.7
  */
-public class SynthMenuUI extends BasicMenuUI
-                         implements PropertyChangeListener, SynthUI {
+public class SynthMenuUI extends BasicMenuUI implements SynthUI {
     private SynthStyle style;
     private SynthStyle accStyle;
+
+    private final PropertyChangeListener menuItemListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e) ||
+                (e.getPropertyName().equals("ancestor") && UIManager.getBoolean("Menu.useMenuBarForTopLevelMenus"))) {
+            updateStyle((JMenu)e.getSource());
+        }
+    };
 
     /**
      *
@@ -75,7 +81,7 @@ public class SynthMenuUI extends BasicMenuUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        menuItem.addPropertyChangeListener(this);
+        menuItem.addPropertyChangeListener(menuItemListener);
     }
 
     private void updateStyle(JMenuItem mi) {
@@ -160,7 +166,7 @@ public class SynthMenuUI extends BasicMenuUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        menuItem.removePropertyChangeListener(this);
+        menuItem.removePropertyChangeListener(menuItemListener);
     }
 
     /**
@@ -286,16 +292,5 @@ public class SynthMenuUI extends BasicMenuUI
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintMenuBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e) ||
-                (e.getPropertyName().equals("ancestor") && UIManager.getBoolean("Menu.useMenuBarForTopLevelMenus"))) {
-            updateStyle((JMenu)e.getSource());
-        }
     }
 }

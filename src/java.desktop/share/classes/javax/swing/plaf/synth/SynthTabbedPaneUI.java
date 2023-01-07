@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.BorderFactory;
@@ -62,8 +61,7 @@ import sun.swing.SwingUtilities2;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthTabbedPaneUI extends BasicTabbedPaneUI
-                               implements PropertyChangeListener, SynthUI {
+public class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI {
 
     /**
      * <p>If non-zero, tabOverlap indicates the amount that the tab bounds
@@ -120,6 +118,12 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     private boolean nudgeSelectedLabel = true;
 
     private boolean selectedTabIsPressed = false;
+
+    private final PropertyChangeListener tabPaneListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle(tabPane);
+        }
+    };
 
     /**
      *
@@ -200,7 +204,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        tabPane.addPropertyChangeListener(this);
+        tabPane.addPropertyChangeListener(tabPaneListener);
     }
 
     /**
@@ -209,7 +213,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        tabPane.removePropertyChangeListener(this);
+        tabPane.removePropertyChangeListener(tabPaneListener);
     }
 
     /**
@@ -275,16 +279,6 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
             return btn;
         }
         return new SynthScrollableTabButton(direction);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle(tabPane);
-        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 
@@ -62,11 +61,19 @@ import javax.swing.plaf.basic.BasicDesktopPaneUI;
  * @author Steve Wilson
  * @since 1.7
  */
-public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
-                  PropertyChangeListener, SynthUI {
+public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements SynthUI {
     private SynthStyle style;
     private TaskBar taskBar;
     private DesktopManager oldDesktopManager;
+
+    private final PropertyChangeListener desktopListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JDesktopPane)e.getSource());
+        }
+        if (e.getPropertyName() == "ancestor" && taskBar != null) {
+            taskBar.adjustSize();
+        }
+    };
 
     /**
      *
@@ -90,7 +97,7 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
     @Override
     protected void installListeners() {
         super.installListeners();
-        desktop.addPropertyChangeListener(this);
+        desktop.addPropertyChangeListener(desktopListener);
         if (taskBar != null) {
             // Listen for desktop being resized
             desktop.addComponentListener(taskBar);
@@ -157,7 +164,7 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
             desktop.removeComponentListener(taskBar);
             desktop.removeContainerListener(taskBar);
         }
-        desktop.removePropertyChangeListener(this);
+        desktop.removePropertyChangeListener(desktopListener);
         super.uninstallListeners();
     }
 
@@ -526,18 +533,5 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintDesktopPaneBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle((JDesktopPane)evt.getSource());
-        }
-        if (evt.getPropertyName() == "ancestor" && taskBar != null) {
-            taskBar.adjustSize();
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,27 @@ import javax.swing.plaf.basic.*;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthScrollBarUI extends BasicScrollBarUI
-                              implements PropertyChangeListener, SynthUI {
+public class SynthScrollBarUI extends BasicScrollBarUI implements SynthUI {
 
     private SynthStyle style;
     private SynthStyle thumbStyle;
     private SynthStyle trackStyle;
 
     private boolean validMinimumThumbSize;
+
+    private final PropertyChangeListener scrollBarListener = e -> {
+        String propertyName = e.getPropertyName();
+
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JScrollBar)e.getSource());
+        }
+
+        if ("orientation" == propertyName) {
+            updateButtonDirections();
+        } else if ("componentOrientation" == propertyName) {
+            updateButtonDirections();
+        }
+    };
 
     /**
      *
@@ -149,7 +162,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        scrollbar.addPropertyChangeListener(this);
+        scrollbar.addPropertyChangeListener(scrollBarListener);
     }
 
     /**
@@ -158,7 +171,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        scrollbar.removePropertyChangeListener(this);
+        scrollbar.removePropertyChangeListener(scrollBarListener);
     }
 
     /**
@@ -457,24 +470,6 @@ public class SynthScrollBarUI extends BasicScrollBarUI
                         orient == HORIZONTAL? WEST : SOUTH);
             ((SynthArrowButton)decrButton).setDirection(
                         orient == HORIZONTAL ? EAST : NORTH);
-        }
-    }
-
-    //
-    // PropertyChangeListener
-    //
-    public void propertyChange(PropertyChangeEvent e) {
-        String propertyName = e.getPropertyName();
-
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JScrollBar)e.getSource());
-        }
-
-        if ("orientation" == propertyName) {
-            updateButtonDirections();
-        }
-        else if ("componentOrientation" == propertyName) {
-            updateButtonDirections();
         }
     }
 }

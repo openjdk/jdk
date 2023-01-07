@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package javax.swing.plaf.synth;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.DefaultListCellRenderer;
@@ -46,11 +45,16 @@ import javax.swing.plaf.basic.BasicListUI;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthListUI extends BasicListUI
-                         implements PropertyChangeListener, SynthUI {
+public class SynthListUI extends BasicListUI implements SynthUI {
     private SynthStyle style;
     private boolean useListColors;
     private boolean useUIBorder;
+
+    private final PropertyChangeListener listListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JList)e.getSource());
+        }
+    };
 
     /**
      *
@@ -105,17 +109,7 @@ public class SynthListUI extends BasicListUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        list.addPropertyChangeListener(this);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JList)e.getSource());
-        }
+        list.addPropertyChangeListener(listListener);
     }
 
     /**
@@ -124,7 +118,7 @@ public class SynthListUI extends BasicListUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        list.removePropertyChangeListener(this);
+        list.removePropertyChangeListener(listListener);
     }
 
     /**

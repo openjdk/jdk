@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.DateFormat;
 import java.text.Format;
@@ -63,8 +62,7 @@ import javax.swing.table.TableColumnModel;
  * @author Philip Milne
  * @since 1.7
  */
-public class SynthTableUI extends BasicTableUI
-                          implements SynthUI, PropertyChangeListener {
+public class SynthTableUI extends BasicTableUI implements SynthUI {
 //
 // Instance Variables
 //
@@ -85,6 +83,12 @@ public class SynthTableUI extends BasicTableUI
     private TableCellRenderer imageIconRenderer;
     private TableCellRenderer booleanRenderer;
     private TableCellRenderer objectRenderer;
+
+    private final PropertyChangeListener tableListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JTable) e.getSource());
+        }
+    };
 
 //
 //  The installation/uninstall procedures and support
@@ -206,7 +210,7 @@ public class SynthTableUI extends BasicTableUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        table.addPropertyChangeListener(this);
+        table.addPropertyChangeListener(tableListener);
     }
 
     /**
@@ -236,7 +240,7 @@ public class SynthTableUI extends BasicTableUI
      */
     @Override
     protected void uninstallListeners() {
-        table.removePropertyChangeListener(this);
+        table.removePropertyChangeListener(tableListener);
         super.uninstallListeners();
     }
 
@@ -696,16 +700,6 @@ public class SynthTableUI extends BasicTableUI
             }
             rendererPane.paintComponent(g, component, table, cellRect.x,
                     cellRect.y, cellRect.width, cellRect.height, true);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-        if (SynthLookAndFeel.shouldUpdateStyle(event)) {
-            updateStyle((JTable)event.getSource());
         }
     }
 

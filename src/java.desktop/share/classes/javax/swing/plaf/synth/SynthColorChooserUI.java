@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.swing.colorchooser.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicColorChooserUI;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 
@@ -43,9 +42,14 @@ import java.beans.PropertyChangeListener;
  * @author Steve Wilson
  * @since 1.7
  */
-public class SynthColorChooserUI extends BasicColorChooserUI implements
-        PropertyChangeListener, SynthUI {
+public class SynthColorChooserUI extends BasicColorChooserUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener colorChooserListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JColorChooser) e.getSource());
+        }
+    };
 
     /**
      *
@@ -110,7 +114,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     @Override
     protected void installListeners() {
         super.installListeners();
-        chooser.addPropertyChangeListener(this);
+        chooser.addPropertyChangeListener(colorChooserListener);
     }
 
     /**
@@ -118,7 +122,7 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
      */
     @Override
     protected void uninstallListeners() {
-        chooser.removePropertyChangeListener(this);
+        chooser.removePropertyChangeListener(colorChooserListener);
         super.uninstallListeners();
     }
 
@@ -194,15 +198,5 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintColorChooserBorder(context, g, x, y,w,h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JColorChooser)e.getSource());
-        }
     }
 }

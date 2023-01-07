@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,7 @@ import javax.swing.plaf.basic.BasicDesktopIconUI;
  * @author Joshua Outwater
  * @since 1.7
  */
-public class SynthDesktopIconUI extends BasicDesktopIconUI
-                                implements SynthUI, PropertyChangeListener {
+public class SynthDesktopIconUI extends BasicDesktopIconUI implements SynthUI {
     private SynthStyle style;
     private Handler handler = new Handler();
 
@@ -105,7 +104,7 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
         // in the super.uninstallComponents()
         if (iconPane instanceof JToggleButton) {
             ((JToggleButton) iconPane).removeActionListener(handler);
-            frame.removePropertyChangeListener(this);
+            frame.removePropertyChangeListener(listener);
         } else if (iconPane instanceof SynthInternalFrameTitlePane) {
             // Uninstall the listeners added by the  SynthInternalFrameTitlePane
             ((SynthInternalFrameTitlePane) iconPane).uninstallListeners();
@@ -119,10 +118,10 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        desktopIcon.addPropertyChangeListener(this);
+        desktopIcon.addPropertyChangeListener(listener);
 
         if (iconPane instanceof JToggleButton) {
-            frame.addPropertyChangeListener(this);
+            frame.addPropertyChangeListener(listener);
             ((JToggleButton)iconPane).addActionListener(handler);
         }
     }
@@ -132,7 +131,7 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
      */
     @Override
     protected void uninstallListeners() {
-        desktopIcon.removePropertyChangeListener(this);
+        desktopIcon.removePropertyChangeListener(listener);
         super.uninstallListeners();
     }
 
@@ -232,7 +231,8 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
         context.getPainter().paintDesktopIconBorder(context, g, x, y, w, h);
     }
 
-    public void propertyChange(PropertyChangeEvent evt) {
+    // TODO: split into two listeners
+    private final PropertyChangeListener listener = evt -> {
         if (evt.getSource() instanceof JInternalFrame.JDesktopIcon) {
             if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
                 updateStyle((JInternalFrame.JDesktopIcon)evt.getSource());
@@ -252,7 +252,7 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
                 }
             }
         }
-    }
+    };
 
     private final class Handler implements ActionListener {
         public void actionPerformed(ActionEvent evt) {

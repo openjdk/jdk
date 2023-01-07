@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,7 @@ import javax.swing.plaf.basic.ComboPopup;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthComboBoxUI extends BasicComboBoxUI implements
-                              PropertyChangeListener, SynthUI {
+public class SynthComboBoxUI extends BasicComboBoxUI implements SynthUI {
     private SynthStyle style;
     private boolean useListColors;
 
@@ -114,6 +113,12 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      * and forced to opaque after rendering the selected value.
      */
     private boolean forceOpaque = false;
+
+    private final PropertyChangeListener comboBoxListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle(comboBox);
+        }
+    };
 
     /**
      *
@@ -184,7 +189,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      */
     @Override
     protected void installListeners() {
-        comboBox.addPropertyChangeListener(this);
+        comboBox.addPropertyChangeListener(comboBoxListener);
         comboBox.addMouseListener(buttonHandler);
         editorFocusHandler = new EditorFocusHandler(comboBox);
         super.installListeners();
@@ -219,7 +224,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     @Override
     protected void uninstallListeners() {
         editorFocusHandler.unregister();
-        comboBox.removePropertyChangeListener(this);
+        comboBox.removePropertyChangeListener(comboBoxListener);
         comboBox.removeMouseListener(buttonHandler);
         buttonHandler.pressed = false;
         buttonHandler.over = false;
@@ -305,16 +310,6 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     //
     // end UI Initialization
     //======================
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle(comboBox);
-        }
-    }
 
     /**
      * {@inheritDoc}

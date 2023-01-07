@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@ import java.beans.*;
  * @author Joshua Outwater
  * @since 1.7
  */
-public class SynthSpinnerUI extends BasicSpinnerUI
-                            implements PropertyChangeListener, SynthUI {
+public class SynthSpinnerUI extends BasicSpinnerUI implements SynthUI {
     private SynthStyle style;
     /**
      * A FocusListener implementation which causes the entire spinner to be
@@ -52,6 +51,15 @@ public class SynthSpinnerUI extends BasicSpinnerUI
      * in the new focused or unfocused state, mirroring that of the editor.
      */
     private EditorFocusHandler editorFocusHandler = new EditorFocusHandler();
+
+    private final PropertyChangeListener spinnerListener = e -> {
+        JSpinner spinner = (JSpinner) e.getSource();
+
+        if (spinner.getUI() instanceof SynthSpinnerUI ui
+                && SynthLookAndFeel.shouldUpdateStyle(e)) {
+            ui.updateStyle(spinner);
+        }
+    };
 
     /**
      *
@@ -76,7 +84,7 @@ public class SynthSpinnerUI extends BasicSpinnerUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        spinner.addPropertyChangeListener(this);
+        spinner.addPropertyChangeListener(spinnerListener);
         JComponent editor = spinner.getEditor();
         if (editor instanceof JSpinner.DefaultEditor) {
             JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
@@ -92,7 +100,7 @@ public class SynthSpinnerUI extends BasicSpinnerUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        spinner.removePropertyChangeListener(this);
+        spinner.removePropertyChangeListener(spinnerListener);
         JComponent editor = spinner.getEditor();
         if (editor instanceof JSpinner.DefaultEditor) {
             JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
@@ -436,23 +444,6 @@ public class SynthSpinnerUI extends BasicSpinnerUI
             setBounds(editor, editorX, insets.top, editorWidth, availHeight);
             setBounds(nextButton, buttonsX, insets.top, buttonsWidth, nextHeight);
             setBounds(previousButton, buttonsX, previousY, buttonsWidth, previousHeight);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        JSpinner spinner = (JSpinner)(e.getSource());
-        SpinnerUI spinnerUI = spinner.getUI();
-
-        if (spinnerUI instanceof SynthSpinnerUI) {
-            SynthSpinnerUI ui = (SynthSpinnerUI)spinnerUI;
-
-            if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-                ui.updateStyle(spinner);
-            }
         }
     }
 

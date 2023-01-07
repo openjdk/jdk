@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.swing.plaf.synth;
 
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.*;
@@ -44,9 +43,24 @@ import sun.swing.SwingUtilities2;
  * @author Joshua Outwater
  * @since 1.7
  */
-public class SynthToolTipUI extends BasicToolTipUI
-                            implements PropertyChangeListener, SynthUI {
+public class SynthToolTipUI extends BasicToolTipUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener componentListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JToolTip)e.getSource());
+        }
+        String name = e.getPropertyName();
+        if (name.equals("tiptext") || SwingUtilities2.isScaleChanged(e)
+                || "foreground".equals(name) || "font".equals(name)) {
+            // remove the old html view client property if one
+            // existed, and install a new one if the text installed
+            // into the JLabel is html source.
+            JToolTip tip = ((JToolTip) e.getSource());
+            String text = tip.getTipText();
+            BasicHTML.updateRenderer(tip, text);
+        }
+    };
 
     /**
      *
@@ -92,7 +106,7 @@ public class SynthToolTipUI extends BasicToolTipUI
      */
     @Override
     protected void installListeners(JComponent c) {
-        c.addPropertyChangeListener(this);
+        c.addPropertyChangeListener(componentListener);
     }
 
     /**
@@ -100,7 +114,7 @@ public class SynthToolTipUI extends BasicToolTipUI
      */
     @Override
     protected void uninstallListeners(JComponent c) {
-        c.removePropertyChangeListener(this);
+        c.removePropertyChangeListener(componentListener);
     }
 
     /**
@@ -222,25 +236,5 @@ public class SynthToolTipUI extends BasicToolTipUI
             }
         }
         return prefSize;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JToolTip)e.getSource());
-        }
-        String name = e.getPropertyName();
-        if (name.equals("tiptext") || SwingUtilities2.isScaleChanged(e)
-                || "foreground".equals(name) || "font".equals(name)) {
-            // remove the old html view client property if one
-            // existed, and install a new one if the text installed
-            // into the JLabel is html source.
-            JToolTip tip = ((JToolTip) e.getSource());
-            String text = tip.getTipText();
-            BasicHTML.updateRenderer(tip, text);
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.JComponent;
@@ -54,11 +53,16 @@ import javax.swing.text.JTextComponent;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthScrollPaneUI extends BasicScrollPaneUI
-                               implements PropertyChangeListener, SynthUI {
+public class SynthScrollPaneUI extends BasicScrollPaneUI implements SynthUI {
     private SynthStyle style;
     private boolean viewportViewHasFocus = false;
     private ViewportViewFocusHandler viewportViewFocusHandler;
+
+    private final PropertyChangeListener scrollPaneListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle(scrollpane);
+        }
+    };
 
     /**
      *
@@ -169,7 +173,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     @Override
     protected void installListeners(JScrollPane c) {
         super.installListeners(c);
-        c.addPropertyChangeListener(this);
+        c.addPropertyChangeListener(scrollPaneListener);
         if (UIManager.getBoolean("ScrollPane.useChildTextComponentFocus")){
             viewportViewFocusHandler = new ViewportViewFocusHandler();
             c.getViewport().addContainerListener(viewportViewFocusHandler);
@@ -200,7 +204,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     @Override
     protected void uninstallListeners(JComponent c) {
         super.uninstallListeners(c);
-        c.removePropertyChangeListener(this);
+        c.removePropertyChangeListener(scrollPaneListener);
         if (viewportViewFocusHandler != null) {
             JViewport viewport = ((JScrollPane) c).getViewport();
             viewport.removeContainerListener(viewportViewFocusHandler);
@@ -229,12 +233,6 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
             baseState = baseState | FOCUSED;
         }
         return baseState;
-    }
-
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle(scrollpane);
-        }
     }
 
     /**

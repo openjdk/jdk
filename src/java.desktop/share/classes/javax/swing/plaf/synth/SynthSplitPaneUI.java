@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ import javax.swing.plaf.basic.*;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthSplitPaneUI extends BasicSplitPaneUI
-                              implements PropertyChangeListener, SynthUI {
+public class SynthSplitPaneUI extends BasicSplitPaneUI implements SynthUI {
     /**
      * Keys to use for forward focus traversal when the JComponent is
      * managing focus.
@@ -66,6 +65,12 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
     private SynthStyle dividerStyle;
 
     private Color dividerDraggingColor;
+
+    private final PropertyChangeListener splitPaneListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JSplitPane)e.getSource());
+        }
+    };
 
     /**
      *
@@ -177,7 +182,7 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        splitPane.addPropertyChangeListener(this);
+        splitPane.addPropertyChangeListener(splitPaneListener);
     }
 
     /**
@@ -204,7 +209,7 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        splitPane.removePropertyChangeListener(this);
+        splitPane.removePropertyChangeListener(splitPaneListener);
     }
 
     /**
@@ -237,16 +242,6 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
             state |= MOUSE_OVER;
         }
         return state;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JSplitPane)e.getSource());
-        }
     }
 
     /**

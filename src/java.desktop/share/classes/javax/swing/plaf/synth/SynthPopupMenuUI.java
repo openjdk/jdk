@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 import java.awt.Graphics;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -41,9 +40,14 @@ import java.beans.PropertyChangeEvent;
  * @author Arnaud Weber
  * @since 1.7
  */
-public class SynthPopupMenuUI extends BasicPopupMenuUI
-                              implements PropertyChangeListener, SynthUI {
+public class SynthPopupMenuUI extends BasicPopupMenuUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener popupMenuListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle(popupMenu);
+        }
+    };
 
     /**
      *
@@ -91,7 +95,7 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        popupMenu.addPropertyChangeListener(this);
+        popupMenu.addPropertyChangeListener(popupMenuListener);
     }
 
     /**
@@ -115,7 +119,7 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        popupMenu.removePropertyChangeListener(this);
+        popupMenu.removePropertyChangeListener(popupMenuListener);
     }
 
     /**
@@ -189,15 +193,5 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintPopupMenuBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle(popupMenu);
-        }
     }
 }

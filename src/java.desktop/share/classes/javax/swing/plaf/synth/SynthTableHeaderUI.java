@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package javax.swing.plaf.synth;
 
 import java.awt.Component;
 import java.awt.Graphics;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.JComponent;
@@ -51,8 +50,7 @@ import sun.swing.table.DefaultTableCellHeaderRenderer;
  * @author Philip Milne
  * @since 1.7
  */
-public class SynthTableHeaderUI extends BasicTableHeaderUI
-                                implements PropertyChangeListener, SynthUI {
+public class SynthTableHeaderUI extends BasicTableHeaderUI implements SynthUI {
 
 //
 // Instance Variables
@@ -61,6 +59,12 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     private TableCellRenderer prevRenderer = null;
 
     private SynthStyle style;
+
+    private final PropertyChangeListener headerListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JTableHeader) e.getSource());
+        }
+    };
 
     /**
      *
@@ -108,7 +112,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        header.addPropertyChangeListener(this);
+        header.addPropertyChangeListener(headerListener);
     }
 
     /**
@@ -131,7 +135,7 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
      */
     @Override
     protected void uninstallListeners() {
-        header.removePropertyChangeListener(this);
+        header.removePropertyChangeListener(headerListener);
         super.uninstallListeners();
     }
 
@@ -214,16 +218,6 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     protected void rolloverColumnUpdated(int oldColumn, int newColumn) {
         header.repaint(header.getHeaderRect(oldColumn));
         header.repaint(header.getHeaderRect(newColumn));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
-            updateStyle((JTableHeader)evt.getSource());
-        }
     }
 
     /**

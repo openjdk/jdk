@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,7 @@ import sun.swing.SwingUtilities2;
  * @author Steve Wilson
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
-        implements SynthUI, PropertyChangeListener {
+class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane implements SynthUI {
 
     protected JPopupMenu systemPopupMenu;
     protected JButton menuButton;
@@ -117,13 +116,13 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
 
     protected void installListeners() {
         super.installListeners();
-        frame.addPropertyChangeListener(this);
-        addPropertyChangeListener(this);
+        frame.addPropertyChangeListener(listener);
+        addPropertyChangeListener(listener);
     }
 
     protected void uninstallListeners() {
-        frame.removePropertyChangeListener(this);
-        removePropertyChangeListener(this);
+        frame.removePropertyChangeListener(listener);
+        removePropertyChangeListener(listener);
         super.uninstallListeners();
     }
 
@@ -343,7 +342,8 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
         return (lm != null) ? lm : new SynthTitlePaneLayout();
     }
 
-    public void propertyChange(PropertyChangeEvent evt) {
+    // TODO: split into two listeners
+    private final PropertyChangeListener listener = evt -> {
         if (evt.getSource() == this) {
             if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
                 updateStyle(this);
@@ -355,7 +355,7 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
                 updateMenuIcon();
             }
         }
-    }
+    };
 
     /**
      * Resets the menuButton icon to match that of the frame.

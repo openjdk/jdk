@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,16 @@ import javax.swing.text.View;
  * @author Scott Violet
  * @since 1.7
  */
-public class SynthButtonUI extends BasicButtonUI implements
-                                 PropertyChangeListener, SynthUI {
+public class SynthButtonUI extends BasicButtonUI implements SynthUI {
     private SynthStyle style;
 
     private static final Object SYNTH_BUTTON_UI_KEY = new Object();
+
+    private final PropertyChangeListener abstractButtonListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((AbstractButton) e.getSource());
+        }
+    };
 
     /**
      * Constructs a {@code SynthButtonUI}.
@@ -79,7 +84,7 @@ public class SynthButtonUI extends BasicButtonUI implements
     @Override
     protected void installListeners(AbstractButton b) {
         super.installListeners(b);
-        b.addPropertyChangeListener(this);
+        b.addPropertyChangeListener(abstractButtonListener);
     }
 
     void updateStyle(AbstractButton b) {
@@ -122,7 +127,7 @@ public class SynthButtonUI extends BasicButtonUI implements
     @Override
     protected void uninstallListeners(AbstractButton b) {
         super.uninstallListeners(b);
-        b.removePropertyChangeListener(this);
+        b.removePropertyChangeListener(abstractButtonListener);
     }
 
     /**
@@ -553,15 +558,5 @@ public class SynthButtonUI extends BasicButtonUI implements
             icon = getDefaultIcon(b);
         }
         return icon;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((AbstractButton)e.getSource());
-        }
     }
 }

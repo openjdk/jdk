@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,14 @@ import java.awt.*;
  *
  * @since 1.7
  */
-public class SynthViewportUI extends ViewportUI
-                             implements PropertyChangeListener, SynthUI {
+public class SynthViewportUI extends ViewportUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener viewportListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JComponent)e.getSource());
+        }
+    };
 
     /**
      *
@@ -113,7 +118,7 @@ public class SynthViewportUI extends ViewportUI
      * @param c a {@code JViewport} object
      */
     protected void installListeners(JComponent c) {
-        c.addPropertyChangeListener(this);
+        c.addPropertyChangeListener(viewportListener);
     }
 
     /**
@@ -122,7 +127,7 @@ public class SynthViewportUI extends ViewportUI
      * @param c a {@code JViewport} object
      */
     protected void uninstallListeners(JComponent c) {
-        c.removePropertyChangeListener(this);
+        c.removePropertyChangeListener(viewportListener);
     }
 
     /**
@@ -215,15 +220,5 @@ public class SynthViewportUI extends ViewportUI
      * @see #update(Graphics,JComponent)
      */
     protected void paint(SynthContext context, Graphics g) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JComponent)e.getSource());
-        }
     }
 }

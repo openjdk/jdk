@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package javax.swing.plaf.synth;
 
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.*;
@@ -43,10 +42,15 @@ import sun.swing.MenuItemLayoutHelper;
  * @author Fredrik Lagerblad
  * @since 1.7
  */
-public class SynthMenuItemUI extends BasicMenuItemUI implements
-                                   PropertyChangeListener, SynthUI {
+public class SynthMenuItemUI extends BasicMenuItemUI implements SynthUI {
     private SynthStyle style;
     private SynthStyle accStyle;
+
+    private final PropertyChangeListener menuItemListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JMenuItem) e.getSource());
+        }
+    };
 
     /**
      *
@@ -92,7 +96,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     @Override
     protected void installListeners() {
         super.installListeners();
-        menuItem.addPropertyChangeListener(this);
+        menuItem.addPropertyChangeListener(menuItemListener);
     }
 
     private void updateStyle(JMenuItem mi) {
@@ -160,7 +164,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        menuItem.removePropertyChangeListener(this);
+        menuItem.removePropertyChangeListener(menuItemListener);
     }
 
     /**
@@ -291,15 +295,5 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintMenuItemBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JMenuItem)e.getSource());
-        }
     }
 }

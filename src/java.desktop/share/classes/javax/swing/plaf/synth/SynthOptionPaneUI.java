@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,14 @@ import sun.swing.DefaultLookup;
  * @author Amy Fowler
  * @since 1.7
  */
-public class SynthOptionPaneUI extends BasicOptionPaneUI implements
-                                PropertyChangeListener, SynthUI {
+public class SynthOptionPaneUI extends BasicOptionPaneUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener optionPaneListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JOptionPane) e.getSource());
+        }
+    };
 
     /**
      *
@@ -75,7 +80,7 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
     @Override
     protected void installListeners() {
         super.installListeners();
-        optionPane.addPropertyChangeListener(this);
+        optionPane.addPropertyChangeListener(optionPaneListener);
     }
 
     private void updateStyle(JComponent c) {
@@ -113,7 +118,7 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
-        optionPane.removePropertyChangeListener(this);
+        optionPane.removePropertyChangeListener(optionPaneListener);
     }
 
     /**
@@ -205,16 +210,6 @@ public class SynthOptionPaneUI extends BasicOptionPaneUI implements
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintOptionPaneBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent e) {
-        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
-            updateStyle((JOptionPane)e.getSource());
-        }
     }
 
     /**

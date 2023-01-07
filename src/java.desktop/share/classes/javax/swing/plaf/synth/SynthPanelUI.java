@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,14 @@ import java.beans.*;
  * @author Steve Wilson
  * @since 1.7
  */
-public class SynthPanelUI extends BasicPanelUI
-                          implements PropertyChangeListener, SynthUI {
+public class SynthPanelUI extends BasicPanelUI implements SynthUI {
     private SynthStyle style;
+
+    private final PropertyChangeListener panelListener = e -> {
+        if (SynthLookAndFeel.shouldUpdateStyle(e)) {
+            updateStyle((JPanel) e.getSource());
+        }
+    };
 
     /**
      *
@@ -86,7 +91,7 @@ public class SynthPanelUI extends BasicPanelUI
      * @param p the {@code JPanel} object
      */
     protected void installListeners(JPanel p) {
-        p.addPropertyChangeListener(this);
+        p.addPropertyChangeListener(panelListener);
     }
 
     /**
@@ -95,7 +100,7 @@ public class SynthPanelUI extends BasicPanelUI
      * @param p the {@code JPanel} object
      */
     protected void uninstallListeners(JPanel p) {
-        p.removePropertyChangeListener(this);
+        p.removePropertyChangeListener(panelListener);
     }
 
     /**
@@ -194,15 +199,5 @@ public class SynthPanelUI extends BasicPanelUI
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintPanelBorder(context, g, x, y, w, h);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent pce) {
-        if (SynthLookAndFeel.shouldUpdateStyle(pce)) {
-            updateStyle((JPanel)pce.getSource());
-        }
     }
 }
