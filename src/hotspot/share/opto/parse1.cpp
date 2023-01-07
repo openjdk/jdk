@@ -1840,23 +1840,33 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
             } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
 
+              // Part-1: only check 'm'.
               if (DoPartialEscapeAnalysis && phi != nullptr) {
                 PEAState& as = block()->state();
+                const PEAState& pred_as = save_block->state();
                 ObjID id = as.is_alias(m);
+
                 if (id != nullptr) {
-                  ObjectState* os = as.get_object_state(id);
-                  PEAState& pred_as = save_block->state();
-                  assert(pred_as.is_alias(n) == id, "sanity: must be live before");
-                  ObjectState* pred_os = pred_as.get_object_state(id);
-                  // we need to materialize 'm'.
-                  if (os->is_virtual() && !pred_os->is_virtual()) {
-                    assert(pred_os->get_materialized_value() == n, "sanity: materialized value is m");
-                    SafePointNode* map = block()->from_block()->start_map();
-                    // object materialization takes place in from_block(), which is the first block 
-                    // see Block::record_state()
-                    Node* mv = ensure_object_materialized(id, as, map, r, block()->init_pnum());
-                    phi->replace_edge(m, mv);
+                  if (as.get_object_state(id)->is_virtual() && id == pred_as.is_alias(n)) {
+                    ObjectState* pred_os = pred_as.get_object_state(id);
+
+                    if (!pred_os->is_virtual()) {
+                      // materialize 'm' because it has been materialized in save_block.
+                      assert(pred_os->get_materialized_value() == n, "sanity: materialized value in save_block is n");
+                      SafePointNode* map = block()->from_block()->start_map();
+                      // object materialization takes place in from_block. It is the initial block that the current block(target) merged.
+                      // from block isn't save_block! see Block::record_state().
+                      Node* mv = ensure_object_materialized(id, as, map, r, block()->init_pnum());
+                      phi->replace_edge(m, mv);
+                      as.update(id, new EscapedState(phi));
+                    } else {
+                      // TODO: merge two virtuals
+                    }
                   }
+                  if (as.is_alias(m)) {// materialization remove it.
+                    as.remove_alias(id, m);
+                  }
+                  as.add_alias(id, phi);
                 }
               } // DoPartialEscapeAnalysis
             }
@@ -1872,16 +1882,37 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (phi != NULL) {
         assert(n != top() || r->in(pnum) == top(), "live value must not be garbage");
         assert(phi->region() == r, "");
-        ObjID escaped_obj = nullptr;
+
+        // Part-2: materialize 'n' if it needs
         if (DoPartialEscapeAnalysis) {
-          PEAState& pred_as = save_block->state();
           PEAState& as = block()->state();
-          ObjID id = pred_as.is_alias(n);
-          if (id != nullptr && as.contains(id)) {
-            escaped_obj = id;
-            if (pred_as.get_object_state(id)->is_virtual()
-                && !as.get_object_state(id)->is_virtual()) {
-              n = ensure_object_materialized(id, pred_as, newin, r, pnum);
+          PEAState& pred_as = save_block->state();
+          ObjID id = as.is_alias(phi);
+
+          if (as.contains(id)) {
+            if (pred_as.contains(id)) {
+              // id are in both AS and PRED_AS
+              if (!as.get_object_state(id)->is_virtual() && pred_as.get_object_state(id)->is_virtual()) {
+                n = ensure_object_materialized(id, pred_as, newin, r, pnum);
+              } else if (as.get_object_state(id)->is_virtual() && !pred_as.get_object_state(id)->is_virtual()) {
+                // TODO: materailize all.
+                assert(false, "not implement yet");
+              }
+            } // else part is case #2: n is nullptr in pred_as. Do nothing.
+          } else {
+            id = pred_as.is_alias(n);
+
+            if (id != nullptr) {
+              // case #1: n is live in its block. we need to import it to AS because phi is not top().
+              // references encounter before are constants including nullptr or arguments.
+
+              ObjectState* pred_os = pred_as.get_object_state(id);
+              if (pred_os->is_virtual()) {
+                as.update(id, pred_os);
+              } else {
+                as.update(id, new EscapedState(phi));
+              }
+              as.add_alias(id, phi);
             }
           }
         }
@@ -1898,10 +1929,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           debug_only(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
-
-          if (escaped_obj) {
-            block()->state().update(escaped_obj, new EscapedState(phi));
-          }
         }
       }
     } // End of for all values to be merged

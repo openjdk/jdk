@@ -528,10 +528,6 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
   return escaped;
 }
 
-void PEAState::merge(const PEAState& incoming) {
-
-}
-
 #ifndef PRODUCT
 void PEAState::print_on(outputStream* os) {
   os->print_cr("PEAState:");

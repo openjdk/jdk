@@ -75,8 +75,6 @@ class PEAState {
   PEAMap<ObjID, ObjectState*> _state;
   PEAMap<Node*, ObjID>        _alias;
 
-  State& intersect(const State& rhs);
-
  public:
   PEAState& operator=(const PEAState& init);
 
@@ -93,14 +91,32 @@ class PEAState {
   }
 
   void add_new_allocation(Node* obj);
-  void merge(const PEAState& merge);
-  bool contains(ObjID id) const { return _state.contains(id); }
-  void update(ObjID id, EscapedState* es) {
-    assert(contains(id), "sanity check");
-    _state.put(id, es);
+  bool contains(ObjID id) const {
+#ifdef ASSERT
+    if (id == nullptr) {
+      assert(!_state.contains(id), "PEAState must exclude nullptr");
+    }
+#endif
+    return _state.contains(id);
   }
-  EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
 
+  void update(ObjID id, ObjectState* os) {
+    //assert(contains(id), "sanity check");
+    _state.put(id, os);
+  }
+
+  void add_alias(ObjID id, Node* var) {
+    assert(contains(id), "sanity check");
+    _alias.put(var, id);
+  }
+
+  void remove_alias(ObjID id, Node* var) {
+    assert(contains(id), "sanity check");
+    assert(_alias.contains(var) && (*_alias.get(var)) == id, "sanity check");
+    _alias.remove(var);
+  }
+
+  EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
 #ifndef PRODUCT
   void print_on(outputStream* os);
 #endif
