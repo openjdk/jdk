@@ -1824,7 +1824,7 @@ public class JPEGImageReader extends ImageReader {
         Thread currThread = Thread.currentThread();
         if (theThread == null || theThread != currThread) {
             throw new IllegalStateException("Attempt to clear thread lock " +
-                                            " form wrong thread." +
+                                            " from wrong thread." +
                                             " Locked thread: " + theThread +
                                             "; current thread: " + currThread);
         }

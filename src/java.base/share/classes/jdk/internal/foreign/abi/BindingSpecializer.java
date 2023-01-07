@@ -80,9 +80,9 @@ public class BindingSpecializer {
 
     private static final String BINDING_CONTEXT_DESC = Binding.Context.class.descriptorString();
     private static final String OF_BOUNDED_ALLOCATOR_DESC = methodType(Binding.Context.class, long.class).descriptorString();
-    private static final String OF_SESSION_DESC = methodType(Binding.Context.class).descriptorString();
+    private static final String OF_SCOPE_DESC = methodType(Binding.Context.class).descriptorString();
     private static final String ALLOCATOR_DESC = methodType(SegmentAllocator.class).descriptorString();
-    private static final String SESSION_DESC = methodType(SegmentScope.class).descriptorString();
+    private static final String SCOPE_DESC = methodType(SegmentScope.class).descriptorString();
     private static final String SESSION_IMPL_DESC = methodType(MemorySessionImpl.class).descriptorString();
     private static final String CLOSE_DESC = VOID_DESC;
     private static final String UNBOX_SEGMENT_DESC = methodType(long.class, MemorySegment.class).descriptorString();
@@ -294,7 +294,7 @@ public class BindingSpecializer {
             emitConst(callingSequence.allocationSize());
             emitInvokeStatic(Binding.Context.class, "ofBoundedAllocator", OF_BOUNDED_ALLOCATOR_DESC);
         } else if (callingSequence.forUpcall() && needsSession()) {
-            emitInvokeStatic(Binding.Context.class, "ofSession", OF_SESSION_DESC);
+            emitInvokeStatic(Binding.Context.class, "ofScope", OF_SCOPE_DESC);
         } else {
             emitGetStatic(Binding.Context.class, "DUMMY", BINDING_CONTEXT_DESC);
         }
@@ -436,7 +436,7 @@ public class BindingSpecializer {
         return callingSequence.argumentBindings()
                 .filter(Binding.BoxAddress.class::isInstance)
                 .map(Binding.BoxAddress.class::cast)
-                .anyMatch(Binding.BoxAddress::needsSession);
+                .anyMatch(Binding.BoxAddress::needsScope);
     }
 
     private boolean shouldAcquire(int paramIndex) {
@@ -561,7 +561,7 @@ public class BindingSpecializer {
     private void emitLoadInternalSession() {
         assert contextIdx != -1;
         emitLoad(Object.class, contextIdx);
-        emitInvokeVirtual(Binding.Context.class, "session", SESSION_DESC);
+        emitInvokeVirtual(Binding.Context.class, "scope", SCOPE_DESC);
     }
 
     private void emitLoadInternalAllocator() {

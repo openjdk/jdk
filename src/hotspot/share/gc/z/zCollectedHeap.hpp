@@ -31,6 +31,7 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
+#include "services/memoryUsage.hpp"
 
 class ZDirector;
 class ZDriver;
@@ -90,6 +91,7 @@ public:
 
   virtual bool uses_stack_watermark_barrier() const;
 
+  virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 

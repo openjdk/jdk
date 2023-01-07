@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,7 +814,7 @@ static void trace_method_resolution(const char* prefix,
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,
             (klass == NULL ? "<NULL>" : klass->internal_name()),
-            (resolved_klass == NULL ? "<NULL>" : resolved_klass->internal_name()),
+            resolved_klass->internal_name(),
             Method::name_and_sig_as_C_string(resolved_klass,
                                              method->name(),
                                              method->signature()),
@@ -969,11 +969,6 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
   Klass* resolved_klass = link_info.resolved_klass();
   Symbol* field = link_info.name();
   Symbol* sig = link_info.signature();
-
-  if (resolved_klass == NULL) {
-    ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), field->as_C_string());
-  }
 
   // Resolve instance field
   Klass* sel_klass = resolved_klass->find_field(field, sig, &fd);

@@ -162,6 +162,15 @@ private:
   static DumpedInternedStrings *_dumped_interned_strings;
   static GrowableArrayCHeap<Metadata**, mtClassShared>* _native_pointers;
 
+  // statistics
+  constexpr static int ALLOC_STAT_SLOTS = 16;
+  static size_t _alloc_count[ALLOC_STAT_SLOTS];
+  static size_t _alloc_size[ALLOC_STAT_SLOTS];
+  static size_t _total_obj_count;
+  static size_t _total_obj_size; // in HeapWords
+
+  static void count_allocation(size_t size);
+  static void print_stats();
 public:
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
@@ -292,7 +301,6 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
 
-  static void check_module_oop(oop orig_module_obj);
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);

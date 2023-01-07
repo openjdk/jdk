@@ -54,7 +54,7 @@ import javadoc.tester.JavadocTester;
 public class TestInterface extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestInterface tester = new TestInterface();
+        var tester = new TestInterface();
         tester.runTests();
     }
 

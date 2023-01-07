@@ -330,55 +330,69 @@ class LambdaForm {
         }
     }
 
-    LambdaForm(int arity, Name[] names, int result) {
-        this(arity, names, result, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
-    }
-    LambdaForm(int arity, Name[] names, int result, Kind kind) {
-        this(arity, names, result, /*forceInline=*/true, /*customized=*/null, kind);
-    }
-    LambdaForm(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
-        this(arity, names, result, forceInline, customized, Kind.GENERIC);
-    }
-    LambdaForm(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
-        assert(namesOK(arity, names));
+    // private version that doesn't do checks or defensive copies
+    private LambdaForm(int arity, int result, boolean forceInline, MethodHandle customized, Name[] names, Kind kind) {
         this.arity = arity;
-        this.result = fixResult(result, names);
-        this.names = names.clone();
+        this.result = result;
         this.forceInline = forceInline;
         this.customized = customized;
+        this.names = names;
         this.kind = kind;
-        int maxOutArity = normalize();
-        if (maxOutArity > MethodType.MAX_MH_INVOKER_ARITY) {
-            // Cannot use LF interpreter on very high arity expressions.
-            assert(maxOutArity <= MethodType.MAX_JVM_ARITY);
-            compileToBytecode();
-        }
-    }
-    LambdaForm(int arity, Name[] names) {
-        this(arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
-    }
-    LambdaForm(int arity, Name[] names, Kind kind) {
-        this(arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, kind);
-    }
-    LambdaForm(int arity, Name[] names, boolean forceInline, Kind kind) {
-        this(arity, names, LAST_RESULT, forceInline, /*customized=*/null, kind);
+        this.vmentry = null;
+        this.isCompiled = false;
     }
 
-    private LambdaForm(MethodType mt) {
+    // root factory pre/post processing and calls simple cosntructor
+    private static LambdaForm create(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
+        names = names.clone();
+        assert(namesOK(arity, names));
+        result = fixResult(result, names);
+
+        boolean canInterpret = normalizeNames(arity, names);
+        LambdaForm form = new LambdaForm(arity, result, forceInline, customized, names, kind);
+        assert(form.nameRefsAreLegal());
+        if (!canInterpret) {
+            form.compileToBytecode();
+        }
+        return form;
+    }
+
+    // derived factories with defaults
+    private static final int DEFAULT_RESULT = LAST_RESULT;
+    private static final boolean DEFAULT_FORCE_INLINE = true;
+    private static final MethodHandle DEFAULT_CUSTOMIZED = null;
+    private static final Kind DEFAULT_KIND = Kind.GENERIC;
+
+    static LambdaForm create(int arity, Name[] names, int result) {
+        return create(arity, names, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, DEFAULT_KIND);
+    }
+    static LambdaForm create(int arity, Name[] names, int result, Kind kind) {
+        return create(arity, names, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, kind);
+    }
+    static LambdaForm create(int arity, Name[] names) {
+        return create(arity, names, DEFAULT_RESULT, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, DEFAULT_KIND);
+    }
+    static LambdaForm create(int arity, Name[] names, Kind kind) {
+        return create(arity, names, DEFAULT_RESULT, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, kind);
+    }
+    static LambdaForm create(int arity, Name[] names, boolean forceInline, Kind kind) {
+        return create(arity, names, DEFAULT_RESULT, forceInline, DEFAULT_CUSTOMIZED, kind);
+    }
+
+    private static LambdaForm createBlankForType(MethodType mt) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
-        this.arity = mt.parameterCount();
-        this.result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? -1 : arity;
-        this.names = buildEmptyNames(arity, mt, result == -1);
-        this.forceInline = true;
-        this.customized = null;
-        this.kind = Kind.ZERO;
-        assert(nameRefsAreLegal());
-        assert(isEmpty());
-        String sig = null;
-        assert(isValidSignature(sig = basicTypeSignature()));
-        assert(sig.equals(basicTypeSignature())) : sig + " != " + basicTypeSignature();
+        int arity = mt.parameterCount();
+        int result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? VOID_RESULT : arity;
+        Name[] names = buildEmptyNames(arity, mt, result == VOID_RESULT);
+        boolean canInterpret = normalizeNames(arity, names);
+        LambdaForm form = new LambdaForm(arity, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, names, Kind.ZERO);
+        assert(form.nameRefsAreLegal() && form.isEmpty() && isValidSignature(form.basicTypeSignature()));
+        if (!canInterpret) {
+            form.compileToBytecode();
+        }
+        return form;
     }
 
     private static Name[] buildEmptyNames(int arity, MethodType mt, boolean isVoid) {
@@ -387,6 +401,7 @@ class LambdaForm {
             Name zero = new Name(constantZero(basicType(mt.returnType())));
             names[arity] = zero.newIndex(arity);
         }
+        assert(namesOK(arity, names));
         return names;
     }
 
@@ -457,7 +472,7 @@ class LambdaForm {
         if (customized == mh) {
             return this;
         }
-        LambdaForm customForm = new LambdaForm(arity, names, result, forceInline, mh, kind);
+        LambdaForm customForm = LambdaForm.create(arity, names, result, forceInline, mh, kind);
         if (COMPILE_THRESHOLD >= 0 && isCompiled) {
             // If shared LambdaForm has been compiled, compile customized version as well.
             customForm.compileToBytecode();
@@ -481,9 +496,9 @@ class LambdaForm {
     }
 
     /** Renumber and/or replace params so that they are interned and canonically numbered.
-     *  @return maximum argument list length among the names (since we have to pass over them anyway)
+     *  @return true if we can interpret
      */
-    private int normalize() {
+    private static boolean normalizeNames(int arity, Name[] names) {
         Name[] oldNames = null;
         int maxOutArity = 0;
         int changesStart = 0;
@@ -508,7 +523,6 @@ class LambdaForm {
                 names[i] = fixed.newIndex(i);
             }
         }
-        assert(nameRefsAreLegal());
         int maxInterned = Math.min(arity, INTERNED_ARGUMENT_LIMIT);
         boolean needIntern = false;
         for (int i = 0; i < maxInterned; i++) {
@@ -523,8 +537,14 @@ class LambdaForm {
                 names[i].internArguments();
             }
         }
-        assert(nameRefsAreLegal());
-        return maxOutArity;
+
+        // return true if we can interpret
+        if (maxOutArity > MethodType.MAX_MH_INVOKER_ARITY) {
+            // Cannot use LF interpreter on very high arity expressions.
+            assert(maxOutArity <= MethodType.MAX_JVM_ARITY);
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -804,7 +824,7 @@ class LambdaForm {
         LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
         if (prep == null) {
             assert (isValidSignature(basicTypeSignature()));
-            prep = new LambdaForm(mtype);
+            prep = LambdaForm.createBlankForType(mtype);
             prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
             prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
         }
@@ -1748,7 +1768,7 @@ class LambdaForm {
             // bootstrap dependency on this method in case we're interpreting LFs
             if (isVoid) {
                 Name[] idNames = new Name[] { argument(0, L_TYPE) };
-                idForm = new LambdaForm(1, idNames, VOID_RESULT, Kind.IDENTITY);
+                idForm = LambdaForm.create(1, idNames, VOID_RESULT, Kind.IDENTITY);
                 idForm.compileToBytecode();
                 idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
@@ -1756,14 +1776,14 @@ class LambdaForm {
                 zeFun = idFun;
             } else {
                 Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
-                idForm = new LambdaForm(2, idNames, 1, Kind.IDENTITY);
+                idForm = LambdaForm.create(2, idNames, 1, Kind.IDENTITY);
                 idForm.compileToBytecode();
                 idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
                             MethodHandleImpl.Intrinsic.IDENTITY));
 
                 Object zeValue = Wrapper.forBasicType(btChar).zero();
                 Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
-                zeForm = new LambdaForm(1, zeNames, 1, Kind.ZERO);
+                zeForm = LambdaForm.create(1, zeNames, 1, Kind.ZERO);
                 zeForm.compileToBytecode();
                 zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm),
                         MethodHandleImpl.Intrinsic.ZERO));
