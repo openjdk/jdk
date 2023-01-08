@@ -33,7 +33,7 @@ import java.util.concurrent.CountDownLatch;
  * @summary "ColorModel.getRGBdefault()" should always return the same object
  */
 public final class RGBdefaultSingleton {
-    
+
     private static volatile boolean failed;
     private static final Map<ColorModel, ?> map =
             Collections.synchronizedMap(new IdentityHashMap<>(1));
