@@ -437,6 +437,96 @@ public class Rational extends Number implements Comparable<Rational> {
         return denominator;
     }
 
+    // Arithmetic Operations
+    /**
+     * Returns a {@code Rational} whose value is {@code (this +
+     * augend)}.
+     *
+     * @param  augend value to be added to this {@code Rational}.
+     * @return {@code this + augend}
+     */
+    public Rational add(Rational augend) {
+        if (signum == 0)
+            return augend;
+
+        if (augend.signum == 0)
+            return this;
+
+        BigInteger num, augNum, den;
+
+        if (denominator.equals(augend.denominator)) {
+            num = numerator;
+            augNum = augend.numerator;
+            den = denominator;
+        } else {
+            BigInteger gcd = denominator.gcd(augend.denominator);
+            BigInteger[] lcdNums = lcdNumerators(augend, gcd);
+            num = lcdNums[0];
+            augNum = lcdNums[1];
+            den = lcd(augend.denominator, gcd);
+        }
+
+        if (signum == augend.signum)
+            return valueOf(signum, num.add(augNum), den);
+        
+        BigInteger diff = num.subtract(augNum);
+
+        if (diff.signum == 1)
+            return valueOf(signum, diff, den);
+        
+        if (diff.signum == -1)
+            return valueOf(augend.signum, diff.negate(), den);
+
+        return ZERO; // abs(this) - abs(augend) == 0
+    }
+
+    /**
+     * Returns a {@code Rational} whose value is {@code (this -
+     * subtrahend)}.
+     *
+     * @param  subtrahend value to be subtracted from this {@code Rational}.
+     * @return {@code this - subtrahend}
+     */
+    public Rational subtract(Rational subtrahend) {
+        return add(subtrahend.negate());
+    }
+
+    /**
+     * Computes the least common denominator of {@code this.denominator}
+     * and the specified denominator
+     * 
+     * @param den a denominator
+     * @param gcd the greatest common divisor of {@code denominator} and {@code den}
+     */
+    private BigInteger lcd(BigInteger den, BigInteger gcd) {
+        return denominator.divide(gcd).multiply(den);
+    }
+
+    /**
+     * Computes the numerators of this {@code Rational} and of the specified
+     * {@code Rational}, relative to the least common denominator of
+     * {@code denominator} and {@code val.denominator}
+     * 
+     * @param val a {@code Rational}
+     * @param gcd the greatest common divisor of {@code denominator}
+     *      and {@code val.denominator}
+     */
+    private BigInteger[] lcdNumerators(Rational val, BigInteger gcd) {
+        return new BigInteger[] {lcdNumerator(val.denominator, gcd), val.lcdNumerator(denominator, gcd)};
+    }
+
+    /**
+     * Computes the numerator of this rational, relative to the least common
+     * denominator of {@code denominator} and the specified denominator
+     * 
+     * @param den a denominator
+     * @param gcd the greatest common divisor of {@code denominator} and {@code den}
+     */
+    private BigInteger lcdNumerator(BigInteger den, BigInteger gcd) {
+        // lcm(a, b) == a * b / gcd(a, b) => n/a == n * (b / gcd(a, b)) / lcm(a, b)
+        return den.divide(gcd).multiply(numerator);
+    }
+
     /**
      * Returns a {@code Rational} whose value is {@code (-this)}.
      *
@@ -777,25 +867,11 @@ public class Rational extends Number implements Comparable<Rational> {
                 // compare using least common denominator
                 // trying to pospone the overflow as as late as possible
                 BigInteger gcd = denominator.gcd(val.denominator);
-                BigInteger lcdNum = lcdNumerator(val.denominator, gcd);
-                BigInteger valLcdNum = val.lcdNumerator(denominator, gcd);
-                absComp = lcdNum.compareTo(valLcdNum);
+                BigInteger[] lcdNums = lcdNumerators(val, gcd);
+                absComp = lcdNums[0].compareTo(lcdNums[1]);
             }
         }
 
         return signum * absComp; // adjust comparison with signum
-    }
-
-    /**
-     * Computes the numerator of this rational, relative to the least common
-     * denominator
-     * of {@code this.denominator} and {@code otherDenominator}
-     * 
-     * @param gcd the greatest common divisor of
-     *            {@code this.denominator} and {@code otherDenominator}
-     */
-    private BigInteger lcdNumerator(BigInteger otherDenominator, BigInteger gcd) {
-        // lcm(a, b) == a * b / gcd(a, b) => n/a == n * (b / gcd(a, b)) / lcm(a, b)
-        return otherDenominator.divide(gcd).multiply(numerator);
     }
 }
