@@ -32,7 +32,6 @@
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
-#include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
