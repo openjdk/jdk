@@ -4661,6 +4661,7 @@ public final class String
      * Returns how many times a substring exists within a String
      *
      * @param regex the substring
+     * @return The integer value how many times the substring is present within the main String object
      */
     public int occurences(String regex){
         return this.length() - this.replaceAll(regex,regex.substring(0,regex.length()-1)).length();
@@ -4670,6 +4671,7 @@ public final class String
      * Returns how many times a substring exists within a String, case unsensitive
      *
      * @param regex the substring
+     * @return The integer value how many times the substring is present within the main String object
      */
     public int occurencesIgnoreCase(String regex){
         return this.toLowerCase().occurences(regex.toLowerCase());
