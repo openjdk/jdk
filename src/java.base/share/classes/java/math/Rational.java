@@ -453,7 +453,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code abs(this)}
      */
     public Rational abs() {
-        return (signum == -1 ? negate() : this);
+        return signum == -1 ? negate() : this;
     }
 
     /**
