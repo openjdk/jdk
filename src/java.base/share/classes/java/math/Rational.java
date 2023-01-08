@@ -469,15 +469,16 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == augend.signum)
             return valueOf(signum, num.add(augNum), den);
         
+        // augends are discordant
         BigInteger diff = num.subtract(augNum);
 
-        if (diff.signum == 1)
+        if (diff.signum == 1) // abs(this) > abs(augend)
             return valueOf(signum, diff, den);
         
-        if (diff.signum == -1)
+        if (diff.signum == -1) // abs(this) < abs(augend)
             return valueOf(augend.signum, diff.negate(), den);
 
-        return ZERO; // abs(this) - abs(augend) == 0
+        return ZERO; // abs(this) == abs(augend)
     }
 
     /**
