@@ -150,14 +150,24 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Translates a {@code BigDecimal} into a {@code Rational}
-     * rounding according to the context settings.
+     * Translates a {@code BigInteger} into a {@code Rational}.
+     *
+     * @param val {@code BigInteger} value to be converted to
+     *            {@code Rational}.
+     */
+    public Rational(BigInteger val) {
+        signum = val.signum();
+        numerator = val.abs();
+        denominator = BigInteger.ONE;
+    }
+
+    /**
+     * Translates a {@code BigDecimal} into a {@code Rational}.
      *
      * @param val {@code BigDecimal} value to be converted to
      *            {@code Rational}.
-     * @param  mc the context to use.
      */
-    public Rational(BigDecimal val, MathContext mc) {
+    public Rational(BigDecimal val) {
         signum = val.signum();
 
         if (signum == 0) {
@@ -166,20 +176,163 @@ public class Rational extends Number implements Comparable<Rational> {
             return;
         }
 
-        val = val.round(mc);
         final int scale = val.scale();
-        final BigInteger signif = val.unscaledValue().abs();
+        final BigInteger intVal = val.unscaledValue().abs();
         final Rational res;
 
         if (scale > 0)
-            res = valueOf(signum, signif, BigInteger.TEN.pow(scale));
+            res = valueOf(signum, intVal, BigDecimal.bigTenToThe(scale));
         else if (scale < 0)
-            res = valueOf(signum, signif.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
+            res = valueOf(signum, BigDecimal.bigMultiplyPowerTen(intVal, -scale), BigInteger.ONE);
         else
-            res = valueOf(signum, signif, BigInteger.ONE);
+            res = valueOf(signum, intVal, BigInteger.ONE);
 
         numerator = res.numerator;
         denominator = res.denominator;
+    }
+
+    /**
+     * Translates a character array representation of a
+     * decimal number into a {@code Rational}, accepting the
+     * same sequence of characters as the {@link #Rational(String)}
+     * constructor, while allowing a sub-array to be specified.
+     *
+     * @implNote If the sequence of characters is already available
+     * within a character array, using this constructor is faster than
+     * converting the {@code char} array to string and using the
+     * {@code Rational(String)} constructor.
+     *
+     * @param  in {@code char} array that is the source of characters.
+     * @param  offset first character in the array to inspect.
+     * @param  len number of characters to consider.
+     * @throws NumberFormatException if {@code in} is not a valid
+     *         representation of a decimal number or the defined subarray
+     *         is not wholly within {@code in}.
+     */
+    public Rational(char[] in, int offset, int len) {
+        this(new BigDecimal(in, offset, len));
+    }
+
+    /**
+     * Translates a character array representation of a
+     * decimal number into a {@code Rational}, accepting the
+     * same sequence of characters as the {@link #Rational(String)}
+     * constructor.
+     *
+     * @implNote If the sequence of characters is already available
+     * as a character array, using this constructor is faster than
+     * converting the {@code char} array to string and using the
+     * {@code Rational(String)} constructor.
+     *
+     * @param in {@code char} array that is the source of characters.
+     * @throws NumberFormatException if {@code in} is not a valid
+     *         representation of a decimal number.
+     */
+    public Rational(char[] in) {
+        this(in, 0, in.length);
+    }
+
+    /**
+     * Translates the string representation of a decimal number
+     * into a {@code Rational}.  The string representation consists
+     * of an optional sign, {@code '+'} (<code> '&#92;u002B'</code>) or
+     * {@code '-'} (<code>'&#92;u002D'</code>), followed by a sequence of
+     * zero or more decimal digits ("the integer"), optionally
+     * followed by a fraction, optionally followed by an exponent.
+     *
+     * <p>The fraction consists of a decimal point followed by zero
+     * or more decimal digits.  The string must contain at least one
+     * digit in either the integer or the fraction.  The number formed
+     * by the sign, the integer and the fraction is referred to as the
+     * <i>significand</i>.
+     *
+     * <p>The exponent consists of the character {@code 'e'}
+     * (<code>'&#92;u0065'</code>) or {@code 'E'} (<code>'&#92;u0045'</code>)
+     * followed by one or more decimal digits.
+     *
+     * <p>More formally, the strings this constructor accepts are
+     * described by the following grammar:
+     * <blockquote>
+     * <dl>
+     * <dt><i>DecimalString:</i>
+     * <dd><i>Sign<sub>opt</sub> Significand Exponent<sub>opt</sub></i>
+     * <dt><i>Sign:</i>
+     * <dd>{@code +}
+     * <dd>{@code -}
+     * <dt><i>Significand:</i>
+     * <dd><i>IntegerPart</i> {@code .} <i>FractionPart<sub>opt</sub></i>
+     * <dd>{@code .} <i>FractionPart</i>
+     * <dd><i>IntegerPart</i>
+     * <dt><i>IntegerPart:</i>
+     * <dd><i>Digits</i>
+     * <dt><i>FractionPart:</i>
+     * <dd><i>Digits</i>
+     * <dt><i>Exponent:</i>
+     * <dd><i>ExponentIndicator SignedInteger</i>
+     * <dt><i>ExponentIndicator:</i>
+     * <dd>{@code e}
+     * <dd>{@code E}
+     * <dt><i>SignedInteger:</i>
+     * <dd><i>Sign<sub>opt</sub> Digits</i>
+     * <dt><i>Digits:</i>
+     * <dd><i>Digit</i>
+     * <dd><i>Digits Digit</i>
+     * <dt><i>Digit:</i>
+     * <dd>any character for which {@link Character#isDigit}
+     * returns {@code true}, including 0, 1, 2 ...
+     * </dl>
+     * </blockquote>
+     *
+     * <p>The scale of the decimal number represented by the returned
+     * {@code Rational} will be the number of digits in the fraction,
+     * or zero if the string contains no decimal point, subject to adjustment
+     * for any exponent; if the string contains an exponent, the exponent is
+     * subtracted from the scale.  The value of the resulting scale
+     * must lie between {@code Integer.MIN_VALUE} and
+     * {@code Integer.MAX_VALUE}, inclusive.
+     *
+     * <p>The character-to-digit mapping is provided by {@link
+     * java.lang.Character#digit} set to convert to radix 10.  The
+     * String may not contain any extraneous characters (whitespace,
+     * for example).
+     *
+     * <p><b>Examples:</b><br>
+     * The value of the returned {@code Rational} is equal to
+     * <i>significand</i> &times; 10<sup>&nbsp;<i>exponent</i></sup>.
+     * For each string on the left, the resulting representation
+     * [{@code denominator}/{@code numerator}] is shown on the right.
+     * <pre>
+     * "0"            [0/1]
+     * "0.00"         [0/1]
+     * "123"          [123/1]
+     * "-123"         [-123/1]
+     * "1.23E3"       [1230/1]
+     * "1.23E+3"      [1230/1]
+     * "12.3E+7"      [123000000/1]
+     * "12.0"         [12/1]
+     * "12.3"         [123/10]
+     * "0.00123"      [123/100000]
+     * "-1.23E-12"    [-123/100000000000000]
+     * "1234.5E-4"    [2469/20000]
+     * "0E+7"         [0/1]
+     * "-0"           [0/1]
+     * </pre>
+     *
+     * @apiNote For values other than {@code float} and
+     * {@code double} NaN and &plusmn;Infinity, this constructor is
+     * compatible with the values returned by {@link Float#toString}
+     * and {@link Double#toString}.  This is generally the preferred
+     * way to convert a {@code float} or {@code double} into a
+     * Rational, as it doesn't suffer from the unpredictability of
+     * the {@link #Rational(double)} constructor.
+     *
+     * @param val String representation of a decimal number.
+     *
+     * @throws NumberFormatException if {@code val} is not a valid
+     *         representation of a decimal number.
+     */
+    public Rational(String val) {
+        this(val.toCharArray(), 0, val.length());
     }
 
     /**
