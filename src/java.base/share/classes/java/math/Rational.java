@@ -158,19 +158,26 @@ public class Rational extends Number implements Comparable<Rational> {
      * @param  mc the context to use.
      */
     public Rational(BigDecimal val, MathContext mc) {
+        signum = val.signum();
+
+        if (signum == 0) {
+            numerator = BigInteger.ZERO;
+            denominator = BigInteger.ONE;
+            return;
+        }
+
         val = val.round(mc);
         final int scale = val.scale();
         final BigInteger signif = val.unscaledValue().abs();
         final Rational res;
 
         if (scale > 0)
-            res = valueOf(val.signum(), signif, BigInteger.TEN.pow(scale));
+            res = valueOf(signum, signif, BigInteger.TEN.pow(scale));
         else if (scale < 0)
-            res = valueOf(val.signum(), signif.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
+            res = valueOf(signum, signif.multiply(BigInteger.TEN.pow(-scale)), BigInteger.ONE);
         else
-            res = valueOf(val.signum(), signif, BigInteger.ONE);
+            res = valueOf(signum, signif, BigInteger.ONE);
 
-        signum = res.signum;
         numerator = res.numerator;
         denominator = res.denominator;
     }
