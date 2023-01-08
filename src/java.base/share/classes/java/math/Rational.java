@@ -352,7 +352,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (num == 0)
             return ZERO;
 
-        return valueOf(Math.signum(num) * Math.signum(den), BigInteger.valueOf(Math.abs(num)), BigInteger.valueOf(Math.abs(den)));
+        return valueOf((int) (Math.signum(num) * Math.signum(den)), BigInteger.valueOf(Math.abs(num)), BigInteger.valueOf(Math.abs(den)));
     }
 
     /**
