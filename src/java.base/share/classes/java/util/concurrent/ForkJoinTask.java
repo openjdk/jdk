@@ -413,9 +413,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             q = (wt = (ForkJoinWorkerThread)t).workQueue;
             p = wt.pool;
         }
-        else if ((how & POOLSUBMIT) != 0)
-            p = null;
-        else if ((p = ForkJoinPool.common) != null)
+        else if ((p = ForkJoinPool.common) != null && (how & POOLSUBMIT) == 0)
             q = p.externalQueue();
         if (q != null && p != null) { // try helping
             if (this instanceof CountedCompleter)
@@ -435,8 +433,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             Aux a;
             if ((s = status) < 0)
                 break;
-            else if (p != null && p.runState < 0)
-                cancelIgnoringExceptions(this); // cancel on shutdown
             else if (node == null)
                 node = new Aux(Thread.currentThread(), null);
             else if (!queued) {
@@ -448,20 +444,21 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 s = 0;
                 break;
             }
-            else {
-                if (Thread.interrupted())
-                    interrupted = true;
-                if ((s = status) < 0)    // prefer result to IE
-                    break;
-                else if (interrupted && (how & INTERRUPTIBLE) != 0) {
+            else if (Thread.interrupted()) {
+                interrupted = true;
+                if ((how & POOLSUBMIT) != 0 && p != null && p.runState < 0)
+                    cancelIgnoringExceptions(this); // cancel on shutdown
+                else if ((how & INTERRUPTIBLE) != 0) {
                     s = ABNORMAL;
                     break;
                 }
-                else if (timed)
-                    LockSupport.parkNanos(ns);
-                else
-                    LockSupport.park();
             }
+            else if ((s = status) < 0) // recheck
+                break;
+            else if (timed)
+                LockSupport.parkNanos(ns);
+            else
+                LockSupport.park();
         }
         if (uncompensate)
             p.uncompensate();
@@ -485,8 +482,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                         }
                     }
                 }
+                int stat = status;           // prefer completion result
+                if (stat < 0)
+                    s = stat;
             }
-            else {
+            if (s < 0) {
                 signalWaiters();             // help clean or signal
                 if (interrupted)
                     Thread.currentThread().interrupt();
@@ -1495,12 +1495,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         public final boolean exec() {
+            ForkJoinPool p;
+            Thread t = Thread.currentThread();
             Thread.interrupted();
-            runner = Thread.currentThread();
-            ForkJoinPool p = getPool();
+            runner = t;
             try {
-                if (p != null && p.runState < 0)
-                    trySetCancelled();    // termination check
+                if ((t instanceof ForkJoinWorkerThread) &&
+                    (p = ((ForkJoinWorkerThread) t).pool) != null &&
+                    p.runState < 0)         // termination check
+                    cancelIgnoringExceptions(this);
                 else if (!isDone())
                     result = callable.call();
                 return true;

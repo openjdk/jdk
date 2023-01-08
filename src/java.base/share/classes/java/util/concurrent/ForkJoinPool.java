@@ -3073,15 +3073,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         InvokeAnyRoot(int n) {
             count = new AtomicInteger(n);
         }
-        final boolean checkDone() {
-            ForkJoinPool p; // force done if caller's pool terminating
-            if (!isDone()) {
-                if ((p = getPool()) == null || p.runState >= 0)
-                    return false;
-                cancel(false);
-            }
-            return true;
-        }
         final void tryComplete(E v, Throwable ex, boolean completed) {
             if (!isDone()) {
                 if (completed) {
@@ -3090,7 +3081,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 else if (count.getAndDecrement() <= 1) {
                     if (ex == null)
-                        cancel(false);
+                        trySetCancelled();
                     else
                         trySetThrown(ex);
                 }
@@ -3118,21 +3109,29 @@ public class ForkJoinPool extends AbstractExecutorService {
             this.callable = callable;
         }
         public final boolean exec() {
+            ForkJoinPool p;
+            Thread t = Thread.currentThread();
             Thread.interrupted();
-            runner = Thread.currentThread();
+            runner = t;
             InvokeAnyRoot<E> r = root;
             Callable<E> c = callable;
             E v = null;
             Throwable ex = null;
             boolean completed = false;
-            if (r != null && !r.checkDone() && !isDone()) {
-                try {
-                    if (c != null) {
+            if (r != null && c != null) {
+                if ((t instanceof ForkJoinWorkerThread) &&
+                    (p = ((ForkJoinWorkerThread) t).pool) != null &&
+                    p.runState < 0) {   // termination check
+                    r.trySetCancelled();
+                    t.interrupt();      // restore interrupt
+                }
+                else if (!r.isDone() && !isDone()) {
+                    try {
                         v = c.call();
                         completed = true;
+                    } catch (Throwable rex) {
+                        ex = rex;
                     }
-                } catch (Throwable rex) {
-                    ex = rex;
                 }
                 if (trySetCancelled() >= 0)
                     r.tryComplete(v, ex, completed);
