@@ -4657,4 +4657,21 @@ public final class String
         return this;
     }
 
+    /**
+     * Returns how many times a substring exists within a String
+     *
+     * @param regex the substring
+     */
+    public int occurences(String regex){
+        return this.length() - this.replaceAll(regex,regex.substring(0,regex.length()-1)).length();
+    }
+
+    /**
+     * Returns how many times a substring exists within a String, case unsensitive
+     *
+     * @param regex the substring
+     */
+    public int occurencesIgnoreCase(String regex){
+        return this.toLowerCase().occurences(regex.toLowerCase());
+    }
 }
