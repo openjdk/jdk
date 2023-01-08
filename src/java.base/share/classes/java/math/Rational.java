@@ -156,7 +156,7 @@ public class Rational extends Number implements Comparable<Rational> {
      *            {@code Rational}.
      */
     public Rational(BigInteger val) {
-        signum = val.signum();
+        signum = val.signum;
         numerator = val.abs();
         denominator = BigInteger.ONE;
     }
