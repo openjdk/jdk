@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8262891
+ * @bug 8262891 8290709
  * @summary Check the pattern domination error are reported correctly.
- * @compile/fail/ref=Domination.out -XDrawDiagnostics --enable-preview -source ${jdk.version} Domination.java
+ * @enablePreview
+ * @compile/fail/ref=Domination.out -XDrawDiagnostics Domination.java
  */
 public class Domination {
-
     int testDominatesError1(Object o) {
         switch (o) {
             case CharSequence cs: return 0;
@@ -209,6 +209,13 @@ public class Domination {
         switch (o) {
             case R(int a) when true: return 1;
             case R(int a): return -1;
+        }
+    }
+
+    int testNotDominates2(Integer x) {
+        switch (x) {
+            case Integer i: return i;
+            case null : return -1;
         }
     }
 }

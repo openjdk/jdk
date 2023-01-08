@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.*;
 import java.util.*;
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.gc.gp.array.*;
 import nsk.share.gc.gp.string.*;
 import nsk.share.gc.gp.list.*;
@@ -84,6 +85,27 @@ public final class GarbageUtils {
         public static final Throwable preloadThrowable = new Throwable("preload");
 
         private GarbageUtils() {
+        }
+
+        /**
+         * engages GC by allocating memory chunks and triggering youngGC.
+         * Allocations are done for a total of YOUNG_GC_ITERATIONS times.
+         * Each iteration, we allocate a memory chunk and trigger youngGC.
+         * Finally fullGC is run once.
+         * This way the objects get to travel to various GC regions.
+         * @param testMemory - memory size to be operated on
+         */
+        public static void engageGC(long testMemory) {
+            final int YOUNG_GC_ITERATIONS = 100;
+            final long memChunk = testMemory / YOUNG_GC_ITERATIONS;
+            int iteration = 0;
+            Object referenceArray[] = new Object[YOUNG_GC_ITERATIONS];
+
+            while (iteration < YOUNG_GC_ITERATIONS) {
+                referenceArray[iteration++] = byteArrayProducer.create(memChunk);
+                WhiteBox.getWhiteBox().youngGC();
+            }
+            WhiteBox.getWhiteBox().fullGC();
         }
 
         /**

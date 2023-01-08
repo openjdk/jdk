@@ -127,7 +127,7 @@ public interface PropertyEditor {
      * <p>
      * Example results are:
      * <ul>
-     * <li>Primitive expresssion: {@code 2}
+     * <li>Primitive expression: {@code 2}
      * <li>Class constructor: {@code new java.awt.Color(127,127,34)}
      * <li>Static field: {@code java.awt.Color.orange}
      * <li>Static method: {@code javax.swing.Box.createRigidArea(new

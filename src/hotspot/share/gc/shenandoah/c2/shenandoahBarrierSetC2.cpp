@@ -716,6 +716,11 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
   return result;
 }
 
+
+bool ShenandoahBarrierSetC2::is_gc_pre_barrier_node(Node* node) const {
+  return is_shenandoah_wb_pre_call(node);
+}
+
 // Support for GC barriers emitted during parsing
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
   if (node->Opcode() == Op_ShenandoahLoadReferenceBarrier || node->Opcode() == Op_ShenandoahIUBarrier) return true;
@@ -1023,7 +1028,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
                 if (if_ctrl != load_ctrl) {
                   // Skip possible CProj->NeverBranch in infinite loops
                   if ((if_ctrl->is_Proj() && if_ctrl->Opcode() == Op_CProj)
-                      && (if_ctrl->in(0)->is_MultiBranch() && if_ctrl->in(0)->Opcode() == Op_NeverBranch)) {
+                      && if_ctrl->in(0)->is_NeverBranch()) {
                     if_ctrl = if_ctrl->in(0)->in(0);
                   }
                 }
@@ -1080,7 +1085,8 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
   } else if (can_reshape &&
              n->Opcode() == Op_If &&
              ShenandoahBarrierC2Support::is_heap_stable_test(n) &&
-             n->in(0) != NULL) {
+             n->in(0) != NULL &&
+             n->outcnt() == 2) {
     Node* dom = n->in(0);
     Node* prev_dom = n;
     int op = n->Opcode();
@@ -1118,7 +1124,7 @@ bool ShenandoahBarrierSetC2::has_only_shenandoah_wb_pre_uses(Node* n) {
   return n->outcnt() > 0;
 }
 
-bool ShenandoahBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode) const {
+bool ShenandoahBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const {
   switch (opcode) {
     case Op_CallLeaf:
     case Op_CallLeafNoFP: {

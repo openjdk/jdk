@@ -175,8 +175,6 @@ Node* Parse::check_interpreter_type(Node* l, const Type* type,
     bad_type_exit->control()->add_req(bad_type_ctrl);
   }
 
-  BasicType bt_l = _gvn.type(l)->basic_type();
-  BasicType bt_t = type->basic_type();
   assert(_gvn.type(l)->higher_equal(type), "must constrain OSR typestate");
   return l;
 }
@@ -469,8 +467,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   for (uint reason = 0; reason < md->trap_reason_limit(); reason++) {
     uint md_count = md->trap_count(reason);
     if (md_count != 0) {
-      if (md_count == md->trap_count_limit())
-        md_count += md->overflow_trap_count();
+      if (md_count >= md->trap_count_limit()) {
+        md_count = md->trap_count_limit() + md->overflow_trap_count();
+      }
       uint total_count = C->trap_count(reason);
       uint old_count   = total_count;
       total_count += md_count;
@@ -577,9 +576,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   } else {
     set_map(entry_map);
     do_method_entry();
-    if (depth() == 1 && C->age_code()) {
-      decrement_age();
-    }
   }
 
   if (depth() == 1 && !failing()) {
@@ -2172,31 +2168,6 @@ void Parse::rtm_deopt() {
     }
   }
 #endif
-}
-
-void Parse::decrement_age() {
-  MethodCounters* mc = method()->ensure_method_counters();
-  if (mc == NULL) {
-    C->record_failure("Must have MCs");
-    return;
-  }
-  assert(!is_osr_parse(), "Not doing this for OSRs");
-
-  // Set starting bci for uncommon trap.
-  set_parse_bci(0);
-
-  const TypePtr* adr_type = TypeRawPtr::make((address)mc);
-  Node* mc_adr = makecon(adr_type);
-  Node* cnt_adr = basic_plus_adr(mc_adr, mc_adr, in_bytes(MethodCounters::nmethod_age_offset()));
-  Node* cnt = make_load(control(), cnt_adr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* decr = _gvn.transform(new SubINode(cnt, makecon(TypeInt::ONE)));
-  store_to_memory(control(), cnt_adr, decr, T_INT, adr_type, MemNode::unordered);
-  Node *chk   = _gvn.transform(new CmpINode(decr, makecon(TypeInt::ZERO)));
-  Node* tst   = _gvn.transform(new BoolNode(chk, BoolTest::gt));
-  { BuildCutout unless(this, tst, PROB_ALWAYS);
-    uncommon_trap(Deoptimization::Reason_tenured,
-                  Deoptimization::Action_make_not_entrant);
-  }
 }
 
 //------------------------------return_current---------------------------------

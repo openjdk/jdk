@@ -143,13 +143,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
-
-#ifndef PRODUCT
-  // CmpNode and subclasses include all data inputs (until hitting a control
-  // boundary) in their related node set, as well as all outputs until and
-  // including eventual control nodes and their projections.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -160,6 +153,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------CmpUNode---------------------------------------
@@ -361,7 +355,6 @@ public:
   bool is_counted_loop_exit_test();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 

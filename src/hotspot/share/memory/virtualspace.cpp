@@ -194,7 +194,7 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
     // Check alignment constraints.
     assert(is_aligned(base, alignment),
            "reserve_memory_special() returned an unaligned address, base: " PTR_FORMAT
-           " alignment: " SIZE_FORMAT_HEX,
+           " alignment: " SIZE_FORMAT_X,
            p2i(base), alignment);
   }
   return base;
@@ -223,12 +223,13 @@ void ReservedSpace::reserve(size_t size,
   assert(is_aligned(size, alignment), "Size must be aligned to the requested alignment");
 
   // There are basically three different cases that we need to handle below:
-  // - Mapping backed by a file
-  // - Mapping backed by explicit large pages
-  // - Mapping backed by normal pages or transparent huge pages
+  // 1. Mapping backed by a file
+  // 2. Mapping backed by explicit large pages
+  // 3. Mapping backed by normal pages or transparent huge pages
   // The first two have restrictions that requires the whole mapping to be
   // committed up front. To record this the ReservedSpace is marked 'special'.
 
+  // == Case 1 ==
   if (_fd_for_heap != -1) {
     // When there is a backing file directory for this space then whether
     // large pages are allocated is up to the filesystem of the backing file.
@@ -239,34 +240,31 @@ void ReservedSpace::reserve(size_t size,
     }
     // Always return, not possible to fall back to reservation not using a file.
     return;
-  } else if (use_explicit_large_pages(page_size)) {
+  }
+
+  // == Case 2 ==
+  if (use_explicit_large_pages(page_size)) {
     // System can't commit large pages i.e. use transparent huge pages and
     // the caller requested large pages. To satisfy this request we use
     // explicit large pages and these have to be committed up front to ensure
     // no reservations are lost.
-    size_t used_page_size = page_size;
-    char* base = NULL;
-
     do {
-      base = reserve_memory_special(requested_address, size, alignment, used_page_size, executable);
+      char* base = reserve_memory_special(requested_address, size, alignment, page_size, executable);
       if (base != NULL) {
-        break;
+        // Successful reservation using large pages.
+        initialize_members(base, size, alignment, page_size, true, executable);
+        return;
       }
-      used_page_size = os::page_sizes().next_smaller(used_page_size);
-    } while (used_page_size > (size_t) os::vm_page_size());
+      page_size = os::page_sizes().next_smaller(page_size);
+    } while (page_size > (size_t) os::vm_page_size());
 
-    if (base != NULL) {
-      // Successful reservation using large pages.
-      initialize_members(base, size, alignment, used_page_size, true, executable);
-      return;
-    }
     // Failed to reserve explicit large pages, do proper logging.
     log_on_large_pages_failure(requested_address, size);
     // Now fall back to normal reservation.
-    page_size = os::vm_page_size();
+    assert(page_size == (size_t) os::vm_page_size(), "inv");
   }
 
-  // Not a 'special' reservation.
+  // == Case 3 ==
   char* base = reserve_memory(requested_address, size, alignment, -1, executable);
   if (base != NULL) {
     // Successful mapping.
@@ -404,7 +402,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
 
   // Try to reserve the memory for the heap.
   log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
-                             " heap of size " SIZE_FORMAT_HEX,
+                             " heap of size " SIZE_FORMAT_X,
                              p2i(requested_address),
                              size);
 
@@ -597,7 +595,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
     // Last, desperate try without any placement.
     if (_base == NULL) {
-      log_trace(gc, heap, coops)("Trying to allocate at address NULL heap of size " SIZE_FORMAT_HEX, size + noaccess_prefix);
+      log_trace(gc, heap, coops)("Trying to allocate at address NULL heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
       initialize(size + noaccess_prefix, alignment, page_size, NULL, false);
     }
   }
@@ -1062,8 +1060,8 @@ void VirtualSpace::print_on(outputStream* out) const {
   out->cr();
   out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
   out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
-  out->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low()), p2i(high()));
-  out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
+  out->print_cr(" - [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
+  out->print_cr(" - [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
 void VirtualSpace::print() const {

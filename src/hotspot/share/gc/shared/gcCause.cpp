@@ -75,6 +75,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _codecache_GC_threshold:
       return "CodeCache GC Threshold";
 
+    case _codecache_GC_aggressive:
+      return "CodeCache GC Aggressive";
+
     case _metadata_GC_threshold:
       return "Metadata GC Threshold";
 
@@ -95,9 +98,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _g1_periodic_collection:
       return "G1 Periodic Collection";
-
-    case _g1_preventive_collection:
-      return "G1 Preventive Collection";
 
     case _dcmd_gc_run:
       return "Diagnostic Command";

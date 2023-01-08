@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 
 public class DocTest extends JavadocTester {
     public static void main(String... args) throws Exception {
-        DocTest tester = new DocTest();
+        var tester = new DocTest();
         tester.runTests();
     }
 
@@ -51,10 +51,6 @@ public class DocTest extends JavadocTester {
                 testSrc("DocTest.java")
         );
         checkExit(Exit.OK);
-
-        // javadoc does not report an exit code for an internal exception (!)
-        // so monitor stderr for stack dumps.
-        checkOutput(Output.STDERR, false, "at com.sun");
     }
 
     /**

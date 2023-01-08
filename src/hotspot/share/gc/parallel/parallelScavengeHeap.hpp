@@ -173,7 +173,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void register_nmethod(nmethod* nm);
   virtual void unregister_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
 
   void prune_scavengable_nmethods();
 
@@ -184,7 +183,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool is_in_reserved(const void* p) const;
 
-  bool is_in_young(const oop p) const;
+  bool is_in_young(const void* p) const;
 
   virtual bool requires_barriers(stackChunkOop obj) const;
 

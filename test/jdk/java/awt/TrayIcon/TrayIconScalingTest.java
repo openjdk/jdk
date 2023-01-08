@@ -81,6 +81,10 @@ public class TrayIconScalingTest {
         PassFailJFrame passFailJFrame = new PassFailJFrame("TrayIcon " +
                 "Test Instructions", INSTRUCTIONS, 8, 18, 85);
         createAndShowGUI();
+        // does not have a test window,
+        // hence only the instruction frame is positioned
+        PassFailJFrame.positionTestWindow(null,
+                PassFailJFrame.Position.HORIZONTAL);
         try {
             passFailJFrame.awaitAndCheck();
         } finally {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,15 +50,21 @@
  *   href="channels/package-summary.html#multiplex">multiplexed,
  *   non-blocking <br> I/O</a> facility.  </p></li>
  *
+ *   <li><p> <a
+ *   href="file/Path.html"><i>Path</i></a>,
+ *   which together with the <a href="file/Files.html"><i>Files</i></a>
+ *   class provides access to files.  </p></li>
+ *
  *  </ul>
  *
  * <p> The {@code java.nio} package defines the buffer classes, which
  * are used throughout the NIO APIs.  The charset API is defined in
- * the {@link java.nio.charset} package, and the channel and selector
- * APIs are defined in the {@link java.nio.channels} package.  Each of
- * these subpackages has its own service-provider (SPI) subpackage,
- * the contents of which can be used to extend the platform's default
- * implementations or to construct alternative implementations.
+ * the {@link java.nio.charset} package, the channel and selector APIs
+ * in the {@link java.nio.channels} package, and the files and path APIs
+ * in the {@link java.nio.file} package.  Each of these subpackages has
+ * its own service-provider interface (SPI) subpackage, the contents of
+ * which can be used to extend the platform's default implementations or
+ * to construct alternative implementations.
  *
  * <a id="buffers"> </a>
  *

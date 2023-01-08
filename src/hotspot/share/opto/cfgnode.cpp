@@ -39,6 +39,7 @@
 #include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -393,6 +394,47 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   return true; // The Region node is unreachable - it is dead.
 }
 
+#ifdef ASSERT
+// Is this region in an infinite subgraph?
+// (no path to root except through false NeverBranch exit)
+bool RegionNode::is_in_infinite_subgraph() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(this);
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
+}
+
+// Are all nodes in worklist in infinite subgraph?
+// (no path to root except through false NeverBranch exit)
+// worklist is directly used for the traversal
+bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) {
+  // BFS traversal down the CFG, except through NeverBranch exits
+  for (uint i = 0; i < worklist.size(); ++i) {
+    Node* n = worklist.at(i);
+    assert(n->is_CFG(), "only traverse CFG");
+    if (n->is_Root()) {
+      // Found root -> there was an exit!
+      return false;
+    } else if (n->is_NeverBranch()) {
+      // Only follow the loop-internal projection, not the NeverBranch exit
+      ProjNode* proj = n->as_NeverBranch()->proj_out_or_null(0);
+      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
+      worklist.push(proj);
+    } else {
+      // Traverse all CFG outputs
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (use->is_CFG()) {
+          worklist.push(use);
+        }
+      }
+    }
+  }
+  // No exit found for any loop -> all are infinite
+  return true;
+}
+#endif //ASSERT
+
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //
@@ -618,7 +660,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (opaq != NULL) {
           // This is not a loop anymore. No need to keep the Opaque1 node on the test that guards the loop as it won't be
           // subject to further loop opts.
-          assert(opaq->Opcode() == Op_Opaque1, "");
+          assert(opaq->Opcode() == Op_OpaqueZeroTripGuard, "");
           igvn->replace_node(opaq, opaq->in(1));
         }
       }
@@ -981,14 +1023,6 @@ PhiNode* PhiNode::slice_memory(const TypePtr* adr_type) const {
 PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const {
   const TypeOopPtr *t_oop = at->isa_oopptr();
   assert(t_oop != NULL && t_oop->is_known_instance(), "expecting instance oopptr");
-  const TypePtr *t = adr_type();
-  assert(type() == Type::MEMORY &&
-         (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
-          t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-          t->is_oopptr()->cast_to_exactness(true)
-           ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
-           ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop),
-         "bottom or raw memory required");
 
   // Check if an appropriate node already exists.
   Node *region = in(0);
@@ -2581,14 +2615,6 @@ const RegMask &PhiNode::out_RegMask() const {
 }
 
 #ifndef PRODUCT
-void PhiNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  // For a PhiNode, the set of related nodes includes all inputs till level 2,
-  // and all outputs till level 1. In compact mode, inputs till level 1 are
-  // collected.
-  this->collect_nodes(in_rel, compact ? 1 : 2, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
-
 void PhiNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
   if (is_tripcount(T_INT) || is_tripcount(T_LONG)) {
@@ -2613,32 +2639,10 @@ const RegMask &GotoNode::out_RegMask() const {
   return RegMask::Empty;
 }
 
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// The related nodes of a GotoNode are all inputs at level 1, as well as the
-// outputs at level 1. This is regardless of compact mode.
-void GotoNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
-}
-#endif
-
-
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// The related nodes of a JumpNode are all inputs at level 1, as well as the
-// outputs at level 2 (to include actual jump targets beyond projection nodes).
-// This is regardless of compact mode.
-void JumpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -2, false, false);
-}
-#endif
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
@@ -2699,12 +2703,6 @@ void JumpProjNode::dump_spec(outputStream *st) const {
 void JumpProjNode::dump_compact_spec(outputStream *st) const {
   ProjNode::dump_compact_spec(st);
   st->print("(%d)%d@%d", _switch_val, _proj_no, _dest_bci);
-}
-
-void JumpProjNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  // The related nodes of a JumpProjNode are its inputs and outputs at level 1.
-  this->collect_nodes(in_rel, 1, false, false);
-  this->collect_nodes(out_rel, -1, false, false);
 }
 #endif
 
@@ -2818,9 +2816,8 @@ Node* CreateExNode::Identity(PhaseGVN* phase) {
   // exception oop through.
   CallNode *call = in(1)->in(0)->as_Call();
 
-  return ( in(0)->is_CatchProj() && in(0)->in(0)->in(1) == in(1) )
-    ? this
-    : call->in(TypeFunc::Parms);
+  return (in(0)->is_CatchProj() && in(0)->in(0)->is_Catch() &&
+          in(0)->in(0)->in(1) == in(1)) ? this : call->in(TypeFunc::Parms);
 }
 
 //=============================================================================
@@ -2851,3 +2848,25 @@ void NeverBranchNode::format( PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("%s", Name());
 }
 #endif
+
+#ifndef PRODUCT
+void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
+  st->print("blackhole ");
+  bool first = true;
+  for (uint i = 0; i < req(); i++) {
+    Node* n = in(i);
+    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
+      if (first) {
+        first = false;
+      } else {
+        st->print(", ");
+      }
+      char buf[128];
+      ra->dump_register(n, buf);
+      st->print("%s", buf);
+    }
+  }
+  st->cr();
+}
+#endif
+

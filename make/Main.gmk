@@ -466,15 +466,15 @@ ALL_TARGETS += bootcycle-images
 # Docs targets
 
 # If building full docs, to complete docs-*-api we need both the javadoc and
-# modulegraph targets.
+# graphs targets.
 $(eval $(call SetupTarget, docs-jdk-api-javadoc, \
     MAKEFILE := Docs, \
     TARGET := docs-jdk-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-jdk-api-modulegraph, \
+$(eval $(call SetupTarget, docs-jdk-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-jdk-api-modulegraph, \
+    TARGET := docs-jdk-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -483,9 +483,9 @@ $(eval $(call SetupTarget, docs-javase-api-javadoc, \
     TARGET := docs-javase-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-javase-api-modulegraph, \
+$(eval $(call SetupTarget, docs-javase-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-javase-api-modulegraph, \
+    TARGET := docs-javase-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -494,9 +494,9 @@ $(eval $(call SetupTarget, docs-reference-api-javadoc, \
     TARGET := docs-reference-api-javadoc, \
 ))
 
-$(eval $(call SetupTarget, docs-reference-api-modulegraph, \
+$(eval $(call SetupTarget, docs-reference-api-graphs, \
     MAKEFILE := Docs, \
-    TARGET := docs-reference-api-modulegraph, \
+    TARGET := docs-reference-api-graphs, \
     DEPS := buildtools-modules runnable-buildjdk, \
 ))
 
@@ -1107,9 +1107,14 @@ docs-reference-api: docs-reference-api-javadoc
 # If we're building full docs, we must also generate the module graphs to
 # get non-broken api documentation.
 ifeq ($(ENABLE_FULL_DOCS), true)
-  docs-jdk-api: docs-jdk-api-modulegraph
-  docs-javase-api: docs-javase-api-modulegraph
-  docs-reference-api: docs-reference-api-modulegraph
+  docs-jdk-api: docs-jdk-api-graphs
+  docs-javase-api: docs-javase-api-graphs
+  docs-reference-api: docs-reference-api-graphs
+
+  # We must generate javadoc first so we know what graphs are needed
+  docs-jdk-api-graphs: docs-jdk-api-javadoc
+  docs-javase-api-graphs: docs-javase-api-javadoc
+  docs-reference-api-graphs: docs-reference-api-javadoc
 endif
 
 docs-jdk: docs-jdk-api docs-jdk-specs docs-jdk-index

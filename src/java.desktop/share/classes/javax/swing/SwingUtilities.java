@@ -65,7 +65,7 @@ public class SwingUtilities implements SwingConstants
     private static boolean suppressDropSupport;
 
     /**
-     * Indiciates if we've checked the system property for suppressing
+     * Indicates if we've checked the system property for suppressing
      * drop support.
      */
     private static boolean checkedSuppressDropSupport;
@@ -854,14 +854,14 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Check whether MouseEvent contains speficied mouse button or
+     * Check whether MouseEvent contains specified mouse button or
      * mouse button down mask based on MouseEvent ID.
      *
      * @param anEvent  a MouseEvent object
      * @param mouseButton mouse button type
      * @param mouseButtonDownMask mouse button down mask event modifier
      *
-     * @return true if the anEvent contains speficied mouseButton or
+     * @return true if the anEvent contains specified mouseButton or
      * mouseButtonDownMask based on MouseEvent ID.
      */
     private static boolean checkMouseButton(MouseEvent anEvent,
@@ -2070,6 +2070,10 @@ public class SwingUtilities implements SwingConstants
      */
     static int findDisplayedMnemonicIndex(String text, int mnemonic) {
         if (text == null || mnemonic == '\0') {
+            return -1;
+        }
+
+        if (mnemonic >= 'a' && mnemonic <= 'z') {
             return -1;
         }
 

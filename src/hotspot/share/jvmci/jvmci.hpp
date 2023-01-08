@@ -107,7 +107,7 @@ class JVMCI : public AllStatic {
      ok,
      dependencies_failed,
      cache_full,
-     nmethod_reclaimed, // code cache sweeper reclaimed nmethod in between its creation and being marked "in_use"
+     nmethod_reclaimed,
      code_too_large,
      first_permanent_bailout = code_too_large
   };

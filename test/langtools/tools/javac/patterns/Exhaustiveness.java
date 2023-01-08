@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100
+ * @bug 8262891 8268871 8274363 8281100 8294670
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -402,7 +402,7 @@ public class Exhaustiveness extends TestRunner {
                    private void test(Object obj) {
                        switch (obj) {
                            case String s: return;
-                       };
+                       }
                    }
                }
                """,
@@ -1010,6 +1010,7 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
     public void testNonPrimitiveBooleanGuard(Path base) throws Exception {
         doTest(base,
                new String[0],
@@ -1054,6 +1055,142 @@ public class Exhaustiveness extends TestRunner {
                "- compiler.note.preview.filename: Test.java, DEFAULT",
                "- compiler.note.preview.recompile",
                "2 errors");
+    }
+
+    @Test //JDK-8294670
+    public void testImplicitDefaultCannotCompleteNormally(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B implements A {}
+
+                   int test(A arg) {
+                       switch (arg) {
+                           case B b: return 1;
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B implements A {}
+
+                   int test(A arg) {
+                       switch (arg) {
+                           case B b: return 1;
+                           default: return 1;
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B implements A {}
+
+                   int test(A arg) {
+                       switch (arg) {
+                           case B b: break;
+                       }
+                   }
+               }
+               """,
+               "Test.java:10:5: compiler.err.missing.ret.stmt",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B implements A {}
+
+                   int test(A arg) {
+                       switch (arg) {
+                           case B b: return 1;
+                           default: break;
+                       }
+                   }
+               }
+               """,
+               "Test.java:11:5: compiler.err.missing.ret.stmt",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B implements A {}
+
+                   int test(A arg) {
+                       switch (arg) {
+                           case B b:
+                       }
+                   }
+               }
+               """,
+               "Test.java:10:5: compiler.err.missing.ret.stmt",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B implements A {}
+
+                   int test(A arg) {
+                       switch (arg) {
+                           case B b: return 1;
+                           default:
+                       }
+                   }
+               }
+               """,
+               "Test.java:11:5: compiler.err.missing.ret.stmt",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+    }
+
+    @Test
+    public void testInferenceExhaustive(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface Opt<T> {}
+                   record Some<T>(T t) implements Opt<T> {}
+                   final class None<T> implements Opt<T> {}
+
+                   void test(Opt<String> optValue) {
+                       switch (optValue) {
+                           case Some<String>(String s) ->
+                               System.out.printf("got string: %s%n", s);
+                           case None<String> none ->
+                               System.out.println("got none");
+                       }
+                   }
+               }
+               """);
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {

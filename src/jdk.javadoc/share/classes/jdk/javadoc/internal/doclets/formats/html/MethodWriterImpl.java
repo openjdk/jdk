@@ -185,8 +185,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
-        return new Table(HtmlStyle.summaryTable)
+    protected Table<Element> createSummaryTable() {
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
                 .setId(HtmlIds.METHOD_SUMMARY_TABLE)

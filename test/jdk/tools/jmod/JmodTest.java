@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,6 +736,101 @@ public class JmodTest {
             .resultChecker(r -> {
                 assertContains(r.output, "unnamed package");
                 assertTrue(Files.notExists(tmp), "Unexpected tmp file:" + tmp);
+            });
+    }
+
+    @Test
+    public void testCompressionLevel() throws IOException {
+        String cp = EXPLODED_DIR.resolve("foo").resolve("classes").toString();
+        Path jmod = MODS_DIR.resolve("foo.jmod");
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-0",
+             jmod.toString())
+            .assertSuccess();
+
+        jmod("list",
+             "--compress", "zip-0",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress is only accepted with create mode"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-9",
+             jmod.toString())
+            .assertSuccess();
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip--1",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-1-something",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-10",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "zip-",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "test",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
+            });
+
+        FileUtils.deleteFileIfExistsWithRetry(jmod);
+
+        jmod("create",
+             "--class-path", cp,
+             "--compress", "test-0",
+             jmod.toString())
+            .assertFailure()
+            .resultChecker(r -> {
+                assertTrue(r.output.contains("--compress value is invalid"), "Error message printed");
             });
     }
 

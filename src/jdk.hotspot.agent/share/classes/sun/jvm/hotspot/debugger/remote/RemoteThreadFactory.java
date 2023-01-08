@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package sun.jvm.hotspot.debugger.remote;
 
 import sun.jvm.hotspot.debugger.*;
 
-/** An interface used only internally by the ProcDebugger to be able to
+/** An interface used only internally by the RemoteDebuggerClient to be able to
     create platform-specific Thread objects */
 
 public interface RemoteThreadFactory {

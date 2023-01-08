@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,11 +111,12 @@ final class ECDHClientKeyExchange {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"ECDH ClientKeyExchange\": '{'\n" +
-                "  \"ecdh public\": '{'\n" +
-                "{0}\n" +
-                "  '}',\n" +
-                "'}'",
+                    """
+                            "ECDH ClientKeyExchange": '{'
+                              "ecdh public": '{'
+                            {0}
+                              '}',
+                            '}'""",
                 Locale.ENGLISH);
             if (encodedPoint == null || encodedPoint.length == 0) {
                 Object[] messageFields = {
@@ -271,26 +272,22 @@ final class ECDHClientKeyExchange {
 
             // Determine which NamedGroup we'll be using, then use
             // the creator functions.
-            NamedGroup namedGroup = null;
+            NamedGroup namedGroup;
 
             // Iteratively determine the X509Possession type's ParameterSpec.
             ECParameterSpec ecParams = x509Possession.getECParameterSpec();
-            NamedParameterSpec namedParams = null;
             if (ecParams != null) {
                 namedGroup = NamedGroup.valueOf(ecParams);
-            }
-
-            // Wasn't EC, try XEC.
-            if (ecParams == null) {
-                namedParams = x509Possession.getXECParameterSpec();
+            } else {
+                // Wasn't EC, try XEC.
+                NamedParameterSpec namedParams =
+                        x509Possession.getXECParameterSpec();
+                if (namedParams == null) {
+                    throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Unknown named parameters in server cert for " +
+                            "ECDH client key exchange");
+                }
                 namedGroup = NamedGroup.nameOf(namedParams.getName());
-            }
-
-            // Can't figure this out, bail.
-            if ((ecParams == null) && (namedParams == null)) {
-                // unlikely, have been checked during cipher suite negotiation.
-                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Not EC/XDH server cert for ECDH client key exchange");
             }
 
             // unlikely, have been checked during cipher suite negotiation.
@@ -380,8 +377,7 @@ final class ECDHClientKeyExchange {
             // Find a good EC/XEC credential to use, determine the
             // NamedGroup to use for creating Possessions/Credentials/Keys.
             for (SSLCredentials cd : chc.handshakeCredentials) {
-                if (cd instanceof NamedGroupCredentials) {
-                    NamedGroupCredentials creds = (NamedGroupCredentials)cd;
+                if (cd instanceof NamedGroupCredentials creds) {
                     ng = creds.getNamedGroup();
                     sslCredentials = cd;
                     break;
@@ -466,9 +462,7 @@ final class ECDHClientKeyExchange {
            // Find a good EC/XEC credential to use, determine the
            // NamedGroup to use for creating Possessions/Credentials/Keys.
             for (SSLPossession possession : shc.handshakePossessions) {
-                if (possession instanceof NamedGroupPossession) {
-                    NamedGroupPossession poss =
-                            (NamedGroupPossession)possession;
+                if (possession instanceof NamedGroupPossession poss) {
                     namedGroup = poss.getNamedGroup();
                     sslPossession = poss;
                     break;

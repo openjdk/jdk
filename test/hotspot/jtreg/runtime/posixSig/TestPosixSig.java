@@ -23,8 +23,8 @@
 
 /*
  * @test TestPosixSig.java
- * @bug 8285792
- * @summary fix issues with signal handler modification checks
+ * @bug 8292559
+ * @summary test that -XX:+CheckJNICalss displays changed signal handlers.
  * @requires os.family != "windows"
  * @library /test/lib
  * @run driver TestPosixSig
@@ -35,13 +35,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestPosixSig {
 
-    // Check that a substring occurs exactly once.
-    public static boolean occursOnce(String source, String substring) {
-        int index = source.indexOf(substring);
-        if (index == -1) return false;
-        return (source.indexOf(substring, index + 1) == -1);
-    }
-
     private static native void changeSigActionFor(int val);
 
     public static void main(String[] args) throws Throwable {
@@ -50,19 +43,19 @@ public class TestPosixSig {
 
         if (args.length == 0) {
 
-            // Create a new java process for the TestPsig Java/JNI test
+            // Create a new java process for the TestPsig Java/JNI test.
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+CheckJNICalls",
                 "-Djava.library.path=" + libpath + ":.",
                 "TestPosixSig", "dummy");
 
-            // Start the process and check the output
+            // Start the process and check the output.
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             String outputString = output.getOutput();
-            if (!occursOnce(outputString, "SIGFPE: sig_handler in ") ||
-                !occursOnce(outputString, "SIGILL: sig_handler in ")) {
+            if (!outputString.contains("Warning: SIGILL handler modified!") ||
+                !outputString.contains("Warning: SIGFPE handler modified!")) {
                 System.out.println("output: " + outputString);
-                throw new RuntimeException("Test failed, bad output.");
+                throw new RuntimeException("Test failed, missing signal Warning");
             }
             output.shouldHaveExitValue(0);
 

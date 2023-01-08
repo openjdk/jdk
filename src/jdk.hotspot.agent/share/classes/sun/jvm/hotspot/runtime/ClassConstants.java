@@ -134,10 +134,8 @@ public interface ClassConstants
     // True if klass supports the Clonable interface
     public static final long JVM_ACC_IS_CLONEABLE             = 0x80000000;
 
-    // Klass* and Method* flags
+    // Method* flags
     public static final long JVM_ACC_HAS_LOCAL_VARIABLE_TABLE = 0x00200000;
-    // flags promoted from methods to the holding klass
-    public static final long JVM_ACC_PROMOTED_FLAGS           = 0x00200000;
 
     // field flags
     // Note: these flags must be defined in the low order 16 bits because

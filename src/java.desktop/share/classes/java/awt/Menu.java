@@ -367,7 +367,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     }
 
     /**
-     * Adds a separator line, or a hypen, to the menu at the current position.
+     * Adds a separator line, or a hyphen, to the menu at the current position.
      * @see         java.awt.Menu#insertSeparator(int)
      */
     public void addSeparator() {

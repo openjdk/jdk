@@ -34,7 +34,7 @@ import java.lang.reflect.*;
  * Field modifiers include:
  * public, private, protected, static, final, volatile, transient,
  *
- * Additionall, the access flags enum and synthetic cannot be
+ * Additionally, the access flags enum and synthetic cannot be
  * explicitly applied.
  */
 public class FieldAccessFlagTest {

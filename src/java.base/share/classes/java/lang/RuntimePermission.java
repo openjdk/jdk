@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,29 +171,16 @@ import java.lang.module.ModuleFinder;
  * <tr>
  *   <th scope="row">modifyThread</th>
  *   <td>Modification of threads, e.g., via calls to Thread
- * {@code interrupt, stop, suspend, resume, setDaemon, setPriority,
- * setName} and {@code setUncaughtExceptionHandler}
- * methods</td>
+ * {@code interrupt, setDaemon, setPriority, setName} and
+ * {@code setUncaughtExceptionHandler} methods</td>
  * <td>This allows an attacker to modify the behaviour of
  * any thread in the system.</td>
  * </tr>
  *
  * <tr>
- *   <th scope="row">stopThread</th>
- *   <td>Stopping of threads via calls to the Thread {@code stop}
- * method</td>
- *   <td>This allows code to stop any thread in the system provided that it is
- * already granted permission to access that thread.
- * This poses as a threat, because that code may corrupt the system by
- * killing existing threads.</td>
- * </tr>
- *
- * <tr>
  *   <th scope="row">modifyThreadGroup</th>
  *   <td>modification of thread groups, e.g., via calls to ThreadGroup
- * {@code destroy}, {@code getParent}, {@code resume},
- * {@code setDaemon}, {@code setMaxPriority}, {@code stop},
- * and {@code suspend} methods</td>
+ * {@code getParent}, {@code setDaemon}, and {@code setMaxPriority} methods</td>
  *   <td>This allows an attacker to create thread groups and
  * set their run priority.</td>
  * </tr>

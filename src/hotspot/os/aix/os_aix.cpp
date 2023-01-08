@@ -28,19 +28,19 @@
 #pragma alloca
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
@@ -470,7 +470,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_HEX ") differs.", real_pagesize);
+          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -997,8 +997,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return ".so"; }
 
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
@@ -2302,7 +2300,7 @@ void os::init(void) {
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes.add(os::vm_page_size);
+  _page_sizes.add(os::vm_page_size());
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));

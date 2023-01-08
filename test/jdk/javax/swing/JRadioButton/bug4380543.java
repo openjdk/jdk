@@ -20,15 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
- * @bug 4380543
- * @key headful
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @summary setMargin() does not work for AbstractButton
- * @run main/manual bug4380543
-*/
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -45,6 +36,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+/* @test
+ * @bug 4380543
+ * @key headful
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary setMargin() does not work for AbstractButton
+ * @run main/manual bug4380543
+ */
 public class bug4380543 {
     static TestFrame testObj;
     static String instructions
@@ -62,17 +61,16 @@ public class bug4380543 {
 
     public static void main(String[] args) throws Exception {
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                try {
-                    passFailJFrame = new PassFailJFrame(instructions);
-                    testObj = new TestFrame();
-                    //Adding the Test Frame to handle dispose
-                    PassFailJFrame.addTestWindow(testObj);
-                    PassFailJFrame.positionTestWindow(testObj, PassFailJFrame.Position.HORIZONTAL);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                passFailJFrame = new PassFailJFrame(instructions);
+                testObj = new TestFrame();
+                //Adding the Test Frame to handle dispose
+                PassFailJFrame.addTestWindow(testObj);
+                PassFailJFrame.positionTestWindow(testObj, PassFailJFrame.Position.HORIZONTAL);
+                testObj.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
         passFailJFrame.awaitAndCheck();
@@ -111,9 +109,7 @@ class TestFrame extends JFrame implements ActionListener {
         }
 
         getContentPane().add(p,BorderLayout.SOUTH);
-
         setSize(500, 300);
-        setVisible(true);
     }
 
     private static void setLookAndFeel(String laf) {

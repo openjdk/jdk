@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,11 +167,6 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
                         break;
                     }
                 }
-            } catch (ThreadDeath td) {
-                //XXX: if there isn't native code on the stack, the VM just
-                //kills the thread right away. Do we expect to catch it
-                //nevertheless?
-                break;
             } catch (Throwable t) {
                 // TODO: log
                 System.err.println("Exception on the toolkit thread");

@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/metaspaceClosure.hpp"

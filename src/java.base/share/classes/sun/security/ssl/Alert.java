@@ -87,7 +87,7 @@ enum Alert {
     // Alert message consumer
     static final SSLConsumer alertConsumer = new AlertConsumer();
 
-    private Alert(byte id, String description, boolean handshakeOnly) {
+    Alert(byte id, String description, boolean handshakeOnly) {
         this.id = id;
         this.description = description;
         this.handshakeOnly = handshakeOnly;
@@ -146,7 +146,7 @@ enum Alert {
         // description of the Alert level
         final String description;
 
-        private Level(byte level, String description) {
+        Level(byte level, String description) {
             this.level = level;
             this.description = description;
         }
@@ -197,10 +197,11 @@ enum Alert {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"Alert\": '{'\n" +
-                    "  \"level\"      : \"{0}\",\n" +
-                    "  \"description\": \"{1}\"\n" +
-                    "'}'",
+                    """
+                            "Alert": '{'
+                              "level"      : "{0}",
+                              "description": "{1}"
+                            '}'""",
                     Locale.ENGLISH);
 
             Object[] messageFields = {
@@ -265,7 +266,7 @@ enum Alert {
                         throw tc.fatal(Alert.HANDSHAKE_FAILURE,
                             "received handshake warning: " + alert.description);
                     } else {
-                        // Otherwise ignore the warning but remove the
+                        // Otherwise, ignore the warning but remove the
                         // Certificate and CertificateVerify handshake
                         // consumer so the state machine doesn't expect it.
                         tc.handshakeContext.handshakeConsumers.remove(

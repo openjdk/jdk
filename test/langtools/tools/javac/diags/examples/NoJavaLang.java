@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,12 @@
 // key: compiler.err.error
 // key: compiler.err.no.java.lang
 // key: compiler.misc.count.error
+// key: compiler.misc.count.warn.plural
+// key: compiler.warn.lintOption
+// key: compiler.warn.option.obsolete.source
+// key: compiler.warn.option.obsolete.suppression
+// key: compiler.warn.option.obsolete.target
+// key: compiler.warn.warning
 // options: -source 8 -target 8 -Xbootclasspath: -classpath .
 // run: backdoor
 

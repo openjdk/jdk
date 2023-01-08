@@ -327,6 +327,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   WorkerThreadsBarrierSync     _first_overflow_barrier_sync;
   WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
+  // Number of completed mark cycles.
+  volatile uint           _completed_mark_cycles;
+
   // This is set by any task, when an overflow on the global data
   // structures is detected
   volatile bool           _has_overflown;
@@ -501,7 +504,7 @@ public:
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
-  void concurrent_cycle_end();
+  void concurrent_cycle_end(bool mark_cycle_completed);
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
   // guarantee or update any state after the call. Root region scan must not be
@@ -579,10 +582,10 @@ public:
 
   // Mark in the marking bitmap. Used during evacuation failure to
   // remember what objects need handling. Not for use during marking.
-  inline void raw_mark_in_bitmap(oop p);
+  inline void raw_mark_in_bitmap(oop obj);
 
   // Clears marks for all objects in the given region in the marking
-  // bitmap. This should only be used clean the bitmap during a
+  // bitmap. This should only be used to clean the bitmap during a
   // safepoint.
   void clear_bitmap_for_region(HeapRegion* hr);
 
@@ -592,6 +595,8 @@ public:
   void verify_no_collection_set_oops() PRODUCT_RETURN;
 
   inline bool do_yield_check();
+
+  uint completed_mark_cycles() const;
 
   bool has_aborted()      { return _has_aborted; }
 
@@ -607,6 +612,8 @@ public:
   inline bool is_marked_in_bitmap(oop p) const;
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
+
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently

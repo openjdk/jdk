@@ -269,6 +269,7 @@ JvmtiVTMSTransitionDisabler::disable_VTMS_transitions() {
     ThreadBlockInVM tbivm(thread);
     MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
 
+    assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
     assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
     while (_SR_mode) { // Suspender or resumer is a JvmtiVTMSTransitionDisabler monopolist.
       ml.wait(10);     // Wait while there is an active suspender or resumer.

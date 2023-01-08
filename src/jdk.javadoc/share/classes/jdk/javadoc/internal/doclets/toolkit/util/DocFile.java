@@ -51,6 +51,12 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  */
 public abstract class DocFile {
 
+    /**
+     * The line separator for the current platform.
+     * Use this when writing to external files.
+     */
+    public static final String PLATFORM_LINE_SEPARATOR = System.getProperty("line.separator");
+
     /** Create a DocFile for a directory. */
     public static DocFile createFileForDirectory(BaseConfiguration configuration, String file) {
         return DocFileFactory.getFactory(configuration).createFileForDirectory(file);
@@ -214,7 +220,7 @@ public abstract class DocFile {
                             String line;
                             while ((line = readResourceLine(resource, reader)) != null) {
                                 write(this, writer, resources == null ? line : localize(line, resources));
-                                write(this, writer, DocletConstants.NL);
+                                write(this, writer, PLATFORM_LINE_SEPARATOR);
                             }
                         } catch (IOException e) {
                             throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);

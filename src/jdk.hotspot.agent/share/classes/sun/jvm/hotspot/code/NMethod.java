@@ -63,16 +63,6 @@ public class NMethod extends CompiledMethod {
 
   // FIXME: add access to flags (how?)
 
-  /** NMethod Flushing lock (if non-zero, then the nmethod is not removed) */
-  private static JIntField     lockCountField;
-
-  /** not_entrant method removal. Each mark_sweep pass will update
-      this mark to current sweep invocation count if it is seen on the
-      stack.  An not_entrant method can be removed when there is no
-      more activations, i.e., when the _stack_traversal_mark is less than
-      current sweep traversal index. */
-  private static CIntegerField stackTraversalMarkField;
-
   private static CIntegerField compLevelField;
 
   static {
@@ -102,8 +92,6 @@ public class NMethod extends CompiledMethod {
     entryPointField             = type.getAddressField("_entry_point");
     verifiedEntryPointField     = type.getAddressField("_verified_entry_point");
     osrEntryPointField          = type.getAddressField("_osr_entry_point");
-    lockCountField              = type.getJIntField("_lock_count");
-    stackTraversalMarkField     = type.getCIntegerField("_stack_traversal_mark");
     compLevelField              = type.getCIntegerField("_comp_level");
     pcDescSize = db.lookupType("PcDesc").getSize();
   }
@@ -215,16 +203,11 @@ public class NMethod extends CompiledMethod {
   // * FIXME: * ADD ACCESS TO FLAGS!!!!
   // **********
   // public boolean isInUse();
-  // public boolean isAlive();
   // public boolean isNotEntrant();
-  // public boolean isZombie();
 
   // ********************************
   // * MAJOR FIXME: MAJOR HACK HERE *
   // ********************************
-  public boolean isZombie() { return false; }
-
-  // public boolean isUnloaded();
   // public boolean isYoung();
   // public boolean isOld();
   // public int     age();
@@ -246,7 +229,7 @@ public class NMethod extends CompiledMethod {
   }
 
   public NMethod getOSRLink() {
-    return (NMethod) VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
+    return VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
   }
 
   // MethodHandle
@@ -272,8 +255,6 @@ public class NMethod extends CompiledMethod {
 
   // FIXME: add inline cache support
   // FIXME: add flush()
-
-  public boolean isLockedByVM() { return lockCountField.getValue(addr) > 0; }
 
   // FIXME: add mark_as_seen_on_stack
   // FIXME: add can_not_entrant_be_converted
@@ -482,9 +463,9 @@ public class NMethod extends CompiledMethod {
       if (h.get(meta) != null) continue;
       h.put(meta, meta);
       if (meta instanceof InstanceKlass) {
-        ((InstanceKlass)meta).dumpReplayData(out);
+        meta.dumpReplayData(out);
       } else if (meta instanceof Method) {
-        ((Method)meta).dumpReplayData(out);
+        meta.dumpReplayData(out);
         MethodData mdo = ((Method)meta).getMethodData();
         if (mdo != null) {
           mdo.dumpReplayData(out);
@@ -500,7 +481,7 @@ public class NMethod extends CompiledMethod {
       }
     }
     if (h.get(method.getMethodHolder()) == null) {
-      ((InstanceKlass)method.getMethodHolder()).dumpReplayData(out);
+      method.getMethodHolder().dumpReplayData(out);
     }
     Klass holder = method.getMethodHolder();
     out.println("compile " + holder.getName().asString() + " " +

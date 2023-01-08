@@ -90,13 +90,11 @@ void ShenandoahParallelCodeHeapIterator::parallel_blobs_do(CodeBlobClosure* f) {
                       (Atomic::cmpxchg(&_claimed_idx, current, current + stride, memory_order_relaxed) == current);
     }
     if (process_block) {
-      if (cb->is_alive()) {
-        f->do_code_blob(cb);
+      f->do_code_blob(cb);
 #ifdef ASSERT
-        if (cb->is_nmethod())
-          Universe::heap()->verify_nmethod((nmethod*)cb);
+      if (cb->is_nmethod())
+        Universe::heap()->verify_nmethod((nmethod*)cb);
 #endif
-      }
     }
   }
 
@@ -118,11 +116,6 @@ void ShenandoahCodeRoots::register_nmethod(nmethod* nm) {
 void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
   _nmethod_table->unregister_nmethod(nm);
-}
-
-void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
-  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
-  _nmethod_table->flush_nmethod(nm);
 }
 
 void ShenandoahCodeRoots::arm_nmethods() {
@@ -187,22 +180,6 @@ private:
     Atomic::store(&_failed, true);
   }
 
-   void unlink(nmethod* nm) {
-     // Unlinking of the dependencies must happen before the
-     // handshake separating unlink and purge.
-     nm->flush_dependencies(false /* delete_immediately */);
-
-     // unlink_from_method will take the CompiledMethod_lock.
-     // In this case we don't strictly need it when unlinking nmethods from
-     // the Method, because it is only concurrently unlinked by
-     // the entry barrier, which acquires the per nmethod lock.
-     nm->unlink_from_method();
-
-     if (nm->is_osr_method()) {
-       // Invalidate the osr nmethod only once
-       nm->invalidate_osr_method();
-     }
-   }
 public:
   ShenandoahNMethodUnlinkClosure(bool unloading_occurred) :
       _unloading_occurred(unloading_occurred),
@@ -219,13 +196,9 @@ public:
     ShenandoahNMethod* nm_data = ShenandoahNMethod::gc_data(nm);
     assert(!nm_data->is_unregistered(), "Should not see unregistered entry");
 
-    if (!nm->is_alive()) {
-      return;
-    }
-
     if (nm->is_unloading()) {
       ShenandoahReentrantLocker locker(nm_data->lock());
-      unlink(nm);
+      nm->unlink();
       return;
     }
 
@@ -235,13 +208,9 @@ public:
     if (_bs->is_armed(nm)) {
       ShenandoahEvacOOMScope oom_evac_scope;
       ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-      if (Continuations::enabled()) {
-        // Loom needs to know about visited nmethods. Arm the nmethods to get
-        // mark_as_maybe_on_continuation() callbacks when they are used again.
-        _bs->arm(nm, 0);
-      } else {
-        _bs->disarm(nm);
-      }
+      // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
+      // mark_as_maybe_on_stack() callbacks when they are used again.
+      _bs->arm(nm, 0);
     }
 
     // Clear compiled ICs and exception caches
@@ -308,44 +277,10 @@ void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred
   }
 }
 
-class ShenandoahNMethodPurgeClosure : public NMethodClosure {
-public:
-  virtual void do_nmethod(nmethod* nm) {
-    if (nm->is_alive() && nm->is_unloading()) {
-      nm->make_unloaded();
-    }
-  }
-};
-
-class ShenandoahNMethodPurgeTask : public WorkerTask {
-private:
-  ShenandoahNMethodPurgeClosure       _cl;
-  ShenandoahConcurrentNMethodIterator _iterator;
-
-public:
-  ShenandoahNMethodPurgeTask() :
-    WorkerTask("Shenandoah Purge NMethods"),
-    _cl(),
-    _iterator(ShenandoahCodeRoots::table()) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    _iterator.nmethods_do_begin();
-  }
-
-  ~ShenandoahNMethodPurgeTask() {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    _iterator.nmethods_do_end();
-  }
-
-  virtual void work(uint worker_id) {
-    _iterator.nmethods_do(&_cl);
-  }
-};
-
-void ShenandoahCodeRoots::purge(WorkerThreads* workers) {
+void ShenandoahCodeRoots::purge() {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
-  ShenandoahNMethodPurgeTask task;
-  workers->run_task(&task);
+  CodeCache::flush_unlinked_nmethods();
 }
 
 ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :

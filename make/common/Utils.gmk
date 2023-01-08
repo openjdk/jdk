@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,12 @@ _sequence-do = \
       $(eval SEQUENCE_COUNT += .) \
       $(words $(SEQUENCE_COUNT)) \
       $(call _sequence-do,$1))
+
+################################################################################
+# Strip both arguments. Append the first argument to the second argument. If the
+# first argument is empty, return the empty string.
+IfAppend = \
+    $(if $(strip $1),$(strip $1)$(strip $2),)
 
 ################################################################################
 # Replace question marks with space in string. This macro needs to be called on
@@ -366,6 +372,9 @@ isBuildCpu = \
 
 isBuildCpuArch = \
   $(strip $(if $(filter $(OPENJDK_BUILD_CPU_ARCH), $1), true, false))
+
+isCompiler = \
+  $(strip $(if $(filter $(TOOLCHAIN_TYPE), $1), true, false))
 
 ################################################################################
 # Converts a space separated list to a comma separated list.

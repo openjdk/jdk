@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -42,6 +42,7 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
@@ -60,6 +61,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -69,7 +71,7 @@
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -79,7 +81,6 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
-#include "services/threadIdTable.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
@@ -89,10 +90,12 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+#include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -243,12 +246,6 @@ void Threads::java_threads_do(ThreadClosure* tc) {
   }
 }
 
-void Threads::java_threads_and_vm_thread_do(ThreadClosure* tc) {
-  assert_locked_or_safepoint(Threads_lock);
-  java_threads_do(tc);
-  tc->do_thread(VMThread::vm_thread());
-}
-
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system).
 void Threads::threads_do(ThreadClosure* tc) {
   assert_locked_or_safepoint(Threads_lock);
@@ -373,7 +370,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   // Get the Java runtime name, version, and vendor info after java.lang.System is initialized.
   // Some values are actually configure-time constants but some can be set via the jlink tool and
   // so must be read dynamically. We treat them all the same.
-  InstanceKlass* ik = SystemDictionary::find_instance_klass(vmSymbols::java_lang_VersionProps(),
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(THREAD, vmSymbols::java_lang_VersionProps(),
                                                             Handle(), Handle());
   {
     ResourceMark rm(main_thread);
@@ -551,6 +548,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
 
+  if (UseSystemMemoryBarrier) {
+    if (!SystemMemoryBarrier::initialize()) {
+      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
+      return JNI_EINVAL;
+    }
+    log_debug(os)("Using experimental system memory barrier synchronization");
+  }
+
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
   ObjectSynchronizer::initialize();
@@ -636,6 +641,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   LogConfiguration::post_initialize();
   Metaspace::post_initialize();
+  MutexLocker::post_initialize();
 
   HOTSPOT_VM_INIT_END();
 
@@ -1155,6 +1161,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_9) return JNI_TRUE;
   if (version == JNI_VERSION_10) return JNI_TRUE;
   if (version == JNI_VERSION_19) return JNI_TRUE;
+  if (version == JNI_VERSION_20) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1393,6 +1400,11 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
 
   // cannot assert on lack of success here; see above comment
   return the_owner;
+}
+
+JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
+  address owner = (address)monitor->owner();
+  return owning_thread_from_monitor_owner(t_list, owner);
 }
 
 class PrintOnClosure : public ThreadClosure {

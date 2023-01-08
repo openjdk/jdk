@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,8 +39,8 @@ enum {
 
 // registers
 enum {
-  pd_nof_cpu_regs_frame_map = RegisterImpl::number_of_registers,       // number of registers used during code emission
-  pd_nof_fpu_regs_frame_map = FloatRegisterImpl::number_of_registers,  // number of float registers used during code emission
+  pd_nof_cpu_regs_frame_map = Register::number_of_registers,       // number of registers used during code emission
+  pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of float registers used during code emission
 
   // caller saved
   pd_nof_caller_save_cpu_regs_frame_map = 13, // number of registers killed by calls
@@ -79,6 +79,10 @@ enum {
 // RISCV where floats and doubles are stored in their native form.
 enum {
   pd_float_saved_as_double = false
+};
+
+enum {
+  pd_two_operand_lir_form = false
 };
 
 #endif // CPU_RISCV_C1_DEFS_RISCV_HPP

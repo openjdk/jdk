@@ -39,7 +39,7 @@
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   int size = 0;
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     if (reg == rfp || reg == sp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
@@ -47,7 +47,7 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister reg = as_FloatRegister(i);
     if (!abi.is_volatile_reg(reg)) {
       // Only the lower 64 bits of vector registers need to be preserved.
@@ -66,7 +66,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   int offset = reg_save_area_offset;
 
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     if (reg == rfp || reg == sp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
@@ -75,7 +75,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister reg = as_FloatRegister(i);
     if (!abi.is_volatile_reg(reg)) {
       __ strd(reg, Address(sp, offset));
@@ -94,7 +94,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   int offset = reg_save_area_offset;
 
   __ block_comment("{ restore_callee_saved_regs ");
-  for (int i = 0; i < RegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < Register::number_of_registers; i++) {
     Register reg = as_Register(i);
     if (reg == rfp || reg == sp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
@@ -103,7 +103,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
     }
   }
 
-  for (int i = 0; i < FloatRegisterImpl::number_of_registers; i++) {
+  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
     FloatRegister reg = as_FloatRegister(i);
     if (!abi.is_volatile_reg(reg)) {
       __ ldrd(reg, Address(sp, offset));
@@ -128,9 +128,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   Register shuffle_reg = r19;
   JavaCallingConvention out_conv;
   NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
-  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
-  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
+  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, as_VMStorage(shuffle_reg));
+  int preserved_bytes = SharedRuntime::out_preserve_stack_slots() * VMRegImpl::stack_slot_size;
+  int stack_bytes = preserved_bytes + arg_shuffle.out_arg_bytes();
+  int out_arg_area = align_up(stack_bytes , StackAlignmentInBytes);
 
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
@@ -158,10 +159,14 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
   int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
 
+  StubLocations locs;
   int ret_buf_offset = -1;
   if (needs_return_buffer) {
     ret_buf_offset = frame_bottom_offset;
     frame_bottom_offset += ret_buf_size;
+    // use a free register for shuffling code to pick up return
+    // buffer address from
+    locs.set(StubLocations::RETURN_BUFFER, abi._scratch1);
   }
 
   int frame_size = frame_bottom_offset;
@@ -218,14 +223,14 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_spilller.generate_fill(_masm, arg_save_area_offset);
   if (needs_return_buffer) {
     assert(ret_buf_offset != -1, "no return buffer allocated");
-    __ lea(abi._ret_buf_addr_reg, Address(sp, ret_buf_offset));
+    __ lea(as_Register(locs.get(StubLocations::RETURN_BUFFER)), Address(sp, ret_buf_offset));
   }
-  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
+  arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0, locs);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
   __ movptr(shuffle_reg, (intptr_t)receiver);
-  __ resolve_jobject(shuffle_reg, rthread, rscratch2);
+  __ resolve_jobject(shuffle_reg, rscratch1, rscratch2);
   __ mov(j_rarg0, shuffle_reg);
   __ block_comment("} receiver ");
 
@@ -239,7 +244,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   if (!needs_return_buffer) {
 #ifdef ASSERT
     if (call_regs._ret_regs.length() == 1) { // 0 or 1
-      VMReg j_expected_result_reg;
+      VMStorage j_expected_result_reg;
       switch (ret_type) {
         case T_BOOLEAN:
         case T_BYTE:
@@ -247,19 +252,18 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
         case T_CHAR:
         case T_INT:
         case T_LONG:
-        j_expected_result_reg = r0->as_VMReg();
+        j_expected_result_reg = as_VMStorage(r0);
         break;
         case T_FLOAT:
         case T_DOUBLE:
-          j_expected_result_reg = v0->as_VMReg();
+          j_expected_result_reg = as_VMStorage(v0);
           break;
         default:
           fatal("unexpected return type: %s", type2name(ret_type));
       }
       // No need to move for now, since CallArranger can pick a return type
       // that goes in the same reg for both CCs. But, at least assert they are the same
-      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
-      "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg, "unexpected result register");
     }
 #endif
   } else {
@@ -267,12 +271,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ lea(rscratch1, Address(sp, ret_buf_offset));
     int offset = 0;
     for (int i = 0; i < call_regs._ret_regs.length(); i++) {
-      VMReg reg = call_regs._ret_regs.at(i);
-      if (reg->is_Register()) {
-        __ ldr(reg->as_Register(), Address(rscratch1, offset));
+      VMStorage reg = call_regs._ret_regs.at(i);
+      if (reg.type() == StorageType::INTEGER) {
+        __ ldr(as_Register(reg), Address(rscratch1, offset));
         offset += 8;
-      } else if (reg->is_FloatRegister()) {
-        __ ldrd(reg->as_FloatRegister(), Address(rscratch1, offset));
+      } else if (reg.type() == StorageType::VECTOR) {
+        __ ldrd(as_FloatRegister(reg), Address(rscratch1, offset));
         offset += 16; // needs to match VECTOR_REG_SIZE in AArch64Architecture (Java)
       } else {
         ShouldNotReachHere();
@@ -328,9 +332,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                          receiver,
                          in_ByteSize(frame_data_offset));
 
-  if (TraceOptimizedUpcallStubs) {
-    blob->print_on(tty);
+#ifndef PRODUCT
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    blob->print_on(&ls);
   }
+#endif
 
   return blob->code_begin();
 }

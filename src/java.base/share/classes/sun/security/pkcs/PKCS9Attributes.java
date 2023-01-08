@@ -26,8 +26,8 @@
 package sun.security.pkcs;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Hashtable;
+
 import sun.security.util.DerEncoder;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
@@ -44,7 +44,7 @@ public class PKCS9Attributes {
      * Attributes in this set indexed by OID.
      */
     private final Hashtable<ObjectIdentifier, PKCS9Attribute> attributes =
-        new Hashtable<ObjectIdentifier, PKCS9Attribute>(3);
+            new Hashtable<>(3);
 
     /**
      * The keys of this hashtable are the OIDs of permitted attributes.
@@ -123,7 +123,7 @@ public class PKCS9Attributes {
      *
      * @param in the contents of the DER encoding of the attribute set.
      * @param ignoreUnsupportedAttributes If true then any attributes
-     * not supported by the PKCS9Attribute class are ignored. Otherwise
+     * not supported by the PKCS9Attribute class are ignored. Otherwise,
      * unsupported attributes cause an exception to be thrown.
      * @exception IOException
      * on i/o error, encoding syntax error, or unsupported or
@@ -154,7 +154,7 @@ public class PKCS9Attributes {
      * @see PKCS9Attribute
      */
     public PKCS9Attributes(PKCS9Attribute[] attribs)
-    throws IllegalArgumentException, IOException {
+            throws IllegalArgumentException {
         ObjectIdentifier oid;
         for (int i=0; i < attribs.length; i++) {
             oid = attribs[i].getOID();
@@ -231,15 +231,13 @@ public class PKCS9Attributes {
      *
      * @param tag the implicit tag to use in the DER encoding.
      * @param out the output stream on which to put the DER encoding.
-     *
-     * @exception IOException  on output error.
      */
-    public void encode(byte tag, OutputStream out) throws IOException {
+    public void encode(byte tag, DerOutputStream out) {
         out.write(tag);
         out.write(derEncoding, 1, derEncoding.length -1);
     }
 
-    private byte[] generateDerEncoding() throws IOException {
+    private byte[] generateDerEncoding() {
         DerOutputStream out = new DerOutputStream();
         DerEncoder[] attribVals = attributes.values().toArray(new DerEncoder[0]);
         out.putOrderedSetOf(DerValue.tag_SetOf, attribVals);
@@ -250,7 +248,7 @@ public class PKCS9Attributes {
      * Return the DER encoding of this attribute set, tagged with
      * DerValue.tag_SetOf.
      */
-    public byte[] getDerEncoding() throws IOException {
+    public byte[] getDerEncoding() {
         return derEncoding.clone();
 
     }
@@ -296,8 +294,7 @@ public class PKCS9Attributes {
     public Object getAttributeValue(ObjectIdentifier oid)
     throws IOException {
         try {
-            Object value = getAttribute(oid).getValue();
-            return value;
+            return getAttribute(oid).getValue();
         } catch (NullPointerException ex) {
             throw new IOException("No value found for attribute " + oid);
         }

@@ -41,7 +41,7 @@ import jdk.jfr.internal.Type;
 public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
     // The order of these fields must be the same as the parameters in
-    // commit(... , long, String, String, String, long, long, long, long, long)
+    // commit(... , long, String, String, long, long, long, long, long)
 
     @Label("Id")
     public long id;

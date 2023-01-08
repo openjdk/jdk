@@ -15,34 +15,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ar_001">العربية الرسمية الحديثة</language>
 			<language type="arn">المابودونجونية</language>
-			<language type="de_AT">الألمانية النمساوية</language>
-			<language type="de_CH">الألمانية العليا السويسرية</language>
-			<language type="en_AU">الإنجليزية الأسترالية</language>
-			<language type="en_CA">الإنجليزية الكندية</language>
-			<language type="en_GB">الإنجليزية البريطانية</language>
-			<language type="en_GB" alt="short">الإنجليزية المملكة المتحدة</language>
-			<language type="en_US">الإنجليزية الأمريكية</language>
-			<language type="en_US" alt="short">الإنجليزية الولايات المتحدة</language>
-			<language type="es_419">الإسبانية أمريكا اللاتينية</language>
-			<language type="es_ES">الإسبانية الأوروبية</language>
-			<language type="es_MX">الإسبانية المكسيكية</language>
-			<language type="fr_CA">الفرنسية الكندية</language>
-			<language type="fr_CH">الفرنسية السويسرية</language>
 			<language type="gn">الغورانية</language>
 			<language type="hsb">صوربيا العليا</language>
 			<language type="lo">اللاوو</language>
-			<language type="nds_NL">السكسونية السفلى</language>
-			<language type="nl_BE">الفلمنكية</language>
-			<language type="pt_BR">البرتغالية البرازيلية</language>
-			<language type="pt_PT">البرتغالية الأوروبية</language>
 			<language type="sh">الكرواتية الصربية</language>
 			<language type="sma">سامي الجنوبية</language>
 			<language type="sw">السواحيلية</language>
 			<language type="sw_CD">السواحيلية الكونغولية</language>
 			<language type="te">التيلوجو</language>
 			<language type="ti">التيغرينية</language>
-			<language type="zh_Hans">الصينية المبسطة</language>
-			<language type="zh_Hant">الصينية التقليدية</language>
 		</languages>
 		<territories>
 			<territory type="AC">جزيرة أسينشين</territory>
@@ -287,7 +268,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} ضياءً شمسيًا</unitPattern>
 				<unitPattern count="other">{0} ضياء شمسي</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<unitPattern count="zero">{0} طن متري</unitPattern>
 				<unitPattern count="one">{0} طن متري</unitPattern>
 				<unitPattern count="two">طنان متريان</unitPattern>

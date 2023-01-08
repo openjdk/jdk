@@ -400,10 +400,23 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
         if (icon == null) return;
 
+        Icon selectedIcon = null;
+
+        // the fallback icon should be based on the selected state
+        if (model.isSelected()) {
+            selectedIcon = b.getSelectedIcon();
+            if (selectedIcon != null) {
+                icon = selectedIcon;
+            }
+        }
         if (!model.isEnabled()) {
             if (model.isSelected()) {
                 tmpIcon = b.getDisabledSelectedIcon();
-            } else {
+               if (tmpIcon == null) {
+                   tmpIcon = selectedIcon;
+               }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getDisabledIcon();
             }
         } else if (model.isPressed() && model.isArmed()) {
@@ -416,7 +429,11 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 tmpIcon = b.getRolloverSelectedIcon();
-            } else {
+                if (tmpIcon == null) {
+                    tmpIcon = selectedIcon;
+                }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getRolloverIcon();
             }
         } else if (model.isSelected()) {
@@ -440,7 +457,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     /**
-     * As of Java 2 platform v 1.4 this method should not be used or overriden.
+     * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      */
     protected void paintText(final Graphics g, final JComponent c, final Rectangle localTextRect, final String text) {
@@ -532,8 +549,8 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
     }
 
     static class AquaHierarchyButtonListener implements HierarchyListener {
-        // Everytime a hierarchy is change we need to check if the button if moved on or from
-        // a toolbar. If that is the case, we need to re-set the border of the button.
+        // Every time a hierarchy is changed we need to check if the button is moved on or from
+        // the toolbar. If that is the case, we need to re-set the border of the button.
         public void hierarchyChanged(final HierarchyEvent e) {
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) == 0) return;
 

@@ -30,6 +30,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -43,7 +44,6 @@
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"
 #endif
-#include "prims/methodHandles.hpp"
 
 #ifdef ASSERT
 void RegisterMap::check_location_valid() {
@@ -123,7 +123,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL || sender_blob == NULL) {
       return false;
     }
@@ -146,10 +146,6 @@ bool frame::safe_for_sender(JavaThread *thread) {
       frame sender(sender_sp, saved_fp, sender_pc);
 
       return sender.is_interpreted_frame_valid(thread);
-    }
-
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
-      return false;
     }
 
     // Could just be some random pointer within the codeBlob

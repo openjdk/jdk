@@ -80,27 +80,27 @@ public class RelationService extends NotificationBroadcasterSupport
     // depending if the relation has been created using createRelation()
     // method (so internally handled) or is an MBean added as a relation by the
     // user
-    private Map<String,Object> myRelId2ObjMap = new HashMap<String,Object>();
+    private Map<String,Object> myRelId2ObjMap = new HashMap<>();
 
     // Map associating:
     //      <relation id> -> <relation type name>
-    private Map<String,String> myRelId2RelTypeMap = new HashMap<String,String>();
+    private Map<String,String> myRelId2RelTypeMap = new HashMap<>();
 
     // Map associating:
     //      <relation MBean Object Name> -> <relation id>
     private Map<ObjectName,String> myRelMBeanObjName2RelIdMap =
-        new HashMap<ObjectName,String>();
+        new HashMap<>();
 
     // Map associating:
     //       <relation type name> -> <RelationType object>
     private Map<String,RelationType> myRelType2ObjMap =
-        new HashMap<String,RelationType>();
+        new HashMap<>();
 
     // Map associating:
     //       <relation type name> -> ArrayList of <relation id>
     // to list all the relations of a given type
     private Map<String,List<String>> myRelType2RelIdsMap =
-        new HashMap<String,List<String>>();
+        new HashMap<>();
 
     // Map associating:
     //       <ObjectName> -> HashMap
@@ -109,7 +109,7 @@ public class RelationService extends NotificationBroadcasterSupport
     // to track where a given MBean is referenced.
     private final Map<ObjectName,Map<String,List<String>>>
         myRefedMBeanObjName2RelIdsMap =
-            new HashMap<ObjectName,Map<String,List<String>>>();
+            new HashMap<>();
 
     // Flag to indicate if, when a notification is received for the
     // unregistration of an MBean referenced in a relation, if an immediate
@@ -138,7 +138,7 @@ public class RelationService extends NotificationBroadcasterSupport
     // of relations when unregistering a referenced MBean is not immediate but
     // on user request)
     private List<MBeanServerNotification> myUnregNtfList =
-        new ArrayList<MBeanServerNotification>();
+        new ArrayList<>();
 
     //
     // Constructor
@@ -352,7 +352,7 @@ public class RelationService extends NotificationBroadcasterSupport
     public List<String> getAllRelationTypeNames() {
         ArrayList<String> result;
         synchronized(myRelType2ObjMap) {
-            result = new ArrayList<String>(myRelType2ObjMap.keySet());
+            result = new ArrayList<>(myRelType2ObjMap.keySet());
         }
         return result;
     }
@@ -465,7 +465,7 @@ public class RelationService extends NotificationBroadcasterSupport
             List<String> relIdList1 =
                 myRelType2RelIdsMap.get(relationTypeName);
             if (relIdList1 != null) {
-                relIdList = new ArrayList<String>(relIdList1);
+                relIdList = new ArrayList<>(relIdList1);
             }
         }
 
@@ -766,7 +766,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
         // Updates listener information to received notification for
         // unregistration of this MBean
-        List<ObjectName> newRefList = new ArrayList<ObjectName>();
+        List<ObjectName> newRefList = new ArrayList<>();
         newRefList.add(relationObjectName);
         updateUnregistrationListener(newRefList, null);
 
@@ -877,7 +877,7 @@ public class RelationService extends NotificationBroadcasterSupport
     public List<String> getAllRelationIds() {
         List<String> result;
         synchronized(myRelId2ObjMap) {
-            result = new ArrayList<String>(myRelId2ObjMap.keySet());
+            result = new ArrayList<>(myRelId2ObjMap.keySet());
         }
         return result;
     }
@@ -1081,7 +1081,7 @@ public class RelationService extends NotificationBroadcasterSupport
         }
 
         if (!(oldValue instanceof ArrayList<?>))
-            oldValue = new ArrayList<ObjectName>(oldValue);
+            oldValue = new ArrayList<>(oldValue);
 
         RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
                             relationId, newRole, oldValue);
@@ -1205,11 +1205,10 @@ public class RelationService extends NotificationBroadcasterSupport
         List<ObjectName> newRoleValue = newRole.getRoleValue();
         // Note: no need to test if oldValue not null before cloning,
         //       tested above.
-        List<ObjectName> oldRoleValue =
-            new ArrayList<ObjectName>(oldValue);
+        List<ObjectName> oldRoleValue = new ArrayList<>(oldValue);
 
         // List of ObjectNames of new referenced MBeans
-        List<ObjectName> newRefList = new ArrayList<ObjectName>();
+        List<ObjectName> newRefList = new ArrayList<>();
 
         for (ObjectName currObjName : newRoleValue) {
 
@@ -1244,7 +1243,7 @@ public class RelationService extends NotificationBroadcasterSupport
         }
 
         // List of ObjectNames of MBeans no longer referenced
-        List<ObjectName> obsRefList = new ArrayList<ObjectName>();
+        List<ObjectName> obsRefList = new ArrayList<>();
 
         // Each ObjectName remaining in oldRoleValue is an ObjectName no longer
         // referenced in new value
@@ -1310,7 +1309,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
         // Removes it from listener filter
         if (result instanceof ObjectName) {
-            List<ObjectName> obsRefList = new ArrayList<ObjectName>();
+            List<ObjectName> obsRefList = new ArrayList<>();
             obsRefList.add((ObjectName)result);
             // Can throw a RelationServiceNotRegisteredException
             updateUnregistrationListener(null, obsRefList);
@@ -1339,10 +1338,10 @@ public class RelationService extends NotificationBroadcasterSupport
         //       on the relation itself. Ok if it is an internal one, but if
         //       it is an MBean, it is possible it is already unregistered, so
         //       not available through the MBean Server.
-        List<ObjectName> refMBeanList = new ArrayList<ObjectName>();
+        List<ObjectName> refMBeanList = new ArrayList<>();
         // List of MBeans no longer referenced in any relation, to be
         // removed fom the map
-        List<ObjectName> nonRefObjNameList = new ArrayList<ObjectName>();
+        List<ObjectName> nonRefObjNameList = new ArrayList<>();
 
         synchronized(myRefedMBeanObjName2RelIdsMap) {
 
@@ -1454,10 +1453,9 @@ public class RelationService extends NotificationBroadcasterSupport
         // notifications while proceeding those ones
         List<MBeanServerNotification> localUnregNtfList;
         synchronized(myRefedMBeanObjName2RelIdsMap) {
-            localUnregNtfList =
-                new ArrayList<MBeanServerNotification>(myUnregNtfList);
+            localUnregNtfList = new ArrayList<>(myUnregNtfList);
             // Resets list
-            myUnregNtfList = new ArrayList<MBeanServerNotification>();
+            myUnregNtfList = new ArrayList<>();
         }
 
 
@@ -1467,11 +1465,11 @@ public class RelationService extends NotificationBroadcasterSupport
         // ObjectName -> relId -> roles, to remove the MBean from the global
         // map
         // List of references to be removed from the listener filter
-        List<ObjectName> obsRefList = new ArrayList<ObjectName>();
+        List<ObjectName> obsRefList = new ArrayList<>();
         // Map including ObjectNames for unregistered MBeans, with
         // referencing relation ids and roles
         Map<ObjectName,Map<String,List<String>>> localMBean2RelIdMap =
-            new HashMap<ObjectName,Map<String,List<String>>>();
+            new HashMap<>();
 
         synchronized(myRefedMBeanObjName2RelIdsMap) {
             for (MBeanServerNotification currNtf : localUnregNtfList) {
@@ -1571,7 +1569,7 @@ public class RelationService extends NotificationBroadcasterSupport
         RELATION_LOGGER.log(Level.TRACE, "ENTRY {0} {1} {2}",
                             mbeanName, relationTypeName, roleName);
 
-        Map<String,List<String>> result = new HashMap<String,List<String>>();
+        Map<String,List<String>> result = new HashMap<>();
 
         synchronized(myRefedMBeanObjName2RelIdsMap) {
 
@@ -1589,11 +1587,11 @@ public class RelationService extends NotificationBroadcasterSupport
                 List<String> relIdList;
                 if (relationTypeName == null) {
                     // Considers all relations
-                    relIdList = new ArrayList<String>(allRelIdSet);
+                    relIdList = new ArrayList<>(allRelIdSet);
 
                 } else {
 
-                    relIdList = new ArrayList<String>();
+                    relIdList = new ArrayList<>();
 
                     // Considers only the relation ids for relations of given
                     // type
@@ -1628,12 +1626,12 @@ public class RelationService extends NotificationBroadcasterSupport
                         // Note: no need to test if list not null before
                         //       cloning, MUST be not null else bug :(
                         result.put(currRelId,
-                                   new ArrayList<String>(currRoleNameList));
+                                new ArrayList<>(currRoleNameList));
 
                     }  else if (currRoleNameList.contains(roleName)) {
                         // Filters only the relations where the MBean is
                         // referenced in // given role
-                        List<String> dummyList = new ArrayList<String>();
+                        List<String> dummyList = new ArrayList<>();
                         dummyList.add(roleName);
                         result.put(currRelId, dummyList);
                     }
@@ -1686,8 +1684,7 @@ public class RelationService extends NotificationBroadcasterSupport
                                      relationTypeName,
                                      roleName);
 
-        Map<ObjectName,List<String>> result =
-            new HashMap<ObjectName,List<String>>();
+        Map<ObjectName,List<String>> result = new HashMap<>();
 
         for (String currRelId : relId2RoleNamesMap.keySet()) {
 
@@ -1713,7 +1710,7 @@ public class RelationService extends NotificationBroadcasterSupport
                     List<String> currRelIdList = result.get(currObjName);
                     if (currRelIdList == null) {
 
-                        currRelIdList = new ArrayList<String>();
+                        currRelIdList = new ArrayList<>();
                         currRelIdList.add(currRelId);
                         result.put(currObjName, currRelIdList);
 
@@ -1757,9 +1754,9 @@ public class RelationService extends NotificationBroadcasterSupport
         synchronized(myRelType2RelIdsMap) {
             List<String> result1 = myRelType2RelIdsMap.get(relationTypeName);
             if (result1 == null)
-                result = new ArrayList<String>();
+                result = new ArrayList<>();
             else
-                result = new ArrayList<String>(result1);
+                result = new ArrayList<>(result1);
         }
 
         RELATION_LOGGER.log(Level.TRACE, "RETURN");
@@ -1836,7 +1833,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 if (invokeResult == null || invokeResult instanceof ArrayList<?>)
                     result = invokeResult;
                 else
-                    result = new ArrayList<ObjectName>(invokeResult);
+                    result = new ArrayList<>(invokeResult);
             } catch (InstanceNotFoundException | ReflectionException exc1) {
                 throw new RuntimeException(exc1.getMessage());
             } catch (MBeanException exc2) {
@@ -2626,11 +2623,11 @@ public class RelationService extends NotificationBroadcasterSupport
 
                 // List of roles where the MBean is referenced in given
                 // relation
-                List<String> roleNames = new ArrayList<String>();
+                List<String> roleNames = new ArrayList<>();
                 roleNames.add(roleName);
 
                 // Map of relations where the MBean is referenced
-                mbeanRefMap = new HashMap<String,List<String>>();
+                mbeanRefMap = new HashMap<>();
                 mbeanRefMap.put(relationId, roleNames);
 
                 myRefedMBeanObjName2RelIdsMap.put(objectName, mbeanRefMap);
@@ -2646,7 +2643,7 @@ public class RelationService extends NotificationBroadcasterSupport
 
                     // List of roles where the MBean is referenced in given
                     // relation
-                    roleNames = new ArrayList<String>();
+                    roleNames = new ArrayList<>();
                     roleNames.add(roleName);
 
                     // Adds new reference done in current relation
@@ -2953,7 +2950,7 @@ public class RelationService extends NotificationBroadcasterSupport
         // to see which roles have not been initialized
         // Note: no need to test if list not null before cloning, not allowed
         //       to have an empty relation type.
-        List<RoleInfo> roleInfoList = new ArrayList<RoleInfo>(relType.getRoleInfos());
+        List<RoleInfo> roleInfoList = new ArrayList<>(relType.getRoleInfos());
 
         if (roleList != null) {
 
@@ -3026,7 +3023,7 @@ public class RelationService extends NotificationBroadcasterSupport
             boolean firstRelFlag = false;
             if (relIdList == null) {
                 firstRelFlag = true;
-                relIdList = new ArrayList<String>();
+                relIdList = new ArrayList<>();
             }
             relIdList.add(relationId);
             if (firstRelFlag) {
@@ -3041,7 +3038,7 @@ public class RelationService extends NotificationBroadcasterSupport
         for (Role currRole : roleList.asList()) {
             // Creates a dummy empty ArrayList of ObjectNames to be the old
             // role value :)
-            List<ObjectName> dummyList = new ArrayList<ObjectName>();
+            List<ObjectName> dummyList = new ArrayList<>();
             // Will not throw a RelationNotFoundException (as the RelId2Obj map
             // has been updated above) so catch it :)
             try {
@@ -3250,7 +3247,7 @@ public class RelationService extends NotificationBroadcasterSupport
             String roleName = currRoleInfo.getName();
 
             // Creates an empty value
-            List<ObjectName> emptyValue = new ArrayList<ObjectName>();
+            List<ObjectName> emptyValue = new ArrayList<>();
             // Creates a role
             Role role = new Role(roleName, emptyValue);
 

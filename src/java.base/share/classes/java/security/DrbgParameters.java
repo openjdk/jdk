@@ -34,7 +34,7 @@ import java.util.Objects;
  * Random Bit Generator).
  * <p>
  * According to
- * <a href="http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf">
+ * <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf">
  * NIST Special Publication 800-90A Revision 1, Recommendation for Random
  * Number Generation Using Deterministic Random Bit Generators</a> (800-90Ar1),
  * <blockquote>

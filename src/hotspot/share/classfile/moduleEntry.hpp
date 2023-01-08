@@ -28,6 +28,7 @@
 #include "jni.h"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
+#include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -174,13 +175,15 @@ public:
   void iterate_symbols(MetaspaceClosure* closure);
   ModuleEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
-  void init_archived_oops();
   static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
+  bool has_been_archived();
   static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
   static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
+  void update_oops_in_archived_module(int root_oop_index);
+  static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };
 
@@ -205,8 +208,8 @@ class ModuleClosure: public StackObj {
 class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
-  ResourceHashtable<const Symbol*, ModuleEntry*, 109, ResourceObj::C_HEAP, mtModule,
-                    Symbol::compute_hash> _table;
+  ResourceHashtable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
+                    SymbolHandle::compute_hash> _table;
 
 public:
   ModuleEntryTable();
@@ -237,7 +240,7 @@ public:
   static bool javabase_defined() { return ((_javabase_module != NULL) &&
                                            (_javabase_module->module() != NULL)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
-  static void patch_javabase_entries(Handle module_handle);
+  static void patch_javabase_entries(JavaThread* current, Handle module_handle);
 
   void modules_do(void f(ModuleEntry*));
   void modules_do(ModuleClosure* closure);
@@ -249,7 +252,6 @@ public:
   void iterate_symbols(MetaspaceClosure* closure);
   Array<ModuleEntry*>* allocate_archived_entries();
   void init_archived_entries(Array<ModuleEntry*>* archived_modules);
-  void init_archived_oops(Array<ModuleEntry*>* archived_modules);
   void load_archived_entries(ClassLoaderData* loader_data,
                              Array<ModuleEntry*>* archived_modules);
   void restore_archived_oops(ClassLoaderData* loader_data,

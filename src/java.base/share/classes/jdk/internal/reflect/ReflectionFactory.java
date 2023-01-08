@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,6 @@ public class ReflectionFactory {
                                 method.getName(),
                                 method.getParameterTypes(),
                                 method.getReturnType(),
-                                method.getExceptionTypes(),
                                 method.getModifiers());
     }
 
@@ -211,7 +210,6 @@ public class ReflectionFactory {
                 return new MethodAccessorGenerator().
                         generateConstructor(c.getDeclaringClass(),
                                             c.getParameterTypes(),
-                                            c.getExceptionTypes(),
                                             c.getModifiers());
             } else {
                 NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
@@ -421,7 +419,6 @@ public class ReflectionFactory {
         ConstructorAccessor acc = new MethodAccessorGenerator().
             generateSerializationConstructor(cl,
                                              constructorToCall.getParameterTypes(),
-                                             constructorToCall.getExceptionTypes(),
                                              constructorToCall.getModifiers(),
                                              constructorToCall.getDeclaringClass());
         Constructor<?> c = newConstructor(constructorToCall.getDeclaringClass(),

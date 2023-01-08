@@ -197,7 +197,7 @@ public class CommandProcessor {
                     add(w[i], t);
                 }
             }
-            tokens = (String[])t.toArray(new String[0]);
+            tokens = t.toArray(new String[0]);
             i = 0;
             length = tokens.length;
 
@@ -768,7 +768,7 @@ public class CommandProcessor {
                           });
                     for (int i = 0; i < keys.length; i++) {
                         out.print("  ");
-                        out.println(((Command)commands.get(keys[i])).usage);
+                        out.println(commands.get(keys[i]).usage);
                     }
                 }
             }
@@ -1085,7 +1085,7 @@ public class CommandProcessor {
                         n = n.getSuperclass();
                     }
                     while (!pending.isEmpty()) {
-                        n = (Type)pending.pop();
+                        n = pending.pop();
                         dumpType(n);
                         emitted.add(n.getName());
                     }
@@ -1226,7 +1226,7 @@ public class CommandProcessor {
                 if (t.countTokens() == 0) {
                     out.println("echo is " + doEcho);
                 } else if (t.countTokens() == 1) {
-                    doEcho = Boolean.valueOf(t.nextToken()).booleanValue();
+                    doEcho = Boolean.parseBoolean(t.nextToken());
                 } else {
                     usage();
                 }
@@ -1238,7 +1238,7 @@ public class CommandProcessor {
                     out.println("versioncheck is " +
                                 (System.getProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck") == null));
                 } else if (t.countTokens() == 1) {
-                    if (Boolean.valueOf(t.nextToken()).booleanValue()) {
+                    if (Boolean.parseBoolean(t.nextToken())) {
                         System.clearProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck");
                     } else {
                         System.setProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck", "true");
@@ -1302,7 +1302,7 @@ public class CommandProcessor {
                     }
                 } else if (t.countTokens() == 2) {
                     String name = t.nextToken();
-                    Integer value = Integer.valueOf(t.nextToken());
+                    int value = Integer.parseInt(t.nextToken());
                     db.addIntConstant(name, value);
                 }
             }
@@ -1325,7 +1325,7 @@ public class CommandProcessor {
                     }
                 } else if (t.countTokens() == 2) {
                     String name = t.nextToken();
-                    Long value = Long.valueOf(t.nextToken());
+                    long value = Long.parseLong(t.nextToken());
                     db.addLongConstant(name, value);
                 }
             }
@@ -1352,7 +1352,7 @@ public class CommandProcessor {
                     // The field's Type must already be in the database -- no exceptions
                     Type fieldType = agent.getTypeDataBase().lookupType(t.nextToken());
 
-                    boolean isStatic = Boolean.valueOf(t.nextToken()).booleanValue();
+                    boolean isStatic = Boolean.parseBoolean(t.nextToken());
                     long offset = Long.parseLong(t.nextToken());
                     Address staticAddress = parseAddress(t.nextToken());
                     if (isStatic && staticAddress == null) {
@@ -1414,9 +1414,9 @@ public class CommandProcessor {
                     if (superclassName.equals("null")) {
                         superclassName = null;
                     }
-                    boolean isOop = Boolean.valueOf(t.nextToken()).booleanValue();
-                    boolean isInteger = Boolean.valueOf(t.nextToken()).booleanValue();
-                    boolean isUnsigned = Boolean.valueOf(t.nextToken()).booleanValue();
+                    boolean isOop = Boolean.parseBoolean(t.nextToken());
+                    boolean isInteger = Boolean.parseBoolean(t.nextToken());
+                    boolean isUnsigned = Boolean.parseBoolean(t.nextToken());
                     long size = Long.parseLong(t.nextToken());
 
                     BasicType type = null;
@@ -1481,7 +1481,7 @@ public class CommandProcessor {
                             n = n.getSuperclass();
                         }
                         while (!pending.isEmpty()) {
-                            n = (Type)pending.pop();
+                            n = pending.pop();
                             dumpType(n);
                             emitted.add(n.getName());
                         }
@@ -1726,7 +1726,7 @@ public class CommandProcessor {
                         }
                     }
                     if (!all) {
-                        out.println("Couldn't find thread " + name);
+                        out.println("Couldn't find thread " + id);
                     }
                 }
             }
@@ -1807,7 +1807,7 @@ public class CommandProcessor {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    verboseExceptions = Boolean.valueOf(t.nextToken()).booleanValue();
+                    verboseExceptions = Boolean.parseBoolean(t.nextToken());
                 }
             }
         },
@@ -1816,7 +1816,7 @@ public class CommandProcessor {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    Assert.ASSERTS_ENABLED = Boolean.valueOf(t.nextToken()).booleanValue();
+                    Assert.ASSERTS_ENABLED = Boolean.parseBoolean(t.nextToken());
                 }
             }
         },
@@ -1986,7 +1986,7 @@ public class CommandProcessor {
     private boolean doEcho = false;
 
     private Command findCommand(String key) {
-        return (Command)commands.get(key);
+        return commands.get(key);
     }
 
     public void printPrompt() {
@@ -2082,17 +2082,17 @@ public class CommandProcessor {
 
                     String cmd = m.group(2);
                     if (cmd.equals("!!")) {
-                        result.append((String)history.get(history.size() - 1));
+                        result.append(history.get(history.size() - 1));
                     } else if (cmd.equals("!!-")) {
-                        Tokens item = new Tokens((String)history.get(history.size() - 1));
+                        Tokens item = new Tokens(history.get(history.size() - 1));
                         item.trim(1);
                         result.append(item.join(" "));
                     } else if (cmd.equals("!*")) {
-                        Tokens item = new Tokens((String)history.get(history.size() - 1));
+                        Tokens item = new Tokens(history.get(history.size() - 1));
                         item.nextToken();
                         result.append(item.join(" "));
                     } else if (cmd.equals("!$")) {
-                        Tokens item = new Tokens((String)history.get(history.size() - 1));
+                        Tokens item = new Tokens(history.get(history.size() - 1));
                         result.append(item.at(item.countTokens() - 1));
                     } else {
                         String tail = cmd.substring(1);
@@ -2115,13 +2115,13 @@ public class CommandProcessor {
                             if (index > size) {
                                 err.println("No such history item");
                             } else {
-                                result.append((String)history.get(index));
+                                result.append(history.get(index));
                             }
                             break;
                         }
                         default: {
                             for (int i = history.size() - 1; i >= 0; i--) {
-                                String s = (String)history.get(i);
+                                String s = history.get(i);
                                 if (s.startsWith(tail)) {
                                     result.append(s);
                                     break; // only capture the most recent match in the history

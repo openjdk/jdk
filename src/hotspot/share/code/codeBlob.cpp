@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -33,6 +32,7 @@
 #include "compiler/oopMap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
 #include "memory/resourceArea.hpp"
@@ -306,6 +306,8 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb) :
 
 AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  CodeCache::gc_on_allocation();
 
   AdapterBlob* blob = NULL;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
@@ -790,6 +792,7 @@ void UpcallStub::verify() {
 void UpcallStub::print_on(outputStream* st) const {
   RuntimeBlob::print_on(st);
   print_value_on(st);
+  Disassembler::decode((RuntimeBlob*)this, st);
 }
 
 void UpcallStub::print_value_on(outputStream* st) const {

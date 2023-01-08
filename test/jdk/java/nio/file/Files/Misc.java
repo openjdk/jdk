@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8005566 8032220 8215467 8255576 8286160
- * @summary Unit test for miscellenous methods in java.nio.file.Files
+ * @bug 4313887 6838333 8005566 8215467 8255576 8286160
+ * @summary Unit test for miscellaneous methods in java.nio.file.Files
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
  * @run main Misc
@@ -51,7 +51,6 @@ public class Misc {
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            testCreateDirectories(dir);
             testIsHidden(dir);
             testIsSameFile(dir);
             testFileTypeMethods(dir);
@@ -61,39 +60,6 @@ public class Misc {
         }
     }
 
-    /**
-     * Tests createDirectories
-     */
-    static void testCreateDirectories(Path tmpdir) throws IOException {
-        // a no-op
-        createDirectories(tmpdir);
-
-        // create one directory
-        Path subdir = tmpdir.resolve("a");
-        createDirectories(subdir);
-        assertTrue(exists(subdir));
-
-        // create parents
-        subdir = subdir.resolve("b/c/d");
-        createDirectories(subdir);
-        assertTrue(exists(subdir));
-
-        // existing file is not a directory
-        Path file = createFile(tmpdir.resolve("x"));
-        try {
-            createDirectories(file);
-            throw new RuntimeException("failure expected");
-        } catch (FileAlreadyExistsException x) { }
-        try {
-            createDirectories(file.resolve("y"));
-            throw new RuntimeException("failure expected");
-        } catch (IOException x) { }
-
-        // the root directory always exists
-        Path root = Path.of("/");
-        Files.createDirectories(root);
-        Files.createDirectories(root.toAbsolutePath());
-    }
 
     /**
      * Tests isHidden

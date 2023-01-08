@@ -43,9 +43,9 @@ import java.util.stream.Stream;
 /**
  * Benchmark for sum operation in sized streams.
  */
-@Fork(5)
-@Warmup(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 20, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(3)
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)

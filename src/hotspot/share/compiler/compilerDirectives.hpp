@@ -42,6 +42,7 @@
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
     cflags(Log,                     bool, LogCompilation, Unknown) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
+    cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \

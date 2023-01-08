@@ -368,7 +368,7 @@ void AwtCheckbox::_SetLabel(void *param)
     {
         LPCTSTR labelStr = NULL;
 
-        // By convension null label means empty string
+        // By convention null label means empty string
         if (label == NULL)
         {
             labelStr = TEXT("");

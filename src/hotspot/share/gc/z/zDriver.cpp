@@ -230,7 +230,7 @@ void ZDriver::collect(const ZDriverRequest& request) {
   case GCCause::_scavenge_alot:
   case GCCause::_jvmti_force_gc:
   case GCCause::_metadata_GC_clear_soft_refs:
-  case GCCause::_codecache_GC_threshold:
+  case GCCause::_codecache_GC_aggressive:
     // Start synchronous GC
     _gc_cycle_port.send_sync(request);
     break;
@@ -241,6 +241,7 @@ void ZDriver::collect(const ZDriverRequest& request) {
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
   case GCCause::_z_high_usage:
+  case GCCause::_codecache_GC_threshold:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _gc_cycle_port.send_async(request);

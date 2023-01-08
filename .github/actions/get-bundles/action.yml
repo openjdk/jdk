@@ -103,7 +103,7 @@ runs:
           tests_dir="$(cygpath $tests_dir)"
         fi
 
-        echo "::set-output name=jdk::$jdk_dir"
-        echo "::set-output name=symbols::$symbols_dir"
-        echo "::set-output name=tests::$tests_dir"
+        echo "jdk=$jdk_dir" >> $GITHUB_OUTPUT
+        echo "symbols=$symbols_dir" >> $GITHUB_OUTPUT
+        echo "tests=$tests_dir" >> $GITHUB_OUTPUT
       shell: bash

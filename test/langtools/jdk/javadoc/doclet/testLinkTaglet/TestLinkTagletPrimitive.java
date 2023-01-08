@@ -40,7 +40,7 @@ import java.nio.file.Path;
 public class TestLinkTagletPrimitive extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestLinkTagletPrimitive tester = new TestLinkTagletPrimitive();
+        var tester = new TestLinkTagletPrimitive();
         tester.runTests();
     }
 

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -57,7 +58,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -67,7 +68,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -388,12 +388,13 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
 
+  _completed_mark_cycles(0),
   _has_overflown(false),
   _concurrent(false),
   _has_aborted(false),
   _restart_for_overflow(false),
-  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
-  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()),
+  _gc_timer_cm(new ConcurrentGCTimer()),
+  _gc_tracer_cm(new G1OldTracer()),
 
   // _verbose_level set below
 
@@ -604,7 +605,8 @@ private:
       // live_words data are current wrt to the _mark_bitmap. We use this information
       // to only clear ranges of the bitmap that require clearing.
       if (is_clear_concurrent_undo()) {
-        // No need to clear bitmaps for empty regions.
+        // No need to clear bitmaps for empty regions (which includes regions we
+        // did not mark through).
         if (_cm->live_words(r->hrm_index()) == 0) {
           assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
           return r->bottom();
@@ -653,7 +655,7 @@ private:
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
-      r->note_end_of_clearing();
+      r->reset_top_at_mark_start();
 
       return false;
     }
@@ -725,8 +727,6 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers) {
 }
 
 class G1PreConcurrentStartTask : public G1BatchedTask {
-  // Concurrent start needs claim bits to keep track of the marked-through CLDs.
-  class CLDClearClaimedMarksTask;
   // Reset marking state.
   class ResetMarkingStateTask;
   // For each region note start of marking.
@@ -734,14 +734,6 @@ class G1PreConcurrentStartTask : public G1BatchedTask {
 
 public:
   G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm);
-};
-
-class G1PreConcurrentStartTask::CLDClearClaimedMarksTask : public G1AbstractSubTask {
-public:
-  CLDClearClaimedMarksTask() : G1AbstractSubTask(G1GCPhaseTimes::CLDClearClaimedMarks) { }
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override;
 };
 
 class G1PreConcurrentStartTask::ResetMarkingStateTask : public G1AbstractSubTask {
@@ -769,10 +761,6 @@ public:
   void do_work(uint worker_id) override;
 };
 
-void G1PreConcurrentStartTask::CLDClearClaimedMarksTask::do_work(uint worker_id) {
-  ClassLoaderDataGraph::clear_claimed_marks();
-}
-
 void G1PreConcurrentStartTask::ResetMarkingStateTask::do_work(uint worker_id) {
   // Reset marking state.
   _cm->reset();
@@ -797,7 +785,6 @@ void G1PreConcurrentStartTask::NoteStartOfMarkTask::set_max_workers(uint max_wor
 
 G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm) :
   G1BatchedTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
-  add_serial_task(new CLDClearClaimedMarksTask());
   add_serial_task(new ResetMarkingStateTask(cm));
   add_parallel_task(new NoteStartOfMarkTask());
 };
@@ -806,6 +793,8 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
   G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 
   G1PreConcurrentStartTask cl(cause, this);
   G1CollectedHeap::heap()->run_batch_task(&cl);
@@ -1022,10 +1011,18 @@ void G1ConcurrentMark::concurrent_cycle_start() {
   _g1h->trace_heap_before_gc(_gc_tracer_cm);
 }
 
-void G1ConcurrentMark::concurrent_cycle_end() {
+uint G1ConcurrentMark::completed_mark_cycles() const {
+  return Atomic::load(&_completed_mark_cycles);
+}
+
+void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
   _g1h->collector_state()->set_clearing_bitmap(false);
 
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
+
+  if (mark_cycle_completed) {
+    Atomic::inc(&_completed_mark_cycles, memory_order_relaxed);
+  }
 
   if (has_aborted()) {
     log_info(gc, marking)("Concurrent Mark Abort");
@@ -1319,8 +1316,8 @@ void G1ConcurrentMark::remark() {
     report_object_count(mark_finished);
   }
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 
   // Statistics
   double now = os::elapsedTime();
@@ -1689,8 +1686,9 @@ void G1ConcurrentMark::weak_refs_work() {
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
+    CodeCache::UnloadingScope scope(&g1_is_alive);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
-    _g1h->complete_cleaning(&g1_is_alive, purged_classes);
+    _g1h->complete_cleaning(purged_classes);
   }
 }
 
@@ -1887,7 +1885,6 @@ void G1ConcurrentMark::flush_all_task_caches() {
 void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
-  hr->note_end_of_clearing();
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
@@ -2121,7 +2118,7 @@ static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h
 
 G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
                                G1CMTask* task)
-  : MetadataVisitingOopIterateClosure(get_cm_oop_closure_ref_processor(g1h)),
+  : ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_strong, get_cm_oop_closure_ref_processor(g1h)),
     _g1h(g1h), _task(task)
 { }
 
@@ -3064,8 +3061,10 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
     return;
   }
 
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  _total_remset_bytes += g1h->card_set_freelist_pool()->mem_size();
   // add static memory usages to remembered set sizes
-  _total_remset_bytes += G1CardSetFreePool::free_list_pool()->mem_size() + HeapRegionRemSet::static_mem_size();
+  _total_remset_bytes += HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX

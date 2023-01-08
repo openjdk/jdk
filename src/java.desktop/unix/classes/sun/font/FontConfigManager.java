@@ -380,7 +380,7 @@ public class FontConfigManager {
          * If that registration fails (signalled by null) just return the
          * regular JDK composite.
          * Algorithmically styled fonts won't match on exact style, so
-         * will fall through this code, but the regisration code will
+         * will fall through this code, but the registration code will
          * find that file already registered and return its font.
          */
         FontFamily family = FontFamily.getFamily(fcInfo.firstFont.familyName);

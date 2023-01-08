@@ -595,9 +595,6 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
                          "Thread not suspended");
-            case JDWP.Error.THREAD_NOT_ALIVE:
-                throw new IncompatibleThreadStateException(
-                                     "Thread has not started or has finished");
             case JDWP.Error.NO_MORE_FRAMES:
                 throw new InvalidStackFrameException(
                          "No more frames on the stack");

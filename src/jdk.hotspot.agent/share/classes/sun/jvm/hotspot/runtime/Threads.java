@@ -151,7 +151,6 @@ public class Threads {
         virtualConstructor.addMapping("JavaThread", JavaThread.class);
         if (!VM.getVM().isCore()) {
             virtualConstructor.addMapping("CompilerThread", CompilerThread.class);
-            virtualConstructor.addMapping("CodeCacheSweeperThread", CodeCacheSweeperThread.class);
         }
         virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
         virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
@@ -195,7 +194,7 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, ServiceThread, JvmtiAgentThread or CodeCacheSweeperThread)", e);
+            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, ServiceThread or JvmtiAgentThread)", e);
         }
     }
 

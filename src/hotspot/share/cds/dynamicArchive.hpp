@@ -33,7 +33,6 @@
 #include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 #if INCLUDE_CDS
 

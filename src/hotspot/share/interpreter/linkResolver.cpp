@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -38,6 +36,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -49,6 +48,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolHandle.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -814,7 +814,7 @@ static void trace_method_resolution(const char* prefix,
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,
             (klass == NULL ? "<NULL>" : klass->internal_name()),
-            (resolved_klass == NULL ? "<NULL>" : resolved_klass->internal_name()),
+            resolved_klass->internal_name(),
             Method::name_and_sig_as_C_string(resolved_klass,
                                              method->name(),
                                              method->signature()),
@@ -970,11 +970,6 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
   Symbol* field = link_info.name();
   Symbol* sig = link_info.signature();
 
-  if (resolved_klass == NULL) {
-    ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), field->as_C_string());
-  }
-
   // Resolve instance field
   Klass* sel_klass = resolved_klass->find_field(field, sig, &fd);
   // check if field exists; i.e., if a klass containing the field def has been selected
@@ -1085,7 +1080,7 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
-  if (resolved_method->is_continuation_enter_intrinsic()
+  if (resolved_method->is_continuation_native_intrinsic()
       && resolved_method->from_interpreted_entry() == NULL) { // does a load_acquire
     methodHandle mh(THREAD, resolved_method);
     // Generate a compiled form of the enterSpecial intrinsic.

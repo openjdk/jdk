@@ -37,6 +37,7 @@
  *                   -Xmixed -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:-StressReflectiveCode
  *                   -XX:+UncommonNullCast -XX:-StressMethodHandleLinkerInlining -XX:TypeProfileLevel=0
+ *                   -XX:-AlwaysIncrementalInline
  *                   -XX:CompileCommand=exclude,compiler.intrinsics.klass.CastNullCheckDroppingsTest::runTest
  *                   compiler.intrinsics.klass.CastNullCheckDroppingsTest
  */

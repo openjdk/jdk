@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,7 @@ final class ClassLoaderRepositorySupport
      * loader has been added.
      **/
     private synchronized boolean add(ObjectName name, ClassLoader cl) {
-        List<LoaderEntry> l =
-            new ArrayList<LoaderEntry>(Arrays.asList(loaders));
+        List<LoaderEntry> l = new ArrayList<>(Arrays.asList(loaders));
         l.add(new LoaderEntry(name, cl));
         loaders = l.toArray(EMPTY_LOADER_ARRAY);
         return true;
@@ -130,13 +129,13 @@ final class ClassLoaderRepositorySupport
      * List of valid search
      */
     private final Map<String,List<ClassLoader>> search =
-        new Hashtable<String,List<ClassLoader>>(10);
+        new Hashtable<>(10);
 
     /**
      * List of named class loaders.
      */
     private final Map<ObjectName,ClassLoader> loadersWithNames =
-        new Hashtable<ObjectName,ClassLoader>(10);
+        new Hashtable<>(10);
 
     // from javax.management.loading.DefaultLoaderRepository
     public final Class<?> loadClass(String className)
@@ -246,7 +245,7 @@ final class ClassLoaderRepositorySupport
         // Add an entry
         //
         if (excluded == null) {
-            excluded = new ArrayList<ClassLoader>(1);
+            excluded = new ArrayList<>(1);
             search.put(className, excluded);
         }
         excluded.add(aloader);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class AccessH1 extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        AccessH1 tester = new AccessH1();
+        var tester = new AccessH1();
         tester.runTests();
     }
 
@@ -51,9 +51,10 @@ public class AccessH1 extends JavadocTester {
 
         // Test the style sheet
         checkOutput("stylesheet.css", true,
-                "h1 {\n"
-                + "    font-size:20px;\n"
-                + "}");
+                """
+                    h1 {
+                        font-size:1.428em;
+                    }""");
 
         // Test the doc title in the overview page
         checkOutput("index.html", true,

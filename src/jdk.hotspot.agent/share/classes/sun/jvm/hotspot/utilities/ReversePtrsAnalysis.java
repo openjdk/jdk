@@ -254,7 +254,7 @@ public class ReversePtrsAnalysis {
         }
 
         // Get the next object to visit.
-        next = (Oop) workList.pop();
+        next = workList.pop();
       }
     } catch (EmptyStackException e) {
       // Done

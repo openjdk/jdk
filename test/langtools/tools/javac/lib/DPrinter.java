@@ -720,7 +720,7 @@ public class DPrinter {
 
         @Override
         public void visitForeachLoop(JCEnhancedForLoop tree) {
-            printTree("var", tree.var);
+            printTree("var", tree.varOrRecordPattern);
             printTree("expr", tree.expr);
             printTree("body", tree.body);
         }
@@ -1139,6 +1139,12 @@ public class DPrinter {
 
         public Void visitSince(SinceTree node, Void p) {
             printList("body", node.getBody());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSpec(SpecTree node, Void p) {
+            printDocTree("url", node.getURL());
+            printList("title", node.getTitle());
             return visitBlockTag(node, null);
         }
 

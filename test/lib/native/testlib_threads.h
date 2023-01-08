@@ -54,7 +54,7 @@ static void fatal(const char* message, int code) {
 // Adapt from the callback type the OS API expects to
 // our OS-independent PROCEDURE type.
 #ifdef _WIN32
-static DWORD procedure(_In_ LPVOID ctxt) {
+DWORD WINAPI procedure(_In_ LPVOID ctxt) {
 #else
 void* procedure(void* ctxt) {
 #endif

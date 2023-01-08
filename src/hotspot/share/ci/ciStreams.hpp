@@ -219,6 +219,7 @@ public:
 
   // If this bytecode is a new, newarray, multianewarray, instanceof,
   // or checkcast, get the referenced klass.
+  ciKlass* get_klass();
   ciKlass* get_klass(bool& will_link);
   int get_klass_index() const;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 
 package sun.security.x509;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.math.BigInteger;
-import java.util.Enumeration;
-import java.util.List;
+import sun.security.util.DerOutputStream;
 
-import sun.security.util.*;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Represents the Freshest CRL Extension.
@@ -63,13 +60,12 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
     public static final String NAME = "FreshestCRL";
 
     /**
-     * Creates a freshest CRL extension.
+     * Creates a fresh CRL extension.
      * The criticality is set to false.
      *
      * @param distributionPoints the list of delta CRL distribution points.
      */
-    public FreshestCRLExtension(List<DistributionPoint> distributionPoints)
-        throws IOException {
+    public FreshestCRLExtension(List<DistributionPoint> distributionPoints) {
 
         super(PKIXExtensions.FreshestCRL_Id, false, distributionPoints, NAME);
     }
@@ -91,9 +87,9 @@ public class FreshestCRLExtension extends CRLDistributionPointsExtension {
      * Writes the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         super.encode(out, PKIXExtensions.FreshestCRL_Id, false);
     }
 }

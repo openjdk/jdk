@@ -30,13 +30,9 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-
-import javax.lang.model.element.Element;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -48,9 +44,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An HTML container used to display summary tables for various kinds of elements.
+ * An HTML container used to display summary tables for various kinds of elements
+ * and other tabular data.
  * This class historically used to generate an HTML {@code <table>} element but has been
- * updated to render elements as a stream of {@code <div>} elements that rely on
+ * updated to render its content as a stream of {@code <div>} elements that rely on
  * <a href="https://www.w3.org/TR/css-grid-1/">CSS Grid Layout</a> for styling.
  * This provides for more flexible layout options, such as splitting up table rows on
  * small displays.
@@ -67,13 +64,20 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * A table may support filtered views, which can be selected by clicking on
  * one of a list of tabs above the table. If the table does not support filtered
  * views, the caption element is typically displayed as a single (inactive)
- * tab.
+ * tab.   The filtered views use a {@link Predicate} to identify the
+ * rows to be shown for each {@link #addTab(Content, Predicate) tab}. The
+ * type parameter for the predicate is the type parameter {@code T} for the table.
+ * The type parameter should be {@link Void} when the table is not configured
+ * to use tabs.
+ *
+ * @param <T> the class or interface used to distinguish the rows to be displayed
+ *            for each tab, or {@code Void} when a table does not contain tabs
  */
-public class Table extends Content {
+public class Table<T> extends Content {
     private final HtmlStyle tableStyle;
     private Content caption;
-    private List<Tab> tabs;
-    private Set<Tab> occurringTabs;
+    private List<Tab<T>> tabs;
+    private Set<Tab<T>> occurringTabs;
     private Content defaultTab;
     private boolean renderTabs = true;
     private TableHeader header;
@@ -86,7 +90,7 @@ public class Table extends Content {
     /**
      * A record containing the data for a table tab.
      */
-    record Tab(Content label, Predicate<Element> predicate, int index) {}
+    record Tab<T>(Content label, Predicate<T> predicate, int index) {}
 
     /**
      * Creates a builder for an HTML element representing a table.
@@ -106,7 +110,7 @@ public class Table extends Content {
      * @param captionContent the caption
      * @return this object
      */
-    public Table setCaption(Content captionContent) {
+    public Table<T> setCaption(Content captionContent) {
         caption = getCaption(captionContent);
         return this;
     }
@@ -114,21 +118,21 @@ public class Table extends Content {
     /**
      * Adds a tab to the table.
      * Tabs provide a way to display subsets of rows, as determined by a
-     * predicate for the tab, and an element associated with each row.
+     * predicate for the tab, and an item associated with each row.
      * Tabs will appear left-to-right in the order they are added.
      *
      * @param label     the tab label
      * @param predicate the predicate
      * @return this object
      */
-    public Table addTab(Content label, Predicate<Element> predicate) {
+    public Table<T> addTab(Content label, Predicate<T> predicate) {
         if (tabs == null) {
             tabs = new ArrayList<>();         // preserves order that tabs are added
             occurringTabs = new HashSet<>();  // order not significant
         }
         // Use current size of tabs list as id so we have tab ids that are consistent
         // across tables with the same tabs but different content.
-        tabs.add(new Tab(label, predicate, tabs.size() + 1));
+        tabs.add(new Tab<>(label, predicate, tabs.size() + 1));
         return this;
     }
 
@@ -139,7 +143,7 @@ public class Table extends Content {
      * @param label the default tab label
      * @return this object
      */
-    public Table setDefaultTab(Content label) {
+    public Table<T> setDefaultTab(Content label) {
         defaultTab = label;
         return this;
     }
@@ -149,19 +153,19 @@ public class Table extends Content {
      * @param showDefaultTab true if default tab should always be shown
      * @return this object
      */
-    public Table setAlwaysShowDefaultTab(boolean showDefaultTab) {
+    public Table<T> setAlwaysShowDefaultTab(boolean showDefaultTab) {
         this.alwaysShowDefaultTab = showDefaultTab;
         return this;
     }
 
     /**
      * Allows to set whether tabs should be rendered for this table. Some pages use their
-     * own controls to select table catetories, in which case the tabs are omitted.
+     * own controls to select table categories, in which case the tabs are omitted.
      *
      * @param renderTabs true if table tabs should be rendered
      * @return this object
      */
-    public Table setRenderTabs(boolean renderTabs) {
+    public Table<T> setRenderTabs(boolean renderTabs) {
         this.renderTabs = renderTabs;
         return this;
     }
@@ -177,7 +181,7 @@ public class Table extends Content {
      * @param header the header
      * @return this object
      */
-    public Table setHeader(TableHeader header) {
+    public Table<T> setHeader(TableHeader header) {
         this.header = header;
         return this;
     }
@@ -193,7 +197,7 @@ public class Table extends Content {
      * @param styles the styles
      * @return this object
      */
-    public Table setColumnStyles(HtmlStyle... styles) {
+    public Table<T> setColumnStyles(HtmlStyle... styles) {
         return setColumnStyles(Arrays.asList(styles));
     }
 
@@ -208,7 +212,7 @@ public class Table extends Content {
      * @param styles the styles
      * @return this object
      */
-    public Table setColumnStyles(List<HtmlStyle> styles) {
+    public Table<T> setColumnStyles(List<HtmlStyle> styles) {
         columnStyles = styles;
         return this;
     }
@@ -221,7 +225,7 @@ public class Table extends Content {
      * @param gridStyle the grid style
      * @return this object
      */
-    public Table setGridStyle(HtmlStyle gridStyle) {
+    public Table<T> setGridStyle(HtmlStyle gridStyle) {
         this.gridStyle = gridStyle;
         return this;
     }
@@ -235,7 +239,7 @@ public class Table extends Content {
      * @param id the id
      * @return this object
      */
-    public Table setId(HtmlId id) {
+    public Table<T> setId(HtmlId id) {
         this.id = id;
         return this;
     }
@@ -258,7 +262,7 @@ public class Table extends Content {
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td> cell}.
      * This method should not be used when the table has tabs: use a method
-     * that takes an {@code element} parameter instead.
+     * that takes an {@code item} parameter instead.
      *
      * @param contents the contents for the row
      */
@@ -271,18 +275,18 @@ public class Table extends Content {
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
      *
-     * If tabs have been added to the table, the specified element will be used
+     * If tabs have been added to the table, the specified item will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
      * {@link #addTab(Content, Predicate) added}.
      *
-     * @param element the element
+     * @param item the item
      * @param contents the contents for the row
      * @throws NullPointerException if tabs have previously been added to the table
-     *      and {@code element} is null
+     *      and {@code item} is null
      */
-    public void addRow(Element element, Content... contents) {
-        addRow(element, Arrays.asList(contents));
+    public void addRow(T item, Content... contents) {
+        addRow(item, Arrays.asList(contents));
     }
 
     /**
@@ -290,18 +294,18 @@ public class Table extends Content {
      * Each item of content should be suitable for use as the content of a
      * {@code <div>} cell.
      *
-     * If tabs have been added to the table, the specified element will be used
+     * If tabs have been added to the table, the specified item will be used
      * to determine whether the row should be displayed when any particular tab
      * is selected, using the predicate specified when the tab was
      * {@link #addTab(Content, Predicate) added}.
      *
-     * @param element the element
+     * @param item the item
      * @param contents the contents for the row
      * @throws NullPointerException if tabs have previously been added to the table
-     *      and {@code element} is null
+     *      and {@code item} is null
      */
-    public void addRow(Element element, List<Content> contents) {
-        if (tabs != null && element == null) {
+    public void addRow(T item, List<Content> contents) {
+        if (tabs != null && item == null) {
             throw new NullPointerException();
         }
         if (contents.size() != columnStyles.size()) {
@@ -317,11 +321,11 @@ public class Table extends Content {
         if (tabs != null) {
             // Construct a series of values to add to the HTML 'class' attribute for the cells of
             // this row, such that there is a default value and a value corresponding to each tab
-            // whose predicate matches the element. The values correspond to the equivalent ids.
+            // whose predicate matches the item. The values correspond to the equivalent ids.
             // The values are used to determine the cells to make visible when a tab is selected.
             tabClasses.add(id.name());
-            for (Tab tab : tabs) {
-                if (tab.predicate().test(element)) {
+            for (var tab : tabs) {
+                if (tab.predicate().test(item)) {
                     occurringTabs.add(tab);
                     tabClasses.add(HtmlIds.forTab(id, tab.index()).name());
                 }
@@ -344,7 +348,7 @@ public class Table extends Content {
     }
 
     /**
-     * Returns whether or not the table is empty.
+     * Returns whether the table is empty.
      * The table is empty if it has no (body) rows.
      *
      * @return true if the table has no rows
@@ -354,8 +358,8 @@ public class Table extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**
@@ -402,7 +406,7 @@ public class Table extends Content {
             }
             table.put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
             if (renderTabs) {
-                for (Tab tab : tabs) {
+                for (var tab : tabs) {
                     if (occurringTabs.contains(tab)) {
                         tablist.add(createTab(HtmlIds.forTab(id, tab.index()), HtmlStyle.tableTab, false, tab.label()));
                     }
