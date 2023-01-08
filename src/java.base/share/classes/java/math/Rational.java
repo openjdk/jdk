@@ -438,6 +438,25 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Returns a {@code Rational} whose value is {@code (-this)}.
+     *
+     * @return {@code -this}.
+     */
+    public Rational negate() {
+        return signum  == 0 ? this : new Rational(-signum, numerator, denominator);
+    }
+
+    /**
+     * Returns a {@code Rational} whose value is the absolute value
+     * of this {@code Rational}.
+     *
+     * @return {@code abs(this)}
+     */
+    public Rational abs() {
+        return (signum == -1 ? negate() : this);
+    }
+
+    /**
      * Converts this {@code Rational} to a {@code BigInteger}.
      * This conversion is analogous to the
      * <i>narrowing primitive conversion</i> from {@code double} to
