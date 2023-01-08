@@ -345,6 +345,26 @@ public class Rational extends Number implements Comparable<Rational> {
      *         with the specified numerator and denominator
      * @throws ArithmeticException if the specified denominator is zero
      */
+    public static Rational valueOf(long num, long den) {
+        if (den == 0)
+            throw new ArithmeticException("Denominator is zero");
+
+        if (num == 0)
+            return ZERO;
+
+        return valueOf(Math.signum(num) * Math.signum(den), BigInteger.valueOf(Math.abs(num)), BigInteger.valueOf(Math.abs(den)));
+    }
+
+    /**
+     * Returns a Rational whose value is represented by the fraction
+     * with the specified numerator and denominator.
+     * 
+     * @param num the numerator of the fraction to represent
+     * @param den the denominator of the fraction to represent
+     * @return a Rational whose value is represented by the fraction
+     *         with the specified numerator and denominator
+     * @throws ArithmeticException if the specified denominator is zero
+     */
     public static Rational valueOf(BigInteger num, BigInteger den) {
         if (den.signum == 0)
             throw new ArithmeticException("Denominator is zero");
@@ -361,6 +381,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * the numerator are positive.
      */
     private static Rational valueOf(int sign, BigInteger num, BigInteger den) {
+        // An optimization if the fraction is unitary or an integer
         if (num.equals(BigInteger.ONE) || den.equals(BigInteger.ONE))
             return new Rational(sign, num, den);
 
@@ -370,7 +391,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Constructs a new Rational with the specified values.
-     * This constructor assumes that the values passed are always valid
+     * Assumes that the passed values are always valid.
      */
     private Rational(int sign, BigInteger num, BigInteger den) {
         signum = sign;
