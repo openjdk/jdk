@@ -390,10 +390,6 @@ public class Rational extends Number implements Comparable<Rational> {
      * the numerator are positive.
      */
     private static Rational valueOf(int sign, BigInteger num, BigInteger den) {
-        // An optimization if the fraction is unitary or an integer
-        if (num.equals(BigInteger.ONE) || den.equals(BigInteger.ONE))
-            return new Rational(sign, num, den);
-
         BigInteger[] frac = simplify(num, den);
         return new Rational(sign, frac[0], frac[1]);
     }
@@ -550,6 +546,26 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public Rational abs() {
         return signum == -1 ? negate() : this;
+    }
+
+    /**
+     * Returns a {@code Rational} whose value is <code>(this &times;
+     * multiplicand)</code>.
+     *
+     * @param  multiplicand value to be multiplied by this {@code Rational}.
+     * @return {@code this * multiplicand}
+     */
+    public Rational multiply(Rational multiplicand) {
+        if (signum == 0 || multiplicand.signum == 0)
+            return ZERO;
+
+        // try to pospone the overflow as as late as possible
+        // using cross simplification
+        BigInteger numGcd = numerator.gcd(multiplicand.denominator);
+        BigInteger denGcd = denominator.gcd(multiplicand.numerator);
+        BigInteger num = numerator.divide(numGcd).multiply(multiplicand.numerator);
+        BigInteger den = denominator.divide(denGcd).multiply(multiplicand.denominator);
+        return new Rational(signum * multiplicand.signum, num, den);
     }
 
     /**
