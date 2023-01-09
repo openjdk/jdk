@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ public class TestModuleSpecificStylesheet extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestModuleSpecificStylesheet tester = new TestModuleSpecificStylesheet();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestModuleSpecificStylesheet();
+        tester.runTests();
     }
 
     TestModuleSpecificStylesheet() {

@@ -301,7 +301,6 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
 
-  static void check_module_oop(oop orig_module_obj);
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
