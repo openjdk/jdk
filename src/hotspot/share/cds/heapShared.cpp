@@ -30,9 +30,8 @@
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/moduleEntry.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -554,7 +553,7 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
     archive_object_subgraphs(fmg_open_archive_subgraph_entry_fields,
                              false /* is_closed_archive */,
                              true /* is_full_module_graph */);
-    ClassLoaderDataShared::init_archived_oops();
+    Modules::verify_archived_modules();
   }
 
   copy_roots();
@@ -1189,25 +1188,6 @@ void HeapShared::check_closed_region_object(InstanceKlass* k) {
   }
 }
 
-void HeapShared::check_module_oop(oop orig_module_obj) {
-  assert(DumpSharedSpaces, "must be");
-  assert(java_lang_Module::is_instance(orig_module_obj), "must be");
-  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
-  if (orig_module_ent == NULL) {
-    // These special Module objects are created in Java code. They are not
-    // defined via Modules::define_module(), so they don't have a ModuleEntry:
-    //     java.lang.Module::ALL_UNNAMED_MODULE
-    //     java.lang.Module::EVERYONE_MODULE
-    //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
-    assert(java_lang_Module::name(orig_module_obj) == NULL, "must be unnamed");
-    log_info(cds, heap)("Module oop with No ModuleEntry* @[" PTR_FORMAT "]", p2i(orig_module_obj));
-  } else {
-    ClassLoaderData* loader_data = orig_module_ent->loader_data();
-    assert(loader_data->is_builtin_class_loader_data(), "must be");
-  }
-}
-
-
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -1276,9 +1256,10 @@ oop HeapShared::archive_reachable_objects_from(int level,
     }
 
     if (java_lang_Module::is_instance(orig_obj)) {
-      check_module_oop(orig_obj);
+      if (Modules::check_module_oop(orig_obj)) {
+        Modules::update_oops_in_archived_module(orig_obj, append_root(archived_obj));
+      }
       java_lang_Module::set_module_entry(archived_obj, NULL);
-      java_lang_Module::set_loader(archived_obj, NULL);
     } else if (java_lang_ClassLoader::is_instance(orig_obj)) {
       // class_data will be restored explicitly at run time.
       guarantee(orig_obj == SystemDictionary::java_platform_loader() ||

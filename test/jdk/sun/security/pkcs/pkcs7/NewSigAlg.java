@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/removePointer.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "utilities/debug.hpp"
+/*
+ * @test
+ * @bug 8299746
+ * @summary Accept unknown signatureAlgorithm in PKCS7 SignerInfo
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.x509
+ * @library /test/lib
+ */
 
-class RemovePointerTest {
-  class A: AllStatic {};
+import jdk.test.lib.Asserts;
+import sun.security.pkcs.SignerInfo;
+import sun.security.x509.AlgorithmId;
 
-  typedef const volatile A cvA;
-  typedef const volatile A& cvAref;
-  typedef const volatile A* const volatile cvAptrcv;
+public class NewSigAlg {
+    public static void main(String[] args) throws Exception {
+        test("SHA-1", "RSA", "SHA1withRSA");
+        test("SHA-1", "SHA1withRSA", "SHA1withRSA");
+        test("SHA-1", "SHA256withRSA", "SHA1withRSA");
+        // Sorry I have to use something that has an OID but not known
+        // as a signature algorithm.
+        test("SHA-1", "PBES2", "PBES2");
+    }
 
-  typedef RemovePointer<cvAref>::type rp_cvAref;
-  static const bool rp_cvAref_is_cvAref = IsSame<rp_cvAref, cvAref>::value;
-  STATIC_ASSERT(rp_cvAref_is_cvAref);
-
-  typedef RemovePointer<cvAptrcv>::type rp_cvAptrcv;
-  static const bool rp_cvAptrcv_is_cvAptrcv = IsSame<rp_cvAptrcv, cvA>::value;
-  STATIC_ASSERT(rp_cvAptrcv_is_cvAptrcv);
-};
+    static void test(String d, String e, String s) throws Exception {
+        Asserts.assertEQ(s, SignerInfo.makeSigAlg(
+                AlgorithmId.get(d), AlgorithmId.get(s), false));
+    }
+}

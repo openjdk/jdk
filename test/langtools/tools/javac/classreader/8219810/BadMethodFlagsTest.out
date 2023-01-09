@@ -1,0 +1,2 @@
+BadMethodFlagsTest.java:10:13: compiler.err.cant.access: BadMethodFlags, (compiler.misc.bad.class.file.header: BadMethodFlags.class, (compiler.misc.illegal.flag.combo: public protected native, method, my_method()))
+1 error

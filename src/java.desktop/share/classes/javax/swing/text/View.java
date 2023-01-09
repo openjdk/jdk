@@ -1383,4 +1383,4 @@ public abstract class View implements SwingConstants {
      */
     int lastUpdateIndex;
 
-};
+}
