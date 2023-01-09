@@ -422,7 +422,7 @@ public class JavadocFormatterTest {
 
                           1. first list item
                           1. testing {@code code} inside a list
-                          1. another list item
+                          1. another \uFFFClist item
                          """;
 
         String actual;
@@ -434,7 +434,43 @@ public class JavadocFormatterTest {
                    MarkDown test.
                     1. first list item
                     2. testing code inside a list
-                    3. another list item
+                    3. another \uFFFClist item
+                   """;
+
+        if (!Objects.equals(actual, expected)) {
+            throw new AssertionError("Incorrect output: " + actual);
+        }
+    }
+
+    public void testNewTags() {
+        String header = "test";
+        String javadoc = """
+                         {@summary New tags test.}
+
+                         <p>Property: {@systemProperty someProperty1}and {@systemProperty someProperty2}.
+                         <p>Another
+                         {@snippet :
+                         class Test {
+                             public static void main(String... args) {   // @highlight substring="main"
+                                 System.out.println("Hello World!");
+                             }
+                         }
+                         }
+                         """;
+
+        String actual;
+        String expected;
+
+        actual = new JavadocFormatter(60, false).formatJavadoc(header, javadoc);
+        expected = """
+                   test
+                   New tags test.
+                   Property: someProperty1 and someProperty2.
+                   Anotherclass Test {
+                       public static void main(String... args) {   // @highlight substring="main"
+                           System.out.println("Hello World!");
+                       }
+                   }
                    """;
 
         if (!Objects.equals(actual, expected)) {

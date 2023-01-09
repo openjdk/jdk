@@ -57,7 +57,10 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.MarkdownTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SnippetTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.util.DocTreeScanner;
@@ -225,16 +228,24 @@ public class JavadocFormatter {
             boolean first = true;
             for (String part : text.split(Pattern.quote("" + FFFC), -1)) {
                 if (!first) {
-                    DocTree nested = injects.remove(0);
-                    scan(nested, null);
-                    if (part.length() > 0 && Character.isWhitespace(part.charAt(0))) {
+                    Object nested = injects.remove(0);
+                    if (nested instanceof DocTree nestedTree) {
+                        scan(nestedTree, null);
+                    } else {
+                        result.append(nested);
+                    }
+                    while (part.length() > 0 && Character.isWhitespace(part.charAt(0)) && !pre) {
                         part = part.substring(1);
                     }
-                    result.append(part);
                 } else {
-                    result.append(part);
                     first = false;
                 }
+                if (!result.isEmpty() && !part.isEmpty() &&
+                    result.charAt(result.length() - 1) == ' ' &&
+                    (part.charAt(0) == '.' || part.charAt(0) == ',')) {
+                    result.delete(result.length() - 1, result.length());
+                }
+                result.append(part);
             }
             return null;
         }
@@ -594,8 +605,28 @@ public class JavadocFormatter {
 
         }
 
+        @Override
+        public Object visitSystemProperty(SystemPropertyTree node, Object p) {
+            result.append(node.getPropertyName());
+            return null;
+        }
+
+        @Override
+        public Object visitSnippet(SnippetTree node, Object p) {
+            boolean prevPre = pre;
+            try {
+                reflowTillNow();
+                pre = true;
+                return scan(node.getBody(), p);
+            } finally {
+                reflownTo = result.length();
+                pre = prevPre;
+            }
+        }
+
         private static final char FFFC = '\uFFFC'; // Unicode Object Replacement Character
-        private List<DocTree> injects = null;
+        private static final Pattern FFFC_PATTERN = Pattern.compile(Pattern.quote("" + FFFC));
+        private List<Object> injects = null;
 
         @Override
         public Object scan(Iterable<? extends DocTree> nodes, Object p) {
@@ -605,7 +636,7 @@ public class JavadocFormatter {
                 return super.scan(nodes, p);
             }
 
-            List<DocTree> prevInjects = injects;
+            List<Object> prevInjects = injects;
             Map<StartElementTree, Integer> prevTableColumns = tableColumns;
             try {
                 StringBuilder realMarkDownContent = new StringBuilder();
@@ -614,8 +645,18 @@ public class JavadocFormatter {
 
                 for (DocTree node : nodes) {
                     if (node.getKind() == DocTree.Kind.MARKDOWN) {
-                        //TODO: handle FFFC in the markdown text itself:
-                        realMarkDownContent.append(((MarkdownTree) node).getCode());
+                        String code = ((MarkdownTree) node).getCode();
+                        boolean first = true;
+
+                        for (String part : FFFC_PATTERN.split(code, -1)) {
+                            if (first) {
+                                first = false;
+                            } else {
+                                realMarkDownContent.append(FFFC);
+                                injects.add(FFFC);
+                            }
+                            realMarkDownContent.append(part);
+                        }
                     } else {
                         realMarkDownContent.append(FFFC);
                         injects.add(node);
