@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class ByteArrayInputStream extends InputStream {
 
     /**
      * The index of the next character to read from the input stream buffer.
-     * This value should always be non-negative
+     * This value should always be nonnegative
      * and not larger than the value of {@code count}.
      * The next byte to be read from the input stream buffer
      * will be {@code buf[pos]}.
@@ -82,7 +82,7 @@ public class ByteArrayInputStream extends InputStream {
     /**
      * The index one greater than the last valid character in the input
      * stream buffer.
-     * This value should always be non-negative
+     * This value should always be nonnegative
      * and not larger than the length of {@code buf}.
      * It  is one greater than the position of
      * the last byte within {@code buf} that

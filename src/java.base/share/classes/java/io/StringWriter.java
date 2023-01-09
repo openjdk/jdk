@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ public class StringWriter extends Writer {
      * size.
      */
     public StringWriter() {
-        super(new StringBuffer());
-        buf = (StringBuffer) lock;
+        buf = new StringBuffer();
+        lock = buf;
     }
 
     /**
@@ -63,8 +63,11 @@ public class StringWriter extends Writer {
      *         If {@code initialSize} is negative
      */
     public StringWriter(int initialSize) {
-        super(new StringBuffer(requireNonNegative(initialSize, "Negative buffer size: ")));
-        buf = (StringBuffer) lock;
+        if (initialSize < 0) {
+            throw new IllegalArgumentException("Negative buffer size: " + initialSize);
+        }
+        buf = new StringBuffer(initialSize);
+        lock = buf;
     }
 
     /**
@@ -238,13 +241,6 @@ public class StringWriter extends Writer {
      * an {@code IOException}.
      */
     public void close() throws IOException {
-    }
-
-    private static int requireNonNegative(int value, String message) {
-        if (value < 0) {
-            throw new IllegalArgumentException(message + value);
-        }
-        return value;
     }
 
 }
