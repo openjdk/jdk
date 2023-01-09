@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5358,9 +5358,11 @@ void Parker::unpark() {
 // Platform Monitor implementation
 
 // Must already be locked
-int PlatformMonitor::wait(jlong millis) {
-  assert(millis >= 0, "negative timeout");
+int PlatformMonitor::wait(uint64_t millis) {
   int ret = OS_TIMEOUT;
+  if (millis > UINT_MAX) {
+    millis = UINT_MAX;
+  }
   int status = SleepConditionVariableCS(&_cond, &_mutex,
                                         millis == 0 ? INFINITE : millis);
   if (status != 0) {
