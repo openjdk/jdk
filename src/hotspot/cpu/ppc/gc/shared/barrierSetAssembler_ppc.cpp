@@ -163,7 +163,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   __ load_const32(tmp, 0 /* Value is patched */); // 2 instructions
 
   // Low order half of 64 bit value is currently used.
-  __ ld(R0, in_bytes(bs_nm->thread_disarmed_offset()), R16_thread);
+  __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
   __ cmpw(CCR0, R0, tmp);
 
   __ bnectrl(CCR0);

@@ -129,7 +129,7 @@ public non-sealed class LinuxAArch64VaList implements VaList {
     }
 
     private static MemorySegment emptyListAddress() {
-        MemorySegment ms = MemorySegment.allocateNative(LAYOUT, SegmentScope.auto());
+        MemorySegment ms = MemorySegment.allocateNative(LAYOUT, SegmentScope.global());
         VH_stack.set(ms, MemorySegment.NULL);
         VH_gr_top.set(ms, MemorySegment.NULL);
         VH_vr_top.set(ms, MemorySegment.NULL);

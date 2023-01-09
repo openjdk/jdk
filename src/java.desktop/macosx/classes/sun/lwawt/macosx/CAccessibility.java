@@ -519,6 +519,13 @@ class CAccessibility implements PropertyChangeListener {
         }, c);
     }
 
+    // This method is called from the native in CommonComponentAccessibility.m
+    private static int getAccessibleActionCount(final AccessibleAction aa, final Component c) {
+        if (aa == null) return 0;
+
+        return invokeAndWait(aa::getAccessibleActionCount, c);
+    }
+
     public static boolean isEnabled(final Accessible a, final Component c) {
         if (a == null) return false;
 
