@@ -102,6 +102,7 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
         ::close(file_handle);
         return parse_string(buffer, stream) > 0;
       }
+      ::close(file_handle);
     }
   }
   return false;
