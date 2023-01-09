@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.nio.file.Path;
 public class TestMarkdown extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestMarkdown tester = new TestMarkdown();
+        var tester = new TestMarkdown();
         tester.runTests();
     }
 
@@ -63,8 +63,7 @@ public class TestMarkdown extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <div class="block"><p>Hello, <em>Markdown</em> world!</p>
-                    </div>
+                    <div class="block">Hello, <em>Markdown</em> world!</div>
                     """);
     }
 
@@ -91,14 +90,12 @@ public class TestMarkdown extends JavadocTester {
                 """
                     <section class="method-summary" id="method-summary">""",
                 """
-                    <div class="block"><p>This is the <em>first</em> sentence.</p>
-                    </div>""",
+                    <div class="block">This is the <em>first</em> sentence.</div>""",
                 """
                     <section class="method-details" id="method-detail">""",
                 """
-                    <div class="block"><p>This is the <em>first</em> sentence.
-                    This is the <em>second</em> sentence.</p>
-                    </div>""");
+                    <div class="block">This is the <em>first</em> sentence.
+                    This is the <em>second</em> sentence.</div>""");
     }
 
     @Test
@@ -187,7 +184,7 @@ public class TestMarkdown extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <p>Regular, <code>Monospace</code>, <em>italic</em>, and <strong>bold</strong> font.</p>""");
+                    Regular, <code>Monospace</code>, <em>italic</em>, and <strong>bold</strong> font.""");
     }
 
     @Test
@@ -222,8 +219,7 @@ public class TestMarkdown extends JavadocTester {
         checkOutput("p/Derived.html", true,
                 """
                     <dt>Throws:</dt>
-                    <dd><code>java.lang.Exception</code> - <p>Base <em>Markdown</em></p>
-                    </dd>
+                    <dd><code>java.lang.Exception</code> - Base <em>Markdown</em></dd>
                     """);
     }
 
@@ -259,8 +255,7 @@ public class TestMarkdown extends JavadocTester {
         checkOutput("p/Derived.html", true,
                 """
                     <dt>Throws:</dt>
-                    <dd><code>java.lang.Exception</code> - <p>Base <em>Markdown</em></p>
-                    </dd>
+                    <dd><code>java.lang.Exception</code> - Base <em>Markdown</em></dd>
                     """);
     }
 
@@ -326,9 +321,8 @@ public class TestMarkdown extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <p>Method m1.
-                    This is different from <a href="#m2()"><code>m2()</code></a>.</p>
-                    """);
+                    Method m1.
+                    This is different from <a href="#m2()"><code>m2()</code></a>.""");
 
     }
 
@@ -358,8 +352,8 @@ public class TestMarkdown extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <p>Method m1.
-                    This is different from <a href="#m2()"><p><em>Markdown</em> m2</p>""");
+                    Method m1.
+                    This is different from <a href="#m2()"><em>Markdown</em> m2""");
 
     }
 
@@ -391,10 +385,8 @@ public class TestMarkdown extends JavadocTester {
                     <dd>
                     <ul class="tag-list">
                     <li>"A reference"</li>
-                    <li><p><a href="http://www.example.com">Example</a></p>
-                    </li>
-                    <li><a href="D.html" title="class in p"><code><p>a <em>Markdown</em> description</p>
-                    </code></a></li>
+                    <li><a href="http://www.example.com">Example</a></li>
+                    <li><a href="D.html" title="class in p"><code>a <em>Markdown</em> description</code></a></li>
                     </ul>
                     </dd>""");
 
@@ -418,8 +410,7 @@ public class TestMarkdown extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                        <div class="block"><p>First sentence. 1<code>1</code>1 \ufffc 2<code>2</code>2</p>
-                        </div>
+                        <div class="block">First sentence. 1<code>1</code>1 \ufffc 2<code>2</code>2</div>
                         """);
     }
 }

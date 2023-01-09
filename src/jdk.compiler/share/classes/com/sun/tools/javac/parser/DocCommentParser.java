@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -980,7 +980,7 @@ public class DocCommentParser {
                         }
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1);
+                    addPendingText(v, bp - 1, false);
                     nextChar();
                 } else {
                     vkind = ValueKind.UNQUOTED;
@@ -988,7 +988,7 @@ public class DocCommentParser {
                     while (bp < buflen && !isUnquotedAttrValueTerminator(ch)) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1);
+                    addPendingText(v, bp - 1, false);
                 }
                 skipWhitespace();
                 value = v.toList();
@@ -1016,9 +1016,13 @@ public class DocCommentParser {
     }
 
     protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
+        addPendingText(list, textEnd, isMarkdown);
+    }
+
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, boolean useMarkdown) {
         if (textStart != -1) {
             if (textStart <= textEnd) {
-                if (isMarkdown) {
+                if (useMarkdown) {
                     list.add(m.at(textStart).newMarkdownTree(newString(textStart, textEnd + 1)));
                 } else {
                     list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
@@ -1566,7 +1570,7 @@ public class DocCommentParser {
                                 while (bp < buflen && ch != quote) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1);
+                                addPendingText(v, bp - 1, false);
                                 nextChar();
                             } else {
                                 vkind = ValueKind.UNQUOTED;
@@ -1575,7 +1579,7 @@ public class DocCommentParser {
                                 while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1);
+                                addPendingText(v, bp - 1, false);
                             }
                             skipWhitespace();
                             value = v.toList();

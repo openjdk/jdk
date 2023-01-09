@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1246,21 +1246,24 @@ public class HtmlDocletWriter {
     }
 
     private class MarkdownHandler {
-        private static final char FFFC = '\uFFFC'; // Unicode Object Replacement Character
+        private static final char PLACEHOLDER = '\uFFFC'; // Unicode Object Replacement Character
         StringBuilder markdownInput = new StringBuilder() ;
         ArrayList<Content> fffcObjects = new ArrayList<>();
+
+        Parser parser = Parser.builder().build();
+        HtmlRenderer renderer = HtmlRenderer.builder().build();
 
         boolean handle(DocTree tree, InlineVisitor visitor) {
             boolean allDone;
             if (tree instanceof MarkdownTree t) {
-                String code = t.getCode();
+                String code = t.getContent();
                 // handle the (unlikely) case of FFFC characters existing in the code
                 int start = 0;
                 int pos;
-                while ((pos = code.indexOf(FFFC, start)) != -1) {
+                while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
                     markdownInput.append(code.substring(start, pos));
-                    markdownInput.append(FFFC);
-                    fffcObjects.add(Text.of(String.valueOf(FFFC)));
+                    markdownInput.append(PLACEHOLDER);
+                    fffcObjects.add(Text.of(String.valueOf(PLACEHOLDER)));
                     start = pos + 1;
                 }
                 markdownInput.append(code.substring(start));
@@ -1269,21 +1272,19 @@ public class HtmlDocletWriter {
                 Content embeddedContent = new ContentBuilder();
                 allDone = visitor.visit(tree, embeddedContent);
                 fffcObjects.add(embeddedContent);
-                markdownInput.append(FFFC);
+                markdownInput.append(PLACEHOLDER);
             }
             return allDone;
         }
 
         void addContent(Content result) {
-            Parser parser = Parser.builder().build();
             Node document = parser.parse(markdownInput.toString());
-            HtmlRenderer renderer = HtmlRenderer.builder().build();
-            String markdownOutput = renderer.render(document);
+            String markdownOutput = unwrap(renderer.render(document));
 
             int start = 0;
             int pos;
             int fffcObjectIndex = 0;
-            while ((pos = markdownOutput.indexOf(FFFC, start)) != -1) {
+            while ((pos = markdownOutput.indexOf(PLACEHOLDER, start)) != -1) {
                 result.add(RawHtml.markdown(markdownOutput.substring(start, pos)));
                 result.add(fffcObjects.get(fffcObjectIndex++));
                 start = pos + 1;
@@ -1292,6 +1293,40 @@ public class HtmlDocletWriter {
                 result.add(RawHtml.of(markdownOutput.substring(start)));
             }
         }
+    }
+
+    /*
+     * If a string contains a simple HTML paragraph, beginning with <p>
+     * and ending with </p> and optional whitespace, return the content
+     * of the paragraph between the tags.
+     * Otherwise, return the string unmodified.
+     */
+    private static String unwrap(String s) {
+        var prefix = "<p>";
+        if (s.startsWith(prefix)) {
+            var suffix = "</p>";
+            var suffixPos = s.indexOf(suffix);
+            if (suffixPos > 0) {
+                var endSuffixPos = suffixPos + suffix.length();
+                if (isBlank(s, endSuffixPos, s.length())) {
+                    return s.substring(prefix.length(), suffixPos);
+                }
+            }
+        }
+        return s;
+    }
+
+    /*
+     * Returns whether a substring of a string is blank.
+     * Avoid creating a substring or using regular expressions.
+     */
+    private static boolean isBlank(String s, int start, int end) {
+        for (int i = start; i < end; i++) {
+            if (!Character.isWhitespace(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private class InlineVisitor extends SimpleDocTreeVisitor<Boolean, Content> {
