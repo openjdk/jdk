@@ -352,7 +352,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (num == 0)
             return ZERO;
 
-        return valueOf((int) (Math.signum(num) * Math.signum(den)), BigInteger.valueOf(Math.abs(num)), BigInteger.valueOf(Math.abs(den)));
+        return valueOf((int) (Math.signum(num) * Math.signum(den)), BigInteger.valueOf(num).abs(), BigInteger.valueOf(den).abs());
     }
 
     /**
@@ -452,25 +452,15 @@ public class Rational extends Number implements Comparable<Rational> {
         if (augend.signum == 0)
             return this;
 
-        BigInteger num, augNum, den;
-
-        if (denominator.equals(augend.denominator)) {
-            num = numerator;
-            augNum = augend.numerator;
-            den = denominator;
-        } else {
-            BigInteger gcd = denominator.gcd(augend.denominator);
-            BigInteger[] lcdNums = lcdNumerators(augend, gcd);
-            num = lcdNums[0];
-            augNum = lcdNums[1];
-            den = lcd(augend.denominator, gcd);
-        }
+        BigInteger gcd = denominator.gcd(augend.denominator);
+        BigInteger[] lcdNums = lcdNumerators(augend, gcd);
+        BigInteger den = denominator.divide(gcd).multiply(augend.denominator); // less common denominator
 
         if (signum == augend.signum)
-            return valueOf(signum, num.add(augNum), den);
+            return valueOf(signum, lcdNums[0].add(lcdNums[1]), den);
         
         // augends are discordant
-        BigInteger diff = num.subtract(augNum);
+        BigInteger diff = lcdNums[0].subtract(lcdNums[1]);
 
         if (diff.signum == 1) // abs(this) > abs(augend)
             return valueOf(signum, diff, den);
