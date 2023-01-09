@@ -65,13 +65,18 @@ template <typename T>
 inline UnifiedOopRef create_with_tag(T ref, uintptr_t tag) {
   assert(ref != NULL, "invariant");
 
-  // We need to encode 3 bits worth of information on 64-bit and 2 bits worth on 32-bit.
-  // narrowOop* are 4 byte aligned on 64-bit so a shift is needed to fit the tag in the lower bits.
-  // The shift requires that the narrowOop/oop is in an address space with the highest bit not set.
-  uintptr_t raw_ref = reinterpret_cast<uintptr_t>(ref);
-  assert(((raw_ref LP64_ONLY(<< 1)) & UnifiedOopRef::tag_mask) == 0, "Unexpected low-order bits");
-  LP64_ONLY(assert((raw_ref & (1ull << 63)) == 0, "Unexpected high-order bit"));
-  UnifiedOopRef result = { (raw_ref LP64_ONLY(<< 1)) | tag };
+  uintptr_t value = reinterpret_cast<uintptr_t>(ref);
+
+#ifdef _LP64
+  // tag_mask is 3 bits. When ref is a narrowOop* we only have 2 alignment
+  // bits, because of the 4 byte alignment of compressed oops addresses.
+  // Shift up to make way for one more bit.
+  assert((value & (1ull << 63)) == 0, "Unexpected high-order bit");
+  value <<= 1;
+#endif
+  assert((value & UnifiedOopRef::tag_mask) == 0, "Unexpected low-order bits");
+
+  UnifiedOopRef result = { value | tag };
   assert(result.addr<T>() == ref, "sanity");
   return result;
 }
