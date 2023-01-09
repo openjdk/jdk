@@ -236,7 +236,8 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
   assert_is_aligned(_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
 
-  // Poison the memory region. It will be unpoisoned later by MetaspaceArena.
+  // Poison the memory region. It will be unpoisoned later on a per-chunk base for chunks that are
+  // handed to arenas.
   ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
 }
 
