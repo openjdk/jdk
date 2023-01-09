@@ -3341,7 +3341,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // vnext = IntVector.broadcast(I256, power_of_31_backwards[0]);
   Register bound = tmp2;
   Register next = tmp3;
-  movl(next, as_Address(ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint)))));
+  lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint))));
+  movl(next, Address(tmp2, 0));
   movdl(vnext, next);
   vpbroadcastd(vnext, vnext, Assembler::AVX_256bit);
 
@@ -3373,18 +3374,20 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   jcc(Assembler::less, UNROLLED_VECTOR_LOOP_BEGIN);
   // }
 
+  lea(ary1, Address(ary1, bound, Address::times(elsize)));
+  subl(cnt1, bound);
+  // release bound
+
   // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
   for (int idx = 0; idx < 4; idx++) {
-    arrays_hashcode_elvload(vcoef[idx], as_Address(ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint)))), T_INT);
+    lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint))));
+    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, 0), T_INT);
     vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
   }
   // result += vresult.reduceLanes(ADD);
   for (int idx = 0; idx < 4; idx++) {
     reduceI(Op_AddReductionVI, 256/(sizeof(jint) * 8), result, result, vresult[idx], vtmp[(idx * 2 + 0) % 4], vtmp[(idx * 2 + 1) % 4]);
   }
-
-  lea(ary1, Address(ary1, bound, Address::times(elsize)));
-  subl(cnt1, bound);
 
   // } else if (cnt1 < 32) {
 
