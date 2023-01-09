@@ -528,6 +528,21 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Returns a {@code Rational} whose value is {@code (1 /
+     * this)}. If {@code (this == 0)} an {@code ArithmeticException} is thrown.
+     *
+     * @param  divisor value by which this {@code Rational} is to be divided.
+     * @throws ArithmeticException if {@code (this == 0)}
+     * @return {@code this / divisor}
+     */
+    public Rational invert() {
+        if (signum == 0)
+            throw new ArithmeticException("Divide by zero");
+
+        return new Rational(signum, denominator, numerator);
+    }
+
+    /**
      * Returns a {@code Rational} whose value is the absolute value
      * of this {@code Rational}.
      *
