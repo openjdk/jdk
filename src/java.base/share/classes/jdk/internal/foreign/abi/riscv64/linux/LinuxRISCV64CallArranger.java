@@ -78,6 +78,8 @@ public class LinuxRISCV64CallArranger {
                            boolean isInMemoryReturn) {
     }
 
+    public static final LinuxRISCV64CallArranger LINUX = new LinuxRISCV64CallArranger();
+
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
     }
