@@ -21,16 +21,7 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Verify that reads and writes of primitives are correct
- * @compile/module=java.base java/io/ReadWriteValues.java
- * @run junit/othervm --add-opens java.base/java.io=ALL-UNNAMED ReadWriteValues
- */
-
 package java.io;
-
-import java.io.Bits;
 
 /**
  * Class to allow public access to package-private methods.

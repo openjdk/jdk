@@ -23,9 +23,10 @@
 
 /*
  * @test
+ * @bug 8299576
  * @summary Verify that reads and writes of primitives are correct
  * @compile/module=java.base java/io/BitsProxy.java
- * @run junit/othervm --add-opens java.base/java.io=ALL-UNNAMED ReadWriteValues
+ * @run junit ReadWriteValues
  */
 
 import java.io.BitsProxy;

@@ -62,7 +62,7 @@ final class Bits {
     }
 
     static float getFloat(byte[] b, int off) {
-        // Using Float.floatToIntBits collapses NaN values to a single
+        // Using Float.intBitsToFloat collapses NaN values to a single
         // "canonical" NaN value
         return Float.intBitsToFloat((int) INT.get(b, off));
     }
@@ -72,7 +72,7 @@ final class Bits {
     }
 
     static double getDouble(byte[] b, int off) {
-        // Using Double.doubleToLongBits collapses NaN values to a single
+        // Using Double.longBitsToDouble collapses NaN values to a single
         // "canonical" NaN value
         return Double.longBitsToDouble((long) LONG.get(b, off));
     }
