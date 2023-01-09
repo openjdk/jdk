@@ -64,7 +64,7 @@ public class NoSuchFieldOutputTest {
     String output = nsfe.getMessage();
     Matcher noSuchFieldMatcher = noSuchFieldPattern.matcher(output);
     if (noSuchFieldMatcher.matches()) {
-      switch(testType) {
+      switch (testType) {
       case "primitive":
         checkOutputGroups(noSuchFieldMatcher, output, "NoSuchFieldPrimitive", "int", "x");
         break;
