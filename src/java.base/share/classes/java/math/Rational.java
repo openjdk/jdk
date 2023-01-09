@@ -198,16 +198,17 @@ public class Rational extends Number implements Comparable<Rational> {
      * constructor, while allowing a sub-array to be specified.
      *
      * @implNote If the sequence of characters is already available
-     * within a character array, using this constructor is faster than
-     * converting the {@code char} array to string and using the
-     * {@code Rational(String)} constructor.
+     *           within a character array, using this constructor is faster than
+     *           converting the {@code char} array to string and using the
+     *           {@code Rational(String)} constructor.
      *
-     * @param  in {@code char} array that is the source of characters.
-     * @param  offset first character in the array to inspect.
-     * @param  len number of characters to consider.
+     * @param in     {@code char} array that is the source of characters.
+     * @param offset first character in the array to inspect.
+     * @param len    number of characters to consider.
      * @throws NumberFormatException if {@code in} is not a valid
-     *         representation of a decimal number or the defined subarray
-     *         is not wholly within {@code in}.
+     *                               representation of a decimal number or the
+     *                               defined subarray
+     *                               is not wholly within {@code in}.
      */
     public Rational(char[] in, int offset, int len) {
         this(new BigDecimal(in, offset, len));
@@ -220,13 +221,13 @@ public class Rational extends Number implements Comparable<Rational> {
      * constructor.
      *
      * @implNote If the sequence of characters is already available
-     * as a character array, using this constructor is faster than
-     * converting the {@code char} array to string and using the
-     * {@code Rational(String)} constructor.
+     *           as a character array, using this constructor is faster than
+     *           converting the {@code char} array to string and using the
+     *           {@code Rational(String)} constructor.
      *
      * @param in {@code char} array that is the source of characters.
      * @throws NumberFormatException if {@code in} is not a valid
-     *         representation of a decimal number.
+     *                               representation of a decimal number.
      */
     public Rational(char[] in) {
         this(in, 0, in.length);
@@ -234,23 +235,26 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Translates the string representation of a decimal number
-     * into a {@code Rational}.  The string representation consists
+     * into a {@code Rational}. The string representation consists
      * of an optional sign, {@code '+'} (<code> '&#92;u002B'</code>) or
      * {@code '-'} (<code>'&#92;u002D'</code>), followed by a sequence of
      * zero or more decimal digits ("the integer"), optionally
      * followed by a fraction, optionally followed by an exponent.
      *
-     * <p>The fraction consists of a decimal point followed by zero
-     * or more decimal digits.  The string must contain at least one
-     * digit in either the integer or the fraction.  The number formed
+     * <p>
+     * The fraction consists of a decimal point followed by zero
+     * or more decimal digits. The string must contain at least one
+     * digit in either the integer or the fraction. The number formed
      * by the sign, the integer and the fraction is referred to as the
      * <i>significand</i>.
      *
-     * <p>The exponent consists of the character {@code 'e'}
+     * <p>
+     * The exponent consists of the character {@code 'e'}
      * (<code>'&#92;u0065'</code>) or {@code 'E'} (<code>'&#92;u0045'</code>)
      * followed by one or more decimal digits.
      *
-     * <p>More formally, the strings this constructor accepts are
+     * <p>
+     * More formally, the strings this constructor accepts are
      * described by the following grammar:
      * <blockquote>
      * <dl>
@@ -283,24 +287,28 @@ public class Rational extends Number implements Comparable<Rational> {
      * </dl>
      * </blockquote>
      *
-     * <p>The scale of the decimal number represented by the returned
+     * <p>
+     * The scale of the decimal number represented by the returned
      * {@code Rational} will be the number of digits in the fraction,
      * or zero if the string contains no decimal point, subject to adjustment
      * for any exponent; if the string contains an exponent, the exponent is
-     * subtracted from the scale.  The value of the resulting scale
+     * subtracted from the scale. The value of the resulting scale
      * must lie between {@code Integer.MIN_VALUE} and
      * {@code Integer.MAX_VALUE}, inclusive.
      *
-     * <p>The character-to-digit mapping is provided by {@link
-     * java.lang.Character#digit} set to convert to radix 10.  The
+     * <p>
+     * The character-to-digit mapping is provided by {@link
+     * java.lang.Character#digit} set to convert to radix 10. The
      * String may not contain any extraneous characters (whitespace,
      * for example).
      *
-     * <p><b>Examples:</b><br>
+     * <p>
+     * <b>Examples:</b><br>
      * The value of the returned {@code Rational} is equal to
      * <i>significand</i> &times; 10<sup>&nbsp;<i>exponent</i></sup>.
      * For each string on the left, the resulting representation
      * [{@code denominator}/{@code numerator}] is shown on the right.
+     * 
      * <pre>
      * "0"            [0/1]
      * "0.00"         [0/1]
@@ -319,17 +327,17 @@ public class Rational extends Number implements Comparable<Rational> {
      * </pre>
      *
      * @apiNote For values other than {@code float} and
-     * {@code double} NaN and &plusmn;Infinity, this constructor is
-     * compatible with the values returned by {@link Float#toString}
-     * and {@link Double#toString}.  This is generally the preferred
-     * way to convert a {@code float} or {@code double} into a
-     * Rational, as it doesn't suffer from the unpredictability of
-     * the {@link #Rational(double)} constructor.
+     *          {@code double} NaN and &plusmn;Infinity, this constructor is
+     *          compatible with the values returned by {@link Float#toString}
+     *          and {@link Double#toString}. This is generally the preferred
+     *          way to convert a {@code float} or {@code double} into a
+     *          Rational, as it doesn't suffer from the unpredictability of
+     *          the {@link #Rational(double)} constructor.
      *
      * @param val String representation of a decimal number.
      *
      * @throws NumberFormatException if {@code val} is not a valid
-     *         representation of a decimal number.
+     *                               representation of a decimal number.
      */
     public Rational(String val) {
         this(val.toCharArray(), 0, val.length());
@@ -352,7 +360,8 @@ public class Rational extends Number implements Comparable<Rational> {
         if (num == 0)
             return ZERO;
 
-        return valueOf((int) (Math.signum(num) * Math.signum(den)), BigInteger.valueOf(num).abs(), BigInteger.valueOf(den).abs());
+        return valueOf((int) (Math.signum(num) * Math.signum(den)), BigInteger.valueOf(num).abs(),
+                BigInteger.valueOf(den).abs());
     }
 
     /**
@@ -442,7 +451,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * Returns a {@code Rational} whose value is {@code (this +
      * augend)}.
      *
-     * @param  augend value to be added to this {@code Rational}.
+     * @param augend value to be added to this {@code Rational}.
      * @return {@code this + augend}
      */
     public Rational add(Rational augend) {
@@ -458,13 +467,13 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (signum == augend.signum)
             return valueOf(signum, lcdNums[0].add(lcdNums[1]), den);
-        
+
         // augends are discordant
         BigInteger diff = lcdNums[0].subtract(lcdNums[1]);
 
         if (diff.signum == 1) // abs(this) > abs(augend)
             return valueOf(signum, diff, den);
-        
+
         if (diff.signum == -1) // abs(this) < abs(augend)
             return valueOf(augend.signum, diff.negate(), den);
 
@@ -475,7 +484,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * Returns a {@code Rational} whose value is {@code (this -
      * subtrahend)}.
      *
-     * @param  subtrahend value to be subtracted from this {@code Rational}.
+     * @param subtrahend value to be subtracted from this {@code Rational}.
      * @return {@code this - subtrahend}
      */
     public Rational subtract(Rational subtrahend) {
@@ -500,22 +509,13 @@ public class Rational extends Number implements Comparable<Rational> {
      * 
      * @param val a {@code Rational}
      * @param gcd the greatest common divisor of {@code denominator}
-     *      and {@code val.denominator}
+     *            and {@code val.denominator}
      */
     private BigInteger[] lcdNumerators(Rational val, BigInteger gcd) {
-        return new BigInteger[] {lcdNumerator(val.denominator, gcd), val.lcdNumerator(denominator, gcd)};
-    }
-
-    /**
-     * Computes the numerator of this rational, relative to the least common
-     * denominator of {@code denominator} and the specified denominator
-     * 
-     * @param den a denominator
-     * @param gcd the greatest common divisor of {@code denominator} and {@code den}
-     */
-    private BigInteger lcdNumerator(BigInteger den, BigInteger gcd) {
         // lcm(a, b) == a * b / gcd(a, b) => n/a == n * (b / gcd(a, b)) / lcm(a, b)
-        return den.divide(gcd).multiply(numerator);
+        // trying to pospone the overflow as as late as possible
+        return new BigInteger[] { val.denominator.divide(gcd).multiply(numerator),
+                denominator.divide(gcd).multiply(val.numerator) };
     }
 
     /**
@@ -524,7 +524,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code -this}.
      */
     public Rational negate() {
-        return signum  == 0 ? this : new Rational(-signum, numerator, denominator);
+        return signum == 0 ? this : new Rational(-signum, numerator, denominator);
     }
 
     /**
