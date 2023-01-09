@@ -115,7 +115,7 @@ class Thread: public ThreadShadow {
 
   // On AArch64, the high order 32 bits are used by a "patching epoch" number
   // which reflects if this thread has executed the required fences, after
-  // an nmethod gets disarmed. The low order 32 bit denote the disarmed value.
+  // an nmethod gets disarmed. The low order 32 bits denote the disarmed value.
   uint64_t _nmethod_disarmed_guard_value;
 
  public:
