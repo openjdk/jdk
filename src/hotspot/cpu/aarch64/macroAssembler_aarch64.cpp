@@ -614,19 +614,13 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
 // Calls to C land
 //
-// When entering C land, the rfp, & resp of the last Java frame have to be recorded
+// When entering C land, the fp & sp of the last Java frame have to be recorded
 // in the (thread-local) JavaThread object. When leaving C land, the last Java fp
 // has to be reset to 0. This is required to allow proper stack traversal.
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
                                          Register last_java_pc,
                                          Register scratch) {
-
-  if (last_java_pc->is_valid()) {
-      str(last_java_pc, Address(rthread,
-                                JavaThread::frame_anchor_offset()
-                                + JavaFrameAnchor::last_Java_pc_offset()));
-    }
 
   // determine last_java_sp register
   if (last_java_sp == sp) {
@@ -637,6 +631,12 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 
   str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
+
+  if (last_java_pc->is_valid()) {
+      str(last_java_pc, Address(rthread,
+                                JavaThread::frame_anchor_offset()
+                                + JavaFrameAnchor::last_Java_pc_offset()));
+    }
 
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {

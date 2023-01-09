@@ -224,13 +224,19 @@ final class Poly1305 {
         return tag;
     }
 
+    private static final String BLAH = System.getenv("APH_FOO_BAX");
+
     /**
      * Process a single block of data.  This should only be called
      * when the block array is complete.  That may not necessarily
      * be a full 16 bytes if the last block has less than 16 bytes.
      */
     private void processBlock(ByteBuffer buf, int len) {
+        var printing = ("yes".equals(BLAH));
         n.setValue(buf, len, (byte)0x01);
+        if (printing) {
+            System.out.println("n = " + n.asBigInteger().toString(16));
+        }
         a.setSum(n);                    // a += (n | 0x01)
         a.setProduct(r);                // a = (a * r) % p
     }
@@ -238,8 +244,20 @@ final class Poly1305 {
     private void processBlock(byte[] block, int offset, int length) {
         Objects.checkFromIndexSize(offset, length, block.length);
         n.setValue(block, offset, length, (byte)0x01);
+        var printing = ("yes".equals(BLAH));
+        if (printing) {
+            System.out.println("a0 = " + a.asBigInteger().toString(16));
+            System.out.println("n = " + n.asBigInteger().toString(16));
+        }
         a.setSum(n);                    // a += (n | 0x01)
+        if (printing) {
+            System.out.println("a = " + a.asBigInteger().toString(16));
+        }
         a.setProduct(r);                // a = (a * r) % p
+        if (printing) {
+            System.out.println("r = " + r.asBigInteger().toString(16));
+            System.out.println("x = " + a.asBigInteger().toString(16));
+        }
     }
 
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.

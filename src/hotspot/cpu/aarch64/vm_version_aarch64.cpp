@@ -547,8 +547,8 @@ void VM_Version::initialize() {
     AlignVector = AvoidUnalignedAccesses;
   }
 
-    if (FLAG_IS_DEFAULT(UsePolyIntrinsics)) {
-      FLAG_SET_DEFAULT(UsePolyIntrinsics, true);
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
 #endif
 
