@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -709,6 +709,8 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
+                if (offset == 0 && length == bytes.length)
+                    return new String(bytes, LATIN1);
                 return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
             }
             dst = new byte[length];
@@ -920,7 +922,12 @@ public final class String
      * Throws iae, instead of replacing, if unmappable.
      */
     static byte[] getBytesUTF8NoRepl(String s) {
-        return encodeUTF8(s.coder(), s.value(), false);
+        byte[] val = s.value();
+        byte coder = s.coder();
+        if (coder == LATIN1 && isASCII(val)) {
+            return val;
+        }
+        return encodeUTF8(coder, val, false);
     }
 
     private static boolean isASCII(byte[] src) {
