@@ -25,7 +25,7 @@
 /**
  * @test
  * @key headful
- * @bug 8266079
+ * @bug 8266079 8298887
  * @summary [macosx] window rendering alpha composite test
  * @author Alexey Ushakov
  * @run main WindowAlphaCompositeTest

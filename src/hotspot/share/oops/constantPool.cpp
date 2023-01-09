@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 objArrayOop ConstantPool::resolved_references() const {
-  return (objArrayOop)_cache->resolved_references();
+  return _cache->resolved_references();
 }
 
 // Called from outside constant pool resolution where a resolved_reference array
@@ -167,8 +167,20 @@ objArrayOop ConstantPool::resolved_references_or_null() const {
   if (_cache == NULL) {
     return NULL;
   } else {
-    return (objArrayOop)_cache->resolved_references();
+    return _cache->resolved_references();
   }
+}
+
+oop ConstantPool::resolved_reference_at(int index) const {
+  oop result = resolved_references()->obj_at(index);
+  assert(oopDesc::is_oop_or_null(result), "Must be oop");
+  return result;
+}
+
+// Use a CAS for multithreaded access
+oop ConstantPool::set_resolved_reference_at(int index, oop new_result) {
+  assert(oopDesc::is_oop_or_null(new_result), "Must be oop");
+  return resolved_references()->replace_if_null(index, new_result);
 }
 
 // Create resolved_references array and mapping array for original cp indexes
@@ -446,7 +458,8 @@ int ConstantPool::cp_to_object_index(int cp_index) {
 }
 
 void ConstantPool::string_at_put(int which, int obj_index, oop str) {
-  resolved_references()->obj_at_put(obj_index, str);
+  oop result = set_resolved_reference_at(obj_index, str);
+  assert(result == nullptr || result == str, "Only set once or to the same string.");
 }
 
 void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Klass* k) {
@@ -936,7 +949,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   assert(index == _no_index_sentinel || index >= 0, "");
 
   if (cache_index >= 0) {
-    result_oop = this_cp->resolved_references()->obj_at(cache_index);
+    result_oop = this_cp->resolved_reference_at(cache_index);
     if (result_oop != NULL) {
       if (result_oop == Universe::the_null_sentinel()) {
         DEBUG_ONLY(int temp_index = (index >= 0 ? index : this_cp->object_to_cp_index(cache_index)));
@@ -1159,9 +1172,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // It doesn't matter which racing thread wins, as long as only one
     // result is used by all threads, and all future queries.
     oop new_result = (result_oop == NULL ? Universe::the_null_sentinel() : result_oop);
-    oop old_result = this_cp->resolved_references()
-      ->atomic_compare_exchange_oop(cache_index, new_result, NULL);
-    if (old_result == NULL) {
+    oop old_result = this_cp->set_resolved_reference_at(cache_index, new_result);
+    if (old_result == nullptr) {
       return result_oop;  // was installed
     } else {
       // Return the winning thread's result.  This can be different than
@@ -1222,7 +1234,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
 
 oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS) {
   // If the string has already been interned, this entry will be non-null
-  oop str = this_cp->resolved_references()->obj_at(obj_index);
+  oop str = this_cp->resolved_reference_at(obj_index);
   assert(str != Universe::the_null_sentinel(), "");
   if (str != NULL) return str;
   Symbol* sym = this_cp->unresolved_string_at(which);

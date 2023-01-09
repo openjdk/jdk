@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8297556
+ * @summary Parse::check_interpreter_type fails with assert "must constrain OSR typestate"
+ *
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileOnly=TestExactArrayOfBasicType::test TestExactArrayOfBasicType
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/isVolatile.hpp"
-#include "utilities/debug.hpp"
 
-class IsVolatileTest {
-  class A: AllStatic {};
+public class TestExactArrayOfBasicType {
+    public static void test() {
+        int[][][][][] array = new int[1][2][3][4][5];
 
-  STATIC_ASSERT(IsVolatile<volatile int>::value);
-  STATIC_ASSERT(IsVolatile<const volatile int>::value);
-  STATIC_ASSERT(!IsVolatile<const int>::value);
-  STATIC_ASSERT(!IsVolatile<int>::value);
+        for (int i = 0; i < 50_000; ++i) {
+            array[0] = new int[0][1][2][3];
+        }
+    }
 
-  STATIC_ASSERT(IsVolatile<volatile A>::value);
-  STATIC_ASSERT(!IsVolatile<const A>::value);
-  STATIC_ASSERT(!IsVolatile<A>::value);
-
-  STATIC_ASSERT(!IsVolatile<volatile A*>::value);
-  STATIC_ASSERT(IsVolatile<A* volatile>::value);
-  STATIC_ASSERT(IsVolatile<volatile A* volatile>::value);
-  STATIC_ASSERT(IsVolatile<A* const volatile>::value);
-};
+    public static void main(String args[]) {
+        test();
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_REMOVECV_HPP
-#define SHARE_METAPROGRAMMING_REMOVECV_HPP
+import java.io.IOException;
 
-#include "memory/allStatic.hpp"
+/**
+ * This test verifies that a service launched with IPv4 inherited channel
+ * can use IPv6 networking; this used to be impossible, see JDK-6914801
+ */
+public class CheckIPv6Test {
 
-template <typename T>
-struct RemoveCV: AllStatic {
-  typedef T type;
-};
+    private static int failures = 0;
 
-template <typename T>
-struct RemoveCV<const T>: AllStatic {
-  typedef T type;
-};
+    private static final String SERVICE = "CheckIPv6Service";
 
-template <typename T>
-struct RemoveCV<volatile T>: AllStatic {
-  typedef T type;
-};
+    public static void main(String args[]) throws IOException {
 
-template <typename T>
-struct RemoveCV<const volatile T>: AllStatic {
-  typedef T type;
-};
+        if (!CheckIPv6Service.isIPv6Available()) {
+            System.out.println("IPv6 not available. Test skipped.");
+            return;
+        }
 
-#endif // SHARE_METAPROGRAMMING_REMOVECV_HPP
+        try {
+            EchoTest.TCPEchoTest(SERVICE);
+            System.out.println("IPv6 test passed.");
+        } catch (Exception x) {
+            System.err.println(x);
+            failures++;
+        }
+
+        if (failures > 0) {
+            throw new RuntimeException("Test failed - see log for details");
+        }
+    }
+
+}

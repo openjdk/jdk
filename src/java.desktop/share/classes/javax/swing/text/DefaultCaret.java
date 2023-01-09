@@ -1055,9 +1055,6 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                     flasher = new Timer(rate, handler);
                 }
                 flasher.setDelay(rate);
-                if (!flasher.isRunning()){
-                    flasher.restart();
-                }
             } else {
                 savedBlinkRate = rate;
                 isBlinkRateSaved = true;
@@ -1068,11 +1065,9 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
                 flasher.removeActionListener(handler);
                 flasher = null;
             }
-            if (component.isEditable()) {
-                if (isBlinkRateSaved) {
-                    savedBlinkRate = 0;
-                    isBlinkRateSaved = false;
-                }
+            if (component.isEditable() && isBlinkRateSaved) {
+                savedBlinkRate = 0;
+                isBlinkRateSaved = false;
             }
         }
     }

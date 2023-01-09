@@ -3709,7 +3709,7 @@ void StubGenerator::generate_initial() {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
-  if (UsePolyIntrinsics) {
+  if (UsePoly1305Intrinsics) {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
   }
 

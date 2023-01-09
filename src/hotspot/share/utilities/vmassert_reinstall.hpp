@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  *
  */
 
-#ifndef SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
-#define SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
+// Intentionally no #include guard.  May be included multiple times for effect.
 
-#include "memory/allStatic.hpp"
+// See vmassert_uninstall.hpp for usage.
 
-template <typename T> struct RemoveExtent: AllStatic { typedef T type; };
+// Remove possible stdlib assert macro (or any others, for that matter).
+#undef assert
 
-template <typename T> struct RemoveExtent<T[]>: AllStatic { typedef T type; };
-template <typename T, size_t S> struct RemoveExtent<T[S]>: AllStatic { typedef T type; };
+// Reinstall HotSpot's assert macro, if previously defined.
+#ifdef vmassert
+#define assert(p, ...) vmassert(p, __VA_ARGS__)
+#endif
 
-#endif // SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
