@@ -74,8 +74,7 @@ public class MFontConfiguration extends FontConfiguration {
         reorderMap.put("UTF-8.zh.TW", "chinese-tw-iso10646");
         reorderMap.put("UTF-8.zh.HK", "chinese-tw-iso10646");
         reorderMap.put("UTF-8.zh.CN", "chinese-cn-iso10646");
-        reorderMap.put("x-euc-jp-linux",
-                        split("japanese-x0201,japanese-x0208"));
+        reorderMap.put("x-euc-jp-linux", new String[] {"japanese-x0201", "japanese-x0208"});
         reorderMap.put("GB2312", "chinese-gb18030");
         reorderMap.put("Big5", "chinese-big5");
         reorderMap.put("EUC-KR", "korean");

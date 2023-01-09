@@ -30,9 +30,8 @@
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/moduleEntry.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -83,6 +82,11 @@ struct ArchivableStaticFieldInfo {
 bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
 GrowableArrayCHeap<Metadata**, mtClassShared>* HeapShared::_native_pointers = NULL;
+
+size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_total_obj_count;
+size_t HeapShared::_total_obj_size;
 
 #ifndef PRODUCT
 #define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
@@ -301,6 +305,7 @@ oop HeapShared::archive_object(oop obj) {
 
   oop archived_oop = cast_to_oop(G1CollectedHeap::heap()->archive_mem_allocate(len));
   if (archived_oop != NULL) {
+    count_allocation(len);
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     // Reinitialize markword to remove age/marking/locking/etc.
     //
@@ -548,7 +553,7 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
     archive_object_subgraphs(fmg_open_archive_subgraph_entry_fields,
                              false /* is_closed_archive */,
                              true /* is_full_module_graph */);
-    ClassLoaderDataShared::init_archived_oops();
+    Modules::verify_archived_modules();
   }
 
   copy_roots();
@@ -586,6 +591,7 @@ void HeapShared::copy_roots() {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
   log_info(cds)("archived obj roots[%d] = " SIZE_FORMAT " words, klass = %p, obj = %p", length, size, k, mem);
+  count_allocation(roots()->size());
 }
 
 //
@@ -831,9 +837,12 @@ void HeapShared::write_subgraph_info_table() {
     _archived_ArchiveHeapTestClass = array;
   }
 #endif
+  if (log_is_enabled(Info, cds, heap)) {
+    print_stats();
+  }
 }
 
-void HeapShared::serialize(SerializeClosure* soc) {
+void HeapShared::serialize_root(SerializeClosure* soc) {
   oop roots_oop = NULL;
 
   if (soc->reading()) {
@@ -849,6 +858,9 @@ void HeapShared::serialize(SerializeClosure* soc) {
     roots_oop = roots();
     soc->do_oop(&roots_oop); // write to archive
   }
+}
+
+void HeapShared::serialize_tables(SerializeClosure* soc) {
 
 #ifndef PRODUCT
   soc->do_ptr((void**)&_archived_ArchiveHeapTestClass);
@@ -1176,25 +1188,6 @@ void HeapShared::check_closed_region_object(InstanceKlass* k) {
   }
 }
 
-void HeapShared::check_module_oop(oop orig_module_obj) {
-  assert(DumpSharedSpaces, "must be");
-  assert(java_lang_Module::is_instance(orig_module_obj), "must be");
-  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
-  if (orig_module_ent == NULL) {
-    // These special Module objects are created in Java code. They are not
-    // defined via Modules::define_module(), so they don't have a ModuleEntry:
-    //     java.lang.Module::ALL_UNNAMED_MODULE
-    //     java.lang.Module::EVERYONE_MODULE
-    //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
-    assert(java_lang_Module::name(orig_module_obj) == NULL, "must be unnamed");
-    log_info(cds, heap)("Module oop with No ModuleEntry* @[" PTR_FORMAT "]", p2i(orig_module_obj));
-  } else {
-    ClassLoaderData* loader_data = orig_module_ent->loader_data();
-    assert(loader_data->is_builtin_class_loader_data(), "must be");
-  }
-}
-
-
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -1263,9 +1256,10 @@ oop HeapShared::archive_reachable_objects_from(int level,
     }
 
     if (java_lang_Module::is_instance(orig_obj)) {
-      check_module_oop(orig_obj);
+      if (Modules::check_module_oop(orig_obj)) {
+        Modules::update_oops_in_archived_module(orig_obj, append_root(archived_obj));
+      }
       java_lang_Module::set_module_entry(archived_obj, NULL);
-      java_lang_Module::set_loader(archived_obj, NULL);
     } else if (java_lang_ClassLoader::is_instance(orig_obj)) {
       // class_data will be restored explicitly at run time.
       guarantee(orig_obj == SystemDictionary::java_platform_loader() ||
@@ -1853,6 +1847,51 @@ ResourceBitMap HeapShared::calculate_ptrmap(MemRegion region) {
   } else {
     return ResourceBitMap(0);
   }
+}
+
+void HeapShared::count_allocation(size_t size) {
+  _total_obj_count ++;
+  _total_obj_size += size;
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    if (size <= (size_t(1) << i)) {
+      _alloc_count[i] ++;
+      _alloc_size[i] += size;
+      return;
+    }
+  }
+}
+
+static double avg_size(size_t size, size_t count) {
+  double avg = 0;
+  if (count > 0) {
+    avg = double(size * HeapWordSize) / double(count);
+  }
+  return avg;
+}
+
+void HeapShared::print_stats() {
+  size_t huge_count = _total_obj_count;
+  size_t huge_size = _total_obj_size;
+
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    size_t byte_size_limit = (size_t(1) << i) * HeapWordSize;
+    size_t count = _alloc_count[i];
+    size_t size = _alloc_size[i];
+    log_info(cds, heap)(SIZE_FORMAT_W(8) " objects are <= " SIZE_FORMAT_W(-6)
+                        " bytes (total " SIZE_FORMAT_W(8) " bytes, avg %8.1f bytes)",
+                        count, byte_size_limit, size * HeapWordSize, avg_size(size, count));
+    huge_count -= count;
+    huge_size -= size;
+  }
+
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " huge  objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      huge_count, huge_size * HeapWordSize,
+                      avg_size(huge_size, huge_count));
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " total objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      _total_obj_count, _total_obj_size * HeapWordSize,
+                      avg_size(_total_obj_size, _total_obj_count));
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

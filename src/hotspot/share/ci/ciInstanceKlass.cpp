@@ -741,11 +741,12 @@ void ciInstanceKlass::compute_transitive_interfaces() {
   GUARDED_VM_ENTRY(
           InstanceKlass* ik = get_instanceKlass();
           Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
+          int orig_length = interfaces->length();
           Arena* arena = CURRENT_ENV->arena();
-          int len = interfaces->length() + (is_interface() ? 1 : 0);
-          GrowableArray<ciInstanceKlass*>* transitive_interfaces = new(arena)GrowableArray<ciInstanceKlass*>(arena, len,
+          int transitive_interfaces_len = orig_length + (is_interface() ? 1 : 0);
+          GrowableArray<ciInstanceKlass*>* transitive_interfaces = new(arena)GrowableArray<ciInstanceKlass*>(arena, transitive_interfaces_len,
                                                                                                              0, NULL);
-          for (int i = 0; i < interfaces->length(); i++) {
+          for (int i = 0; i < orig_length; i++) {
             transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
           }
           if (is_interface()) {

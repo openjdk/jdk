@@ -683,8 +683,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     _blocks_scanned++;
   }
 
-   void scan_heap_roots(HeapRegion* r) {
-    EventGCPhaseParallel event;
+  void scan_heap_roots(HeapRegion* r) {
     uint const region_idx = r->hrm_index();
 
     ResourceMark rm;
@@ -725,8 +724,6 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       }
       _chunks_claimed++;
     }
-
-    event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::ScanHR));
   }
 
 public:
@@ -780,8 +777,11 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
                                G1GCPhaseTimes::GCParPhases scan_phase,
                                G1GCPhaseTimes::GCParPhases objcopy_phase,
                                bool remember_already_scanned_cards) {
+  EventGCPhaseParallel event;
   G1ScanHRForRegionClosure cl(_scan_state, pss, worker_id, scan_phase, remember_already_scanned_cards);
   _scan_state->iterate_dirty_regions_from(&cl, worker_id);
+
+  event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(scan_phase));
 
   G1GCPhaseTimes* p = _g1p->phase_times();
 
@@ -816,16 +816,12 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
   Tickspan _rem_set_opt_trim_partially_time;
 
   void scan_opt_rem_set_roots(HeapRegion* r) {
-    EventGCPhaseParallel event;
-
     G1OopStarChunkedList* opt_rem_set_list = _pss->oops_into_optional_region(r);
 
     G1ScanCardClosure scan_cl(G1CollectedHeap::heap(), _pss, _opt_roots_scanned);
     G1ScanRSForOptionalClosure cl(G1CollectedHeap::heap(), &scan_cl);
     _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->strong_oops());
     _opt_refs_memory_used += opt_rem_set_list->used_memory();
-
-    event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_scan_phase));
   }
 
 public:
@@ -853,13 +849,15 @@ public:
     // The individual references for the optional remembered set are per-worker, so we
     // always need to scan them.
     if (r->has_index_in_opt_cset()) {
+      EventGCPhaseParallel event;
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _rem_set_opt_root_scan_time, _rem_set_opt_trim_partially_time);
       scan_opt_rem_set_roots(r);
+
+      event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_scan_phase));
     }
 
     if (_scan_state->claim_collection_set_region(region_idx)) {
       EventGCPhaseParallel event;
-
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
       // Scan the code root list attached to the current region
       r->code_roots_do(_pss->closures()->weak_codeblobs());
@@ -915,6 +913,8 @@ void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
 
 void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   uint hrm_index = r->hrm_index();
+
+  r->prepare_remset_for_scan();
 
   // Only update non-collection set old regions, others must have already been set
   // to NULL (don't scan) in the initialization.
@@ -1031,7 +1031,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
         G1MergeHeapRootsPrefetchCache<G1CardTable::CardValue>(G1CardTable::dirty_card_val()),
         _merge_card_cl(merge_card_cl) { }
 
-      ~G1MergeCardSetCache() {
+      void flush() {
         for (uint i = 0; i < CacheSize; i++) {
           _merge_card_cl->mark_card(push(&_dummy_card));
         }
@@ -1120,7 +1120,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       return false;
     }
 
-    G1MergeCardSetStats stats() const { return _stats; }
+    G1MergeCardSetStats stats() {
+      _merge_card_set_cache.flush();
+      return _stats;
+    }
   };
 
   // Closure to make sure that the marking bitmap is clear for any old region in
@@ -1187,11 +1190,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
   class G1FlushHumongousCandidateRemSets : public HeapRegionIndexClosure {
-    G1RemSetScanState* _scan_state;
-    G1MergeCardSetStats _merge_stats;
+    G1MergeCardSetClosure _cl;
 
   public:
-    G1FlushHumongousCandidateRemSets(G1RemSetScanState* scan_state) : _scan_state(scan_state), _merge_stats() { }
+    G1FlushHumongousCandidateRemSets(G1RemSetScanState* scan_state) : _cl(scan_state) { }
 
     bool do_heap_region_index(uint region_index) override {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -1208,12 +1210,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
-      G1MergeCardSetStats stats;
-      {
-        G1MergeCardSetClosure cl(_scan_state);
-        cl.merge_card_set_for_region(r);
-        stats = cl.stats();
-      }
+
+      _cl.merge_card_set_for_region(r);
 
       // We should only clear the card based remembered set here as we will not
       // implicitly rebuild anything else during eager reclaim. Note that at the moment
@@ -1233,7 +1231,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
       return false;
     }
 
-    size_t merged(uint i) const { return _merge_stats.merged(i); }
+    G1MergeCardSetStats stats() {
+      return _cl.stats();
+    }
   };
 
   // Visitor for the log buffer entries to merge them into the card table.
@@ -1332,38 +1332,41 @@ public:
                                                      G1GCPhaseTimes::MergeRS :
                                                      G1GCPhaseTimes::OptMergeRS;
 
-    // We schedule flushing the remembered sets of humongous fast reclaim candidates
-    // onto the card table first to allow the remaining parallelized tasks hide it.
-    if (_initial_evacuation &&
-        g1h->has_humongous_reclaim_candidates() &&
-        !_fast_reclaim_handled &&
-        !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
-
-      G1GCParPhaseTimesTracker x(p, G1GCPhaseTimes::MergeER, worker_id);
-
-      G1FlushHumongousCandidateRemSets cl(_scan_state);
-      g1h->heap_region_iterate(&cl);
-
-      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
-        p->record_or_add_thread_work_item(merge_remset_phase, worker_id, cl.merged(i), i);
-      }
-    }
-
-    // Merge remembered sets of current candidates.
     {
+      // Merge remset of ...
       G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, !_initial_evacuation /* allow_multiple_record */);
-      G1MergeCardSetStats stats;
+
       {
+        // 1. eager-reclaim candidates
+        if (_initial_evacuation &&
+            g1h->has_humongous_reclaim_candidates() &&
+            !_fast_reclaim_handled &&
+            !Atomic::cmpxchg(&_fast_reclaim_handled, false, true)) {
+
+          G1GCParPhaseTimesTracker subphase_x(p, G1GCPhaseTimes::MergeER, worker_id);
+
+          G1FlushHumongousCandidateRemSets cl(_scan_state);
+          g1h->heap_region_iterate(&cl);
+          G1MergeCardSetStats stats = cl.stats();
+
+          for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
+            p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
+          }
+        }
+      }
+
+      {
+        // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
 
-        g1h->collection_set_iterate_increment_from(&combined, &_hr_claimer, worker_id);
-        stats = merge.stats();
-      }
+        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
+        G1MergeCardSetStats stats = merge.stats();
 
-      for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
-        p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
+        for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
+          p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
+        }
       }
     }
 

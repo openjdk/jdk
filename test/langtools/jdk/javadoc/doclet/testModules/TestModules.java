@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestModules extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestModules tester = new TestModules();
+        var tester = new TestModules();
         tester.runTests();
     }
 
@@ -629,7 +629,7 @@ public class TestModules extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li>"Test see tag"</li>
                     <li><a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
                     gs"><code>TestClassInModuleTags</code></a></li>

@@ -894,7 +894,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 // Common case 1: we have no handler, so all exceptions merge right into
 // the rethrow case.
 // Case 2: we have some handlers, with loaded exception klasses that have
-// no subklasses.  We do a Deutsch-Shiffman style type-check on the incoming
+// no subklasses.  We do a Deutsch-Schiffman style type-check on the incoming
 // exception oop and branch to the handler directly.
 // Case 3: We have some handlers with subklasses or are not loaded at
 // compile-time.  We have to call the runtime to resolve the exception.

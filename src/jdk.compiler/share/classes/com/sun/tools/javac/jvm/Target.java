@@ -94,7 +94,10 @@ public enum Target {
     JDK1_19("19", 63, 0),
 
     /** JDK 20. */
-    JDK1_20("20", 64, 0);
+    JDK1_20("20", 64, 0),
+
+    /** JDK 21. */
+    JDK1_21("21", 65, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 

@@ -67,13 +67,9 @@ address StubRoutines::_throw_delayed_StackOverflowError_entry   = NULL;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = NULL;
 address StubRoutines::_atomic_xchg_entry                        = NULL;
-address StubRoutines::_atomic_xchg_long_entry                   = NULL;
-address StubRoutines::_atomic_store_entry                       = NULL;
 address StubRoutines::_atomic_cmpxchg_entry                     = NULL;
-address StubRoutines::_atomic_cmpxchg_byte_entry                = NULL;
 address StubRoutines::_atomic_cmpxchg_long_entry                = NULL;
 address StubRoutines::_atomic_add_entry                         = NULL;
-address StubRoutines::_atomic_add_long_entry                    = NULL;
 address StubRoutines::_fence_entry                              = NULL;
 
 // Compiled code entry points default values
@@ -128,6 +124,7 @@ address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_galoisCounterMode_AESCrypt          = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
+address StubRoutines::_chacha20Block                       = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
 address StubRoutines::_base64_decodeBlock                  = NULL;
 address StubRoutines::_poly1305_processBlocks              = NULL;

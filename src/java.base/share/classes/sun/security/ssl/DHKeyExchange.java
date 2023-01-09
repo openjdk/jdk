@@ -42,7 +42,6 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import sun.security.action.GetPropertyAction;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
 
@@ -313,12 +312,13 @@ final class DHKeyExchange {
             if (!useLegacyEphemeralDHKeys &&
                     (context.clientRequestedNamedGroups != null) &&
                     (!context.clientRequestedNamedGroups.isEmpty())) {
-                preferableNamedGroup =
-                        SupportedGroups.getPreferredGroup(context.negotiatedProtocol,
-                                context.algorithmConstraints,
-                                new NamedGroupSpec [] {
-                                    NamedGroupSpec.NAMED_GROUP_FFDHE },
-                                context.clientRequestedNamedGroups);
+                preferableNamedGroup = NamedGroup.getPreferredGroup(
+                        context.sslConfig,
+                        context.negotiatedProtocol,
+                        context.algorithmConstraints,
+                        new NamedGroupSpec [] {
+                            NamedGroupSpec.NAMED_GROUP_FFDHE },
+                        context.clientRequestedNamedGroups);
                 if (preferableNamedGroup != null) {
                     return new DHEPossession(preferableNamedGroup,
                                 context.sslContext.getSecureRandom());

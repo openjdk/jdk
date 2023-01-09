@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.Deque;
 
 import jdk.management.jfr.DiskRepository.DiskChunk;
 
 final class FileDump {
-    private final Queue<DiskChunk> chunks = new ArrayDeque<>();
+    private final Deque<DiskChunk> chunks = new ArrayDeque<>();
     private final long stopTimeMillis;
     private boolean complete;
 
@@ -47,7 +47,7 @@ final class FileDump {
             return;
         }
         dc.acquire();
-        chunks.add(dc);
+        chunks.addFirst(dc);
         long endMillis = dc.endTimeNanos / 1_000_000;
         if (endMillis >= stopTimeMillis) {
             setComplete();
@@ -75,7 +75,7 @@ final class FileDump {
         while (true) {
             synchronized (this) {
                 if (!chunks.isEmpty()) {
-                    return chunks.poll();
+                    return chunks.pollLast();
                 }
                 if (complete) {
                     return null;
@@ -86,14 +86,19 @@ final class FileDump {
     }
 
     public void write(Path path) throws IOException, InterruptedException {
+        DiskChunk chunk = null;
         try (FileChannel out = FileChannel.open(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-            DiskChunk chunk = null;
             while ((chunk = oldestChunk()) != null) {
                 try (FileChannel in = FileChannel.open(chunk.path(), StandardOpenOption.READ)) {
                     in.transferTo(0, in.size(), out);
                 }
+                chunk.release();
+                chunk = null;
             }
         } finally {
+            if (chunk != null) {
+                chunk.release();
+            }
             close();
         }
     }

@@ -23,7 +23,7 @@
 /*
  * @test
  * @key headful
- * @bug 4314194 8075916
+ * @bug 4314194 8075916 8298083
  * @summary  Verifies disabled color for JCheckbox and JRadiobutton is honored in all L&F
  * @run main bug4314194
  */
@@ -40,13 +40,14 @@ import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.plaf.synth.SynthLookAndFeel;
 
 public class bug4314194 {
-    private static JFrame frame;
-    private static JRadioButton radioButton;
-    private static JCheckBox checkBox;
-    private static Point point;
-    private static Rectangle rect;
+    private static volatile JFrame frame;
+    private static volatile JRadioButton radioButton;
+    private static volatile JCheckBox checkBox;
+    private static volatile Point point;
+    private static volatile Rectangle rect;
     private static Robot robot;
     private static final Color radioButtonColor = Color.RED;
     private static final Color checkboxColor = Color.GREEN;
@@ -87,9 +88,25 @@ public class bug4314194 {
         }
     }
 
-    private static void createUI() {
-        UIManager.getDefaults().put("CheckBox.disabledText", checkboxColor);
-        UIManager.getDefaults().put("RadioButton.disabledText", radioButtonColor);
+    private static void createUI(String laf) {
+        if (UIManager.getLookAndFeel() instanceof SynthLookAndFeel) {
+            // reset "basic" properties
+            UIManager.getDefaults().put("CheckBox.disabledText", null);
+            UIManager.getDefaults().put("RadioButton.disabledText", null);
+            // set "synth" properties
+            UIManager.getDefaults().put("CheckBox[Disabled].textForeground", checkboxColor);
+            // for some reason the RadioButton[Disabled] does not work
+            // see https://bugs.openjdk.org/browse/JDK-8298149
+            //UIManager.getDefaults().put("RadioButton[Disabled].textForeground", radioButtonColor);
+            UIManager.getDefaults().put("RadioButton[Enabled].textForeground", radioButtonColor);
+        } else {
+            // reset "synth" properties
+            UIManager.getDefaults().put("CheckBox[Disabled].textForeground", null);
+            UIManager.getDefaults().put("RadioButton[Enabled].textForeground", null);
+            // set "basic" properties
+            UIManager.getDefaults().put("CheckBox.disabledText", checkboxColor);
+            UIManager.getDefaults().put("RadioButton.disabledText", radioButtonColor);
+        }
 
         checkBox = new JCheckBox("\u2588".repeat(5));
         radioButton = new JRadioButton("\u2588".repeat(5));
@@ -98,7 +115,7 @@ public class bug4314194 {
         checkBox.setEnabled(false);
         radioButton.setEnabled(false);
 
-        frame = new JFrame("bug4314194");
+        frame = new JFrame(laf);
         frame.getContentPane().add(radioButton, BorderLayout.SOUTH);
         frame.getContentPane().add(checkBox, BorderLayout.NORTH);
         frame.pack();
@@ -122,7 +139,7 @@ public class bug4314194 {
             System.out.println("Testing L&F: " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             try {
-                SwingUtilities.invokeAndWait(() -> createUI());
+                SwingUtilities.invokeAndWait(() -> createUI(laf.getName()));
                 robot.waitForIdle();
                 robot.delay(1000);
 
@@ -141,4 +158,3 @@ public class bug4314194 {
         }
     }
 }
-

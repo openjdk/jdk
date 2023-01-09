@@ -21,6 +21,7 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
@@ -80,7 +81,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
-
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
@@ -3161,7 +3161,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
-  case Op_Opaque2:              // Remove Opaque Nodes before matching
   case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
@@ -4361,8 +4360,8 @@ Compile::TracePhase::~TracePhase() {
 // (1) subklass is already limited to a subtype of superklass => always ok
 // (2) subklass does not overlap with superklass => always fail
 // (3) superklass has NO subtypes and we can check with a simple compare.
-Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk) {
-  if (StressReflectiveCode) {
+Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip) {
+  if (skip) {
     return SSC_full_test;       // Let caller generate the general case.
   }
 

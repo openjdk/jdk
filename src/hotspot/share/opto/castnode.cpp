@@ -371,30 +371,6 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return optimize_integer_cast(phase, T_LONG);
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// If input is already higher or equal to cast type, then this is an identity.
-Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
-  Node* dom = dominating_cast(phase, phase);
-  if (dom != NULL) {
-    return dom;
-  }
-  if (_dependency != RegularDependency) {
-    return this;
-  }
-  const Type* t = phase->type(in(1));
-  if (EnableVectorReboxing && in(1)->Opcode() == Op_VectorBox) {
-    if (t->higher_equal_speculative(phase->type(this))) {
-      return in(1);
-    }
-  } else if (t == phase->type(this)) {
-    // Toned down to rescue meeting at a Phi 3 different oops all implementing
-    // the same interface.
-    return in(1);
-  }
-  return this;
-}
-
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type, unless working with an Interface
 const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
@@ -414,7 +390,7 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
     TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
       result = in_type;
-    } else {
+    } else if (in_ptr != TypePtr::Constant) {
       result =  my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
     }
   }

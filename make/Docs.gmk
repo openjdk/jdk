@@ -102,6 +102,10 @@ REFERENCE_TAGS := $(JAVADOC_TAGS)
 JAVADOC_DISABLED_DOCLINT_WARNINGS := missing
 JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 
+# Allow overriding on the command line
+# (intentionally sharing name with the javac option)
+JAVA_WARNINGS_ARE_ERRORS ?= -Werror
+
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
@@ -333,6 +337,7 @@ define SetupApiDocsGenerationBody
   # Ignore the doclint warnings in certain packages
   $1_OPTIONS += -Xdoclint/package:$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT_PACKAGES)))
+  $1_OPTIONS += $$(JAVA_WARNINGS_ARE_ERRORS)
 
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
@@ -614,7 +619,7 @@ $(foreach n, 0 1 2, \
   $(eval specs_bottom_rel_path := $(specs_bottom_rel_path)../) \
 )
 
-SPECS_TOP := $(if $(filter true, $(IS_DRAFT)), <header class="draft-header">$(DRAFT_TEXT)</header>)
+SPECS_TOP := $(if $(filter true, $(IS_DRAFT)), <header class="draft-header" role="banner">$(DRAFT_TEXT)</header>)
 
 # For all html files in $module/share/specs directories, copy and add the
 # copyright footer.

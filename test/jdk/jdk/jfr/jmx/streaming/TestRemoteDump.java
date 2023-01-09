@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,19 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.management.MBeanServerConnection;
 
 import jdk.jfr.Event;
 import jdk.jfr.Name;
+import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.consumer.RecordingStream;
@@ -63,6 +66,9 @@ public class TestRemoteDump {
         testOneDump();
         testMultipleDumps();
         testEventAfterDump();
+        testSetNoPolicy();
+        testSetMaxAge();
+        testSetMaxSize();
     }
 
     private static void testUnstarted() throws Exception {
@@ -88,6 +94,70 @@ public class TestRemoteDump {
             throw new Exception("Should not be able to dump closed recording");
         } catch (IOException ise) {
             // OK, expected
+        }
+    }
+
+    private static List<RecordedEvent> recordWithPolicy(String filename, Consumer<RemoteRecordingStream> policy) throws Exception {
+        CountDownLatch latch1 = new CountDownLatch(1);
+        CountDownLatch latch2 = new CountDownLatch(2);
+        CountDownLatch latch3 = new CountDownLatch(3);
+        try (var rs = new RemoteRecordingStream(CONNECTION)) {
+            policy.accept(rs);
+            rs.onEvent(e -> {
+                latch1.countDown();
+                latch2.countDown();
+                latch3.countDown();
+            });
+            rs.startAsync();
+            DumpEvent e1 = new DumpEvent();
+            e1.commit();
+            latch1.await();
+            // Force chunk rotation
+            try (Recording r = new Recording()) {
+                r.start();
+                DumpEvent e2 = new DumpEvent();
+                e2.commit();
+            }
+            latch2.await();
+            DumpEvent e3 = new DumpEvent();
+            e3.commit();
+            latch3.await();
+            Path p = Path.of(filename);
+            rs.dump(p);
+            return RecordingFile.readAllEvents(p);
+        }
+    }
+
+    private static void testSetMaxSize() throws Exception {
+        var events = recordWithPolicy("max-size.jfr", rs -> {
+            // keeps all events for the dump
+            rs.setMaxSize(100_000_000);
+        });
+        if (events.size() != 3) {
+            throw new Exception("Expected all 3 events to be in dump after setMaxSize");
+        }
+
+    }
+
+    private static void testSetMaxAge() throws Exception {
+        var events = recordWithPolicy("max-age.jfr", rs -> {
+            // keeps all events for the dump
+            rs.setMaxAge(Duration.ofDays(1));
+        });
+        if (events.size() != 3) {
+            throw new Exception("Expected all 3 events to be in dump after setMaxAge");
+        }
+
+    }
+
+    private static void testSetNoPolicy() throws Exception {
+        var events = recordWithPolicy("no-policy.jfr", rs -> {
+            // use default policy, remove after consumption
+        });
+        // Since latch3 have been triggered at least two events/chunks
+        // before must have been consumed, possibly 3, but it's a race.
+        if (events.size() > 1) {
+            throw new Exception("Expected at most one event to not be consumed");
         }
     }
 
