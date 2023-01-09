@@ -524,12 +524,11 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a {@code Rational} whose value is {@code (1 /
-     * this)}. If {@code (this == 0)} an {@code ArithmeticException} is thrown.
+     * Returns a {@code Rational} whose value is {@code (1 / this)}.
+     * If {@code (this == 0)} an {@code ArithmeticException} is thrown.
      *
-     * @param  divisor value by which this {@code Rational} is to be divided.
      * @throws ArithmeticException if {@code (this == 0)}
-     * @return {@code this / divisor}
+     * @return {@code 1 / this}
      */
     public Rational invert() {
         if (signum == 0)
@@ -566,6 +565,18 @@ public class Rational extends Number implements Comparable<Rational> {
         BigInteger num = numerator.divide(numGcd).multiply(multiplicand.numerator);
         BigInteger den = denominator.divide(denGcd).multiply(multiplicand.denominator);
         return new Rational(signum * multiplicand.signum, num, den);
+    }
+
+    /**
+     * Returns a {@code Rational} whose value is {@code (this / divisor)}.
+     * If {@code (divisor == 0)} an {@code ArithmeticException} is thrown.
+     *
+     * @param  divisor value by which this {@code Rational} is to be divided.
+     * @throws ArithmeticException if {@code (divisor == 0)}
+     * @return {@code this / divisor}
+     */
+    public Rational divide(Rational divisor) {
+        return multiply(divisor.invert());
     }
 
     /**
