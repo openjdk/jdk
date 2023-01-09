@@ -3131,6 +3131,9 @@ public final class String
         {
             // All the checks above can potentially be constant folded by
             // a JIT/AOT compiler when the regex is a constant string.
+            // That requires method inlining of the checks, which is only
+            // possible when the actual split logic is in a separate method
+            // because the large split loop can usually not be inlined.
             return split(ch, limit);
         }
         return Pattern.compile(regex).split(this, limit);
