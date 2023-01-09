@@ -1303,7 +1303,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             while (f.getParent() != null) {
                 path.add(f);
                 f = getFileChooser().getFileSystemView().createFileObject(f.getParent());
-            };
+            }
 
             // Add root file (the desktop) to the model
             final File[] roots = getFileChooser().getFileSystemView().getRoots();

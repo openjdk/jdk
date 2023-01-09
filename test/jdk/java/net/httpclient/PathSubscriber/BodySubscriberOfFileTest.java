@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8237470
+ * @bug 8237470 8299015
  * @summary Confirm HttpResponse.BodySubscribers#ofFile(Path)
  *          works with default and non-default file systems
  *          when SecurityManager is enabled
@@ -66,11 +66,15 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
+import java.util.concurrent.Flow;
+import java.util.stream.IntStream;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -197,6 +201,30 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
             assertEquals(resp.statusCode(), 200);
             assertEquals(msg, expectedMsg);
         }
+    }
+
+    // A large enough number of buffers to gather from, in an attempt to provoke a partial
+    // write. Loosely based on the value of _SC_IOV_MAX, to trigger partial gathering write.
+    private static final int NUM_GATHERING_BUFFERS = 1024 + 1;
+
+    @Test
+    public void testSubscribersWritesAllBytes() throws Exception {
+        var buffers = IntStream.range(0, NUM_GATHERING_BUFFERS)
+                .mapToObj(i -> new byte[10])
+                .map(ByteBuffer::wrap).toList();
+        int expectedSize = buffers.stream().mapToInt(Buffer::remaining).sum();
+
+        var subscriber = BodySubscribers.ofFile(defaultFsPath);
+        subscriber.onSubscribe(new Flow.Subscription() {
+            @Override
+            public void request(long n) { }
+            @Override
+            public void cancel() { }
+        });
+        subscriber.onNext(buffers);
+        subscriber.onComplete();
+        buffers.forEach(b -> assertEquals(b.remaining(), 0) );
+        assertEquals(expectedSize, Files.size(defaultFsPath));
     }
 
     @BeforeTest

@@ -149,7 +149,7 @@ class MultiUIDefaults extends UIDefaults
 
     private static class MultiUIDefaultsEnumerator implements Enumeration<Object>
     {
-        public static enum Type { KEYS, ELEMENTS };
+        public static enum Type { KEYS, ELEMENTS }
         private Iterator<Entry<Object, Object>> iterator;
         private Type type;
 
