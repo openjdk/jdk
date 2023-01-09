@@ -53,12 +53,15 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
         private GarbageProducer garbageProducer;
         private MemoryStrategy memoryStrategy;
         private Object[] array;
+        private Object[] indexLocks;
         long objectSize;
 
         private class Juggler implements Runnable {
                 public void run() {
-                        synchronized (this) {
-                                int index = LocalRandom.nextInt(array.length);
+                        int index = LocalRandom.nextInt(array.length);
+                        // Synchronizing on array object would reduce the concurrency.
+                        synchronized (indexLocks[index]) {
+                                array[index] = null;
                                 array[index] = garbageProducer.create(objectSize);
                         }
                 }
@@ -72,13 +75,15 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
                 log.debug("Garbage producer: " + garbageProducer);
                 log.debug("Memory strategy: " + memoryStrategy);
                 long memory = runParams.getTestMemory();
-                // Keep object count to 4, intention is to juggle
-                // not to overwhelm gc
-                int objectCount = 4;
+                int objectCount = memoryStrategy.getCount(memory);
                 objectSize = memoryStrategy.getSize(memory);
                 log.debug("Object count: " + objectCount);
                 log.debug("Object size: " + objectSize);
                 array = new Object[objectCount - 1];
+                indexLocks = new Object[objectCount - 1];
+                for (int i = 0; i < indexLocks.length; i++) {
+                    indexLocks[i] = new Object();
+                }
                 super.run();
         }
 
