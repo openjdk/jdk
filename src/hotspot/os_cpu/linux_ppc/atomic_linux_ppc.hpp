@@ -31,8 +31,8 @@
 #endif
 
 #include "orderAccess_linux_ppc.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/bitCast.hpp"
+#include "utilities/debug.hpp"
 
 // Implementation of class atomic
 
