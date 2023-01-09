@@ -114,6 +114,9 @@ class MallocSiteTable : AllStatic {
     table_size = (table_base_size * NMT_TrackingStackDepth - 1)
   };
 
+  // The table must not be wider than the maximum value the bucket_idx field
+  // in the malloc header can hold.
+  STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
   // This is a very special lock, that allows multiple shared accesses (sharedLock), but
   // once exclusive access (exclusiveLock) is requested, all shared accesses are

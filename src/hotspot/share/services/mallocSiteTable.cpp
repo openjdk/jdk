@@ -39,7 +39,6 @@ volatile int MallocSiteTable::_access_count = 0;
 // Tracking hashtable contention
 NOT_PRODUCT(int MallocSiteTable::_peak_count = 0;)
 
-
 /*
  * Initialize malloc site table.
  * Hashtable entry is malloc'd, so it can cause infinite recursion.
@@ -49,7 +48,6 @@ NOT_PRODUCT(int MallocSiteTable::_peak_count = 0;)
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
-  assert((size_t)table_size <= MAX_MALLOCSITE_TABLE_SIZE, "Hashtable overflow");
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");

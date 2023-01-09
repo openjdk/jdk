@@ -58,6 +58,7 @@ class MemTracker : AllStatic {
     const NativeCallStack& stack, NMT_TrackingLevel level) { return mem_base; }
   static inline size_t malloc_header_size(NMT_TrackingLevel level) { return 0; }
   static inline size_t malloc_header_size(void* memblock) { return 0; }
+  static inline size_t malloc_footer_size(NMT_TrackingLevel level) { return 0; }
   static inline void* malloc_base(void* memblock) { return memblock; }
   static inline void* record_free(void* memblock, NMT_TrackingLevel level) { return memblock; }
 
@@ -157,11 +158,9 @@ class MemTracker : AllStatic {
     return MallocTracker::malloc_header_size(level);
   }
 
-  static size_t malloc_header_size(void* memblock) {
-    if (tracking_level() != NMT_off) {
-      return MallocTracker::get_header_size(memblock);
-    }
-    return 0;
+  // malloc tracking footer size for specific tracking level
+  static inline size_t malloc_footer_size(NMT_TrackingLevel level) {
+    return MallocTracker::malloc_footer_size(level);
   }
 
   // To malloc base address, which is the starting address
