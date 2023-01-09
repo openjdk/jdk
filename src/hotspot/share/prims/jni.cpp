@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2812,15 +2812,15 @@ JNI_END
 
 
 JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, void *carray, jint mode))
- HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
+  HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
   // Unpin object
   Universe::heap()->unpin_object(thread, JNIHandles::resolve_non_null(array));
- HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
+HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
 
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
- HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
+  HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
   oop s = JNIHandles::resolve_non_null(string);
   jchar* ret;
   if (!java_lang_String::is_latin1(s)) {
@@ -2830,9 +2830,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
     Universe::heap()->pin_object(thread, s_value());
 
     ret = (jchar*) s_value->base(T_CHAR);
-    if (isCopy != NULL) {
-      *isCopy = JNI_FALSE;
-    }
+    if (isCopy != NULL) *isCopy = JNI_FALSE;
   } else {
     // Inflate latin1 encoded string to UTF16
     typeArrayOop s_value = java_lang_String::value(s);
@@ -2845,9 +2843,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
       }
       ret[s_len] = 0;
     }
-    if (isCopy != NULL) {
-      *isCopy = JNI_TRUE;
-    }
+    if (isCopy != NULL) *isCopy = JNI_TRUE;
   }
  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;
@@ -2855,7 +2851,7 @@ JNI_END
 
 
 JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar *chars))
- HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
+  HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
   oop s = JNIHandles::resolve_non_null(str);
   bool is_latin1 = java_lang_String::is_latin1(s);
 
@@ -2871,7 +2867,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
     // Unpin value array
     Universe::heap()->unpin_object(thread, value);
   }
- HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
+HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 
 

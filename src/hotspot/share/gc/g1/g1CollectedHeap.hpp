@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1311,6 +1311,9 @@ public:
 
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
+
+  virtual void pin_object(JavaThread* thread, oop obj) override;
+  virtual void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

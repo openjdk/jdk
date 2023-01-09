@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,14 +634,6 @@ void CollectedHeap::reset_promotion_should_fail() {
 }
 
 #endif  // #ifndef PRODUCT
-
-void CollectedHeap::pin_object(JavaThread* thread, oop obj) {
-  GCLocker::lock_critical(thread);
-}
-
-void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
-  GCLocker::unlock_critical(thread);
-}
 
 bool CollectedHeap::is_archived_object(oop object) const {
   return false;

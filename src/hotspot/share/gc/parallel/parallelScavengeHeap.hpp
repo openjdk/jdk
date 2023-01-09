@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,6 +273,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   bool can_load_archived_objects() const { return UseCompressedOops; }
   HeapWord* allocate_loaded_archive_space(size_t size);
   void complete_loaded_archive_space(MemRegion archive_space);
+
+  virtual void pin_object(JavaThread* thread, oop obj) override;
+  virtual void unpin_object(JavaThread* thread, oop obj) override;
 };
 
 // Class that can be used to print information about the

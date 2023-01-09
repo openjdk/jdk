@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,9 @@ public:
 
   virtual void safepoint_synchronize_begin();
   virtual void safepoint_synchronize_end();
+
+  virtual void pin_object(JavaThread* thread, oop obj) override;
+  virtual void unpin_object(JavaThread* thread, oop obj) override;
 
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
