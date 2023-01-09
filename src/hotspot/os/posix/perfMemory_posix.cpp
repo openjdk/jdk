@@ -1208,6 +1208,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   if (fd == OS_ERR) {
     return;
   }
+  assert(!HAS_PENDING_EXCEPTION, "must be");
 
   size_t size;
   if (*sizep == 0) {
