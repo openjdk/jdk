@@ -649,11 +649,7 @@ final class JrtPath implements Path {
     }
 
     final JrtFileAttributes getAttributes(LinkOption... options) throws IOException {
-        JrtFileAttributes zfas = jrtfs.getFileAttributes(this, options);
-        if (zfas == null) {
-            throw new NoSuchFileException(toString());
-        }
-        return zfas;
+        return jrtfs.getFileAttributes(this, options);
     }
 
     final void setAttribute(String attribute, Object value, LinkOption... options)
