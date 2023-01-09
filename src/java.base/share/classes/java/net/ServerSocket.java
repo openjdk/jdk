@@ -283,7 +283,7 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Create a SocketImpl for a server socket. The SocketImpl s created
+     * Create a SocketImpl for a server socket. The SocketImpl is created
      * without an underlying socket.
      */
     private static SocketImpl createImpl() {

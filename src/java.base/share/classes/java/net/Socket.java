@@ -1308,7 +1308,7 @@ public class Socket implements java.io.Closeable {
      *  sending the data.
      * @since 1.4
      */
-    public void sendUrgentData(int data) throws IOException  {
+    public void sendUrgentData(int data) throws IOException {
         if (!getImpl().supportsUrgentData()) {
             throw new SocketException ("Urgent data not supported");
         }
