@@ -712,7 +712,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Sets the {@code TimeZone} that is returned by the {@code getDefault}
      * method. {@code zone} is cached. If {@code zone} is null, the cached
      * default {@code TimeZone} is cleared. This method doesn't change the value
-     * of the {@code user.timezone} property.
+     * of the {@systemProperty user.timezone} property.
      *
      * @param zone the new default {@code TimeZone}, or null
      * @throws SecurityException if the security manager's {@code checkPermission}
