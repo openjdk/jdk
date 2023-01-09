@@ -25,7 +25,7 @@
  * @test
  * @bug 8298065
  * @summary Test output of NoSuchFieldError when field signature does not match
- * @compile NoSuchFieldPrimitive.jasm NoSuchFieldReference.jasm
+ * @compile NoSuchFieldPrimitive.jasm NoSuchFieldReference.jasm TestClass.java
  * @compile NoSuchFieldArray.jasm NoSuchFieldMultiArray.jasm
  * @run main NoSuchFieldOutputTest
  */
