@@ -7003,7 +7003,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
 bool LibraryCallKit::inline_poly1305_processBlocks() {
   address stubAddr;
   const char *stubName;
-  assert(UsePolyIntrinsics, "need Poly intrinsics support");
+  assert(UsePoly1305Intrinsics, "need Poly intrinsics support");
   assert(callee()->signature()->size() == 5, "poly1305_processBlocks has %d parameters", callee()->signature()->size());
   stubAddr = StubRoutines::poly1305_processBlocks();
   stubName = "poly1305_processBlocks";

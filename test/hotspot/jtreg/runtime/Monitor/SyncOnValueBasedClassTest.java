@@ -33,7 +33,8 @@ import java.util.stream.*;
  * @requires vm.flagless
  * @requires vm.flavor != "zero"
  * @library /test/lib
- * @run driver/timeout=180000 SyncOnValueBasedClassTest
+ * @enablePreview
+ * @run main/othervm/timeout=180000 --enable-preview SyncOnValueBasedClassTest
  */
 
 public class SyncOnValueBasedClassTest {
@@ -62,7 +63,7 @@ public class SyncOnValueBasedClassTest {
 
     private static void generateTests() {
         initTestObjects();
-        String[] commonFatalTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash", "-XX:DiagnoseSyncOnValueBasedClasses=1"};
+        String[] commonFatalTestsFlags = {"--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash", "-XX:DiagnoseSyncOnValueBasedClasses=1"};
         fatalTests = new String[specificFlags.length * testObjects.size()][];
         for (int i = 0; i < specificFlags.length; i++) {
             for (int j = 0; j < testObjects.size(); j++) {
@@ -72,7 +73,7 @@ public class SyncOnValueBasedClassTest {
                                           .toArray(String[]::new);
             }
         }
-        String[] commonLogTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DiagnoseSyncOnValueBasedClasses=2"};
+        String[] commonLogTestsFlags = {"--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:DiagnoseSyncOnValueBasedClasses=2"};
         logTests = new String[specificFlags.length][];
         for (int i = 0; i < specificFlags.length; i++) {
             logTests[i] = Stream.of(commonLogTestsFlags, specificFlags[i], new String[] {"SyncOnValueBasedClassTest$LogTest"})
@@ -96,6 +97,7 @@ public class SyncOnValueBasedClassTest {
             output.shouldHaveExitValue(0);
             checkOutput(output);
         }
+        virtualThreadTests();
     }
 
     private static void checkOutput(OutputAnalyzer output) {
@@ -161,6 +163,38 @@ public class SyncOnValueBasedClassTest {
                     sharedCounter++;
                 }
             }
+        }
+    }
+
+    // Very basic sanity tests to show things work for virtual threads too.
+    private static void virtualThreadTests() throws Exception {
+        final String[] vtTest = { "--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash",
+                                  "", "SyncOnValueBasedClassTest$VTTest" };
+        // Fatal test
+        vtTest[3] = "-XX:DiagnoseSyncOnValueBasedClasses=1";
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        output.shouldContain("fatal error: Synchronizing on object");
+        output.shouldNotContain("synchronization on value based class did not fail");
+        output.shouldNotHaveExitValue(0);
+
+        // Log test
+        vtTest[3] = "-XX:DiagnoseSyncOnValueBasedClasses=2";
+        pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Synchronizing on object");
+        output.shouldContain("synchronization on value based class did not fail");
+    }
+
+    static class VTTest {
+        public static void main(String[] args) throws Exception {
+            var thread = Thread.ofVirtual().start(() -> {
+                    synchronized (Character.valueOf('H')) {
+                        System.out.println("synchronization on value based class did not fail");
+                    }
+                });
+            thread.join();
         }
     }
 }

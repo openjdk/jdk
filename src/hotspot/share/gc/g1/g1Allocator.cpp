@@ -254,8 +254,8 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
     // the memory may have been used up as the threads waited to acquire the lock.
     if (!survivor_is_full()) {
       result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
-                                                                              desired_word_size,
-                                                                              actual_word_size);
+                                                                               desired_word_size,
+                                                                               actual_word_size);
       if (result == NULL) {
         set_survivor_full();
       }

@@ -67,8 +67,8 @@ public class TestTFMBuilder extends JavadocTester {
     }
 
     public static void main(String... args) throws Exception {
-        TestTFMBuilder tester = new TestTFMBuilder();
-        tester.setup().runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestTFMBuilder();
+        tester.setup().runTests();
     }
 
     private Path srcDir = Path.of("src");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,24 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/isConst.hpp"
-#include "utilities/debug.hpp"
+// Intentionally no #include guard.  May be included multiple times for effect.
 
-class IsConstTest {
-  class A: AllStatic {};
+// The files vmassert_uninstall.hpp and vmassert_reinstall.hpp provide a
+// workaround for the name collision between HotSpot's assert macro and the
+// Standard Library's assert macro.  When including a 3rd-party header that
+// uses (and so includes) the standard assert macro, wrap that inclusion with
+// includes of these two files, e.g.
+//
+// #include "utilities/vmassert_uninstall.hpp"
+// #include <header including standard assert macro>
+// #include "utilities/vmassert_reinstall.hpp"
+//
+// This removes the HotSpot macro definition while pre-processing the
+// 3rd-party header, then reinstates the HotSpot macro (if previously defined)
+// for following code.
 
-  STATIC_ASSERT(!IsConst<volatile int>::value);
-  STATIC_ASSERT(IsConst<const volatile int>::value);
-  STATIC_ASSERT(IsConst<const int>::value);
-  STATIC_ASSERT(!IsConst<int>::value);
-
-  STATIC_ASSERT(!IsConst<volatile A>::value);
-  STATIC_ASSERT(IsConst<const A>::value);
-  STATIC_ASSERT(!IsConst<A>::value);
-
-  STATIC_ASSERT(!IsConst<const A*>::value);
-  STATIC_ASSERT(IsConst<A* const>::value);
-  STATIC_ASSERT(IsConst<const A* const>::value);
-  STATIC_ASSERT(IsConst<A* const volatile>::value);
-};
+// Remove HotSpot's assert macro, if present.
+#ifdef vmassert
+#undef assert
+#endif // vmassert
 

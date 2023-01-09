@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     assert( n->in(0) != blk1, "Lousy candidate for split-if" );
     return false;
   }
-  if (!at_relevant_ctrl(n, blk1,blk2))
+  if (!at_relevant_ctrl(n, blk1, blk2))
     return false;               // Not block local
   if( n->is_Phi() ) return false; // Local PHIs are expected
 
@@ -85,7 +85,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     }
   }
 
-  if (process_cmp_loadklass(n, blk1, blk2)) {
+  if (clone_cmp_loadklass_down(n, blk1, blk2)) {
     return true;
   }
 
@@ -208,7 +208,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 // (through ConstraintCastNode::Identity). That could cause the CheckCastPP at the If to become top while (CmpP phi1)
 // wouldn't constant fold because it's using a different data path. Cloning the whole subgraph down guarantees both the
 // AddP and CheckCastPP have the same obj input after split if.
-bool PhaseIdealLoop::process_cmp_loadklass(Node* n, const Node* blk1, const Node* blk2) {
+bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2) {
   if (n->Opcode() == Op_AddP && at_relevant_ctrl(n, blk1, blk2)) {
     Node_List cmp_nodes;
     uint old = C->unique();
@@ -237,7 +237,6 @@ bool PhaseIdealLoop::process_cmp_loadklass(Node* n, const Node* blk1, const Node
           Node* u2 = u1->out(j);
           if (at_relevant_ctrl(u2, blk1, blk2) && clone_cmp_down(u2, blk1, blk2)) {
             --j;
-
           }
         }
         for (DUIterator_Fast kmax, k = u1->fast_outs(kmax); k < kmax; k++) {
@@ -251,8 +250,8 @@ bool PhaseIdealLoop::process_cmp_loadklass(Node* n, const Node* blk1, const Node
 
     for (uint i = 0; i < cmp_nodes.size(); ++i) {
       Node* cmp = cmp_nodes.at(i);
-      process_load_klass_helper(n, cmp, 1);
-      process_load_klass_helper(n, cmp, 2);
+      clone_loadklass_nodes_at_cmp_index(n, cmp, 1);
+      clone_loadklass_nodes_at_cmp_index(n, cmp, 2);
     }
     if (n->outcnt() == 0) {
       assert(n->is_dead(), "");
@@ -266,7 +265,7 @@ bool PhaseIdealLoop::at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk
   return ctrl_or_self(n) == blk1 || ctrl_or_self(n) == blk2;
 }
 
-void PhaseIdealLoop::process_load_klass_helper(const Node* n, Node* cmp, int i) {
+void PhaseIdealLoop::clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i) {
   Node* decode = cmp->in(i);
   if (decode->Opcode() == Op_DecodeNKlass) {
     Node* loadklass = decode->in(1);
@@ -305,7 +304,6 @@ void PhaseIdealLoop::process_load_klass_helper(const Node* n, Node* cmp, int i) 
         }
       }
     }
-
   }
 }
 
@@ -420,7 +418,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
         register_new_node(x, ctrl_or_self(use));
         _igvn.replace_input_of(use, pos, x);
       }
-      _igvn.remove_dead_node(n );
+      _igvn.remove_dead_node(n);
 
       return true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
  * @test
  * @bug 8297345
  * @summary C2: SIGSEGV in PhaseIdealLoop::push_pinned_nodes_thru_region
+ * @requires vm.gc.Parallel
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=TestCheckCastPPBecomesTOP::test1 -XX:LoopMaxUnroll=0
  *                   -XX:CompileCommand=dontinline,TestCheckCastPPBecomesTOP::notInlined -XX:+UseParallelGC TestCheckCastPPBecomesTOP
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=TestCheckCastPPBecomesTOP::test1 -XX:LoopMaxUnroll=0
  *                   -XX:CompileCommand=dontinline,TestCheckCastPPBecomesTOP::notInlined -XX:+UseParallelGC -XX:-UseCompressedClassPointers TestCheckCastPPBecomesTOP
  *

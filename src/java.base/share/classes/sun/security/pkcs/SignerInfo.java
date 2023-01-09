@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,7 +537,16 @@ public class SignerInfo implements DerEncoder {
                     digAlg = "SHA" + digAlg.substring(4);
                 }
                 if (keyAlg.equals("EC")) keyAlg = "ECDSA";
-                return digAlg + "with" + keyAlg;
+                String sigAlg = digAlg + "with" + keyAlg;
+                try {
+                    Signature.getInstance(sigAlg);
+                    return sigAlg;
+                } catch (NoSuchAlgorithmException e) {
+                    // Possibly an unknown modern signature algorithm,
+                    // in this case, encAlg should already be a signature
+                    // algorithm.
+                    return encAlg;
+                }
         }
     }
 

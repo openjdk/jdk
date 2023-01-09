@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/isVolatile.hpp"
-#include "utilities/debug.hpp"
+/*
+ * @test
+ * @bug 8298425
+ * @summary Verify behavior of System.console()
+ * @build KullaTesting TestingInputStream
+ * @run testng ConsoleTest
+ */
 
-class IsVolatileTest {
-  class A: AllStatic {};
 
-  STATIC_ASSERT(IsVolatile<volatile int>::value);
-  STATIC_ASSERT(IsVolatile<const volatile int>::value);
-  STATIC_ASSERT(!IsVolatile<const int>::value);
-  STATIC_ASSERT(!IsVolatile<int>::value);
+import org.testng.annotations.Test;
 
-  STATIC_ASSERT(IsVolatile<volatile A>::value);
-  STATIC_ASSERT(!IsVolatile<const A>::value);
-  STATIC_ASSERT(!IsVolatile<A>::value);
+public class ConsoleTest extends KullaTesting {
 
-  STATIC_ASSERT(!IsVolatile<volatile A*>::value);
-  STATIC_ASSERT(IsVolatile<A* volatile>::value);
-  STATIC_ASSERT(IsVolatile<volatile A* volatile>::value);
-  STATIC_ASSERT(IsVolatile<A* const volatile>::value);
-};
+    @Test
+    public void testConsole1() {
+        assertEval("System.console()", "null");
+    }
+
+}

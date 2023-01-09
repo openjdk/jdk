@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_ISARRAY_HPP
-#define SHARE_METAPROGRAMMING_ISARRAY_HPP
+/*
+ * @test
+ * @bug 8299746
+ * @summary Accept unknown signatureAlgorithm in PKCS7 SignerInfo
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.x509
+ * @library /test/lib
+ */
 
-#include "metaprogramming/integralConstant.hpp"
+import jdk.test.lib.Asserts;
+import sun.security.pkcs.SignerInfo;
+import sun.security.x509.AlgorithmId;
 
-template <typename T> struct IsArray: public FalseType {};
+public class NewSigAlg {
+    public static void main(String[] args) throws Exception {
+        test("SHA-1", "RSA", "SHA1withRSA");
+        test("SHA-1", "SHA1withRSA", "SHA1withRSA");
+        test("SHA-1", "SHA256withRSA", "SHA1withRSA");
+        // Sorry I have to use something that has an OID but not known
+        // as a signature algorithm.
+        test("SHA-1", "PBES2", "PBES2");
+    }
 
-template <typename T> struct IsArray<T[]>: public TrueType {};
-template <typename T, size_t S> struct IsArray<T[S]>: public TrueType {};
-
-#endif // SHARE_METAPROGRAMMING_ISARRAY_HPP
+    static void test(String d, String e, String s) throws Exception {
+        Asserts.assertEQ(s, SignerInfo.makeSigAlg(
+                AlgorithmId.get(d), AlgorithmId.get(s), false));
+    }
+}
