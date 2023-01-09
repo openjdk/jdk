@@ -323,7 +323,7 @@ abstract class XSDAbstractParticleTraverser extends XSDAbstractTraverser {
         // big array to contain all particles
         XSParticleDecl[] fParticles = new XSParticleDecl[10];
         // the ending position of particles in the array for each context
-        // index 0 is reserved, with value 0. index 1 is used for the fist
+        // index 0 is reserved, with value 0. index 1 is used for the first
         // context. so that the number of particles for context 'i' can be
         // computed simply by fPos[i] - fPos[i-1].
         int[] fPos = new int[5];

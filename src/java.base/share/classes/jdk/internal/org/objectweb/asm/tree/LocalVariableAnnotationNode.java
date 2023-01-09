@@ -73,7 +73,7 @@ import jdk.internal.org.objectweb.asm.TypePath;
 public class LocalVariableAnnotationNode extends TypeAnnotationNode {
 
     /**
-      * The fist instructions corresponding to the continuous ranges that make the scope of this local
+      * The first instructions corresponding to the continuous ranges that make the scope of this local
       * variable (inclusive). Must not be {@literal null}.
       */
     public List<LabelNode> start;
@@ -100,7 +100,7 @@ public class LocalVariableAnnotationNode extends TypeAnnotationNode {
       * @param typePath the path to the annotated type argument, wildcard bound, array element type, or
       *     static inner type within 'typeRef'. May be {@literal null} if the annotation targets
       *     'typeRef' as a whole.
-      * @param start the fist instructions corresponding to the continuous ranges that make the scope
+      * @param start the first instructions corresponding to the continuous ranges that make the scope
       *     of this local variable (inclusive).
       * @param end the last instructions corresponding to the continuous ranges that make the scope of
       *     this local variable (exclusive). This array must have the same size as the 'start' array.
@@ -124,7 +124,7 @@ public class LocalVariableAnnotationNode extends TypeAnnotationNode {
       * @param api the ASM API version implemented by this visitor. Must be one of the {@code
       *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param typeRef a reference to the annotated type. See {@link jdk.internal.org.objectweb.asm.TypeReference}.
-      * @param start the fist instructions corresponding to the continuous ranges that make the scope
+      * @param start the first instructions corresponding to the continuous ranges that make the scope
       *     of this local variable (inclusive).
       * @param end the last instructions corresponding to the continuous ranges that make the scope of
       *     this local variable (exclusive). This array must have the same size as the 'start' array.

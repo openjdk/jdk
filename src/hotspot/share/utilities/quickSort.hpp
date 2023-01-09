@@ -62,7 +62,7 @@ class QuickSort : AllStatic {
       swap(array, middle_index, last_index);
     }
     // Now the value in the middle of the array is the median
-    // of the fist, last and middle values. Use this as pivot.
+    // of the first, last and middle values. Use this as pivot.
     return middle_index;
   }
 

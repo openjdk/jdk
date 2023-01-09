@@ -578,7 +578,7 @@ public class FloatingDecimal{
             // In these cases, we will avoid doing FDBigInteger arithmetic.
             // We use the same algorithms, except that we "normalize"
             // our FDBigIntegers before iterating. This is to make division easier,
-            // as it makes our fist guess (quotient of high-order words)
+            // as it makes our first guess (quotient of high-order words)
             // more accurate!
             //
             // Some day, we'll write a stopping test that takes

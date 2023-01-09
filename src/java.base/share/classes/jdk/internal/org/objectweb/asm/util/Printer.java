@@ -1182,7 +1182,7 @@ public abstract class Printer {
       * @param typePath the path to the annotated type argument, wildcard bound, array element type, or
       *     static inner type within 'typeRef'. May be {@literal null} if the annotation targets
       *     'typeRef' as a whole.
-      * @param start the fist instructions corresponding to the continuous ranges that make the scope
+      * @param start the first instructions corresponding to the continuous ranges that make the scope
       *     of this local variable (inclusive).
       * @param end the last instructions corresponding to the continuous ranges that make the scope of
       *     this local variable (exclusive). This array must have the same size as the 'start' array.

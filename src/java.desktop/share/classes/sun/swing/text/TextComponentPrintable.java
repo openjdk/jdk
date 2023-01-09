@@ -123,7 +123,7 @@ public class TextComponentPrintable implements CountingPrintable {
     /**
      * stores metrics for the unhandled rows. The only metrics we need are
      * yStart and yEnd when row is handled by updatePagesMetrics it is removed
-     * from the list. Thus the head of the list is the fist row to handle.
+     * from the list. Thus the head of the list is the first row to handle.
      *
      * sorted
      */

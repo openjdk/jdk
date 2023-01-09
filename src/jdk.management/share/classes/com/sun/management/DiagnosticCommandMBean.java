@@ -147,7 +147,7 @@ import javax.management.DynamicMBean;
  *   </tr>
  *   <tr>
  *     <th scope="row">dcmd.permissionName</th><td>String</td>
- *     <td>The fist argument of the permission required to execute this
+ *     <td>The first argument of the permission required to execute this
  *          diagnostic command or null if no permission is required</td>
  *   </tr>
  *   <tr>

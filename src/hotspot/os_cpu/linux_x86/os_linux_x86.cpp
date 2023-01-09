@@ -288,9 +288,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         if (op == 0xDB) {
           // FIST
           // TODO: The encoding of D2I in x86_32.ad can cause an exception
-          // prior to the fist instruction if there was an invalid operation
+          // prior to the first instruction if there was an invalid operation
           // pending. We want to dismiss that exception. From the win_32
-          // side it also seems that if it really was the fist causing
+          // side it also seems that if it really was the first causing
           // the exception that we do the d2i by hand with different
           // rounding. Seems kind of weird.
           // NOTE: that we take the exception at the NEXT floating point instruction.

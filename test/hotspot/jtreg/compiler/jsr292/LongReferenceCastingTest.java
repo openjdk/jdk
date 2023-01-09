@@ -51,7 +51,7 @@ public class LongReferenceCastingTest {
 
     public String myMethod(long l, Object o, String s) {
         // The long argument occupies two stack slots, causing C2 to treat it as
-        // two arguments and casting the fist one two long and the second one to Object.
+        // two arguments and casting the first one two long and the second one to Object.
         // As a result, Object o is casted to String and the o.toString() call is
         // inlined as String::toString(). We fail at runtime because 'o' is not a String.
         return o.toString();

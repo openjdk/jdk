@@ -50,7 +50,7 @@
 //
 
 #define IDENTIFIER_LENGTH  64    /* length of strings included in the structures */
-#define FIRST_CPU          ""    /* pseudo-name for fist CPU */
+#define FIRST_CPU          ""    /* pseudo-name for first CPU */
 #define FIRST_NETINTERFACE ""    /* pseudo-name for first NETINTERFACE */
 
 

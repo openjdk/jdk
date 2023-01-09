@@ -481,7 +481,7 @@ uint PhaseCFG::build_cfg() {
       }
     } else { // Post-processing visited nodes
       nstack.pop();                 // remove node from stack
-      // Check if it the fist node pushed on stack at the beginning.
+      // Check if it the first node pushed on stack at the beginning.
       if (idx == 0) break;          // end of the build
       // Find predecessor basic block
       Block *pb = get_block_for_node(x);

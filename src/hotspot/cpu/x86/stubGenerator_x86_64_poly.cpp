@@ -623,7 +623,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   __ evmovdquq(D1, Address(input, 64), Assembler::AVX_512bit);
   poly1305_limbs_avx512(D0, D1, A0, A1, A2, true, TMP, t1 /*rscratch*/);
 
-  // Add accumulator to the fist message block
+  // Add accumulator to the first message block
   __ vpaddq(A0, A0, C0, Assembler::AVX_512bit);
   __ vpaddq(A1, A1, C1, Assembler::AVX_512bit);
   __ vpaddq(A2, A2, C2, Assembler::AVX_512bit);

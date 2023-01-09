@@ -157,7 +157,7 @@ public:
   // Returns reference to the first chunk in the list, or NULL
   Metachunk* first() const { return _first; }
 
-  // Returns reference to the fist chunk in the list with a committed word
+  // Returns reference to the first chunk in the list with a committed word
   // level >= min_committed_words, or NULL.
   Metachunk* first_minimally_committed(size_t min_committed_words) const {
     // Since uncommitted chunks are added to the back we can stop looking once

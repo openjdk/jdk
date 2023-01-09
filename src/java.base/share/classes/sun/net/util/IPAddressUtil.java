@@ -705,7 +705,7 @@ public class IPAddressUtil {
      * </ul>
      *
      * @param radix       digits encoding radix to use for parsing. Valid values: 8, 10, 16.
-     * @param buffer      {@code CharBuffer} with position set to the field's fist character
+     * @param buffer      {@code CharBuffer} with position set to the field's first character
      * @param fieldNumber parsed field number
      * @return {@code CANT_PARSE_IN_RADIX} if field can not be parsed in requested {@code radix}.
      * {@code TERMINAL_PARSE_ERROR} if field can't be parsed and the whole parse process should be terminated.

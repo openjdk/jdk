@@ -574,7 +574,7 @@ cmsBool InterpolateMissingSector(cmsGDB* gbd, int alpha, int theta)
 }
 
 
-// Interpolate missing parts. The algorithm fist computes slices at
+// Interpolate missing parts. The algorithm first computes slices at
 // theta=0 and theta=Max.
 cmsBool CMSEXPORT cmsGDBCompute(cmsHANDLE hGBD, cmsUInt32Number dwFlags)
 {

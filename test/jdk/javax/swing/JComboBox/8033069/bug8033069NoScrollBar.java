@@ -118,7 +118,7 @@ public class bug8033069NoScrollBar {
             assertFalse("cb1 popup is visible",
                         Util.invokeOnEDT(cb1::isPopupVisible));
 
-            // Move mouse pointer to the center of the fist combo box
+            // Move mouse pointer to the center of the first combo box
             SwingUtilities.invokeAndWait(() -> {
                 p = cb1.getLocationOnScreen();
                 d = cb1.getSize();
