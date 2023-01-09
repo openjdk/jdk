@@ -640,7 +640,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * </ul>
      *
      * <p>The default {@code TimeZone} created from the ID is cached,
-     * and its clone is returned. The {@code user.timezone} property
+     * and its clone is returned. The {@systemProperty user.timezone} property
      * value is set to the ID upon return.
      *
      * @return the default {@code TimeZone}
