@@ -527,7 +527,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * Returns a {@code Rational} whose value is {@code (1 / this)}.
      * If {@code (this == 0)} an {@code ArithmeticException} is thrown.
      *
-     * @throws ArithmeticException if {@code (this == 0)}
+     * @throws ArithmeticException if {@code this == 0}
      * @return {@code 1 / this}
      */
     public Rational invert() {
@@ -572,11 +572,48 @@ public class Rational extends Number implements Comparable<Rational> {
      * If {@code (divisor == 0)} an {@code ArithmeticException} is thrown.
      *
      * @param  divisor value by which this {@code Rational} is to be divided.
-     * @throws ArithmeticException if {@code (divisor == 0)}
+     * @throws ArithmeticException if {@code divisor == 0}
      * @return {@code this / divisor}
      */
     public Rational divide(Rational divisor) {
         return multiply(divisor.invert());
+    }
+
+    /**
+     * Returns a two-element {@code Rational} array containing the
+     * result of {@code divideToIntegralValue} followed by the result of
+     * {@code remainder} on the two operands.
+     *
+     * <p>Note that if both the integer quotient and remainder are
+     * needed, this method is faster than using the
+     * {@code divideToIntegralValue} and {@code remainder} methods
+     * separately because the division need only be carried out once.
+     *
+     * @param  divisor value by which this {@code Rational} is to be divided,
+     *         and the remainder computed.
+     * @return a two element {@code Rational} array: the quotient
+     *         (the result of {@code divideToIntegralValue}) is the initial element
+     *         and the remainder is the final element.
+     * @throws ArithmeticException if {@code divisor == 0}
+     * @see    #divideToIntegralValue(Rational)
+     * @see    #remainder(Rational)
+     */
+    public Rational[] divideAndRemainder(Rational divisor) {
+        Rational q = divide(divisor);
+        BigInteger[] res = q.numerator.divideAndRemainder(q.denominator);
+        return new Rational[] { new Rational(res[0]), new Rational(res[1]) };
+    }
+
+    /**
+     * Returns a {@code Rational} whose value is the integer part
+     * of the quotient {@code (this / divisor)} rounded down.
+     *
+     * @param  divisor value by which this {@code Rational} is to be divided.
+     * @return The integer part of {@code this / divisor}.
+     * @throws ArithmeticException if {@code divisor == 0}
+     */
+    public Rational divideToIntegralValue(Rational divisor) {
+        return divideAndRemainder(divisor)[0];
     }
 
     /**
