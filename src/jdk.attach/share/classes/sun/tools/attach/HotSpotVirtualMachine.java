@@ -419,7 +419,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     /*
      * InputStream for the socket connection to get target VM
      */
-    static abstract class SocketInputStream extends InputStream {
+    abstract static class SocketInputStream extends InputStream {
         private final long fd;
 
         public SocketInputStream(long fd) {
