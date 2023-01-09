@@ -556,12 +556,12 @@ public class Lower extends TreeTranslator {
                             names.fromUtf(ClassWriter.externalize(forEnum.type.tsym.flatName())).toString()
                             .replace('/', '.')
                             .replace('.', target.syntheticNameChar()));
-            ClassSymbol enumMapClass = makeEmptyClass(STATIC | SYNTHETIC, outermostClassDef.sym).sym;
+            ClassSymbol outerCacheClass = outerCacheClass();
             this.mapVar = new VarSymbol(STATIC | SYNTHETIC | FINAL,
                                         varName,
                                         new ArrayType(syms.intType, syms.arrayClass),
-                                        enumMapClass);
-            enterSynthetic(pos, mapVar, enumMapClass.members());
+                                        outerCacheClass);
+            enterSynthetic(pos, mapVar, outerCacheClass.members());
         }
 
         DiagnosticPosition pos = null;
@@ -1945,6 +1945,23 @@ public class Lower extends TreeTranslator {
 /**************************************************************************
  * Code for .class
  *************************************************************************/
+
+    /** Return the symbol of a class to contain a cache of
+     *  compiler-generated statics such as class$ and the
+     *  $assertionsDisabled flag.  We create an anonymous nested class
+     *  (unless one already exists) and return its symbol.  However,
+     *  for backward compatibility in 1.4 and earlier we use the
+     *  top-level class itself.
+     */
+    private ClassSymbol outerCacheClass() {
+        ClassSymbol clazz = outermostClassDef.sym;
+        Scope s = clazz.members();
+        for (Symbol sym : s.getSymbols(NON_RECURSIVE))
+            if (sym.kind == TYP &&
+                sym.name == names.empty &&
+                (sym.flags() & INTERFACE) == 0) return (ClassSymbol) sym;
+        return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
+    }
 
     /** Create an attributed tree of the form left.name(). */
     private JCMethodInvocation makeCall(JCExpression left, Name name, List<JCExpression> args) {
