@@ -82,4 +82,4 @@
   } while (false)
 #endif
 
-#endif  // SHARE_SANITIZERS_ADDRESS_HPP
+#endif // SHARE_SANITIZERS_ADDRESS_HPP
