@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7176515
+ * @bug 7176515 8299760
  * @summary ExceptionInInitializerError for an enum with multiple switch statements
  */
 
@@ -76,11 +76,10 @@ public class EnumLookupTableExceptionInInitializer {
         EEE(MyEnum.SECOND);
 
         private Nested(MyEnum x) {
-// Bug still occurs if this is uncommented
-//            switch (x) {
-//            default:
-//                break;
-//            }
+            switch (x) {
+            default:
+                break;
+            }
         }
     }
 

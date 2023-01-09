@@ -151,10 +151,6 @@ public class Lower extends TreeTranslator {
      */
     EndPosTable endPosTable;
 
-    /** If currentClass is an enum type, an ordered list of its identifiers.
-     */
-    List<Name> currentEnumNames;
-
 /**************************************************************************
  * Global mappings
  *************************************************************************/
@@ -228,6 +224,34 @@ public class Lower extends TreeTranslator {
             def = classdefs.get(c);
         }
         return def;
+    }
+
+    /**
+     * Get the enum constants for the given enum class symbol, if known.
+     * They will only be found if they are defined within the same top-level
+     * class as the class being compiled, so it's safe to assume that they
+     * can't change at runtime due to a recompilation.
+     */
+    List<Name> enumNamesFor(ClassSymbol c) {
+
+        // Find the class definition and verify it is an enum class
+        final JCClassDecl classDef = classDef(c);
+        if (classDef == null ||
+            (classDef.mods.flags & ENUM) == 0 ||
+            (types.supertype(currentClass.type).tsym.flags() & ENUM) != 0) {
+            return null;
+        }
+
+        // Gather the enum identifiers
+        ListBuffer<Name> idents = new ListBuffer<>();
+        for (List<JCTree> defs = classDef.defs; defs.nonEmpty(); defs=defs.tail) {
+            if (defs.head.hasTag(VARDEF) &&
+                (((JCVariableDecl) defs.head).mods.flags & ENUM) != 0) {
+                JCVariableDecl var = (JCVariableDecl)defs.head;
+                idents.append(var.name);
+            }
+        }
+        return idents.toList();
     }
 
     /** A hash table mapping class symbols to lists of free variables.
@@ -430,8 +454,15 @@ public class Lower extends TreeTranslator {
     Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
 
     EnumMapping mapForEnum(DiagnosticPosition pos, TypeSymbol enumClass) {
-        if (enumClass == currentClass)
-            return new CompileTimeEnumMapping(currentEnumNames);
+
+        // If enum class is part of this compilation, just switch on ordinal value
+        if (enumClass.kind == TYP) {
+            final List<Name> idents = enumNamesFor((ClassSymbol)enumClass);
+            if (idents != null)
+                return new CompileTimeEnumMapping(idents);
+        }
+
+        // Map identifiers to ordinal values at runtime, and then switch on that
         EnumMapping map = enumSwitchMap.get(enumClass);
         if (map == null)
             enumSwitchMap.put(enumClass, map = new RuntimeEnumMapping(pos, enumClass));
@@ -525,12 +556,12 @@ public class Lower extends TreeTranslator {
                             names.fromUtf(ClassWriter.externalize(forEnum.type.tsym.flatName())).toString()
                             .replace('/', '.')
                             .replace('.', target.syntheticNameChar()));
-            ClassSymbol outerCacheClass = outerCacheClass();
+            ClassSymbol enumMapClass = makeEmptyClass(STATIC | SYNTHETIC, outermostClassDef.sym).sym;
             this.mapVar = new VarSymbol(STATIC | SYNTHETIC | FINAL,
                                         varName,
                                         new ArrayType(syms.intType, syms.arrayClass),
-                                        outerCacheClass);
-            enterSynthetic(pos, mapVar, outerCacheClass.members());
+                                        enumMapClass);
+            enterSynthetic(pos, mapVar, enumMapClass.members());
         }
 
         DiagnosticPosition pos = null;
@@ -1915,23 +1946,6 @@ public class Lower extends TreeTranslator {
  * Code for .class
  *************************************************************************/
 
-    /** Return the symbol of a class to contain a cache of
-     *  compiler-generated statics such as class$ and the
-     *  $assertionsDisabled flag.  We create an anonymous nested class
-     *  (unless one already exists) and return its symbol.  However,
-     *  for backward compatibility in 1.4 and earlier we use the
-     *  top-level class itself.
-     */
-    private ClassSymbol outerCacheClass() {
-        ClassSymbol clazz = outermostClassDef.sym;
-        Scope s = clazz.members();
-        for (Symbol sym : s.getSymbols(NON_RECURSIVE))
-            if (sym.kind == TYP &&
-                sym.name == names.empty &&
-                (sym.flags() & INTERFACE) == 0) return (ClassSymbol) sym;
-        return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
-    }
-
     /** Create an attributed tree of the form left.name(). */
     private JCMethodInvocation makeCall(JCExpression left, Name name, List<JCExpression> args) {
         Assert.checkNonNull(left.type);
@@ -2239,11 +2253,9 @@ public class Lower extends TreeTranslator {
         Env<AttrContext> prevEnv = attrEnv;
         ClassSymbol currentClassPrev = currentClass;
         MethodSymbol currentMethodSymPrev = currentMethodSym;
-        List<Name> currentEnumNamesPrev = currentEnumNames;
 
         currentClass = tree.sym;
         currentMethodSym = null;
-        currentEnumNames = null;
         attrEnv = typeEnvs.remove(currentClass);
         if (attrEnv == null)
             attrEnv = prevEnv;
@@ -2337,7 +2349,6 @@ public class Lower extends TreeTranslator {
         attrEnv = prevEnv;
         currentClass = currentClassPrev;
         currentMethodSym = currentMethodSymPrev;
-        currentEnumNames = currentEnumNamesPrev;
 
         // Return empty block {} as a placeholder for an inner class.
         result = make_at(tree.pos()).Block(SYNTHETIC, List.nil());
@@ -2389,7 +2400,6 @@ public class Lower extends TreeTranslator {
         ListBuffer<JCExpression> values = new ListBuffer<>();
         ListBuffer<JCTree> enumDefs = new ListBuffer<>();
         ListBuffer<JCTree> otherDefs = new ListBuffer<>();
-        ListBuffer<Name> idents = new ListBuffer<>();
         for (List<JCTree> defs = tree.defs;
              defs.nonEmpty();
              defs=defs.tail) {
@@ -2398,12 +2408,10 @@ public class Lower extends TreeTranslator {
                 visitEnumConstantDef(var, nextOrdinal++);
                 values.append(make.QualIdent(var.sym));
                 enumDefs.append(var);
-                idents.append(var.name);
             } else {
                 otherDefs.append(defs.head);
             }
         }
-        currentEnumNames = idents.toList();
 
         // synthetic private static T[] $values() { return new T[] { a, b, c }; }
         // synthetic private static final T[] $VALUES = $values();
