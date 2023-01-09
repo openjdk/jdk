@@ -840,27 +840,22 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0) // values are both zero
             return 0;
 
-        final int absComp;
-
         // compare absolute values
-        if (denominator.equals(val.denominator))
+        final int absComp;
+        // compare to one
+        int unitComp = numerator.compareTo(denominator);
+        int valUnitComp = val.numerator.compareTo(val.denominator);
+
+        if (unitComp != valUnitComp)
+            absComp = unitComp > valUnitComp ? 1 : -1;
+        else if (denominator.equals(val.denominator))
             absComp = numerator.compareTo(val.numerator); // a/b < c/b <=> a < c
         else if (numerator.equals(val.numerator))
             absComp = val.denominator.compareTo(denominator); // a/b < a/c <=> c < b
         else {
-            // compare to one
-            int unitComp = numerator.compareTo(denominator);
-            int valUnitComp = val.numerator.compareTo(val.denominator);
-
-            if (unitComp != valUnitComp)
-                absComp = unitComp > valUnitComp ? 1 : -1;
-            else {
-                // compare using least common denominator
-                // trying to pospone the overflow as as late as possible
-                BigInteger gcd = denominator.gcd(val.denominator);
-                BigInteger[] lcdNums = lcdNumerators(val, gcd);
-                absComp = lcdNums[0].compareTo(lcdNums[1]);
-            }
+            // compare using least common denominator
+            BigInteger[] lcdNums = lcdNumerators(val, denominator.gcd(val.denominator));
+            absComp = lcdNums[0].compareTo(lcdNums[1]);
         }
 
         return signum * absComp; // adjust comparison with signum
