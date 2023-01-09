@@ -203,7 +203,7 @@ public enum TypeClass {
         }
     }
 
-    static TypeClass classifyLayout(MemoryLayout type) {
+    public static TypeClass classifyLayout(MemoryLayout type) {
         if (type instanceof ValueLayout vt) {
             return classifyValueType(vt);
         } else if (type instanceof GroupLayout gt) {

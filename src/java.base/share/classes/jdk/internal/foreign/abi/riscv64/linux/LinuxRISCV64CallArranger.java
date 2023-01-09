@@ -78,16 +78,15 @@ public class LinuxRISCV64CallArranger {
                            boolean isInMemoryReturn) {
     }
 
-    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
+    public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
     }
 
-    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
+    public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(CLinux, forUpcall, options);
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
 
-        // When return struct is classified as STRUCT_REFERENCE, it will be true.
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
             Class<?> carrier = MemorySegment.class;
@@ -109,7 +108,7 @@ public class LinuxRISCV64CallArranger {
         return new Bindings(csb.build(), returnInMemory);
     }
 
-    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+    public MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(CLinux, bindings.callingSequence).getBoundMethodHandle();
@@ -121,7 +120,7 @@ public class LinuxRISCV64CallArranger {
         return handle;
     }
 
-    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
+    public MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
 
         Bindings bindings = getBindings(mt, cDesc, true);
 
@@ -139,7 +138,7 @@ public class LinuxRISCV64CallArranger {
                 .isPresent();
     }
 
-    static class StorageCalculator {
+    class StorageCalculator {
         private final boolean forArguments;
         // next available register index. 0=integerRegIdx, 1=floatRegIdx
         private final int IntegerRegIdx = 0;
@@ -237,7 +236,7 @@ public class LinuxRISCV64CallArranger {
         }
     }
 
-    abstract static class BindingCalculator {
+    abstract class BindingCalculator {
         protected final StorageCalculator storageCalculator;
 
         @Override
@@ -258,7 +257,7 @@ public class LinuxRISCV64CallArranger {
                               Map.entry(STRUCT_REGISTER_XF, STRUCT_REGISTER_X));
     }
 
-    static class UnboxBindingCalculator extends BindingCalculator {
+    class UnboxBindingCalculator extends BindingCalculator {
         boolean forArguments;
 
         UnboxBindingCalculator(boolean forArguments) {
@@ -377,7 +376,7 @@ public class LinuxRISCV64CallArranger {
         }
     }
 
-    static class BoxBindingCalculator extends BindingCalculator {
+    class BoxBindingCalculator extends BindingCalculator {
 
         BoxBindingCalculator(boolean forArguments) {
             super(forArguments);

@@ -41,6 +41,22 @@ public class RISCV64Architecture implements Architecture {
     private static final int INTEGER_REG_SIZE = 8; // bytes
     private static final int FLOAT_REG_SIZE = 8;
 
+    @Override
+    public boolean isStackType(int cls) {
+        return cls == StorageType.STACK;
+    }
+
+    @Override
+    public int typeSize(int cls) {
+        switch (cls) {
+            case StorageType.INTEGER: return INTEGER_REG_SIZE;
+            case StorageType.FLOAT: return FLOAT_REG_SIZE;
+            // STACK is deliberately omitted
+        }
+
+        throw new IllegalArgumentException("Invalid Storage Class: " + cls);
+    }
+
     public interface StorageType {
         byte INTEGER = 0;
         byte FLOAT = 1;
@@ -126,22 +142,6 @@ public class RISCV64Architecture implements Architecture {
 
     public static VMStorage stackStorage(short size, int byteOffset) {
         return new VMStorage(StorageType.STACK, size, byteOffset);
-    }
-
-    @Override
-    public boolean isStackType(int cls) {
-        return cls == StorageType.STACK;
-    }
-
-    @Override
-    public int typeSize(int cls) {
-        switch (cls) {
-            case StorageType.INTEGER: return INTEGER_REG_SIZE;
-            case StorageType.FLOAT: return FLOAT_REG_SIZE;
-            // STACK is deliberately omitted
-        }
-
-        throw new IllegalArgumentException("Invalid Storage Class: " + cls);
     }
 
     public static ABIDescriptor abiFor(VMStorage[] inputIntRegs,
