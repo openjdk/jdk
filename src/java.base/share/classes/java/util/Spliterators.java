@@ -399,8 +399,8 @@ public final class Spliterators {
 
     /**
      * Creates a {@code Spliterator} using the given collection's
-     * {@link java.util.Collection#iterator()} as the source of elements, and
-     * reporting its {@link java.util.Collection#size()} as its initial size.
+     * {@link java.util.Collection#iterator() iterator} as the source of elements, and
+     * reporting its {@link java.util.Collection#size() size} as its initial size.
      *
      * <p>The spliterator is
      * <em><a href="Spliterator.html#binding">late-binding</a></em>, inherits
