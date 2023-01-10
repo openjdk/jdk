@@ -181,10 +181,26 @@ class Direct$Type$Buffer$RW$$BO$
     // The long-valued capacity is restricted to int range.
     //
     private Direct$Type$Buffer(long addr, long cap) {
-        super(-1, 0, clampCapacity(cap), (int)cap, null);
+        super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;
         att = null;
+    }
+
+    // Throw an IllegalArgumentException if the capacity is not in
+    // the range [0, Integer.MAX_VALUE]
+    //
+    private static int checkCapacity(long capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity < 0: ("
+                + capacity + " < 0)");
+        } else if (capacity > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity > Integer.MAX_VALUE: ("
+                + capacity + " > Integer.MAX_VALUE)");
+        }
+        return (int)capacity;
     }
 
 #end[rw]
@@ -238,19 +254,6 @@ class Direct$Type$Buffer$RW$$BO$
               segment);
         this.isReadOnly = true;
 #end[rw]
-    }
-
-    // Constrain the capacity to int range throwing IAE if not possible
-    //
-    private static int clampCapacity(long capacity) {
-        try {
-            return Math.toIntExact(capacity);
-        } catch (ArithmeticException ignore) {
-            String msg = "JNI NewDirectByteBuffer passed illegal capacity: "
-                + capacity + (capacity < Integer.MIN_VALUE
-                ? " < Integer.MIN_VALUE" : " > Integer.MAX_VALUE");
-            throw new IllegalArgumentException(msg);
-        }
     }
 
     @Override

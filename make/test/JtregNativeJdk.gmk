@@ -82,7 +82,7 @@ ifeq ($(call isTargetOs, windows), true)
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
-  BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := -ljava -lc
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
 
   # java.lang.foreign tests

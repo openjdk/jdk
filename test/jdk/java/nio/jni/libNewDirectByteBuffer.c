@@ -23,16 +23,43 @@
 #include <stdlib.h>
 #include "jni.h"
 
-// private static native ByteBuffer allocBigBuffer(long size)
+// private static native ByteBuffer newDirectByteBuffer(long size)
 JNIEXPORT jobject JNICALL
-Java_NewDirectByteBuffer_allocBigBuffer(JNIEnv *env, jclass cls, jlong size)
+Java_NewDirectByteBuffer_newDirectByteBuffer
+    (JNIEnv *env, jclass cls, jlong size)
 {
-    return (*env)->NewDirectByteBuffer(env, malloc(size), size);
+    // Allocate memory, on failure throwing an OOME or returning NULL
+    // if throwing the OOME fails
+    void* addr = malloc(size);
+    if (addr == NULL) {
+        jclass rtExCls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+        if ((*env)->ThrowNew(env, rtExCls, "malloc failed") < 0) {
+            return NULL;
+        }
+    }
+
+    // Create the direct byte buffer, freeing the native memory if an exception
+    // is thrown while constructing the buffer
+    jobject dbb = (*env)->NewDirectByteBuffer(env, addr, size);
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        free(addr);
+    }
+    return dbb;
 }
 
-// private static native long getLongCapacity(ByteBuffer buf)
+// private static native long getDirectBufferCapacity(ByteBuffer buf)
 JNIEXPORT jlong JNICALL
-Java_NewDirectByteBuffer_getLongCapacity(JNIEnv *env, jclass cls, jobject buf)
+Java_NewDirectByteBuffer_getDirectBufferCapacity
+    (JNIEnv *env, jclass cls, jobject buf)
 {
     return (*env)->GetDirectBufferCapacity(env, buf);
+}
+
+// private static native void freeDirectBufferMemory(ByteBuffer buf)
+JNIEXPORT void JNICALL
+Java_NewDirectByteBuffer_freeDirectBufferMemory
+    (JNIEnv *env, jclass cls, jobject buf)
+{
+    void* addr = (*env)->GetDirectBufferAddress(env, buf);
+    free(addr);
 }

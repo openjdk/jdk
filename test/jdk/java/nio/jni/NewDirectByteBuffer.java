@@ -34,6 +34,14 @@ public class NewDirectByteBuffer {
         System.loadLibrary("NewDirectByteBuffer");
     }
 
+    private static final long[] LEGAL_CAPACITIES = {
+        0L,
+        1L,
+        (long)Integer.MAX_VALUE/2,
+        (long)Integer.MAX_VALUE - 1,
+        (long)Integer.MAX_VALUE
+    };
+
     private static final long[] ILLEGAL_CAPACITIES = {
         (long)Integer.MIN_VALUE - 1L,
         -1L,
@@ -42,31 +50,49 @@ public class NewDirectByteBuffer {
         5_000_000_000L
     };
 
-    private static final long[] LEGAL_CAPACITIES = {
-        0L,
-        1L,
-        (long)Integer.MAX_VALUE - 1,
-        (long)Integer.MAX_VALUE
-    };
+    private static final void checkBuffer(ByteBuffer buf, long capacity) {
+        if (!buf.isDirect())
+            throw new RuntimeException("Buffer is not direct");
+        long bufferCapacity = getDirectBufferCapacity(buf);
+        if (bufferCapacity != capacity)
+            throw new RuntimeException("GetDirectBufferCapacity "
+                + bufferCapacity + " is not " + capacity);
+        if (buf.capacity() != capacity)
+            throw new RuntimeException("buf.capacity() "
+                + buf.capacity() + " is not " + capacity);
+        if (buf.position() != 0)
+            throw new RuntimeException("buf.position() "
+                + buf.position() + " is nonzero");
+        if (buf.limit() != capacity)
+            throw new RuntimeException("buf.limit() "
+                + buf.limit() + " is not " + capacity);
+    }
 
     public static void main(String[] args) {
         System.out.println("--- Legal Capacities ---");
         for (long cap : LEGAL_CAPACITIES) {
-            System.out.println("Allocating buffer with capacity " + cap);
-            ByteBuffer buf = allocBigBuffer(cap);
-            long bufferCapacity = getLongCapacity(buf);
-            System.out.printf("buf.capacity(): %d, getLongCapacity(buf): %d%n",
-                buf.capacity(), bufferCapacity);
-            if (bufferCapacity != cap) {
-                throw new RuntimeException("GetDirectBufferCapacity returned "
-                    + bufferCapacity + ", not " + cap + "as expected");
+            System.out.println("Capacity " + cap);
+            ByteBuffer buf = newDirectByteBuffer(cap);
+            if (buf != null) {
+                try {
+                    checkBuffer(buf, cap);
+                    System.out.println("Verified buffer for capacity " + cap);
+                } finally {
+                    freeDirectBufferMemory(buf);
+                }
+            } else {
+                throw new RuntimeException("Direct buffer is null but no OOME");
             }
         }
 
         System.out.println("\n--- Illegal Capacities ---");
         for (long cap : ILLEGAL_CAPACITIES) {
+            System.out.println("Capacity " + cap);
             try {
-                ByteBuffer buf = allocBigBuffer(cap);
+                ByteBuffer buf = newDirectByteBuffer(cap);
+                if (buf != null) {
+                    freeDirectBufferMemory(buf);
+                }
                 throw new RuntimeException("IAE not thrown for capacity " + cap);
             } catch (IllegalArgumentException expected) {
                 System.out.println("Caught expected IAE for capacity " + cap);
@@ -75,6 +101,7 @@ public class NewDirectByteBuffer {
     }
 
     // See libNewDirectByteBuffer.c for implementations.
-    private static native ByteBuffer allocBigBuffer(long size);
-    private static native long getLongCapacity(ByteBuffer buf);
+    private static native ByteBuffer newDirectByteBuffer(long size);
+    private static native long getDirectBufferCapacity(ByteBuffer buf);
+    private static native void freeDirectBufferMemory(ByteBuffer buf);
 }
