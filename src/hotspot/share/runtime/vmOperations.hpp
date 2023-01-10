@@ -45,6 +45,10 @@ class VM_Cleanup: public VM_Operation {
  public:
   VMOp_Type type() const { return VMOp_Cleanup; }
   void doit() {};
+  virtual bool skip_thread_oop_barriers() const {
+    // None of the safepoint cleanup tasks read oops in the Java threads.
+    return true;
+  }
 };
 
 class VM_ClearICs: public VM_Operation {
