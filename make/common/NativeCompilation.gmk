@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -920,7 +920,7 @@ define SetupNativeCompilationBody
   # This is a rough heuristic and may not always print accurate information.
   $$($1_BUILD_INFO): $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
         ifeq ($$(wildcard $$($1_TARGET)), )
-	  $$(call LogWarn, Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
+	  $$(call LogInfo, Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
 	      $$(filter-out %.vardeps, $$?)) file(s))
         else
 	  $$(call LogWarn, $$(strip Updating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) \
