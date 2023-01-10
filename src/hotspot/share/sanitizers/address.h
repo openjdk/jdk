@@ -47,13 +47,13 @@
 // ASAN_POISON_MEMORY_REGION()
 //
 // Poisons the specified memory region. Subsequent reads and writes to the memory region will result
-// in a fatal error.
+// in a fatal error. When ASan is available this is the macro of the same name from
+// <sanitizer/asan_interface.h>. When ASan is not available this macro is a NOOP which preserves the
+// arguments, ensuring they still compile, but ensures they are stripped due to being unreachable.
+// This helps ensure developers do not accidently break ASan builds.
 #ifdef ADDRESS_SANITIZER
-#undef ASAN_POISON_MEMORY_REGION
-#define ASAN_POISON_MEMORY_REGION(addr, size) __asan_poison_memory_region((addr), (size))
+// ASAN_POISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 #else
-// NOOP implementation which preserves the arguments, ensuring they still compile, but ensures they
-// are stripped due to being unreachable.
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
   do {                                        \
     if (false) {                              \
@@ -66,13 +66,13 @@
 // ASAN_UNPOISON_MEMORY_REGION()
 //
 // Unpoisons the specified memory region. Subsequent reads and writes to the memory region are
-// valid.
+// valid. When ASan is available this is the macro of the same name from
+// <sanitizer/asan_interface.h>. When ASan is not available this macro is a NOOP which preserves the
+// arguments, ensuring they still compile, but ensures they are stripped due to being unreachable.
+// This helps ensure developers do not accidently break ASan builds.
 #ifdef ADDRESS_SANITIZER
-#undef ASAN_UNPOISON_MEMORY_REGION
-#define ASAN_UNPOISON_MEMORY_REGION(addr, size) __asan_unpoison_memory_region((addr), (size))
+// ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 #else
-// NOOP implementation which preserves the arguments, ensuring they still compile, but ensures they
-// are stripped due to being unreachable.
 #define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
   do {                                          \
     if (false) {                                \
