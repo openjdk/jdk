@@ -104,7 +104,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
     if (bs_nm != NULL) {
-      thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
+      thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
     }
 
     if (ShenandoahStackWatermarkBarrier) {

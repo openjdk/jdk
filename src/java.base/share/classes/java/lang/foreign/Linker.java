@@ -345,6 +345,7 @@ public sealed interface Linker permits AbstractLinker {
          * }
          * }
          */
+        @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
         sealed interface CaptureCallState extends Option
                                           permits LinkerOptions.CaptureCallStateImpl {
             /**

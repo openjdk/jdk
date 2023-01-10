@@ -451,7 +451,7 @@ void CardTableRS::non_clean_card_iterate(ContiguousSpace* sp,
   }
   // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), gen_boundary);
+  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, gen_boundary);
   ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
 
   clear_cl.do_MemRegion(mr);
