@@ -78,11 +78,11 @@ public class LinuxRISCV64CallArranger {
                            boolean isInMemoryReturn) {
     }
 
-    public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
+    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
     }
 
-    public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
+    public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(CLinux, forUpcall, options);
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -138,7 +138,7 @@ public class LinuxRISCV64CallArranger {
                 .isPresent();
     }
 
-    class StorageCalculator {
+    static class StorageCalculator {
         private final boolean forArguments;
         // next available register index. 0=integerRegIdx, 1=floatRegIdx
         private final int IntegerRegIdx = 0;
@@ -236,7 +236,7 @@ public class LinuxRISCV64CallArranger {
         }
     }
 
-    abstract class BindingCalculator {
+    abstract static class BindingCalculator {
         protected final StorageCalculator storageCalculator;
 
         @Override
@@ -257,7 +257,7 @@ public class LinuxRISCV64CallArranger {
                               Map.entry(STRUCT_REGISTER_XF, STRUCT_REGISTER_X));
     }
 
-    class UnboxBindingCalculator extends BindingCalculator {
+    static class UnboxBindingCalculator extends BindingCalculator {
         boolean forArguments;
 
         UnboxBindingCalculator(boolean forArguments) {
@@ -376,7 +376,7 @@ public class LinuxRISCV64CallArranger {
         }
     }
 
-    class BoxBindingCalculator extends BindingCalculator {
+    static class BoxBindingCalculator extends BindingCalculator {
 
         BoxBindingCalculator(boolean forArguments) {
             super(forArguments);
