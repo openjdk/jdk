@@ -244,7 +244,7 @@ public class ImplAccept {
             return false;  // not created
         }
 
-        // call getSocket to get the value of the SO_REUSEADDR socket option
+        // call getOption to get the value of the SO_REUSEADDR socket option
         Method m = SocketImpl.class.getDeclaredMethod("getOption", SocketOption.class);
         m.setAccessible(true);
         try {

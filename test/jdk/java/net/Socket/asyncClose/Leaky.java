@@ -42,6 +42,7 @@ import java.net.SocketImpl;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
@@ -160,10 +161,23 @@ public class Leaky {
             return null;
         }, delay2, TimeUnit.MILLISECONDS);
 
+        ExecutionException e = null;
         try {
             future1.get();
-        } finally {
+        } catch (ExecutionException e1) {
+            e = e1;
+        }
+        try {
             future2.get();
+        } catch (ExecutionException e2) {
+            if (e == null) {
+                e = e2;
+            } else {
+                e.addSuppressed(e2);
+            }
+        }
+        if (e != null) {
+            throw e;
         }
     }
 
