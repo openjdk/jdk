@@ -14,7 +14,7 @@ public class Rational extends Number implements Comparable<Rational> {
     private final int signum;
 
     /**
-     * The integer part of this Rational.
+     * The absolute integer part of this Rational.
      */
     private final BigInteger floor;
 
@@ -409,6 +409,16 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Returns a Rational whose value is represented by the specified parameters.
+     * Assumes that {@code signum != 0} and that the denominator and
+     * the numerator are positive and {@code num < den}
+     */
+    private static Rational valueOf(int sign, BigInteger floor, BigInteger num, BigInteger den) {
+        BigInteger[] frac = simplify(num, den);
+        return new Rational(sign, floor, frac[0], frac[1]);
+    }
+
+    /**
      * Constructs a new Rational with the specified values.
      * Assumes that the passed values are always valid.
      */
@@ -454,21 +464,53 @@ public class Rational extends Number implements Comparable<Rational> {
 
         BigInteger gcd = denominator.gcd(augend.denominator);
         BigInteger[] lcdNums = lcdNumerators(augend, gcd);
-        BigInteger den = denominator.divide(gcd).multiply(augend.denominator); // less common denominator
+        // less common denominator
+        BigInteger resDen = denominator.divide(gcd).multiply(augend.denominator);
+        BigInteger resFloor, resNum;
+        final int resSign;
 
-        if (signum == augend.signum)
-            return valueOf(signum, lcdNums[0].add(lcdNums[1]), den);
+        if (signum == augend.signum) { // augends are concordant
+            resSign = signum;
+            resFloor = floor.add(augend.floor);
+            resNum = lcdNums[0].add(lcdNums[1]);
+            BigInteger remainder = resNum.subtract(resDen);
 
-        // augends are discordant
-        BigInteger diff = lcdNums[0].subtract(lcdNums[1]);
+            // carry propagation
+            if (remainder.signum >= 0) { // frational part >= 1
+                resFloor = resFloor.add(BigInteger.ONE);
+                resNum = remainder;
+            }
+        } else { // augends are discordant
+            // compute abs(this) - abs(augend)
+            resFloor = floor.subtract(augend.floor);
+            resNum = lcdNums[0].subtract(lcdNums[1]);
 
-        if (diff.signum == 1) // abs(this) > abs(augend)
-            return valueOf(signum, diff, den);
+            if (resFloor.signum == 0) { // floor == augend.floor
+                if (resNum.signum == 0) // abs(this) == abs(augend)
+                    return ZERO;
 
-        if (diff.signum == -1) // abs(this) < abs(augend)
-            return valueOf(augend.signum, diff.negate(), den);
+                resSign = resNum.signum;
+                resNum = resNum.abs();
+            } else { // floor != augend.floor
+                if (resFloor.signum == 1) // abs(this) > abs(augend)
+                    resSign = signum;
+                else { // abs(this) < abs(augend)
+                    resSign = augend.signum;
+                    // abs(abs(this) - abs(augend)) = - (abs(this) - abs(augend))
+                    resFloor = resFloor.negate();
+                    resNum = resNum.negate();
+                }
 
-        return ZERO; // abs(this) == abs(augend)
+                // borrow propagation
+                if (resNum.signum == -1) { // frational part < 0
+                    // correct because abs(floor - augend.floor) >= 1
+                    resFloor = resFloor.subtract(BigInteger.ONE);
+                    resNum = resNum.add(resDen);
+                }
+            }
+        }
+
+        return valueOf(resSign, resFloor, resNum, resDen);
     }
 
     /**
