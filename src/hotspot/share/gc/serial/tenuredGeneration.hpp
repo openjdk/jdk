@@ -65,7 +65,7 @@ class TenuredGeneration: public Generation {
 
   void assert_correct_size_change_locking();
 
-  TenuredSpace*    _the_space;       // Actual space holding objects
+  TenuredSpace*       _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
