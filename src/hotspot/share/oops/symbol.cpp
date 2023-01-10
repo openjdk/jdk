@@ -294,7 +294,7 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
   }
 }
 
-void Symbol::print_signature_as_external_field_type(outputStream *os) {
+void Symbol::print_as_field_external_type(outputStream *os) {
   SignatureStream ss(this, false);
   assert(!ss.is_done(), "must have at least one element in field ref");
   assert(!ss.at_return_type(), "field ref cannot be a return type");

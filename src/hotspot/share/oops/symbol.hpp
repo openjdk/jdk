@@ -275,7 +275,7 @@ class Symbol : public MetaspaceObj {
   // separated by ', ' to the outputStream.  Prints external names as
   //  'double' or 'java.lang.Object[][]'.
   void print_as_signature_external_parameters(outputStream *os);
-  void print_signature_as_external_field_type(outputStream *os);
+  void print_as_field_external_type(outputStream *os);
 
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return SymbolType; }

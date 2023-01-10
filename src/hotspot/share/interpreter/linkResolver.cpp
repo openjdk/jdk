@@ -982,7 +982,7 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
     ResourceMark rm(THREAD);
     stringStream ss;
     ss.print("Class %s does not have member field '", resolved_klass->external_name());
-    sig->print_signature_as_external_field_type(&ss);
+    sig->print_as_field_external_type(&ss);
     ss.print(" %s'", field->as_C_string());
     THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), ss.as_string());
   }
