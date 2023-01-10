@@ -5360,11 +5360,12 @@ void Parker::unpark() {
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {
   int ret = OS_TIMEOUT;
+  // The timeout parameter for SleepConditionVariableCS is a DWORD
   if (millis > UINT_MAX) {
     millis = UINT_MAX;
   }
   int status = SleepConditionVariableCS(&_cond, &_mutex,
-                                        millis == 0 ? INFINITE : millis);
+                                        millis == 0 ? INFINITE : (DWORD)millis);
   if (status != 0) {
     ret = OS_OK;
   }
