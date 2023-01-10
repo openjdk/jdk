@@ -35,12 +35,12 @@ public interface ObjectStreamConstants {
     /**
      * Magic number that is written to the stream header.
      */
-    short STREAM_MAGIC = (short)0xaced;
+    static short STREAM_MAGIC = (short)0xaced;
 
     /**
      * Version number that is written to the stream header.
      */
-    short STREAM_VERSION = 5;
+    static short STREAM_VERSION = 5;
 
     /* Each item in the stream is preceded by a tag
      */
@@ -48,105 +48,105 @@ public interface ObjectStreamConstants {
     /**
      * First tag value.
      */
-    byte TC_BASE = 0x70;
+    static byte TC_BASE = 0x70;
 
     /**
      * Null object reference.
      */
-    byte TC_NULL =         (byte)0x70;
+    static byte TC_NULL =         (byte)0x70;
 
     /**
      * Reference to an object already written into the stream.
      */
-    byte TC_REFERENCE =    (byte)0x71;
+    static byte TC_REFERENCE =    (byte)0x71;
 
     /**
      * new Class Descriptor.
      */
-    byte TC_CLASSDESC =    (byte)0x72;
+    static byte TC_CLASSDESC =    (byte)0x72;
 
     /**
      * new Object.
      */
-    byte TC_OBJECT =       (byte)0x73;
+    static byte TC_OBJECT =       (byte)0x73;
 
     /**
      * new String.
      */
-    byte TC_STRING =       (byte)0x74;
+    static byte TC_STRING =       (byte)0x74;
 
     /**
      * new Array.
      */
-    byte TC_ARRAY =        (byte)0x75;
+    static byte TC_ARRAY =        (byte)0x75;
 
     /**
      * Reference to Class.
      */
-    byte TC_CLASS =        (byte)0x76;
+    static byte TC_CLASS =        (byte)0x76;
 
     /**
      * Block of optional data. Byte following tag indicates number
      * of bytes in this block data.
      */
-    byte TC_BLOCKDATA =    (byte)0x77;
+    static byte TC_BLOCKDATA =    (byte)0x77;
 
     /**
      * End of optional block data blocks for an object.
      */
-    byte TC_ENDBLOCKDATA = (byte)0x78;
+    static byte TC_ENDBLOCKDATA = (byte)0x78;
 
     /**
      * Reset stream context. All handles written into stream are reset.
      */
-    byte TC_RESET =        (byte)0x79;
+    static byte TC_RESET =        (byte)0x79;
 
     /**
      * long Block data. The long following the tag indicates the
      * number of bytes in this block data.
      */
-    byte TC_BLOCKDATALONG= (byte)0x7A;
+    static byte TC_BLOCKDATALONG= (byte)0x7A;
 
     /**
      * Exception during write.
      */
-    byte TC_EXCEPTION =    (byte)0x7B;
+    static byte TC_EXCEPTION =    (byte)0x7B;
 
     /**
      * Long string.
      */
-    byte TC_LONGSTRING =   (byte)0x7C;
+    static byte TC_LONGSTRING =   (byte)0x7C;
 
     /**
      * new Proxy Class Descriptor.
      */
-    byte TC_PROXYCLASSDESC =       (byte)0x7D;
+    static byte TC_PROXYCLASSDESC =       (byte)0x7D;
 
     /**
      * new Enum constant.
      * @since 1.5
      */
-    byte TC_ENUM =         (byte)0x7E;
+    static byte TC_ENUM =         (byte)0x7E;
 
     /**
      * Last tag value.
      */
-    byte TC_MAX =          (byte)0x7E;
+    static byte TC_MAX =          (byte)0x7E;
 
     /**
      * First wire handle to be assigned.
      */
-    int baseWireHandle = 0x7e0000;
+    static int baseWireHandle = 0x7e0000;
 
 
-    /******************************************************/
-    /* Bit masks for ObjectStreamClass flag.*/
+    /* *******************************************************************/
+    /* Bit masks for ObjectStreamClass flag. */
 
     /**
      * Bit mask for ObjectStreamClass flag. Indicates a Serializable class
      * defines its own writeObject method.
      */
-    byte SC_WRITE_METHOD = 0x01;
+    static byte SC_WRITE_METHOD = 0x01;
 
     /**
      * Bit mask for ObjectStreamClass flag. Indicates Externalizable data
@@ -156,23 +156,23 @@ public interface ObjectStreamConstants {
      * @see #PROTOCOL_VERSION_2
      * @since 1.2
      */
-    byte SC_BLOCK_DATA = 0x08;
+    static byte SC_BLOCK_DATA = 0x08;
 
     /**
      * Bit mask for ObjectStreamClass flag. Indicates class is Serializable.
      */
-    byte SC_SERIALIZABLE = 0x02;
+    static byte SC_SERIALIZABLE = 0x02;
 
     /**
      * Bit mask for ObjectStreamClass flag. Indicates class is Externalizable.
      */
-    byte SC_EXTERNALIZABLE = 0x04;
+    static byte SC_EXTERNALIZABLE = 0x04;
 
     /**
      * Bit mask for ObjectStreamClass flag. Indicates class is an enum type.
      * @since 1.5
      */
-    byte SC_ENUM = 0x10;
+    static byte SC_ENUM = 0x10;
 
 
     /* *******************************************************************/
@@ -186,7 +186,7 @@ public interface ObjectStreamConstants {
      * @see java.io.ObjectInputStream#enableResolveObject(boolean)
      * @since 1.2
      */
-    SerializablePermission SUBSTITUTION_PERMISSION =
+    static SerializablePermission SUBSTITUTION_PERMISSION =
                            new SerializablePermission("enableSubstitution");
 
     /**
@@ -196,7 +196,7 @@ public interface ObjectStreamConstants {
      * @see java.io.ObjectInputStream#readObjectOverride()
      * @since 1.2
      */
-    SerializablePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
+    static SerializablePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
                     new SerializablePermission("enableSubclassImplementation");
 
     /**
@@ -205,7 +205,7 @@ public interface ObjectStreamConstants {
      * @see java.io.ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter)
      * @since 9
      */
-    SerializablePermission SERIAL_FILTER_PERMISSION =
+    static SerializablePermission SERIAL_FILTER_PERMISSION =
             new SerializablePermission("serialFilter");
 
    /**
@@ -219,7 +219,7 @@ public interface ObjectStreamConstants {
     * @see java.io.ObjectOutputStream#useProtocolVersion(int)
     * @since 1.2
     */
-    int PROTOCOL_VERSION_1 = 1;
+    static int PROTOCOL_VERSION_1 = 1;
 
 
    /**
@@ -240,5 +240,5 @@ public interface ObjectStreamConstants {
     * @see #SC_BLOCK_DATA
     * @since 1.2
     */
-    int PROTOCOL_VERSION_2 = 2;
+    static int PROTOCOL_VERSION_2 = 2;
 }
