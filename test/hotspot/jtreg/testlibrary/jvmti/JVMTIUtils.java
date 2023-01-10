@@ -31,6 +31,7 @@ public class JVMTIUtils {
     public static int JVMTI_ERROR_THREAD_SUSPENDED = 14;
     public static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
 
+    public static int JVMTI_ERROR_WRONG_PHASE = 112;
 
     public static class JvmtiException extends RuntimeException {
 

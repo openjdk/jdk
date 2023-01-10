@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "compiler/compilerDefinitions.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -161,13 +161,6 @@ const char* Abstract_VM_Version::vm_release() {
   return VM_RELEASE;
 }
 
-// NOTE: do *not* use stringStream. this function is called by
-//       fatal error handlers. if the crash is in native thread,
-//       stringStream cannot get resource allocated and will SEGV.
-const char* Abstract_VM_Version::jre_release_version() {
-  return VERSION_STRING;
-}
-
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
                  AIX_ONLY("aix")                 \
@@ -203,11 +196,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if _MSC_VER == 1800
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
-      #elif _MSC_VER == 1900
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 14.0 (VS2015)"
-      #elif _MSC_VER == 1911
+      #if _MSC_VER == 1911
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.3 (VS2017)"
       #elif _MSC_VER == 1912
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.5 (VS2017)"
@@ -243,6 +232,10 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.0 (VS2022)"
       #elif _MSC_VER == 1931
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.1 (VS2022)"
+      #elif _MSC_VER == 1932
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.2 (VS2022)"
+      #elif _MSC_VER == 1933
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.3 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -279,10 +272,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
   return strcmp(DEBUG_LEVEL, "release") == 0
       ? VMNAME " (" INTERNAL_VERSION_SUFFIX
       : VMNAME " (" DEBUG_LEVEL " " INTERNAL_VERSION_SUFFIX;
-}
-
-const char *Abstract_VM_Version::vm_build_user() {
-  return HOTSPOT_BUILD_USER;
 }
 
 const char *Abstract_VM_Version::jdk_debug_level() {

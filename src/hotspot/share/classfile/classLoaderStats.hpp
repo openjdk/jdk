@@ -112,7 +112,7 @@ protected:
   }
 
   typedef ResourceHashtable<oop, ClassLoaderStats,
-                            256, ResourceObj::RESOURCE_AREA, mtInternal,
+                            256, AnyObj::RESOURCE_AREA, mtInternal,
                             ClassLoaderStatsClosure::oop_hash> StatsTable;
 
   outputStream* _out;

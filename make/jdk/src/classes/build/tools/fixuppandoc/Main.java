@@ -37,6 +37,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,6 +47,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -120,21 +123,31 @@ public class Main {
     private void run(String... args) throws IOException {
         Path inFile = null;
         Path outFile = null;
+        NavBar navbar = null;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.equals("-o") && i + 1 < args.length) {
                 outFile = Path.of(args[++i]);
+            } else if (arg.equals("--insert-nav")) {
+                navbar = new NavBar();
+            } else if (arg.equals("--nav-right-info") && i + 1 < args.length) {
+                navbar.rightSideInfo(args[++i]);
+            } else if (arg.equals("--nav-subdirs") && i + 1 < args.length) {
+                navbar.subdirs(Integer.parseInt(args[++i]));
+            } else if (arg.equals("--nav-link-guides")) {
+                navbar.linkGuides(true);
             } else if (arg.startsWith("-")) {
                 throw new IllegalArgumentException(arg);
             } else if (inFile == null) {
                 inFile = Path.of(arg);
             } else {
+                System.err.println("ARGV: " + Arrays.toString(args));
                 throw new IllegalArgumentException(arg);
             }
         }
 
-        new Fixup().run(inFile, outFile);
+        new Fixup(navbar).run(inFile, outFile);
     }
 
     /**
@@ -147,6 +160,9 @@ public class Main {
 
         /** A stream for reporting errors. */
         PrintStream err = System.err;
+
+        /** A manager for the navigation bar, null if not required. */
+        NavBar navbar;
 
         /**
          * Flag to indicate when {@code <main>} is permitted around palpable content.
@@ -173,6 +189,10 @@ public class Main {
          * Handler for {@code <table>} elements.
          */
         Table table;
+
+        Fixup(NavBar navbar) {
+            this.navbar = navbar;
+        }
 
         /**
          * Run the program, copying an input file to an output file.
@@ -282,7 +302,10 @@ public class Main {
                     }
                     // <main> is not permitted within these elements
                     allowMain = false;
-                    if (name.equals("nav") && Objects.equals(attrs.get("id"), "TOC")) {
+                    if (navbar != null && name.equals("header") && Objects.equals(attrs.get("id"), "title-block-header")) {
+                        flushBuffer();
+                        navbar.write(out);
+                    } else if (name.equals("nav") && Objects.equals(attrs.get("id"), "TOC")) {
                         out.write(buffer.toString()
                                 .replaceAll(">$", " title=\"Table Of Contents\">"));
                         buffer.setLength(0);
@@ -433,6 +456,65 @@ public class Main {
             }
             buffer.setLength(0);
 
+        }
+    }
+
+    class NavBar {
+        private int subdirs = 0;
+        private boolean linkGuides = false;
+        private String rightSideInfo = "";
+
+        void subdirs(int subdirs) {
+            this.subdirs = subdirs;
+        }
+
+        void linkGuides(boolean linkGuides) {
+            this.linkGuides = linkGuides;
+        }
+
+        void rightSideInfo(String rightSideInfo) {
+            this.rightSideInfo = rightSideInfo;
+        }
+
+        void write(PrintWriter out) {
+            get().lines().forEach(out::println);
+        }
+
+        String get() {
+            String pathToSpecs = "../".repeat(subdirs);
+            String api = pathToSpecs + "../api/index.html";
+            String specs = pathToSpecs + "index.html";
+            String guides = pathToSpecs + "man/index.html";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n");
+            sb.append("<div class=\"navbar\">"); // full enclosing banner
+            if (rightSideInfo != null) {
+                sb.append("<div>").append(rightSideInfo).append("</div>");
+            }
+            sb.append("<nav>"); // nav links
+            var links = new ArrayList<>(List.of(
+                    link(api, "API"),
+                    link(specs, "OTHER SPECIFICATIONS")
+                ));
+            if (linkGuides) {
+                links.add(link(guides, "TOOL GUIDES"));
+            }
+            sb.append(list(links));
+            sb.append("</nav>");
+            sb.append("</div>");
+            sb.append("\n");
+            return sb.toString();
+        }
+
+        String list(List<String> items) {
+            return items.stream()
+                    .map(i -> "<li>" + i)
+                    .collect(Collectors.joining("\n", "<ul>", "</ul>"));
+        }
+
+        private String link(String href, String label) {
+            return "<a href=\"" + href + "\">" + label + "</a>";
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javadoc.tester.JavadocTester;
 public class TestHtmlDefinitionListTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestHtmlDefinitionListTag tester = new TestHtmlDefinitionListTag();
+        var tester = new TestHtmlDefinitionListTag();
         tester.runTests();
     }
 
@@ -160,7 +160,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>JDK1.0</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="C2.html" title="class in pkg1"><code>C2</code></a></li>
                     <li><a href="../serialized-form.html#pkg1.C1">Serialized Form</a></li>
                     </ul>
@@ -172,7 +172,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -185,7 +185,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dt>Throws:</dt>
                     <dd><code>java.lang.IllegalArgumentException</code> - if the <code>owner</code>'s
                          <code>GraphicsConfiguration</code> is not from a screen device</dd>
-                    <dd><code>HeadlessException</code></dd>
+                    <dd><code>java.awt.HeadlessException</code></dd>
                     </dl>""",
                 """
                     <dl class="notes">
@@ -197,7 +197,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#readObject()"><code>readObject()</code></a></li>
                     </ul>
                     </dd>
@@ -208,7 +208,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd><code>java.io.IOException</code></dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -230,7 +230,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd><code>java.io.IOException</code></dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -246,7 +246,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -288,7 +288,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>JDK1.0</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="C2.html" title="class in pkg1"><code>C2</code></a></li>
                     <li><a href="../serialized-form.html#pkg1.C1">Serialized Form</a></li>
                     </ul>
@@ -304,7 +304,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dt>Throws:</dt>
                     <dd><code>java.lang.IllegalArgumentException</code> - if the <code>owner</code>'s
                          <code>GraphicsConfiguration</code> is not from a screen device</dd>
-                    <dd><code>HeadlessException</code></dd>
+                    <dd><code>java.awt.HeadlessException</code></dd>
                     </dl>""",
                 """
                     <dl class="notes">
@@ -316,7 +316,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#readObject()"><code>readObject()</code></a></li>
                     </ul>
                     </dd>
@@ -327,7 +327,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd><code>java.io.IOException</code></dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -340,7 +340,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd><code>java.io.IOException</code></dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>
@@ -356,7 +356,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <dd>1.4</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="pkg1/C1.html#setUndecorated(boolean)"><code>C1.setUndecorated(boolean)</code></a></li>
                     </ul>
                     </dd>

@@ -141,10 +141,9 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
 
 void Method::release_C_heap_structures() {
   if (method_data()) {
-#if INCLUDE_JVMCI
-    FailedSpeculation::free_failed_speculations(method_data()->get_failed_speculations_address());
-#endif
-    // Destroy MethodData
+    method_data()->release_C_heap_structures();
+
+    // Destroy MethodData embedded lock
     method_data()->~MethodData();
   }
 }
@@ -590,26 +589,25 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
     return;
   }
 
-  // Grab a lock here to prevent multiple
-  // MethodData*s from being created.
-  MutexLocker ml(THREAD, MethodData_lock);
-  if (method->method_data() == NULL) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CompileBroker::log_metaspace_failure();
-      ClassLoaderDataGraph::set_metaspace_oom(true);
-      return;   // return the exception (which is cleared)
-    }
+  ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
+  MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CompileBroker::log_metaspace_failure();
+    ClassLoaderDataGraph::set_metaspace_oom(true);
+    return;   // return the exception (which is cleared)
+  }
 
-    method->set_method_data(method_data);
-    if (PrintMethodData && (Verbose || WizardMode)) {
-      ResourceMark rm(THREAD);
-      tty->print("build_profiling_method_data for ");
-      method->print_name(tty);
-      tty->cr();
-      // At the end of the run, the MDO, full of data, will be dumped.
-    }
+  if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
+    MetadataFactory::free_metadata(loader_data, method_data);
+    return;
+  }
+
+  if (PrintMethodData && (Verbose || WizardMode)) {
+    ResourceMark rm(THREAD);
+    tty->print("build_profiling_method_data for ");
+    method->print_name(tty);
+    tty->cr();
+    // At the end of the run, the MDO, full of data, will be dumped.
   }
 }
 
@@ -1266,15 +1264,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   return adapter->get_c2i_entry();
 }
 
-address Method::from_compiled_entry_no_trampoline() const {
-  CompiledMethod *code = Atomic::load_acquire(&_code);
-  if (code) {
-    return code->verified_entry_point();
-  } else {
-    return adapter()->get_c2i_entry();
-  }
-}
-
 // The verified_code_entry() must be called when a invoke is resolved
 // on this method.
 
@@ -1730,20 +1719,6 @@ bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
   return sig_is_loaded;
 }
 
-bool Method::has_unloaded_classes_in_signature(const methodHandle& m, TRAPS) {
-  ResourceMark rm(THREAD);
-  for(ResolvingSignatureStream ss(m()); !ss.is_done(); ss.next()) {
-    if (ss.type() == T_OBJECT) {
-      // Do not use ss.is_reference() here, since we don't care about
-      // unloaded array component types.
-      Klass* klass = ss.as_klass_if_loaded(THREAD);
-      assert(!HAS_PENDING_EXCEPTION, "as_klass_if_loaded contract");
-      if (klass == NULL) return true;
-    }
-  }
-  return false;
-}
-
 // Exposed so field engineers can debug VM
 void Method::print_short_name(outputStream* st) const {
   ResourceMark rm;
@@ -1834,18 +1809,15 @@ void Method::print_name(outputStream* st) const {
 #endif // !PRODUCT || INCLUDE_JVMTI
 
 
-void Method::print_codes_on(outputStream* st) const {
-  print_codes_on(0, code_size(), st);
+void Method::print_codes_on(outputStream* st, int flags) const {
+  print_codes_on(0, code_size(), st, flags);
 }
 
-void Method::print_codes_on(int from, int to, outputStream* st) const {
+void Method::print_codes_on(int from, int to, outputStream* st, int flags) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   methodHandle mh (thread, (Method*)this);
-  BytecodeStream s(mh);
-  s.set_interval(from, to);
-  BytecodeTracer::set_closure(BytecodeTracer::std_closure());
-  while (s.next() >= 0) BytecodeTracer::trace(mh, s.bcp(), st);
+  BytecodeTracer::print_method_codes(mh, from, to, st, flags);
 }
 
 CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {
@@ -2192,50 +2164,29 @@ JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _top(0), _next(NULL) {
   }
 }
 
-void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
-  ClassLoaderData* cld = loader_data;
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the lock
-    // protects as well.
-    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock(capacity));
-    } else {
-      cld->jmethod_ids()->ensure_methods(capacity);
-    }
+void Method::ensure_jmethod_ids(ClassLoaderData* cld, int capacity) {
+  // Have to add jmethod_ids() to class loader data thread-safely.
+  // Also have to add the method to the list safely, which the lock
+  // protects as well.
+  MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
+  if (cld->jmethod_ids() == NULL) {
+    cld->set_jmethod_ids(new JNIMethodBlock(capacity));
   } else {
-    // At safepoint, we are single threaded and can set this.
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock(capacity));
-    } else {
-      cld->jmethod_ids()->ensure_methods(capacity);
-    }
+    cld->jmethod_ids()->ensure_methods(capacity);
   }
 }
 
 // Add a method id to the jmethod_ids
-jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {
-  ClassLoaderData* cld = loader_data;
-
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the lock
-    // protects as well.
-    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock());
-    }
-    // jmethodID is a pointer to Method*
-    return (jmethodID)cld->jmethod_ids()->add_method(m);
-  } else {
-    // At safepoint, we are single threaded and can set this.
-    if (cld->jmethod_ids() == NULL) {
-      cld->set_jmethod_ids(new JNIMethodBlock());
-    }
-    // jmethodID is a pointer to Method*
-    return (jmethodID)cld->jmethod_ids()->add_method(m);
+jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
+  // Have to add jmethod_ids() to class loader data thread-safely.
+  // Also have to add the method to the list safely, which the lock
+  // protects as well.
+  assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
+  if (cld->jmethod_ids() == NULL) {
+    cld->set_jmethod_ids(new JNIMethodBlock());
   }
+  // jmethodID is a pointer to Method*
+  return (jmethodID)cld->jmethod_ids()->add_method(m);
 }
 
 jmethodID Method::jmethod_id() {
@@ -2245,8 +2196,7 @@ jmethodID Method::jmethod_id() {
 
 // Mark a jmethodID as free.  This is called when there is a data race in
 // InstanceKlass while creating the jmethodID cache.
-void Method::destroy_jmethod_id(ClassLoaderData* loader_data, jmethodID m) {
-  ClassLoaderData* cld = loader_data;
+void Method::destroy_jmethod_id(ClassLoaderData* cld, jmethodID m) {
   Method** ptr = (Method**)m;
   assert(cld->jmethod_ids() != NULL, "should have method handles");
   cld->jmethod_ids()->destroy_method(ptr);
@@ -2322,6 +2272,8 @@ bool Method::is_valid_method(const Method* m) {
     return false;
   } else if ((intptr_t(m) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
+    return false;
+  } else if (!os::is_readable_range(m, m + 1)) {
     return false;
   } else if (m->is_shared()) {
     return CppVtables::is_valid_shared_method(m);

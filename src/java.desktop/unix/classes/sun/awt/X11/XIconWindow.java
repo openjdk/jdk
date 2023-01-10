@@ -220,7 +220,7 @@ public class XIconWindow extends XBaseWindow {
     }
 
     /**
-     * @return preffered icon size calculated from specific icon
+     * @return preferred icon size calculated from specific icon
      */
     Dimension getIconSize(int widthHint, int heightHint) {
         if (size == null) {

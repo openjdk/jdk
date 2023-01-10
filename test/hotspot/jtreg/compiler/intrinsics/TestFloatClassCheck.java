@@ -21,16 +21,7 @@
  * questions.
  */
 
-/**
-* @test
-* @summary Test intrinsics for Float methods isNaN, isFinite, isInfinite.
-* @requires vm.cpu.features ~= ".*avx512dq.*" | os.arch == "riscv64"
-* @library /test/lib /
-* @run driver compiler.intrinsics.TestFloatClassCheck
-*/
-
 package compiler.intrinsics;
-import compiler.lib.ir_framework.*;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 
@@ -39,10 +30,6 @@ public class TestFloatClassCheck {
     int BUFFER_SIZE = 1024;
     float[] inputs;
     boolean[] outputs;
-
-    public static void main(String args[]) {
-        TestFramework.run(TestFloatClassCheck.class);
-    }
 
     public TestFloatClassCheck() {
         outputs = new boolean[BUFFER_SIZE];
@@ -57,16 +44,6 @@ public class TestFloatClassCheck {
             else input = rng.nextFloat();
             inputs[i] = input;
         }
-    }
-
-    @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
-    @IR(counts = {"IsInfiniteF", ">= 1"}) // Atleast one IsInfiniteF node is generated if intrinsic is used
-    public void testIsInfinite() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isInfinite(inputs[i]);
-        }
-        checkResult("isInfinite");
     }
 
     public void checkResult(String method) {

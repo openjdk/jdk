@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@
  * input.build_osenv
  * input.build_osenv_cpu
  * input.build_osenv_platform
+ * input.build_osenv_version
  *
  * For more complex nested attributes, there is a method "get":
  *
@@ -388,7 +389,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "18";
+    common.boot_jdk_version = "19";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -553,7 +554,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             "ANT_HOME": input.get("ant", "home_path")
         }
     };
-    [ "linux-x64", "macosx-x64", "windows-x64", "linux-aarch64"]
+    [ "linux-x64", "macosx-aarch64", "macosx-x64", "windows-x64", "linux-aarch64"]
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
@@ -943,7 +944,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: input.build_cpu,
             dependencies: [
                 "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJdk,
-                testedProfileTest, testedProfile + ".jdk_symbols",
+                testedProfileTest,
             ],
             src: "src.conf",
             make_args: testOnlyMake,
@@ -957,6 +958,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             labels: "test"
         }
     };
+    if (!testedProfile.endsWith("-jcov")) {
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
+    }
 
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
@@ -1031,7 +1035,7 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
-        macosx: "Xcode12.4+1.0",
+        macosx: "Xcode12.4+1.1",
         windows_x64: "VS2022-17.1.0+1.0",
         linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
@@ -1077,20 +1081,23 @@ var getJibProfilesDependencies = function (input, common) {
         environment_path: common.boot_jdk_home + "/bin"
     }
 
-    var pandoc_version;
-    if (input.build_cpu == "aarch64") {
-        if (input.build_os == "macosx") {
-            pandoc_version = "2.14.0.2+1.0";
-        } else {
-            pandoc_version = "2.5+1.0";
+    var makeRevision = "4.0+1.0";
+    var makeBinSubDir = "/bin";
+    var makeModule = "gnumake-" + input.build_platform;
+    if (input.build_os == "windows") {
+        makeModule = "gnumake-" + input.build_osenv_platform;
+        if (input.build_osenv == "cygwin") {
+            var versionArray = input.build_osenv_version.split(/\./);
+            var majorVer = parseInt(versionArray[0]);
+            var minorVer = parseInt(versionArray[1]);
+            if (majorVer > 3 || (majorVer == 3 && minorVer >= 3)) {
+                makeRevision = "4.3+1.0";
+            } else {
+                makeBinSubDir = "/cygwin/bin";
+            }
         }
-    } else {
-        pandoc_version = "2.3.1+1.0";
     }
-
-    var makeBinDir = (input.build_os == "windows"
-        ? input.get("gnumake", "install_path") + "/cygwin/bin"
-        : input.get("gnumake", "install_path") + "/bin");
+    var makeBinDir = input.get("gnumake", "install_path") + makeBinSubDir;
 
     var dependencies = {
         boot_jdk: boot_jdk,
@@ -1131,9 +1138,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7",
+            version: "7.1.1",
             build_number: "1",
-            file: "bundles/jtreg-7+1.zip",
+            file: "bundles/jtreg-7.1.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1147,7 +1154,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-12-jdk-asm+1.0",
+            revision: "3.0-14-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1155,18 +1162,12 @@ var getJibProfilesDependencies = function (input, common) {
         gnumake: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "4.0+1.0",
-
-            module: (input.build_os == "windows"
-                ? "gnumake-" + input.build_osenv_platform
-                : "gnumake-" + input.build_platform),
-
+            revision: makeRevision,
+            module: makeModule,
             configure_args: "MAKE=" + makeBinDir + "/make",
-
             environment: {
                 "MAKE": makeBinDir + "/make"
             },
-
             environment_path: makeBinDir
         },
 
@@ -1193,7 +1194,7 @@ var getJibProfilesDependencies = function (input, common) {
         pandoc: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: pandoc_version,
+            revision: "2.19.2+1.0",
             module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"

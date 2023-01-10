@@ -27,16 +27,15 @@
 #define SHARE_RUNTIME_THREADCRASHPROTECTION_HPP
 
 #include "memory/allocation.hpp"
-
-class CrashProtectionCallback : public StackObj {
-public:
-  virtual void call() = 0;
-};
-
 #if defined(LINUX) || defined(AIX) || defined(BSD)
 # include "threadCrashProtection_posix.hpp"
 #else
 # include OS_HEADER(threadCrashProtection)
 #endif
+
+class CrashProtectionCallback : public StackObj {
+public:
+  virtual void call() = 0;
+};
 
 #endif // SHARE_RUNTIME_THREADCRASHPROTECTION_HPP

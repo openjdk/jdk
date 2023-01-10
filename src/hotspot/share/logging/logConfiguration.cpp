@@ -102,12 +102,21 @@ void LogConfiguration::post_initialize() {
 }
 
 void LogConfiguration::initialize(jlong vm_start_time) {
+  StdoutLog = new LogStdoutOutput();
+  StderrLog = new LogStderrOutput();
   LogFileOutput::set_file_name_parameters(vm_start_time);
   assert(_outputs == NULL, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
-  _outputs[0] = &StdoutLog;
-  _outputs[1] = &StderrLog;
+  _outputs[0] = StdoutLog;
+  _outputs[1] = StderrLog;
   _n_outputs = 2;
+  _outputs[0]->set_config_string("all=warning");
+  _outputs[1]->set_config_string("all=off");
+
+  // Set the default output to warning and error level for all new tagsets.
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    ts->set_output_level(StdoutLog, LogLevel::Default);
+  }
 }
 
 void LogConfiguration::finalize() {
@@ -411,13 +420,13 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   static bool stderr_configured = false;
 
   // Normally options can't be used to change an existing output
-  // (parse_log_arguments() will report an error), and
-  // both StdoutLog and StderrLog are created by static initializers,
-  // so we have to process their options (e.g. foldmultilines) directly first.
+  // (parse_log_arguments() will report an error), but we make an exception for
+  // both StdoutLog and StderrLog as they're initialized automatically
+  // very early in the boot process.
   if (output == NULL || strlen(output) == 0 ||
       strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
     if (!stdout_configured) {
-      success = StdoutLog.parse_options(output_options, &ss);
+      success = StdoutLog->parse_options(output_options, &ss);
       stdout_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
       output_options = NULL;
@@ -426,7 +435,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
     // with a warning
   } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
     if (!stderr_configured) {
-      success = StderrLog.parse_options(output_options, &ss);
+      success = StderrLog->parse_options(output_options, &ss);
       stderr_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
       output_options = NULL;
@@ -666,6 +675,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
   out->print_cr("\t Turn off all logging, including warnings and errors,");
   out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
+  out->cr();
 
   out->print_cr(" -Xlog:async -Xlog:gc=debug:file=gc.log -Xlog:safepoint=trace");
   out->print_cr("\t Write logs asynchronously. Enable messages tagged with 'safepoint' up to 'trace' level to stdout ");

@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -83,6 +84,15 @@ public @interface IR {
      * {@link IRViolationException} is thrown.
      */
     String[] counts() default {};
+
+    /**
+     * Define a list of {@link CompilePhase} enums to apply the IR rule constraint attributes {@link #failOn()} and/or
+     * {@link #counts()} on. By default, IR matching is applied on the predefined default phase of an IR node
+     * placeholder string as defined in {@link IRNode}. For non-IR node constraints (i.e. user-defined regexes with no
+     * definition in {@link IRNode}), a compile phase must explicitly be set. Otherwise, a {@link TestFormatException}
+     * is reported.
+     */
+    CompilePhase[] phase() default { CompilePhase.DEFAULT };
 
     /**
      * Define a single VM flag precondition which <i>must hold</i> when applying the IR rule. If the VM flag precondition

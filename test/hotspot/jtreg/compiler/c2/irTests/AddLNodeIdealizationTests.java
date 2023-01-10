@@ -44,7 +44,8 @@ public class AddLNodeIdealizationTests {
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
-                 "test20","test21", "test22"})
+                 "test20", "test21", "test22",
+                 "test23", "test24"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -62,30 +63,32 @@ public class AddLNodeIdealizationTests {
 
     @DontCompile
     public void assertResult(long a, long b, long c, long d) {
-        Asserts.assertEQ(((a+a) + (a+a))             , additions(a));
-        Asserts.assertEQ(0L                          , xMinusX(a));
-        Asserts.assertEQ(a + 1 + 2                   , test1(a));
-        Asserts.assertEQ((a + 2021) + b              , test2(a, b));
-        Asserts.assertEQ(a + (b + 2021)              , test3(a, b));
-        Asserts.assertEQ((1 - a) + 2                 , test4(a));
-        Asserts.assertEQ((a - b) + (c - d)           , test5(a, b, c, d));
-        Asserts.assertEQ((a - b) + (b + c)           , test6(a, b, c));
-        Asserts.assertEQ((a - b) + (c + b)           , test7(a, b, c));
-        Asserts.assertEQ((a - b) + (c - a)           , test8(a, b, c));
-        Asserts.assertEQ(a + (0 - b)                 , test9(a, b));
-        Asserts.assertEQ((0 - b) + a                 , test10(a, b));
-        Asserts.assertEQ((a - b) + b                 , test11(a, b));
-        Asserts.assertEQ(b + (a - b)                 , test12(a, b));
-        Asserts.assertEQ(a + 0                       , test13(a));
-        Asserts.assertEQ(0 + a                       , test14(a));
-        Asserts.assertEQ(a*b + a*c                   , test15(a, b, c));
-        Asserts.assertEQ(a*b + b*c                   , test16(a, b, c));
-        Asserts.assertEQ(a*c + b*c                   , test17(a, b, c));
-        Asserts.assertEQ(a*b + c*a                   , test18(a, b, c));
-        Asserts.assertEQ((a - b) + 123_456_789_123L  , test19(a, b));
-        Asserts.assertEQ((a - b) + -123_456_788_877L , test20(a, b));
-        Asserts.assertEQ((a - b) + 123_456_789_123L  , test21(a, b));
-        Asserts.assertEQ((a - b) + -123_456_788_877L , test22(a, b));
+        Asserts.assertEQ(((a+a) + (a+a))                , additions(a));
+        Asserts.assertEQ(0L                             , xMinusX(a));
+        Asserts.assertEQ(a + 1 + 2                      , test1(a));
+        Asserts.assertEQ((a + 2021) + b                 , test2(a, b));
+        Asserts.assertEQ(a + (b + 2021)                 , test3(a, b));
+        Asserts.assertEQ((1 - a) + 2                    , test4(a));
+        Asserts.assertEQ((a - b) + (c - d)              , test5(a, b, c, d));
+        Asserts.assertEQ((a - b) + (b + c)              , test6(a, b, c));
+        Asserts.assertEQ((a - b) + (c + b)              , test7(a, b, c));
+        Asserts.assertEQ((a - b) + (c - a)              , test8(a, b, c));
+        Asserts.assertEQ(a + (0 - b)                    , test9(a, b));
+        Asserts.assertEQ((0 - b) + a                    , test10(a, b));
+        Asserts.assertEQ((a - b) + b                    , test11(a, b));
+        Asserts.assertEQ(b + (a - b)                    , test12(a, b));
+        Asserts.assertEQ(a + 0                          , test13(a));
+        Asserts.assertEQ(0 + a                          , test14(a));
+        Asserts.assertEQ(a*b + a*c                      , test15(a, b, c));
+        Asserts.assertEQ(a*b + b*c                      , test16(a, b, c));
+        Asserts.assertEQ(a*c + b*c                      , test17(a, b, c));
+        Asserts.assertEQ(a*b + c*a                      , test18(a, b, c));
+        Asserts.assertEQ((a - b) + 123_456_789_123L     , test19(a, b));
+        Asserts.assertEQ((a - b) + -123_456_788_877L    , test20(a, b));
+        Asserts.assertEQ((a - b) + 123_456_789_123L     , test21(a, b));
+        Asserts.assertEQ((a - b) + -123_456_788_877L    , test22(a, b));
+        Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test23(a, b));
+        Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test24(a, b));
     }
 
     @Test
@@ -286,5 +289,21 @@ public class AddLNodeIdealizationTests {
     public long test22(long x, long y) {
         return x + (-123_456_789_000L - y) + 123;
         // transformed to (x - y) + -123_456_788_877L;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MAX, IRNode.MIN })
+    @IR(counts = { IRNode.ADD, "1" })
+    // Checks Math.max(a, b) + Math.min(a, b) => a + b
+    public long test23(long a, long b) {
+        return Math.max(a, b) + Math.min(a, b);
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MAX, IRNode.MIN })
+    @IR(counts = { IRNode.ADD, "1" })
+    // Checks Math.min(a, b) + Math.max(a, b) => a + b
+    public long test24(long a, long b) {
+        return Math.min(a, b) + Math.max(a, b);
     }
 }

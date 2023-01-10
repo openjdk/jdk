@@ -410,6 +410,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::monitorenter(JavaThread* current, oopDesc* o
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* current, oopDesc* obj, BasicLock* lock))
+  assert(current == JavaThread::current(), "pre-condition");
   assert(current->last_Java_sp(), "last_Java_sp must be set");
   assert(oopDesc::is_oop(obj), "invalid lock object pointer dected");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
@@ -417,6 +418,7 @@ JRT_END
 
 // Object.notify() fast path, caller does slow path
 JRT_LEAF(jboolean, JVMCIRuntime::object_notify(JavaThread* current, oopDesc* obj))
+  assert(current == JavaThread::current(), "pre-condition");
 
   // Very few notify/notifyAll operations find any threads on the waitset, so
   // the dominant fast-path is to simply return.
@@ -433,6 +435,7 @@ JRT_END
 
 // Object.notifyAll() fast path, caller does slow path
 JRT_LEAF(jboolean, JVMCIRuntime::object_notifyAll(JavaThread* current, oopDesc* obj))
+  assert(current == JavaThread::current(), "pre-condition");
 
   if (!SafepointSynchronize::is_synchronizing() ) {
     if (ObjectSynchronizer::quick_notify(obj, current, true)) {
@@ -746,7 +749,7 @@ JVM_END
 void JVMCIRuntime::call_getCompiler(TRAPS) {
   THREAD_JVMCIENV(JavaThread::current());
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  initialize(JVMCIENV);
+  initialize(JVMCI_CHECK);
   JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
 }
 
@@ -820,11 +823,13 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       // an InvalidInstalledCodeException.
       HotSpotJVMCI::InstalledCode::set_address(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
+      HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
     } else if (nm->is_not_entrant()) {
       // Zero the entry point so any new invocation will fail but keep
       // the address link around that so that existing activations can
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
+      HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
     }
   }
 
@@ -981,7 +986,7 @@ static void _flush_log() {
 static void _fatal() {
   Thread* thread = Thread::current_or_null_safe();
   if (thread != nullptr && thread->is_Java_thread()) {
-    JavaThread* jthread = (JavaThread*) thread;
+    JavaThread* jthread = JavaThread::cast(thread);
     JVMCIRuntime* runtime = jthread->libjvmci_runtime();
     if (runtime != nullptr) {
       int javaVM_id = runtime->get_shared_library_javavm_id();
@@ -1310,7 +1315,7 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
     }
   }
 
-  initialize(JVMCIENV);
+  initialize(JVMCI_CHECK);
 
   // This should only be called in the context of the JVMCI class being initialized
   JVMCIObject result = JVMCIENV->call_HotSpotJVMCIRuntime_runtime(JVMCI_CHECK);
@@ -1365,11 +1370,16 @@ class JavaVMRefsInitialization: public StackObj {
   }
 };
 
-void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
+void JVMCIRuntime::initialize(JVMCI_TRAPS) {
   // Check first without _lock
   if (_init_state == fully_initialized) {
     return;
   }
+
+  JavaThread* THREAD = JavaThread::current();
+
+  int properties_len = 0;
+  jbyte* properties = NULL;
 
   MutexLocker locker(_lock);
   // Check again under _lock
@@ -1392,7 +1402,6 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
   {
     MutexUnlocker unlock(_lock);
 
-    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
     ResourceMark rm(THREAD);
     {
@@ -1436,7 +1445,12 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
 
     if (!JVMCIENV->is_hotspot()) {
-      JVMCIENV->copy_saved_properties();
+      Handle properties_exception;
+      properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
+      if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
+        return;
+      }
+      JVMCIENV->copy_saved_properties(properties, properties_len, JVMCI_CHECK);
     }
   }
 
@@ -1479,7 +1493,7 @@ void JVMCIRuntime::initialize_JVMCI(JVMCI_TRAPS) {
 }
 
 JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
-  initialize(JVMCIENV);
+  initialize(JVMCI_CHECK_(JVMCIObject()));
   initialize_JVMCI(JVMCI_CHECK_(JVMCIObject()));
   return _HotSpotJVMCIRuntime_instance;
 }
@@ -1987,11 +2001,21 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
   HandleMark hm(thread);
   JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
-    fatal_exception(JVMCIENV, "Exception during HotSpotJVMCIRuntime initialization");
+    if (PrintWarnings) {
+      ResourceMark rm(thread);
+      warning("HotSpotJVMCIRuntime initialization failed when compiling %s", method->name_and_sig_as_C_string());
+      JVMCIENV->describe_pending_exception(true);
+    }
+    compile_state->set_failure(false, "exception during HotSpotJVMCIRuntime initialization");
+    return;
   }
   JVMCIObject jvmci_method = JVMCIENV->get_jvmci_method(method, JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
-    JVMCIENV->describe_pending_exception(true);
+    if (PrintWarnings) {
+      ResourceMark rm(thread);
+      warning("Error creating JVMCI wrapper for %s", method->name_and_sig_as_C_string());
+      JVMCIENV->describe_pending_exception(true);
+    }
     compile_state->set_failure(false, "exception getting JVMCI wrapper method");
     return;
   }

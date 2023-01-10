@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,6 @@ LogTagSet::LogTagSet(PrefixWriter prefix_writer, LogTagType t0, LogTagType t1, L
   }
   _list = this;
   _ntagsets++;
-
-  // Set the default output to warning and error level for all new tagsets.
-  _output_list.set_output_level(&StdoutLog, LogLevel::Default);
 }
 
 void LogTagSet::update_decorators(const LogDecorators& decorator) {

@@ -656,6 +656,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
     address start = __ pc();
+    // B
     __ emit_data(0x03020100, relocInfo::none, 0);
     __ emit_data(0x07060504, relocInfo::none, 0);
     __ emit_data(0x0B0A0908, relocInfo::none, 0);
@@ -672,6 +673,96 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data(0x37363534, relocInfo::none, 0);
     __ emit_data(0x3B3A3938, relocInfo::none, 0);
     __ emit_data(0x3F3E3D3C, relocInfo::none, 0);
+
+    // W
+    __ emit_data(0x00010000, relocInfo::none, 0);
+    __ emit_data(0x00030002, relocInfo::none, 0);
+    __ emit_data(0x00050004, relocInfo::none, 0);
+    __ emit_data(0x00070006, relocInfo::none, 0);
+    __ emit_data(0x00090008, relocInfo::none, 0);
+    __ emit_data(0x000B000A, relocInfo::none, 0);
+    __ emit_data(0x000D000C, relocInfo::none, 0);
+    __ emit_data(0x000F000E, relocInfo::none, 0);
+    __ emit_data(0x00110010, relocInfo::none, 0);
+    __ emit_data(0x00130012, relocInfo::none, 0);
+    __ emit_data(0x00150014, relocInfo::none, 0);
+    __ emit_data(0x00170016, relocInfo::none, 0);
+    __ emit_data(0x00190018, relocInfo::none, 0);
+    __ emit_data(0x001B001A, relocInfo::none, 0);
+    __ emit_data(0x001D001C, relocInfo::none, 0);
+    __ emit_data(0x001F001E, relocInfo::none, 0);
+
+    // D
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000001, relocInfo::none, 0);
+    __ emit_data(0x00000002, relocInfo::none, 0);
+    __ emit_data(0x00000003, relocInfo::none, 0);
+    __ emit_data(0x00000004, relocInfo::none, 0);
+    __ emit_data(0x00000005, relocInfo::none, 0);
+    __ emit_data(0x00000006, relocInfo::none, 0);
+    __ emit_data(0x00000007, relocInfo::none, 0);
+    __ emit_data(0x00000008, relocInfo::none, 0);
+    __ emit_data(0x00000009, relocInfo::none, 0);
+    __ emit_data(0x0000000A, relocInfo::none, 0);
+    __ emit_data(0x0000000B, relocInfo::none, 0);
+    __ emit_data(0x0000000C, relocInfo::none, 0);
+    __ emit_data(0x0000000D, relocInfo::none, 0);
+    __ emit_data(0x0000000E, relocInfo::none, 0);
+    __ emit_data(0x0000000F, relocInfo::none, 0);
+
+    // Q
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000001, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000002, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000003, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000004, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000005, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000006, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000007, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+
+    // D - FP
+    __ emit_data(0x00000000, relocInfo::none, 0); // 0.0f
+    __ emit_data(0x3F800000, relocInfo::none, 0); // 1.0f
+    __ emit_data(0x40000000, relocInfo::none, 0); // 2.0f
+    __ emit_data(0x40400000, relocInfo::none, 0); // 3.0f
+    __ emit_data(0x40800000, relocInfo::none, 0); // 4.0f
+    __ emit_data(0x40A00000, relocInfo::none, 0); // 5.0f
+    __ emit_data(0x40C00000, relocInfo::none, 0); // 6.0f
+    __ emit_data(0x40E00000, relocInfo::none, 0); // 7.0f
+    __ emit_data(0x41000000, relocInfo::none, 0); // 8.0f
+    __ emit_data(0x41100000, relocInfo::none, 0); // 9.0f
+    __ emit_data(0x41200000, relocInfo::none, 0); // 10.0f
+    __ emit_data(0x41300000, relocInfo::none, 0); // 11.0f
+    __ emit_data(0x41400000, relocInfo::none, 0); // 12.0f
+    __ emit_data(0x41500000, relocInfo::none, 0); // 13.0f
+    __ emit_data(0x41600000, relocInfo::none, 0); // 14.0f
+    __ emit_data(0x41700000, relocInfo::none, 0); // 15.0f
+
+    // Q - FP
+    __ emit_data(0x00000000, relocInfo::none, 0); // 0.0d
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 1.0d
+    __ emit_data(0x3FF00000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 2.0d
+    __ emit_data(0x40000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 3.0d
+    __ emit_data(0x40080000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 4.0d
+    __ emit_data(0x40100000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 5.0d
+    __ emit_data(0x40140000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 6.0d
+    __ emit_data(0x40180000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0); // 7.0d
+    __ emit_data(0x401c0000, relocInfo::none, 0);
     return start;
   }
 

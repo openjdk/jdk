@@ -956,6 +956,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                         // Expand the System Id and obtain an absolute URI for it.
                         String absoluteURI = SystemIDResolver.getAbsoluteURI(uri);
 
+                        @SuppressWarnings("deprecation")
                         URL url = new URL(absoluteURI);
                         OutputStream urlOutStream = null;
                         String protocol = url.getProtocol();
@@ -1234,6 +1235,7 @@ final public class LSSerializerImpl implements DOMConfiguration, LSSerializer {
                 // REVISIT: Can this be used to get an absolute expanded URI
                 String absoluteURI = SystemIDResolver.getAbsoluteURI(uri);
 
+                @SuppressWarnings("deprecation")
                 URL url = new URL(absoluteURI);
                 OutputStream urlOutStream = null;
                 String protocol = url.getProtocol();

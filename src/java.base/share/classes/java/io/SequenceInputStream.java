@@ -25,9 +25,10 @@
 
 package java.io;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.util.Vector;
 
 /**
  * A {@code SequenceInputStream} represents
@@ -39,12 +40,12 @@ import java.util.Vector;
  * and so on, until end of file is reached
  * on the last of the contained input streams.
  *
- * @author  Author van Hoff
+ * @author  Arthur van Hoff
  * @since   1.0
  */
 public class SequenceInputStream extends InputStream {
-    Enumeration<? extends InputStream> e;
-    InputStream in;
+    private final Enumeration<? extends InputStream> e;
+    private InputStream in;
 
     /**
      * Initializes a newly created {@code SequenceInputStream}
@@ -79,11 +80,7 @@ public class SequenceInputStream extends InputStream {
      * @param   s2   the second input stream to read.
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
-        Vector<InputStream> v = new Vector<>(2);
-        v.addElement(s1);
-        v.addElement(s2);
-        e = v.elements();
-        peekNextStream();
+        this(Collections.enumeration(Arrays.asList(s1, s2)));
     }
 
     /**
@@ -236,6 +233,21 @@ public class SequenceInputStream extends InputStream {
         }
         if (ioe != null) {
             throw ioe;
+        }
+    }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        if (getClass() == SequenceInputStream.class) {
+            long c = 0;
+            while (in != null) {
+                c += in.transferTo(out);
+                nextStream();
+            }
+            return c;
+        } else {
+            return super.transferTo(out);
         }
     }
 }

@@ -57,9 +57,11 @@ class JfrCheckpointManager : public JfrCHeapObj {
  public:
   typedef JfrCheckpointMspace::Node Buffer;
   typedef JfrCheckpointMspace::NodePtr BufferPtr;
+  typedef const JfrCheckpointMspace::Node* ConstBufferPtr;
  private:
   JfrCheckpointMspace* _global_mspace;
   JfrThreadLocalCheckpointMspace* _thread_local_mspace;
+  JfrThreadLocalCheckpointMspace* _virtual_thread_local_mspace;
   JfrChunkWriter& _chunkwriter;
 
   JfrCheckpointManager(JfrChunkWriter& cw);
@@ -69,14 +71,16 @@ class JfrCheckpointManager : public JfrCHeapObj {
   bool initialize();
   static void destroy();
 
-  static BufferPtr get_thread_local(Thread* thread);
-  static void set_thread_local(Thread* thread, BufferPtr buffer);
-  static BufferPtr acquire_thread_local(size_t size, Thread* thread);
+  static BufferPtr get_virtual_thread_local(Thread* thread);
+  static void set_virtual_thread_local(Thread* thread, BufferPtr buffer);
+  static BufferPtr acquire_virtual_thread_local(Thread* thread, size_t size);
+  static BufferPtr new_virtual_thread_local(Thread* thread, size_t size = 0);
 
-  static BufferPtr lease(Thread* thread, bool previous_epoch = false, size_t size = 0);
-  static BufferPtr lease(BufferPtr old, Thread* thread, size_t size);
   static BufferPtr lease_thread_local(Thread* thread, size_t size = 0);
+  static BufferPtr lease_global(Thread* thread, bool previous_epoch = false, size_t size = 0);
 
+  static BufferPtr acquire(Thread* thread, JfrCheckpointBufferKind kind = JFR_THREADLOCAL, bool previous_epoch = false, size_t size = 0);
+  static BufferPtr renew(ConstBufferPtr old, Thread* thread, size_t size, JfrCheckpointBufferKind kind = JFR_THREADLOCAL);
   static BufferPtr flush(BufferPtr old, size_t used, size_t requested, Thread* thread);
 
   size_t clear();

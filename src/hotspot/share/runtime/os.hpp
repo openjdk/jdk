@@ -440,6 +440,15 @@ class os: AllStatic {
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
+  // Does the platform support trimming the native heap?
+  static bool can_trim_native_heap();
+
+  // Trim the C-heap. Optionally returns working set size change (RSS+Swap) in *rss_change.
+  // Note: If trimming succeeded but no size change information could be obtained,
+  // rss_change.after will contain SIZE_MAX upon return.
+  struct size_change_t { size_t before; size_t after; };
+  static bool trim_native_heap(size_change_t* rss_change = nullptr);
+
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
   // Prints all mappings
@@ -575,8 +584,6 @@ class os: AllStatic {
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 
-  static int pd_self_suspend_thread(Thread* thread);
-
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
   static frame      fetch_compiled_frame_from_context(const void* ucVoid);
@@ -646,9 +653,6 @@ class os: AllStatic {
   static DIR*           opendir(const char* dirname);
   static struct dirent* readdir(DIR* dirp);
   static int            closedir(DIR* dirp);
-
-  // Dynamic library extension
-  static const char*    dll_file_extension();
 
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
@@ -742,6 +746,10 @@ class os: AllStatic {
   // of some platforms don't.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+
+  // Performs snprintf and asserts the result is non-negative (so there was not
+  // an encoding error) and that the output was not truncated.
+  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);
@@ -875,13 +883,10 @@ class os: AllStatic {
   static int connect(int fd, struct sockaddr* him, socklen_t len);
   static struct hostent* get_host_by_name(char* name);
 
-  // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
+  // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
   static void  signal_notify(int signal_number);
-  static void* signal(int signal_number, void* handler);
-  static void  signal_raise(int signal_number);
   static int   signal_wait();
-  static void* user_handler();
   static void  terminate_signal_thread();
   static int   sigexitnum_pd();
 
@@ -953,7 +958,6 @@ class os: AllStatic {
   inline static bool zero_page_read_protected();
 
   static void setup_fpu();
-  static bool supports_sse();
   static juint cpu_microcode_revision();
 
   static inline jlong rdtsc();
@@ -1001,7 +1005,6 @@ class os: AllStatic {
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
   static bool dont_yield();                     // when true, JVM_Yield() is nop
-  static void print_statistics();
 
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);

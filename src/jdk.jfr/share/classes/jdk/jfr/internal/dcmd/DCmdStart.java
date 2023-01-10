@@ -139,11 +139,24 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (disk != null) {
+            if (!disk) {
+                if (maxAge != null) {
+                    logWarning("Option maxage has no effect with disk=false.");
+                }
+                if (maxSize != null) {
+                    logWarning("Option maxsize has no effect with disk=false.");
+                }
+            }
             recording.setToDisk(disk.booleanValue());
         }
 
         recording.setSettings(s);
         SafePath safePath = null;
+
+        // Generate dump filename if user has specified a time-bound recording
+        if (duration != null && path == null) {
+            path = resolvePath(recording, null).toString();
+        }
 
         if (path != null) {
             try {
@@ -224,7 +237,7 @@ final class DCmdStart extends AbstractDCmd {
     }
 
     private LinkedHashMap<String, String> configureStandard(String[] settings) throws DCmdException {
-        LinkedHashMap<String, String> s = new LinkedHashMap<>();
+        LinkedHashMap<String, String> s = LinkedHashMap.newLinkedHashMap(settings.length);
         for (String configName : settings) {
             try {
                 s.putAll(JFC.createKnown(configName).getSettings());

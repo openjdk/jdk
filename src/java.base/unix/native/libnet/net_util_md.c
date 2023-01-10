@@ -123,18 +123,7 @@ jint  IPv6_supported()
          */
         return JNI_FALSE;
     }
-
-    /*
-     * If fd 0 is a socket it means we may have been launched from inetd or
-     * xinetd. If it's a socket then check the family - if it's an
-     * IPv4 socket then we need to disable IPv6.
-     */
-    if (getsockname(0, &sa.sa, &sa_len) == 0) {
-        if (sa.sa.sa_family == AF_INET) {
-            close(fd);
-            return JNI_FALSE;
-        }
-    }
+    close(fd);
 
     /**
      * Linux - check if any interface has an IPv6 address.
@@ -147,13 +136,11 @@ jint  IPv6_supported()
         char *bufP;
 
         if (fP == NULL) {
-            close(fd);
             return JNI_FALSE;
         }
         bufP = fgets(buf, sizeof(buf), fP);
         fclose(fP);
         if (bufP == NULL) {
-            close(fd);
             return JNI_FALSE;
         }
     }
@@ -164,7 +151,6 @@ jint  IPv6_supported()
      *  we should also check if the APIs are available.
      */
     ipv6_fn = JVM_FindLibraryEntry(RTLD_DEFAULT, "inet_pton");
-    close(fd);
     if (ipv6_fn == NULL ) {
         return JNI_FALSE;
     } else {
@@ -223,21 +209,6 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
         free(buf);
     }
 }
-
-#if defined(_AIX)
-
-/* Initialize stubs for blocking I/O workarounds (see src/solaris/native/java/net/linux_close.c) */
-extern void aix_close_init();
-
-void platformInit () {
-    aix_close_init();
-}
-
-#else
-
-void platformInit () {}
-
-#endif
 
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd) {
@@ -715,7 +686,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
           pfd.events |= POLLOUT;
 
         errno = 0;
-        read_rv = NET_Poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
+        read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
 
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);

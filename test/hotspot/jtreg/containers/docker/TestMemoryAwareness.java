@@ -87,6 +87,11 @@ public class TestMemoryAwareness {
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
                 "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
+            testOperatingSystemMXBeanAwareness(
+                "100M", Integer.toString(((int) Math.pow(2, 20)) * 100),
+                "200M", Integer.toString(((int) Math.pow(2, 20)) * (200 - 100)),
+                true /* additional cgroup fs mounts */
+            );
             final String hostMaxMem = getHostMaxMemory();
             testOperatingSystemMXBeanIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
             testMetricsIgnoresMemLimitExceedingPhysicalMemory(hostMaxMem);
@@ -170,6 +175,12 @@ public class TestMemoryAwareness {
 
     private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
             String swapAllocation, String expectedSwap) throws Exception {
+        testOperatingSystemMXBeanAwareness(memoryAllocation, expectedMemory, swapAllocation, expectedSwap, false);
+    }
+
+    private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
+            String swapAllocation, String expectedSwap, boolean addCgroupMounts) throws Exception {
+
         Common.logNewTestCase("Check OperatingSystemMXBean");
 
         DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
@@ -181,6 +192,10 @@ public class TestMemoryAwareness {
             // diagnostics
             .addJavaOpts("--add-exports")
             .addJavaOpts("java.base/jdk.internal.platform=ALL-UNNAMED");
+        if (addCgroupMounts) {
+            // Extra cgroup mount should be ignored by product code
+            opts.addDockerOpts("--volume", "/sys/fs/cgroup:/cgroup-in:ro");
+        }
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
         out.shouldHaveExitValue(0)

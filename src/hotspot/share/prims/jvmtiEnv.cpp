@@ -583,7 +583,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     // ThreadsListHandle that is common to both thread-specific and
     // global code paths.
 
-    JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, (oop) NULL, event_type, enabled);
+    JvmtiEventController::set_user_enabled(this, NULL, (oop) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.
     ThreadsListHandle tlh;
@@ -715,9 +715,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     }
     delete zip_entry;   // no longer needed
 
-    // lock the loader
-    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    ObjectLocker ol(loader, THREAD);
+    Handle loader(THREAD, SystemDictionary::java_system_loader());
 
     // need the path as java.lang.String
     Handle path = java_lang_String::create_from_platform_dependent_str(segment, THREAD);
@@ -1358,7 +1356,7 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(calling_thread);
@@ -1431,7 +1429,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
 
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+         new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
   JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(calling_thread);
@@ -1670,7 +1668,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = NULL;
-  Handle *group_objs  = NULL;
+  objArrayHandle group_objs;
   jint nthreads = 0;
   jint ngroups = 0;
   int hidden_threads = 0;
@@ -2246,12 +2244,19 @@ JvmtiEnv::GetLocalObject(jthread thread, jint depth, jint slot, jobject* value_p
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
+
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     current_thread, depth, slot);
+                                     current_thread, depth, slot, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2259,13 +2264,7 @@ JvmtiEnv::GetLocalObject(jthread thread, jint depth, jint slot, jobject* value_p
     }
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, current_thread, depth, slot);
+    VM_GetOrSetLocal op(java_thread, current_thread, depth, slot, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2286,12 +2285,19 @@ JvmtiEnv::GetLocalInstance(jthread thread, jint depth, jobject* value_ptr){
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
+
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetReceiver op(this, Handle(current_thread, thread_obj),
-                                   current_thread, depth);
+                                   current_thread, depth, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2299,13 +2305,7 @@ JvmtiEnv::GetLocalInstance(jthread thread, jint depth, jobject* value_ptr){
     }
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetReceiver op(java_thread, current_thread, depth);
+    VM_GetReceiver op(java_thread, current_thread, depth, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2327,12 +2327,19 @@ JvmtiEnv::GetLocalInt(jthread thread, jint depth, jint slot, jint* value_ptr) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
+
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_INT);
+                                     depth, slot, T_INT, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2340,13 +2347,7 @@ JvmtiEnv::GetLocalInt(jthread thread, jint depth, jint slot, jint* value_ptr) {
     }
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_INT);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_INT, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2368,12 +2369,19 @@ JvmtiEnv::GetLocalLong(jthread thread, jint depth, jint slot, jlong* value_ptr) 
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
+
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_LONG);
+                                     depth, slot, T_LONG, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2381,13 +2389,7 @@ JvmtiEnv::GetLocalLong(jthread thread, jint depth, jint slot, jlong* value_ptr) 
     }
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_LONG);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_LONG, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2409,12 +2411,19 @@ JvmtiEnv::GetLocalFloat(jthread thread, jint depth, jint slot, jfloat* value_ptr
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
+
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_FLOAT);
+                                     depth, slot, T_FLOAT, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2422,13 +2431,7 @@ JvmtiEnv::GetLocalFloat(jthread thread, jint depth, jint slot, jfloat* value_ptr
     }
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_FLOAT);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_FLOAT, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2450,12 +2453,19 @@ JvmtiEnv::GetLocalDouble(jthread thread, jint depth, jint slot, jdouble* value_p
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
+
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_DOUBLE);
+                                     depth, slot, T_DOUBLE, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2463,13 +2473,7 @@ JvmtiEnv::GetLocalDouble(jthread thread, jint depth, jint slot, jdouble* value_p
     }
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_DOUBLE);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_DOUBLE, self);
     VMThread::execute(&op);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
@@ -2490,25 +2494,26 @@ JvmtiEnv::SetLocalObject(jthread thread, jint depth, jint slot, jobject value) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
+
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
   jvalue val;
   val.l = value;
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_OBJECT, val);
+                                     depth, slot, T_OBJECT, val, self);
     VMThread::execute(&op);
     err = op.result();
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_OBJECT, val);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_OBJECT, val, self);
     VMThread::execute(&op);
     err = op.result();
   }
@@ -2526,25 +2531,26 @@ JvmtiEnv::SetLocalInt(jthread thread, jint depth, jint slot, jint value) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
+
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
   jvalue val;
   val.i = value;
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_INT, val);
+                                     depth, slot, T_INT, val, self);
     VMThread::execute(&op);
     err = op.result();
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_INT, val);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_INT, val, self);
     VMThread::execute(&op);
     err = op.result();
   }
@@ -2562,25 +2568,26 @@ JvmtiEnv::SetLocalLong(jthread thread, jint depth, jint slot, jlong value) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
+
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
   jvalue val;
   val.j = value;
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_LONG, val);
+                                     depth, slot, T_LONG, val, self);
     VMThread::execute(&op);
     err = op.result();
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_LONG, val);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_LONG, val, self);
     VMThread::execute(&op);
     err = op.result();
   }
@@ -2598,25 +2605,26 @@ JvmtiEnv::SetLocalFloat(jthread thread, jint depth, jint slot, jfloat value) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
+
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
   jvalue val;
   val.f = value;
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_FLOAT, val);
+                                     depth, slot, T_FLOAT, val, self);
     VMThread::execute(&op);
     err = op.result();
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_FLOAT, val);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_FLOAT, val, self);
     VMThread::execute(&op);
     err = op.result();
   }
@@ -2634,25 +2642,26 @@ JvmtiEnv::SetLocalDouble(jthread thread, jint depth, jint slot, jdouble value) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
+  ThreadsListHandle tlh(current_thread);
+
+  JavaThread* java_thread = NULL;
+  oop thread_obj = NULL;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+  bool self = is_JavaThread_current(java_thread, thread_obj);
   jvalue val;
   val.d = value;
 
-  jvmtiError err = JVMTI_ERROR_NONE;
-  oop thread_obj = current_thread_obj_or_resolve_external_guard(thread);
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     VM_VirtualThreadGetOrSetLocal op(this, Handle(current_thread, thread_obj),
-                                     depth, slot, T_DOUBLE, val);
+                                     depth, slot, T_DOUBLE, val, self);
     VMThread::execute(&op);
     err = op.result();
   } else {
     // Support for ordinary threads
-    ThreadsListHandle tlh(current_thread);
-    JavaThread* java_thread = NULL;
-    err = get_JavaThread(tlh.list(), thread, &java_thread);
-    if (err != JVMTI_ERROR_NONE) {
-      return err;
-    }
-    VM_GetOrSetLocal op(java_thread, depth, slot, T_DOUBLE, val);
+    VM_GetOrSetLocal op(java_thread, depth, slot, T_DOUBLE, val, self);
     VMThread::execute(&op);
     err = op.result();
   }
@@ -3513,7 +3522,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
 
   // does the klass have any local variable information?
   InstanceKlass* ik = method->method_holder();
-  if (!ik->access_flags().has_localvariable_table()) {
+  if (!ik->has_localvariable_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 

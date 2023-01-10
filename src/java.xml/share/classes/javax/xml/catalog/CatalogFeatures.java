@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,10 +279,10 @@ import jdk.xml.internal.SecuritySupport;
  * <td>
  * <pre>{@literal
    The following XInclude element:
-   <xi:include href="http://openjdk.java.net/xml/disclaimer.xml"/>
+   <xi:include href="https://openjdk.org/xml/disclaimer.xml"/>
 
    can be resolved using a URI entry:
-   <uri name="http://openjdk.java.net/xml/disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
+   <uri name="https://openjdk.org/xml/disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
    or
    <uriSuffix uriSuffix="disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
  * }</pre>
@@ -294,15 +294,15 @@ import jdk.xml.internal.SecuritySupport;
  * <td>
  * <pre>{@literal
    The following import element:
-    <xsd:import namespace="http://openjdk.java.net/xsd/XSDImport_person"
-                schemaLocation="http://openjdk.java.net/xsd/XSDImport_person.xsd"/>
+    <xsd:import namespace="https://openjdk.org/xsd/XSDImport_person"
+                schemaLocation="https://openjdk.org/xsd/XSDImport_person.xsd"/>
 
    can be resolved using a URI entry:
-   <uri name="http://openjdk.java.net/xsd/XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
+   <uri name="https://openjdk.org/xsd/XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
    or
    <uriSuffix uriSuffix="XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
    or
-   <uriSuffix uriSuffix="http://openjdk.java.net/xsd/XSDImport_person" uri="file:///pathto/local/XSDImport_person.xsd"/>
+   <uriSuffix uriSuffix="https://openjdk.org/xsd/XSDImport_person" uri="file:///pathto/local/XSDImport_person.xsd"/>
  * }</pre>
  * </td>
  * </tr>
@@ -312,10 +312,10 @@ import jdk.xml.internal.SecuritySupport;
  * <td>
  * <pre>{@literal
    The following include element:
-   <xsd:include schemaLocation="http://openjdk.java.net/xsd/XSDInclude_person.xsd"/>
+   <xsd:include schemaLocation="https://openjdk.org/xsd/XSDInclude_person.xsd"/>
 
    can be resolved using a URI entry:
-   <uri name="http://openjdk.java.net/xsd/XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
+   <uri name="https://openjdk.org/xsd/XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
    or
    <uriSuffix uriSuffix="XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
  * }</pre>
@@ -327,10 +327,10 @@ import jdk.xml.internal.SecuritySupport;
  * <td>
  * <pre>{@literal
    The following include element:
-   <xsl:include href="http://openjdk.java.net/xsl/include.xsl"/>
+   <xsl:include href="https://openjdk.org/xsl/include.xsl"/>
 
    can be resolved using a URI entry:
-   <uri name="http://openjdk.java.net/xsl/include.xsl" uri="file:///pathto/local/include.xsl"/>
+   <uri name="https://openjdk.org/xsl/include.xsl" uri="file:///pathto/local/include.xsl"/>
    or
    <uriSuffix uriSuffix="include.xsl" uri="file:///pathto/local/include.xsl"/>
  * }</pre>
@@ -342,10 +342,10 @@ import jdk.xml.internal.SecuritySupport;
  * <td>
  * <pre>{@literal
    The document in the following element:
-   <xsl:variable name="dummy" select="document('http://openjdk.java.net/xsl/list.xml')"/>
+   <xsl:variable name="dummy" select="document('https://openjdk.org/xsl/list.xml')"/>
 
    can be resolved using a URI entry:
-   <uri name="http://openjdk.java.net/xsl/list.xml" uri="file:///pathto/local/list.xml"/>
+   <uri name="https://openjdk.org/xsl/list.xml" uri="file:///pathto/local/list.xml"/>
    or
    <uriSuffix uriSuffix="list.xml" uri="file:///pathto/local/list.xml"/>
  * }</pre>

@@ -253,8 +253,6 @@ class java_lang_Class : AllStatic {
                             Handle protection_domain, Handle classData, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
-  static void update_archived_primitive_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
-  static void update_archived_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
@@ -354,7 +352,7 @@ class java_lang_Thread : AllStatic {
   static int _tid_offset;
   static int _continuation_offset;
   static int _park_blocker_offset;
-  static int _extentLocalBindings_offset;
+  static int _scopedValueBindings_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
@@ -400,8 +398,8 @@ class java_lang_Thread : AllStatic {
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);
 
-  // Clear all extent local bindings on error
-  static void clear_extentLocalBindings(oop java_thread);
+  // Clear all scoped value bindings on error
+  static void clear_scopedValueBindings(oop java_thread);
 
   // Blocker object responsible for thread parking
   static oop park_blocker(oop java_thread);
@@ -481,13 +479,7 @@ class java_lang_ThreadGroup : AllStatic {
   static int _maxPriority_offset;
   static int _daemon_offset;
 
-  static int _ngroups_offset;
-  static int _groups_offset;
-  static int _nweaks_offset;
-  static int _weaks_offset;
-
   static void compute_offsets();
-
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
@@ -499,15 +491,6 @@ class java_lang_ThreadGroup : AllStatic {
   static ThreadPriority maxPriority(oop java_thread_group);
   // Daemon
   static bool is_daemon(oop java_thread_group);
-
-  // Number of strongly reachable thread groups
-  static int ngroups(oop java_thread_group);
-  // Strongly reachable thread groups
-  static objArrayOop groups(oop java_thread_group);
-  // Number of weakly reachable thread groups
-  static int nweaks(oop java_thread_group);
-  // Weakly reachable thread groups
-  static objArrayOop weaks(oop java_thread_group);
 
   // Debugging
   friend class JavaClasses;
@@ -969,6 +952,7 @@ class java_lang_ref_Reference: AllStatic {
   static inline oop phantom_referent_no_keepalive(oop ref);
   static inline oop unknown_referent_no_keepalive(oop ref);
   static inline void clear_referent(oop ref);
+  static inline void clear_referent_raw(oop ref);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
   static inline void set_next(oop ref, oop value);
@@ -1138,8 +1122,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static int _volatileStorage_offset;
   static int _stackAlignment_offset;
   static int _shadowSpace_offset;
-  static int _targetAddrStorage_offset;
-  static int _retBufAddrStorage_offset;
+  static int _scratch1_offset;
+  static int _scratch2_offset;
 
   static void compute_offsets();
 
@@ -1152,8 +1136,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static objArrayOop volatileStorage(oop entry);
   static jint        stackAlignment(oop entry);
   static jint        shadowSpace(oop entry);
-  static oop         targetAddrStorage(oop entry);
-  static oop         retBufAddrStorage(oop entry);
+  static oop         scratch1(oop entry);
+  static oop         scratch2(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1168,7 +1152,8 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
 
  private:
   static int _type_offset;
-  static int _index_offset;
+  static int _indexOrOffset_offset;
+  static int _segmentMaskOrSize_offset;
   static int _debugName_offset;
 
   static void compute_offsets();
@@ -1177,9 +1162,10 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static jint        type(oop entry);
-  static jint        index(oop entry);
-  static oop         debugName(oop entry);
+  static jbyte  type(oop entry);
+  static jint   index_or_offset(oop entry);
+  static jshort segment_mask_or_size(oop entry);
+  static oop    debugName(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1493,6 +1479,7 @@ class java_lang_ClassLoader : AllStatic {
   static void release_set_loader_data(oop loader, ClassLoaderData* new_data);
 
   static oop parent(oop loader);
+  static oop parent_no_keepalive(oop loader);
   static oop name(oop loader);
   static oop nameAndId(oop loader);
   static bool isAncestor(oop loader, oop cl);

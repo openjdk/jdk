@@ -156,7 +156,7 @@ public interface XKeySymConstants {
 
 
     /*
-     * Auxilliary Functions; note the duplicate definitions for left and right
+     * Auxiliary Functions; note the duplicate definitions for left and right
      * function keys;  Sun keyboards and a few other manufactures have such
      * function key groups on the left and/or right sides of the keyboard.
      * We've not found a keyboard with more than 35 function keys total.

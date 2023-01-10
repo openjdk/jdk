@@ -50,5 +50,5 @@ runs:
       id: path-name
       run: |
         # Export the path
-        echo '::set-output name=path::gtest'
+        echo 'path=gtest' >> $GITHUB_OUTPUT
       shell: bash

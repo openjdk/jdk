@@ -201,7 +201,7 @@ class CSSParser {
      * Parses an @ rule, stopping at a matching brace pair, or ;.
      */
     private void parseAtRule() throws IOException {
-        // PENDING: make this more effecient.
+        // PENDING: make this more efficient.
         boolean        done = false;
         boolean isImport = (tokenBufferLength == 7 &&
                             tokenBuffer[0] == '@' && tokenBuffer[1] == 'i' &&

@@ -60,13 +60,7 @@ public class FilterNode extends CheckNode implements LookupListener, ChangedList
 
         content.add(filter.getEditor());
         this.filter = filter;
-        filter.getChangedEvent().addListener(new ChangedListener<Filter>() {
-
-            @Override
-            public void changed(Filter source) {
-                update();
-            }
-        });
+        filter.getChangedEvent().addListener(source -> update());
 
         update();
 
