@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import com.sun.source.doctree.MarkdownTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SnippetTree;
-import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
@@ -120,7 +119,7 @@ public class JavadocFormatter {
             DocCommentTree docComment = trees.getDocCommentTree(new SimpleJavaFileObject(new URI("mem://doc.html"), Kind.HTML) {
                 @Override @DefinedBy(Api.COMPILER)
                 public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                    boolean isMarkDown = javadoc.startsWith("md") && Character.isWhitespace(javadoc.charAt(2)); //TODO: constant
+                    boolean isMarkDown = javadoc.startsWith("md") && Character.isWhitespace(javadoc.charAt(2));
                     return isMarkDown ? javadoc : "<body>" + javadoc + "</body>";
                 }
             });
@@ -157,6 +156,9 @@ public class JavadocFormatter {
     }
 
     private class FormatJavadocScanner extends DocTreeScanner<Object, Object> {
+        private static final char FFFC = '\uFFFC'; // Unicode Object Replacement Character
+        private static final Pattern FFFC_PATTERN = Pattern.compile(Pattern.quote("" + FFFC));
+
         private final StringBuilder result;
         private final JavacTask task;
         private final DocTrees trees;
@@ -226,7 +228,7 @@ public class JavadocFormatter {
                 text = text.replaceAll("\n", "\n" + indentString(indent));
             }
             boolean first = true;
-            for (String part : text.split(Pattern.quote("" + FFFC), -1)) {
+            for (String part : FFFC_PATTERN.split(text, -1)) {
                 if (!first) {
                     Object nested = injects.remove(0);
                     if (nested instanceof DocTree nestedTree) {
@@ -240,6 +242,7 @@ public class JavadocFormatter {
                 } else {
                     first = false;
                 }
+                //remove space right before dot or comma:
                 if (!result.isEmpty() && !part.isEmpty() &&
                     result.charAt(result.length() - 1) == ' ' &&
                     (part.charAt(0) == '.' || part.charAt(0) == ',')) {
@@ -624,8 +627,6 @@ public class JavadocFormatter {
             }
         }
 
-        private static final char FFFC = '\uFFFC'; // Unicode Object Replacement Character
-        private static final Pattern FFFC_PATTERN = Pattern.compile(Pattern.quote("" + FFFC));
         private List<Object> injects = null;
 
         @Override
