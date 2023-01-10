@@ -29,30 +29,15 @@
 #include <sanitizer/asan_interface.h>
 #endif
 
-// NO_SANITIZE_ADDRESS
+// ASAN_POISON_MEMORY_REGION()/ASAN_UNPOISON_MEMORY_REGION()
 //
-// Function attribute that can be applied to disable ASan instrumentation for the function.
-#ifdef ADDRESS_SANITIZER
-// We currently only support ASan with GCC and Clang, but technically MSVC also has ASan so we could
-// support it in the future. Thus we pre-emptively support the MSVC-specific attribute.
-#ifdef _MSC_VER
-#define NO_SANITIZE_ADDRESS __declspec(no_sanitize_address)
-#else
-#define NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
-#endif
-#else
-#define NO_SANITIZE_ADDRESS
-#endif
-
-// ASAN_POISON_MEMORY_REGION()
-//
-// Poisons the specified memory region. Subsequent reads and writes to the memory region will result
-// in a fatal error. When ASan is available this is the macro of the same name from
-// <sanitizer/asan_interface.h>. When ASan is not available this macro is a NOOP which preserves the
-// arguments, ensuring they still compile, but ensures they are stripped due to being unreachable.
-// This helps ensure developers do not accidently break ASan builds.
+// Poisons/unpoisons the specified memory region. When ASan is available this is the macro of the
+// same name from <sanitizer/asan_interface.h>. When ASan is not available this macro is a NOOP
+// which preserves the arguments, ensuring they still compile, but ensures they are stripped due to
+// being unreachable. This helps ensure developers do not accidently break ASan builds.
 #ifdef ADDRESS_SANITIZER
 // ASAN_POISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
+// ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 #else
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
   do {                                        \
@@ -61,18 +46,6 @@
       ((void) (size));                        \
     }                                         \
   } while (false)
-#endif
-
-// ASAN_UNPOISON_MEMORY_REGION()
-//
-// Unpoisons the specified memory region. Subsequent reads and writes to the memory region are
-// valid. When ASan is available this is the macro of the same name from
-// <sanitizer/asan_interface.h>. When ASan is not available this macro is a NOOP which preserves the
-// arguments, ensuring they still compile, but ensures they are stripped due to being unreachable.
-// This helps ensure developers do not accidently break ASan builds.
-#ifdef ADDRESS_SANITIZER
-// ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
-#else
 #define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
   do {                                          \
     if (false) {                                \
