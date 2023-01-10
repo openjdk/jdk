@@ -82,9 +82,25 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * unit are invoked, we "invoke" them to follow references.
  *
  * <p>
- * When tracking references, we distinguish between direct references and indirect references,
- * but do no further refinement. In particular, we do not attempt to track references stored
- * in fields at all. So we are mainly just trying to track what's on the Java stack.
+ * As we analyze constructors and the methods they invoke, we track the various things in scope
+ * that could possibly reference the 'this' instance we are following. Such references are
+ * represented by {@link Ref} instances, of which there are these varieties:
+ * <ul>
+ *  <li>The current 'this' reference; see {@link ThisRef}
+ *  <li>The current outer 'this' reference; see {@link OuterRef}
+ *  <li>Local variables and method parameters; see {@link VarRef}
+ *  <li>The current expression being evaluated, i.e.,what's on top of the Java stack; see {@link ExprRef}
+ *  <li>The current method's return value; see {@link ReturnRef}
+ * </ul>
+ *
+ * <p>
+ * For each type of reference, we distinguish between <i>direct</i> and <i>indirect</i> references.
+ * A direct reference means the reference directly refers to the 'this' instance we are tracking.
+ * An indirect reference means the reference refers to the 'this' instance we are tracking through
+ * at least one level of indirection.
+ *
+ * <p>
+ * Currently we do not attempt to explicitly track references stored in fields (for future study).
  *
  * <p>
  * A few notes on this implementation:
@@ -104,18 +120,8 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  <ul>
  *      <li>When this occurs the warning displays each step in the stack trace to help in comprehension.
  *  </ul>
- *  <li>The possible locations for a 'this' reference that we try to track are:
- *  <ul>
- *      <li>Current 'this' instance
- *      <li>Current outer 'this' instance
- *      <li>Local parameter/variable
- *      <li>Method return value
- *      <li>Current expression value (i.e. top of stack)
- *  </ul>
  *  <li>We assume that native methods do not leak.
- *  <li>We don't try to track assignments to &amp; from fields (for future study).
- *  <li>We don't try to follow {@code super()} invocations.
- *  <li>We categorize tracked references as direct or indirect to add a tiny bit of nuance.
+ *  <li>We don't try to follow {@code super()} invocations; that's for the superclass analysis to handle.
  *  </ul>
  */
 class ThisEscapeAnalyzer extends TreeScanner {
