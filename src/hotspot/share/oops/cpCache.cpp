@@ -872,6 +872,11 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   ResourceMark rm;
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
 
+  if (UseNewIndyCode) {
+    if (resolved_indy_info(index)->method() != nullptr)
+      return constant_pool()->resolved_reference_from_indy(index);
+  }
+
   // Come back to this
   /*if (indy_resolution_failed()) {
     // Before we got here, another thread got a LinkageError exception during
@@ -936,7 +941,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   if (UseNewIndyCode && resolved_indy_info()) {
     assert(resolved_indy_info() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
     resolved_indy_info(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-    resolved_indy_info(index)->print_on(tty);
+    // resolved_indy_info(index)->print_on(tty);
   }
 
   // The interpreter assembly code does not check byte_2,

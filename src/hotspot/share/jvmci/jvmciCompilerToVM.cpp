@@ -763,7 +763,7 @@ C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupAppendixInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, index);
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, index, index < 0);
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(appendix_oop));
 C2V_END
 
@@ -1462,8 +1462,12 @@ C2V_VMENTRY(void, resolveInvokeDynamicInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   CallInfo callInfo;
   LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokedynamic, CHECK);
-  ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
-  cp_cache_entry->set_dynamic_call(cp, callInfo);
+  if (UseNewIndyCode) {
+    cp->cache()->set_dynamic_call(callInfo, cp->decode_invokedynamic_index(index));
+  } else {
+    ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
+    cp_cache_entry->set_dynamic_call(cp, callInfo);
+  }
 C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))

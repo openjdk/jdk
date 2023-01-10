@@ -470,7 +470,7 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_s
 bool ciBytecodeStream::has_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index());
+  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index(), has_index_u4());
 }
 
 // ------------------------------------------------------------------
@@ -481,7 +481,7 @@ bool ciBytecodeStream::has_appendix() {
 ciObject* ciBytecodeStream::get_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index());
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index(), has_index_u4());
   return CURRENT_ENV->get_object(appendix_oop);
 }
 

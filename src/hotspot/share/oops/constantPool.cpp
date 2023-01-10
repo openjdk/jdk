@@ -641,18 +641,28 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
 }
 
 
-bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
+bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which, bool is_invokedynamic) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->has_appendix();
+  if (UseNewIndyCode && is_invokedynamic) {
+    int indy_index = decode_cpcache_index(which, true);
+    return cpool->cache()->resolved_indy_info(indy_index)->has_appendix();
+  } else {
+    int cache_index = decode_cpcache_index(which, true);
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->has_appendix();
+  }
 }
 
-oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
+oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which, bool is_invokedynamic) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->appendix_if_resolved(cpool);
+  if (UseNewIndyCode && is_invokedynamic) {
+    int indy_index = decode_cpcache_index(which, true);
+    return cpool->resolved_reference_from_indy(indy_index);
+  } else {
+    int cache_index = decode_cpcache_index(which, true);
+    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
+    return e->appendix_if_resolved(cpool);
+  }
 }
 
 
