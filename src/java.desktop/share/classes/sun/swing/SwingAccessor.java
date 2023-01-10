@@ -51,29 +51,6 @@ public final class SwingAccessor {
     }
 
     /**
-     * This interface provides access to the renderer's accessibility component.
-     * For example, the renderer of a list element, a table cell, or a tree node
-     */
-    public interface AccessibleComponentAccessor {
-        Accessible getCurrentAccessible(AccessibleContext ac);
-    }
-
-    private static AccessibleComponentAccessor accessibleComponentAccessor = null;
-
-    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
-        var access = accessibleComponentAccessor;
-        if (access == null) {
-            ensureClassInitialized(JTree.class);
-            access = accessibleComponentAccessor;
-        }
-        return access;
-    }
-
-    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
-        accessibleComponentAccessor = accessibleAccessor;
-    }
-
-    /**
      * An accessor for the JComponent class.
      */
     public interface JComponentAccessor {
@@ -320,5 +297,28 @@ public final class SwingAccessor {
         try {
             MethodHandles.lookup().ensureInitialized(c);
         } catch (IllegalAccessException e) {}
+    }
+
+    /**
+     * This interface provides access to the renderer's accessibility component.
+     * For example, the renderer of a list element, a table cell, or a tree node
+     */
+    public interface AccessibleComponentAccessor {
+        Accessible getCurrentAccessible(AccessibleContext ac);
+    }
+
+    private static AccessibleComponentAccessor accessibleComponentAccessor = null;
+
+    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
+        var access = accessibleComponentAccessor;
+        if (access == null) {
+            ensureClassInitialized(JTree.class);
+            access = accessibleComponentAccessor;
+        }
+        return access;
+    }
+
+    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
+        accessibleComponentAccessor = accessibleAccessor;
     }
 }
