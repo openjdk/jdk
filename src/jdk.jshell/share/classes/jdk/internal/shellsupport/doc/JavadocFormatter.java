@@ -645,7 +645,7 @@ public class JavadocFormatter {
 
                 for (DocTree node : nodes) {
                     if (node.getKind() == DocTree.Kind.MARKDOWN) {
-                        String code = ((MarkdownTree) node).getCode();
+                        String code = ((MarkdownTree) node).getContent();
                         boolean first = true;
 
                         for (String part : FFFC_PATTERN.split(code, -1)) {

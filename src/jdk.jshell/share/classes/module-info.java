@@ -68,8 +68,8 @@ module jdk.jshell {
     requires jdk.compiler;
     requires jdk.internal.ed;
     requires jdk.internal.le;
+    requires jdk.internal.md;
     requires jdk.internal.opt;
-    requires jdk.javadoc;
 
     requires transitive java.compiler;
     requires transitive java.prefs;

@@ -65,9 +65,6 @@ module jdk.javadoc {
     requires transitive jdk.compiler;
 
     exports jdk.javadoc.doclet;
-    exports jdk.internal.org.commonmark.node to jdk.jshell;
-    exports jdk.internal.org.commonmark.parser to jdk.jshell;
-    exports jdk.internal.org.commonmark.renderer.html to jdk.jshell;
 
     provides java.util.spi.ToolProvider with
         jdk.javadoc.internal.tool.JavadocToolProvider;
