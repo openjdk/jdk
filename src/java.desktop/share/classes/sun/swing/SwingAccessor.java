@@ -301,12 +301,6 @@ public final class SwingAccessor {
         SwingAccessor.keyStrokeAccessor = accessor;
     }
 
-    private static void ensureClassInitialized(Class<?> c) {
-        try {
-            MethodHandles.lookup().ensureInitialized(c);
-        } catch (IllegalAccessException e) {}
-    }
-
     private static AccessibleComponentAccessor accessibleComponentAccessor = null;
 
     public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
@@ -320,5 +314,11 @@ public final class SwingAccessor {
 
     public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
         accessibleComponentAccessor = accessibleAccessor;
+    }
+
+    private static void ensureClassInitialized(Class<?> c) {
+        try {
+            MethodHandles.lookup().ensureInitialized(c);
+        } catch (IllegalAccessException e) {}
     }
 }
