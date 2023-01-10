@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ class MemReporterBase : public StackObj {
   }
 
   // Convert diff amount in bytes to current reporting scale
-  inline int64_t diff_in_current_scale(size_t s1, size_t s2) const {
+  int64_t diff_in_current_scale(size_t s1, size_t s2) const {
     // _scale should not be 0, otherwise division by zero at return.
     assert(_scale != 0, "wrong scale");
 
@@ -83,21 +83,17 @@ class MemReporterBase : public StackObj {
 
     size_t amount = s1 - s2;
     assert(amount <= SIZE_MAX - _scale / 2, "size_t overflow");
-    amount = (amount + _scale / 2) / _scale;
+    size_t scaled = (amount / _scale);
+    if ((amount % _scale) > (_scale - 1)/2) {
+      scaled += 1;
+    }
 
-    if (amount == 0) {
+    if (scaled == 0) {
       return 0;
     }
-    // We assume the valid range for deltas [INT64_MIN, INT64_MAX].
-    if (!(sizeof(size_t) <= sizeof(int64_t) && amount - (int)is_negative <= INT64_MAX)) {
-      fprintf(stderr,"amount=%ld, amount-1= %ld, INT64_MAX=%ld\n", amount , amount - (int)is_negative, INT64_MAX);
-    }
-    assert((sizeof(size_t) <= sizeof(int64_t) && amount - (int)is_negative <= INT64_MAX), "cannot fit scaled diff into int64_t");
-    if (is_negative) {
-      return (sizeof(size_t) == sizeof(int64_t) && amount - 1 == INT64_MAX)? INT64_MIN : -(int64_t)amount;
-    } else {
-      return (int64_t)amount;
-    }
+    assert(scaled <= INT64_MAX, "overflow");
+    int64_t result = static_cast<int64_t>(scaled);
+    return is_negative ? -result : result;
   }
 
   // Print summary total, malloc and virtual memory
