@@ -65,6 +65,9 @@ enum ProtocolVersion {
     // The limit of minimum protocol version
     static final int LIMIT_MIN_VALUE = 0x0000;
 
+    static final ProtocolVersion MAX_TLS_SUPPORTED = TLS13;
+    static final ProtocolVersion MIN_TLS_SUPPORTED = SSL30;
+
     // (D)TLS ProtocolVersion array for TLS 1.0 and previous versions.
     static final ProtocolVersion[] PROTOCOLS_TO_10 = new ProtocolVersion[] {
             TLS10, SSL30
@@ -235,8 +238,9 @@ enum ProtocolVersion {
         } else {
             if (v < SSL30.id) {
                 return allowSSL20Hello && (v == SSL20Hello.id);
+            } else {
+                return v >= MIN_TLS_SUPPORTED.id && v <= MAX_TLS_SUPPORTED.id;
             }
-            return true;
         }
     }
 
