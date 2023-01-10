@@ -27,7 +27,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/utf8.hpp"
-
+#include "runtime/os.hpp"
 
 // Assume the utf8 string is in legal form and has been
 // checked in the class file parser/format checker.
@@ -224,7 +224,7 @@ void UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int
       *p++ = (char)c;
     } else {
       if (p + 6 >= end) break;      // string is truncated
-      sprintf(p, "\\u%04x", c);
+      os::snprintf_checked(p, 7, "\\u%04x", c);  // counting terminating zero in
       p += 6;
     }
   }
@@ -518,7 +518,7 @@ void UNICODE::as_quoted_ascii(const T* base, int length, char* buf, int buflen) 
       *p++ = (char)c;
     } else {
       if (p + 6 >= end) break;      // string is truncated
-      sprintf(p, "\\u%04x", c);
+      os::snprintf_checked(p, 7, "\\u%04x", c);
       p += 6;
     }
   }

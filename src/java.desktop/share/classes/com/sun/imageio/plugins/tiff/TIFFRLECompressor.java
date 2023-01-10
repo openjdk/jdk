@@ -39,7 +39,7 @@ public class TIFFRLECompressor extends TIFFFaxCompressor {
 
     /**
      * Encode a row of data using Modified Huffman Compression also known as
-     * CCITT RLE (Run Lenth Encoding).
+     * CCITT RLE (Run Length Encoding).
      *
      * @param data        The row of data to compress.
      * @param rowOffset   Starting index in {@code data}.

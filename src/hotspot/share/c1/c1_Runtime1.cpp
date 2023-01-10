@@ -689,7 +689,7 @@ JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* current, int i
   const int len = 35;
   assert(len < strlen("Index %d out of bounds for length %d"), "Must allocate more space for message.");
   char message[2 * jintAsStringSize + len];
-  sprintf(message, "Index %d out of bounds for length %d", index, a->length());
+  os::snprintf_checked(message, sizeof(message), "Index %d out of bounds for length %d", index, a->length());
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
 JRT_END
 
@@ -701,7 +701,7 @@ JRT_ENTRY(void, Runtime1::throw_index_exception(JavaThread* current, int index))
   }
 #endif
   char message[16];
-  sprintf(message, "%d", index);
+  os::snprintf_checked(message, sizeof(message), "%d", index);
   SharedRuntime::throw_and_post_jvmti_exception(current, vmSymbols::java_lang_IndexOutOfBoundsException(), message);
 JRT_END
 
@@ -764,6 +764,7 @@ JRT_END
 
 
 JRT_LEAF(void, Runtime1::monitorexit(JavaThread* current, BasicObjectLock* lock))
+  assert(current == JavaThread::current(), "pre-condition");
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _monitorexit_slowcase_cnt++;

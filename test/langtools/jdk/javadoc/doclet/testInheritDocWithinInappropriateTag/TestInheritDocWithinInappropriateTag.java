@@ -39,7 +39,7 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         new TestInheritDocWithinInappropriateTag()
-                .runTests(m -> new Object[]{Path.of(m.getName())});
+                .runTests();
     }
 
     private final ToolBox tb = new ToolBox();

@@ -37,7 +37,7 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/resourceHash.hpp"
 
-struct ArchiveHeapOopmapInfo;
+struct ArchiveHeapBitmapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -237,8 +237,8 @@ private:
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
-  ResizeableResourceHashtable<address, SourceObjInfo, ResourceObj::C_HEAP, mtClassShared> _src_obj_table;
-  ResizeableResourceHashtable<address, address, ResourceObj::C_HEAP, mtClassShared> _buffered_to_src_table;
+  ResizeableResourceHashtable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
+  ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   GrowableArray<SpecialRefInfo>* _special_refs;
@@ -417,8 +417,8 @@ public:
   void write_archive(FileMapInfo* mapinfo,
                      GrowableArray<MemRegion>* closed_heap_regions,
                      GrowableArray<MemRegion>* open_heap_regions,
-                     GrowableArray<ArchiveHeapOopmapInfo>* closed_heap_oopmaps,
-                     GrowableArray<ArchiveHeapOopmapInfo>* open_heap_oopmaps);
+                     GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_oopmaps,
+                     GrowableArray<ArchiveHeapBitmapInfo>* open_heap_oopmaps);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 

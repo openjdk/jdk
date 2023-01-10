@@ -126,6 +126,7 @@ public class FilterOutputStream extends OutputStream {
      * @param      off   {@inheritDoc}
      * @param      len   {@inheritDoc}
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      * @see        java.io.FilterOutputStream#write(int)
      */
     @Override

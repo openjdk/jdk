@@ -1670,7 +1670,7 @@ void NAME_SOLID_DRAWGLYPHLIST(DST)(SurfaceDataRasInfo *pRasInfo, \
 
 /*
  * Antialiased glyph drawing results in artifacts around the character edges
- * when text is drawn ontop of translucent background color. The standard
+ * when text is drawn on top of translucent background color. The standard
  * blending equation for two colors:
  * destColor = srcColor * glyphAlpha + destColor * (1 - glyphAlpha)
  * works only when srcColor and destColor are opaque. For translucent srcColor

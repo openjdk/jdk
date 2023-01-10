@@ -238,6 +238,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
+  product(bool, UsePoly1305Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for sun.security.util.math.intpoly")              \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
           "page size for the environment as the maximum)")                  \
@@ -319,6 +322,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseAESCTRIntrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
+                                                                            \
+  product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for the vectorized version of ChaCha20")          \
                                                                             \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \
@@ -449,10 +455,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
-  develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena). "  \
-          "Used to help diagnose memory stomping bugs.")                    \
-                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space")                                 \
                                                                             \
@@ -510,6 +512,9 @@ const int ObjectAlignmentInBytes = 8;
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
+                                                                            \
+  product(bool, ErrorLogSecondaryErrorDetails, false, DIAGNOSTIC,           \
+          "If enabled, show details on secondary crashes in the error log") \
                                                                             \
   develop(intx, TraceDwarfLevel, 0,                                         \
           "Debug levels for the dwarf parser")                              \
@@ -676,12 +681,13 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
           "Print the class loader data graph at exit")                      \
                                                                             \
-  product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
-          "Dynamically resize system dictionaries as needed")               \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
+                                                                            \
+  product(bool, EnableWaitForParallelLoad, false,                           \
+          "(Deprecated) Enable legacy parallel classloading logic for "     \
+          "class loaders not registered as parallel capable")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
@@ -1822,11 +1828,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PauseAtExit, false, DIAGNOSTIC,                             \
           "Pause and wait for keypress on exit if a debugger is attached")  \
                                                                             \
-  product(bool, ExtendedDTraceProbes,    false,                             \
-          "(Deprecated) Enable performance-impacting dtrace probes. "       \
-          "Use the combination of -XX:+DTraceMethodProbes, "                \
-          "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
-                                                                            \
   product(bool, DTraceMethodProbes, false,                                  \
           "Enable dtrace tool probes for method-entry and method-exit")     \
                                                                             \
@@ -1946,11 +1947,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
                                                                             \
-  product(intx, ExtentLocalCacheSize, 16,                                   \
-          "Size of the cache for scoped values")                            \
-           range(0, max_intx)                                               \
-           constraint(ExtentLocalCacheSizeConstraintFunc, AtParse)          \
-                                                                            \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \
                "1 - always, >1 every nth interval)")                        \
@@ -1992,9 +1988,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(size_t, HeapObjectStatsSamplingInterval, 500, DIAGNOSTIC,         \
              "Heap object statistics sampling interval (ms)")               \
-                                                                            \
-  develop(bool, TraceOptimizedUpcallStubs, false,                           \
-                "Trace optimized upcall stub generation")                   \
 
 // end of RUNTIME_FLAGS
 

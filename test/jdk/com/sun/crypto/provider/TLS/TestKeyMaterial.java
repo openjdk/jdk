@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class TestKeyMaterial extends Utils {
         byte[] clientRandom = null;
         byte[] serverRandom = null;
         String cipherAlgorithm = null;
+        String hashAlgorithm = null; // TLS1.2+ only
         int keyLength = 0;
         int expandedKeyLength = 0;
         int ivLength = 0;
@@ -94,6 +95,8 @@ public class TestKeyMaterial extends Utils {
                 serverRandom = parse(data);
             } else if (line.startsWith("km-cipalg:")) {
                 cipherAlgorithm = data;
+            } else if (line.startsWith("km-hashalg:")) {
+                hashAlgorithm = data;
             } else if (line.startsWith("km-keylen:")) {
                 keyLength = Integer.parseInt(data);
             } else if (line.startsWith("km-explen:")) {
@@ -119,14 +122,36 @@ public class TestKeyMaterial extends Utils {
                 n++;
 
                 KeyGenerator kg =
-                    KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
+                        KeyGenerator.getInstance(minor == 3 ?
+                                "SunTls12KeyMaterial" :
+                                "SunTlsKeyMaterial", provider);
                 SecretKey masterKey =
                     new SecretKeySpec(master, "TlsMasterSecret");
+                int prfHashLength, prfBlockSize;
+
+                if (hashAlgorithm != null) {
+                    switch (hashAlgorithm) {
+                        case "SHA-256":
+                            prfHashLength = 32;
+                            prfBlockSize = 64;
+                            break;
+                        case "SHA-384":
+                            prfHashLength = 48;
+                            prfBlockSize = 128;
+                            break;
+                        default:
+                            throw new RuntimeException("Unexpected hashalg: " +
+                                    hashAlgorithm);
+                    }
+                } else {
+                    prfHashLength = -1;
+                    prfBlockSize = -1;
+                }
                 TlsKeyMaterialParameterSpec spec =
                     new TlsKeyMaterialParameterSpec(masterKey, major, minor,
                         clientRandom, serverRandom, cipherAlgorithm,
                         keyLength, expandedKeyLength, ivLength, macLength,
-                        null, -1, -1);
+                        hashAlgorithm, prfHashLength, prfBlockSize);
 
                 kg.init(spec);
                 TlsKeyMaterialSpec result =

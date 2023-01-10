@@ -1161,17 +1161,12 @@ bool ciMethod::was_executed_more_than(int times) {
 // ------------------------------------------------------------------
 // ciMethod::has_unloaded_classes_in_signature
 bool ciMethod::has_unloaded_classes_in_signature() {
-  VM_ENTRY_MARK;
-  {
-    ExceptionMark em(THREAD);
-    methodHandle m(THREAD, get_Method());
-    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, thread);
-    if( HAS_PENDING_EXCEPTION ) {
-      CLEAR_PENDING_EXCEPTION;
-      return true;     // Declare that we may have unloaded classes
-    }
-    return has_unloaded;
-  }
+  // ciSignature is resolved against some accessing class and
+  // signature classes aren't required to be local. As a benefit,
+  // it makes signature classes visible through loader constraints.
+  // So, encountering an unloaded class signals it is absent both in
+  // the callee (local) and caller contexts.
+  return signature()->has_unloaded_classes();
 }
 
 // ------------------------------------------------------------------

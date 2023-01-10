@@ -119,7 +119,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
     public void registerEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        boolean overriden = false;
+        boolean overridden = false;
         int version = 0;
         long proxy = 0;
         long newProxy = XDropTargetRegistry.getDnDProxyWindow();
@@ -135,7 +135,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
 
-                overriden = true;
+                overridden = true;
                 version = (int)Native.getLong(wpg1.getData());
             }
         } finally {
@@ -143,7 +143,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
 
         /* XdndProxy is not supported for prior to XDnD version 4 */
-        if (overriden && version >= 4) {
+        if (overridden && version >= 4) {
             WindowPropertyGetter wpg2 =
                 new WindowPropertyGetter(embedder, XDnDConstants.XA_XdndProxy,
                                          0, 1, false, XAtom.XA_WINDOW);
@@ -264,7 +264,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             data = 0;
         }
 
-        putEmbedderRegistryEntry(embedder, overriden, version, proxy);
+        putEmbedderRegistryEntry(embedder, overridden, version, proxy);
     }
 
     public void unregisterEmbedderDropSite(long embedder) {
@@ -320,7 +320,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
     public void registerEmbeddedDropSite(long embedded) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        boolean overriden = false;
+        boolean overridden = false;
         int version = 0;
         long proxy = 0;
         long newProxy = XDropTargetRegistry.getDnDProxyWindow();
@@ -336,7 +336,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
 
-                overriden = true;
+                overridden = true;
                 version = (int)Native.getLong(wpg1.getData());
             }
         } finally {
@@ -344,7 +344,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         }
 
         /* XdndProxy is not supported for prior to XDnD version 4 */
-        if (overriden && version >= 4) {
+        if (overridden && version >= 4) {
             WindowPropertyGetter wpg2 =
                 new WindowPropertyGetter(embedded, XDnDConstants.XA_XdndProxy,
                                          0, 1, false, XAtom.XA_WINDOW);
@@ -402,7 +402,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             }
         }
 
-        putEmbedderRegistryEntry(embedded, overriden, version, proxy);
+        putEmbedderRegistryEntry(embedded, overridden, version, proxy);
     }
 
     public boolean isProtocolSupported(long window) {

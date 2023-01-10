@@ -44,7 +44,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
-class ZBarrierSetC2State : public ResourceObj {
+class ZBarrierSetC2State : public ArenaObj {
 private:
   GrowableArray<ZLoadBarrierStubC2*>* _stubs;
   Node_Array                          _live;

@@ -39,7 +39,7 @@ import java.io.File;
 public class RelativePath extends DynamicArchiveTestBase {
 
     public static void main(String[] args) throws Exception {
-        runTest(AppendClasspath::testDefaultBase);
+        runTest(RelativePath::testDefaultBase);
     }
 
     static void testDefaultBase() throws Exception {
@@ -54,6 +54,16 @@ public class RelativePath extends DynamicArchiveTestBase {
         int idx = appJar.lastIndexOf(File.separator);
         String jarName = appJar.substring(idx + 1);
         String jarDir = appJar.substring(0, idx);
+
+        // Create CDS Archive
+        dump(topArchiveName, "-Xlog:cds",
+            "-Xlog:cds+dynamic=debug",
+            "-cp", appJar + File.pathSeparator + appJar2,
+            "HelloMore")
+            .assertNormalExit(output-> {
+                    output.shouldContain("Written dynamic archive 0x");
+            });
+
         // relative path starting with "."
         runWithRelativePath(null, topArchiveName, jarDir,
             "-Xlog:class+load",

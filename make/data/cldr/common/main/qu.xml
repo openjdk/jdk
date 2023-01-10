@@ -12,46 +12,87 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ab">Abjasia</language>
+			<language type="ace">Achinese</language>
+			<language type="ada">Adangme</language>
+			<language type="ady">Adyghe</language>
 			<language type="af">Afrikaans Simi</language>
 			<language type="agq">Aghem Simi</language>
+			<language type="ain">Ainu</language>
 			<language type="ak">Akan Simi</language>
+			<language type="ale">Aleut</language>
+			<language type="alt">ltai Meridional</language>
 			<language type="am">Amarico Simi</language>
+			<language type="an">Aragonesa</language>
+			<language type="ann">Obolo Simi</language>
+			<language type="anp">Angika</language>
 			<language type="ar">Arabe Simi</language>
 			<language type="arn">Mapuche Simi</language>
+			<language type="arp">Arapaho</language>
+			<language type="ars">Árabe Najdi Simi</language>
 			<language type="as">Asames Simi</language>
 			<language type="asa">Asu Simi</language>
 			<language type="ast">Asturiano Simi</language>
+			<language type="atj">Atikamekw</language>
+			<language type="av">Avaric</language>
+			<language type="awa">Awadhi</language>
 			<language type="ay">Aymara Simi</language>
 			<language type="az">Azerbaiyano Simi</language>
 			<language type="az" alt="short">Azerí Simi</language>
 			<language type="ba">Baskir Simi</language>
+			<language type="ban">Balines Simi</language>
 			<language type="bas">Basaa Simi</language>
 			<language type="be">Bielorruso Simi</language>
 			<language type="bem">Bemba Simi</language>
 			<language type="bez">Bena Simi</language>
 			<language type="bg">Bulgaro Simi</language>
+			<language type="bho">Bhojpuri</language>
+			<language type="bi">Bislama</language>
+			<language type="bin">Bini</language>
+			<language type="bla">Siksiká Simi</language>
 			<language type="bm">Bambara Simi</language>
 			<language type="bn">Bangla Simi</language>
 			<language type="bo">Tibetano Simi</language>
 			<language type="br">Breton Simi</language>
 			<language type="brx">Bodo Simi</language>
 			<language type="bs">Bosnio Simi</language>
+			<language type="bug">Buginese</language>
+			<language type="byn">Blin</language>
 			<language type="ca">Catalan Simi</language>
+			<language type="cay">Cayugá</language>
 			<language type="ccp">Chakma Simi</language>
 			<language type="ce">Checheno Simi</language>
 			<language type="ceb">Cebuano Simi</language>
 			<language type="cgg">Kiga Simi</language>
+			<language type="ch">Chamorro Simi</language>
+			<language type="chk">Chuukese Simi</language>
+			<language type="chm">Mari Simi</language>
+			<language type="cho">Choctaw Simi</language>
+			<language type="chp">Chipewyan Simi</language>
 			<language type="chr">Cheroqui Simi</language>
+			<language type="chy">Cheyenne</language>
 			<language type="ckb">Chawpi Kurdo Simi</language>
 			<language type="ckb" alt="menu">Kurdo Simi, Chawpi</language>
 			<language type="ckb" alt="variant">Kurdo Simi, Sorani</language>
+			<language type="clc">Chilcotin Simi</language>
 			<language type="co">Corso Simi</language>
+			<language type="crg">Michif Simi</language>
+			<language type="crj">Cree Este del Sur Simi</language>
+			<language type="crk">Plains Cree Simi</language>
+			<language type="crl">Cree del Noreste Simi</language>
+			<language type="crm">Moose Cree Simi</language>
+			<language type="crr">Algonquian Carolina</language>
 			<language type="cs">Checo Simi</language>
+			<language type="csw">Swampy Cree Simi</language>
 			<language type="cu">Eslavo Eclesiástico Simi</language>
+			<language type="cv">Chuvash Simi</language>
 			<language type="cy">Gales Simi</language>
 			<language type="da">Danes Simi</language>
+			<language type="dak">Dakota Simi</language>
+			<language type="dar">Dargwa Simi</language>
 			<language type="dav">Taita Simi</language>
 			<language type="de">Aleman Simi</language>
+			<language type="dgr">Dogrib Simi</language>
 			<language type="dje">Zarma Simi</language>
 			<language type="doi">Dogri Simi</language>
 			<language type="dsb">Bajo Sorbio Simi</language>
@@ -59,8 +100,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dv">Divehi Simi</language>
 			<language type="dyo">Jola-Fonyi Simi</language>
 			<language type="dz">Butanés Simi</language>
+			<language type="dzg">Dazaga Simi</language>
 			<language type="ebu">Embu Simi</language>
 			<language type="ee">Ewé Simi</language>
+			<language type="efi">Efik Simi</language>
+			<language type="eka">Ekajuk Simi</language>
 			<language type="el">Griego Simi</language>
 			<language type="en">Ingles Simi</language>
 			<language type="en_GB" alt="short">Ingles Simi (GB)</language>
@@ -76,187 +120,314 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ff">Fulah Simi</language>
 			<language type="fi">Fines Simi</language>
 			<language type="fil">Filipino Simi</language>
+			<language type="fj">Fiyiano Simi</language>
 			<language type="fo">Feroes Simi</language>
+			<language type="fon">Fon Simi</language>
 			<language type="fr">Frances Simi</language>
+			<language type="frc">Francés Cajun</language>
+			<language type="frr">Frisón del Norte Simi</language>
 			<language type="fur">Friulano Simi</language>
 			<language type="fy">Frison Simi</language>
 			<language type="ga">Irlandes Simi</language>
+			<language type="gaa">Ga Simi</language>
 			<language type="gd">Gaelico Escoces Simi</language>
+			<language type="gez">Geez Simi</language>
+			<language type="gil">Gilbertese Simi</language>
 			<language type="gl">Gallego Simi</language>
+			<language type="gn">Guaraní Simi</language>
+			<language type="gor">Gorontalo Simi</language>
 			<language type="gsw">Alsaciano Simi</language>
 			<language type="gu">Gujarati Simi</language>
 			<language type="guz">Guzí Simi</language>
 			<language type="gv">Manés Simi</language>
+			<language type="gwi">Gwichʼin Simi</language>
 			<language type="ha">Hausa Simi</language>
+			<language type="hai">Haida Simi</language>
 			<language type="haw">Hawaiano Simi</language>
+			<language type="hax">Haida Meridional</language>
 			<language type="he">Hebreo Simi</language>
 			<language type="hi">Hindi Simi</language>
+			<language type="hi_Latn" alt="variant">Hinglish Simi</language>
+			<language type="hil">Hiligaynon Simi</language>
 			<language type="hmn">Hmong Daw Simi</language>
 			<language type="hr">Croata Simi</language>
 			<language type="hsb">Alto Sorbio Simi</language>
 			<language type="ht">Haitiano Criollo Simi</language>
 			<language type="hu">Hungaro Simi</language>
+			<language type="hup">Hupa Simi</language>
+			<language type="hur">Halkomelem Simi</language>
 			<language type="hy">Armenio Simi</language>
+			<language type="hz">Herero Simi</language>
 			<language type="ia">Interlingua Simi</language>
+			<language type="iba">Iban Simi</language>
+			<language type="ibb">Ibibio Simi</language>
 			<language type="id">Indonesio Simi</language>
 			<language type="ig">Igbo Simi</language>
 			<language type="ii">Yi Simi</language>
+			<language type="ikt">Inuktitut Simi (Canadá occidental)</language>
+			<language type="ilo">Iloko Simi</language>
+			<language type="inh">Ingush Simi</language>
+			<language type="io">Ido Simi</language>
 			<language type="is">Islandes Simi</language>
 			<language type="it">Italiano Simi</language>
 			<language type="iu">Inuktitut Simi</language>
 			<language type="ja">Japones Simi</language>
+			<language type="jbo">Lojban Simi</language>
 			<language type="jgo">Ngomba Simi</language>
 			<language type="jmc">Machame Simi</language>
 			<language type="jv">Javanés Simi</language>
 			<language type="ka">Georgiano Simi</language>
 			<language type="kab">Cabilio Simi</language>
+			<language type="kac">Kachin Simi</language>
+			<language type="kaj">Jju Simi</language>
 			<language type="kam">Kamba Simi</language>
+			<language type="kbd">Kabardiano Simi</language>
+			<language type="kcg">Tyap Simi</language>
 			<language type="kde">Makonde Simi</language>
 			<language type="kea">Caboverdiano Simi</language>
+			<language type="kfo">Koro Simi</language>
+			<language type="kgp">Kaingang Simi</language>
+			<language type="kha">Khasi Simi</language>
 			<language type="khq">Koyra Chiini Simi</language>
 			<language type="ki">Kikuyu Simi</language>
+			<language type="kj">Kuanyama Simi</language>
 			<language type="kk">Kazajo Simi</language>
 			<language type="kkj">Kako Simi</language>
 			<language type="kl">Groenlandes Simi</language>
 			<language type="kln">Kalenjin Simi</language>
 			<language type="km">Khmer Simi</language>
+			<language type="kmb">Kimbundu Simi</language>
 			<language type="kn">Kannada Simi</language>
 			<language type="ko">Coreano Simi</language>
 			<language type="kok">Konkani Simi</language>
+			<language type="kpe">Kpelle Simi</language>
+			<language type="kr">Kanuri Simi</language>
+			<language type="krc">Karachay-Balkar Simi</language>
+			<language type="krl">Karelian Simi</language>
+			<language type="kru">Kurukh Simi</language>
 			<language type="ks">Cachemir Simi</language>
 			<language type="ksb">Shambala Simi</language>
 			<language type="ksf">Bafia Simi</language>
 			<language type="ksh">Kölsch Simi</language>
 			<language type="ku">Kurdo Simi</language>
+			<language type="kum">Kumyk Simi</language>
+			<language type="kv">Komi Simi</language>
 			<language type="kw">Córnico Simi</language>
+			<language type="kwk">Kwakʼwala Simi</language>
 			<language type="ky">Kirghiz Simi</language>
 			<language type="la">Latín Simi</language>
+			<language type="lad">Ladino Simi</language>
 			<language type="lag">Langi Simi</language>
 			<language type="lb">Luxemburgues Simi</language>
+			<language type="lez">Lezghian Simi</language>
 			<language type="lg">Luganda Simi</language>
+			<language type="li">Limburgues Simi</language>
+			<language type="lil">Lillooet Simi</language>
 			<language type="lkt">Lakota Simi</language>
 			<language type="ln">Lingala Simi</language>
 			<language type="lo">Lao Simi</language>
+			<language type="lou">Luisiana Criollo</language>
+			<language type="loz">Lozi Simi</language>
 			<language type="lrc">Luri septentrional Simi</language>
+			<language type="lsm">Saamia Simi</language>
 			<language type="lt">Lituano Simi</language>
 			<language type="lu">Luba-Katanga Simi</language>
+			<language type="lua">Luba-Lulua Simi</language>
+			<language type="lun">Lunda Simi</language>
 			<language type="luo">Luo Simi</language>
+			<language type="lus">Mizo Simi</language>
 			<language type="luy">Luyia Simi</language>
 			<language type="lv">Leton Simi</language>
+			<language type="mad">Madurese Simi</language>
+			<language type="mag">Magahi Simi</language>
 			<language type="mai">Maithili Simi</language>
+			<language type="mak">Makasar Simi</language>
 			<language type="mas">Masai Simi</language>
+			<language type="mdf">Moksha Simi</language>
+			<language type="men">Mende Simi</language>
 			<language type="mer">Meru Simi</language>
 			<language type="mfe">Mauriciano Simi</language>
 			<language type="mg">Malgache Simi</language>
 			<language type="mgh">Makhuwa-Meetto Simi</language>
 			<language type="mgo">Metaʼ Simi</language>
+			<language type="mh">Marshallese Simi</language>
 			<language type="mi">Maori Simi</language>
+			<language type="mic">Mi'kmaq Simi</language>
+			<language type="min">Minangkabau Simi</language>
 			<language type="mk">Macedonio Simi</language>
 			<language type="ml">Malayalam Simi</language>
 			<language type="mn">Mongol Simi</language>
 			<language type="mni">Manipuri Simi</language>
+			<language type="moe">Innu-aimun Simi</language>
 			<language type="moh">Mohawk Simi</language>
+			<language type="mos">Mossi Simi</language>
 			<language type="mr">Marathi Simi</language>
 			<language type="ms">Malayo Simi</language>
 			<language type="mt">Maltes Simi</language>
 			<language type="mua">Mundang Simi</language>
 			<language type="mul">Idiomas M´últiples Simi</language>
+			<language type="mus">Muscogee Simi</language>
+			<language type="mwl">Mirandés Simi</language>
 			<language type="my">Birmano Simi</language>
+			<language type="myv">Erzya Simi</language>
 			<language type="mzn">Mazandaraní Simi</language>
+			<language type="na">Nauru Simi</language>
+			<language type="nap">Neapolitan Simi</language>
 			<language type="naq">Nama Simi</language>
 			<language type="nb">Noruego Bokmål Simi</language>
 			<language type="nd">Ndebele septentrional Simi</language>
 			<language type="nds">Bajo Alemán Simi</language>
 			<language type="ne">Nepali Simi</language>
+			<language type="new">Newari Simi</language>
+			<language type="ng">Ndonga Simi</language>
+			<language type="nia">Nias Simi</language>
+			<language type="niu">Niuean Simi</language>
 			<language type="nl">Neerlandes Simi</language>
 			<language type="nl_BE">Flamenco Simi</language>
 			<language type="nmg">Kwasio Ngumba Simi</language>
 			<language type="nn">Noruego Nynorsk Simi</language>
 			<language type="nnh">Ngiemboon Simi</language>
 			<language type="no">Noruego Simi</language>
+			<language type="nog">Nogai Simi</language>
+			<language type="nqo">N’Ko Simi</language>
+			<language type="nr">Ndebele del Sur Simi</language>
 			<language type="nso">Sesotho Sa Leboa Simi</language>
 			<language type="nus">Nuer Simi</language>
+			<language type="nv">Navajo Simi</language>
 			<language type="ny">Nyanja Simi</language>
 			<language type="nyn">Nyankole Simi</language>
 			<language type="oc">Occitano Simi</language>
+			<language type="ojb">Ojibwa del noroeste Simi</language>
+			<language type="ojc">Ojibwa Central</language>
+			<language type="ojs">Oji-Cree Simi</language>
+			<language type="ojw">Ojibwa Occidental</language>
+			<language type="oka">Okanagan Simi</language>
 			<language type="om">Oromo Simi</language>
 			<language type="or">Odia Simi</language>
 			<language type="os">Osetio Simi</language>
 			<language type="pa">Punyabi Simi</language>
+			<language type="pag">Pangasinan Simi</language>
+			<language type="pam">Pampanga Simi</language>
 			<language type="pap">Papiamento Simi</language>
+			<language type="pau">Palauan Simi</language>
 			<language type="pcm">Pidgin Nigeriano Simi</language>
+			<language type="pis">Pijin Simi</language>
 			<language type="pl">Polaco Simi</language>
+			<language type="pqm">Maliseet-Passamaquoddy Simi</language>
 			<language type="prg">Prusiano Simi</language>
 			<language type="ps">Pashto Simi</language>
 			<language type="pt">Portugues Simi</language>
 			<language type="qu">Runasimi</language>
 			<language type="quc">Kʼicheʼ Simi</language>
+			<language type="rap">Rapanui Simi</language>
+			<language type="rar">Rarotongan Simi</language>
 			<language type="rhg">Rohingya Simi</language>
 			<language type="rm">Romanche Simi</language>
 			<language type="rn">Rundi Simi</language>
 			<language type="ro">Rumano Simi</language>
 			<language type="rof">Rombo Simi</language>
 			<language type="ru">Ruso Simi</language>
+			<language type="rup">Arrumano</language>
 			<language type="rw">Kinyarwanda Simi</language>
 			<language type="rwk">Rwa Simi</language>
 			<language type="sa">Sanscrito Simi</language>
+			<language type="sad">Sandawe Simi</language>
 			<language type="sah">Sakha Simi</language>
 			<language type="saq">Samburu Simi</language>
 			<language type="sat">Santali Simi</language>
+			<language type="sba">Ngambay Simi</language>
 			<language type="sbp">Sangu Simi</language>
+			<language type="sc">Sardinian Simi</language>
+			<language type="scn">Siciliano Simi</language>
+			<language type="sco">Scots Simi</language>
 			<language type="sd">Sindhi Simi</language>
 			<language type="se">Chincha Sami Simi</language>
 			<language type="seh">Sena Simi</language>
 			<language type="ses">Koyraboro Senni Simi</language>
 			<language type="sg">Sango Simi</language>
 			<language type="shi">Tashelhit Simi</language>
+			<language type="shn">Shan Simi</language>
 			<language type="si">Cingales Simi</language>
 			<language type="sk">Eslovaco Simi</language>
 			<language type="sl">Esloveno Simi</language>
+			<language type="slh">Lushootseed Meridional</language>
 			<language type="sm">Samoano Simi</language>
 			<language type="sma">Qulla Sami Simi</language>
 			<language type="smj">Sami Lule Simi</language>
 			<language type="smn">Sami Inari Simi</language>
 			<language type="sms">Sami Skolt Simi</language>
 			<language type="sn">Shona Simi</language>
+			<language type="snk">Soninke Simi</language>
 			<language type="so">Somali Simi</language>
 			<language type="sq">Albanes Simi</language>
 			<language type="sr">Serbio Simi</language>
+			<language type="srn">Sranan Tongo Simi</language>
+			<language type="ss">Swati Simi</language>
 			<language type="st">Soto Meridional Simi</language>
+			<language type="str">Straits Salish Simi</language>
 			<language type="su">Sundanés Simi</language>
+			<language type="suk">Sukuma Simi</language>
 			<language type="sv">Sueco Simi</language>
 			<language type="sw">Suajili Simi</language>
 			<language type="sw_CD">Suajili Simi (Congo (RDC))</language>
+			<language type="swb">Comorian Simi</language>
 			<language type="syr">Siriaco Simi</language>
 			<language type="ta">Tamil Simi</language>
+			<language type="tce">Tutchone Meridional</language>
 			<language type="te">Telugu Simi</language>
+			<language type="tem">Timne Simi</language>
 			<language type="teo">Teso Simi</language>
+			<language type="tet">Tetum Simi</language>
 			<language type="tg">Tayiko Simi</language>
+			<language type="tgx">Tagish Simi</language>
 			<language type="th">Tailandes Simi</language>
+			<language type="tht">Tahltan Simi</language>
 			<language type="ti">Tigriña Simi</language>
+			<language type="tig">Tigre Simi</language>
 			<language type="tk">Turcomano Simi</language>
+			<language type="tlh">Klingon Simi</language>
+			<language type="tli">Tlingit Simi</language>
 			<language type="tn">Setsuana Simi</language>
 			<language type="to">Tongano Simi</language>
+			<language type="tok">Toki Pona Simi</language>
+			<language type="tpi">Tok Pisin Simi</language>
 			<language type="tr">Turco Simi</language>
+			<language type="trv">Taroko Simi</language>
+			<language type="ts">Tsonga Simi</language>
 			<language type="tt">Tartaro Simi</language>
+			<language type="ttm">Tutchone del Norte Simi</language>
+			<language type="tum">Tumbuka Simi</language>
+			<language type="tvl">Tuvalu Simi</language>
 			<language type="twq">Tasawaq Simi</language>
+			<language type="ty">Tahití Simi</language>
+			<language type="tyv">Tuviniano Simi</language>
 			<language type="tzm">Tamazight Simi</language>
+			<language type="udm">Udmurt Simi</language>
 			<language type="ug">Uigur Simi</language>
 			<language type="uk">Ucraniano Simi</language>
+			<language type="umb">Umbundu Simi</language>
 			<language type="und">Mana Riqsisqa Simi</language>
 			<language type="ur">Urdu Simi</language>
 			<language type="uz">Uzbeko Simi</language>
 			<language type="vai">Vai Simi</language>
+			<language type="ve">Venda Simi</language>
 			<language type="vi">Vietnamita Simi</language>
 			<language type="vo">Volapük Simi</language>
 			<language type="vun">Vunjo Simi</language>
+			<language type="wa">Valona Simi</language>
 			<language type="wae">Walser Simi</language>
+			<language type="wal">Wolaytta Simi</language>
+			<language type="war">Waray Simi</language>
 			<language type="wo">Wolof Simi</language>
+			<language type="wuu">Wu Chino</language>
+			<language type="xal">Kalmyk Simi</language>
 			<language type="xh">Isixhosa Simi</language>
 			<language type="xog">Soga Simi</language>
 			<language type="yav">Yangben Simi</language>
+			<language type="ybb">Yemba Simi</language>
 			<language type="yi">Yiddish Simi</language>
 			<language type="yo">Yoruba Simi</language>
+			<language type="yrl">Nheengatu Simi</language>
 			<language type="yue">Cantonés Simi</language>
 			<language type="yue" alt="menu">Chino Cantonés Simi</language>
 			<language type="zgh">Bereber Marroquí Estándar Simi</language>
@@ -267,14 +438,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hant">Chino Tradicional Simi</language>
 			<language type="zh_Hant" alt="long">Chino Mandarín Tradicional Simi</language>
 			<language type="zu">Isizulu Simi</language>
+			<language type="zun">Zuni Simi</language>
 			<language type="zxx">Manaraq simi yachana</language>
+			<language type="zza">Zaza Simi</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Adlam Simi</script>
 			<script type="Arab">Arabe Simi</script>
+			<script type="Aran">Nastaliq qillqa</script>
 			<script type="Armn">Armenio Simi</script>
 			<script type="Beng">Bangla Simi</script>
 			<script type="Bopo">Bopomofo Simi</script>
 			<script type="Brai">Braile</script>
+			<script type="Cakm">Chakma Simi</script>
+			<script type="Cans">Silabeo aborigen Simi (Canadiense unificado)</script>
+			<script type="Cher">Cherokee Simi</script>
 			<script type="Cyrl">Cirilico</script>
 			<script type="Deva">Devanagari</script>
 			<script type="Ethi">Etiope</script>
@@ -302,14 +480,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Latn">Latin Simi</script>
 			<script type="Mlym">Malayalam Simi</script>
 			<script type="Mong">Mongol Simi</script>
+			<script type="Mtei">Meitei Mayek Simi</script>
 			<script type="Mymr">Myanmar</script>
+			<script type="Nkoo">N’Ko Simi</script>
+			<script type="Olck">Ol Chiki Simi</script>
 			<script type="Orya">Odia Simi</script>
+			<script type="Rohg">Hanifi Simi</script>
 			<script type="Sinh">Cingales Simi</script>
+			<script type="Sund">Sundanese Simi</script>
+			<script type="Syrc">Sirio Simi</script>
 			<script type="Taml">Tamil Simi</script>
 			<script type="Telu">Tegulu Simi</script>
+			<script type="Tfng">Tifinagh Simi</script>
 			<script type="Thaa">Thaana Simi</script>
 			<script type="Thai">Tailandes Simi</script>
 			<script type="Tibt">Tibetano Simi</script>
+			<script type="Vaii">Vai Simi</script>
+			<script type="Yiii">Yi Simi</script>
 			<script type="Zmth">Matimatica Willay</script>
 			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Unanchakuna</script>
@@ -530,6 +717,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Nueva Zelanda</territory>
+			<territory type="NZ" alt="variant">Aotearoa Nueva Zelanda</territory>
 			<territory type="OM">Omán</territory>
 			<territory type="PA">Panamá</territory>
 			<territory type="PE">Perú</territory>
@@ -573,7 +761,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Siria</territory>
-			<territory type="SZ">Suazilandia</territory>
+			<territory type="SZ">Esuatini</territory>
+			<territory type="SZ" alt="variant">Suazilandia</territory>
 			<territory type="TA">Tristán de Acuña</territory>
 			<territory type="TC">Islas Turcas y Caicos</territory>
 			<territory type="TD">Chad</territory>
@@ -630,11 +819,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">Budista Intiwatana</type>
 			<type key="calendar" type="chinese">Chino Intiwatana</type>
+			<type key="calendar" type="coptic">Copto Intiwatana</type>
 			<type key="calendar" type="dangi">Dangi Intiwatana</type>
 			<type key="calendar" type="ethiopic">Etiope Intiwatana</type>
+			<type key="calendar" type="ethiopic-amete-alem">Etíope Amete Alem Intiwatana</type>
 			<type key="calendar" type="gregorian">Gregoriano Intiwatana</type>
 			<type key="calendar" type="hebrew">Hebreo Intiwatana</type>
 			<type key="calendar" type="islamic">Islamico Intiwatana</type>
+			<type key="calendar" type="islamic-civil">Islamico Intiwatana (tabular, época civil)</type>
+			<type key="calendar" type="islamic-umalqura">Islamico Intiwatana (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Intiwatana</type>
 			<type key="calendar" type="japanese">Japones Intiwatana</type>
 			<type key="calendar" type="persian">Persa Intiwatana</type>
@@ -659,6 +852,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="armn">Armenio Sananpakuna</type>
 			<type key="numbers" type="armnlow">Armenio Uchuy Sananpakuna</type>
 			<type key="numbers" type="beng">Bangla Sananpakuna</type>
+			<type key="numbers" type="cakm">Chakma Sananpakuna</type>
 			<type key="numbers" type="deva">Devanagari Sananpakuna</type>
 			<type key="numbers" type="ethi">Etiope Sananpakuna</type>
 			<type key="numbers" type="fullwide">Llapan kinray Sananpakuna</type>
@@ -673,6 +867,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Kikin Chino Yupaypakuna</type>
 			<type key="numbers" type="hantfin">Kikin Qullqi Chino Yupaypakuna</type>
 			<type key="numbers" type="hebr">Hebreo Yupaykuna</type>
+			<type key="numbers" type="java">Javaneses Yupaykuna</type>
 			<type key="numbers" type="jpan">Japones Yupaykuna</type>
 			<type key="numbers" type="jpanfin">Japones Qullqi Yupaykuna</type>
 			<type key="numbers" type="khmr">Khmer Sananpakuna</type>
@@ -680,7 +875,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="laoo">Lao Sananpakuna</type>
 			<type key="numbers" type="latn">Occidental Sananpakuna</type>
 			<type key="numbers" type="mlym">Malayalam Sananpakuna</type>
+			<type key="numbers" type="mtei">Meetei Mayek Yupaykuna</type>
 			<type key="numbers" type="mymr">Myanmar Sananpakuna</type>
+			<type key="numbers" type="olck">Ol Chiki Yupaykuna</type>
 			<type key="numbers" type="orya">Odia Sananpakuna</type>
 			<type key="numbers" type="roman">Romano Sananpakuna</type>
 			<type key="numbers" type="romanlow">Roman Uchuy Yupaykuna</type>
@@ -689,7 +886,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="telu">Telegu Sananpakuna</type>
 			<type key="numbers" type="thai">Thai Sananpakuna</type>
 			<type key="numbers" type="tibt">Tibetano Sananpakuna</type>
+			<type key="numbers" type="vaii">Vai Yupaykuna</type>
 		</types>
+		<codePatterns>
+			<codePattern type="language">Simi: {0}</codePattern>
+			<codePattern type="script">Qillqa: {0}</codePattern>
+			<codePattern type="territory">Suyu: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<layout>
 		<orientation>
@@ -738,6 +941,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -748,10 +954,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -763,20 +975,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
@@ -799,104 +1011,104 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">MM-y GGGGG – MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d-MM-y – d–MM-y GGGGG</greatestDifference>
-							<greatestDifference id="G">d-MM-y GGGG – d-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">d-MM-y – d-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">d-MM-y – d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d">d-MM-y – d–MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">d-MM-y GGGG – d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">d-MM-y – d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">d-MM-y – d-MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, d-MM-y GGGG – E, d-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, d-MM-y GGGG – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d-MM-y – E, d-MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
-							<greatestDifference id="M">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="M">dd-MM – dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, dd-MM – E, dd-MM</greatestDifference>
-							<greatestDifference id="M">E, dd-MM – E, dd-MM</greatestDifference>
+							<greatestDifference id="d">E, dd-MM – E, dd-MM</greatestDifference>
+							<greatestDifference id="M">E, dd-MM – E, dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d–d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM-y – MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, dd-MM-y – E, dd-MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d–d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM y – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM–MMMM y G</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1145,13 +1357,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0">ñawpa cristu</era>
-						<era type="0" alt="variant">Ñawpa Kaqlla Era</era>
+						<era type="0" alt="variant">ñawpa kaqlla era</era>
 						<era type="1">chanta cristu</era>
 						<era type="1" alt="variant">kaqlla era</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">a.d.</era>
-						<era type="0" alt="variant">ACE</era>
+						<era type="0" alt="variant">ace</era>
 						<era type="1">d.C.</era>
 						<era type="1" alt="variant">ec</era>
 					</eraAbbr>
@@ -1216,20 +1428,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{0} {1}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1241,24 +1465,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">MM-dd</dateFormatItem>
@@ -1285,7 +1509,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
@@ -1293,51 +1517,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
+							<greatestDifference id="G">MM-y GGGGG – MM-y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d, MMM y G</greatestDifference>
-							<greatestDifference id="G">d, MMM y G – d, MMM y G</greatestDifference>
-							<greatestDifference id="M">d, MMM – d, MMM y G</greatestDifference>
-							<greatestDifference id="y">d, MMM y – d, MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d, MMM y G</greatestDifference>
+							<greatestDifference id="G">d, MMM y G – d, MMM y G</greatestDifference>
+							<greatestDifference id="M">d, MMM – d, MMM y G</greatestDifference>
+							<greatestDifference id="y">d, MMM y – d, MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
 							<greatestDifference id="M">E, d MMM d – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1346,58 +1570,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d MMM, y</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM, y</greatestDifference>
-							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
+							<greatestDifference id="d">d – d MMM, y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y</greatestDifference>
+							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="y">E, d MMM, y – E, d MMM, y</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM, y</greatestDifference>
+							<greatestDifference id="y">E, d MMM, y – E, d MMM, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -4200,9 +4424,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4996,6 +5222,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}qi yupayta hapiy.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5003,10 +5232,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>deci{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-2">
-				<unitPrefixPattern>centi{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} centímetro</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-3">
-				<unitPrefixPattern>mili{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} mg</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
 				<unitPrefixPattern>micro{0}</unitPrefixPattern>
@@ -5015,7 +5244,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>nano{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-12">
-				<unitPrefixPattern>pico{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} picómetro</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-15">
 				<unitPrefixPattern>femto{0}</unitPrefixPattern>
@@ -5033,22 +5262,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>deka{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p2">
-				<unitPrefixPattern>hecto{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} hectopa</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p3">
-				<unitPrefixPattern>kilo{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} kilómetro</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p6">
-				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} megabyte</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p9">
-				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} gigahz</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p12">
-				<unitPrefixPattern>tera{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} Tbyte</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p15">
-				<unitPrefixPattern>peta{0}</unitPrefixPattern>
+				<unitPrefixPattern>{0} petabyte</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>exa{0}</unitPrefixPattern>
@@ -5087,10 +5316,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern>{0} sapa {1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="other">metro cuadrado {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} metro cuadrado</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="other">metro cubico {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} metro cubico</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>metros por segundo cuadrado</displayName>
@@ -5165,6 +5394,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>wata</displayName>
 				<unitPattern count="other">{0} wata</unitPattern>
 				<perUnitPattern>{0} sapa wata</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>sapa kimsa killa</displayName>
 			</unit>
 			<unit type="duration-month">
 				<displayName>killa</displayName>
@@ -5512,6 +5744,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>{0} dl</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>{0} MB</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>{0} PB</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>metros/sec²</displayName>
 			</unit>
@@ -5577,6 +5818,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>{0} dL</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>{0} km</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>{0} byte MB</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>{0} TB</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>{0} byte PB</unitPrefixPattern>
+			</compoundUnit>
 			<unit type="duration-year">
 				<displayName>wata</displayName>
 				<unitPattern count="other">{0} w</unitPattern>
@@ -5651,4 +5907,156 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} utaq {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und qu</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}{surname2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {surname2-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-initial} {given2-initial} {surname-initial} {surname2-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {suffix} {surname} {surname2} {given} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{surname2-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {given} {given2} {prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {surname-prefix} {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {surname-prefix} {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {surname-prefix} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Mario</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Carlos</nameField>
+			<nameField type="surname">Zabala</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Juan</nameField>
+			<nameField type="given2">Antonio</nameField>
+			<nameField type="surname">Flores</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Prof. Dr.</nameField>
+			<nameField type="given">Maria</nameField>
+			<nameField type="given-informal">Nico</nameField>
+			<nameField type="given2">Guadalupe</nameField>
+			<nameField type="surname-prefix">Diez</nameField>
+			<nameField type="surname-core">Canseco</nameField>
+			<nameField type="surname2">Guzmán</nameField>
+			<nameField type="suffix">Ph. D.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

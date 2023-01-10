@@ -26,8 +26,8 @@ package com.sun.hotspot.igv.data.serialization;
 
 public interface ParseMonitor {
 
-    public void updateProgress();
+    void updateProgress();
 
-    public void setState(String state);
+    void setState(String state);
 
 }

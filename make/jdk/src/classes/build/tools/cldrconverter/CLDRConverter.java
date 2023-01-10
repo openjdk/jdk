@@ -633,7 +633,7 @@ public class CLDRConverter {
     /**
      * Examine if the id includes the country (territory) code. If it does, it returns
      * the country code.
-     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
+     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it returns "SG".
      * It does NOT return UN M.49 code, e.g., '001', as those three digit numbers cannot
      * be translated into package names.
      */
@@ -645,11 +645,19 @@ public class CLDRConverter {
     /**
      * Examine if the id includes the region code. If it does, it returns
      * the region code.
-     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
+     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it returns "SG".
      * It DOES return UN M.49 code, e.g., '001', as well as ISO 3166 two letter country codes.
      */
     static String getRegionCode(String id) {
         return Locale.forLanguageTag(id.replaceAll("_", "-")).getCountry();
+    }
+
+    /**
+     * Examine if the id includes the script code. If it does, it returns
+     * the script code.
+     */
+    static String getScriptCode(String id) {
+        return Locale.forLanguageTag(id.replaceAll("_", "-")).getScript();
     }
 
     private static class KeyComparator implements Comparator<String> {
@@ -1020,6 +1028,7 @@ public class CLDRConverter {
     private static void setupBaseLocales(String localeList) {
         Arrays.stream(localeList.split(","))
             .map(Locale::forLanguageTag)
+            .map(l -> new Locale.Builder().setLocale(l).setScript("Latn").build())
             .map(l -> Control.getControl(Control.FORMAT_DEFAULT)
                              .getCandidateLocales("", l))
             .forEach(BASE_LOCALES::addAll);

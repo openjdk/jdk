@@ -32,16 +32,15 @@
 // with the ones that should pick up the mocks removed. Those should be included
 // later after the mocks have been defined.
 
-#include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "logging/log.hpp"
 #include "runtime/os_perf.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-
 #include "unittest.hpp"
 
 #include <vector>
@@ -125,7 +124,10 @@ namespace {
       for (std::list<MockNetworkInterface>::const_iterator i = _interfaces.begin();
            i != _interfaces.end();
            ++i) {
-        NetworkInterface* cur = new NetworkInterface(i->name.c_str(), i->bytes_in, i->bytes_out, *network_interfaces);
+        // The gtests are compiled with exceptions, which requires operator delete.
+        // Allocate in CHeap instead.
+        void* mem = AllocateHeap(sizeof(NetworkInterface), mtTest);
+        NetworkInterface* cur = ::new (mem) NetworkInterface(i->name.c_str(), i->bytes_in, i->bytes_out, *network_interfaces);
         *network_interfaces = cur;
       }
       return OS_OK;
