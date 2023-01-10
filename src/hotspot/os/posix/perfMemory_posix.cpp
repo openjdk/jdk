@@ -1205,10 +1205,12 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
+  if (HAS_PENDING_EXCEPTION) {
+    assert(fd == OS_ERR, "open_sharedmem_file always return OS_ERR on exceptions");
+  }
   if (fd == OS_ERR) {
     return;
   }
-  assert(!HAS_PENDING_EXCEPTION, "must be");
 
   size_t size;
   if (*sizep == 0) {
