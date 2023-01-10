@@ -14,12 +14,19 @@ public class Rational extends Number implements Comparable<Rational> {
     private final int signum;
 
     /**
-     * The least non-negative numerator necessary to represent this Rational.
+     * The integer part of this Rational.
+     */
+    private final BigInteger floor;
+
+    /**
+     * The least non-negative numerator necessary to represent
+     * the fractional part of this Rational.
      */
     private final BigInteger numerator;
 
     /**
-     * The least positive denominator necessary to represent this Rational.
+     * The least positive denominator necessary to represent
+     * the fractional part of this Rational.
      */
     private final BigInteger denominator;
 
@@ -108,6 +115,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (significand == 0) {
             signum = 0;
+            floor = BigInteger.ZERO;
             numerator = BigInteger.ZERO;
             denominator = BigInteger.ONE;
         } else if (exponent < 0) {
@@ -119,11 +127,14 @@ public class Rational extends Number implements Comparable<Rational> {
             // now the significand and the denominator are relative primes
             // the significand is odd and the denominator is a power of two
             signum = sign;
-            numerator = BigInteger.valueOf(significand);
+            int quot = significand >>> -exponent;
+            floor = BigInteger.valueOf(quot);
+            numerator = BigInteger.valueOf(significand - (quot << -exponent));
             denominator = BigInteger.ONE.shiftLeft(-exponent);
         } else {
             signum = sign;
-            numerator = BigInteger.valueOf(significand).shiftLeft(exponent);
+            floor = BigInteger.valueOf(significand).shiftLeft(exponent);
+            numerator = BigInteger.ZERO;
             denominator = BigInteger.ONE;
         }
     }
@@ -135,17 +146,18 @@ public class Rational extends Number implements Comparable<Rational> {
      *            {@code Rational}.
      */
     public Rational(long val) {
+        numerator = BigInteger.ZERO;
         denominator = BigInteger.ONE;
 
         if (val > 0) {
             signum = 1;
-            numerator = BigInteger.valueOf(val);
+            floor = BigInteger.valueOf(val);
         } else if (val < 0) {
             signum = -1;
-            numerator = BigInteger.valueOf(-val);
+            floor = BigInteger.valueOf(val).negate();
         } else {
             signum = 0;
-            numerator = BigInteger.ZERO;
+            floor = BigInteger.ZERO;
         }
     }
 
@@ -157,7 +169,8 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public Rational(BigInteger val) {
         signum = val.signum;
-        numerator = val.abs();
+        floor = val.abs();
+        numerator = BigInteger.ZERO;
         denominator = BigInteger.ONE;
     }
 
@@ -171,24 +184,24 @@ public class Rational extends Number implements Comparable<Rational> {
         signum = val.signum();
 
         if (signum == 0) {
+            floor = BigInteger.ZERO;
             numerator = BigInteger.ZERO;
             denominator = BigInteger.ONE;
-            return;
+        } else {
+            final int scale = val.scale();
+            final BigInteger intVal = val.unscaledValue().abs();
+
+            if (scale > 0) {
+                Rational res = valueOf(signum, intVal, BigDecimal.bigTenToThe(scale));
+                floor = res.floor;
+                numerator = res.numerator;
+                denominator = res.denominator;
+            } else { // scale <= 0
+                floor = BigDecimal.bigMultiplyPowerTen(intVal, -scale);
+                numerator = BigInteger.ZERO;
+                denominator = BigInteger.ONE;
+            }
         }
-
-        final int scale = val.scale();
-        final BigInteger intVal = val.unscaledValue().abs();
-        final Rational res;
-
-        if (scale > 0)
-            res = valueOf(signum, intVal, BigDecimal.bigTenToThe(scale));
-        else if (scale < 0)
-            res = valueOf(signum, BigDecimal.bigMultiplyPowerTen(intVal, -scale), BigInteger.ONE);
-        else
-            res = valueOf(signum, intVal, BigInteger.ONE);
-
-        numerator = res.numerator;
-        denominator = res.denominator;
     }
 
     /**
@@ -390,18 +403,20 @@ public class Rational extends Number implements Comparable<Rational> {
      * the numerator are positive.
      */
     private static Rational valueOf(int sign, BigInteger num, BigInteger den) {
-        BigInteger[] frac = simplify(num, den);
-        return new Rational(sign, frac[0], frac[1]);
+        BigInteger[] quotAndRem = num.divideAndRemainder(den);
+        BigInteger[] frac = simplify(quotAndRem[1], den);
+        return new Rational(sign, quotAndRem[0], frac[0], frac[1]);
     }
 
     /**
      * Constructs a new Rational with the specified values.
      * Assumes that the passed values are always valid.
      */
-    private Rational(int sign, BigInteger num, BigInteger den) {
-        signum = sign;
-        numerator = num;
-        denominator = den;
+    private Rational(int sign, BigInteger floor, BigInteger num, BigInteger den) {
+        this.signum = sign;
+        this.floor = floor;
+        this.numerator = num;
+        this.denominator = den;
     }
 
     /**
@@ -420,26 +435,6 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public int signum() {
         return signum;
-    }
-
-    /**
-     * Returns the least non-negative denominator necessary to represent this
-     * Rational.
-     * 
-     * @return the least non-negative denominator necessary to represent this
-     *         Rational.
-     */
-    public BigInteger getNumerator() {
-        return numerator;
-    }
-
-    /**
-     * Returns the least positive denominator necessary to represent this Rational.
-     * 
-     * @return the least positive denominator necessary to represent this Rational.
-     */
-    public BigInteger getDenominator() {
-        return denominator;
     }
 
     // Arithmetic Operations
@@ -615,15 +610,15 @@ public class Rational extends Number implements Comparable<Rational> {
         Rational q2MulR1divB = r1DivB.multiply(new Rational(qr2[0])); // q2 * r1 / b
         BigInteger[] qr3 = q1MulR2divC.numerator.divideAndRemainder(q1MulR2divC.denominator);
         BigInteger[] qr4 = q2MulR1divB.numerator.divideAndRemainder(q2MulR1divB.denominator);
-        Rational r3DivC = valueOf(1, qr3[1], c);
-        Rational r4DivB = valueOf(1, qr4[1], b);
+        Rational r3Frac = valueOf(1, qr3[1], q1MulR2divC.denominator); // r3 / c
+        Rational r4Frac = valueOf(1, qr4[1], q2MulR1divB.denominator); // r4 / b
 
-        BigInteger q = qr1[0].multiply(qr2[0]).add(qr3[0]).add(qr4[0]); // sum integer augends
-        Rational fracAug = r3DivC.add(r4DivB).add(r1DivB.multiply(r2DivC));
+        BigInteger absQuot = qr1[0].multiply(qr2[0]).add(qr3[0]).add(qr4[0]); // q1 * q2 + q3 + q4
+        Rational fracAug = r3Frac.add(r4Frac).add(r1DivB.multiply(r2DivC)); // r3 / c + r4 / b + (r1 / b) * (r2 / c)
         // add integer part of fractional augends
-        q = q.add(fracAug.numerator.divide(fracAug.denominator));
-        Rational quot = new Rational(q);
-        return new Rational[] { quot, subtract(quot.multiply(divisor)) }; // this == quotient * divisor + remainder
+        absQuot = absQuot.add(fracAug.numerator.divide(fracAug.denominator));
+        Rational quot = new Rational(signum * divisor.signum, absQuot, BigInteger.ONE);
+        return new Rational[] { quot, subtract(quot.multiply(divisor)) }; // remainder == this - quotient * divisor
     }
 
     /**
