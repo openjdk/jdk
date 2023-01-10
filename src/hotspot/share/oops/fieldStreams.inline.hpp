@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
 #define SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
 
+#include "oops/fieldInfo.inline.hpp"
 #include "oops/fieldStreams.hpp"
 
 #include "runtime/javaThread.hpp"

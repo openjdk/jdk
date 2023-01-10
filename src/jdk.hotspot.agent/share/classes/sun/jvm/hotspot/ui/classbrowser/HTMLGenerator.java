@@ -1120,19 +1120,42 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                 buf.append(" " + kls.getName().asString() + "={");
                 int flen = ov.fieldsSize();
 
-                U2Array klfields = kls.getFields();
-                int klen = klfields.length();
+                CompressedReadStream crs = new CompressedReadStream(kls.getFieldInfoStream().getDataStart());
+                int jfields = crs.readInt();
+                int ifields = crs.readInt();
                 int findex = 0;
-                for (int index = 0; index < klen; index++) {
-                    int accsFlags = kls.getFieldAccessFlags(index);
-                    Symbol f_name = kls.getFieldName(index);
-                    AccessFlags access = new AccessFlags(accsFlags);
-                    if (!access.isStatic()) {
-                        ScopeValue svf = ov.getFieldAt(findex++);
-                        String    fstr = scopeValueAsString(sd, svf);
-                        buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
-                    }
+                for (int index = 0; index < jfields + ifields; index ++) {
+                  int nameIndex = crs.readInt(); // read name_index
+                  int sigIndex = crs.readInt(); // read signature index
+                  int offset = crs.readInt(); // read offset
+                  int accessFlags = crs.readInt(); // read access flags
+                  int internalFlags = crs.readInt();
+                  if (InstanceKlass.fieldIsInitialized(internalFlags)) crs.readInt(); // read initial value index
+                  if (InstanceKlass.fieldIsGeneric(internalFlags))     crs.readInt(); // read generic signature index
+                  if (InstanceKlass.fieldIsContended(internalFlags))   crs.readInt(); // read contended group
+                  Symbol f_name = kls.getSymbolFromIndex(index, nameIndex);
+                  AccessFlags access = new AccessFlags(accessFlags);
+                  if (!access.isStatic()) {
+                     ScopeValue svf = ov.getFieldAt(findex++);
+                     String    fstr = scopeValueAsString(sd, svf);
+                     buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
+                 }
                 }
+
+
+               //  U2Array klfields = kls.getFields();
+               //  int klen = klfields.length();
+               //  int findex = 0;
+               //  for (int index = 0; index < klen; index++) {
+               //      int accsFlags = kls.getFieldAccessFlags(index);
+               //      Symbol f_name = kls.getFieldName(index);
+               //      AccessFlags access = new AccessFlags(accsFlags);
+               //      if (!access.isStatic()) {
+               //          ScopeValue svf = ov.getFieldAt(findex++);
+               //          String    fstr = scopeValueAsString(sd, svf);
+               //          buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
+               //      }
+               //  }
                 buf.append(" }");
             } else {
                 buf.append(" ");
@@ -1680,22 +1703,44 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genHTMLListForFields(InstanceKlass klass) {
       Formatter buf = new Formatter(genHTML);
-      U2Array fields = klass.getFields();
-      int numFields = klass.getAllFieldsCount();
+      // U2Array fields = klass.getFields();
+      CompressedReadStream crs = new CompressedReadStream(klass.getFieldInfoStream().getDataStart());
+      int java_fields_count = crs.readInt();
+      int injected_fields_count = crs.readInt();
+      int numFields = java_fields_count + injected_fields_count;
       if (numFields != 0) {
          buf.h3("Fields");
          buf.beginList();
          for (int f = 0; f < numFields; f++) {
-           sun.jvm.hotspot.oops.Field field = klass.getFieldByIndex(f);
-           String f_name = ((NamedFieldIdentifier)field.getID()).getName();
-           Symbol f_sig  = field.getSignature();
-           Symbol f_genSig = field.getGenericSignature();
-           AccessFlags acc = field.getAccessFlagsObj();
+         //   sun.jvm.hotspot.oops.Field field = klass.getFieldByIndex(f);
+         //   String f_name = ((NamedFieldIdentifier)field.getID()).getName();
+         //   Symbol f_sig  = field.getSignature();
+         //   Symbol f_genSig = field.getGenericSignature();
+         //   AccessFlags acc = field.getAccessFlagsObj();
+
+           int nameIndex = crs.readInt();
+           int signatureIndex = crs.readInt();
+           int fieldOffset = crs.readInt();
+           int accessFlags = crs.readInt();
+           int internalFlags = crs.readInt();
+           int genericSignatureIndex = 0;
+           if (klass.fieldIsInitialized(internalFlags)) crs.readInt();
+           if (klass.fieldIsGeneric(internalFlags))     genericSignatureIndex = crs.readInt();
+           if (klass.fieldIsContended(internalFlags))   crs.readInt();
+
+           String f_name = klass.getSymbolFromIndex(f, nameIndex).asString();
+           Symbol f_sig = klass.getSymbolFromIndex(f, signatureIndex);
+           Symbol f_genSig = null;
+           if (genericSignatureIndex != 0) {
+            f_genSig = klass.getSymbolFromIndex(f, genericSignatureIndex);
+           }
+           AccessFlags acc = new AccessFlags(accessFlags);
 
            buf.beginListItem();
            buf.append(genFieldModifierString(acc));
            buf.append(' ');
            Formatter sigBuf = new Formatter(genHTML);
+           System.out.println(klass.getName().asString() + " : Field at index " + f + " with signature " + f_sig.asString() + " signatureIndex=" + signatureIndex + " java fields = " + klass.getJavaFieldsCount());
            new SignatureConverter(f_sig, sigBuf.getBuffer()).dispatchField();
            buf.append(sigBuf.toString().replace('/', '.'));
            buf.append(' ');
@@ -1707,7 +1752,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
               buf.append(escapeHTMLSpecialChars(f_genSig.asString()));
               buf.append("] ");
            }
-           buf.append(" (offset = " + field.getOffset() + ")");
+           buf.append(" (offset = " + fieldOffset + ")");
            buf.endListItem();
          }
          buf.endList();

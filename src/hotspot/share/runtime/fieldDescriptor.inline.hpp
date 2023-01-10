@@ -27,6 +27,7 @@
 
 #include "runtime/fieldDescriptor.hpp"
 
+#include "oops/fieldInfo.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
@@ -46,7 +47,7 @@ inline ConstantPool* fieldDescriptor::constants() const {
 }
 
 inline int fieldDescriptor::offset()                    const    { return field().offset(); }
-inline bool fieldDescriptor::has_initial_value()        const    { return field().initializer_index() != 0; } // Should test flags
+inline bool fieldDescriptor::has_initial_value()        const    { return field().field_flags().is_initialized(); }
 inline int fieldDescriptor::initial_value_index()       const    { return field().initializer_index(); }
 
 inline void fieldDescriptor::set_is_field_access_watched(const bool value) {

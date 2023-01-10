@@ -28,7 +28,7 @@
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/fieldInfo.hpp"
+#include "oops/fieldInfo.inline.hpp"
 #include "oops/instanceKlassMiscStatus.hpp"
 #include "oops/instanceOop.hpp"
 #include "runtime/handles.hpp"
@@ -270,20 +270,7 @@ class InstanceKlass: public Klass {
   // offset matches _default_methods offset
   Array<int>*     _default_vtable_indices;
 
-  // Instance and static variable information, starts with 6-tuples of shorts
-  // [access, name index, sig index, initval index, low_offset, high_offset]
-  // for all fields, followed by the generic signature data at the end of
-  // the array. Only fields with generic signature attributes have the generic
-  // signature data set in the array. The fields array looks like following:
-  //
-  // f1: [access, name index, sig index, initial value index, low_offset, high_offset]
-  // f2: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //      ...
-  // fn: [access, name index, sig index, initial value index, low_offset, high_offset]
-  //     [generic signature index]
-  //     [generic signature index]
-  //     ...
-  // Array<u2>*      _fields;
+  // Fields information is stored in an UNSIGNED5 encoded stream (see fieldInfo.hpp)
   Array<u1>* _fieldinfo_stream;
   Array<FieldStatus>* _fields_status;
 

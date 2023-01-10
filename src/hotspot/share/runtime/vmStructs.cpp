@@ -66,6 +66,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -2299,6 +2300,17 @@
   declare_constant(JavaThreadStatus::PARKED_TIMED)                        \
   declare_constant(JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)            \
   declare_constant(JavaThreadStatus::TERMINATED)                          \
+                                                                          \
+                                                                          \
+  /******************************/                                        \
+  /* FieldFlags enum            */                                        \
+  /******************************/                                        \
+                                                                          \
+  declare_constant(FieldInfo::FieldFlags::_ff_initialized)                \
+  declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
+  declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
+  declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
+  declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \

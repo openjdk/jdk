@@ -271,7 +271,7 @@ public class ClassLoaderStats extends Tool {
       size += arraySize(k.getInnerClasses());
 
       // Fields
-      size += arraySize(k.getFields());
+      size += arraySize(k.getFieldInfoStream());
 
       // Methods
       MethodArray methods = k.getMethods();

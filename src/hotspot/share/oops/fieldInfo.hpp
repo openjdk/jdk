@@ -61,6 +61,7 @@ class FieldInfo {
   friend class FieldInfoStream;
   friend class FieldStreamBase;
   friend class FieldInfoReader;
+  friend class VMStructs;
 
  public:
   // fields
@@ -68,6 +69,8 @@ class FieldInfo {
   // as an array of 6 shorts.
 
   class FieldFlags {
+    friend class VMStructs;
+
     // The ordering of this enum is totally internal.  More frequent
     // flags should come earlier than less frequent ones, because
     // earlier ones compress better.
@@ -217,22 +220,8 @@ class FieldInfo {
     return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
   }
 
-  void print(outputStream* os, ConstantPool* cp) {
-    os->print_cr("index=%d name_index=%d name=%s signature_index=%d signature=%s AccessFlags=%d FieldFlags=%d initval_index=%d offset=%d",
-                 index(),
-                 name_index(), name(cp)->as_utf8(),
-                 signature_index(), signature(cp)->as_utf8(),
-                 access_flags().as_int(),
-                 field_flags().as_uint(),
-                 initializer_index(),
-                 offset());
-  }
-
-  void static print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp) {
-    for (int i = 0; i < array->length(); i++) {
-      array->adr_at(i)->print(os, cp);
-    }
-  }
+  void print(outputStream* os, ConstantPool* cp);
+  void static print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp);
 };
 
 class FieldInfoStream;
@@ -244,57 +233,10 @@ class Mapper {
   int _next_index;
 public:
   Mapper(CON* consumer) : _consumer(consumer) { _next_index = 0; }
-  int next_index() { return _next_index; }
-  void set_next_index(int next_index) {
-    _next_index = next_index;
-  }
+  int next_index() const { return _next_index; }
+  void set_next_index(int next_index) { _next_index = next_index; }
   CON* consumer() const { return _consumer; }
-  bool map_required_field_info(u2 name_index,
-                                u2 signature_index,
-                                u4 offset,
-                                AccessFlags access_flags,
-                                FieldInfo::FieldFlags field_flags) {
-    _next_index++;  // pre-increment
-    _consumer->accept_uint(name_index);
-    _consumer->accept_uint(signature_index);
-    _consumer->accept_uint(offset);
-    _consumer->accept_uint(access_flags.as_int());
-    _consumer->accept_uint(field_flags.as_uint());
-    // tell caller whether there were optional fields:
-    return field_flags.has_any_optionals();
-  }
-  // visit the fixed items; optional items must be visited next
-  bool map_required_field_info(const FieldInfo& fi) {
-    _next_index++;  // pre-increment
-    _consumer->accept_uint(fi._name_index);
-    _consumer->accept_uint(fi._signature_index);
-    _consumer->accept_uint(fi._offset);
-    _consumer->accept_uint(fi._access_flags.as_int());
-    _consumer->accept_uint(fi._internal_flags.as_uint());
-    // tell caller whether there were optional fields:
-    return fi._internal_flags.has_any_optionals();
-  }
-  // based on the internal flags item just written, visit any optional items
-  void map_optional_field_info(FieldInfo::FieldFlags internal_flags,
-                                  int initializer_index,
-                                  int generic_signature_index,
-                                  int contention_group) {
-    if (!internal_flags.has_any_optionals()) {
-      assert(initializer_index == 0, "");
-      assert(generic_signature_index == 0, "");
-      assert(contention_group == 0, "");
-    } else {
-      if (internal_flags.is_initialized()) {
-        _consumer->accept_uint(initializer_index);
-      }
-      if (internal_flags.is_generic()) {
-        _consumer->accept_uint(generic_signature_index);
-      }
-      if (internal_flags.is_contended()) {
-        _consumer->accept_uint(contention_group);
-      }
-    }
-  }
+  void map_field_info(const FieldInfo& fi);
 };
 
 
@@ -310,86 +252,25 @@ class FieldInfoReader {
 
   public:
   FieldInfoReader(const Array<u1>* fi);
-    // : _r(fi->data(), 0),
-    //   _next_index(0) { }
 
   private:
   uint32_t next_uint() { return _r.next_uint(); }
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
-  // void skip_header() {
-  //   const int jf_intf = 2;  // two items
-  //   skip(jf_intf);
-  // }
 public:
   int has_next() { return _r.has_next(); }
   int position() { return _r.position(); }
   int next_index() { return _next_index; }
-  // read the fixed items; optional items must be read next
-  bool read_required_field_info(FieldInfo& fi) {
-    fi._index = _next_index++;
-    fi._name_index = next_uint();
-    fi._signature_index = next_uint();
-    fi._offset = next_uint();
-    fi._access_flags = AccessFlags(next_uint());
-    fi._internal_flags = FieldInfo::FieldFlags(next_uint());
-    return fi._internal_flags.has_any_optionals();
-  }
-  // based on the internal flags item just read, read any optional items
-  bool read_optional_field_info(FieldInfo& fi) {
-    FieldInfo::FieldFlags internal_flags = fi._internal_flags;
-    if (!internal_flags.has_any_optionals()) {
-      return false;  // tell caller there was nothing
-    } else {
-      if (internal_flags.is_initialized()) {
-        fi._initializer_index = next_uint();
-      } else {
-        fi._initializer_index = 0;
-      }
-      if (internal_flags.is_generic()) {
-        fi._generic_signature_index = next_uint();
-      } else {
-        fi._generic_signature_index = 0;
-      }
-      if (internal_flags.is_contended()) {
-        fi._contention_group = next_uint();
-      } else {
-        fi._contention_group = 0;
-      }
-      return true;  // tell caller there was something
-    }
-  }
+  void read_field_info(FieldInfo& fi);
   // skip a whole field record, both required and optional bits
-  FieldInfoReader&  skip_field_info() {
-    _next_index++;
-    const int name_sig_af_off = 4;  // four items
-    skip(name_sig_af_off);
-    FieldInfo::FieldFlags ff(next_uint());
-    if (ff.has_any_optionals()) {
-      const int init_gen_cont = (ff.is_initialized() +
-                                  ff.is_generic() +
-                                  ff.is_contended());
-      skip(init_gen_cont);  // up to three items
-    }
-    return *this;
-  }
+  FieldInfoReader&  skip_field_info();
 
   // Skip to the nth field.  If the reader is freshly initialized to
   // the zero index, this will call skip_field_info() n times.
-  FieldInfoReader& skip_to_field_info(int n) {
-    assert(n >= _next_index, "already past that index");
-    const int count = n - _next_index;
-    for (int i = 0; i < count; i++)  skip_field_info();
-    assert(_next_index == n, "");
-    return *this;
-  }
+  FieldInfoReader& skip_to_field_info(int n);
 
   // for random access, if you know where to go up front:
-  FieldInfoReader& set_position_and_next_index(int position, int next_index) {
-    _r.set_position(position);
-    _next_index = next_index;
-    return *this;
-  }
+  FieldInfoReader& set_position_and_next_index(int position, int next_index);
 };
 
 // The format of the stream, after decompression, is a series of
@@ -403,8 +284,6 @@ public:
 //   End = 0
 //
 class FieldInfoStream : AllStatic {
-  // a FieldInfo is a repurposed Array<u1> with no additional fields
-
   friend class fieldDescriptor;
   friend class JavaFieldStream;
   friend class FieldStreamBase;
@@ -413,18 +292,9 @@ class FieldInfoStream : AllStatic {
   // Return num_java_fields from the header.  As the most frequently
   // used item it comes first.
   public:
-  static int num_java_fields(const Array<u1>* fis) {
-    return FieldInfoReader(fis).next_uint();
-  }
-  static int num_injected_java_fields(const Array<u1>* fis) {
-    FieldInfoReader fir(fis);
-    fir.skip(1);
-    return fir.next_uint();
-  }
-  static int num_total_fields(const Array<u1>* fis) {
-    FieldInfoReader fir(fis);
-    return fir.next_uint() + fir.next_uint();
-  }
+  static int num_java_fields(const Array<u1>* fis);
+  static int num_injected_java_fields(const Array<u1>* fis);
+  static int num_total_fields(const Array<u1>* fis);
 
   static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS);
@@ -441,35 +311,26 @@ class FieldStatus {
 
   // boilerplate:
   u1 _flags;
-  static constexpr u1 flag_mask(FieldStatusBitPosition pos) {
-    return (u1)1 << (int)pos;
-  }
-  bool test_flag(FieldStatusBitPosition pos) {
-    return (_flags & flag_mask(pos)) != 0;
-  }
+  static constexpr u1 flag_mask(FieldStatusBitPosition pos) { return (u1)1 << (int)pos; }
+  bool test_flag(FieldStatusBitPosition pos) { return (_flags & flag_mask(pos)) != 0; }
   // this performs an atomic update on a live status byte!
-  void update_flag(FieldStatusBitPosition pos, bool z) {
-    if (z)    atomic_set_bits(  _flags, flag_mask(pos));
-    else      atomic_clear_bits(_flags, flag_mask(pos));
-  }
+  void update_flag(FieldStatusBitPosition pos, bool z);
   // out-of-line functions do a CAS-loop
   static void atomic_set_bits(u1& flags, u1 mask);
   static void atomic_clear_bits(u1& flags, u1 mask);
 
   public:
   FieldStatus() { _flags = 0; }
-  FieldStatus(u1 flags) {
-    _flags = flags;
-  }
+  FieldStatus(u1 flags) { _flags = flags; }
   u1 as_uint() { return _flags; }
 
   bool is_access_watched()        { return test_flag(_fs_access_watched); }
   bool is_modification_watched()  { return test_flag(_fs_modification_watched); }
   bool is_initialized_final_update() { return test_flag(_initialized_final_update); }
 
-  void update_access_watched(bool z) { update_flag(_fs_access_watched, z); }
-  void update_modification_watched(bool z) { update_flag(_fs_modification_watched, z); }
-  void update_initialized_final_update(bool z) {update_flag(_initialized_final_update, z); }
+  void update_access_watched(bool z);
+  void update_modification_watched(bool z);
+  void update_initialized_final_update(bool z);
 };
 
 #endif // SHARE_OOPS_FIELDINFO_HPP

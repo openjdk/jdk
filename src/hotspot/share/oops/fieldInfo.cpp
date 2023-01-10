@@ -23,32 +23,27 @@
  */
 
 #include "precompiled.hpp"
-#include "oops/fieldInfo.hpp"
+#include "oops/fieldInfo.inline.hpp"
 #include "runtime/atomic.hpp"
 
-void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags | mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while(witness != old_flags);
+void FieldInfo::print(outputStream* os, ConstantPool* cp) {
+  os->print_cr("index=%d name_index=%d name=%s signature_index=%d signature=%s offset=%d AccessFlags=%d FieldFlags=%d initval_index=%d gen_signature_index=%d, gen_signature=%s contended_group=%d",
+                index(),
+                name_index(), name(cp)->as_utf8(),
+                signature_index(), signature(cp)->as_utf8(),
+                offset(),
+                access_flags().as_int(),
+                field_flags().as_uint(),
+                initializer_index(),
+                generic_signature_index(), _internal_flags.is_injected() ? lookup_symbol(generic_signature_index())->as_utf8() : cp->symbol_at(generic_signature_index())->as_utf8(),
+                contended_group());
 }
 
-void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags & ~mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while(witness != old_flags);
+void FieldInfo::print_from_growable_array(GrowableArray<FieldInfo>* array, outputStream* os, ConstantPool* cp) {
+  for (int i = 0; i < array->length(); i++) {
+    array->adr_at(i)->print(os, cp);
+  }
 }
-
-FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
-  : _r(fi->data(), 0),
-    _next_index(0) { }
 
 Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS) {
@@ -60,45 +55,34 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   //                   group?[i&is_contended]  // Contended anno (group)
   //   End = 0
 
-  UNSIGNED5::Sizer<> s;
-  Mapper<UNSIGNED5::Sizer<>> sm(&s);
-  sm.consumer()->accept_uint(java_fields);
-  sm.consumer()->accept_uint(injected_fields);
+  using StreamSizer = UNSIGNED5::Sizer<>;
+  using StreamFieldSizer = Mapper<StreamSizer>;
+  StreamSizer s;
+  StreamFieldSizer sizer(&s);
+
+  sizer.consumer()->accept_uint(java_fields);
+  sizer.consumer()->accept_uint(injected_fields);
   for (int i = 0; i < fields->length(); i++) {
     FieldInfo* fi = fields->adr_at(i);
-    if (sm.map_required_field_info(fi->name_index(),
-                                  fi->signature_index(),
-                                  fi->offset(),
-                                  fi->access_flags(),
-                                  fi->field_flags())) {
-      sm.map_optional_field_info(fi->field_flags(),
-                                  fi->initializer_index(),
-                                  fi->generic_signature_index(),
-                                  fi->is_contended() ? fi->contended_group() : 0);
-    }
+    sizer.map_field_info(*fi);
   }
-  int storage_size = sm.consumer()->position() + 1;
+  int storage_size = sizer.consumer()->position() + 1;
 
   Array<u1>* const fis = MetadataFactory::new_array<u1>(loader_data,
                                   storage_size,
                                   CHECK_NULL);
 
-  UNSIGNED5::Writer<Array<u1>*, int, ArrayHelper<Array<u1>*, int>> w(fis);
-  Mapper<UNSIGNED5::Writer<Array<u1>*, int, ArrayHelper<Array<u1>*, int>>> wm(&w);
-  wm.consumer()->accept_uint(java_fields);
-  wm.consumer()->accept_uint(injected_fields);
+
+  using StreamWriter = UNSIGNED5::Writer<Array<u1>*, int, ArrayHelper<Array<u1>*, int>>;
+  using StreamFieldWriter = Mapper<StreamWriter>;
+  StreamWriter w(fis);
+  StreamFieldWriter writer(&w);
+
+  writer.consumer()->accept_uint(java_fields);
+  writer.consumer()->accept_uint(injected_fields);
   for (int i = 0; i < fields->length(); i++) {
     FieldInfo* fi = fields->adr_at(i);
-    if (wm.map_required_field_info(fi->name_index(),
-                                  fi->signature_index(),
-                                  fi->offset(),
-                                  fi->access_flags(),
-                                  fi->field_flags())) {
-      wm.map_optional_field_info(fi->field_flags(),
-                                  fi->initializer_index(),
-                                  fi->generic_signature_index(),
-                                  fi->is_contended() ? fi->contended_group() : 0);
-    }
+    writer.map_field_info(*fi);
   }
 
 #ifdef ASSERT
@@ -109,10 +93,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   assert(ifc == injected_fields, "Must be");
   for (int i = 0; i < jfc + ifc; i++) {
     FieldInfo fi;
-    bool opt = r.read_required_field_info(fi);
-    if (opt) {
-      r.read_optional_field_info(fi);
-    }
+    r.read_field_info(fi);
     FieldInfo* fi_ref = fields->adr_at(i);
     assert(fi_ref->name_index() == fi.name_index(), "Must be");
     assert(fi_ref->signature_index() == fi.signature_index(), "Must be");
@@ -142,10 +123,7 @@ GrowableArray<FieldInfo>* FieldInfoStream::create_FieldInfoArray(const Array<u1>
   *injected_fields_count = r.next_uint();
   while(r.has_next()) {
     FieldInfo fi;
-    bool opt = r.read_required_field_info(fi);
-    if (opt) {
-      r.read_optional_field_info(fi);
-    }
+    r.read_field_info(fi);
     array->append(fi);
   }
   assert(array->length() == length, "Must be");
@@ -160,10 +138,7 @@ void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* 
   int injected_fields_count = r.next_uint();
   while(r.has_next()) {
     FieldInfo fi;
-    bool opt = r.read_required_field_info(fi);
-    if (opt) {
-      r.read_optional_field_info(fi);
-    }
+    r.read_field_info(fi);
     fi.print(os, cp);
   }
 }

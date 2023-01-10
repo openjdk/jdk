@@ -74,6 +74,10 @@ public abstract class GenericArray extends VMObject {
     return length();
   }
 
+  public Address getDataStart() {
+    return getAddress().addOffsetTo(dataFieldOffset);
+  }
+
   /**
    * Gets the element at the given index.
    */

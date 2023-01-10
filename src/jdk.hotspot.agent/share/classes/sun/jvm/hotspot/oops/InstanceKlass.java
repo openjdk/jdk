@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.classfile.ClassLoaderData;
+import sun.jvm.hotspot.code.CompressedReadStream;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
@@ -34,6 +35,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
+
 
 // An InstanceKlass is the VM level representation of a Java class.
 
@@ -57,6 +59,13 @@ public class InstanceKlass extends Klass {
   private static short FIELDINFO_TAG_SIZE;
   private static short FIELDINFO_TAG_OFFSET;
 
+  // internal field flags constants
+  private static int FIELD_FLAG_IS_INITIALIZED;
+  private static int FIELD_FLAG_IS_INJECTED;
+  private static int FIELD_FLAG_IS_GENERIC;
+  private static int FIELD_FLAG_IS_STABLE;
+  private static int FIELD_FLAG_IS_CONTENDED;
+
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
   private static int CLASS_STATE_LOADED;
@@ -75,8 +84,9 @@ public class InstanceKlass extends Klass {
     methodOrdering       = type.getAddressField("_method_ordering");
     localInterfaces      = type.getAddressField("_local_interfaces");
     transitiveInterfaces = type.getAddressField("_transitive_interfaces");
-    fields               = type.getAddressField("_fields");
-    javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), 0);
+    // fields               = type.getAddressField("_fields");
+    // javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), 0);
+    fieldinfoStream      = type.getAddressField("_fieldinfo_stream");
     constants            = new MetadataField(type.getAddressField("_constants"), 0);
     sourceDebugExtension = type.getAddressField("_source_debug_extension");
     innerClasses         = type.getAddressField("_inner_classes");
@@ -93,15 +103,23 @@ public class InstanceKlass extends Klass {
     headerSize           = type.getSize();
 
     // read field offset constants
-    ACCESS_FLAGS_OFFSET            = db.lookupIntConstant("FieldInfo::access_flags_offset").intValue();
-    NAME_INDEX_OFFSET              = db.lookupIntConstant("FieldInfo::name_index_offset").intValue();
-    SIGNATURE_INDEX_OFFSET         = db.lookupIntConstant("FieldInfo::signature_index_offset").intValue();
-    INITVAL_INDEX_OFFSET           = db.lookupIntConstant("FieldInfo::initval_index_offset").intValue();
-    LOW_OFFSET                     = db.lookupIntConstant("FieldInfo::low_packed_offset").intValue();
-    HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_packed_offset").intValue();
-    FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
-    FIELDINFO_TAG_SIZE             = db.lookupIntConstant("FIELDINFO_TAG_SIZE").shortValue();
-    FIELDINFO_TAG_OFFSET           = db.lookupIntConstant("FIELDINFO_TAG_OFFSET").shortValue();
+    // ACCESS_FLAGS_OFFSET            = db.lookupIntConstant("FieldInfo::access_flags_offset").intValue();
+    // NAME_INDEX_OFFSET              = db.lookupIntConstant("FieldInfo::name_index_offset").intValue();
+    // SIGNATURE_INDEX_OFFSET         = db.lookupIntConstant("FieldInfo::signature_index_offset").intValue();
+    // INITVAL_INDEX_OFFSET           = db.lookupIntConstant("FieldInfo::initval_index_offset").intValue();
+    // LOW_OFFSET                     = db.lookupIntConstant("FieldInfo::low_packed_offset").intValue();
+    // HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_packed_offset").intValue();
+    // FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
+    // FIELDINFO_TAG_SIZE             = db.lookupIntConstant("FIELDINFO_TAG_SIZE").shortValue();
+    // FIELDINFO_TAG_OFFSET           = db.lookupIntConstant("FIELDINFO_TAG_OFFSET").shortValue();
+
+    // read internal field flags constants
+    FIELD_FLAG_IS_INITIALIZED      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_initialized");
+    FIELD_FLAG_IS_INJECTED         = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_injected");
+    FIELD_FLAG_IS_GENERIC          = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_generic");
+    FIELD_FLAG_IS_STABLE           = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_stable");
+    FIELD_FLAG_IS_CONTENDED        = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_contended");
+
 
     // read ClassState constants
     CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
@@ -142,8 +160,9 @@ public class InstanceKlass extends Klass {
   private static AddressField  methodOrdering;
   private static AddressField  localInterfaces;
   private static AddressField  transitiveInterfaces;
-  private static AddressField fields;
-  private static CIntField javaFieldsCount;
+  // private static AddressField fields;
+  // private static CIntField javaFieldsCount;
+  private static AddressField fieldinfoStream;
   private static MetadataField constants;
   private static AddressField  sourceDebugExtension;
   private static AddressField  innerClasses;
@@ -264,17 +283,63 @@ public class InstanceKlass extends Klass {
 
   public static long getHeaderSize() { return headerSize; }
 
+  // The format of the stream, after decompression, is a series of
+  // integers organized like this:
+  //
+  //   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
+  //   Field := name sig offset access internal Optionals(internal)
+  //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
+  //                   gsig?[i&is_generic]     // signature attr
+  //                   group?[i&is_contended]  // Contended anno (group)
+  //   End = 0
+  //
+
+  public static boolean fieldIsInitialized(int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_INITIALIZED) & 1 ) != 0; }
+  public static boolean fieldIsInjected   (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_INJECTED   ) & 1 ) != 0; }
+  public static boolean fieldIsGeneric    (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_GENERIC    ) & 1 ) != 0; }
+  public static boolean fieldIsStable     (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_STABLE     ) & 1 ) != 0; }
+  public static boolean fieldIsContended  (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_CONTENDED  ) & 1 ) != 0; }
+
+  private void advanceToField(CompressedReadStream crs, int n) {
+    crs.readInt(); // read num_java_fields
+    crs.readInt(); // read num_injected_fields;
+    for (int i = 0; i < n; i++) {
+      crs.readInt(); // read name_index
+      crs.readInt(); // read signature index
+      crs.readInt(); // read offset
+      crs.readInt(); // read access flags
+      int internalFlags = crs.readInt();  // read internal field flags
+      // Optional reads
+      if (fieldIsInitialized(internalFlags)) crs.readInt(); // read initial value index
+      if (fieldIsGeneric(internalFlags))     crs.readInt(); // read generic signature index
+      if (fieldIsContended(internalFlags))   crs.readInt(); // read contended group
+    }
+  }
+
   public short getFieldAccessFlags(int index) {
-    return getFields().at(index * FIELD_SLOTS + ACCESS_FLAGS_OFFSET);
+    // return getFields().at(index * FIELD_SLOTS + ACCESS_FLAGS_OFFSET);
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    crs.readInt(); // read name index
+    crs.readInt(); // read signature index
+    crs.readInt(); // read offset
+    return (short)crs.readInt();
   }
 
   public short getFieldNameIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getFields().at(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    return (short)crs.readInt();
+    // return getFields().at(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
   }
 
   public Symbol getFieldName(int index) {
-    int nameIndex = getFields().at(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
+    // int nameIndex = getFields().at(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
+    // Cannot use getFieldNameIndex() because this method is also used for injected fields
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    int nameIndex = crs.readInt();
     if (index < getJavaFieldsCount()) {
       return getConstants().getSymbolAt(nameIndex);
     } else {
@@ -282,13 +347,30 @@ public class InstanceKlass extends Klass {
     }
   }
 
+  public Symbol getSymbolFromIndex(int fieldIndex, int cpIndex) { // Logic should be based on INJECTED flag, not field index FIXME
+    if (fieldIndex < getJavaFieldsCount()) {
+      return getConstants().getSymbolAt(cpIndex);
+    } else {
+      return vmSymbols.symbolAt(cpIndex);
+    }
+  }
+
   public short getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getFields().at(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
+    // return getFields().at(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    crs.readInt(); // read name index
+    return (short)crs.readInt();
   }
 
   public Symbol getFieldSignature(int index) {
-    int signatureIndex = getFields().at(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
+    // int signatureIndex = getFields().at(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
+    //Cannot use getFieldSignatureIndex() because this method is also use for injected fields
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    crs.readInt(); // read name index
+    int signatureIndex = crs.readInt();
     if (index < getJavaFieldsCount()) {
       return getConstants().getSymbolAt(signatureIndex);
     } else {
@@ -297,25 +379,38 @@ public class InstanceKlass extends Klass {
   }
 
   public short getFieldGenericSignatureIndex(int index) {
-    // int len = getFields().length();
-    int allFieldsCount = getAllFieldsCount();
-    int generic_signature_slot = allFieldsCount * FIELD_SLOTS;
-    for (int i = 0; i < allFieldsCount; i++) {
-      short flags = getFieldAccessFlags(i);
-      AccessFlags access = new AccessFlags(flags);
-      if (i == index) {
-        if (access.fieldHasGenericSignature()) {
-           return getFields().at(generic_signature_slot);
-        } else {
-          return 0;
-        }
-      } else {
-        if (access.fieldHasGenericSignature()) {
-          generic_signature_slot ++;
-        }
-      }
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    crs.readInt(); // read name_index
+    crs.readInt(); // read signature index
+    crs.readInt(); // read offset
+    crs.readInt(); // read access flags
+    int internal_flags = crs.readInt();
+    if (fieldIsGeneric(internal_flags)) {
+      if (fieldIsInitialized(internal_flags)) crs.readInt(); // read initial value index
+      return (short) crs.readInt();
     }
     return 0;
+
+    // // int len = getFields().length();
+    // int allFieldsCount = getAllFieldsCount();
+    // int generic_signature_slot = allFieldsCount * FIELD_SLOTS;
+    // for (int i = 0; i < allFieldsCount; i++) {
+    //   short flags = getFieldAccessFlags(i);
+    //   AccessFlags access = new AccessFlags(flags);
+    //   if (i == index) {
+    //     if (access.fieldHasGenericSignature()) {
+    //        return getFields().at(generic_signature_slot);
+    //     } else {
+    //       return 0;
+    //     }
+    //   } else {
+    //     if (access.fieldHasGenericSignature()) {
+    //       generic_signature_slot ++;
+    //     }
+    //   }
+    // }
+    // return 0;
   }
 
   public Symbol getFieldGenericSignature(int index) {
@@ -328,17 +423,33 @@ public class InstanceKlass extends Klass {
 
   public short getFieldInitialValueIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getFields().at(index * FIELD_SLOTS + INITVAL_INDEX_OFFSET);
+    // return getFields().at(index * FIELD_SLOTS + INITVAL_INDEX_OFFSET);
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    crs.readInt(); // read name_index
+    crs.readInt(); // read signature index
+    crs.readInt(); // read offset
+    crs.readInt(); // read access flags
+    int internal_flags = crs.readInt();
+    if (fieldIsInitialized(internal_flags)) {
+      return (short) crs.readInt();
+    }
+    return 0;
   }
 
   public int getFieldOffset(int index) {
-    U2Array fields = getFields();
-    short lo = fields.at(index * FIELD_SLOTS + LOW_OFFSET);
-    short hi = fields.at(index * FIELD_SLOTS + HIGH_OFFSET);
-    if ((lo & FIELDINFO_TAG_OFFSET) == FIELDINFO_TAG_OFFSET) {
-      return VM.getVM().buildIntFromShorts(lo, hi) >> FIELDINFO_TAG_SIZE;
-    }
-    throw new RuntimeException("should not reach here");
+    // U2Array fields = getFields();
+    // short lo = fields.at(index * FIELD_SLOTS + LOW_OFFSET);
+    // short hi = fields.at(index * FIELD_SLOTS + HIGH_OFFSET);
+    // if ((lo & FIELDINFO_TAG_OFFSET) == FIELDINFO_TAG_OFFSET) {
+    //   return VM.getVM().buildIntFromShorts(lo, hi) >> FIELDINFO_TAG_SIZE;
+    // }
+    // throw new RuntimeException("should not reach here");
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    advanceToField(crs, index);
+    crs.readInt(); // read name_index
+    crs.readInt(); // read signature index
+    return crs.readInt();
   }
 
   // Accessors for declared fields
@@ -360,18 +471,23 @@ public class InstanceKlass extends Klass {
 
   public KlassArray   getLocalInterfaces()      { return new KlassArray(localInterfaces.getValue(getAddress())); }
   public KlassArray   getTransitiveInterfaces() { return new KlassArray(transitiveInterfaces.getValue(getAddress())); }
-  public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
-  public int       getAllFieldsCount()      {
-    int len = getFields().length();
-    int allFieldsCount = 0;
-    for (; allFieldsCount*FIELD_SLOTS < len; allFieldsCount++) {
-      short flags = getFieldAccessFlags(allFieldsCount);
-      AccessFlags access = new AccessFlags(flags);
-      if (access.fieldHasGenericSignature()) {
-        len --;
-      }
-    }
-    return allFieldsCount;
+  // public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
+  // public int       getAllFieldsCount()      {
+  //   int len = getFields().length();
+  //   int allFieldsCount = 0;
+  //   for (; allFieldsCount*FIELD_SLOTS < len; allFieldsCount++) {
+  //     short flags = getFieldAccessFlags(allFieldsCount);
+  //     AccessFlags access = new AccessFlags(flags);
+  //     if (access.fieldHasGenericSignature()) {
+  //       len --;
+  //     }
+  //   }
+  //   return allFieldsCount;
+  // }
+  public int          getJavaFieldsCount() { return new CompressedReadStream(getFieldInfoStream().getDataStart()).readInt(); }
+  public int          getAllFieldsCount() {
+    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
+    return crs.readInt() + crs.readInt();
   }
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
   public Symbol    getSourceFileName()      { return                getConstants().getSourceFileName(); }
@@ -622,7 +738,7 @@ public class InstanceKlass extends Klass {
   }
 
   public Field[] getStaticFields() {
-    U2Array fields = getFields();
+    // U2Array fields = getFields();
     int length = getJavaFieldsCount();
     ArrayList<Field> result = new ArrayList<>();
     for (int index = 0; index < length; index++) {
@@ -860,10 +976,15 @@ public class InstanceKlass extends Klass {
     return VMObjectFactory.newObject(IntArray.class, addr);
   }
 
-  public U2Array getFields() {
-    Address addr = getAddress().getAddressAt(fields.getOffset());
-    return VMObjectFactory.newObject(U2Array.class, addr);
+  public U1Array getFieldInfoStream() {
+    Address addr = getAddress().getAddressAt(fieldinfoStream.getOffset());
+    return VMObjectFactory.newObject(U1Array.class, addr);
   }
+
+  // public U2Array getFields() {
+  //   Address addr = getAddress().getAddressAt(fields.getOffset());
+  //   return VMObjectFactory.newObject(U2Array.class, addr);
+  // }
 
   public U2Array getInnerClasses() {
     Address addr = getAddress().getAddressAt(innerClasses.getOffset());

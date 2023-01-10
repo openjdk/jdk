@@ -62,10 +62,7 @@ class FieldStreamBase : public StackObj {
     int injected_fields_count = _reader.next_uint();
     assert( _limit <= java_fields_count + injected_fields_count, "Safety check");
     if (_limit != 0) {
-      bool opt = _reader.read_required_field_info(_fi_buf);
-      if (opt) {
-        _reader.read_optional_field_info(_fi_buf);
-      }
+      _reader.read_field_info(_fi_buf);
     }
    }
  public:
@@ -78,14 +75,7 @@ class FieldStreamBase : public StackObj {
   void next() {
     _index += 1;
     if (done()) return;
-    bool opt = _reader.read_required_field_info(_fi_buf);
-    if (opt) {
-      _reader.read_optional_field_info(_fi_buf);
-    } else {
-      _fi_buf._initializer_index = 0;
-      _fi_buf._contention_group = 0;
-      _fi_buf._generic_signature_index = 0;
-    }
+    _reader.read_field_info(_fi_buf);
   }
   bool done() const { return _index >= _limit; }
 

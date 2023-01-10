@@ -3546,7 +3546,7 @@ void VM_RedefineClasses::set_new_constant_pool(
   int java_fields;
   int injected_fields;
   bool update_required = false;
-  GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(InstanceKlass::cast(scratch_class)->fieldinfo_stream(), &java_fields, &injected_fields);
+  GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(scratch_class->fieldinfo_stream(), &java_fields, &injected_fields);
   for (int i = 0; i < java_fields; i++) {
     FieldInfo* fi = fields->adr_at(i);
     jshort cur_index = fi->name_index();
