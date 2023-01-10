@@ -27,6 +27,8 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -39,6 +41,7 @@ import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
+import java.nio.ByteOrder;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
@@ -48,6 +51,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
+import java.util.Objects;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -65,45 +69,35 @@ public class Net {
     };
 
     // set to true if exclusive binding is on for Windows
-    private static final boolean exclusiveBind;
+    private static final boolean EXCLUSIVE_BIND;
 
     // set to true if the fast tcp loopback should be enabled on Windows
-    private static final boolean fastLoopback;
+    private static final boolean FAST_LOOPBACK;
 
     // -- Miscellaneous utilities --
 
-    private static volatile boolean checkedIPv6;
-    private static volatile boolean isIPv6Available;
-    private static volatile boolean checkedReusePort;
-    private static volatile boolean isReusePortAvailable;
+    private static final boolean IP_V6_AVAILABLE;
+    private static final boolean REUSE_PORT_AVAILABLE;
 
     /**
      * Tells whether dual-IPv4/IPv6 sockets should be used.
      */
     static boolean isIPv6Available() {
-        if (!checkedIPv6) {
-            isIPv6Available = isIPv6Available0();
-            checkedIPv6 = true;
-        }
-        return isIPv6Available;
+        return IP_V6_AVAILABLE;
     }
 
     /**
      * Tells whether SO_REUSEPORT is supported.
      */
     static boolean isReusePortAvailable() {
-        if (!checkedReusePort) {
-            isReusePortAvailable = isReusePortAvailable0();
-            checkedReusePort = true;
-        }
-        return isReusePortAvailable;
+        return REUSE_PORT_AVAILABLE;
     }
 
     /**
      * Returns true if exclusive binding is on
      */
     static boolean useExclusiveBind() {
-        return exclusiveBind;
+        return EXCLUSIVE_BIND;
     }
 
     /**
@@ -140,16 +134,14 @@ public class Net {
     }
 
     public static InetSocketAddress checkAddress(SocketAddress sa) {
-        if (sa == null)
-            throw new NullPointerException();
-        if (!(sa instanceof InetSocketAddress))
+        Objects.requireNonNull(sa);
+        if (!(sa instanceof InetSocketAddress isa))
             throw new UnsupportedAddressTypeException(); // ## needs arg
-        InetSocketAddress isa = (InetSocketAddress)sa;
         if (isa.isUnresolved())
             throw new UnresolvedAddressException(); // ## needs arg
         InetAddress addr = isa.getAddress();
         if (!(addr instanceof Inet4Address || addr instanceof Inet6Address))
-            throw new IllegalArgumentException("Invalid address type");
+            throw new IllegalArgumentException("Invalid address type: " + addr.getClass().getName());
         return isa;
     }
 
@@ -164,16 +156,16 @@ public class Net {
     }
 
     static InetSocketAddress asInetSocketAddress(SocketAddress sa) {
-        if (!(sa instanceof InetSocketAddress))
+        if (!(sa instanceof InetSocketAddress isa))
             throw new UnsupportedAddressTypeException();
-        return (InetSocketAddress)sa;
+        return isa;
     }
 
     static void translateToSocketException(Exception x)
         throws SocketException
     {
-        if (x instanceof SocketException)
-            throw (SocketException)x;
+        if (x instanceof SocketException se)
+            throw se;
         Exception nx = x;
         if (x instanceof ClosedChannelException)
             nx = new SocketException("Socket is closed");
@@ -193,10 +185,10 @@ public class Net {
         if (nx != x)
             nx.initCause(x);
 
-        if (nx instanceof SocketException)
-            throw (SocketException)nx;
-        else if (nx instanceof RuntimeException)
-            throw (RuntimeException)nx;
+        if (nx instanceof SocketException se)
+            throw se;
+        else if (nx instanceof RuntimeException re)
+            throw re;
         else
             throw new Error("Untranslated exception", nx);
     }
@@ -205,8 +197,8 @@ public class Net {
                                    boolean unknownHostForUnresolved)
         throws IOException
     {
-        if (x instanceof IOException)
-            throw (IOException)x;
+        if (x instanceof IOException ioe)
+            throw ioe;
         // Throw UnknownHostException from here since it cannot
         // be thrown as a SocketException
         if (unknownHostForUnresolved &&
@@ -255,40 +247,40 @@ public class Net {
         return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }
 
-    private static final InetAddress anyLocalInet4Address;
-    private static final InetAddress anyLocalInet6Address;
-    private static final InetAddress inet4LoopbackAddress;
-    private static final InetAddress inet6LoopbackAddress;
+    private static final InetAddress ANY_LOCAL_INET_4_ADDRESS;
+    private static final InetAddress ANY_LOCAL_INET_6_ADDRESS;
+    private static final InetAddress INET_4_LOOPBACK_ADDRESS;
+    private static final InetAddress INET_6_LOOPBACK_ADDRESS;
     static {
         try {
-            anyLocalInet4Address = inet4FromInt(0);
-            assert anyLocalInet4Address instanceof Inet4Address
-                    && anyLocalInet4Address.isAnyLocalAddress();
+            ANY_LOCAL_INET_4_ADDRESS = inet4FromInt(0);
+            assert ANY_LOCAL_INET_4_ADDRESS instanceof Inet4Address
+                    && ANY_LOCAL_INET_4_ADDRESS.isAnyLocalAddress();
 
-            anyLocalInet6Address = InetAddress.getByAddress(new byte[16]);
-            assert anyLocalInet6Address instanceof Inet6Address
-                    && anyLocalInet6Address.isAnyLocalAddress();
+            ANY_LOCAL_INET_6_ADDRESS = InetAddress.getByAddress(new byte[16]);
+            assert ANY_LOCAL_INET_6_ADDRESS instanceof Inet6Address
+                    && ANY_LOCAL_INET_6_ADDRESS.isAnyLocalAddress();
 
-            inet4LoopbackAddress = inet4FromInt(0x7f000001);
-            assert inet4LoopbackAddress instanceof Inet4Address
-                    && inet4LoopbackAddress.isLoopbackAddress();
+            INET_4_LOOPBACK_ADDRESS = inet4FromInt(0x7f000001);
+            assert INET_4_LOOPBACK_ADDRESS instanceof Inet4Address
+                    && INET_4_LOOPBACK_ADDRESS.isLoopbackAddress();
 
             byte[] bytes = new byte[16];
             bytes[15] = 0x01;
-            inet6LoopbackAddress = InetAddress.getByAddress(bytes);
-            assert inet6LoopbackAddress instanceof Inet6Address
-                    && inet6LoopbackAddress.isLoopbackAddress();
+            INET_6_LOOPBACK_ADDRESS = InetAddress.getByAddress(bytes);
+            assert INET_6_LOOPBACK_ADDRESS instanceof Inet6Address
+                    && INET_6_LOOPBACK_ADDRESS.isLoopbackAddress();
         } catch (Exception e) {
             throw new InternalError(e);
         }
     }
 
     static InetAddress inet4LoopbackAddress() {
-        return inet4LoopbackAddress;
+        return INET_4_LOOPBACK_ADDRESS;
     }
 
     static InetAddress inet6LoopbackAddress() {
-        return inet6LoopbackAddress;
+        return INET_6_LOOPBACK_ADDRESS;
     }
 
     /**
@@ -298,9 +290,9 @@ public class Net {
      */
     static InetAddress anyLocalAddress(ProtocolFamily family) {
         if (family == StandardProtocolFamily.INET) {
-            return anyLocalInet4Address;
+            return ANY_LOCAL_INET_4_ADDRESS;
         } else if (family == StandardProtocolFamily.INET6) {
-            return anyLocalInet6Address;
+            return ANY_LOCAL_INET_6_ADDRESS;
         } else {
             throw new IllegalArgumentException();
         }
@@ -317,8 +309,8 @@ public class Net {
                 Enumeration<InetAddress> addrs = interf.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = addrs.nextElement();
-                    if (addr instanceof Inet4Address) {
-                        return (Inet4Address)addr;
+                    if (addr instanceof Inet4Address inet4Address) {
+                        return inet4Address;
                     }
                 }
                 return null;
@@ -331,12 +323,7 @@ public class Net {
      */
     static int inet4AsInt(InetAddress ia) {
         if (ia instanceof Inet4Address) {
-            byte[] addr = ia.getAddress();
-            int address  = addr[3] & 0xFF;
-            address |= ((addr[2] << 8) & 0xFF00);
-            address |= ((addr[1] << 16) & 0xFF0000);
-            address |= ((addr[0] << 24) & 0xFF000000);
-            return address;
+            return getInt(ia.getAddress());
         }
         throw new AssertionError("Should not reach here");
     }
@@ -347,10 +334,7 @@ public class Net {
      */
     static InetAddress inet4FromInt(int address) {
         byte[] addr = new byte[4];
-        addr[0] = (byte) ((address >>> 24) & 0xFF);
-        addr[1] = (byte) ((address >>> 16) & 0xFF);
-        addr[2] = (byte) ((address >>> 8) & 0xFF);
-        addr[3] = (byte) (address & 0xFF);
+        putInt(addr, address);
         try {
             return InetAddress.getByAddress(addr);
         } catch (UnknownHostException uhe) {
@@ -384,7 +368,7 @@ public class Net {
 
     // -- Socket options
 
-    static final ExtendedSocketOptions extendedOptions =
+    static final ExtendedSocketOptions EXTENDED_OPTIONS =
             ExtendedSocketOptions.getInstance();
 
     static void setSocketOption(FileDescriptor fd, SocketOption<?> name, Object value)
@@ -404,8 +388,8 @@ public class Net {
         Class<?> type = name.type();
         boolean isIPv6 = (family == StandardProtocolFamily.INET6);
 
-        if (extendedOptions.isOptionSupported(name)) {
-            extendedOptions.setOption(fd, name, value, isIPv6);
+        if (EXTENDED_OPTIONS.isOptionSupported(name)) {
+            EXTENDED_OPTIONS.setOption(fd, name, value, isIPv6);
             return;
         }
 
@@ -416,24 +400,24 @@ public class Net {
         if (name == StandardSocketOptions.SO_RCVBUF ||
             name == StandardSocketOptions.SO_SNDBUF)
         {
-            int i = ((Integer)value).intValue();
+            int i = (Integer) value;
             if (i < 0)
                 throw new IllegalArgumentException("Invalid send/receive buffer size");
         }
         if (name == StandardSocketOptions.SO_LINGER) {
-            int i = ((Integer)value).intValue();
+            int i = (Integer) value;
             if (i < 0)
-                value = Integer.valueOf(-1);
+                value = -1;
             if (i > 65535)
-                value = Integer.valueOf(65535);
+                value = 65535;
         }
         if (name == StandardSocketOptions.IP_TOS) {
-            int i = ((Integer)value).intValue();
+            int i = (Integer) value;
             if (i < 0 || i > 255)
                 throw new IllegalArgumentException("Invalid IP_TOS value");
         }
         if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
-            int i = ((Integer)value).intValue();
+            int i = (Integer) value;
             if (i < 0 || i > 255)
                 throw new IllegalArgumentException("Invalid TTL/hop value");
         }
@@ -445,9 +429,9 @@ public class Net {
 
         int arg;
         if (type == Integer.class) {
-            arg = ((Integer)value).intValue();
+            arg = (Integer) value;
         } else {
-            boolean b = ((Boolean)value).booleanValue();
+            boolean b = (Boolean) value;
             arg = (b) ? 1 : 0;
         }
 
@@ -466,9 +450,9 @@ public class Net {
     {
         Class<?> type = name.type();
 
-        if (extendedOptions.isOptionSupported(name)) {
+        if (EXTENDED_OPTIONS.isOptionSupported(name)) {
             boolean isIPv6 = (family == StandardProtocolFamily.INET6);
-            return extendedOptions.getOption(fd, name, isIPv6);
+            return EXTENDED_OPTIONS.getOption(fd, name, isIPv6);
         }
 
         // only simple values supported by this method
@@ -484,7 +468,7 @@ public class Net {
         int value = getIntOption0(fd, mayNeedConversion, key.level(), key.name());
 
         if (type == Integer.class) {
-            return Integer.valueOf(value);
+            return value;
         } else {
             return (value == 0) ? Boolean.FALSE : Boolean.TRUE;
         }
@@ -493,7 +477,7 @@ public class Net {
     public static boolean isFastTcpLoopbackRequested() {
         String loopbackProp = GetPropertyAction
                 .privilegedGetProperty("jdk.net.useFastTcpLoopback", "false");
-        return loopbackProp.isEmpty() ? true : Boolean.parseBoolean(loopbackProp);
+        return loopbackProp.isEmpty() || Boolean.parseBoolean(loopbackProp);
     }
 
     // -- Socket operations --
@@ -522,7 +506,7 @@ public class Net {
     static FileDescriptor socket(ProtocolFamily family, boolean stream) throws IOException {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, false, fastLoopback));
+        return IOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
     }
 
     static FileDescriptor serverSocket(boolean stream) {
@@ -532,10 +516,10 @@ public class Net {
     static FileDescriptor serverSocket(ProtocolFamily family, boolean stream) {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, true, fastLoopback));
+        return IOUtil.newFD(socket0(preferIPv6, stream, true, FAST_LOOPBACK));
     }
 
-    // Due to oddities SO_REUSEADDR on windows reuse is ignored
+    // Due to oddities SO_REUSEADDR on Windows reuse is ignored
     private static native int socket0(boolean preferIPv6, boolean stream, boolean reuse,
                                       boolean fastLoopback);
 
@@ -553,7 +537,7 @@ public class Net {
         if (addr.isLinkLocalAddress()) {
             addr = IPAddressUtil.toScopedAddress(addr);
         }
-        bind0(fd, preferIPv6, exclusiveBind, addr, port);
+        bind0(fd, preferIPv6, EXCLUSIVE_BIND, addr, port);
     }
 
     private static native void bind0(FileDescriptor fd, boolean preferIPv6,
@@ -655,7 +639,7 @@ public class Net {
     /**
      * Polls a connecting socket to test if the connection has been established.
      *
-     * @apiNote This method is public to allow it be used by code in jdk.sctp.
+     * @apiNote This method is public to allow it to be used by code in jdk.sctp.
      *
      * @param timeout the timeout to wait; 0 to not wait, -1 to wait indefinitely
      * @return true if connected
@@ -820,18 +804,28 @@ public class Net {
         if (availLevel >= 0) {
             String exclBindProp = GetPropertyAction
                     .privilegedGetProperty("sun.net.useExclusiveBind");
-            if (exclBindProp != null) {
-                exclusiveBind = exclBindProp.isEmpty() ?
-                        true : Boolean.parseBoolean(exclBindProp);
-            } else if (availLevel == 1) {
-                exclusiveBind = true;
-            } else {
-                exclusiveBind = false;
-            }
+            EXCLUSIVE_BIND = (exclBindProp == null)
+                    ? availLevel == 1
+                    : exclBindProp.isEmpty() || Boolean.parseBoolean(exclBindProp);
         } else {
-            exclusiveBind = false;
+            EXCLUSIVE_BIND = false;
         }
 
-        fastLoopback = isFastTcpLoopbackRequested();
+        FAST_LOOPBACK = isFastTcpLoopbackRequested();
+
+        IP_V6_AVAILABLE = isIPv6Available0();
+        REUSE_PORT_AVAILABLE = isReusePortAvailable0();
     }
+
+    // Network-ordered accessors for int values in byte arrays
+
+    private static final VarHandle INT = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
+
+    private static int getInt(byte[] b) {
+        return (int) INT.get(b, 0);
+    }
+    private static void putInt(byte[] b, int val) {
+        INT.set(b, 0, val);
+    }
+
 }
