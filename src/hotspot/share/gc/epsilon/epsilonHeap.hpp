@@ -109,8 +109,8 @@ public:
   virtual void object_iterate(ObjectClosure* cl);
 
   // Object pinning support: every object is implicitly pinned
-  virtual void pin_object(JavaThread* thread, oop obj)   { }
-  virtual void unpin_object(JavaThread* thread, oop obj) { }
+  void pin_object(JavaThread* thread, oop obj) override { }
+  void unpin_object(JavaThread* thread, oop obj) override { }
 
   // No support for block parsing.
   HeapWord* block_start(const void* addr) const { return NULL;  }

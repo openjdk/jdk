@@ -503,7 +503,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. The GC must guarantee
   // that pinned objects never move and don't get reclaimed as garbage.
-  // These methods are potentially safepointing.
+  // These functions are potentially safepointing.
   virtual void pin_object(JavaThread* thread, oop obj) = 0;
   virtual void unpin_object(JavaThread* thread, oop obj) = 0;
 

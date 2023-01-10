@@ -1312,8 +1312,8 @@ public:
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
-  virtual void pin_object(JavaThread* thread, oop obj) override;
-  virtual void unpin_object(JavaThread* thread, oop obj) override;
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

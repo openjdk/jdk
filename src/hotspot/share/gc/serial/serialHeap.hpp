@@ -109,8 +109,8 @@ public:
   HeapWord* allocate_loaded_archive_space(size_t size);
   void complete_loaded_archive_space(MemRegion archive_space);
 
-  virtual void pin_object(JavaThread* thread, oop obj) override;
-  virtual void unpin_object(JavaThread* thread, oop obj) override;
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

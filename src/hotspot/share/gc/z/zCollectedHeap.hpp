@@ -113,8 +113,8 @@ public:
   virtual void safepoint_synchronize_begin();
   virtual void safepoint_synchronize_end();
 
-  virtual void pin_object(JavaThread* thread, oop obj) override;
-  virtual void unpin_object(JavaThread* thread, oop obj) override;
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 
   virtual void print_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;
