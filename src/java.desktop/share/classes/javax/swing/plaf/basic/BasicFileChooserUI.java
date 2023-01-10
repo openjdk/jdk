@@ -410,7 +410,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         updateButtonText = UIManager.getString("FileChooser.updateButtonText",l);
         helpButtonText   = UIManager.getString("FileChooser.helpButtonText",l);
         directoryOpenButtonText = UIManager.getString("FileChooser.directoryOpenButtonText",l);
-        customApproveButtonText = UIManager.getString("FileChooser.customApproveButtonText", l);
+        customApproveButtonText = UIManager.getString("FileChooser.customApproveButtonText",l);
 
         saveButtonMnemonic   = getMnemonic("FileChooser.saveButtonMnemonic", l);
         openButtonMnemonic   = getMnemonic("FileChooser.openButtonMnemonic", l);
@@ -598,7 +598,7 @@ public class BasicFileChooserUI extends FileChooserUI {
             return openButtonToolTipText;
         } else if(fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonToolTipText;
-        } else if (fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
+        } else if(fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return customApproveButtonToolTipText;
         }
         return null;
@@ -925,7 +925,7 @@ public class BasicFileChooserUI extends FileChooserUI {
             return openButtonMnemonic;
         } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonMnemonic;
-        } else if(fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return customApproveButtonMnemonic;
         } else {
             return mnemonic;

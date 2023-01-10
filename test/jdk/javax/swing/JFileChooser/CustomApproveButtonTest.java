@@ -44,12 +44,11 @@ public class CustomApproveButtonTest {
     private JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        String aquaLAF = "com.apple.laf.AquaLookAndFeel";
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
                 for (UIManager.LookAndFeelInfo look : lookAndFeel) {
-                    if(look.getClassName().equals(aquaLAF)) {
+                    if (look.getName().equals("Aqua")) {
                         continue;
                     }
                     new CustomApproveButtonTest(look.getClassName());
@@ -60,7 +59,7 @@ public class CustomApproveButtonTest {
     }
 
     private CustomApproveButtonTest(String lookAndFeel) {
-        System.out.println("Testing Look & Feel : "+lookAndFeel);
+        System.out.println("Testing Look & Feel : " + lookAndFeel);
         frame = new JFrame("CustomApproveButtonTest");
         this.lookAndFeel = lookAndFeel;
 
@@ -90,7 +89,7 @@ public class CustomApproveButtonTest {
             return;
         }
 
-        if(frame != null) {
+        if (frame != null) {
             frame.dispose();
         }
 
@@ -110,8 +109,9 @@ public class CustomApproveButtonTest {
             if (c instanceof Container) {
                 JButton button = findCustomApproveButton((Container) c);
 
-                if (result == null) {
+                if (button != null && result == null) {
                     result = button;
+                    break;
                 }
             }
         }
@@ -119,7 +119,7 @@ public class CustomApproveButtonTest {
     }
 
     private void fail(String s) {
-        if(frame != null) {
+        if (frame != null) {
             frame.dispose();
         }
         throw new RuntimeException("Test failed: " + s);
