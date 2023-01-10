@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1141,21 +1141,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                      buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
                  }
                 }
-
-
-               //  U2Array klfields = kls.getFields();
-               //  int klen = klfields.length();
-               //  int findex = 0;
-               //  for (int index = 0; index < klen; index++) {
-               //      int accsFlags = kls.getFieldAccessFlags(index);
-               //      Symbol f_name = kls.getFieldName(index);
-               //      AccessFlags access = new AccessFlags(accsFlags);
-               //      if (!access.isStatic()) {
-               //          ScopeValue svf = ov.getFieldAt(findex++);
-               //          String    fstr = scopeValueAsString(sd, svf);
-               //          buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
-               //      }
-               //  }
                 buf.append(" }");
             } else {
                 buf.append(" ");
@@ -1712,12 +1697,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.h3("Fields");
          buf.beginList();
          for (int f = 0; f < numFields; f++) {
-         //   sun.jvm.hotspot.oops.Field field = klass.getFieldByIndex(f);
-         //   String f_name = ((NamedFieldIdentifier)field.getID()).getName();
-         //   Symbol f_sig  = field.getSignature();
-         //   Symbol f_genSig = field.getGenericSignature();
-         //   AccessFlags acc = field.getAccessFlagsObj();
-
            int nameIndex = crs.readInt();
            int signatureIndex = crs.readInt();
            int fieldOffset = crs.readInt();
@@ -1740,7 +1719,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
            buf.append(genFieldModifierString(acc));
            buf.append(' ');
            Formatter sigBuf = new Formatter(genHTML);
-           System.out.println(klass.getName().asString() + " : Field at index " + f + " with signature " + f_sig.asString() + " signatureIndex=" + signatureIndex + " java fields = " + klass.getJavaFieldsCount());
            new SignatureConverter(f_sig, sigBuf.getBuffer()).dispatchField();
            buf.append(sigBuf.toString().replace('/', '.'));
            buf.append(' ');

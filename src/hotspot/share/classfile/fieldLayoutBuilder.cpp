@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,7 @@ void FieldGroup::sort_by_size() {
   }
 }
 
-FieldLayout::FieldLayout(/*Array<u2>* fields*/ GrowableArray<FieldInfo>* field_info, ConstantPool* cp) :
-  // _fields(fields),
+FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, ConstantPool* cp) :
   _field_info(field_info),
   _cp(cp),
   _blocks(NULL),
@@ -232,7 +231,6 @@ void FieldLayout::add_field_at_offset(LayoutRawBlock* block, int offset, LayoutR
       if (slot->size() == 0) {
         remove(slot);
       }
-      // FieldInfo::from_field_array(_fields, block->field_index())->set_offset(block->offset());
       _field_info->adr_at(block->field_index())->set_offset(block->offset());
       return;
     }
@@ -292,7 +290,6 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   if (slot->size() == 0) {
     remove(slot);
   }
-  // FieldInfo::from_field_array(_fields, block->field_index())->set_offset(block->offset());
   _field_info->adr_at(block->field_index())->set_offset(block->offset());
   return block;
 }
@@ -433,7 +430,6 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
   while(b != _last) {
     switch(b->kind()) {
       case LayoutRawBlock::REGULAR: {
-        // FieldInfo* fi = FieldInfo::from_field_array(_fields, b->field_index());
         FieldInfo* fi = _field_info->adr_at(b->field_index());
         output->print_cr(" @%d \"%s\" %s %d/%d %s",
                          b->offset(),
@@ -445,7 +441,6 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
         break;
       }
       case LayoutRawBlock::FLATTENED: {
-        // FieldInfo* fi = FieldInfo::from_field_array(_fields, b->field_index());
         FieldInfo* fi = _field_info->adr_at(b->field_index());
         output->print_cr(" @%d \"%s\" %s %d/%d %s",
                          b->offset(),
@@ -504,12 +499,10 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
 }
 
 FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, const InstanceKlass* super_klass, ConstantPool* constant_pool,
-      /*Array<u2>* fields*/
       GrowableArray<FieldInfo>* field_info, bool is_contended, FieldLayoutInfo* info) :
   _classname(classname),
   _super_klass(super_klass),
   _constant_pool(constant_pool),
-  // _fields(fields),
   _field_info(field_info),
   _info(info),
   _root_group(NULL),
@@ -536,7 +529,7 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 }
 
 void FieldLayoutBuilder::prologue() {
-  _layout = new FieldLayout(/*_fields*/ _field_info, _constant_pool);
+  _layout = new FieldLayout(_field_info, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
   _layout->initialize_instance_layout(super_klass);
   if (super_klass != NULL) {
@@ -555,10 +548,8 @@ void FieldLayoutBuilder::prologue() {
 //   - @Contended annotation is ignored for static fields
 void FieldLayoutBuilder::regular_field_sorting() {
   int idx = 0;
-  for (GrowableArrayIterator<FieldInfo> it = _field_info->begin();
-       it != _field_info->end(); ++it, ++idx) {
-  FieldInfo ctrl = _field_info->at(0);
-  // for (AllFieldStream fs(_fields, _constant_pool); !fs.done(); fs.next()) {
+  for (GrowableArrayIterator<FieldInfo> it = _field_info->begin(); it != _field_info->end(); ++it, ++idx) {
+    FieldInfo ctrl = _field_info->at(0);
     FieldGroup* group = NULL;
     FieldInfo tfi = *it;
     if (tfi.access_flags().is_static()) {

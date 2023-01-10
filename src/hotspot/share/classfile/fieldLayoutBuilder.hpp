@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,14 +165,13 @@ class FieldGroup : public ResourceObj {
 class FieldLayout : public ResourceObj {
  private:
   GrowableArray<FieldInfo>* _field_info;
-  // Array<u2>* _fields;
   ConstantPool* _cp;
   LayoutRawBlock* _blocks;  // the layout being computed
   LayoutRawBlock* _start;   // points to the first block where a field can be inserted
   LayoutRawBlock* _last;    // points to the last block of the layout (big empty block)
 
  public:
-  FieldLayout(/*Array<u2>* fields*/ GrowableArray<FieldInfo>* field_info, ConstantPool* cp);
+  FieldLayout(GrowableArray<FieldInfo>* field_info, ConstantPool* cp);
   void initialize_static_layout();
   void initialize_instance_layout(const InstanceKlass* ik);
 
@@ -231,7 +230,6 @@ class FieldLayoutBuilder : public ResourceObj {
   const Symbol* _classname;
   const InstanceKlass* _super_klass;
   ConstantPool* _constant_pool;
-  // Array<u2>* _fields;
   GrowableArray<FieldInfo>* _field_info;
   FieldLayoutInfo* _info;
   FieldGroup* _root_group;
@@ -246,7 +244,6 @@ class FieldLayoutBuilder : public ResourceObj {
 
  public:
   FieldLayoutBuilder(const Symbol* classname, const InstanceKlass* super_klass, ConstantPool* constant_pool,
-                     /*Array<u2>* fields*/
                      GrowableArray<FieldInfo>* field_info, bool is_contended, FieldLayoutInfo* info);
 
   int get_alignment() {

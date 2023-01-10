@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,6 @@ class FieldInfo {
   friend class VMStructs;
 
  public:
-  // fields
-  // Field info extracted from the class file and stored
-  // as an array of 6 shorts.
 
   class FieldFlags {
     friend class VMStructs;
@@ -289,9 +286,7 @@ class FieldInfoStream : AllStatic {
   friend class FieldStreamBase;
   friend class ClassFileParser;
 
-  // Return num_java_fields from the header.  As the most frequently
-  // used item it comes first.
-  public:
+ public:
   static int num_java_fields(const Array<u1>* fis);
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);

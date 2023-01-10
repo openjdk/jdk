@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ void FieldInfo::print_from_growable_array(GrowableArray<FieldInfo>* array, outpu
 
 Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS) {
-  // Creation of the stream might be incorrect, the format described in fieldInfo.hpp is:
+  // The stream format described in fieldInfo.hpp is:
   //   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
   //   Field := name sig offset access internal Optionals(internal)
   //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
@@ -67,11 +67,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
     sizer.map_field_info(*fi);
   }
   int storage_size = sizer.consumer()->position() + 1;
-
-  Array<u1>* const fis = MetadataFactory::new_array<u1>(loader_data,
-                                  storage_size,
-                                  CHECK_NULL);
-
+  Array<u1>* const fis = MetadataFactory::new_array<u1>(loader_data, storage_size, CHECK_NULL);
 
   using StreamWriter = UNSIGNED5::Writer<Array<u1>*, int, ArrayHelper<Array<u1>*, int>>;
   using StreamFieldWriter = Mapper<StreamWriter>;
