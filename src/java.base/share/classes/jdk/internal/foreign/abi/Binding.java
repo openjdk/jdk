@@ -202,19 +202,19 @@ public interface Binding {
      */
     class Context implements AutoCloseable {
         private final SegmentAllocator allocator;
-        private final SegmentScope session;
+        private final SegmentScope scope;
 
-        private Context(SegmentAllocator allocator, SegmentScope session) {
+        private Context(SegmentAllocator allocator, SegmentScope scope) {
             this.allocator = allocator;
-            this.session = session;
+            this.scope = scope;
         }
 
         public SegmentAllocator allocator() {
             return allocator;
         }
 
-        public SegmentScope session() {
-            return session;
+        public SegmentScope scope() {
+            return scope;
         }
 
         @Override
@@ -242,7 +242,7 @@ public interface Binding {
         public static Context ofAllocator(SegmentAllocator allocator) {
             return new Context(allocator, null) {
                 @Override
-                public SegmentScope session() {
+                public SegmentScope scope() {
                     throw new UnsupportedOperationException();
                 }
             };
@@ -252,7 +252,7 @@ public interface Binding {
          * Create a binding context from given scope. The resulting context will throw when
          * the context's allocator is accessed.
          */
-        public static Context ofSession() {
+        public static Context ofScope() {
             Arena arena = Arena.openConfined();
             return new Context(null, arena.scope()) {
                 @Override
@@ -276,7 +276,7 @@ public interface Binding {
             }
 
             @Override
-            public SegmentScope session() {
+            public SegmentScope scope() {
                 throw new UnsupportedOperationException();
             }
 
@@ -678,10 +678,10 @@ public interface Binding {
 
     /**
      * BOX_ADDRESS()
-     * Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory session
-     * (either the context session, or the global session), and pushes that onto the operand stack.
+     * Pops a 'long' from the operand stack, converts it to a 'MemorySegment', with the given size and memory scope
+     * (either the context scope, or the global scope), and pushes that onto the operand stack.
      */
-    record BoxAddress(long size, boolean needsSession) implements Binding {
+    record BoxAddress(long size, boolean needsScope) implements Binding {
 
         @Override
         public Tag tag() {
@@ -698,9 +698,9 @@ public interface Binding {
         @Override
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
                               BindingInterpreter.LoadFunc loadFunc, Context context) {
-            SegmentScope session = needsSession ?
-                    context.session() : SegmentScope.global();
-            stack.push(NativeMemorySegmentImpl.makeNativeSegmentUnchecked((long) stack.pop(), size, session));
+            SegmentScope scope = needsScope ?
+                    context.scope() : SegmentScope.global();
+            stack.push(NativeMemorySegmentImpl.makeNativeSegmentUnchecked((long) stack.pop(), size, scope));
         }
     }
 

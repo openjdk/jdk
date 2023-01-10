@@ -244,6 +244,7 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
       e.set_edenUsedSize(g1_heap_summary->edenUsed());
       e.set_edenTotalSize(g1_heap_summary->edenCapacity());
       e.set_survivorUsedSize(g1_heap_summary->survivorUsed());
+      e.set_oldGenUsedSize(g1_heap_summary->oldGenUsed());
       e.set_numberOfRegions(g1_heap_summary->numberOfRegions());
       e.commit();
     }

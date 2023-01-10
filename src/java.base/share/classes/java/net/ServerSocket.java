@@ -299,7 +299,7 @@ public class ServerSocket implements java.io.Closeable {
                     } catch (SocketException e) {
                         throw e;
                     } catch (IOException e) {
-                        throw new SocketException(e.getMessage());
+                        throw new SocketException(e.getMessage(), e);
                     }
                     created = true;
                 }
