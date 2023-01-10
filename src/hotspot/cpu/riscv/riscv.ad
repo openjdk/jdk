@@ -9888,9 +9888,7 @@ instruct cmovI_cmpI(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "b$cop $op1, $op2, skip\t#@cmovI_cmpI\n\t"
-    "mv $dst, $src\n\t"
-    "skip:"
+    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpI\n\t"
   %}
 
   ins_encode %{
@@ -9907,9 +9905,7 @@ instruct cmovI_cmpU(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOpU cop) 
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "b$cop $op1, $op2, skip\t#@cmovI_cmpU\n\t"
-    "mv $dst, $src\n\t"
-    "skip:"
+    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpU\n\t"
   %}
 
   ins_encode %{
@@ -9926,9 +9922,7 @@ instruct cmovI_cmpL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "b$cop $op1, $op2, skip\t#@cmovI_cmpL\n\t"
-    "mv $dst, $src\n\t"
-    "skip:"
+    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpL\n\t"
   %}
 
   ins_encode %{
@@ -9945,9 +9939,7 @@ instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "b$cop $op1, $op2, skip\t#@cmovL_cmpL\n\t"
-    "mv $dst, $src\n\t"
-    "skip:"
+    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpL\n\t"
   %}
 
   ins_encode %{
@@ -9964,9 +9956,7 @@ instruct cmovL_cmpUL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOpU cop)
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "b$cop $op1, $op2, skip\t#@cmovL_cmpUL\n\t"
-    "mv $dst, $src\n\t"
-    "skip:"
+    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovL_cmpUL\n\t"
   %}
 
   ins_encode %{
@@ -9983,9 +9973,7 @@ instruct cmovI_cmpUL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOpU cop)
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "b$cop $op1, $op2, skip\t#@cmovI_cmpUL\n\t"
-    "mv $dst, $src\n\t"
-    "skip:"
+    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpUL\n\t"
   %}
 
   ins_encode %{
