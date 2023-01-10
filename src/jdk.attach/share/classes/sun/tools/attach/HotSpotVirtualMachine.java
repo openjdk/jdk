@@ -71,7 +71,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         try {
             pid = Integer.parseInt(id);
         } catch (NumberFormatException e) {
-        throw new AttachNotSupportedException("Invalid process identifier: " + id);
+            throw new AttachNotSupportedException("Invalid process identifier: " + id);
         }
 
         // The tool should be a different VM to the target. This check will
