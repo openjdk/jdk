@@ -1889,10 +1889,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(size_t, ArrayAllocatorMallocLimit, (size_t)-1, EXPERIMENTAL,      \
-          "Allocation less than this value will be allocated "              \
-          "using malloc. Larger allocations will use mmap.")                \
-                                                                            \
   product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
           "Accesses to all variables should always be atomic")              \
                                                                             \

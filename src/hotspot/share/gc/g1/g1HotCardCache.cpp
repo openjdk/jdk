@@ -38,7 +38,7 @@ G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
 void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
   if (use_cache()) {
     _hot_cache_size = (size_t)1 << G1ConcRSLogCacheSize;
-    _hot_cache = ArrayAllocator<CardValue*>::allocate(_hot_cache_size, mtGC);
+    _hot_cache = NEW_C_HEAP_ARRAY(CardValue*, _hot_cache_size, mtGC);
 
     reset_hot_cache_internal();
 
@@ -55,7 +55,7 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
 G1HotCardCache::~G1HotCardCache() {
   if (use_cache()) {
     assert(_hot_cache != NULL, "Logic");
-    ArrayAllocator<CardValue*>::free(_hot_cache, _hot_cache_size);
+    FREE_C_HEAP_ARRAY(CardValue*, _hot_cache);
     _hot_cache = NULL;
   }
 }

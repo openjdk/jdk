@@ -135,15 +135,15 @@ CHeapBitMap::~CHeapBitMap() {
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
-  return ArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
+  return NEW_C_HEAP_ARRAY(bm_word_t, size_in_words, _flags);
 }
 
 void CHeapBitMap::free(bm_word_t* map, idx_t size_in_words) const {
-  ArrayAllocator<bm_word_t>::free(map, size_in_words);
+  FREE_C_HEAP_ARRAY(bm_word_t, map);
 }
 
 bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, size_t new_size_in_words) const {
-  return ArrayAllocator<bm_word_t>::reallocate(map, old_size_in_words, new_size_in_words, _flags);
+  return REALLOC_C_HEAP_ARRAY(bm_word_t, map, new_size_in_words, _flags);
 }
 
 #ifdef ASSERT

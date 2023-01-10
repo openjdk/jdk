@@ -36,13 +36,13 @@
 template <typename T>
 inline ZGranuleMap<T>::ZGranuleMap(size_t max_offset) :
     _size(max_offset >> ZGranuleSizeShift),
-    _map(MmapArrayAllocator<T>::allocate(_size, mtGC)) {
+    _map(NEW_C_HEAP_ARRAY(T, _size, mtGC)) {
   assert(is_aligned(max_offset, ZGranuleSize), "Misaligned");
 }
 
 template <typename T>
 inline ZGranuleMap<T>::~ZGranuleMap() {
-  MmapArrayAllocator<T>::free(_map, _size);
+  FREE_C_HEAP_ARRAY(T, _map);
 }
 
 template <typename T>

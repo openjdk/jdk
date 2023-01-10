@@ -99,13 +99,13 @@ inline void GenericTaskQueueSet<T, F>::print_and_reset_taskqueue_stats(const cha
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :
-  _elems(ArrayAllocator<E>::allocate(N, F)),
+  _elems(NEW_C_HEAP_ARRAY(E, N, F)),
   _last_stolen_queue_id(InvalidQueueId),
   _seed(17 /* random number */) {}
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
-  ArrayAllocator<E>::free(_elems, N);
+  FREE_C_HEAP_ARRAY(E, _elems);
 }
 
 template<class E, MEMFLAGS F, unsigned int N> inline bool

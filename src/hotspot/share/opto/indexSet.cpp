@@ -28,10 +28,23 @@
 #include "opto/compile.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/regmask.hpp"
+#include "runtime/atomic.hpp"
 
 // This file defines the IndexSet class, a set of sparse integer indices.
 // This data structure is used by the compiler in its liveness analysis and
 // during register allocation.  It also defines an iterator for this class.
+
+#ifndef PRODUCT
+// Increments unsigned long value for statistics (not atomic on MP, but avoids word-tearing on 32 bit).
+static inline void inc_stat_counter(volatile julong* dest, julong add_value) {
+#ifdef _LP64
+  *dest += add_value;
+#else
+  julong value = Atomic::load(dest);
+  Atomic::store(dest, value + add_value);
+#endif
+}
+#endif
 
 //-------------------------------- Initializations ------------------------------
 
