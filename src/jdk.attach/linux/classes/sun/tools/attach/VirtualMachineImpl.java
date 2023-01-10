@@ -59,7 +59,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // This provider only understands pids
         int pid = Integer.parseInt(vmid);
         if (pid < 1) {
-            throw new AttachNotSupportedException("Invalid process identifier -1");
+            throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
         }
 
         // Try to resolve to the "inner most" pid namespace

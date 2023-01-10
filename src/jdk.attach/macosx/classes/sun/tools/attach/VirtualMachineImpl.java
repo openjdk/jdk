@@ -59,7 +59,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // This provider only understands pids
         int pid = Integer.parseInt(vmid);
         if (pid < 1) {
-            throw new AttachNotSupportedException("Invalid process identifier -1");
+            throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
         }
 
         // Find the socket file. If not found then we attempt to start the
