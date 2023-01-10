@@ -78,8 +78,6 @@ public class LinuxRISCV64CallArranger {
                            boolean isInMemoryReturn) {
     }
 
-    public static final LinuxRISCV64CallArranger LINUX = new LinuxRISCV64CallArranger();
-
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
     }
@@ -110,7 +108,7 @@ public class LinuxRISCV64CallArranger {
         return new Bindings(csb.build(), returnInMemory);
     }
 
-    public MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(CLinux, bindings.callingSequence).getBoundMethodHandle();
@@ -122,7 +120,7 @@ public class LinuxRISCV64CallArranger {
         return handle;
     }
 
-    public MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
+    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
 
         Bindings bindings = getBindings(mt, cDesc, true);
 
