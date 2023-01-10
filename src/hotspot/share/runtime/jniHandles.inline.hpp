@@ -32,33 +32,36 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+inline bool JNIHandles::is_tagged_with(jobject handle, TypeTag tag) {
+  return (reinterpret_cast<uintptr_t>(handle) & tag_mask) == tag;
+}
+
+inline bool JNIHandles::is_local_tagged(jobject handle) {
+  return is_tagged_with(handle, TypeTag::local);
+}
+
 inline bool JNIHandles::is_jweak_tagged(jobject handle) {
-  STATIC_ASSERT(weak_tag_size == 1);
-  STATIC_ASSERT(weak_tag_value == 1);
-  return (reinterpret_cast<uintptr_t>(handle) & weak_tag_mask) != 0;
+  return is_tagged_with(handle, TypeTag::weak);
 }
 
 inline bool JNIHandles::is_global_tagged(jobject handle) {
-  return (reinterpret_cast<uintptr_t>(handle) & global_tag_value) == global_tag_value;
+  return is_tagged_with(handle, TypeTag::global);
 }
 
 inline oop* JNIHandles::jobject_ptr(jobject handle) {
-  assert(!is_jweak_tagged(handle), "precondition");
-  assert(!is_global_tagged(handle), "precondition");
+  assert(is_local_tagged(handle), "precondition");
   return reinterpret_cast<oop*>(handle);
 }
 
 inline oop* JNIHandles::global_ptr(jobject handle) {
   assert(is_global_tagged(handle), "precondition");
-  assert(!is_jweak_tagged(handle), "precondition");
-  char* ptr = reinterpret_cast<char*>(handle) - global_tag_value;
+  char* ptr = reinterpret_cast<char*>(handle) - TypeTag::global;
   return reinterpret_cast<oop*>(ptr);
 }
 
 inline oop* JNIHandles::jweak_ptr(jobject handle) {
   assert(is_jweak_tagged(handle), "precondition");
-  assert(!is_global_tagged(handle), "precondition");
-  char* ptr = reinterpret_cast<char*>(handle) - weak_tag_value;
+  char* ptr = reinterpret_cast<char*>(handle) - TypeTag::weak;
   return reinterpret_cast<oop*>(ptr);
 }
 

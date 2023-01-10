@@ -93,7 +93,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
     if (ptr != NULL) {
       assert(NativeAccess<AS_NO_KEEPALIVE>::oop_load(ptr) == oop(NULL), "invariant");
       NativeAccess<>::oop_store(ptr, obj());
-      char* tptr = reinterpret_cast<char*>(ptr) + global_tag_value;
+      char* tptr = reinterpret_cast<char*>(ptr) + TypeTag::global;
       res = reinterpret_cast<jobject>(tptr);
     } else {
       report_handle_allocation_failure(alloc_failmode, "global");
@@ -115,7 +115,7 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
     if (ptr != NULL) {
       assert(NativeAccess<AS_NO_KEEPALIVE>::oop_load(ptr) == oop(NULL), "invariant");
       NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(ptr, obj());
-      char* tptr = reinterpret_cast<char*>(ptr) + weak_tag_value;
+      char* tptr = reinterpret_cast<char*>(ptr) + TypeTag::weak;
       res = reinterpret_cast<jobject>(tptr);
     } else {
       report_handle_allocation_failure(alloc_failmode, "weak global");
@@ -247,13 +247,15 @@ bool JNIHandles::is_frame_handle(JavaThread* thr, jobject handle) {
 
 bool JNIHandles::is_global_handle(jobject handle) {
   assert(handle != NULL, "precondition");
-  return is_global_tagged(handle) && !is_jweak_tagged(handle) && is_storage_handle(global_handles(), global_ptr(handle));
+  assert(!is_global_tagged(handle) || is_storage_handle(global_handles(), global_ptr(handle)), "invalid storage");
+  return is_global_tagged(handle);
 }
 
 
 bool JNIHandles::is_weak_global_handle(jobject handle) {
   assert(handle != NULL, "precondition");
-  return is_jweak_tagged(handle) && !is_global_tagged(handle) && is_storage_handle(weak_global_handles(), jweak_ptr(handle));
+  assert(!is_jweak_tagged(handle) || is_storage_handle(weak_global_handles(), jweak_ptr(handle)), "invalid storage");
+  return is_jweak_tagged(handle);
 }
 
 // We assume this is called at a safepoint: no lock is needed.

@@ -3122,7 +3122,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
   const TypeOopPtr* const xtype = aklass->as_instance_type();
-  Node* jobj_untagged = _gvn.transform(new AddPNode(top(), jobj, _gvn.MakeConX(-JNIHandles::global_tag_value)));
+  Node* jobj_untagged = _gvn.transform(new AddPNode(top(), jobj, _gvn.MakeConX(-JNIHandles::TypeTag::global)));
   Node* event_writer = access_load(jobj_untagged, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
 
   // Load the current thread id from the event writer object.

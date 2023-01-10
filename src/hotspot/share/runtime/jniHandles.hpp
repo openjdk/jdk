@@ -45,6 +45,7 @@ class JNIHandles : AllStatic {
   static OopStorage* global_handles();
   static OopStorage* weak_global_handles();
 
+  inline static bool is_local_tagged(jobject handle);
   inline static bool is_jweak_tagged(jobject handle);
   inline static bool is_global_tagged(jobject handle);
   inline static oop* jobject_ptr(jobject handle); // NOT jweak or global!
@@ -61,26 +62,24 @@ class JNIHandles : AllStatic {
   static bool current_thread_in_native();
 
  public:
-  // Low tag bit in jobject used to distinguish a jweak.  jweak is
-  // type equivalent to jobject, but there are places where we need to
-  // be able to distinguish jweak values from other jobjects, and
-  // is_weak_global_handle is unsuitable for performance reasons.  To
-  // provide such a test we add weak_tag_value to the (aligned) byte
-  // address designated by the jobject to produce the corresponding
-  // jweak.  Accessing the value of a jobject must account for it
-  // being a possibly offset jweak.
-  static const uintptr_t weak_tag_size = 1;
-  static const uintptr_t weak_tag_alignment = (1u << weak_tag_size);
-  static const uintptr_t weak_tag_mask = weak_tag_alignment - 1;
+  // Low tag bits in jobject used to distinguish its type. Checking
+  // the underlying storage type is unsuitable for performance reasons.
+  enum TypeTag {
+    local = 0b00,
+    weak = 0b01,
+    global = 0b10,
+  };
+
+private:
+  inline static bool is_tagged_with(jobject handle, TypeTag tag);
+
+public:
   static const uintptr_t tag_size = 2;
-  static const uintptr_t tag_alignment = (1u << tag_size);
-  static const uintptr_t tag_mask = tag_alignment - 1;
-  static const int weak_tag_value = 1;
-  // Low tag bit in jobject used to distinguish a global jobject.
-  // There are places where we need to be able to distinguish global
-  // values from other jobjects, and is_global_handle is unsuitable
-  // for performance reasons.
-  static const int global_tag_value = 2;
+  static const uintptr_t tag_mask = ((1u << tag_size) - 1u);
+
+  STATIC_ASSERT((TypeTag::local & tag_mask) == TypeTag::local);
+  STATIC_ASSERT((TypeTag::weak & tag_mask) == TypeTag::weak);
+  STATIC_ASSERT((TypeTag::global & tag_mask) == TypeTag::global);
 
   // Resolve handle into oop
   inline static oop resolve(jobject handle);

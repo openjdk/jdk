@@ -2470,18 +2470,18 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   b(done);
 
   bind(tagged);
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 0b1);
+  STATIC_ASSERT(JNIHandles::TypeTag::weak == 0b1);
   tbnz(value, 0, weak_tagged);    // Test for weak tag.
 
   // Resolve global handle
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::global_tag_value), tmp1, tmp2);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
   verify_oop(value);
   b(done);
 
   bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 value, Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
+                 value, Address(value, -JNIHandles::TypeTag::weak), tmp1, tmp2);
   verify_oop(value);
 
   bind(done);
@@ -2495,7 +2495,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT(JNIHandles::global_tag_value == 0b10);
+    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
     tbnz(value, 1, valid_global_tag); // Test for global tag
     stop("non global jobject using resolve_global_jobject");
@@ -2504,7 +2504,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 #endif
 
   // Resolve global handle
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::global_tag_value), tmp1, tmp2);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
   verify_oop(value);
 
   bind(done);

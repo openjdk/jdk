@@ -127,7 +127,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
   __ b(verify);
 
   __ bind(tagged);
-  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
+  __ andi_(tmp1, value, JNIHandles::TypeTag::weak);
   __ clrrdi(value, value, JNIHandles::tag_size); // Untag.
   __ bne(CCR0, weak_tagged);   // Test for jweak tag.
 
@@ -156,7 +156,7 @@ void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register 
 #ifdef ASSERT
   {
     Label valid_global_tag;
-    __ andi_(tmp1, value, JNIHandles::global_tag_value);
+    __ andi_(tmp1, value, JNIHandles::TypeTag::global);
     __ bne(CCR0, valid_global_tag);       // Test for global tag.
     __ stop("non global jobject using resolve_global_jobject");
     __ bind(valid_global_tag);
