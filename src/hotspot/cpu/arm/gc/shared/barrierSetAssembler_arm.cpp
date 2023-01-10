@@ -217,7 +217,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 #endif
 
   Label skip, guard;
-  Address thread_disarmed_addr(Rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+  Address thread_disarmed_addr(Rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
 
   __ block_comment("nmethod_barrier begin");
   __ ldr_label(tmp0, guard);
