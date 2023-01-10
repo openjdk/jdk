@@ -37,6 +37,7 @@ template <typename T>
 inline ZGranuleMap<T>::ZGranuleMap(size_t max_offset) :
     _size(max_offset >> ZGranuleSizeShift),
     _map(NEW_C_HEAP_ARRAY(T, _size, mtGC)) {
+  memset(_map, '\0', sizeof(T) * _size);
   assert(is_aligned(max_offset, ZGranuleSize), "Misaligned");
 }
 
