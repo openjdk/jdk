@@ -101,24 +101,22 @@ jlong JvmtiTagMapTable::find(oop obj) {
   return found == NULL ? 0 : *found;
 }
 
-bool JvmtiTagMapTable::add(oop obj, jlong tag) {
+void JvmtiTagMapTable::add(oop obj, jlong tag) {
   JvmtiTagMapKey new_entry(obj);
   bool is_added = false;
   _table.put_if_absent(new_entry, tag, &is_added);
   assert(is_added, "should be added");
-  return is_added;
 }
 
-bool JvmtiTagMapTable::update(oop obj, jlong tag) {
+void JvmtiTagMapTable::update(oop obj, jlong tag) {
   JvmtiTagMapKey new_entry(obj);
   bool is_updated = _table.put(new_entry, tag) == false;
   assert(is_updated, "should be updated and not added");
-  return is_updated;
 }
 
-bool JvmtiTagMapTable::remove(oop obj) {
+void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapKey jtme(obj);
-  return _table.remove(jtme);
+  _table.remove(jtme);
 }
 
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapKeyClosure* closure) {

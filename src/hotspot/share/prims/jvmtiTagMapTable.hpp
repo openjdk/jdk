@@ -87,10 +87,10 @@ class JvmtiTagMapTable : public CHeapObj<mtInternal> {
   ~JvmtiTagMapTable();
 
   jlong find(oop obj);
-  bool add(oop obj, jlong tag);
-  bool update(oop obj, jlong tag);
+  void add(oop obj, jlong tag);
+  void update(oop obj, jlong tag);
 
-  bool remove(oop obj);
+  void remove(oop obj);
 
   // iterate over all entries in the hashmap
   void entry_iterate(JvmtiTagMapKeyClosure* closure);
