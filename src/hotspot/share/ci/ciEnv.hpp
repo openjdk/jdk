@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_CI_CIENV_HPP
 
 #include "ci/ciClassList.hpp"
+#include "ci/ciConstant.hpp"
 #include "ci/ciObjectFactory.hpp"
 #include "classfile/vmClassMacros.hpp"
 #include "code/debugInfoRec.hpp"
@@ -465,6 +466,28 @@ public:
 
   // RedefineClasses support
   void metadata_do(MetadataClosure* f) { _factory->metadata_do(f); }
+
+  // FoldStableValues support
+private:
+  class StableValue {
+    private:
+      const ciObject* _obj;
+      int _off;
+      ciConstant _value;
+
+    public:
+      StableValue() : _obj(NULL), _off(0), _value(ciConstant()) { }
+      StableValue(const ciObject* obj, int off, ciConstant value) : _obj(obj), _off(off), _value(value) { }
+
+      const ciObject* obj() const { return _obj; }
+      int off() const { return _off; }
+      ciConstant value() const { return _value; }
+  };
+
+  GrowableArray<StableValue>* _stable_values; // Cache of stable values
+
+public:
+  ciConstant check_stable_value(const ciObject* obj, int off, ciConstant val);
 
   // Replay support
 private:

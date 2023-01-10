@@ -316,6 +316,7 @@ const Type* Type::make_constant_from_array_element(ciArray* array, int off, int 
   if (element_value.basic_type() == T_ILLEGAL) {
     return NULL; // wrong offset
   }
+  element_value = ciEnv::current()->check_stable_value(array, off, element_value);
   ciConstant con = check_mismatched_access(element_value, loadbt, is_unsigned_load);
 
   assert(con.basic_type() != T_ILLEGAL, "elembt=%s; loadbt=%s; unsigned=%d",
@@ -360,6 +361,10 @@ const Type* Type::make_constant_from_field(ciField* field, ciInstance* holder,
     // java.lang.invoke and sun.invoke packages and subpackages) as
     // compile time constants.
     field_value = field->constant_value_of(holder);
+  }
+  if (FoldStableValues && field->is_stable()) {
+    holder = field->is_static() ? field->holder()->java_mirror() : holder;
+    field_value = ciEnv::current()->check_stable_value(holder, field->offset(), field_value);
   }
   if (!field_value.is_valid()) {
     return NULL; // Not a constant

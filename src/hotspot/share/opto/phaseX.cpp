@@ -1760,23 +1760,14 @@ PhaseCCP::~PhaseCCP() {
 
 #ifdef ASSERT
 void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
-  // Skip verification when folding loads from stable fields because the field
-  // may be (re-)initialized during CCP and the different types violate monotonicity.
-  const TypePtr* adr_type = n->adr_type();
-  Compile::AliasType* atp = C->alias_type(adr_type);
-  if (FoldStableValues && n->is_Load() &&
-      ((atp->field() != NULL && atp->field()->is_stable()) ||
-       (adr_type->isa_aryptr() && adr_type->is_aryptr()->is_stable()))) {
-    return;
-  }
   if (tnew->meet(told) != tnew->remove_speculative()) {
     n->dump(1);
     tty->print("told = "); told->dump(); tty->cr();
     tty->print("tnew = "); tnew->dump(); tty->cr();
     fatal("Not monotonic");
   }
-  assert(!told->isa_int() || !tnew->isa_int() || told->isa_int()->_widen <= tnew->isa_int()->_widen, "widen increases");
-  assert(!told->isa_long() || !tnew->isa_long() || told->isa_long()->_widen <= tnew->isa_long()->_widen, "widen increases");
+  assert(!told->isa_int() || !tnew->isa_int() || told->is_int()->_widen <= tnew->is_int()->_widen, "widen increases");
+  assert(!told->isa_long() || !tnew->isa_long() || told->is_long()->_widen <= tnew->is_long()->_widen, "widen increases");
 }
 #endif //ASSERT
 

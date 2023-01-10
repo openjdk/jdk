@@ -53,7 +53,8 @@ public class TestUnstableStable {
 
     @Stable Integer stableField = null;
     static @Stable Integer staticStableField = null;
-    static @Stable Integer[] stableArray = new Integer[1];
+    static @Stable Integer[] stableArray0 = new Integer[1];
+    static @Stable Integer[][] stableArray1 = new Integer[1][1];
 
     static final Integer finalField = 43;
 
@@ -75,9 +76,19 @@ public class TestUnstableStable {
                 staticStableField = null;
                 staticStableField = 42;
                 staticStableField = 43;
-                stableArray[0] = null;
-                stableArray[0] = 42;
-                stableArray[0] = 43;
+                stableArray0[0] = null;
+                stableArray0[0] = 42;
+                stableArray0[0] = 43;
+                stableArray1[0] = null;
+                Integer[] tmp1 = {null};
+                stableArray1[0] = tmp1;
+                Integer[] tmp2 = {42};
+                stableArray1[0] = tmp2;
+                Integer[] tmp3 = {43};
+                stableArray1[0] = tmp3;
+                stableArray1[0][0] = null;
+                stableArray1[0][0] = 42;
+                stableArray1[0][0] = 43;
                 U.putObject(TestUnstableStable.class, FIELD_OFFSET, null);
                 U.putObject(TestUnstableStable.class, FIELD_OFFSET, 42);
                 U.putObject(TestUnstableStable.class, FIELD_OFFSET, 43);
@@ -103,10 +114,20 @@ public class TestUnstableStable {
         return val;
     }
 
-    static Object testArray() {
-        Integer val = stableArray[0];
+    static Object testArray0() {
+        Integer val = stableArray0[0];
         if (val == null) {
             val = null;
+        }
+        return val;
+    }
+
+    static Object testArray1() {
+        Integer[] val = stableArray1[0];
+        if (val == null) {
+            val = null;
+        } else {
+            return val[0];
         }
         return val;
     }
@@ -124,7 +145,8 @@ public class TestUnstableStable {
         t.start();
         Method testNonStatic = TestUnstableStable.class.getDeclaredMethod("testNonStatic");
         Method testStatic = TestUnstableStable.class.getDeclaredMethod("testStatic");
-        Method testArray = TestUnstableStable.class.getDeclaredMethod("testArray");
+        Method testArray0 = TestUnstableStable.class.getDeclaredMethod("testArray0");
+        Method testArray1 = TestUnstableStable.class.getDeclaredMethod("testArray1");
         Method testFinal = TestUnstableStable.class.getDeclaredMethod("testFinal");
         testFinal();
         for (int i = 0; i < 1000; ++i) {
@@ -132,8 +154,10 @@ public class TestUnstableStable {
             WHITE_BOX.enqueueMethodForCompilation(testNonStatic, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
             WHITE_BOX.deoptimizeMethod(testStatic, false);
             WHITE_BOX.enqueueMethodForCompilation(testStatic, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            WHITE_BOX.deoptimizeMethod(testArray, false);
-            WHITE_BOX.enqueueMethodForCompilation(testArray, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+            WHITE_BOX.deoptimizeMethod(testArray0, false);
+            WHITE_BOX.enqueueMethodForCompilation(testArray0, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+            WHITE_BOX.deoptimizeMethod(testArray1, false);
+            WHITE_BOX.enqueueMethodForCompilation(testArray1, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
             WHITE_BOX.deoptimizeMethod(testFinal, false);
             WHITE_BOX.enqueueMethodForCompilation(testFinal, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
         }
