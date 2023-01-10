@@ -298,6 +298,7 @@ void Symbol::print_as_field_external_type(outputStream *os) {
   SignatureStream ss(this, false);
   assert(!ss.is_done(), "must have at least one element in field ref");
   assert(!ss.at_return_type(), "field ref cannot be a return type");
+  assert(!Signature::is_method(this), "field ref cannot be a method");
 
   if (ss.is_array()) {
     print_array(os, ss);
