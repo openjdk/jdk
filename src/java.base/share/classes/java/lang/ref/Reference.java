@@ -531,8 +531,9 @@ public abstract sealed class Reference<T>
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * reachabilityFence(x)
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
-     * any Reference to x is enqueued on a ReferenceQueue (such as happens when
-     * running a {@linkplain Cleaner#register cleaning action} for x).
+     * any Reference to x is enqueued on a ReferenceQueue (as happens when a
+     * {@linkplain Cleaner#register cleaning action} for x runs on a
+     * {@linkplain Cleaner}'s thread).
      *
      * @apiNote
      * Reference processing or finalization may occur whenever the virtual machine detects that no
