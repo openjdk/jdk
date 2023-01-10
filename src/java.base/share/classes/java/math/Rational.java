@@ -562,8 +562,8 @@ public class Rational extends Number implements Comparable<Rational> {
         // using cross simplification
         BigInteger numGcd = numerator.gcd(multiplicand.denominator);
         BigInteger denGcd = denominator.gcd(multiplicand.numerator);
-        BigInteger num = numerator.divide(numGcd).multiply(multiplicand.numerator);
-        BigInteger den = denominator.divide(denGcd).multiply(multiplicand.denominator);
+        BigInteger num = numerator.divide(numGcd).multiply(multiplicand.numerator.divide(denGcd));
+        BigInteger den = denominator.divide(denGcd).multiply(multiplicand.denominator.divide(numGcd));
         return new Rational(signum * multiplicand.signum, num, den);
     }
 
@@ -599,9 +599,31 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see    #remainder(Rational)
      */
     public Rational[] divideAndRemainder(Rational divisor) {
-        Rational q = divide(divisor);
-        BigInteger[] res = q.numerator.divideAndRemainder(q.denominator);
-        return new Rational[] { new Rational(res[0]), new Rational(res[1]) };
+        final BigInteger a = numerator, b = denominator;
+        final BigInteger c = divisor.numerator, d = divisor.denominator;
+        // (a / b) / (c / d)
+        // == (a / b) * (d / c)
+        // == (q1 + r1 / b) * (q2 + r2 / c)
+        // == q1 * q2 + (q1 * r2 / c) + (q2 * r1 / b) + (r1 / b) * (r2 / c)
+        // == q1 * q2 + (q3 + r3 / c) + (q4 + r4 / b) + (r1 / b) * (r2 / c)
+        // try to pospone the overflow as as late as possible
+        BigInteger[] qr1 = a.divideAndRemainder(b);
+        BigInteger[] qr2 = d.divideAndRemainder(c);
+        Rational r1DivB = valueOf(1, qr1[1], b); // r1 / b
+        Rational r2DivC = valueOf(1, qr2[1], c); // r2 / c
+        Rational q1MulR2divC = r2DivC.multiply(new Rational(qr1[0])); // q1 * r2 / c
+        Rational q2MulR1divB = r1DivB.multiply(new Rational(qr2[0])); // q2 * r1 / b
+        BigInteger[] qr3 = q1MulR2divC.numerator.divideAndRemainder(q1MulR2divC.denominator);
+        BigInteger[] qr4 = q2MulR1divB.numerator.divideAndRemainder(q2MulR1divB.denominator);
+        Rational r3DivC = valueOf(1, qr3[1], c);
+        Rational r4DivB = valueOf(1, qr4[1], b);
+
+        BigInteger q = qr1[0].multiply(qr2[0]).add(qr3[0]).add(qr4[0]); // sum integer augends
+        Rational fracAug = r3DivC.add(r4DivB).add(r1DivB.multiply(r2DivC));
+        // add integer part of fractional augends
+        q = q.add(fracAug.numerator.divide(fracAug.denominator));
+        Rational quot = new Rational(q);
+        return new Rational[] { quot, subtract(quot.multiply(divisor)) }; // this == quotient * divisor + remainder
     }
 
     /**
