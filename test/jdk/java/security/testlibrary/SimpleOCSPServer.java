@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class SimpleOCSPServer {
     private volatile boolean receivedShutdown = false;
     private volatile boolean acceptConnections = true;
     private volatile long delayMsec = 0;
+    private boolean omitContentLength = false;
 
     // Fields used in the generation of responses
     private long nextUpdateInterval = -1;
@@ -532,6 +533,19 @@ public class SimpleOCSPServer {
     }
 
     /**
+     * Setting to control whether HTTP responses have the Content-Length
+     * field asserted or not.
+     *
+     * @param isDisabled true if the Content-Length field should not be
+     *        asserted, false otherwise.
+     */
+    public void setDisableContentLength(boolean isDisabled) {
+        if (!started) {
+            omitContentLength = isDisabled;
+        }
+    }
+
+    /**
      * Log a message to stdout.
      *
      * @param message the message to log
@@ -776,8 +790,11 @@ public class SimpleOCSPServer {
 
             sb.append("HTTP/1.0 200 OK\r\n");
             sb.append("Content-Type: application/ocsp-response\r\n");
-            sb.append("Content-Length: ").append(respBytes.length);
-            sb.append("\r\n\r\n");
+            if (!omitContentLength) {
+                sb.append("Content-Length: ").append(respBytes.length).
+                        append("\r\n");
+            }
+            sb.append("\r\n");
 
             out.write(sb.toString().getBytes("UTF-8"));
             out.write(respBytes);
