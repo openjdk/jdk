@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,9 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
- * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *      -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
+ * @run testng/othervm -Djava.lang.invoke.MethodHandle.RESOLVE_LAZY=false
+ *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      jdk.vm.ci.hotspot.test.MethodHandleAccessProviderTest
  */
 
 package jdk.vm.ci.hotspot.test;
