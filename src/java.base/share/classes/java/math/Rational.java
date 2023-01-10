@@ -410,8 +410,9 @@ public class Rational extends Number implements Comparable<Rational> {
 
     /**
      * Returns a Rational whose value is represented by the specified parameters.
-     * Assumes that {@code signum != 0} and that the denominator and
-     * the numerator are positive and {@code num < den}
+     * Assumes that {@code signum != 0}, the denominator and the numerator are
+     * positive
+     * and {@code num < den}
      */
     private static Rational valueOf(int sign, BigInteger floor, BigInteger num, BigInteger den) {
         BigInteger[] frac = simplify(num, den);
@@ -525,17 +526,6 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Computes the least common denominator of {@code this.denominator}
-     * and the specified denominator
-     * 
-     * @param den a denominator
-     * @param gcd the greatest common divisor of {@code denominator} and {@code den}
-     */
-    private BigInteger lcd(BigInteger den, BigInteger gcd) {
-        return denominator.divide(gcd).multiply(den);
-    }
-
-    /**
      * Computes the numerators of this {@code Rational} and of the specified
      * {@code Rational}, relative to the least common denominator of
      * {@code denominator} and {@code val.denominator}
@@ -557,7 +547,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code -this}.
      */
     public Rational negate() {
-        return signum == 0 ? this : new Rational(-signum, numerator, denominator);
+        return signum == 0 ? this : new Rational(-signum, floor, numerator, denominator);
     }
 
     /**
@@ -571,7 +561,9 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0)
             throw new ArithmeticException("Divide by zero");
 
-        return new Rational(signum, denominator, numerator);
+        BigInteger completeNum = floor.multiply(denominator).add(numerator);
+        BigInteger[] quotAndRem = denominator.divideAndRemainder(completeNum);
+        return valueOf(signum, quotAndRem[0], quotAndRem[1], completeNum);
     }
 
     /**
@@ -588,27 +580,37 @@ public class Rational extends Number implements Comparable<Rational> {
      * Returns a {@code Rational} whose value is <code>(this &times;
      * multiplicand)</code>.
      *
-     * @param  multiplicand value to be multiplied by this {@code Rational}.
+     * @param multiplicand value to be multiplied by this {@code Rational}.
      * @return {@code this * multiplicand}
      */
     public Rational multiply(Rational multiplicand) {
         if (signum == 0 || multiplicand.signum == 0)
             return ZERO;
 
+        final BigInteger a = floor, b = multiplicand.floor;
+        final BigInteger n = numerator, m = denominator;
+        final BigInteger k = multiplicand.numerator, l = multiplicand.denominator;
+        // (a + n / m) * (b + k / l)
+        // == a * b + a * (k / l) + b * (n / m) + (n / m) * (k / l)
         // try to pospone the overflow as as late as possible
-        // using cross simplification
-        BigInteger numGcd = numerator.gcd(multiplicand.denominator);
-        BigInteger denGcd = denominator.gcd(multiplicand.numerator);
-        BigInteger num = numerator.divide(numGcd).multiply(multiplicand.numerator.divide(denGcd));
-        BigInteger den = denominator.divide(denGcd).multiply(multiplicand.denominator.divide(numGcd));
-        return new Rational(signum * multiplicand.signum, num, den);
+        BigInteger gcdAL = a.gcd(l);
+        BigInteger gcdBM = b.gcd(m);
+        BigInteger gcdNL = n.gcd(l);
+        BigInteger gcdMK = m.gcd(k);
+        Rational aug1 = new Rational(a.multiply(b)); // a * b
+        Rational aug2 = valueOf(1, a.divide(gcdAL).multiply(k), l.divide(gcdAL)); // a * (k / l)
+        Rational aug3 = valueOf(1, b.divide(gcdBM).multiply(n), m.divide(gcdBM)); // b * (n / m)
+        Rational aug4 = valueOf(1, n.divide(gcdNL).multiply(k.divide(gcdMK)),
+                m.divide(gcdMK).multiply(l.divide(gcdNL))); // (n / m) * (k / l)
+        Rational absRes = aug1.add(aug2).add(aug3).add(aug4);
+        return signum * multiplicand.signum == 1 ? absRes : absRes.negate();
     }
 
     /**
      * Returns a {@code Rational} whose value is {@code (this / divisor)}.
      * If {@code (divisor == 0)} an {@code ArithmeticException} is thrown.
      *
-     * @param  divisor value by which this {@code Rational} is to be divided.
+     * @param divisor value by which this {@code Rational} is to be divided.
      * @throws ArithmeticException if {@code divisor == 0}
      * @return {@code this / divisor}
      */
@@ -621,19 +623,20 @@ public class Rational extends Number implements Comparable<Rational> {
      * result of {@code divideToIntegralValue} followed by the result of
      * {@code remainder} on the two operands.
      *
-     * <p>Note that if both the integer quotient and remainder are
+     * <p>
+     * Note that if both the integer quotient and remainder are
      * needed, this method is faster than using the
      * {@code divideToIntegralValue} and {@code remainder} methods
      * separately because the division need only be carried out once.
      *
-     * @param  divisor value by which this {@code Rational} is to be divided,
-     *         and the remainder computed.
+     * @param divisor value by which this {@code Rational} is to be divided,
+     *                and the remainder computed.
      * @return a two element {@code Rational} array: the quotient
      *         (the result of {@code divideToIntegralValue}) is the initial element
      *         and the remainder is the final element.
      * @throws ArithmeticException if {@code divisor == 0}
-     * @see    #divideToIntegralValue(Rational)
-     * @see    #remainder(Rational)
+     * @see #divideToIntegralValue(Rational)
+     * @see #remainder(Rational)
      */
     public Rational[] divideAndRemainder(Rational divisor) {
         final BigInteger a = numerator, b = denominator;
@@ -667,7 +670,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * Returns a {@code Rational} whose value is the integer part
      * of the quotient {@code (this / divisor)} rounded down.
      *
-     * @param  divisor value by which this {@code Rational} is to be divided.
+     * @param divisor value by which this {@code Rational} is to be divided.
      * @return The integer part of {@code this / divisor}.
      * @throws ArithmeticException if {@code divisor == 0}
      */
