@@ -301,14 +301,18 @@ class IntegerMulRing {
   const IntegerType* _right;
   NativeType _min_value = IntegerType::MIN->_lo;
 
-
   // Check overflow by using arithmetic equality: x = a * b <=> x / a = b. Since a and b are integer numbers, the division
   // x / a does not underflow/overflow since |x / a| <= |x|. If a * b does underflow/overflow, then we'll get a different
   // result compared to a * b. Special case MIN_VALUE * -1 whose result is MIN_VALUE.
-  bool does_overflow(const NativeType a, const NativeType b) const {
-    NativeType x = java_multiply(a, b);
-    return (a == -1 && b == _min_value) || // Special case 'MIN_VALUE * -1 = MIN_VALUE'.
-           (a != 0 && x / a != b);
+  bool does_overflow(const NativeType product_a_b, const NativeType a, const NativeType b) const {
+    if (a == 0 || b == 0) {
+      // Trivially no overflow.
+      return false;
+    } else if (a == -1 && b == _min_value) {
+      // Special case 'MIN_VALUE * -1 = MIN_VALUE' does overflow.
+      return true;
+    }
+    return product_a_b / a != b;
   }
 
  public:
@@ -322,20 +326,20 @@ class IntegerMulRing {
     const NativeType hi_left = _left->_hi;
     const NativeType lo_right = _right->_lo;
     const NativeType hi_right = _right->_hi;
+    const NativeType lo_lo_product = java_multiply(lo_left, lo_right);
+    const NativeType lo_hi_product = java_multiply(lo_left, hi_right);
+    const NativeType hi_lo_product = java_multiply(hi_left, lo_right);
+    const NativeType hi_hi_product = java_multiply(hi_left, hi_right);
 
-    if (does_overflow(lo_left, lo_right) ||
-        does_overflow(lo_left, hi_right) ||
-        does_overflow(hi_left, lo_right) ||
-        does_overflow(hi_left, hi_right)) {
+    if (does_overflow(lo_lo_product, lo_left, lo_right) ||
+        does_overflow(lo_hi_product, lo_left, hi_right) ||
+        does_overflow(hi_lo_product, hi_left, lo_right) ||
+        does_overflow(hi_hi_product, hi_left, hi_right)) {
       return OverflowType<IntegerType>::overflow(); // Full range of values - bottom type.
     }
 
-    NativeType lo_lo_product = java_multiply(lo_left, lo_right);
-    NativeType lo_hi_product = java_multiply(lo_left, hi_right);
-    NativeType hi_lo_product = java_multiply(hi_left, lo_right);
-    NativeType hi_hi_product = java_multiply(hi_left, hi_right);
-    NativeType min = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
-    NativeType max = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    const NativeType min = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    const NativeType max = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
     return IntegerType::make(min, max, MAX2(_left->_widen, _right->_widen));
   }
 };
