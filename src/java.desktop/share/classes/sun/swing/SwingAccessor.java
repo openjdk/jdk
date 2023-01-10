@@ -31,13 +31,7 @@ import java.lang.invoke.MethodHandles;
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
 
-import javax.swing.JComponent;
-import javax.swing.KeyStroke;
-import javax.swing.Popup;
-import javax.swing.PopupFactory;
-import javax.swing.RepaintManager;
-import javax.swing.TransferHandler;
-import javax.swing.UIDefaults;
+import javax.swing.*;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -67,7 +61,12 @@ public final class SwingAccessor {
     private static AccessibleComponentAccessor accessibleComponentAccessor = null;
 
     public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
-        return accessibleComponentAccessor;
+        var access = accessibleComponentAccessor;
+        if (access == null) {
+            ensureClassInitialized(JTree.class);
+            access = accessibleComponentAccessor;
+        }
+        return access;
     }
 
     public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
