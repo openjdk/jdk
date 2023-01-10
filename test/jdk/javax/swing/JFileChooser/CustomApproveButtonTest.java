@@ -39,8 +39,6 @@ import javax.swing.UIManager;
  */
 
 public class CustomApproveButtonTest {
-    private final String customApproveText;
-    private final String lookAndFeel;
     private JFrame frame;
 
     public static void main(String[] args) throws Exception {
@@ -61,12 +59,12 @@ public class CustomApproveButtonTest {
     private CustomApproveButtonTest(String lookAndFeel) {
         System.out.println("Testing Look & Feel : " + lookAndFeel);
         frame = new JFrame("CustomApproveButtonTest");
-        this.lookAndFeel = lookAndFeel;
 
         try {
             UIManager.setLookAndFeel(lookAndFeel);
         } catch (Exception e) {
-            fail("Failed to set ", e);
+            throw new RuntimeException("Failed to set " + lookAndFeel +
+                    " LookAndFeel. Error : " + e);
         }
 
         JFileChooser fileChooser = new JFileChooser();
@@ -75,47 +73,20 @@ public class CustomApproveButtonTest {
         frame.setVisible(true);
         frame.pack();
 
-        customApproveText = UIManager.getString("FileChooser.customApproveButtonText", fileChooser.getLocale());
-
-        if (customApproveText == null || customApproveText.length() == 0) {
-            fail("Cannot find Custom Approve Button text From UIManager Property!");
-            return;
-        }
-
-        JButton customApproveButton = findCustomApproveButton(fileChooser);
+        JButton customApproveButton = fileChooser.getUI().getDefaultButton(fileChooser);
 
         if (customApproveButton == null) {
             fail("Cannot find Custom Approve Button in FileChooser!");
+            return;
+        }
+        if (customApproveButton.getText() == null) {
+            fail("Custom Approve Button Text is null in FileChooser!");
             return;
         }
 
         if (frame != null) {
             frame.dispose();
         }
-
-    }
-
-    private JButton findCustomApproveButton(Container container) {
-        JButton result = null;
-
-        for (int i = 0; i < container.getComponentCount(); i++) {
-            Component c = container.getComponent(i);
-
-            if (c instanceof JButton && customApproveText.equals(((JButton) c).getText())) {
-                result = (JButton) c;
-                break;
-            }
-
-            if (c instanceof Container) {
-                JButton button = findCustomApproveButton((Container) c);
-
-                if (button != null && result == null) {
-                    result = button;
-                    break;
-                }
-            }
-        }
-        return result;
     }
 
     private void fail(String s) {
@@ -123,9 +94,5 @@ public class CustomApproveButtonTest {
             frame.dispose();
         }
         throw new RuntimeException("Test failed: " + s);
-    }
-
-    private void fail(String s, Throwable e) {
-        throw new RuntimeException(s + lookAndFeel + " LookAndFeel. Error : " + s, e);
     }
 }
