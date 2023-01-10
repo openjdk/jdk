@@ -4497,10 +4497,10 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   }
 
 #ifndef PRODUCT
-    if (TraceOptimizeFill) {
-      tty->print("ArrayFill call   ");
-      call->dump();
-    }
+  if (TraceOptimizeFill) {
+    tty->print("ArrayFill call   ");
+    call->dump();
+  }
 #endif
 
   return true;
