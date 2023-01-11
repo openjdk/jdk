@@ -53,90 +53,90 @@ public interface ObjectStreamConstants {
     /**
      * Null object reference.
      */
-    static byte TC_NULL =         (byte)0x70;
+    static byte TC_NULL = 0x70;
 
     /**
      * Reference to an object already written into the stream.
      */
-    static byte TC_REFERENCE =    (byte)0x71;
+    static byte TC_REFERENCE = 0x71;
 
     /**
      * new Class Descriptor.
      */
-    static byte TC_CLASSDESC =    (byte)0x72;
+    static byte TC_CLASSDESC = 0x72;
 
     /**
      * new Object.
      */
-    static byte TC_OBJECT =       (byte)0x73;
+    static byte TC_OBJECT = 0x73;
 
     /**
      * new String.
      */
-    static byte TC_STRING =       (byte)0x74;
+    static byte TC_STRING = 0x74;
 
     /**
      * new Array.
      */
-    static byte TC_ARRAY =        (byte)0x75;
+    static byte TC_ARRAY = 0x75;
 
     /**
      * Reference to Class.
      */
-    static byte TC_CLASS =        (byte)0x76;
+    static byte TC_CLASS = 0x76;
 
     /**
      * Block of optional data. Byte following tag indicates number
      * of bytes in this block data.
      */
-    static byte TC_BLOCKDATA =    (byte)0x77;
+    static byte TC_BLOCKDATA = 0x77;
 
     /**
      * End of optional block data blocks for an object.
      */
-    static byte TC_ENDBLOCKDATA = (byte)0x78;
+    static byte TC_ENDBLOCKDATA = 0x78;
 
     /**
      * Reset stream context. All handles written into stream are reset.
      */
-    static byte TC_RESET =        (byte)0x79;
+    static byte TC_RESET = 0x79;
 
     /**
      * long Block data. The long following the tag indicates the
      * number of bytes in this block data.
      */
-    static byte TC_BLOCKDATALONG= (byte)0x7A;
+    static byte TC_BLOCKDATALONG= 0x7A;
 
     /**
      * Exception during write.
      */
-    static byte TC_EXCEPTION =    (byte)0x7B;
+    static byte TC_EXCEPTION = 0x7B;
 
     /**
      * Long string.
      */
-    static byte TC_LONGSTRING =   (byte)0x7C;
+    static byte TC_LONGSTRING = 0x7C;
 
     /**
      * new Proxy Class Descriptor.
      */
-    static byte TC_PROXYCLASSDESC =       (byte)0x7D;
+    static byte TC_PROXYCLASSDESC = 0x7D;
 
     /**
      * new Enum constant.
      * @since 1.5
      */
-    static byte TC_ENUM =         (byte)0x7E;
+    static byte TC_ENUM = 0x7E;
 
     /**
      * Last tag value.
      */
-    static byte TC_MAX =          (byte)0x7E;
+    static byte TC_MAX = 0x7E;
 
     /**
      * First wire handle to be assigned.
      */
-    static int baseWireHandle = 0x7e0000;
+    static int BASE_WIRE_HANDLE = 0x7e0000;
 
 
     /* *******************************************************************/
@@ -226,12 +226,12 @@ public interface ObjectStreamConstants {
     * A Stream Protocol Version. <p>
     *
     * This protocol is written by JVM 1.2.
-    *
+    * <p>
     * Externalizable data is written in block data mode and is
     * terminated with TC_ENDBLOCKDATA. Externalizable class descriptor
     * flags has SC_BLOCK_DATA enabled. JVM 1.1.6 and greater can
     * read this format change.
-    *
+    * <p>
     * Enables writing a nonSerializable class descriptor into the
     * stream. The serialVersionUID of a nonSerializable class is
     * set to 0L.

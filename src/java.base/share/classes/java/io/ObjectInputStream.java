@@ -1863,11 +1863,11 @@ public class ObjectInputStream
         if (bin.readByte() != TC_REFERENCE) {
             throw new InternalError();
         }
-        passHandle = bin.readInt() - baseWireHandle;
+        passHandle = bin.readInt() - BASE_WIRE_HANDLE;
         if (passHandle < 0 || passHandle >= handles.size()) {
             throw new StreamCorruptedException(
                 String.format("invalid handle value: %08X", passHandle +
-                baseWireHandle));
+                        BASE_WIRE_HANDLE));
         }
         if (unshared) {
             // REMIND: what type of exception to throw here?
