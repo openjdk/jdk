@@ -64,11 +64,11 @@ public class TestVectorizeURShiftSubword {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=exclude,*.urshift");
+        TestFramework framework = new TestFramework(TestVectorizeURShiftSubword.class);
+        framework.setDefaultWarmup(1).addFlags("-XX:CompileCommand=exclude,*.urshift").start();
     }
 
     @Test
-    @Warmup(1)
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VB, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testByte0() {
         for(int i = 0; i < NUM; i++) {
@@ -77,7 +77,6 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @Warmup(1)
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VB, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testByte1() {
         for(int i = 0; i < NUM; i++) {
@@ -86,7 +85,6 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @Warmup(1)
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.RSHIFT_VB, IRNode.STORE_VECTOR})
     public void testByte2() {
         for(int i = 0; i < NUM; i++) {
@@ -95,7 +93,6 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @Warmup(1)
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VS, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testShort0() {
         for(int i = 0; i < NUM; i++) {
@@ -104,7 +101,6 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @Warmup(1)
     @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.RSHIFT_VS, ">0", IRNode.STORE_VECTOR, ">0"})
     public void testShort1() {
         for(int i = 0; i < NUM; i++) {
@@ -113,7 +109,6 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Test
-    @Warmup(1)
     @IR(failOn = {IRNode.LOAD_VECTOR, IRNode.RSHIFT_VS, IRNode.STORE_VECTOR})
     public void testShort2() {
         for(int i = 0; i < NUM; i++) {
@@ -151,7 +146,6 @@ public class TestVectorizeURShiftSubword {
     }
 
     @Run(test = "checkTest")
-    @Warmup(1)
     public void checkTest_runner() {
         for (int i = 0; i < SPECIALS.length; i++) {
             for (int j = 0; j < shorta.length; j++) {
