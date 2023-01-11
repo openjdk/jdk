@@ -446,9 +446,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
             else if (Thread.interrupted()) {
                 interrupted = true;
-                if ((how & POOLSUBMIT) != 0 && p != null && p.runState < 0)
-                    cancelIgnoringExceptions(this); // cancel on shutdown
-                else if ((how & INTERRUPTIBLE) != 0) {
+                if ((how & INTERRUPTIBLE) != 0) {
                     s = ABNORMAL;
                     break;
                 }
@@ -575,13 +573,20 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * necessary in an ExecutionException.
      */
     private void reportExecutionException(int s) {
-        Throwable ex = null, rx;
+        Throwable ex, rx;
         if (s == ABNORMAL)
             ex = new InterruptedException();
         else if (s >= 0)
             ex = new TimeoutException();
         else if ((rx = getThrowableException()) != null)
             ex = new ExecutionException(rx);
+        else {
+            rx = new CancellationException();
+            if ((status & POOLSUBMIT) != 0) // wrap if external
+                ex = new ExecutionException(rx);
+            else
+                ex = rx;
+        }
         ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
     }
 

@@ -1824,8 +1824,8 @@ public class ForkJoinPool extends AbstractExecutorService {
             int r = w.stackPred, src = 0;       // use seed from registerWorker
             do {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-            } while ((src = scan(w, src, r)) >= 0 ||
-                     (src = awaitWork(w)) == 0);
+            } while (runState >= 0 && ((src = scan(w, src, r)) >= 0 ||
+                                       (src = awaitWork(w)) == 0));
         }
     }
 
@@ -1922,7 +1922,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
         }
-        return runState & STOP;                  // 0 unless terminating
+        return 0;
     }
 
     /**
@@ -3071,6 +3071,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         final AtomicInteger count;  // in case all fail
         @SuppressWarnings("serial")
         InvokeAnyRoot(int n) {
+            if (n <= 0)
+                throw new IllegalArgumentException();
             count = new AtomicInteger(n);
         }
         final void tryComplete(E v, Throwable ex, boolean completed) {
@@ -3090,6 +3092,32 @@ public class ForkJoinPool extends AbstractExecutorService {
         public final boolean exec()         { return false; } // never forked
         public final E getRawResult()       { return result; }
         public final void setRawResult(E v) { result = v; }
+        // Common support for timed and untimed versions of invokeAny
+        final E invokeAny(Collection<? extends Callable<E>> tasks,
+                          ForkJoinPool pool, boolean timed, long nanos)
+            throws InterruptedException, ExecutionException, TimeoutException {
+            Thread t = Thread.currentThread();
+            if (!(t instanceof ForkJoinWorkerThread) ||
+                ((ForkJoinWorkerThread)t).pool != pool)
+                markPoolSubmission(); // for exception reporting
+            ArrayList<InvokeAnyTask<E>> fs = new ArrayList<>(count.get());
+            try {
+                for (Callable<E> c : tasks) {
+                    InvokeAnyTask<E> f = new InvokeAnyTask<E>(this, c);
+                    fs.add(f);
+                    pool.poolSubmit(true, f);
+                    if (isDone())
+                        break;
+                }
+                if (timed)
+                    return get(nanos, TimeUnit.NANOSECONDS);
+                else
+                    return get();
+            } finally {
+                for (InvokeAnyTask<E> f : fs)
+                    ForkJoinTask.cancelIgnoringExceptions(f);
+            }
+        }
     }
 
     /**
@@ -3105,8 +3133,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         final Callable<E> callable;
         transient volatile Thread runner;
         InvokeAnyTask(InvokeAnyRoot<E> root, Callable<E> callable) {
-            this.root = root;
+            if (callable == null) throw new NullPointerException();
             this.callable = callable;
+            this.root = root;
         }
         public final boolean exec() {
             ForkJoinPool p;
@@ -3161,29 +3190,12 @@ public class ForkJoinPool extends AbstractExecutorService {
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
         throws InterruptedException, ExecutionException {
-        int n = tasks.size();
-        if (n <= 0)
-            throw new IllegalArgumentException();
-        InvokeAnyRoot<T> root = new InvokeAnyRoot<T>(n);
-        ArrayList<InvokeAnyTask<T>> fs = new ArrayList<>(n);
         try {
-            for (Callable<T> c : tasks) {
-                if (c == null)
-                    throw new NullPointerException();
-                InvokeAnyTask<T> f = new InvokeAnyTask<T>(root, c);
-                fs.add(f);
-                poolSubmit(true, f);
-                if (root.isDone())
-                    break;
-            }
-            try {
-                return root.get();
-            } catch (CancellationException cx) {
-                throw new ExecutionException(cx);
-            }
-        } finally {
-            for (InvokeAnyTask<T> f : fs)
-                ForkJoinTask.cancelIgnoringExceptions(f);
+            return new InvokeAnyRoot<T>(tasks.size()).
+                invokeAny(tasks, this, false, 0L);
+        } catch (TimeoutException cannotHappen) {
+            assert false;
+            return null;
         }
     }
 
@@ -3191,31 +3203,8 @@ public class ForkJoinPool extends AbstractExecutorService {
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                            long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
-        long nanos = unit.toNanos(timeout);
-        int n = tasks.size();
-        if (n <= 0)
-            throw new IllegalArgumentException();
-        InvokeAnyRoot<T> root = new InvokeAnyRoot<T>(n);
-        ArrayList<InvokeAnyTask<T>> fs = new ArrayList<>(n);
-        try {
-            for (Callable<T> c : tasks) {
-                if (c == null)
-                    throw new NullPointerException();
-                InvokeAnyTask<T> f = new InvokeAnyTask<T>(root, c);
-                fs.add(f);
-                poolSubmit(true, f);
-                if (root.isDone())
-                    break;
-            }
-            try {
-                return root.get(nanos, TimeUnit.NANOSECONDS);
-            } catch (CancellationException cx) {
-                throw new ExecutionException(cx);
-            }
-        } finally {
-            for (InvokeAnyTask<T> f : fs)
-                ForkJoinTask.cancelIgnoringExceptions(f);
-        }
+        return new InvokeAnyRoot<T>(tasks.size()).
+            invokeAny(tasks, this, true, unit.toNanos(timeout));
     }
 
     /**
