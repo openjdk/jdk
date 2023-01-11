@@ -95,7 +95,7 @@ public class ZipFSTester {
             test0(fs);
             test1(fs);
             test2(fs);
-            test8299864(fs); // more tests
+            testFileStoreNullArgs(fs); // more tests
         }
         testStreamChannel();
         testTime(jarFile);
@@ -1083,21 +1083,33 @@ public class ZipFSTester {
         return path;
     }
 
-    static void test8299864(FileSystem fs)  {
+    static void testFileStoreNullArgs(FileSystem fs)  {
         FileStore store = fs.getFileStores().iterator().next();
+
+        // Make sure we are testing the right thing
         if (!"jdk.nio.zipfs.ZipFileStore".equals(store.getClass().getName()))
             throw new AssertionError(store.getClass().getName());
+
+        assertThrowsNPE(() -> store.supportsFileAttributeView((String) null));
+        assertThrowsNPE(() -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
+        assertThrowsNPE(() -> store.getAttribute(null));
+        assertThrowsNPE(() -> store.getFileStoreAttributeView(null));
+    }
+
+    @FunctionalInterface
+    private interface ThrowingRunnable {
+        void run() throws Exception;
+    }
+
+    static void assertThrowsNPE(ThrowingRunnable r) {
         try {
-            store.supportsFileAttributeView((String) null);
+            r.run();
+            // Didn't throw an exception
             throw new AssertionError();
         } catch (NullPointerException expected) {
             // happy path
-        }
-        try {
-            store.supportsFileAttributeView((Class<? extends FileAttributeView>) null);
-            throw new AssertionError();
-        } catch (NullPointerException expected) {
-            // happy path
+        } catch (Exception e) {
+            throw new AssertionError(e);
         }
     }
 
