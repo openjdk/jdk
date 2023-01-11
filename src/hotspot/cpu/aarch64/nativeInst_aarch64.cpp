@@ -39,6 +39,9 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciEnv.hpp"
+#endif
 
 void NativeCall::verify() {
   assert(NativeCall::is_call_at((address)this), "unexpected code at call site");
@@ -523,15 +526,19 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
   OrderAccess::release();
 }
 
+#if INCLUDE_JVMCI
 // Generate a trampoline for a branch to dest.  If there's no need for a
 // trampoline, simply patch the call directly to dest.
-address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
+address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
   MacroAssembler a(&cbuf);
   address stub = NULL;
 
   if (a.far_branches()
       && ! is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
     stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
+    if (stub == nullptr) {
+      JVMCI_ERROR_0("could not emit trampoline stub - code cache is full");
+    }
   }
 
   if (stub == NULL) {
@@ -543,6 +550,7 @@ address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
 
   return stub;
 }
+#endif
 
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
