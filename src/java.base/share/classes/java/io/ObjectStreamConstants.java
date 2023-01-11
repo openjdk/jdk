@@ -105,7 +105,7 @@ public interface ObjectStreamConstants {
      * long Block data. The long following the tag indicates the
      * number of bytes in this block data.
      */
-    static byte TC_BLOCKDATALONG= 0x7A;
+    static byte TC_BLOCKDATALONG = 0x7A;
 
     /**
      * Exception during write.
