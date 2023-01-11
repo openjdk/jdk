@@ -238,9 +238,8 @@ enum ProtocolVersion {
         } else {
             if (v < SSL30.id) {
                 return allowSSL20Hello && (v == SSL20Hello.id);
-            } else {
-                return v >= MIN_TLS_SUPPORTED.id && v <= MAX_TLS_SUPPORTED.id;
             }
+            return true;
         }
     }
 
