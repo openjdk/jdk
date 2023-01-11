@@ -323,9 +323,14 @@ public class Net {
      */
     static int inet4AsInt(InetAddress ia) {
         if (ia instanceof Inet4Address) {
-            return getInt(ia.getAddress());
+            byte[] addr = ia.getAddress();
+            int address  = addr[3] & 0xFF;
+            address |= ((addr[2] << 8) & 0xFF00);
+            address |= ((addr[1] << 16) & 0xFF0000);
+            address |= ((addr[0] << 24) & 0xFF000000);
+            return address;
         }
-        throw new AssertionError("Should not reach here");
+        throw shouldNotReachHere();
     }
 
     /**
@@ -334,11 +339,14 @@ public class Net {
      */
     static InetAddress inet4FromInt(int address) {
         byte[] addr = new byte[4];
-        putInt(addr, address);
+        addr[0] = (byte) ((address >>> 24) & 0xFF);
+        addr[1] = (byte) ((address >>> 16) & 0xFF);
+        addr[2] = (byte) ((address >>> 8) & 0xFF);
+        addr[3] = (byte) (address & 0xFF);
         try {
             return InetAddress.getByAddress(addr);
         } catch (UnknownHostException uhe) {
-            throw new AssertionError("Should not reach here");
+            throw shouldNotReachHere();
         }
     }
 
@@ -363,7 +371,7 @@ public class Net {
             return address;
         }
 
-        throw new AssertionError("Should not reach here");
+        throw shouldNotReachHere();
     }
 
     // -- Socket options
@@ -394,30 +402,30 @@ public class Net {
         }
 
         if (type != Integer.class && type != Boolean.class)
-            throw new AssertionError("Should not reach here");
+            throw shouldNotReachHere();
 
         // special handling
         if (name == StandardSocketOptions.SO_RCVBUF ||
             name == StandardSocketOptions.SO_SNDBUF)
         {
-            int i = (Integer) value;
+            int i = ((Integer)value).intValue();
             if (i < 0)
                 throw new IllegalArgumentException("Invalid send/receive buffer size");
         }
         if (name == StandardSocketOptions.SO_LINGER) {
-            int i = (Integer) value;
+            int i = ((Integer)value).intValue();
             if (i < 0)
-                value = -1;
+                value = Integer.valueOf(-1);
             if (i > 65535)
-                value = 65535;
+                value = Integer.valueOf(65535);
         }
         if (name == StandardSocketOptions.IP_TOS) {
-            int i = (Integer) value;
+            int i = ((Integer)value).intValue();
             if (i < 0 || i > 255)
                 throw new IllegalArgumentException("Invalid IP_TOS value");
         }
         if (name == StandardSocketOptions.IP_MULTICAST_TTL) {
-            int i = (Integer) value;
+            int i = ((Integer)value).intValue();
             if (i < 0 || i > 255)
                 throw new IllegalArgumentException("Invalid TTL/hop value");
         }
@@ -429,9 +437,9 @@ public class Net {
 
         int arg;
         if (type == Integer.class) {
-            arg = (Integer) value;
+            arg = ((Integer)value).intValue();
         } else {
-            boolean b = (Boolean) value;
+            boolean b = ((Boolean)value).booleanValue();
             arg = (b) ? 1 : 0;
         }
 
@@ -457,7 +465,7 @@ public class Net {
 
         // only simple values supported by this method
         if (type != Integer.class && type != Boolean.class)
-            throw new AssertionError("Should not reach here");
+            throw shouldNotReachHere();
 
         // map option name to platform level/name
         OptionKey key = SocketOptionRegistry.findOption(name, family);
@@ -468,7 +476,7 @@ public class Net {
         int value = getIntOption0(fd, mayNeedConversion, key.level(), key.name());
 
         if (type == Integer.class) {
-            return value;
+            return Integer.valueOf(value);
         } else {
             return (value == 0) ? Boolean.FALSE : Boolean.TRUE;
         }
@@ -804,9 +812,14 @@ public class Net {
         if (availLevel >= 0) {
             String exclBindProp = GetPropertyAction
                     .privilegedGetProperty("sun.net.useExclusiveBind");
-            EXCLUSIVE_BIND = (exclBindProp == null)
-                    ? availLevel == 1
-                    : exclBindProp.isEmpty() || Boolean.parseBoolean(exclBindProp);
+            if (exclBindProp != null) {
+                EXCLUSIVE_BIND = exclBindProp.isEmpty() ?
+                        true : Boolean.parseBoolean(exclBindProp);
+            } else if (availLevel == 1) {
+                EXCLUSIVE_BIND = true;
+            } else {
+                EXCLUSIVE_BIND = false;
+            }
         } else {
             EXCLUSIVE_BIND = false;
         }
@@ -815,6 +828,10 @@ public class Net {
 
         IP_V6_AVAILABLE = isIPv6Available0();
         REUSE_PORT_AVAILABLE = isReusePortAvailable0();
+    }
+
+    private static AssertionError shouldNotReachHere() {
+        return new AssertionError("Should not reach here");
     }
 
     // Network-ordered accessors for int values in byte arrays
