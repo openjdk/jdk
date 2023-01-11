@@ -144,7 +144,7 @@ public class Padding {
     class BlankPaddingDouble {
 
         @Test
-        void blankPad_d() {
+        void blankPad_f() {
             assertEquals("1.2", String.format("%1.1f", 1.2));
             assertEquals("1.2", String.format("%2.1f", 1.2));
             assertEquals("1.2", String.format("%3.1f", 1.2));
@@ -161,7 +161,7 @@ public class Padding {
         }
 
         @Test
-        void blankPad_plus_d() {
+        void blankPad_plus_f() {
             assertEquals("+1.2", String.format("%+1.1f", 1.2));
             assertEquals("+1.2", String.format("%+2.1f", 1.2));
             assertEquals("+1.2", String.format("%+3.1f", 1.2));
@@ -178,7 +178,7 @@ public class Padding {
         }
 
         @Test
-        void blankPad_blank_d() {
+        void blankPad_blank_f() {
             assertEquals(" 1.2", String.format("% 1.1f", 1.2));
             assertEquals(" 1.2", String.format("% 2.1f", 1.2));
             assertEquals(" 1.2", String.format("% 3.1f", 1.2));
@@ -195,7 +195,7 @@ public class Padding {
         }
 
         @Test
-        void blankPad_minus_d() {
+        void blankPad_minus_f() {
             assertEquals("1.2", String.format("%-1.1f", 1.2));
             assertEquals("1.2", String.format("%-2.1f", 1.2));
             assertEquals("1.2", String.format("%-3.1f", 1.2));
@@ -212,7 +212,7 @@ public class Padding {
         }
 
         @Test
-        void blankPad_minus_plus_d() {
+        void blankPad_minus_plus_f() {
             assertEquals("+1.2", String.format("%-+1.1f", 1.2));
             assertEquals("+1.2", String.format("%-+2.1f", 1.2));
             assertEquals("+1.2", String.format("%-+3.1f", 1.2));
@@ -229,7 +229,7 @@ public class Padding {
         }
 
         @Test
-        void blankPad_minus_blank_d() {
+        void blankPad_minus_blank_f() {
             assertEquals(" 1.2", String.format("%- 1.1f", 1.2));
             assertEquals(" 1.2", String.format("%- 2.1f", 1.2));
             assertEquals(" 1.2", String.format("%- 3.1f", 1.2));
@@ -307,7 +307,7 @@ public class Padding {
     class ZeroPaddingDouble {
 
         @Test
-        void zeroPad_d() {
+        void zeroPad_f() {
             assertEquals("1.2", String.format("%01.1f", 1.2));
             assertEquals("1.2", String.format("%02.1f", 1.2));
             assertEquals("1.2", String.format("%03.1f", 1.2));
@@ -324,7 +324,7 @@ public class Padding {
         }
 
         @Test
-        void zeroPad_plus_d() {
+        void zeroPad_plus_f() {
             assertEquals("+1.2", String.format("%+01.1f", 1.2));
             assertEquals("+1.2", String.format("%+02.1f", 1.2));
             assertEquals("+1.2", String.format("%+03.1f", 1.2));
@@ -341,7 +341,7 @@ public class Padding {
         }
 
         @Test
-        void zeroPad_blank_d() {
+        void zeroPad_blank_f() {
             assertEquals(" 1.2", String.format("% 01.1f", 1.2));
             assertEquals(" 1.2", String.format("% 02.1f", 1.2));
             assertEquals(" 1.2", String.format("% 03.1f", 1.2));
