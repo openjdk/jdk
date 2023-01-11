@@ -357,6 +357,26 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Translates a {@code double} into a {@code Rational}, using
+     * the {@code double}'s canonical string representation provided
+     * by the {@link Double#toString(double)} method.
+     *
+     * @apiNote This is generally the preferred way to convert a
+     * {@code double} (or {@code float}) into a {@code Rational}, as
+     * the value returned is equal to that resulting from constructing
+     * a {@code Rational} from the result of using {@link
+     * Double#toString(double)}.
+     *
+     * @param  val {@code double} to convert to a {@code Rational}.
+     * @return a {@code Rational} whose value is equal to or approximately
+     *         equal to the value of {@code val}.
+     * @throws NumberFormatException if {@code val} is infinite or NaN.
+     */
+    public static Rational valueOf(double val) {
+        return new Rational(Double.toString(val));
+    }
+
+    /**
      * Returns a Rational whose value is represented by the fraction
      * with the specified numerator and denominator.
      * 
