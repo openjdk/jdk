@@ -192,7 +192,6 @@ class CallbackWrapper : public StackObj {
  private:
   JvmtiTagMap* _tag_map;
   JvmtiTagMapTable* _hashmap;
-  bool _entry_found;
   oop _o;
   jlong _obj_size;
   jlong _obj_tag;
@@ -436,7 +435,7 @@ ClassFieldMap::ClassFieldMap() {
 }
 
 ClassFieldMap::~ClassFieldMap() {
-  for (int i = 0; i < _fields->length(); i++) {
+  for (int i=0; i<_fields->length(); i++) {
     delete _fields->at(i);
   }
   delete _fields;

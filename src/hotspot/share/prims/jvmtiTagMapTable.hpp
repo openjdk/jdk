@@ -41,7 +41,7 @@ class JvmtiTagMapKeyClosure;
 // This class is the Key type for inserting in ResizeableResourceHashTable
 // Its get_hash() and equals() methods are also used for getting the hash
 // value of a Key and comparing two Keys, respectively.
-class JvmtiTagMapKey : public CHeapObj<mtInternal> {
+class JvmtiTagMapKey : public CHeapObj<mtServiceability> {
   WeakHandle _wh;
   oop _obj; // temporarily hold obj while searching
  public:
@@ -73,7 +73,7 @@ ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
                               JvmtiTagMapKey::get_hash,
                               JvmtiTagMapKey::equals> ResizableResourceHT;
 
-class JvmtiTagMapTable : public CHeapObj<mtInternal> {
+class JvmtiTagMapTable : public CHeapObj<mtServiceability> {
  enum Constants {
   _table_size  = 1007
  };
