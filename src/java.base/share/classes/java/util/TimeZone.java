@@ -508,6 +508,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @param date the given Date.
      * @return {@code true} if the given date is in Daylight Saving Time,
      *         {@code false}, otherwise.
+     * @throws NullPointerException if {@code date} is {@code null}
      */
     public abstract boolean inDaylightTime(Date date);
 
