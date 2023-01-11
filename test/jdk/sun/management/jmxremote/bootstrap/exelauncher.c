@@ -62,7 +62,7 @@ int main(int argc, char**argv) {
         return -1;
      }
      size_t propLen = strlen(CP_PROP) + strlen(argv[2]) + 1;
-     cp_prop = (char*)malloc(strlen(propLen);
+     cp_prop = (char*)malloc(propLen);
      snprintf(cp_prop, propLen, "%s%s", CP_PROP, argv[2]);
 
      options[0].optionString = cp_prop;
