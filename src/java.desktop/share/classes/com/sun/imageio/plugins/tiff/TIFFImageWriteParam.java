@@ -148,5 +148,5 @@ public class TIFFImageWriteParam extends ImageWriteParam {
         this.canWriteCompressed = true;
         this.canWriteTiles = true;
         this.compressionTypes = TIFFImageWriter.TIFFCompressionTypes;
-    };
+    }
 }

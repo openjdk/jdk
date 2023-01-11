@@ -240,11 +240,10 @@ class DirtyCardToOopClosure: public MemRegionClosureRO {
 protected:
   OopIterateClosure* _cl;
   Space* _sp;
-  CardTable::PrecisionStyle _precision;
   HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
                                 // pointing below boundary.
-  HeapWord* _min_done;          // ObjHeadPreciseArray precision requires
-                                // a downwards traversal; this is the
+  HeapWord* _min_done;          // Need a downwards traversal to compensate
+                                // imprecise write barrier; this is the
                                 // lowest location already done (or,
                                 // alternatively, the lowest address that
                                 // shouldn't be done again.  NULL means infinity.)
@@ -268,9 +267,8 @@ protected:
 
 public:
   DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl,
-                        CardTable::PrecisionStyle precision,
                         HeapWord* boundary) :
-    _cl(cl), _sp(sp), _precision(precision), _boundary(boundary),
+    _cl(cl), _sp(sp), _boundary(boundary),
     _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
   }
@@ -467,7 +465,6 @@ class ContiguousSpace: public CompactibleSpace {
   }
 
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                     CardTable::PrecisionStyle precision,
                                      HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
@@ -544,9 +541,8 @@ class ContiguousSpaceDCTOC : public DirtyCardToOopClosure {
 
 public:
   ContiguousSpaceDCTOC(ContiguousSpace* sp, OopIterateClosure* cl,
-                       CardTable::PrecisionStyle precision,
                        HeapWord* boundary) :
-    DirtyCardToOopClosure(sp, cl, precision, boundary)
+    DirtyCardToOopClosure(sp, cl, boundary)
   {}
 };
 
