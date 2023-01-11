@@ -38,22 +38,22 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * The value 0.
      */
-    public static final Rational ZERO = new Rational(0, BigInteger.ZERO, BigInteger.ONE);
+    public static final Rational ZERO = new Rational(0, BigInteger.ZERO);
 
     /**
      * The value 1.
      */
-    public static final Rational ONE = new Rational(1, BigInteger.ONE, BigInteger.ONE);
+    public static final Rational ONE = new Rational(1, BigInteger.ONE);
 
     /**
      * The value 2.
      */
-    public static final Rational TWO = new Rational(1, BigInteger.TWO, BigInteger.ONE);
+    public static final Rational TWO = new Rational(1, BigInteger.TWO);
 
     /**
      * The value 10.
      */
-    public static final Rational TEN = new Rational(1, BigInteger.TEN, BigInteger.ONE);
+    public static final Rational TEN = new Rational(1, BigInteger.TEN);
 
     // Constructors
 
@@ -146,19 +146,7 @@ public class Rational extends Number implements Comparable<Rational> {
      *            {@code Rational}.
      */
     public Rational(long val) {
-        numerator = BigInteger.ZERO;
-        denominator = BigInteger.ONE;
-
-        if (val > 0) {
-            signum = 1;
-            floor = BigInteger.valueOf(val);
-        } else if (val < 0) {
-            signum = -1;
-            floor = BigInteger.valueOf(val).negate();
-        } else {
-            signum = 0;
-            floor = BigInteger.ZERO;
-        }
+        this(BigInteger.valueOf(val));
     }
 
     /**
@@ -168,8 +156,20 @@ public class Rational extends Number implements Comparable<Rational> {
      *            {@code Rational}.
      */
     public Rational(BigInteger val) {
-        signum = val.signum;
-        floor = val.abs();
+        this(val.signum, val.abs());
+    }
+
+    /**
+     * Translates a {@code BigInteger} into a {@code Rational},
+     * with the specified signum.
+     * Assumes that the {@code BigInteger} is non-negative.
+     *
+     * @param val {@code BigInteger} value to be converted to
+     *            {@code Rational}.
+     */
+    private Rational(int sign, BigInteger val) {
+        signum = sign;
+        floor = val;
         numerator = BigInteger.ZERO;
         denominator = BigInteger.ONE;
     }
@@ -597,7 +597,7 @@ public class Rational extends Number implements Comparable<Rational> {
         BigInteger gcdBM = b.gcd(m);
         BigInteger gcdNL = n.gcd(l);
         BigInteger gcdMK = m.gcd(k);
-        Rational aug1 = new Rational(a.multiply(b)); // a * b
+        Rational aug1 = new Rational(1, a.multiply(b)); // a * b
         Rational aug2 = valueOf(1, a.divide(gcdAL).multiply(k), l.divide(gcdAL)); // a * (k / l)
         Rational aug3 = valueOf(1, b.divide(gcdBM).multiply(n), m.divide(gcdBM)); // b * (n / m)
         Rational aug4 = valueOf(1, n.divide(gcdNL).multiply(k.divide(gcdMK)),
@@ -639,31 +639,8 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see #remainder(Rational)
      */
     public Rational[] divideAndRemainder(Rational divisor) {
-        final BigInteger a = numerator, b = denominator;
-        final BigInteger c = divisor.numerator, d = divisor.denominator;
-        // (a / b) / (c / d)
-        // == (a / b) * (d / c)
-        // == (q1 + r1 / b) * (q2 + r2 / c)
-        // == q1 * q2 + (q1 * r2 / c) + (q2 * r1 / b) + (r1 / b) * (r2 / c)
-        // == q1 * q2 + (q3 + r3 / c) + (q4 + r4 / b) + (r1 / b) * (r2 / c)
-        // try to pospone the overflow as as late as possible
-        BigInteger[] qr1 = a.divideAndRemainder(b);
-        BigInteger[] qr2 = d.divideAndRemainder(c);
-        Rational r1DivB = valueOf(1, qr1[1], b); // r1 / b
-        Rational r2DivC = valueOf(1, qr2[1], c); // r2 / c
-        Rational q1MulR2divC = r2DivC.multiply(new Rational(qr1[0])); // q1 * r2 / c
-        Rational q2MulR1divB = r1DivB.multiply(new Rational(qr2[0])); // q2 * r1 / b
-        BigInteger[] qr3 = q1MulR2divC.numerator.divideAndRemainder(q1MulR2divC.denominator);
-        BigInteger[] qr4 = q2MulR1divB.numerator.divideAndRemainder(q2MulR1divB.denominator);
-        Rational r3Frac = valueOf(1, qr3[1], q1MulR2divC.denominator); // r3 / c
-        Rational r4Frac = valueOf(1, qr4[1], q2MulR1divB.denominator); // r4 / b
-
-        BigInteger absQuot = qr1[0].multiply(qr2[0]).add(qr3[0]).add(qr4[0]); // q1 * q2 + q3 + q4
-        Rational fracAug = r3Frac.add(r4Frac).add(r1DivB.multiply(r2DivC)); // r3 / c + r4 / b + (r1 / b) * (r2 / c)
-        // add integer part of fractional augends
-        absQuot = absQuot.add(fracAug.numerator.divide(fracAug.denominator));
-        Rational quot = new Rational(signum * divisor.signum, absQuot, BigInteger.ONE);
-        return new Rational[] { quot, subtract(quot.multiply(divisor)) }; // remainder == this - quotient * divisor
+        Rational quot = new Rational(signum * divisor.signum, divide(divisor).floor);
+        return new Rational[] { quot, subtract(quot.multiply(divisor)) };
     }
 
     /**
