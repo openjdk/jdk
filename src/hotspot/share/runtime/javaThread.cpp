@@ -99,6 +99,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -1673,6 +1674,25 @@ oop JavaThread::current_park_blocker() {
   return NULL;
 }
 
+// Print current stack trace for checked JNI warnings and JNI fatal errors.
+// This is the external format, selecting the platform or vthread
+// as applicable, and allowing for a native-only stack.
+void JavaThread::print_jni_stack() {
+  assert(this == JavaThread::current(), "Can't print stack of other threads");
+  if (!has_last_Java_frame()) {
+    ResourceMark rm(this);
+    char* buf = NEW_RESOURCE_ARRAY_RETURN_NULL(char, O_BUFLEN);
+    if (buf == nullptr) {
+      tty->print_cr("Unable to print native stack - out of memory");
+      return;
+    }
+    frame f = os::current_frame();
+    VMError::print_native_stack(tty, f, this, true /*print_source_info */,
+                                -1 /* max stack */, buf, O_BUFLEN);
+  } else {
+    print_active_stack_on(tty);
+  }
+}
 
 void JavaThread::print_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
@@ -1703,6 +1723,56 @@ void JavaThread::print_stack_on(outputStream* st) {
     // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
     count++;
     if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
+  }
+}
+
+void JavaThread::print_vthread_stack_on(outputStream* st) {
+  assert(is_vthread_mounted(), "Caller should have checked this");
+  assert(has_last_Java_frame(), "must be");
+
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include);
+  ContinuationEntry* cont_entry = last_continuation();
+  vframe* start_vf = last_java_vframe(&reg_map);
+  int count = 0;
+  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
+    // Watch for end of vthread stack
+    if (Continuation::is_continuation_enterSpecial(f->fr())) {
+      assert(cont_entry == Continuation::get_continuation_entry_for_entry_frame(this, f->fr()), "");
+      if (cont_entry->is_virtual_thread()) {
+        break;
+      }
+      cont_entry = cont_entry->parent();
+    }
+    if (f->is_java_frame()) {
+      javaVFrame* jvf = javaVFrame::cast(f);
+      java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
+
+      // Print out lock information
+      if (JavaMonitorsInStackTrace) {
+        jvf->print_lock_info_on(st, count);
+      }
+    } else {
+      // Ignore non-Java frames
+    }
+
+    // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
+    count++;
+    if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
+  }
+}
+
+void JavaThread::print_active_stack_on(outputStream* st) {
+  if (is_vthread_mounted()) {
+    print_vthread_stack_on(st);
+  } else {
+    print_stack_on(st);
   }
 }
 

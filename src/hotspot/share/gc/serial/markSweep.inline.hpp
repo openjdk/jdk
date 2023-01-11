@@ -39,46 +39,6 @@
 #include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
 
-inline void MarkSweep::mark_object(oop obj) {
-  if (StringDedup::is_enabled() &&
-      java_lang_String::is_instance(obj) &&
-      SerialStringDedup::is_candidate_from_mark(obj)) {
-    _string_dedup_requests->add(obj);
-  }
-
-  // some marks may contain information we need to preserve so we store them away
-  // and overwrite the mark.  We'll restore it at the end of markSweep.
-  markWord mark = obj->mark();
-  obj->set_mark(markWord::prototype().set_marked());
-
-  ContinuationGCSupport::transform_stack_chunk(obj);
-
-  if (obj->mark_must_be_preserved(mark)) {
-    preserve_mark(obj, mark);
-  }
-}
-
-template <class T> inline void MarkSweep::mark_and_push(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark().is_marked()) {
-      mark_object(obj);
-      _marking_stack.push(obj);
-    }
-  }
-}
-
-inline void MarkSweep::follow_klass(Klass* klass) {
-  oop op = klass->class_loader_data()->holder_no_keepalive();
-  MarkSweep::mark_and_push(&op);
-}
-
-template <typename T>
-inline void MarkAndPushClosure::do_oop_work(T* p)            { MarkSweep::mark_and_push(p); }
-inline void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
-inline void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
-
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
@@ -97,7 +57,6 @@ template <typename T>
 void AdjustPointerClosure::do_oop_work(T* p)           { MarkSweep::adjust_pointer(p); }
 inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
-
 
 inline size_t MarkSweep::adjust_pointers(oop obj) {
   return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);

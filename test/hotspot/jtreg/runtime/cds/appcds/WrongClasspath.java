@@ -33,6 +33,9 @@
  */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
@@ -44,10 +47,26 @@ public class WrongClasspath {
     String mismatchMsg = "shared class paths mismatch";
     String hintMsg = "(hint: enable -Xlog:class+path=info to diagnose the failure)";
 
+    // Dump CDS archive with hello.jar
+    // Run with a jar file that differs from the original jar file by the first character only: -cp mello.jar
+    // Shared class paths mismatch should be detected.
+    String hellojar = "hello.jar";
+    String mellojar = "mello.jar";
+    Files.copy(Paths.get(appJar), Paths.get(hellojar), StandardCopyOption.COPY_ATTRIBUTES);
+    Files.copy(Paths.get(appJar), Paths.get(mellojar), StandardCopyOption.COPY_ATTRIBUTES);
+    TestCommon.testDump(hellojar, TestCommon.list("Hello"));
+    TestCommon.run("-cp", mellojar,
+        "-Xlog:cds",
+        "Hello")
+        .assertAbnormalExit(unableToUseMsg, mismatchMsg, hintMsg);
+
     // Dump an archive with a specified JAR file in -classpath
     TestCommon.testDump(appJar, TestCommon.list("Hello"));
 
     // Then try to execute the archive without -classpath -- it should fail
+    // To run without classpath, set the property test.noclasspath to true
+    // so that ProcessTools won't append the classpath of the jtreg process to the test process
+    System.setProperty("test.noclasspath", "true");
     TestCommon.run(
         /* "-cp", appJar, */ // <- uncomment this and the execution should succeed
         "-Xlog:cds",
@@ -70,6 +89,7 @@ public class WrongClasspath {
                .shouldContain(mismatchMsg)
                .shouldNotContain(hintMsg);
         });
+    System.clearProperty("test.noclasspath");
 
     // Dump CDS archive with 2 jars: -cp hello.jar:jar2.jar
     // Run with 2 jars but the second jar doesn't exist: -cp hello.jarjar2.jarx

@@ -14377,6 +14377,12 @@ instruct safePoint_poll(iRegPdst poll) %{
 
 // Call Java Static Instruction
 
+source %{
+
+#include "runtime/continuation.hpp"
+
+%}
+
 // Schedulable version of call static node.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);

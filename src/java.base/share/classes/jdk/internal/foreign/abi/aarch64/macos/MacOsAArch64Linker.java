@@ -65,14 +65,14 @@ public final class MacOsAArch64Linker extends AbstractLinker {
         return CallArranger.MACOS.arrangeUpcall(target, targetType, function, scope);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope session) {
-        MacOsAArch64VaList.Builder builder = MacOsAArch64VaList.builder(session);
+    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
+        MacOsAArch64VaList.Builder builder = MacOsAArch64VaList.builder(scope);
         actions.accept(builder);
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope session) {
-        return MacOsAArch64VaList.ofAddress(address, session);
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
+        return MacOsAArch64VaList.ofAddress(address, scope);
     }
 
     public static VaList emptyVaList() {
