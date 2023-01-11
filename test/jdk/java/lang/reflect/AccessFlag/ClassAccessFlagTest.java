@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266670
+ * @bug 8266670 8291734 8296743
  * @summary Test expected AccessFlag's on classes.
  */
 
@@ -46,16 +46,11 @@ import java.util.*;
  * return the Class object created from a module-info.class
  * file. Therefore, this test does not attempt to probe the setting of
  * that access flag.
- *
- * For a class, the VM must treat the class as if the ACC_SUPER bit
- * were set, but that bit is cleared by HotSpot when it is passed out
- * to the core reflection libraries. Therefore, this test does not
- * attempt to check whether or not AccessFlag.SUPER is set.
  */
-@ExpectedClassFlags("[PUBLIC, FINAL]")
+@ExpectedClassFlags("[PUBLIC, FINAL, SUPER]")
 public final class ClassAccessFlagTest {
     public static void main(String... args) {
-        // Top-level and axuillary classes; i.e. non-inner classes
+        // Top-level and auxiliary classes; i.e. non-inner classes
         Class<?>[] testClasses = {
             ClassAccessFlagTest.class,
             TestInterface.class,
@@ -103,23 +98,14 @@ public final class ClassAccessFlagTest {
             void.class // same access flag rules
         };
 
-        var mustBePresent = Set.of(AccessFlag.PUBLIC, AccessFlag.FINAL);
-        var mustBeAbsent = Set.of(AccessFlag.PRIVATE,
-                                  AccessFlag.PROTECTED,
-                                  AccessFlag.INTERFACE);
+        var expected = Set.of(AccessFlag.PUBLIC,
+                              AccessFlag.FINAL,
+                              AccessFlag.ABSTRACT);
 
         for(var primClass : primitives) {
-            // PUBLIC must be present, PROTECTED and PRIVATE must be
-            // absent.
-            // FINAL must be present, INTERFACE must be absent.
             var accessFlags = primClass.accessFlags();
-            if (!accessFlags.containsAll(mustBePresent)) {
-                throw new RuntimeException("Missing mandatory flags on " +
-                                           primClass);
-            }
-
-            if (containsAny(accessFlags, mustBeAbsent)) {
-                throw new RuntimeException("Unexpected flags present on " +
+            if (!accessFlags.equals(expected)) {
+                throw new RuntimeException("Unexpected flags on " +
                                            primClass);
             }
         }
@@ -226,7 +212,7 @@ public final class ClassAccessFlagTest {
 interface TestInterface {}
 
 
-@ExpectedClassFlags("[FINAL, ENUM]")
+@ExpectedClassFlags("[FINAL, SUPER, ENUM]")
 enum TestOuterEnum {
     INSTANCE;
 }

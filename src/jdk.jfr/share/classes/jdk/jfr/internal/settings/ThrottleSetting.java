@@ -42,7 +42,6 @@ import jdk.jfr.internal.Utils;
 @Description("Throttles the emission rate for an event")
 @Name(Type.SETTINGS_PREFIX + "Throttle")
 public final class ThrottleSetting extends JDKSettingControl {
-    private static final long typeId = Type.getTypeId(ThrottleSetting.class);
     private static final long OFF = -2;
     private String value = "0/s";
     private final PlatformEventType eventType;

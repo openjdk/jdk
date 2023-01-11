@@ -158,7 +158,7 @@ import sun.security.util.KnownOIDs;
  * <li>{@code RSA/ECB/OAEPWithSHA-256AndMGF1Padding} (1024, 2048)</li>
  * </ul>
  * These transformations are described in the
- * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
  * Cipher section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
@@ -511,7 +511,7 @@ public class Cipher {
      * @param transformation the name of the transformation, e.g.,
      * <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -601,7 +601,7 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -673,7 +673,7 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -1239,6 +1239,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key) throws InvalidKeyException {
         init(opmode, key, JCAUtil.getDefSecureRandom());
@@ -1294,6 +1296,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key, SecureRandom random)
             throws InvalidKeyException
@@ -1379,6 +1383,9 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
+     *
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
@@ -1441,6 +1448,9 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
+     *
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params,
                            SecureRandom random)
@@ -1522,6 +1532,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key, AlgorithmParameters params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
@@ -1584,6 +1596,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key, AlgorithmParameters params,
                            SecureRandom random)
@@ -1671,6 +1685,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Certificate certificate)
             throws InvalidKeyException
@@ -1740,6 +1756,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Certificate certificate,
                            SecureRandom random)

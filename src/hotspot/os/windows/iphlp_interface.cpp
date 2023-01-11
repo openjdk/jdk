@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "iphlp_interface.hpp"
+#include "os_windows.hpp"
 #include "runtime/os.hpp"
 
 // IPHLP API

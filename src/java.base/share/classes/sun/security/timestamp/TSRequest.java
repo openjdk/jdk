@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,11 @@ public class TSRequest {
 
     private int version = 1;
 
-    private AlgorithmId hashAlgorithmId = null;
+    private final AlgorithmId hashAlgorithmId;
 
-    private byte[] hashValue;
+    private final byte[] hashValue;
 
-    private String policyId = null;
+    private String policyId;
 
     private BigInteger nonce = null;
 
@@ -132,7 +132,7 @@ public class TSRequest {
      * Request that the TSA include its signing certificate in the response.
      *
      * @param returnCertificate True if the TSA should return its signing
-     *                          certificate. By default it is not returned.
+     *                          certificate. By default, it is not returned.
      */
     public void requestCertificate(boolean returnCertificate) {
         this.returnCertificate = returnCertificate;

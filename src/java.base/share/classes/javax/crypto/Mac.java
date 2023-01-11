@@ -423,7 +423,7 @@ public class Mac implements Cloneable {
      *
      * @param key the key.
      *
-     * @exception InvalidKeyException if the given key is inappropriate for
+     * @throws InvalidKeyException if the given key is inappropriate for
      * initializing this MAC.
      */
     public final void init(Key key) throws InvalidKeyException {
@@ -451,9 +451,9 @@ public class Mac implements Cloneable {
      * @param key the key.
      * @param params the algorithm parameters.
      *
-     * @exception InvalidKeyException if the given key is inappropriate for
+     * @throws InvalidKeyException if the given key is inappropriate for
      * initializing this MAC.
-     * @exception InvalidAlgorithmParameterException if the given algorithm
+     * @throws InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this MAC.
      */
     public final void init(Key key, AlgorithmParameterSpec params)
@@ -476,7 +476,7 @@ public class Mac implements Cloneable {
      *
      * @param input the input byte to be processed.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void update(byte input) throws IllegalStateException {
@@ -492,7 +492,7 @@ public class Mac implements Cloneable {
      *
      * @param input the array of bytes to be processed.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void update(byte[] input) throws IllegalStateException {
@@ -513,7 +513,7 @@ public class Mac implements Cloneable {
      * @param offset the offset in {@code input} where the input starts.
      * @param len the number of bytes to process.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void update(byte[] input, int offset, int len)
@@ -538,8 +538,9 @@ public class Mac implements Cloneable {
      *
      * @param input the ByteBuffer
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
+     * @throws IllegalArgumentException if {@code input} is null
      * @since 1.5
      */
     public final void update(ByteBuffer input) {
@@ -569,7 +570,7 @@ public class Mac implements Cloneable {
      *
      * @return the MAC result.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final byte[] doFinal() throws IllegalStateException {
@@ -603,9 +604,9 @@ public class Mac implements Cloneable {
      * @param outOffset the offset in {@code output} where the MAC is
      * stored
      *
-     * @exception ShortBufferException if the given output buffer is too small
+     * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void doFinal(byte[] output, int outOffset)
@@ -641,7 +642,7 @@ public class Mac implements Cloneable {
      * @param input data in bytes
      * @return the MAC result.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final byte[] doFinal(byte[] input) throws IllegalStateException
@@ -678,7 +679,7 @@ public class Mac implements Cloneable {
      *
      * @return a clone if the provider implementation is cloneable.
      *
-     * @exception CloneNotSupportedException if this is called on a
+     * @throws CloneNotSupportedException if this is called on a
      * delegate that does not support {@code Cloneable}.
      */
     public final Object clone() throws CloneNotSupportedException {

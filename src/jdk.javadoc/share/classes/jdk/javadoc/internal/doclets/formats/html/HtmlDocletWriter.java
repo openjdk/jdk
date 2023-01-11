@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -104,7 +105,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
@@ -171,6 +171,8 @@ public class HtmlDocletWriter {
     protected final Comparators comparators;
 
     protected final HtmlIds htmlIds;
+
+    private final Set<String> headingIds = new HashSet<>();
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -596,10 +598,21 @@ public class HtmlDocletWriter {
     /**
      * {@return the link to the given package}
      *
-     * @param packageElement the package to link to.
-     * @param label the label for the link.
+     * @param packageElement the package to link to
+     * @param label the label for the link
      */
     public Content getPackageLink(PackageElement packageElement, Content label) {
+        return getPackageLink(packageElement, label, null);
+    }
+
+    /**
+     * {@return the link to the given package}
+     *
+     * @param packageElement the package to link to
+     * @param label the label for the link
+     * @param fragment the link fragment
+     */
+    public Content getPackageLink(PackageElement packageElement, Content label, String fragment) {
         boolean included = packageElement != null && utils.isIncluded(packageElement);
         if (!included) {
             for (PackageElement p : configuration.packages) {
@@ -617,7 +630,7 @@ public class HtmlDocletWriter {
         }
         DocLink targetLink;
         if (included || packageElement == null) {
-            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY));
+            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY), fragment);
         } else {
             targetLink = getCrossPackageLink(packageElement);
         }
@@ -648,11 +661,23 @@ public class HtmlDocletWriter {
      * @param label tag for the link
      */
     public Content getModuleLink(ModuleElement mdle, Content label) {
+        return getModuleLink(mdle, label, null);
+    }
+
+    /**
+     * {@return a link to module}
+     *
+     * @param mdle the module being documented
+     * @param label tag for the link
+     * @param fragment the link fragment
+     */
+    public Content getModuleLink(ModuleElement mdle, Content label, String fragment) {
         Set<ElementFlag> flags = mdle != null ? utils.elementFlags(mdle)
                                               : EnumSet.noneOf(ElementFlag.class);
         boolean included = utils.isIncluded(mdle);
         if (included) {
-            DocLink targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)));
+            DocLink targetLink;
+            targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
@@ -1167,7 +1192,7 @@ public class HtmlDocletWriter {
         final Content result = new ContentBuilder() {
             @Override
             public ContentBuilder add(CharSequence text) {
-                return super.add(utils.normalizeNewlines(text));
+                return super.add(Text.normalizeNewlines(text));
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
@@ -1201,10 +1226,6 @@ public class HtmlDocletWriter {
 
                 private boolean inAnAtag() {
                     return (tag instanceof StartElementTree st) && equalsIgnoreCase(st.getName(), "a");
-                }
-
-                private boolean equalsIgnoreCase(Name name, String s) {
-                    return name != null && name.toString().equalsIgnoreCase(s);
                 }
 
                 @Override
@@ -1359,7 +1380,7 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitLiteral(LiteralTree node, Content content) {
                     String s = node.getBody().getBody();
-                    Content t = Text.of(utils.normalizeNewlines(s));
+                    Content t = Text.of(Text.normalizeNewlines(s));
                     content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
                     return false;
                 }
@@ -1367,6 +1388,9 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
+                    if (node.getName().toString().matches("(?i)h[1-6]") && !hasIdAttribute(node)) {
+                        generateHeadingId(node, trees, attrs);
+                    }
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, attrs);
                     }
@@ -1404,7 +1428,7 @@ public class HtmlDocletWriter {
                         text = text.stripTrailing();
                     }
                     text = utils.replaceTabs(text);
-                    return utils.normalizeNewlines(text);
+                    return Text.normalizeNewlines(text);
                 }
 
                 @Override
@@ -1434,6 +1458,39 @@ public class HtmlDocletWriter {
                 break;
         }
         return result;
+    }
+
+    private boolean equalsIgnoreCase(Name name, String s) {
+        return name != null && name.toString().equalsIgnoreCase(s);
+    }
+
+    private boolean hasIdAttribute(StartElementTree node) {
+        return node.getAttributes().stream().anyMatch(
+                dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"));
+    }
+
+    private void generateHeadingId(StartElementTree node, List<? extends DocTree> trees, Content content) {
+        StringBuilder sb = new StringBuilder();
+        String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
+        for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
+            if (docTree instanceof TextTree text) {
+                sb.append(text.getBody());
+            } else if (docTree instanceof LiteralTree literal) {
+                sb.append(literal.getBody().getBody());
+            } else if (docTree instanceof LinkTree link) {
+                var label = link.getLabel();
+                sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
+            } else if (docTree instanceof EndElementTree endElement
+                    && equalsIgnoreCase(endElement.getName(), tagName)) {
+                break;
+            } else if (docTree instanceof StartElementTree nested
+                    && equalsIgnoreCase(nested.getName(), "a")
+                    && hasIdAttribute(nested)) {
+                return; // Avoid generating id if embedded <a id=...> is present
+            }
+        }
+        HtmlId htmlId = htmlIds.forHeading(sb, headingIds);
+        content.add("id=\"").add(htmlId.name()).add("\"");
     }
 
     /**
@@ -1698,7 +1755,7 @@ public class HtmlDocletWriter {
             else {
                 addAnnotations(annotationElement, linkInfo, annotation, pairs, lineBreak);
             }
-            annotation.add(lineBreak ? DocletConstants.NL : "");
+            annotation.add(lineBreak ? Text.NL : "");
             results.add(annotation);
         }
         return results;
@@ -1730,7 +1787,7 @@ public class HtmlDocletWriter {
                 } else {
                     annotation.add(",");
                     if (linkBreak) {
-                        annotation.add(DocletConstants.NL);
+                        annotation.add(Text.NL);
                         int spaces = annotationDoc.getSimpleName().length() + 2;
                         for (int k = 0; k < (spaces); k++) {
                             annotation.add(" ");
@@ -2143,4 +2200,19 @@ public class HtmlDocletWriter {
                                    HtmlTree.CODE(Text.of(className)),
                                    links);
     }
+
+    public URI resolveExternalSpecURI(URI specURI) {
+        if (!specURI.isAbsolute()) {
+            URI baseURI = configuration.getOptions().specBaseURI();
+            if (baseURI == null) {
+                baseURI = URI.create("../specs/");
+            }
+            if (!baseURI.isAbsolute() && !pathToRoot.isEmpty()) {
+                baseURI = URI.create(pathToRoot.getPath() + "/").resolve(baseURI);
+            }
+            specURI = baseURI.resolve(specURI);
+        }
+        return specURI;
+    }
+
 }

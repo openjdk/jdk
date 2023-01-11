@@ -29,12 +29,13 @@ package jdk.vm.ci.code;
 public class InstalledCode {
 
     /**
-     * Raw address address of entity representing this installed code.
+     * Address of the entity (e.g., HotSpot {@code nmethod} or {@code RuntimeStub}) representing
+     * this installed code.
      */
     protected long address;
 
     /**
-     * Raw address of entryPoint of this installed code.
+     * Address of the entryPoint of this installed code.
      */
     protected long entryPoint;
 
@@ -50,7 +51,8 @@ public class InstalledCode {
     }
 
     /**
-     * @return the address of entity representing this installed code.
+     * @return the address of entity (e.g., HotSpot {@code nmethod} or {@code RuntimeStub})
+     *         representing this installed code
      */
     public long getAddress() {
         return address;
@@ -94,8 +96,7 @@ public class InstalledCode {
     }
 
     /**
-     * @return true if the code represented by this object still exists and might have live
-     *         activations, false otherwise (may happen due to deopt, etc.)
+     * @return true if this object still points to installed code
      */
     public boolean isAlive() {
         return address != 0;
@@ -109,11 +110,27 @@ public class InstalledCode {
     }
 
     /**
-     * Invalidates this installed code such that any subsequent
-     * {@linkplain #executeVarargs(Object...) invocation} will throw an
-     * {@link InvalidInstalledCodeException} and all existing invocations will be deoptimized.
+     * Equivalent to calling {@link #invalidate(boolean)} with a {@code true} argument.
      */
     public void invalidate() {
+        invalidate(true);
+    }
+
+    /**
+     * Invalidates this installed code such that any subsequent
+     * {@linkplain #executeVarargs(Object...) invocation} will throw an
+     * {@link InvalidInstalledCodeException}.
+     *
+     * If this installed code is already {@linkplain #isValid() invalid}, this method has no effect.
+     * A subsequent call to {@link #isAlive()} or {@link #isValid()} on this object will return
+     * {@code false}.
+     *
+     * @param deoptimize if {@code true}, all existing invocations will be immediately deoptimized.
+     *            If {@code false}, any existing invocation will continue until it completes or
+     *            there is a subsequent call to this method with {@code deoptimize == true} before
+     *            the invocation completes.
+     */
+    public void invalidate(boolean deoptimize) {
         throw new UnsupportedOperationException();
     }
 

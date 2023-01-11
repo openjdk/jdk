@@ -23,13 +23,17 @@
 
 /**
  * @test
+ * @bug 8284161
  * @summary Stress test the HTTP protocol handler and HTTP server
  * @requires vm.debug != true
  * @modules jdk.httpserver
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} HttpALot.java
+ * @enablePreview
+ * @comment This test runs with -Dsun.net.httpserver.nodelay=true to enable TCP_NODELAY on the
+ *          sockets "accept()"ed by the HttpServer. This is to avoid occasional 40ms delays
+ *          receiving responses from the server on Linux.
  * @run main/othervm/timeout=600
- *     --enable-preview
+ *     -Dsun.net.httpserver.nodelay=true
  *     -Dsun.net.client.defaultConnectTimeout=5000
  *     -Dsun.net.client.defaultReadTimeout=5000
  *     HttpALot

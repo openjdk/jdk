@@ -390,7 +390,7 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         goto bad;
       }
 
-      rslt = hcreate_r(n, symtab->hash_table);
+      rslt = hcreate_r(htab_sz, symtab->hash_table);
       // guarantee(rslt, "unexpected failure: hcreate_r");
 
       // shdr->sh_link points to the section that contains the actual strings

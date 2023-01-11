@@ -109,7 +109,7 @@ mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
     }
 
     /* So, if we are here, then either vis or generic version of
-     * medialib library was sucessfuly loaded.
+     * medialib library was successfully loaded.
      * Let's try to initialize handlers...
      */
     if ((tempSysFns.createFP = (MlibCreateFP_t)dlsym(handle,

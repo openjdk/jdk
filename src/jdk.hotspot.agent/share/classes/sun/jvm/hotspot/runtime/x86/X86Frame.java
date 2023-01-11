@@ -380,7 +380,7 @@ public class X86Frame extends Frame {
 
     // frame owned by optimizing compiler
     if (Assert.ASSERTS_ENABLED) {
-        Assert.that(cb.getFrameSize() >= 0, "must have non-zero frame size");
+        Assert.that(cb.getFrameSize() > 0, "must have non-zero frame size");
     }
     Address senderSP = getUnextendedSP().addOffsetTo(cb.getFrameSize());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,16 @@
 #define OS_CPU_BSD_X86_OS_BSD_X86_INLINE_HPP
 
 #include "runtime/os.hpp"
+
+#if defined(__APPLE__) && defined(COMPATIBLE_CDS_ALIGNMENT)
+#define HAVE_CDS_CORE_REGION_ALIGNMENT 1
+inline size_t os::cds_core_region_alignment() {
+  // Core region alignment is 16K to be able to run binaries built on MacOS x64
+  // on MacOS aarch64.
+  return (16*K);
+}
+#endif
+
 
 // See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
 inline jlong os::rdtsc() {

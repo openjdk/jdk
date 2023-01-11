@@ -120,7 +120,7 @@ public class DerValue {
     /** Tag value indicating an ASN.1 "GeneralizedTime" value. */
     public static final byte    tag_GeneralizedTime = 0x18;
 
-    /** Tag value indicating an ASN.1 "GenerallString" value. */
+    /** Tag value indicating an ASN.1 "GeneralString" value. */
     public static final byte    tag_GeneralString = 0x1B;
 
     /** Tag value indicating an ASN.1 "UniversalString" value. */
@@ -493,7 +493,7 @@ public class DerValue {
     /**
      * Encode an ASN1/DER encoded datum onto a DER output stream.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         out.write(tag);
         out.putLength(end - start);
         out.write(buffer, start, end - start);
@@ -774,7 +774,7 @@ public class DerValue {
      * Helper routine to return all the bytes contained in the
      * DerInputStream associated with this object.
      */
-    public byte[] getDataBytes() throws IOException {
+    public byte[] getDataBytes() {
         data.pos = data.end; // Compatibility. Reach end.
         return Arrays.copyOfRange(buffer, start, end);
     }
@@ -1016,7 +1016,7 @@ public class DerValue {
                     throw new IOException("Parse " + type + " time, +hhmm");
                 }
 
-                time -= ((hr * 60) + min) * 60 * 1000;
+                time -= ((hr * 60L) + min) * 60 * 1000;
                 break;
 
             case '-':
@@ -1032,7 +1032,7 @@ public class DerValue {
                     throw new IOException("Parse " + type + " time, -hhmm");
                 }
 
-                time += ((hr * 60) + min) * 60 * 1000;
+                time += ((hr * 60L) + min) * 60 * 1000;
                 break;
 
             case 'Z':
@@ -1104,10 +1104,9 @@ public class DerValue {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DerValue)) {
+        if (!(o instanceof DerValue other)) {
             return false;
         }
-        DerValue other = (DerValue) o;
         if (tag != other.tag) {
             return false;
         }
@@ -1134,7 +1133,7 @@ public class DerValue {
      *
      * @return DER-encoded value, including tag and length.
      */
-    public byte[] toByteArray() throws IOException {
+    public byte[] toByteArray() {
         data.pos = data.start; // Compatibility. At head.
         // Minimize content duplication by writing out tag and length only
         DerOutputStream out = new DerOutputStream();

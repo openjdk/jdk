@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
+bool GCTracer::should_report_cpu_time_event() const {
+  return should_send_cpu_time_event();
+}
+
 void GCTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
   _shared_gc_info.set_cause(cause);
   _shared_gc_info.set_start_timestamp(timestamp);
@@ -57,6 +61,10 @@ void GCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_p
 
 void GCTracer::report_gc_end(const Ticks& timestamp, TimePartitions* time_partitions) {
   report_gc_end_impl(timestamp, time_partitions);
+}
+
+void GCTracer::report_cpu_time_event(double user_time, double system_time, double real_time) const {
+  send_cpu_time_event(user_time, system_time, real_time);
 }
 
 void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) const {

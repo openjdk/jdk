@@ -30,7 +30,6 @@ import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleReferenceImpl;
 
-import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.util.HashSet;
@@ -51,6 +50,9 @@ import java.util.Set;
  * @author Josh Bloch
  */
 public final class StackTraceElement implements java.io.Serializable {
+
+    private static final String NATIVE_METHOD = "Native Method";
+    private static final String UNKNOWN_SOURCE = "Unknown Source";
 
     // For Throwables and StackWalker, the VM initially sets this field to a
     // reference to the declaring Class.  The Class reference is used to
@@ -355,27 +357,50 @@ public final class StackTraceElement implements java.io.Serializable {
      * @revised 9
      * @see    Throwable#printStackTrace()
      */
+    @Override
     public String toString() {
-        String s = "";
-        if (!dropClassLoaderName() && classLoaderName != null &&
-                !classLoaderName.isEmpty()) {
-            s += classLoaderName + "/";
-        }
-        if (moduleName != null && !moduleName.isEmpty()) {
-            s += moduleName;
+        int estimatedLength = length(classLoaderName) + 1
+                + length(moduleName) + 1
+                + length(moduleVersion) + 1
+                + declaringClass.length() + 1
+                + methodName.length() + 1
+                + Math.max(UNKNOWN_SOURCE.length(), length(fileName)) + 1
+                + 12;
 
-            if (!dropModuleVersion() && moduleVersion != null &&
-                    !moduleVersion.isEmpty()) {
-                s += "@" + moduleVersion;
+        StringBuilder sb = new StringBuilder(estimatedLength);
+        if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
+            sb.append(classLoaderName).append('/');
+        }
+
+        if (moduleName != null && !moduleName.isEmpty()) {
+            sb.append(moduleName);
+            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
+                sb.append('@').append(moduleVersion);
             }
         }
-        s = s.isEmpty() ? declaringClass : s + "/" + declaringClass;
 
-        return s + "." + methodName + "(" +
-             (isNativeMethod() ? "Native Method)" :
-              (fileName != null && lineNumber >= 0 ?
-               fileName + ":" + lineNumber + ")" :
-                (fileName != null ?  ""+fileName+")" : "Unknown Source)")));
+        if (sb.length() > 0) {
+            sb.append('/');
+        }
+
+        sb.append(declaringClass).append('.').append(methodName).append('(');
+        if (isNativeMethod()) {
+            sb.append(NATIVE_METHOD);
+        } else if (fileName == null) {
+            sb.append(UNKNOWN_SOURCE);
+        } else {
+            sb.append(fileName);
+            if (lineNumber >= 0) {
+                sb.append(':').append(lineNumber);
+            }
+        }
+        sb.append(')');
+
+        return sb.toString();
+    }
+
+    private static int length(String s) {
+        return (s == null) ? 0 : s.length();
     }
 
     /**

@@ -76,9 +76,9 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public boolean write(Writer writer, boolean atNewline) throws IOException {
+    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
         for (Content content: contents) {
-            atNewline = content.write(writer, atNewline);
+            atNewline = content.write(writer, newline, atNewline);
         }
         return atNewline;
     }

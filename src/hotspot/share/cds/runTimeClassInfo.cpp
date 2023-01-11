@@ -44,8 +44,8 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     RTVerifierConstraint* vf_constraints = verifier_constraints();
     char* flags = verifier_constraint_flags();
     for (i = 0; i < _num_verifier_constraints; i++) {
-      vf_constraints[i]._name      = builder->any_to_offset_u4(info._verifier_constraints->at(i)._name);
-      vf_constraints[i]._from_name = builder->any_to_offset_u4(info._verifier_constraints->at(i)._from_name);
+      vf_constraints[i]._name      = builder->any_to_offset_u4(info._verifier_constraints->at(i).name());
+      vf_constraints[i]._from_name = builder->any_to_offset_u4(info._verifier_constraints->at(i).from_name());
     }
     for (i = 0; i < _num_verifier_constraints; i++) {
       flags[i] = info._verifier_constraint_flags->at(i);
@@ -55,9 +55,9 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   if (_num_loader_constraints > 0) {
     RTLoaderConstraint* ld_constraints = loader_constraints();
     for (i = 0; i < _num_loader_constraints; i++) {
-      ld_constraints[i]._name = builder->any_to_offset_u4(info._loader_constraints->at(i)._name);
-      ld_constraints[i]._loader_type1 = info._loader_constraints->at(i)._loader_type1;
-      ld_constraints[i]._loader_type2 = info._loader_constraints->at(i)._loader_type2;
+      ld_constraints[i]._name = builder->any_to_offset_u4(info._loader_constraints->at(i).name());
+      ld_constraints[i]._loader_type1 = info._loader_constraints->at(i).loader_type1();
+      ld_constraints[i]._loader_type2 = info._loader_constraints->at(i).loader_type2();
     }
   }
 

@@ -210,11 +210,11 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
 VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, JVMCI_TRAPS) {
-  if (jvmci_reg < RegisterImpl::number_of_registers) {
+  if (jvmci_reg < Register::number_of_registers) {
     return as_Register(jvmci_reg)->as_VMReg();
   } else {
-    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_registers;
-    if (floatRegisterNumber < XMMRegisterImpl::number_of_registers) {
+    jint floatRegisterNumber = jvmci_reg - Register::number_of_registers;
+    if (floatRegisterNumber < XMMRegister::number_of_registers) {
       return as_XMMRegister(floatRegisterNumber)->as_VMReg();
     }
     JVMCI_ERROR_NULL("invalid register number: %d", jvmci_reg);

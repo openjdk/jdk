@@ -874,8 +874,18 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * This is overridden to return false if the current Icon's Image is
-     * not equal to the passed in Image <code>img</code>.
+     * If the component is not showing or either the icon or disabled
+     * icon is not an {@code ImageIcon} with an {@code Image}
+     * equal to the passed in {@code Image}, return {@code false};
+     * otherwise it will delegate to the super-class.
+     *
+     * @param img   the {@code Image} to be compared
+     * @param infoflags flags used to repaint the label when the image
+     *           is updated and which determine how much is to be painted
+     * @param x   the x coordinate
+     * @param y   the y coordinate
+     * @param w   the width
+     * @param h   the height
      *
      * @see     java.awt.image.ImageObserver
      * @see     java.awt.Component#imageUpdate(java.awt.Image, int, int, int, int, int)
@@ -1233,7 +1243,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
         }
 
         /**
-         * Return the number of characters (valid indicies)
+         * Return the number of characters (valid indices)
          *
          * @return the number of characters
          * @since 1.3

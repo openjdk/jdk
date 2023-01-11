@@ -514,17 +514,12 @@ class WindowsFileCopy {
         try {
             int request = (DACL_SECURITY_INFORMATION |
                 OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION);
-            NativeBuffer buffer =
-                WindowsAclFileAttributeView.getFileSecurity(path, request);
-            try {
-                try {
-                    SetFileSecurity(target.getPathForWin32Calls(), request,
+            try (NativeBuffer buffer =
+                 WindowsAclFileAttributeView.getFileSecurity(path, request)) {
+                SetFileSecurity(target.getPathForWin32Calls(), request,
                         buffer.address());
-                } catch (WindowsException x) {
-                    x.rethrowAsIOException(target);
-                }
-            } finally {
-                buffer.release();
+            } catch (WindowsException x) {
+                x.rethrowAsIOException(target);
             }
         } finally {
             priv.drop();

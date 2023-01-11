@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _wb_young_gc:
       return "WhiteBox Initiated Young GC";
 
-    case _wb_conc_mark:
-      return "WhiteBox Initiated Concurrent Mark";
-
     case _wb_full_gc:
       return "WhiteBox Initiated Full GC";
 
@@ -74,6 +71,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _codecache_GC_threshold:
       return "CodeCache GC Threshold";
+
+    case _codecache_GC_aggressive:
+      return "CodeCache GC Aggressive";
 
     case _metadata_GC_threshold:
       return "Metadata GC Threshold";
@@ -95,9 +95,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _g1_periodic_collection:
       return "G1 Periodic Collection";
-
-    case _g1_preventive_collection:
-      return "G1 Preventive Collection";
 
     case _dcmd_gc_run:
       return "Diagnostic Command";

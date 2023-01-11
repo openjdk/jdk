@@ -135,6 +135,14 @@ public:
     return ::as_VectorSRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(AARCH64)
+  PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
+    return ::as_PRegister(reg(ra_, node));
+  }
+  PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node, int idx) const {
+    return ::as_PRegister(reg(ra_, node, idx));
+  }
+#endif
 
   virtual intptr_t  constant() const;
   virtual relocInfo::relocType constant_reloc() const;
@@ -351,7 +359,7 @@ public:
   virtual const class TypePtr *adr_type() const;
 
   // Apply peephole rule(s) to this instruction
-  virtual MachNode *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);
+  virtual int peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_);
 
   // Top-level ideal Opcode matched
   virtual int ideal_Opcode()     const { return Op_Node; }

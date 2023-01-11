@@ -196,7 +196,7 @@ public abstract class GlobalCursorManager {
                 // If findComponentAt returns null, then something bad has
                 // happened. For example, the heavyweight Component may
                 // have been hidden or disabled by another thread. In that
-                // case, we'll just use the originial heavyweight.
+                // case, we'll just use the original heavyweight.
                 if (c != null) {
                     comp = c;
                 }

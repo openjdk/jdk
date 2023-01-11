@@ -211,8 +211,9 @@ void ADLParser::instr_parse(void) {
             return;
           }
           assert(match_rules_cnt < 100," too many match rule clones");
-          char* buf = (char*) AdlAllocateHeap(strlen(instr->_ident) + 4);
-          sprintf(buf, "%s_%d", instr->_ident, match_rules_cnt++);
+          const size_t buf_size = strlen(instr->_ident) + 4;
+          char* buf = (char*) AdlAllocateHeap(buf_size);
+          snprintf_checked(buf, buf_size, "%s_%d", instr->_ident, match_rules_cnt++);
           rule->_result = buf;
           // Check for commutative operations with tree operands.
           matchrule_clone_and_swap(rule, instr->_ident, match_rules_cnt);
@@ -2046,14 +2047,20 @@ void ADLParser::peep_parse(void) {
         return;
       }
       // check for legal subsections of peephole rule
-      if (strcmp(token,"peepmatch")==0) {
+      if (strcmp(token,"peeppredicate")==0) {
+        peep_predicate_parse(*peep); }
+      else if (strcmp(token,"peepmatch")==0) {
         peep_match_parse(*peep); }
+      else if (strcmp(token, "peepprocedure")==0) {
+        peep_procedure_parse(*peep); }
       else if (strcmp(token,"peepconstraint")==0) {
         peep_constraint_parse(*peep); }
       else if (strcmp(token,"peepreplace")==0) {
         peep_replace_parse(*peep); }
       else {
-        parse_err(SYNERR, "expected peepmatch, peepconstraint, or peepreplace for identifier %s.\n", token);
+        parse_err(SYNERR,
+            "expected peeppreddicate, peepmatch, peepprocedure, peepconstraint, peepreplace, received %s.\n",
+            token);
       }
       skipws();
     }
@@ -2537,6 +2544,31 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
   return NULL;
 }
 
+//---------------------------peep-predicate-parse------------------------------
+// Syntax for a peeppredicate rule
+//
+// peeppredicate ( predicate );
+//
+void ADLParser::peep_predicate_parse(Peephole& peep) {
+
+  skipws();
+  char* rule = nullptr;
+  if ( (rule = get_paren_expr("pred expression", true)) == nullptr ) {
+    parse_err(SYNERR, "incorrect or missing expression for 'peeppredicate'\n");
+    return;
+  }
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' in peeppredicate definition\n");
+    return;
+  }
+  next_char();   // skip ';'
+  skipws();
+
+  // Construct PeepPredicate
+  PeepPredicate* predicate = new PeepPredicate(rule);
+  peep.add_predicate(predicate);
+}
+
 //------------------------------peep_match_parse-------------------------------
 // Syntax for a peepmatch rule
 //
@@ -2581,6 +2613,46 @@ void ADLParser::peep_match_parse(Peephole &peep) {
   // Store match into peep, and store peep into instruction
   peep.add_match(match);
   root->append_peephole(&peep);
+}
+
+//---------------------------peep-procedure-parse------------------------------
+// Syntax for a peepprocedure rule
+//
+// peeppredicate ( function_name );
+//
+void ADLParser::peep_procedure_parse(Peephole& peep) {
+
+  skipws();
+  // Check for open paren
+  if (_curchar != '(') {
+    parse_err(SYNERR, "missing '(' at start of peepprocedure rule.\n");
+    return;
+  }
+  next_char();   // skip '('
+  skipws();
+
+  char* name = nullptr;
+  if ( (name = get_ident_dup()) == nullptr ) {
+    parse_err(SYNERR, "incorrect or missing expression for 'peepprocedure'\n");
+    return;
+  }
+
+  skipws();
+  if (_curchar != ')') {
+    parse_err(SYNERR, "peepprocedure should contain a single identifier only\n");
+    return;
+  }
+  next_char();   // skip ')'
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' in peepprocedure definition\n");
+    return;
+  }
+  next_char();   // skip ';'
+  skipws();
+
+  // Construct PeepProcedure
+  PeepProcedure* procedure = new PeepProcedure(name);
+  peep.add_procedure(procedure);
 }
 
 //------------------------------peep_constraint_parse--------------------------
@@ -2629,7 +2701,7 @@ void ADLParser::peep_constraint_parse(Peephole &peep) {
 
     skipws();
     // Get information on the right instruction and its operand
-    int right_inst;        // Right-instructions's number
+    int right_inst;        // Right-instruction's number
     if( isdigit(_curchar) ) {
       right_inst = get_int();
       // Right-instruction's operand
@@ -2805,8 +2877,9 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
   const char* prefix = "__ins_encode_";
-  char* ec_name = (char*) AdlAllocateHeap(strlen(inst._ident) + strlen(prefix) + 1);
-  sprintf(ec_name, "%s%s", prefix, inst._ident);
+  const size_t ec_name_size = strlen(inst._ident) + strlen(prefix) + 1;
+  char* ec_name = (char*) AdlAllocateHeap(ec_name_size);
+  snprintf_checked(ec_name, ec_name_size, "%s%s", prefix, inst._ident);
 
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
   EncClass* encoding = _AD._encode->add_EncClass(ec_name);
@@ -3276,8 +3349,9 @@ void ADLParser::constant_parse(InstructForm& inst) {
   // Create a new encoding name based on the name of the instruction
   // definition, which should be unique.
   const char* prefix = "__constant_";
-  char* ec_name = (char*) AdlAllocateHeap(strlen(inst._ident) + strlen(prefix) + 1);
-  sprintf(ec_name, "%s%s", prefix, inst._ident);
+  const size_t ec_name_size = strlen(inst._ident) + strlen(prefix) + 1;
+  char* ec_name = (char*) AdlAllocateHeap(ec_name_size);
+  snprintf_checked(ec_name, ec_name_size, "%s%s", prefix, inst._ident);
 
   assert(_AD._encode->encClass(ec_name) == NULL, "shouldn't already exist");
   EncClass* encoding = _AD._encode->add_EncClass(ec_name);
@@ -3334,20 +3408,20 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
     if (_curchar == '(') {
       parens_depth++;
       encoding->add_code("(");
-      next_char();
+      next_char_or_line();
     }
     else if (_curchar == ')') {
       parens_depth--;
       if (parens_depth > 0)
         encoding->add_code(")");
-      next_char();
+      next_char_or_line();
     }
     else {
       // (1)
       // Check if there is a string to pass through to output
       char *start = _ptr;  // Record start of the next string
       while ((_curchar != '$') && (_curchar != '(') && (_curchar != ')')) {
-        next_char();
+        next_char_or_line();
       }
       // If a string was found, terminate it and record in EncClass
       if (start != _ptr) {
@@ -4596,8 +4670,9 @@ char *ADLParser::get_ident_or_literal_constant(const char* description) {
     // Grab a constant expression.
     param = get_paren_expr(description);
     if (param[0] != '(') {
-      char* buf = (char*) AdlAllocateHeap(strlen(param) + 3);
-      sprintf(buf, "(%s)", param);
+      const size_t buf_size = strlen(param) + 3;
+      char* buf = (char*) AdlAllocateHeap(buf_size);
+      snprintf_checked(buf, buf_size, "(%s)", param);
       param = buf;
     }
     assert(is_literal_constant(param),
@@ -5204,8 +5279,9 @@ void ADLParser::next_line() {
 char* ADLParser::get_line_string(int linenum) {
   const char* file = _AD._ADL_file._name;
   int         line = linenum ? linenum : this->linenum();
-  char* location = (char *)AdlAllocateHeap(strlen(file) + 100);
-  sprintf(location, "\n#line %d \"%s\"\n", line, file);
+  const size_t location_size = strlen(file) + 100;
+  char* location = (char *)AdlAllocateHeap(location_size);
+  snprintf_checked(location, location_size, "\n#line %d \"%s\"\n", line, file);
   return location;
 }
 

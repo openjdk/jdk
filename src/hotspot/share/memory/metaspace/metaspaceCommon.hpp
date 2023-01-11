@@ -78,8 +78,8 @@ void print_percentage(outputStream* st, size_t total, size_t part);
 #ifdef ASSERT
 #define assert_is_aligned(value, alignment)                  \
   assert(is_aligned((value), (alignment)),                   \
-         SIZE_FORMAT_HEX " is not aligned to "               \
-         SIZE_FORMAT_HEX, (size_t)(uintptr_t)value, (size_t)(alignment))
+         SIZE_FORMAT_X " is not aligned to "                 \
+         SIZE_FORMAT_X, (size_t)(uintptr_t)value, (size_t)(alignment))
 #else
 #define assert_is_aligned(value, alignment)
 #endif

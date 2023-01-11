@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,17 +68,11 @@ public abstract class AbstractConnectTimeoutHandshake {
 
     static List<List<Duration>> TIMEOUTS = List.of(
                     // connectTimeout   HttpRequest timeout
-            Arrays.asList( NO_DURATION,   ofSeconds(1)  ),
-            Arrays.asList( NO_DURATION,   ofSeconds(2)  ),
-            Arrays.asList( NO_DURATION,   ofMillis(500) ),
+            Arrays.asList( NO_DURATION,   ofMillis(100) ),
 
-            Arrays.asList( ofSeconds(1),  NO_DURATION   ),
-            Arrays.asList( ofSeconds(2),  NO_DURATION   ),
-            Arrays.asList( ofMillis(500), NO_DURATION   ),
+            Arrays.asList( ofMillis(100), NO_DURATION   ),
 
-            Arrays.asList( ofSeconds(1),  ofMinutes(1)  ),
-            Arrays.asList( ofSeconds(2),  ofMinutes(1)  ),
-            Arrays.asList( ofMillis(500), ofMinutes(1)  )
+            Arrays.asList( ofMillis(100), ofMinutes(1)  )
     );
 
     static final List<String> METHODS = List.of("GET" , "POST");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -102,9 +102,17 @@ public:
     CPU_APPLE     = 'a',
   };
 
+enum Ampere_CPU_Model {
+    CPU_MODEL_EMAG      = 0x0,   /* CPU implementer is CPU_AMCC */
+    CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4  /* CPU implementer is CPU_AMPERE */
+};
+
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
-    decl(ASIMD,         simd,          1)     \
+    decl(ASIMD,         asimd,         1)     \
     decl(EVTSTRM,       evtstrm,       2)     \
     decl(AES,           aes,           3)     \
     decl(PMULL,         pmull,         4)     \
@@ -167,6 +175,12 @@ public:
   static void initialize_cpu_information(void);
 
   static bool use_rop_protection() { return _rop_protection; }
+
+  // For common 64/128-bit unpredicated vector operations, we may prefer
+  // emitting NEON instructions rather than the corresponding SVE instructions.
+  static bool use_neon_for_vector(int vector_length_in_bytes) {
+    return vector_length_in_bytes <= 16;
+  }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

@@ -150,6 +150,9 @@ public class VectorSupport {
 
     public static class VectorSpecies<E> {}
 
+    /**
+     * @hidden
+     */
     public static class VectorPayload {
         private final Object payload; // array of primitives
 
@@ -162,17 +165,26 @@ public class VectorSupport {
         }
     }
 
+    /**
+     * @hidden
+     */
     public static class Vector<E> extends VectorPayload {
         public Vector(Object payload) {
             super(payload);
         }
     }
 
+    /**
+     * @hidden
+     */
     public static class VectorShuffle<E> extends VectorPayload {
         public VectorShuffle(Object payload) {
             super(payload);
         }
     }
+    /**
+     * @hidden
+     */
     public static class VectorMask<E> extends VectorPayload {
         public VectorMask(Object payload) {
             super(payload);
@@ -240,7 +252,7 @@ public class VectorSupport {
         V index(V v, int step, S s);
     }
 
-    //FIXME @IntrinsicCandidate
+    @IntrinsicCandidate
     public static
     <V extends Vector<E>,
      E,

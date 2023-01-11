@@ -77,9 +77,11 @@ class Bytecode: public StackObj {
   int get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
     address p = addr_at(is_wide ? 2 : 1);
-    if (can_use_native_byte_order(bc, is_wide))
+    if (can_use_native_byte_order(bc, is_wide)) {
       return Bytes::get_native_u2(p);
-    else  return Bytes::get_Java_u2(p);
+    } else {
+      return Bytes::get_Java_u2(p);
+    }
   }
   int get_index_u1_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);

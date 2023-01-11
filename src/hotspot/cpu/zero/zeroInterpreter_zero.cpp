@@ -65,7 +65,7 @@ void ZeroInterpreter::initialize_code() {
   // generate interpreter
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
-    ZeroInterpreterGenerator g(_code);
+    ZeroInterpreterGenerator g;
     if (PrintInterpreter) print();
   }
 }

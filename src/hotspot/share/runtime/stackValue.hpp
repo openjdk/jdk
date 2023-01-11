@@ -29,6 +29,7 @@
 #include "runtime/handles.hpp"
 
 class BasicLock;
+class frame;
 class RegisterMap;
 class ScopeValue;
 
@@ -106,6 +107,9 @@ class StackValue : public ResourceObj {
       return (*(int *)&_integer_value == *(int *)&value->_integer_value);
     }
   }
+
+  static StackValue* create_stack_value_from_oop_location(stackChunkOop chunk, void* addr);
+  static StackValue* create_stack_value_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register);
 
   static BasicLock*  resolve_monitor_lock(const frame* fr, Location location);
 

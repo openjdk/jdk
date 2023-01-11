@@ -48,7 +48,6 @@
 
 #undef LSA_SUCCESS
 #define LSA_SUCCESS(Status) ((Status) >= 0)
-#define EXIT_FAILURE -1 // mdu
 
 /*
  * Library-wide static references
@@ -823,6 +822,7 @@ ShowLastError(
     if (native_debug) {
         if (0 == dwRes) {
             printf("LSA: FormatMessage failed with %d\n", GetLastError());
+            // #define EXIT_FAILURE -1 // mdu
             // ExitProcess(EXIT_FAILURE);
         } else {
             printf("LSA: %S",szMsgBuf);

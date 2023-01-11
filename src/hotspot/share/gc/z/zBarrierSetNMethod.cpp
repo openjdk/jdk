@@ -59,8 +59,8 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZNMethod::nmethod_oops_barrier(nm);
 
 
-  // CodeCache sweeper support
-  nm->mark_as_maybe_on_continuation();
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
 
   // Disarm
   disarm(nm);
@@ -68,10 +68,10 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   return true;
 }
 
-int* ZBarrierSetNMethod::disarmed_value_address() const {
+int* ZBarrierSetNMethod::disarmed_guard_value_address() const {
   return (int*)ZAddressBadMaskHighOrderBitsAddr;
 }
 
-ByteSize ZBarrierSetNMethod::thread_disarmed_offset() const {
+ByteSize ZBarrierSetNMethod::thread_disarmed_guard_value_offset() const {
   return ZThreadLocalData::nmethod_disarmed_offset();
 }

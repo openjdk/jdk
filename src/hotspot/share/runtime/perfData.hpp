@@ -333,10 +333,6 @@ class PerfData : public CHeapObj<mtInternal> {
     // returns the address of the data portion of the item in the
     // PerfData memory region.
     inline void* get_address() { return _valuep; }
-
-    // returns the value of the data portion of the item in the
-    // PerfData memory region formatted as a string.
-    virtual int format(char* cp, int length) = 0;
 };
 
 /*
@@ -362,8 +358,6 @@ class PerfLong : public PerfData {
     PerfLong(CounterNS ns, const char* namep, Units u, Variability v);
 
   public:
-    int format(char* buffer, int length);
-
     // returns the value of the data portion of the item in the
     // PerfData memory region.
     inline jlong get_value() { return *(jlong*)_valuep; }
@@ -423,7 +417,6 @@ class PerfLongVariant : public PerfLong {
     inline void inc() { (*(jlong*)_valuep)++; }
     inline void inc(jlong val) { (*(jlong*)_valuep) += val; }
     inline void dec(jlong val) { inc(-val); }
-    inline void add(jlong val) { (*(jlong*)_valuep) += val; }
 };
 
 /*
@@ -510,9 +503,6 @@ class PerfString : public PerfByteArray {
        if (is_valid()) set_string(initial_value);
     }
 
-  public:
-
-    int format(char* buffer, int length);
 };
 
 /*
@@ -627,14 +617,6 @@ class PerfDataList : public CHeapObj<mtInternal> {
     // add a PerfData item to this list
     inline void append(PerfData *p);
 
-    // remove the given PerfData item from this list. When called
-    // while iterating over the list, this method will result in a
-    // change in the length of the container. The at(int index)
-    // method is also impacted by this method as elements with an
-    // index greater than the index of the element removed by this
-    // method will be shifted down by one.
-    inline void remove(PerfData *p);
-
     // create a new PerfDataList from this list. The new list is
     // a shallow copy of the original list and care should be taken
     // with respect to delete operations on the elements of the list
@@ -668,17 +650,10 @@ class PerfDataManager : AllStatic {
     static void add_item(PerfData* p, bool sampled);
 
   protected:
-    // return the list of all known PerfData items
-    static PerfDataList* all();
-    static inline int count();
 
     // return the list of all known PerfData items that are to be
     // sampled by the StatSampler.
     static PerfDataList* sampled();
-
-    // return the list of all known PerfData items that have a
-    // variability classification of type Constant
-    static PerfDataList* constants();
 
   public:
 
@@ -754,12 +729,6 @@ class PerfDataManager : AllStatic {
                                                       int max_length,
                                                       const char *s, TRAPS);
 
-    static PerfStringVariable* create_string_variable(CounterNS ns,
-                                                      const char* name,
-                                                      const char *s, TRAPS) {
-      return create_string_variable(ns, name, 0, s, THREAD);
-    };
-
     static PerfLongVariable* create_long_variable(CounterNS ns,
                                                   const char* name,
                                                   PerfData::Units u,
@@ -770,10 +739,6 @@ class PerfDataManager : AllStatic {
                                                   PerfData::Units u, TRAPS) {
       return create_long_variable(ns, name, u, (jlong)0, THREAD);
     };
-
-    static PerfLongVariable* create_long_variable(CounterNS, const char* name,
-                                                  PerfData::Units u,
-                                                  jlong* sp, TRAPS);
 
     static PerfLongVariable* create_long_variable(CounterNS ns,
                                                   const char* name,
@@ -786,15 +751,6 @@ class PerfDataManager : AllStatic {
     static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
                                                 PerfData::Units u,
                                                 jlong ival, TRAPS);
-
-    static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
-                                                PerfData::Units u, TRAPS) {
-      return create_long_counter(ns, name, u, (jlong)0, THREAD);
-    };
-
-    static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
-                                                PerfData::Units u, jlong* sp,
-                                                TRAPS);
 
     static PerfLongCounter* create_long_counter(CounterNS ns, const char* name,
                                                 PerfData::Units u,
@@ -821,29 +777,14 @@ class PerfDataManager : AllStatic {
     }
 
     static PerfVariable* create_variable(CounterNS ns, const char* name,
-                                         PerfData::Units u, jlong* sp, TRAPS) {
-      return create_long_variable(ns, name, u, sp, THREAD);
-    }
-
-    static PerfVariable* create_variable(CounterNS ns, const char* name,
                                          PerfData::Units u,
                                          PerfSampleHelper* sh, TRAPS) {
       return create_long_variable(ns, name, u, sh, THREAD);
     }
 
     static PerfCounter* create_counter(CounterNS ns, const char* name,
-                                       PerfData::Units u, jlong ival, TRAPS) {
-      return create_long_counter(ns, name, u, ival, THREAD);
-    }
-
-    static PerfCounter* create_counter(CounterNS ns, const char* name,
                                        PerfData::Units u, TRAPS) {
       return create_long_counter(ns, name, u, (jlong)0, THREAD);
-    }
-
-    static PerfCounter* create_counter(CounterNS ns, const char* name,
-                                       PerfData::Units u, jlong* sp, TRAPS) {
-      return create_long_counter(ns, name, u, sp, THREAD);
     }
 
     static PerfCounter* create_counter(CounterNS ns, const char* name,
@@ -899,9 +840,6 @@ class PerfTraceTime : public StackObj {
       if (!UsePerfData) return;
       _t.start();
     }
-
-    inline void suspend() { if (!UsePerfData) return; _t.stop(); }
-    inline void resume() { if (!UsePerfData) return; _t.start(); }
 
     ~PerfTraceTime();
 };

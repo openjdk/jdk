@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
      * and CRLs.
      */
     private void buildIndex(Collection<?> coll) {
-        certSubjects = new HashMap<X500Principal, Object>();
-        crlIssuers = new HashMap<X500Principal, Object>();
+        certSubjects = new HashMap<>();
+        crlIssuers = new HashMap<>();
         otherCertificates = null;
         otherCRLs = null;
         for (Object obj : coll) {
@@ -149,12 +149,12 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                 indexCRL((X509CRL)obj);
             } else if (obj instanceof Certificate) {
                 if (otherCertificates == null) {
-                    otherCertificates = new HashSet<Certificate>();
+                    otherCertificates = new HashSet<>();
                 }
                 otherCertificates.add((Certificate)obj);
             } else if (obj instanceof CRL) {
                 if (otherCRLs == null) {
-                    otherCRLs = new HashSet<CRL>();
+                    otherCRLs = new HashSet<>();
                 }
                 otherCRLs.add((CRL)obj);
             } else {
@@ -162,10 +162,10 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
             }
         }
         if (otherCertificates == null) {
-            otherCertificates = Collections.<Certificate>emptySet();
+            otherCertificates = Collections.emptySet();
         }
         if (otherCRLs == null) {
-            otherCRLs = Collections.<CRL>emptySet();
+            otherCRLs = Collections.emptySet();
         }
     }
 
@@ -187,7 +187,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
             } else {
                 @SuppressWarnings("unchecked") // See certSubjects javadoc.
                 List<X509Certificate> list = (List<X509Certificate>)oldEntry;
-                if (list.contains(cert) == false) {
+                if (!list.contains(cert)) {
                     list.add(cert);
                 }
                 certSubjects.put(subject, list);
@@ -214,7 +214,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                 // See crlIssuers javadoc.
                 @SuppressWarnings("unchecked")
                 List<X509CRL> list = (List<X509CRL>)oldEntry;
-                if (list.contains(crl) == false) {
+                if (!list.contains(crl)) {
                     list.add(crl);
                 }
                 crlIssuers.put(issuer, list);
@@ -246,7 +246,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
             return matches;
         }
 
-        if (selector instanceof X509CertSelector == false) {
+        if (!(selector instanceof X509CertSelector x509Selector)) {
             Set<Certificate> matches = new HashSet<>();
             matchX509Certs(selector, matches);
             for (Certificate cert : otherCertificates) {
@@ -260,7 +260,6 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
         if (certSubjects.isEmpty()) {
             return Collections.<X509Certificate>emptySet();
         }
-        X509CertSelector x509Selector = (X509CertSelector)selector;
         // see if the subject is specified
         X500Principal subject;
         X509Certificate matchCert = x509Selector.getCertificate();
@@ -275,8 +274,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
             if (entry == null) {
                 return Collections.<X509Certificate>emptySet();
             }
-            if (entry instanceof X509Certificate) {
-                X509Certificate x509Entry = (X509Certificate)entry;
+            if (entry instanceof X509Certificate x509Entry) {
                 if (x509Selector.match(x509Entry)) {
                     return Collections.singleton(x509Entry);
                 } else {
@@ -309,8 +307,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
         Collection<Certificate> matches) {
 
         for (Object obj : certSubjects.values()) {
-            if (obj instanceof X509Certificate) {
-                X509Certificate cert = (X509Certificate)obj;
+            if (obj instanceof X509Certificate cert) {
                 if (selector.match(cert)) {
                     matches.add(cert);
                 }
@@ -350,7 +347,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
             return matches;
         }
 
-        if (selector instanceof X509CRLSelector == false) {
+        if (!(selector instanceof X509CRLSelector x509Selector)) {
             Set<CRL> matches = new HashSet<>();
             matchX509CRLs(selector, matches);
             for (CRL crl : otherCRLs) {
@@ -362,9 +359,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
         }
 
         if (crlIssuers.isEmpty()) {
-            return Collections.<CRL>emptySet();
+            return Collections.emptySet();
         }
-        X509CRLSelector x509Selector = (X509CRLSelector)selector;
         // see if the issuer is specified
         Collection<X500Principal> issuers = x509Selector.getIssuers();
         if (issuers != null) {
@@ -373,8 +369,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                 Object entry = crlIssuers.get(issuer);
                 if (entry == null) {
                     // empty
-                } else if (entry instanceof X509CRL) {
-                    X509CRL crl = (X509CRL)entry;
+                } else if (entry instanceof X509CRL crl) {
                     if (x509Selector.match(crl)) {
                         matches.add(crl);
                     }
@@ -403,8 +398,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
      */
     private void matchX509CRLs(CRLSelector selector, Collection<CRL> matches) {
         for (Object obj : crlIssuers.values()) {
-            if (obj instanceof X509CRL) {
-                X509CRL crl = (X509CRL)obj;
+            if (obj instanceof X509CRL crl) {
                 if (selector.match(crl)) {
                     matches.add(crl);
                 }

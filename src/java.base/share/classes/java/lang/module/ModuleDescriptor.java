@@ -213,8 +213,10 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * requires flags, possibly empty}}
+         * Returns the set of the module {@linkplain AccessFlag
+         * requires flags}.
+         *
+         * @return A possibly-empty unmodifiable set of requires flags
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
@@ -447,8 +449,10 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * export flags} for this module descriptor, possibly empty}
+         * Returns the set of the module {@linkplain AccessFlag
+         * export flags} for this module descriptor.
+         *
+         * @return A possibly-empty unmodifiable set of export flags
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
@@ -669,8 +673,10 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * opens flags}, possibly empty}
+         * Returns the set of the module {@linkplain AccessFlag opens
+         * flags}.
+         *
+         * @return A possibly-empty unmodifiable set of opens flags
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
@@ -1354,8 +1360,9 @@ public class ModuleDescriptor
     }
 
     /**
-     * {@return an unmodifiable set of the {@linkplain AccessFlag
-     * module flags}, possibly empty}
+     * Returns the set of the {@linkplain AccessFlag module flags}.
+     *
+     * @return A possibly-empty unmodifiable set of module flags
      * @see #modifiers()
      * @jvms 4.7.25 The Module Attribute
      * @since 20
@@ -1545,13 +1552,14 @@ public class ModuleDescriptor
      * <cite>The Java Language Specification</cite>. </p>
      *
      * <p> Example usage: </p>
-     * <pre>{@code    ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")
+     * {@snippet :
+     *     ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")
      *         .requires("java.base")
      *         .exports("org.acme.stats.core.clustering")
      *         .exports("org.acme.stats.core.regression")
      *         .packages(Set.of("org.acme.stats.core.internal"))
      *         .build();
-     * }</pre>
+     * }
      *
      * @apiNote A {@code Builder} checks the components and invariants as
      * components are added to the builder. The rationale for this is to detect
@@ -2626,7 +2634,7 @@ public class ModuleDescriptor
     private static int modsHashCode(Iterable<? extends Enum<?>> enums) {
         int h = 0;
         for (Enum<?> e : enums) {
-            h = h * 43 + Objects.hashCode(e.name());
+            h += e.name().hashCode();
         }
         return h;
     }

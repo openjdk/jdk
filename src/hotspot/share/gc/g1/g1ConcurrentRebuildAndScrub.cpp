@@ -73,28 +73,16 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
 
     const bool _should_rebuild_remset;
 
-    size_t _marked_words;
     size_t _processed_words;
 
     const size_t ProcessingYieldLimitInWords = G1RebuildRemSetChunkSize / HeapWordSize;
-
-    void reset_marked_words() {
-      _marked_words = 0;
-    }
 
     void reset_processed_words() {
       _processed_words = 0;
     }
 
-    void assert_marked_words(HeapRegion* hr) {
-      assert((_marked_words * HeapWordSize) == hr->marked_bytes(),
-             "Mismatch between marking and re-calculation for region %u, %zu != %zu",
-             hr->hrm_index(), (_marked_words * HeapWordSize), hr->marked_bytes());
-    }
-
     void add_processed_words(size_t processed) {
       _processed_words += processed;
-      _marked_words += processed;
     }
 
     // Yield if enough has been processed; returns if the concurrent marking cycle
@@ -228,7 +216,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     bool scan_and_scrub_region(HeapRegion* hr, HeapWord* const pb) {
       assert(should_rebuild_or_scrub(hr), "must be");
 
-      reset_marked_words();
       log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
                              HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
 
@@ -240,9 +227,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       // Scrubbing completed for this region - notify that we are done with it, resetting
       // pb to bottom.
       hr->note_end_of_scrubbing();
-      // Assert that the size of marked objects from the marking matches
-      // the size of the objects which we scanned to rebuild remembered sets.
-      assert_marked_words(hr);
 
       // Rebuild from TAMS (= parsable_bottom) to TARS.
       if (scan_from_pb_to_tars(hr, pb, _cm->top_at_rebuild_start(hr->hrm_index()))) {
@@ -270,7 +254,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(_bitmap->is_marked(humongous) || pb == hr->bottom(),
              "Humongous object not live");
 
-      reset_marked_words();
       log_trace(gc, marking)("Rebuild for humongous region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
                               HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
 
@@ -282,13 +265,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       if (mark_aborted) {
         log_trace(gc, marking)("Rebuild aborted for region: %u (%s)", hr->hrm_index(), hr->get_short_type_str());
         return true;
-      } else if (_bitmap->is_marked(humongous) && should_rebuild_or_scrub(hr)) {
-        // Only verify that the marked size matches the rebuilt size if this object was marked
-        // and the object should still be handled. The should_rebuild_or_scrub() state can
-        // change during rebuild for humongous objects that are eagerly reclaimed so we need to
-        // check this.
-        // If the object has not been marked the size from marking will be 0.
-        assert_marked_words(hr);
       }
       return false;
     }
@@ -299,7 +275,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       _bitmap(_cm->mark_bitmap()),
       _rebuild_closure(G1CollectedHeap::heap(), worker_id),
       _should_rebuild_remset(should_rebuild_remset),
-      _marked_words(0),
       _processed_words(0) { }
 
     bool do_heap_region(HeapRegion* hr) {

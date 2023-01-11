@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.IREncodingPrinter;
@@ -37,9 +36,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Class to parse the IR encoding emitted by the test VM and creating {@link IRMethod} objects for each entry.
+ * Class to parse the IR encoding emitted by the test VM and creating {@link TestMethod} objects for each entry.
  *
- * @see IRMethod
+ * @see TestMethod
  */
 class IREncodingParser {
 
@@ -47,31 +46,36 @@ class IREncodingParser {
     private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END + ")");
 
-    private final Map<String, IRMethod> compilations;
+    private final Map<String, TestMethod> testMethodMap;
     private final Class<?> testClass;
 
     public IREncodingParser(Class<?> testClass) {
         this.testClass = testClass;
-        this.compilations = new HashMap<>();
+        this.testMethodMap = new HashMap<>();
     }
 
-    public Map<String, IRMethod> parseIRMethods(String irEncoding) {
+    /**
+     * Parse the IR encoding passed as parameter and return a "test name" -> TestMethod map that contains an entry
+     * for each method that needs to be IR matched on.
+     */
+    public Map<String, TestMethod> parse(String irEncoding) {
         if (TestFramework.VERBOSE || PRINT_IR_ENCODING) {
             System.out.println("Read IR encoding from test VM:");
             System.out.println(irEncoding);
         }
-        createCompilationsMap(irEncoding, testClass);
+        createTestMethodMap(irEncoding, testClass);
         // We could have found format errors in @IR annotations. Report them now with an exception.
         TestFormat.throwIfAnyFailures();
-        return compilations;
+        return testMethodMap;
     }
 
     /**
-     * Sets up a map testname -> IRMethod (containing the PrintIdeal and PrintOptoAssembly output for testname).
+     * Sets up a map testname -> TestMethod map. The TestMethod object will later be filled with the ideal and opto
+     * assembly output in {@link HotSpotPidFileParser}.
      */
-    private void createCompilationsMap(String irEncoding, Class<?> testClass) {
+    private void createTestMethodMap(String irEncoding, Class<?> testClass) {
         Map<String, int[]> irRulesMap = parseIREncoding(irEncoding);
-        createIRMethodsWithEncoding(testClass, irRulesMap);
+        createTestMethodsWithEncoding(testClass, irRulesMap);
     }
 
     /**
@@ -122,7 +126,7 @@ class IREncodingParser {
         return irRulesIdx;
     }
 
-    private void createIRMethodsWithEncoding(Class<?> testClass, Map<String, int[]> irRulesMap) {
+    private void createTestMethodsWithEncoding(Class<?> testClass, Map<String, int[]> irRulesMap) {
         for (Method m : testClass.getDeclaredMethods()) {
             IR[] irAnnos = m.getAnnotationsByType(IR.class);
             if (irAnnos.length > 0) {
@@ -130,7 +134,7 @@ class IREncodingParser {
                 int[] irRuleIds = irRulesMap.get(m.getName());
                 validateIRRuleIds(m, irAnnos, irRuleIds);
                 if (hasAnyApplicableIRRules(irRuleIds)) {
-                    compilations.put(m.getName(), new IRMethod(m, irRuleIds, irAnnos));
+                    testMethodMap.put(m.getName(), new TestMethod(m, irRuleIds));
                 }
             }
         }

@@ -26,10 +26,15 @@
 #ifndef OS_AIX_OS_AIX_INLINE_HPP
 #define OS_AIX_OS_AIX_INLINE_HPP
 
-// os_aix.hpp included by os.hpp
+#include "os_aix.hpp"
 
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
+
+// Information about the protection of the page at address '0' on this os.
+inline bool os::zero_page_read_protected() {
+  return false;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;
@@ -46,5 +51,9 @@ inline bool os::must_commit_stack_guard_pages() {
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
 }
+
+// stubbed-out trim-native support
+inline bool os::can_trim_native_heap() { return false; }
+inline bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
 
 #endif // OS_AIX_OS_AIX_INLINE_HPP

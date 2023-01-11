@@ -36,16 +36,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">ამჰარული</language>
 			<language type="an">არაგონული</language>
 			<language type="ang">ძველი ინგლისური</language>
+			<language type="ann">ობოლო</language>
 			<language type="anp">ანგიკა</language>
 			<language type="ar">არაბული</language>
 			<language type="ar_001">თანამედროვე სტანდარტული არაბული</language>
 			<language type="arc">არამეული</language>
 			<language type="arn">მაპუდუნგუნი</language>
 			<language type="arp">არაპაჰო</language>
+			<language type="ars">ნაჯის არაბული</language>
 			<language type="arw">არავაკი</language>
 			<language type="as">ასამური</language>
 			<language type="asa">ასუ</language>
 			<language type="ast">ასტურიული</language>
+			<language type="atj">ატიკამეკი</language>
 			<language type="av">ხუნძური</language>
 			<language type="awa">ავადი</language>
 			<language type="ay">აიმარა</language>
@@ -91,13 +94,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">ჩეროკი</language>
 			<language type="chy">ჩეიენი</language>
 			<language type="ckb">ცენტრალური ქურთული</language>
+			<language type="clc">ჩილკოტინი</language>
 			<language type="co">კორსიკული</language>
 			<language type="cop">კოპტური</language>
 			<language type="cr">კრი</language>
+			<language type="crg">მიჩიფი</language>
 			<language type="crh">ყირიმულ-თურქული</language>
+			<language type="crj">სამხრეთ-აღმოსავლეთის კრი</language>
+			<language type="crk">დაბლობის კრი</language>
+			<language type="crl">ჩრდილო-აღმოსავლეთის კრი</language>
+			<language type="crm">მუსური კრი</language>
+			<language type="crr">კაროლინური ალგონკინი</language>
 			<language type="crs">სესელვა-კრეოლური ფრანგული</language>
 			<language type="cs">ჩეხური</language>
 			<language type="csb">კაშუბური</language>
+			<language type="csw">ჭაობის კრი</language>
 			<language type="cu">საეკლესიო სლავური</language>
 			<language type="cv">ჩუვაშური</language>
 			<language type="cy">უელსური</language>
@@ -132,7 +143,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">ავსტრალიური ინგლისური</language>
 			<language type="en_CA">კანადური ინგლისური</language>
 			<language type="en_GB">ბრიტანული ინგლისური</language>
-			<language type="en_GB" alt="short">ინგლისური (გაერთ. სამეფო)</language>
+			<language type="en_GB" alt="short">ინგლისური (გაერთიანებული სამეფო)</language>
 			<language type="en_US">ამერიკული ინგლისური</language>
 			<language type="en_US" alt="short">აშშ ინგლისური</language>
 			<language type="enm">საშუალო ინგლისური</language>
@@ -155,6 +166,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fr">ფრანგული</language>
 			<language type="fr_CA">კანადური ფრანგული</language>
 			<language type="fr_CH">შვეიცარიული ფრანგული</language>
+			<language type="frc">კაჟუნური ფრანგული</language>
 			<language type="frm">საშუალო ფრანგული</language>
 			<language type="fro">ძველი ფრანგული</language>
 			<language type="frr">ჩრდილოფრიზიული</language>
@@ -182,9 +194,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">მენური</language>
 			<language type="gwi">გვიჩინი</language>
 			<language type="ha">ჰაუსა</language>
+			<language type="hai">ჰაიდა</language>
 			<language type="haw">ჰავაიური</language>
+			<language type="hax">სამხრეთული ჰაიდა</language>
 			<language type="he">ებრაული</language>
 			<language type="hi">ჰინდი</language>
+			<language type="hi_Latn" alt="variant">ჰინგლისური</language>
 			<language type="hil">ჰილიგაინონი</language>
 			<language type="hit">ხეთური</language>
 			<language type="hmn">ჰმონგი</language>
@@ -193,6 +208,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">ჰაიტიური კრეოლი</language>
 			<language type="hu">უნგრული</language>
 			<language type="hup">ჰუპა</language>
+			<language type="hur">ჰალკომელემი</language>
 			<language type="hy">სომხური</language>
 			<language type="hz">ჰერერო</language>
 			<language type="ia">ინტერლინგუალური</language>
@@ -202,6 +218,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ie">ინტერლინგი</language>
 			<language type="ig">იგბო</language>
 			<language type="ii">სიჩუანის ი</language>
+			<language type="ikt">დასავლეთ-კანადური ინუკტიტუტი</language>
 			<language type="ilo">ილოკო</language>
 			<language type="inh">ინგუშური</language>
 			<language type="io">იდო</language>
@@ -227,6 +244,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">კაბუვერდიანუ</language>
 			<language type="kfo">კორო</language>
 			<language type="kg">კონგო</language>
+			<language type="kgp">კაინგანგი</language>
 			<language type="kha">ხასი</language>
 			<language type="khq">კოირა-ჩიინი</language>
 			<language type="ki">კიკუიუ</language>
@@ -256,6 +274,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">კუტენაი</language>
 			<language type="kv">კომი</language>
 			<language type="kw">კორნული</language>
+			<language type="kwk">კვაკვალა</language>
 			<language type="ky">ყირგიზული</language>
 			<language type="la">ლათინური</language>
 			<language type="lad">ლადინო</language>
@@ -266,12 +285,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ლეზგიური</language>
 			<language type="lg">განდა</language>
 			<language type="li">ლიმბურგული</language>
+			<language type="lil">ლილიეტი</language>
 			<language type="lkt">ლაკოტა</language>
 			<language type="ln">ლინგალა</language>
 			<language type="lo">ლაოსური</language>
 			<language type="lol">მონგო</language>
+			<language type="lou">ლუიზიანას კრეოლური</language>
 			<language type="loz">ლოზი</language>
 			<language type="lrc">ჩრდილოეთ ლური</language>
+			<language type="lsm">სამია</language>
 			<language type="lt">ლიეტუვური</language>
 			<language type="lu">ლუბა-კატანგა</language>
 			<language type="lua">ლუბა-ლულუა</language>
@@ -305,6 +327,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">მონღოლური</language>
 			<language type="mnc">მანჯურიული</language>
 			<language type="mni">მანიპური</language>
+			<language type="moe">ინუ-აიმუნი</language>
 			<language type="moh">მოჰაუკური</language>
 			<language type="mos">მოსი</language>
 			<language type="mr">მარათჰი</language>
@@ -352,6 +375,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">ნზიმა</language>
 			<language type="oc">ოქსიტანური</language>
 			<language type="oj">ოჯიბვე</language>
+			<language type="ojb">ჩრდილო-დასავლეთის ოჯიბვა</language>
+			<language type="ojc">ცენტრალური ოჯიბვე</language>
+			<language type="ojs">ოჯი-კრი</language>
+			<language type="ojw">დასავლეთის ოჯიბვა</language>
+			<language type="oka">ოკანაგანი</language>
 			<language type="om">ორომო</language>
 			<language type="or">ორია</language>
 			<language type="os">ოსური</language>
@@ -365,7 +393,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="peo">ძველი სპარსული</language>
 			<language type="phn">ფინიკიური</language>
 			<language type="pi">პალი</language>
+			<language type="pis">პიჯინი</language>
 			<language type="pl">პოლონური</language>
+			<language type="pqm">მალისეტ-პასამაკვოდი</language>
 			<language type="prg">პრუსიული</language>
 			<language type="pro">ძველი პროვანსული</language>
 			<language type="ps">პუშტუ</language>
@@ -415,6 +445,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">სინჰალური</language>
 			<language type="sk">სლოვაკური</language>
 			<language type="sl">სლოვენური</language>
+			<language type="slh">სამხრეთული ლუშუციდი</language>
 			<language type="sm">სამოა</language>
 			<language type="sma">სამხრეთსამური</language>
 			<language type="smj">ლულე-საამური</language>
@@ -429,6 +460,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">სუატი</language>
 			<language type="ssy">საჰო</language>
 			<language type="st">სამხრეთ სოთოს ენა</language>
+			<language type="str">სტრეიტს სალიში</language>
 			<language type="su">სუნდური</language>
 			<language type="suk">სუკუმა</language>
 			<language type="sux">შუმერული</language>
@@ -439,23 +471,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syc">კლასიკური სირიული</language>
 			<language type="syr">სირიული</language>
 			<language type="ta">ტამილური</language>
+			<language type="tce">სამხრეთ ტუჩონი</language>
 			<language type="te">ტელუგუ</language>
 			<language type="tem">ტინმე</language>
 			<language type="teo">ტესო</language>
 			<language type="tet">ტეტუმი</language>
 			<language type="tg">ტაჯიკური</language>
-			<language type="th">ტაი</language>
+			<language type="tgx">ტაგიში</language>
+			<language type="th">ტაილანდური</language>
+			<language type="tht">ტალტანი</language>
 			<language type="ti">ტიგრინია</language>
 			<language type="tig">თიგრე</language>
 			<language type="tk">თურქმენული</language>
 			<language type="tlh">კლინგონი</language>
+			<language type="tli">ტლინგიტი</language>
 			<language type="tn">ტსვანა</language>
 			<language type="to">ტონგანური</language>
+			<language type="tok">ტოკი-პონა</language>
 			<language type="tpi">ტოკ-პისინი</language>
 			<language type="tr">თურქული</language>
 			<language type="trv">ტაროკო</language>
 			<language type="ts">ტსონგა</language>
 			<language type="tt">თათრული</language>
+			<language type="ttm">ჩრდილოეთ ტუჩონი</language>
 			<language type="tum">ტუმბუკა</language>
 			<language type="tvl">ტუვალუ</language>
 			<language type="tw">თუი</language>
@@ -482,6 +520,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="war">ვარაი</language>
 			<language type="wbp">ვალპირი</language>
 			<language type="wo">ვოლოფური</language>
+			<language type="wuu" draft="contributed">ვუ</language>
 			<language type="xal">ყალმუხური</language>
 			<language type="xh">ქჰოსა</language>
 			<language type="xog">სოგა</language>
@@ -489,6 +528,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">იემბა</language>
 			<language type="yi">იდიში</language>
 			<language type="yo">იორუბა</language>
+			<language type="yrl">ნენგატუ</language>
 			<language type="yue">კანტონური</language>
 			<language type="yue" alt="menu">ჩინური, კანტონური</language>
 			<language type="zbl">ბლისსიმბოლოები</language>
@@ -506,8 +546,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">ზაზაკი</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">ადლამი</script>
 			<script type="Afak">აფაკა</script>
 			<script type="Arab">არაბული</script>
+			<script type="Aran">ნასტალიქი</script>
 			<script type="Armi">იმპერიული არამეული</script>
 			<script type="Armn">სომხური</script>
 			<script type="Avst">ავესტური</script>
@@ -523,7 +565,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Bugi" draft="unconfirmed">ლონტარა</script>
 			<script type="Buhd">ბუჰიდი</script>
 			<script type="Cakm">ჩაკმა</script>
-			<script type="Cans" draft="unconfirmed">კანადური სილაბური</script>
+			<script type="Cans">გაერთიანებული კანადური სილაბური</script>
 			<script type="Cari">კარიული</script>
 			<script type="Cham">ჩამი</script>
 			<script type="Cher">ჩეროკი</script>
@@ -599,7 +641,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Mong">მონღოლური</script>
 			<script type="Moon" draft="unconfirmed">მუნისი</script>
 			<script type="Mroo">მრო</script>
-			<script type="Mtei" draft="unconfirmed">მანიპური</script>
+			<script type="Mtei">მანიპური</script>
 			<script type="Mymr">მიანმური</script>
 			<script type="Narb">ძველი ჩრდილოეთ-არაბული</script>
 			<script type="Nbat">ნაბატეური</script>
@@ -621,6 +663,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Plrd" draft="unconfirmed">პოლარდისი</script>
 			<script type="Prti">მონუმენტური პართული</script>
 			<script type="Rjng">რეჯანგი</script>
+			<script type="Rohg">ჰანიფი</script>
 			<script type="Roro">რონგორონგო</script>
 			<script type="Runr">რუნული</script>
 			<script type="Samr">სამარიული</script>
@@ -651,7 +694,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tfng">ტიფინაღი</script>
 			<script type="Tglg" draft="unconfirmed">ბაიბაინი</script>
 			<script type="Thaa">თაანა</script>
-			<script type="Thai">ტაი</script>
+			<script type="Thai">ტაილანდური</script>
 			<script type="Tibt">ტიბეტური</script>
 			<script type="Tirh">ტირჰუტა</script>
 			<script type="Ugar">უგარითული</script>
@@ -661,7 +704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Wole">ვოლეაი</script>
 			<script type="Xpeo">ძველი სპარსული</script>
 			<script type="Xsux">შუმერულ-აქადური ლურსმნული</script>
-			<script type="Yiii" draft="unconfirmed">ი</script>
+			<script type="Yiii">ი</script>
 			<script type="Zinh">გადაღებული</script>
 			<script type="Zmth">მათემატიკური ნოტაცია</script>
 			<script type="Zsye">Emoji</script>
@@ -888,6 +931,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">ნაურუ</territory>
 			<territory type="NU">ნიუე</territory>
 			<territory type="NZ">ახალი ზელანდია</territory>
+			<territory type="NZ" alt="variant">აოტეროა (ახალი ზელანდია)</territory>
 			<territory type="OM">ომანი</territory>
 			<territory type="PA">პანამა</territory>
 			<territory type="PE">პერუ</territory>
@@ -932,7 +976,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">სინტ-მარტენი</territory>
 			<territory type="SY">სირია</territory>
 			<territory type="SZ">სვაზილენდი</territory>
-			<territory type="SZ" alt="variant">სვაზილანდი</territory>
 			<territory type="TA">ტრისტან-და-კუნია</territory>
 			<territory type="TC">თერქს-ქაიქოსის კუნძულები</territory>
 			<territory type="TD">ჩადი</territory>
@@ -1054,15 +1097,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">ბუდისტური კალენდარი</type>
 			<type key="calendar" type="chinese">ჩინური კალენდარი</type>
-			<type key="calendar" type="coptic" draft="unconfirmed">კოპტური კალენდარი</type>
+			<type key="calendar" type="coptic">კოპტური კალენდარი</type>
 			<type key="calendar" type="dangi">კალენდარი დანგი</type>
 			<type key="calendar" type="ethiopic">ეთიოპიური კალენდარი</type>
-			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">ეთიოპიური ამეთე ალემი კალენდარი</type>
+			<type key="calendar" type="ethiopic-amete-alem">ეთიოპიური ამეთე ალემი კალენდარი</type>
 			<type key="calendar" type="gregorian">გრიგორიანული კალენდარი</type>
 			<type key="calendar" type="hebrew">ებრაული კალენდარი</type>
 			<type key="calendar" type="indian">ინდოეთის ეროვნული კალენდარი</type>
 			<type key="calendar" type="islamic">ისლამური კალენდარი</type>
 			<type key="calendar" type="islamic-civil">ისლამური სამოქალაქო კალენდარი</type>
+			<type key="calendar" type="islamic-umalqura">ისლამური კალენდარი (უმ-ალ-ქურა)</type>
 			<type key="calendar" type="iso8601">ISO-8601 კალენდარი</type>
 			<type key="calendar" type="japanese">იაპონური კალენდარი</type>
 			<type key="calendar" type="persian">სპარსული კალენდარი</type>
@@ -1099,6 +1143,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armnlow">სომხური ქვედა რეგისტრის რიცხვები</type>
 			<type key="numbers" type="bali" draft="unconfirmed">ბალიური ციფრები</type>
 			<type key="numbers" type="beng">ბენგალური ციფრები</type>
+			<type key="numbers" type="cakm">ჩაკმა ციფრები</type>
 			<type key="numbers" type="cham" draft="unconfirmed">ჩამური ციფრები</type>
 			<type key="numbers" type="deva">დევანაგარის ციფრები</type>
 			<type key="numbers" type="ethi">ეთიოპიური რიცხვები</type>
@@ -1114,7 +1159,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">ტრადიციული ჩინური რიცხვები</type>
 			<type key="numbers" type="hantfin">ტრადიციული ჩინური ფინანსური რიცხვები</type>
 			<type key="numbers" type="hebr">ებრაული რიცხვები</type>
-			<type key="numbers" type="java" draft="unconfirmed">იავური ციფრები</type>
+			<type key="numbers" type="java">იავური ციფრები</type>
 			<type key="numbers" type="jpan">იაპონური რიცხვები</type>
 			<type key="numbers" type="jpanfin">იაპონური ფინანსური რიცხვები</type>
 			<type key="numbers" type="kali" draft="unconfirmed">კაიაჰ-ლისი ციფრები</type>
@@ -1128,11 +1173,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="limb">ლიმბური ციფრები</type>
 			<type key="numbers" type="mlym">მალაიალამური ციფრები</type>
 			<type key="numbers" type="mong">მონღოლური ციფრები</type>
-			<type key="numbers" type="mtei" draft="unconfirmed">მანიპური ციფრები</type>
+			<type key="numbers" type="mtei">მანიპური ციფრები</type>
 			<type key="numbers" type="mymr">მიანმური ციფრები</type>
 			<type key="numbers" type="mymrshan" draft="unconfirmed">მიანმური შანი ციფრები</type>
 			<type key="numbers" type="nkoo" draft="unconfirmed">ნკოური ციფრები</type>
-			<type key="numbers" type="olck" draft="unconfirmed">ოლ-ჩიკის ციფრები</type>
+			<type key="numbers" type="olck">ოლ-ჩიკის ციფრები</type>
 			<type key="numbers" type="orya">ორიული ციფრები</type>
 			<type key="numbers" type="roman">რომაული ციფრები</type>
 			<type key="numbers" type="romanlow">რომაული ქვედა რეგისტრის რიცხვები</type>
@@ -1144,7 +1189,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="telu">ტელუგუს ციფრები</type>
 			<type key="numbers" type="thai">ტაილანდური ციფრები</type>
 			<type key="numbers" type="tibt">ტიბეტური ციფრები</type>
-			<type key="numbers" type="vaii" draft="unconfirmed">ვაიური ციფრები</type>
+			<type key="numbers" type="vaii">ვაიური ციფრები</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">მეტრული</measurementSystemName>
@@ -1732,6 +1777,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -3485,6 +3533,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ენდერბური</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>კანტონი</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>კირიტიმატი</exemplarCity>
 			</zone>
@@ -5133,9 +5184,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -6828,6 +6881,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} წელი</unitPattern>
 				<perUnitPattern>{0} წელში</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>კვარტალი</displayName>
+				<unitPattern count="one">{0} კვარტალი</unitPattern>
+				<unitPattern count="other">{0} კვარტალი</unitPattern>
+				<perUnitPattern>{0}/კვარტალში</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>თვე</displayName>
 				<unitPattern count="one">{0} თვე</unitPattern>
@@ -7144,7 +7203,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} მზის სხივიერობა</unitPattern>
 				<unitPattern count="other">{0} მზის სხივიერობა</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>მეტრული ტონა</displayName>
 				<unitPattern count="one">{0} მეტრული ტონა</unitPattern>
 				<unitPattern count="other">{0} მეტრული ტონა</unitPattern>
@@ -7850,6 +7909,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} წ</unitPattern>
 				<perUnitPattern>{0}/წ</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>კვარტ</displayName>
+				<unitPattern count="one">{0} კვარტ</unitPattern>
+				<unitPattern count="other">{0} კვარტ</unitPattern>
+				<perUnitPattern>{0}/კვარტ</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>თვე</displayName>
 				<unitPattern count="one">{0} თვე</unitPattern>
@@ -8166,7 +8231,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ☉ სხივიერობა</unitPattern>
 				<unitPattern count="other">{0} ☉ სხივიერობა</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>მტ</displayName>
 				<unitPattern count="one">{0} მტ</unitPattern>
 				<unitPattern count="other">{0} მტ</unitPattern>
@@ -8705,10 +8770,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} წ</unitPattern>
 				<unitPattern count="other">{0} წ</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>კვარტ</displayName>
+				<unitPattern count="one">{0} კვარტ</unitPattern>
+				<unitPattern count="other">{0} კვარტ</unitPattern>
+				<perUnitPattern>{0}/კვარტ</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>თვე</displayName>
 				<unitPattern count="one">{0} თვე</unitPattern>
 				<unitPattern count="other">{0} თვე</unitPattern>
+				<perUnitPattern>{0}/თ.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>კვრ</displayName>
@@ -9098,4 +9170,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">ტაბულარული ციფრები</featureName>
 		<featureName type="zero">გადახაზული ნული</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und ka</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

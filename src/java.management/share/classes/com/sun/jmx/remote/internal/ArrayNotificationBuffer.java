@@ -116,8 +116,8 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private static final Object globalLock = new Object();
     private static final
         HashMap<MBeanServer,ArrayNotificationBuffer> mbsToBuffer =
-        new HashMap<MBeanServer,ArrayNotificationBuffer>(1);
-    private final Collection<ShareBuffer> sharers = new HashSet<ShareBuffer>(1);
+        new HashMap<>(1);
+    private final Collection<ShareBuffer> sharers = new HashSet<>(1);
 
     public static NotificationBuffer getNotificationBuffer(
             MBeanServer mbs, Map<String, ?> env) {
@@ -251,7 +251,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
         this.mBeanServer = mbs;
         this.queueSize = queueSize;
-        this.queue = new ArrayQueue<NamedNotification>(queueSize);
+        this.queue = new ArrayQueue<>(queueSize);
         this.earliestSequenceNumber = System.currentTimeMillis();
         this.nextSequenceNumber = this.earliestSequenceNumber;
 
@@ -353,8 +353,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
            to the earliest notification we examined.  */
         long earliestSeq = -1;
         long nextSeq = startSequenceNumber;
-        List<TargetedNotification> notifs =
-            new ArrayList<TargetedNotification>();
+        List<TargetedNotification> notifs = new ArrayList<>();
 
         /* On exit from this loop, notifs, earliestSeq, and nextSeq must
            all be correct values for the returned NotificationResult.  */
@@ -459,8 +458,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                potentially slow filters.  */
             ObjectName name = candidate.getObjectName();
             Notification notif = candidate.getNotification();
-            List<TargetedNotification> matchedNotifs =
-                new ArrayList<TargetedNotification>();
+            List<TargetedNotification> matchedNotifs = new ArrayList<>();
             logger.debug("fetchNotifications",
                          "applying filter to candidate");
             filter.apply(matchedNotifs, name, notif);
@@ -601,7 +599,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         logger.debug("createListeners", "starts");
 
         synchronized (this) {
-            createdDuringQuery = new HashSet<ObjectName>();
+            createdDuringQuery = new HashSet<>();
         }
 
         try {
@@ -618,7 +616,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         /* Spec doesn't say whether Set returned by QueryNames can be modified
            so we clone it. */
         Set<ObjectName> names = queryNames(null, broadcasterQuery);
-        names = new HashSet<ObjectName>(names);
+        names = new HashSet<>(names);
 
         synchronized (this) {
             names.addAll(createdDuringQuery);
@@ -696,7 +694,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private Set<ObjectName> queryNames(final ObjectName name,
                                        final QueryExp query) {
         PrivilegedAction<Set<ObjectName>> act =
-            new PrivilegedAction<Set<ObjectName>>() {
+            new PrivilegedAction<>() {
                 public Set<ObjectName> run() {
                     return mBeanServer.queryNames(name, query);
                 }
@@ -715,7 +713,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                                         final ObjectName name,
                                         final String className) {
         PrivilegedExceptionAction<Boolean> act =
-            new PrivilegedExceptionAction<Boolean>() {
+            new PrivilegedExceptionAction<>() {
                 public Boolean run() throws InstanceNotFoundException {
                     return mbs.isInstanceOf(name, className);
                 }

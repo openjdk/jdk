@@ -46,12 +46,6 @@ StubCodeDesc* StubCodeDesc::desc_for(address pc) {
   return p;
 }
 
-const char* StubCodeDesc::name_for(address pc) {
-  StubCodeDesc* p = desc_for(pc);
-  return p == NULL ? NULL : p->name();
-}
-
-
 void StubCodeDesc::freeze() {
   assert(!_frozen, "repeated freeze operation");
   _frozen = true;
@@ -76,7 +70,7 @@ StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
 StubCodeGenerator::~StubCodeGenerator() {
 #ifndef PRODUCT
   CodeBuffer* cbuf = _masm->code();
-  CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
+  CodeBlob*   blob = CodeCache::find_blob(cbuf->insts()->start());
   if (blob != NULL) {
     blob->use_remarks(cbuf->asm_remarks());
     blob->use_strings(cbuf->dbg_strings());

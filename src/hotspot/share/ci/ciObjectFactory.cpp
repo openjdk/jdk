@@ -36,6 +36,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciTypeArray.hpp"
@@ -166,6 +167,7 @@ void ciObjectFactory::init_shared_objects() {
       assert (obj->is_metadata(), "what else would it be?");
       if (obj->is_loaded() && obj->is_instance_klass()) {
         obj->as_instance_klass()->compute_nonstatic_fields();
+        obj->as_instance_klass()->transitive_interfaces();
       }
     }
   }
@@ -284,6 +286,14 @@ ciMetadata* ciObjectFactory::cached_metadata(Metadata* key) {
 // is created.
 ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   ASSERT_IN_VM;
+
+  if (ReplayCompiles && key->is_klass()) {
+    Klass* k = (Klass*)key;
+    if (k->is_instance_klass() && ciReplay::is_klass_unresolved((InstanceKlass*)k)) {
+      // Klass was unresolved at replay dump time. Simulate this case.
+      return ciEnv::_unloaded_ciinstance_klass;
+    }
+  }
 
 #ifdef ASSERT
   if (CIObjectFactoryVerify) {

@@ -201,7 +201,7 @@ class APITest {
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "script-dir/jquery-3.6.0.min.js",
+            "script-dir/jquery-3.6.1.min.js",
             "script-dir/jquery-ui.min.js",
             "script-dir/jquery-ui.min.css",
             "search.html",
@@ -218,7 +218,6 @@ class APITest {
             "resources/x.png",
             "script.js",
             "search.js",
-            "jquery-ui.overrides.css",
             "stylesheet.css",
             "tag-search-index.js",
             "type-search-index.js"
@@ -232,7 +231,6 @@ class APITest {
                          && !s.equals("search.js")
                          && !s.equals("search.html")
                          && !s.equals("search-page.js")
-                         && !s.equals("jquery-ui.overrides.css")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")
                          && !s.equals("system-properties.html"))

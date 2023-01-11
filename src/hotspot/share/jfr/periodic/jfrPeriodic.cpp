@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
@@ -47,6 +46,7 @@
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
@@ -59,11 +59,11 @@
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
+#include "services/memJfrReporter.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -73,12 +73,25 @@
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
+
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in
  *  xsl generated traceRequestables.hpp
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
+
+// Timestamp to correlate events in the same batch/generation
+Ticks JfrPeriodicEventSet::_timestamp;
+PeriodicType JfrPeriodicEventSet::_type;
+
+Ticks JfrPeriodicEventSet::timestamp(void) {
+  return _timestamp;
+}
+
+PeriodicType JfrPeriodicEventSet::type(void) {
+  return _type;
+}
 
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
@@ -138,6 +151,7 @@ static int _native_library_callback(const char* name, address base, address top,
   event.set_name(name);
   event.set_baseAddress((u8)base);
   event.set_topAddress((u8)top);
+  event.set_starttime(*(JfrTicks*)param);
   event.set_endtime(*(JfrTicks*) param);
   event.commit();
   return 0;
@@ -412,6 +426,7 @@ TRACE_REQUEST_FUNC(InitialSystemProperty) {
       EventInitialSystemProperty event(UNTIMED);
       event.set_key(p->key());
       event.set_value(p->value());
+      event.set_starttime(time_stamp);
       event.set_endtime(time_stamp);
       event.commit();
     }
@@ -438,6 +453,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
     EventThreadAllocationStatistics event(UNTIMED);
     event.set_allocated(allocated.at(i));
     event.set_thread(thread_ids.at(i));
+    event.set_starttime(time_stamp);
     event.set_endtime(time_stamp);
     event.commit();
   }
@@ -552,21 +568,6 @@ TRACE_REQUEST_FUNC(StringTableStatistics) {
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 
-TRACE_REQUEST_FUNC(PlaceholderTableStatistics) {
-  TableStatistics statistics = SystemDictionary::placeholders_statistics();
-  emit_table_statistics<EventPlaceholderTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(LoaderConstraintsTableStatistics) {
-  TableStatistics statistics = SystemDictionary::loader_constraints_statistics();
-  emit_table_statistics<EventLoaderConstraintsTableStatistics>(statistics);
-}
-
-TRACE_REQUEST_FUNC(ProtectionDomainCacheTableStatistics) {
-  TableStatistics statistics = SystemDictionary::protection_domain_cache_statistics();
-  emit_table_statistics<EventProtectionDomainCacheTableStatistics>(statistics);
-}
-
 TRACE_REQUEST_FUNC(CompilerStatistics) {
   EventCompilerStatistics event;
   event.set_compileCount(CompileBroker::get_total_compile_count());
@@ -587,12 +588,14 @@ TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
   event.set_threadCount(CICompilerCount);
   event.set_tieredCompilation(TieredCompilation);
+  event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();
 }
 
 TRACE_REQUEST_FUNC(CodeCacheStatistics) {
   // Emit stats for all available code heaps
-  for (int bt = 0; bt < CodeBlobType::NumTypes; ++bt) {
+  for (int bt_index = 0; bt_index < static_cast<int>(CodeBlobType::NumTypes); ++bt_index) {
+    const CodeBlobType bt = static_cast<CodeBlobType>(bt_index);
     if (CodeCache::heap_available(bt)) {
       EventCodeCacheStatistics event;
       event.set_codeBlobType((u1)bt);
@@ -622,24 +625,6 @@ TRACE_REQUEST_FUNC(CodeCacheConfiguration) {
   event.commit();
 }
 
-TRACE_REQUEST_FUNC(CodeSweeperStatistics) {
-  EventCodeSweeperStatistics event;
-  event.set_sweepCount(NMethodSweeper::traversal_count());
-  event.set_methodReclaimedCount(NMethodSweeper::total_nof_methods_reclaimed());
-  event.set_totalSweepTime(NMethodSweeper::total_time_sweeping());
-  event.set_peakFractionTime(NMethodSweeper::peak_sweep_fraction_time());
-  event.set_peakSweepTime(NMethodSweeper::peak_sweep_time());
-  event.commit();
-}
-
-TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
-  EventCodeSweeperConfiguration event;
-  event.set_sweeperEnabled(MethodFlushing);
-  event.set_flushingEnabled(UseCodeCacheFlushing);
-  event.set_sweepThreshold(NMethodSweeper::sweep_threshold_bytes());
-  event.commit();
-}
-
 TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
@@ -655,4 +640,12 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 #else
   log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsage) {
+  MemJFRReporter::send_type_events();
+}
+
+TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
+  MemJFRReporter::send_total_event();
 }

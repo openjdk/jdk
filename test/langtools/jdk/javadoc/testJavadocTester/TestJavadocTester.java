@@ -59,11 +59,11 @@ import toolbox.ToolBox;
  */
 public class TestJavadocTester extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestJavadocTester tester = new TestJavadocTester();
+        var tester = new TestJavadocTester();
         tester.setup().runTests();
     }
 
-    private final List<String> messages = new ArrayList<>();
+    protected final List<String> messages = new ArrayList<>();
     private int testErrors = 0;
 
     /**
@@ -158,7 +158,7 @@ public class TestJavadocTester extends JavadocTester {
 
     //-------------------------------------------------
 
-    private final ToolBox tb = new ToolBox();
+    protected final ToolBox tb = new ToolBox();
 
     TestJavadocTester setup() throws IOException {
         Path src = Path.of("src");

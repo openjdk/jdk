@@ -43,32 +43,16 @@ static void handleError(JNIEnv *env, jint rv, const char *errmsg) {
     }
 }
 
-static int socketFamily(jint fd) {
-    WSAPROTOCOL_INFO info;
-    socklen_t sa_len = sizeof(info);
-
-    if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL_INFO, (char *)&info, &sa_len) == 0) {
-        return info.iAddressFamily;
-    }
-    return -1;
-}
-
 /*
  * Class:     jdk_net_WindowsSocketOptions
  * Method:    setIpDontFragment0
- * Signature: (IZ)V
+ * Signature: (IZZ)V
  */
 JNIEXPORT void JNICALL Java_jdk_net_WindowsSocketOptions_setIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd, jboolean optval) {
+(JNIEnv *env, jobject unused, jint fd, jboolean optval, jboolean isIPv6) {
     int rv, opt;
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return;
-    }
 
-
-    if (family == AF_INET) {
+    if (!isIPv6) {
         opt = optval ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
         rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, (char *)&opt, sizeof(int));
         if (rv == SOCKET_ERROR && WSAGetLastError() == WSAENOPROTOOPT) {
@@ -81,7 +65,7 @@ JNIEXPORT void JNICALL Java_jdk_net_WindowsSocketOptions_setIpDontFragment0
         if (rv == SOCKET_ERROR && WSAGetLastError() == WSAENOPROTOOPT) {
             /* IPV6_MTU_DISCOVER not supported on W 2016 and older, can use old option */
             opt = optval;
-            rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAGMENT, (char *)&opt, sizeof(int));
+            rv = setsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, (char *)&opt, sizeof(int));
         }
     }
     handleError(env, rv, "set option IP_DONTFRAGMENT failed");
@@ -90,18 +74,13 @@ JNIEXPORT void JNICALL Java_jdk_net_WindowsSocketOptions_setIpDontFragment0
 /*
  * Class:     jdk_net_WindowsSocketOptions
  * Method:    getIpDontFragment0
- * Signature: (I)Z;
+ * Signature: (IZ)Z;
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd) {
+(JNIEnv *env, jobject unused, jint fd, jboolean isIPv6) {
     int optval, rv, sz = sizeof(optval);
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return JNI_FALSE;
-    }
 
-    if (family == AF_INET) {
+    if (!isIPv6) {
         rv = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, (char *)&optval, &sz);
         if (rv == SOCKET_ERROR && WSAGetLastError() == WSAENOPROTOOPT) {
             sz = sizeof(optval);
@@ -115,7 +94,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
         rv = getsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, (char *)&optval, &sz);
         if (rv == SOCKET_ERROR && WSAGetLastError() == WSAENOPROTOOPT) {
             sz = sizeof(optval);
-            rv = getsockopt(fd, IPPROTO_IP, IP_DONTFRAGMENT, (char *)&optval, &sz);
+            rv = getsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, (char *)&optval, &sz);
             handleError(env, rv, "get option IP_DONTFRAGMENT failed");
             return optval;
         }

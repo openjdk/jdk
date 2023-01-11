@@ -120,7 +120,7 @@ public class CheckStylesheetClasses {
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
-        removeAll(htmlStyleNames, "col-plain", "external-link",
+        removeAll(htmlStyleNames, "col-plain", "external-link", "header",
                 "hierarchy", "index", "package-uses", "packages", "permits-note",
                 "serialized-package-container", "source-container");
 
@@ -137,11 +137,12 @@ public class CheckStylesheetClasses {
         // used in search.js and search-page.js; may be worth documenting in HtmlStyle
         removeAll(styleSheetNames, "result-highlight", "result-item", "copy-header",
                 "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
-                "ui-autocomplete", "ui-autocomplete-category", "expanded",
+                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "expanded",
                 "search-result-link", "two-column-search-results", "ui-static-link");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
+        styleSheetNames.remove("sealed-graph");
 
         boolean ok = check(htmlStyleNames, "HtmlStyle", styleSheetNames, "stylesheet")
                     & check(styleSheetNames, "stylesheet", htmlStyleNames, "HtmlStyle");

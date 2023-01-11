@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ public class TestModulePackages extends JavadocTester {
     enum ColKind { EXPORTED_TO, OPENED_TO };
 
     public static void main(String... args) throws Exception {
-        TestModulePackages tester = new TestModulePackages();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestModulePackages();
+        tester.runTests();
     }
 
     private final ToolBox tb;
@@ -57,7 +57,7 @@ public class TestModulePackages extends JavadocTester {
         tb = new ToolBox();
     }
 
-    // @Test: See: https://bugs.openjdk.java.net/browse/JDK-8193107
+    // @Test: See: https://bugs.openjdk.org/browse/JDK-8193107
     public void empty(Path base) throws Exception {
         Path src = base.resolve("src");
         new ModuleBuilder(tb, "m")

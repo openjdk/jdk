@@ -36,8 +36,8 @@ struct AllBitmask<LogDecorators::Count> {
   static const uint _value = 0;
 };
 
-const LogDecorators LogDecorators::None = LogDecorators(0);
-const LogDecorators LogDecorators::All  = LogDecorators(AllBitmask<time_decorator>::_value);
+const LogDecorators LogDecorators::None = {0};
+const LogDecorators LogDecorators::All = {AllBitmask<time_decorator>::_value};
 
 const char* LogDecorators::_name[][2] = {
 #define DECORATOR(n, a) {#n, #a},

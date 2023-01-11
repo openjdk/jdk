@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -301,7 +301,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     }
     Register R19_member = R19_method;  // MemberName ptr; incoming method ptr is dead now
     __ ld(R19_member, RegisterOrConstant((intptr_t)8), R15_argbase);
-    __ add(R15_argbase, Interpreter::stackElementSize, R15_argbase);
+    __ addi(R15_argbase, R15_argbase, Interpreter::stackElementSize);
     generate_method_handle_dispatch(_masm, iid, tmp_recv, R19_member, not_for_compiler_entry);
   }
 

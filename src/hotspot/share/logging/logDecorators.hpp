@@ -77,7 +77,7 @@ class LogDecorators {
     return 1 << decorator;
   }
 
-  LogDecorators(uint mask) : _decorators(mask) {
+  constexpr LogDecorators(uint mask) : _decorators(mask) {
   }
 
  public:

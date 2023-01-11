@@ -24,6 +24,7 @@ package org.openjdk.bench.java.util.regex;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -39,6 +40,9 @@ import java.util.regex.PatternSyntaxException;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(2)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class PatternBench {
 
@@ -71,36 +75,26 @@ public class PatternBench {
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public long longStringGraphemeMatches() {
         return graphemePattern.matcher(flagsString.repeat(3)).results().count();
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public int splitFlags() {
         return graphemeBoundaryPattern.split(flagsString).length;
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public boolean canonicalJmodMatch() {
         return jmodCanonicalPattern.matcher(fileTestString).matches();
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public boolean normalJmodMatch() {
         return jmodPattern.matcher(fileTestString).matches();
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public boolean charPatternMatch() {
         return charPattern.matcher(charPatternStrings[0]).matches()
                 && charPattern.matcher(charPatternStrings[1]).matches()
@@ -108,8 +102,6 @@ public class PatternBench {
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public boolean charPatternMatchWithCompile() {
         Pattern p = Pattern.compile(charPatternRegex);
         return p.matcher(charPatternStrings[0]).matches()
@@ -118,8 +110,6 @@ public class PatternBench {
     }
 
     @Benchmark
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 3)
     public Pattern charPatternCompile() {
         return Pattern.compile(charPatternRegex);
     }

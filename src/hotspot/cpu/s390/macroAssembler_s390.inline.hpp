@@ -75,7 +75,7 @@ inline void MacroAssembler::load_address(Register d, const Address &a) {
   } else if (Displacement::is_validDisp(a.disp())) {
     z_lay(d, a.disp(), a.indexOrR0(), a.baseOrR0());
   } else {
-    guarantee(false, "displacement = " SIZE_FORMAT_HEX ", out of range for LA/LAY", a.disp());
+    guarantee(false, "displacement = " SIZE_FORMAT_X ", out of range for LA/LAY", a.disp());
   }
 }
 

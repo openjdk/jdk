@@ -77,7 +77,6 @@ public class PropertyExpander {
             if (p > i) {
                 // copy in anything before the special stuff
                 sb.append(value.substring(i, p));
-                i = p;
             }
             int pe = p+2;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,7 +304,8 @@ public abstract class FileSystem
      * <blockquote><pre>
      * <i>syntax</i><b>:</b><i>pattern</i>
      * </pre></blockquote>
-     * where {@code ':'} stands for itself.
+     * where <i>syntax</i> is the non-empty name of the syntax, <i>pattern</i>
+     * is a possibly-empty pattern string, and {@code ':'} stands for itself.
      *
      * <p> A {@code FileSystem} implementation supports the "{@code glob}" and
      * "{@code regex}" syntaxes, and may support others. The value of the syntax

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,14 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
                     in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()),
                     flag_type);
   // Read the marking-in-progress flag.
+  // Note: When loading pre_val requires patching, i.e. do_load == true &&
+  // patch == true, a safepoint can occur while patching. This makes the
+  // pre-barrier non-atomic and invalidates the marking-in-progress check.
+  // Therefore, in the presence of patching, we must repeat the same
+  // marking-in-progress checking before calling into the Runtime. For
+  // simplicity, we do this check unconditionally (regardless of the presence
+  // of patching) in the runtime stub
+  // (G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub).
   LIR_Opr flag_val = gen->new_register(T_INT);
   __ load(mark_active_flag_addr, flag_val);
   __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
@@ -145,7 +153,7 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
 
   LIR_Opr xor_res = gen->new_pointer_register();
   LIR_Opr xor_shift_res = gen->new_pointer_register();
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ move(addr, xor_res);
     __ logical_xor(xor_res, new_val, xor_res);
     __ move(xor_res, xor_shift_res);

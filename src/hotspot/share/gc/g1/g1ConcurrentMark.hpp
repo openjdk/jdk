@@ -285,6 +285,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMKeepAliveAndDrainClosure;
   friend class G1CMRefProcProxyTask;
   friend class G1CMRemarkTask;
+  friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
   friend class G1ConcurrentMarkThread;
 
@@ -325,6 +326,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // exit it, they are free to start working again.
   WorkerThreadsBarrierSync     _first_overflow_barrier_sync;
   WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
+
+  // Number of completed mark cycles.
+  volatile uint           _completed_mark_cycles;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
@@ -497,12 +501,10 @@ public:
   size_t partial_mark_stack_size_target() const { return _global_mark_stack.capacity() / 3; }
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
-  G1CMRootMemRegions* root_regions() { return &_root_regions; }
-
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
   bool concurrent_cycle_abort();
-  void concurrent_cycle_end();
+  void concurrent_cycle_end(bool mark_cycle_completed);
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
   // guarantee or update any state after the call. Root region scan must not be
@@ -557,9 +559,16 @@ public:
   // Scan all the root regions and mark everything reachable from
   // them.
   void scan_root_regions();
+  bool wait_until_root_region_scan_finished();
+  void add_root_region(HeapRegion* r);
+
+private:
+  G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
   // Scan a single root MemRegion to mark everything reachable from it.
   void scan_root_region(const MemRegion* region, uint worker_id);
+
+public:
 
   // Do concurrent phase of marking, to a tentative transitive closure.
   void mark_from_roots();
@@ -573,10 +582,10 @@ public:
 
   // Mark in the marking bitmap. Used during evacuation failure to
   // remember what objects need handling. Not for use during marking.
-  inline void raw_mark_in_bitmap(oop p);
+  inline void raw_mark_in_bitmap(oop obj);
 
   // Clears marks for all objects in the given region in the marking
-  // bitmap. This should only be used clean the bitmap during a
+  // bitmap. This should only be used to clean the bitmap during a
   // safepoint.
   void clear_bitmap_for_region(HeapRegion* hr);
 
@@ -586,6 +595,8 @@ public:
   void verify_no_collection_set_oops() PRODUCT_RETURN;
 
   inline bool do_yield_check();
+
+  uint completed_mark_cycles() const;
 
   bool has_aborted()      { return _has_aborted; }
 
@@ -602,13 +613,14 @@ public:
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
 
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
+
 private:
   // Rebuilds the remembered sets for chosen regions in parallel and concurrently
   // to the application. Also scrubs dead objects to ensure region is parsable.
   void rebuild_and_scrub();
 
   uint needs_remembered_set_rebuild() const { return _needs_remembered_set_rebuild; }
-
 };
 
 // A class representing a marking task.

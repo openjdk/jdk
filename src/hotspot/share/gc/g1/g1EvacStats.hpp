@@ -26,10 +26,16 @@
 #define SHARE_GC_G1_G1EVACSTATS_HPP
 
 #include "gc/shared/plab.hpp"
+#include "gc/shared/gcUtil.hpp"
 
-// Records various memory allocation statistics gathered during evacuation.
+// Records various memory allocation statistics gathered during evacuation. All sizes
+// are in HeapWords.
 class G1EvacStats : public PLABStats {
- private:
+  size_t _default_plab_size;
+  size_t _desired_net_plab_size; // Output of filter (below), suitably trimmed and quantized
+  AdaptiveWeightedAverage
+         _net_plab_size_filter;  // Integrator with decay
+
   size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
   uint   _regions_filled;   // Number of regions filled completely.
   size_t _num_plab_filled; // Number of PLABs filled and retired.
@@ -55,14 +61,21 @@ class G1EvacStats : public PLABStats {
     _failure_waste = 0;
   }
 
-  virtual void log_plab_allocation();
+  void log_plab_allocation();
+  void log_sizing(size_t calculated_words, size_t net_desired_words);
 
-  virtual size_t compute_desired_plab_sz();
+  size_t compute_desired_plab_size() const;
 
- public:
+public:
   G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt);
 
-  ~G1EvacStats();
+  // Calculates plab size for current number of gc worker threads.
+  size_t desired_plab_size(uint no_of_gc_workers) const;
+
+  // Computes the new desired PLAB size assuming one gc worker thread, updating
+  // _desired_plab_sz, and clearing statistics for the next GC.
+  // Should be called at the end of a GC pause.
+  void adjust_desired_plab_size();
 
   uint regions_filled() const { return _regions_filled; }
   size_t num_plab_filled() const { return _num_plab_filled; }

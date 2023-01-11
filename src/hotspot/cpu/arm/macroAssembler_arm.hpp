@@ -587,8 +587,22 @@ public:
     AbstractAssembler::emit_address((address)L.data());
   }
 
+  void ldr_label(Register rd, Label& L) {
+    ldr(rd, Address(PC, target(L) - pc() - 8));
+  }
+
   void resolve_oop_handle(Register result);
   void load_mirror(Register mirror, Register method, Register tmp);
+
+  void enter() {
+    raw_push(FP, LR);
+    mov(FP, SP);
+  }
+
+  void leave() {
+    mov(SP, FP);
+    raw_pop(FP, LR);
+  }
 
 #define ARM_INSTR_1(common_mnemonic, arm32_mnemonic, arg_type) \
   void common_mnemonic(arg_type arg) { \

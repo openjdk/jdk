@@ -32,62 +32,87 @@
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
 
-// Use Register as shortcut
-class RegisterImpl;
-typedef const RegisterImpl* Register;
+class Register {
+ private:
+  int _encoding;
 
-inline constexpr Register as_Register(int encoding);
+  constexpr explicit Register(int encoding) : _encoding(encoding) {}
 
-class RegisterImpl: public AbstractRegisterImpl {
-  static constexpr Register first();
-
-public:
+ public:
   enum {
-    number_of_registers         =   32,
-    number_of_declared_registers  = 34,  // Including SP and ZR.
-    max_slots_per_register = 2
+    number_of_registers          = 32,
+    number_of_declared_registers = 34,  // Including SP and ZR.
+    max_slots_per_register       =  2
   };
 
-  // derived registers, offsets, and addresses
-  const Register successor() const { return this + 1; }
+  class RegisterImpl: public AbstractRegisterImpl {
+    friend class Register;
 
-  // construction
+    static constexpr const RegisterImpl* first();
+
+   public:
+    // accessors
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+
+    // derived registers, offsets, and addresses
+    inline Register successor() const;
+
+    VMReg as_VMReg() const;
+
+    const char* name() const;
+  };
+
   inline friend constexpr Register as_Register(int encoding);
 
-  VMReg as_VMReg() const;
+  constexpr Register() : _encoding(-1) {} // noreg
 
-  // accessors
-  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  bool is_valid() const            { return (unsigned)encoding_nocheck() < number_of_registers; }
-  const char* name() const;
-  int encoding_nocheck() const     { return this - first(); }
+  int operator==(const Register r) const { return _encoding == r._encoding; }
+  int operator!=(const Register r) const { return _encoding != r._encoding; }
+
+  constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
 };
 
+extern Register::RegisterImpl all_RegisterImpls[Register::number_of_declared_registers + 1] INTERNAL_VISIBILITY;
 
-REGISTER_IMPL_DECLARATION(Register, RegisterImpl, RegisterImpl::number_of_declared_registers);
+inline constexpr const Register::RegisterImpl* Register::RegisterImpl::first() {
+  return all_RegisterImpls + 1;
+}
 
-// The integer registers of the aarch64 architecture
+constexpr Register noreg = Register();
 
-CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
+inline constexpr Register as_Register(int encoding) {
+  if (0 <= encoding && encoding < Register::number_of_declared_registers) {
+    return Register(encoding);
+  }
+  return noreg;
+}
 
-CONSTANT_REGISTER_DECLARATION(Register, r0,    (0));
-CONSTANT_REGISTER_DECLARATION(Register, r1,    (1));
-CONSTANT_REGISTER_DECLARATION(Register, r2,    (2));
-CONSTANT_REGISTER_DECLARATION(Register, r3,    (3));
-CONSTANT_REGISTER_DECLARATION(Register, r4,    (4));
-CONSTANT_REGISTER_DECLARATION(Register, r5,    (5));
-CONSTANT_REGISTER_DECLARATION(Register, r6,    (6));
-CONSTANT_REGISTER_DECLARATION(Register, r7,    (7));
-CONSTANT_REGISTER_DECLARATION(Register, r8,    (8));
-CONSTANT_REGISTER_DECLARATION(Register, r9,    (9));
-CONSTANT_REGISTER_DECLARATION(Register, r10,  (10));
-CONSTANT_REGISTER_DECLARATION(Register, r11,  (11));
-CONSTANT_REGISTER_DECLARATION(Register, r12,  (12));
-CONSTANT_REGISTER_DECLARATION(Register, r13,  (13));
-CONSTANT_REGISTER_DECLARATION(Register, r14,  (14));
-CONSTANT_REGISTER_DECLARATION(Register, r15,  (15));
-CONSTANT_REGISTER_DECLARATION(Register, r16,  (16));
-CONSTANT_REGISTER_DECLARATION(Register, r17,  (17));
+inline Register Register::RegisterImpl::successor() const {
+  assert(is_valid(), "sanity");
+  return as_Register(encoding() + 1);
+}
+
+// The integer registers of the AArch64 architecture
+constexpr Register r0  = as_Register( 0);
+constexpr Register r1  = as_Register( 1);
+constexpr Register r2  = as_Register( 2);
+constexpr Register r3  = as_Register( 3);
+constexpr Register r4  = as_Register( 4);
+constexpr Register r5  = as_Register( 5);
+constexpr Register r6  = as_Register( 6);
+constexpr Register r7  = as_Register( 7);
+constexpr Register r8  = as_Register( 8);
+constexpr Register r9  = as_Register( 9);
+constexpr Register r10 = as_Register(10);
+constexpr Register r11 = as_Register(11);
+constexpr Register r12 = as_Register(12);
+constexpr Register r13 = as_Register(13);
+constexpr Register r14 = as_Register(14);
+constexpr Register r15 = as_Register(15);
+constexpr Register r16 = as_Register(16);
+constexpr Register r17 = as_Register(17);
 
 // In the ABI for Windows+AArch64 the register r18 is used to store the pointer
 // to the current thread's TEB (where TLS variables are stored). We could
@@ -99,222 +124,262 @@ CONSTANT_REGISTER_DECLARATION(Register, r17,  (17));
 // It's easier to avoid allocating r18 altogether.
 //
 // See https://docs.microsoft.com/en-us/cpp/build/arm64-windows-abi-conventions?view=vs-2019#integer-registers
-CONSTANT_REGISTER_DECLARATION(Register, r18_tls,  (18));
-CONSTANT_REGISTER_DECLARATION(Register, r19,  (19));
-CONSTANT_REGISTER_DECLARATION(Register, r20,  (20));
-CONSTANT_REGISTER_DECLARATION(Register, r21,  (21));
-CONSTANT_REGISTER_DECLARATION(Register, r22,  (22));
-CONSTANT_REGISTER_DECLARATION(Register, r23,  (23));
-CONSTANT_REGISTER_DECLARATION(Register, r24,  (24));
-CONSTANT_REGISTER_DECLARATION(Register, r25,  (25));
-CONSTANT_REGISTER_DECLARATION(Register, r26,  (26));
-CONSTANT_REGISTER_DECLARATION(Register, r27,  (27));
-CONSTANT_REGISTER_DECLARATION(Register, r28,  (28));
-CONSTANT_REGISTER_DECLARATION(Register, r29,  (29));
-CONSTANT_REGISTER_DECLARATION(Register, r30,  (30));
+constexpr Register r18_tls = as_Register(18);
+constexpr Register r19     = as_Register(19);
+constexpr Register r20     = as_Register(20);
+constexpr Register r21     = as_Register(21);
+constexpr Register r22     = as_Register(22);
+constexpr Register r23     = as_Register(23);
+constexpr Register r24     = as_Register(24);
+constexpr Register r25     = as_Register(25);
+constexpr Register r26     = as_Register(26);
+constexpr Register r27     = as_Register(27);
+constexpr Register r28     = as_Register(28);
+constexpr Register r29     = as_Register(29);
+constexpr Register r30     = as_Register(30);
 
 
 // r31 is not a general purpose register, but represents either the
 // stack pointer or the zero/discard register depending on the
 // instruction.
-CONSTANT_REGISTER_DECLARATION(Register, r31_sp, (31));
-CONSTANT_REGISTER_DECLARATION(Register, zr,  (32));
-CONSTANT_REGISTER_DECLARATION(Register, sp,  (33));
+constexpr Register r31_sp = as_Register(31);
+constexpr Register zr     = as_Register(32);
+constexpr Register sp     = as_Register(33);
 
 // Used as a filler in instructions where a register field is unused.
-const Register dummy_reg = r31_sp;
+constexpr Register dummy_reg = r31_sp;
 
-// Use FloatRegister as shortcut
-class FloatRegisterImpl;
-typedef const FloatRegisterImpl* FloatRegister;
-
-inline constexpr FloatRegister as_FloatRegister(int encoding);
 
 // The implementation of floating point registers for the architecture
-class FloatRegisterImpl: public AbstractRegisterImpl {
-  static constexpr FloatRegister first();
+class FloatRegister {
+ private:
+  int _encoding;
 
-public:
+  constexpr explicit FloatRegister(int encoding) : _encoding(encoding) {}
+
+ public:
+  inline friend constexpr FloatRegister as_FloatRegister(int encoding);
+
   enum {
-    number_of_registers = 32,
-    max_slots_per_register = 8,
-    save_slots_per_register = 2,
-    slots_per_neon_register = 4,
+    number_of_registers     = 32,
+    max_slots_per_register  =  4,
+    save_slots_per_register =  2,
+    slots_per_neon_register =  4,
     extra_save_slots_per_neon_register = slots_per_neon_register - save_slots_per_register
   };
 
-  // construction
-  inline friend constexpr FloatRegister as_FloatRegister(int encoding);
+  class FloatRegisterImpl: public AbstractRegisterImpl {
+    friend class FloatRegister;
 
-  VMReg as_VMReg() const;
+    static constexpr const FloatRegisterImpl* first();
 
-  // derived registers, offsets, and addresses
-  FloatRegister successor() const {
-    return as_FloatRegister((encoding() + 1) % (unsigned)number_of_registers);
-  }
+   public:
+    // accessors
+    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
-  // accessors
-  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  bool is_valid() const            { return (unsigned)encoding_nocheck() < number_of_registers; }
-  const char* name() const;
-  int encoding_nocheck() const     { return this - first(); }
+    // derived registers, offsets, and addresses
+    inline FloatRegister successor() const;
+
+    VMReg as_VMReg() const;
+
+    const char* name() const;
+  };
+
+  constexpr FloatRegister() : _encoding(-1) {} // fnoreg
+
+  int operator==(const FloatRegister r) const { return _encoding == r._encoding; }
+  int operator!=(const FloatRegister r) const { return _encoding != r._encoding; }
+
+  constexpr const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
 };
 
-REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::number_of_registers);
+extern FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
 
+inline constexpr const FloatRegister::FloatRegisterImpl* FloatRegister::FloatRegisterImpl::first() {
+  return all_FloatRegisterImpls + 1;
+}
 
-// The float registers of the AARCH64 architecture
+constexpr FloatRegister fnoreg = FloatRegister();
 
-CONSTANT_REGISTER_DECLARATION(FloatRegister, fnoreg , (-1));
+inline constexpr FloatRegister as_FloatRegister(int encoding) {
+  if (0 <= encoding && encoding < FloatRegister::number_of_registers) {
+    return FloatRegister(encoding);
+  }
+  return fnoreg;
+}
 
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v0     , ( 0));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v1     , ( 1));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v2     , ( 2));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v3     , ( 3));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v4     , ( 4));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v5     , ( 5));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v6     , ( 6));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v7     , ( 7));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v8     , ( 8));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v9     , ( 9));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v10    , (10));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v11    , (11));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v12    , (12));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v13    , (13));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v14    , (14));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v15    , (15));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v16    , (16));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v17    , (17));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v18    , (18));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v19    , (19));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v20    , (20));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v21    , (21));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v22    , (22));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v23    , (23));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v24    , (24));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v25    , (25));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v26    , (26));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v27    , (27));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v28    , (28));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v29    , (29));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v30    , (30));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, v31    , (31));
+inline FloatRegister FloatRegister::FloatRegisterImpl::successor() const {
+  assert(is_valid(), "sanity");
+  return as_FloatRegister((encoding() + 1) % number_of_registers);
+}
+
+// The float registers of the AArch64 architecture
+constexpr FloatRegister v0  = as_FloatRegister( 0);
+constexpr FloatRegister v1  = as_FloatRegister( 1);
+constexpr FloatRegister v2  = as_FloatRegister( 2);
+constexpr FloatRegister v3  = as_FloatRegister( 3);
+constexpr FloatRegister v4  = as_FloatRegister( 4);
+constexpr FloatRegister v5  = as_FloatRegister( 5);
+constexpr FloatRegister v6  = as_FloatRegister( 6);
+constexpr FloatRegister v7  = as_FloatRegister( 7);
+constexpr FloatRegister v8  = as_FloatRegister( 8);
+constexpr FloatRegister v9  = as_FloatRegister( 9);
+constexpr FloatRegister v10 = as_FloatRegister(10);
+constexpr FloatRegister v11 = as_FloatRegister(11);
+constexpr FloatRegister v12 = as_FloatRegister(12);
+constexpr FloatRegister v13 = as_FloatRegister(13);
+constexpr FloatRegister v14 = as_FloatRegister(14);
+constexpr FloatRegister v15 = as_FloatRegister(15);
+constexpr FloatRegister v16 = as_FloatRegister(16);
+constexpr FloatRegister v17 = as_FloatRegister(17);
+constexpr FloatRegister v18 = as_FloatRegister(18);
+constexpr FloatRegister v19 = as_FloatRegister(19);
+constexpr FloatRegister v20 = as_FloatRegister(20);
+constexpr FloatRegister v21 = as_FloatRegister(21);
+constexpr FloatRegister v22 = as_FloatRegister(22);
+constexpr FloatRegister v23 = as_FloatRegister(23);
+constexpr FloatRegister v24 = as_FloatRegister(24);
+constexpr FloatRegister v25 = as_FloatRegister(25);
+constexpr FloatRegister v26 = as_FloatRegister(26);
+constexpr FloatRegister v27 = as_FloatRegister(27);
+constexpr FloatRegister v28 = as_FloatRegister(28);
+constexpr FloatRegister v29 = as_FloatRegister(29);
+constexpr FloatRegister v30 = as_FloatRegister(30);
+constexpr FloatRegister v31 = as_FloatRegister(31);
 
 // SVE vector registers, shared with the SIMD&FP v0-v31. Vn maps to Zn[127:0].
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z0     , ( 0));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z1     , ( 1));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z2     , ( 2));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z3     , ( 3));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z4     , ( 4));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z5     , ( 5));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z6     , ( 6));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z7     , ( 7));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z8     , ( 8));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z9     , ( 9));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z10    , (10));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z11    , (11));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z12    , (12));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z13    , (13));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z14    , (14));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z15    , (15));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z16    , (16));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z17    , (17));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z18    , (18));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z19    , (19));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z20    , (20));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z21    , (21));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z22    , (22));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z23    , (23));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z24    , (24));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z25    , (25));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z26    , (26));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z27    , (27));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z28    , (28));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z29    , (29));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z30    , (30));
-CONSTANT_REGISTER_DECLARATION(FloatRegister, z31    , (31));
+constexpr FloatRegister z0  = v0;
+constexpr FloatRegister z1  = v1;
+constexpr FloatRegister z2  = v2;
+constexpr FloatRegister z3  = v3;
+constexpr FloatRegister z4  = v4;
+constexpr FloatRegister z5  = v5;
+constexpr FloatRegister z6  = v6;
+constexpr FloatRegister z7  = v7;
+constexpr FloatRegister z8  = v8;
+constexpr FloatRegister z9  = v9;
+constexpr FloatRegister z10 = v10;
+constexpr FloatRegister z11 = v11;
+constexpr FloatRegister z12 = v12;
+constexpr FloatRegister z13 = v13;
+constexpr FloatRegister z14 = v14;
+constexpr FloatRegister z15 = v15;
+constexpr FloatRegister z16 = v16;
+constexpr FloatRegister z17 = v17;
+constexpr FloatRegister z18 = v18;
+constexpr FloatRegister z19 = v19;
+constexpr FloatRegister z20 = v20;
+constexpr FloatRegister z21 = v21;
+constexpr FloatRegister z22 = v22;
+constexpr FloatRegister z23 = v23;
+constexpr FloatRegister z24 = v24;
+constexpr FloatRegister z25 = v25;
+constexpr FloatRegister z26 = v26;
+constexpr FloatRegister z27 = v27;
+constexpr FloatRegister z28 = v28;
+constexpr FloatRegister z29 = v29;
+constexpr FloatRegister z30 = v30;
+constexpr FloatRegister z31 = v31;
 
-
-class PRegisterImpl;
-typedef const PRegisterImpl* PRegister;
-inline constexpr PRegister as_PRegister(int encoding);
 
 // The implementation of predicate registers for the architecture
-class PRegisterImpl: public AbstractRegisterImpl {
-  static constexpr PRegister first();
+class PRegister {
+  int _encoding;
 
- public:
+  constexpr explicit PRegister(int encoding) : _encoding(encoding) {}
+
+public:
+  inline friend constexpr PRegister as_PRegister(int encoding);
+
   enum {
     number_of_registers = 16,
     number_of_governing_registers = 8,
-    // p0-p7 are governing predicates for load/store and arithmetic, but p7 is
-    // preserved as an all-true predicate in OpenJDK. And since we don't support
-    // non-governing predicate registers allocation for non-temp register, the
-    // predicate registers to be saved are p0-p6.
-    number_of_saved_registers = number_of_governing_registers - 1,
     max_slots_per_register = 1
   };
 
-  // construction
-  inline friend constexpr PRegister as_PRegister(int encoding);
+  constexpr PRegister() : _encoding(-1) {} // pnoreg
 
-  VMReg as_VMReg() const;
+  class PRegisterImpl: public AbstractRegisterImpl {
+    friend class PRegister;
 
-  // derived registers, offsets, and addresses
-  PRegister successor() const     { return this + 1; }
+    static constexpr const PRegisterImpl* first();
 
-  // accessors
-  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
-  int encoding_nocheck() const    { return this - first(); }
-  bool is_valid() const           { return (unsigned)encoding_nocheck() < number_of_registers; }
-  bool is_governing() const       { return first() <= this && this - first() < number_of_governing_registers; }
-  const char* name() const;
+   public:
+    // accessors
+    int raw_encoding() const  { return this - first(); }
+    int encoding() const      { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    bool is_valid() const     { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+    bool is_governing() const { return 0 <= raw_encoding() && raw_encoding() < number_of_governing_registers; }
+
+    // derived registers, offsets, and addresses
+    inline PRegister successor() const;
+
+    VMReg as_VMReg() const;
+
+    const char* name() const;
+  };
+
+  int operator==(const PRegister r) const { return _encoding == r._encoding; }
+  int operator!=(const PRegister r) const { return _encoding != r._encoding; }
+
+  const PRegisterImpl* operator->() const { return PRegisterImpl::first() + _encoding; }
 };
 
+extern PRegister::PRegisterImpl all_PRegisterImpls[PRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
 
-REGISTER_IMPL_DECLARATION(PRegister, PRegisterImpl, PRegisterImpl::number_of_registers);
+inline constexpr const PRegister::PRegisterImpl* PRegister::PRegisterImpl::first() {
+  return all_PRegisterImpls + 1;
+}
+
+constexpr PRegister pnoreg = PRegister();
+
+inline constexpr PRegister as_PRegister(int encoding) {
+  if (0 <= encoding && encoding < PRegister::number_of_registers) {
+    return PRegister(encoding);
+  }
+  return pnoreg;
+}
+
+inline PRegister PRegister::PRegisterImpl::successor() const {
+  assert(is_valid(), "sanity");
+  return as_PRegister(encoding() + 1);
+}
 
 // The predicate registers of SVE.
-//
-CONSTANT_REGISTER_DECLARATION(PRegister, pnoreg, (-1));
-
-CONSTANT_REGISTER_DECLARATION(PRegister, p0,  ( 0));
-CONSTANT_REGISTER_DECLARATION(PRegister, p1,  ( 1));
-CONSTANT_REGISTER_DECLARATION(PRegister, p2,  ( 2));
-CONSTANT_REGISTER_DECLARATION(PRegister, p3,  ( 3));
-CONSTANT_REGISTER_DECLARATION(PRegister, p4,  ( 4));
-CONSTANT_REGISTER_DECLARATION(PRegister, p5,  ( 5));
-CONSTANT_REGISTER_DECLARATION(PRegister, p6,  ( 6));
-CONSTANT_REGISTER_DECLARATION(PRegister, p7,  ( 7));
-CONSTANT_REGISTER_DECLARATION(PRegister, p8,  ( 8));
-CONSTANT_REGISTER_DECLARATION(PRegister, p9,  ( 9));
-CONSTANT_REGISTER_DECLARATION(PRegister, p10, (10));
-CONSTANT_REGISTER_DECLARATION(PRegister, p11, (11));
-CONSTANT_REGISTER_DECLARATION(PRegister, p12, (12));
-CONSTANT_REGISTER_DECLARATION(PRegister, p13, (13));
-CONSTANT_REGISTER_DECLARATION(PRegister, p14, (14));
-CONSTANT_REGISTER_DECLARATION(PRegister, p15, (15));
+constexpr PRegister p0  = as_PRegister( 0);
+constexpr PRegister p1  = as_PRegister( 1);
+constexpr PRegister p2  = as_PRegister( 2);
+constexpr PRegister p3  = as_PRegister( 3);
+constexpr PRegister p4  = as_PRegister( 4);
+constexpr PRegister p5  = as_PRegister( 5);
+constexpr PRegister p6  = as_PRegister( 6);
+constexpr PRegister p7  = as_PRegister( 7);
+constexpr PRegister p8  = as_PRegister( 8);
+constexpr PRegister p9  = as_PRegister( 9);
+constexpr PRegister p10 = as_PRegister(10);
+constexpr PRegister p11 = as_PRegister(11);
+constexpr PRegister p12 = as_PRegister(12);
+constexpr PRegister p13 = as_PRegister(13);
+constexpr PRegister p14 = as_PRegister(14);
+constexpr PRegister p15 = as_PRegister(15);
 
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-  // A big enough number for C2: all the registers plus flags
-  // This number must be large enough to cover REG_COUNT (defined by c2) registers.
-  // There is no requirement that any ordering here matches any ordering c2 gives
-  // it's optoregs.
+    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
+    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
+    max_pr  = max_fpr + PRegister::number_of_registers * PRegister::max_slots_per_register,
 
-    number_of_registers = (RegisterImpl::max_slots_per_register * RegisterImpl::number_of_registers +
-                           FloatRegisterImpl::max_slots_per_register * FloatRegisterImpl::number_of_registers +
-                           PRegisterImpl::max_slots_per_register * PRegisterImpl::number_of_registers +
-                           1) // flags
+    // A big enough number for C2: all the registers plus flags
+    // This number must be large enough to cover REG_COUNT (defined by c2) registers.
+    // There is no requirement that any ordering here matches any ordering c2 gives
+    // it's optoregs.
+    number_of_registers = max_pr + 1 // gpr/fpr/pr + flags
   };
-
-  // added to make it compile
-  static const int max_gpr;
-  static const int max_fpr;
-  static const int max_pr;
 };
 
 typedef AbstractRegSet<Register> RegSet;

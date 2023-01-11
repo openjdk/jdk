@@ -129,6 +129,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Evacuate Collection Set
         new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),
@@ -277,7 +278,6 @@ public class TestGCLogMessages {
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -290,7 +290,6 @@ public class TestGCLogMessages {
                                                    "-Xmn16M",
                                                    "-Xms32M",
                                                    "-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:-G1UsePreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 
@@ -300,7 +299,6 @@ public class TestGCLogMessages {
     }
 
     LogMessageWithLevel concurrentStartMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Clear Claimed Marks", Level.DEBUG),
         new LogMessageWithLevel("Reset Marking State", Level.DEBUG),
         new LogMessageWithLevel("Note Start Of Mark", Level.DEBUG),
     };
@@ -368,7 +366,7 @@ public class TestGCLogMessages {
     static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
             jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
-            WB.g1StartConcMarkCycle();
+            WB.g1StartConcurrentGC();
         }
     }
 

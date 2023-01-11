@@ -106,10 +106,8 @@ public class Resolve {
     ModuleFinder moduleFinder;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean allowModules;
     public final boolean allowRecords;
-    public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
     private final boolean allowLocalVariableTypeInference;
     private final boolean allowYieldStatement;
@@ -145,11 +143,8 @@ public class Resolve {
                 options.isUnset(Option.XDIAGS) && options.isUnset("rawDiagnostics");
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
-        allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
         allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
-        checkVarargsAccessAfterResolution =
-                Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
@@ -915,7 +910,7 @@ public class Resolve {
             super.argumentsAcceptable(env, deferredAttrContext, argtypes, formals, warn);
             // should we check varargs element type accessibility?
             if (deferredAttrContext.phase.isVarargsRequired()) {
-                if (deferredAttrContext.mode == AttrMode.CHECK || !checkVarargsAccessAfterResolution) {
+                if (deferredAttrContext.mode == AttrMode.CHECK) {
                     varargsAccessible(env, types.elemtype(formals.last()), deferredAttrContext.inferenceContext);
                 }
             }
@@ -1170,9 +1165,8 @@ public class Resolve {
             }
 
             public boolean compatible(Type found, Type req, Warner warn) {
-                if (allowFunctionalInterfaceMostSpecific &&
-                        unrelatedFunctionalInterfaces(found, req) &&
-                        (actual != null && actual.getTag() == DEFERRED)) {
+                if (unrelatedFunctionalInterfaces(found, req) &&
+                    (actual != null && actual.getTag() == DEFERRED)) {
                     DeferredType dt = (DeferredType) actual;
                     JCTree speculativeTree = dt.speculativeTree(deferredAttrContext);
                     if (speculativeTree != deferredAttr.stuckTree) {
@@ -3117,7 +3111,8 @@ public class Resolve {
         boundSearchResolveContext.methodCheck = methodCheck;
         Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(),
                 site.tsym, boundSearchResolveContext, boundLookupHelper);
-        ReferenceLookupResult boundRes = new ReferenceLookupResult(boundSym, boundSearchResolveContext);
+        boolean isStaticSelector = TreeInfo.isStaticSelector(referenceTree.expr, names);
+        ReferenceLookupResult boundRes = new ReferenceLookupResult(boundSym, boundSearchResolveContext, isStaticSelector);
         if (dumpMethodReferenceSearchResults) {
             dumpMethodReferenceSearchResults(referenceTree, boundSearchResolveContext, boundSym, true);
         }
@@ -3133,7 +3128,7 @@ public class Resolve {
             unboundSearchResolveContext.methodCheck = methodCheck;
             unboundSym = lookupMethod(unboundEnv, env.tree.pos(),
                     site.tsym, unboundSearchResolveContext, unboundLookupHelper);
-            unboundRes = new ReferenceLookupResult(unboundSym, unboundSearchResolveContext);
+            unboundRes = new ReferenceLookupResult(unboundSym, unboundSearchResolveContext, isStaticSelector);
             if (dumpMethodReferenceSearchResults) {
                 dumpMethodReferenceSearchResults(referenceTree, unboundSearchResolveContext, unboundSym, false);
             }
@@ -3244,8 +3239,8 @@ public class Resolve {
         /** The lookup result. */
         Symbol sym;
 
-        ReferenceLookupResult(Symbol sym, MethodResolutionContext resolutionContext) {
-            this(sym, staticKind(sym, resolutionContext));
+        ReferenceLookupResult(Symbol sym, MethodResolutionContext resolutionContext, boolean isStaticSelector) {
+            this(sym, staticKind(sym, resolutionContext, isStaticSelector));
         }
 
         private ReferenceLookupResult(Symbol sym, StaticKind staticKind) {
@@ -3253,17 +3248,17 @@ public class Resolve {
             this.sym = sym;
         }
 
-        private static StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext) {
-            switch (sym.kind) {
-                case MTH:
-                case AMBIGUOUS:
-                    return resolutionContext.candidates.stream()
-                            .filter(c -> c.isApplicable() && c.step == resolutionContext.step)
-                            .map(c -> StaticKind.from(c.sym))
-                            .reduce(StaticKind::reduce)
-                            .orElse(StaticKind.UNDEFINED);
-                default:
-                    return StaticKind.UNDEFINED;
+        private static StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext, boolean isStaticSelector) {
+            if (sym.kind == MTH && !isStaticSelector) {
+                return StaticKind.from(sym);
+            } else if (sym.kind == MTH || sym.kind == AMBIGUOUS) {
+                return resolutionContext.candidates.stream()
+                        .filter(c -> c.isApplicable() && c.step == resolutionContext.step)
+                        .map(c -> StaticKind.from(c.sym))
+                        .reduce(StaticKind::reduce)
+                        .orElse(StaticKind.UNDEFINED);
+            } else {
+                return StaticKind.UNDEFINED;
             }
         }
 
@@ -3686,7 +3681,9 @@ public class Resolve {
                 List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
             super(referenceTree, names.init, site, argtypes, typeargtypes, maxPhase);
             if (site.isRaw()) {
-                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym, site.getMetadata());
+                this.site = new ClassType(site.getEnclosingType(),
+                        !(site.tsym.isInner() && site.getEnclosingType().isRaw()) ?
+                                site.tsym.type.getTypeArguments() : List.nil(), site.tsym, site.getMetadata());
                 needsInference = true;
             }
         }
@@ -4176,17 +4173,34 @@ public class Resolve {
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
             Symbol ws = c.fst.asMemberOf(site, types);
-            return diags.create(dkind, log.currentSource(), pos,
-                      "cant.apply.symbol",
-                      compactMethodDiags ?
-                              d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
-                      kindName(ws),
-                      ws.name == names.init ? ws.owner.name : ws.name,
-                      methodArguments(ws.type.getParameterTypes()),
-                      methodArguments(argtypes),
-                      kindName(ws.owner),
-                      ws.owner.type,
-                      c.snd);
+
+            // If the problem is due to type arguments, then the method parameters aren't relevant,
+            // so use the error message that omits them to avoid confusion.
+            switch (c.snd.getCode()) {
+                case "compiler.misc.wrong.number.type.args":
+                case "compiler.misc.explicit.param.do.not.conform.to.bounds":
+                    return diags.create(dkind, log.currentSource(), pos,
+                              "cant.apply.symbol.noargs",
+                              compactMethodDiags ?
+                                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
+                              kindName(ws),
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              kindName(ws.owner),
+                              ws.owner.type,
+                              c.snd);
+                default:
+                    return diags.create(dkind, log.currentSource(), pos,
+                              "cant.apply.symbol",
+                              compactMethodDiags ?
+                                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
+                              kindName(ws),
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              methodArguments(ws.type.getParameterTypes()),
+                              methodArguments(argtypes),
+                              kindName(ws.owner),
+                              ws.owner.type,
+                              c.snd);
+            }
         }
 
         @Override

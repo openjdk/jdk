@@ -3,7 +3,7 @@
  * @bug 8075793
  * @summary Capture variable as an inference upper bound followed by a member reference
  * @compile/fail/ref=CaptureUpperBoundDeref.out -XDrawDiagnostics CaptureUpperBoundDeref.java
- * @compile --release 7 CaptureUpperBoundDeref.java
+ *
  */
 
 class CaptureUpperBoundDeref {

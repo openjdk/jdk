@@ -51,11 +51,11 @@ class G1FullGCScope : public StackObj {
   G1CollectedHeap*        _g1h;
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
-  G1FullGCTracer          _tracer;
+  G1FullGCTracer*         _tracer;
   IsGCActiveMark          _active;
   G1FullGCJFRTracerMark   _tracer_mark;
   ClearedAllSoftRefs      _soft_refs;
-  G1MonitoringScope       _monitoring_scope;
+  G1FullGCMonitoringScope _monitoring_scope;
   G1HeapPrinterMark       _heap_printer;
   size_t                  _region_compaction_threshold;
 
@@ -63,7 +63,8 @@ public:
   G1FullGCScope(G1MonitoringSupport* monitoring_support,
                 bool explicit_gc,
                 bool clear_soft,
-                bool do_maximal_compaction);
+                bool do_maximal_compaction,
+                G1FullGCTracer* tracer);
 
   bool is_explicit_gc();
   bool should_clear_soft_refs();

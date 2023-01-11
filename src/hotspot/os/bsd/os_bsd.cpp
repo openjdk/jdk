@@ -23,13 +23,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -49,6 +49,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
@@ -121,7 +122,6 @@ mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
 volatile uint64_t         os::Bsd::_max_abstime   = 0;
 #endif
 pthread_t os::Bsd::_main_thread;
-int os::Bsd::_page_size = -1;
 
 #if defined(__APPLE__) && defined(__x86_64__)
 static const int processor_id_unassigned = -1;
@@ -320,7 +320,7 @@ void os::init_system_properties_values() {
 
 #ifndef __APPLE__
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -376,17 +376,16 @@ void os::init_system_properties_values() {
     const char *v_colon = ":";
     if (v == NULL) { v = ""; v_colon = ""; }
     // That's +1 for the colon and +1 for the trailing '\0'.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 +
-                                             sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
+    const size_t ld_library_path_size = strlen(v) + 1 + sizeof(SYS_EXT_DIR) +
+            sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
-  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -401,7 +400,7 @@ void os::init_system_properties_values() {
   size_t system_ext_size = strlen(user_home_dir) + sizeof(SYS_EXTENSIONS_DIR) +
     sizeof(SYS_EXTENSIONS_DIRS);
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -471,11 +470,9 @@ void os::init_system_properties_values() {
     // could cause a change in behavior, but Apple's Java6 behavior
     // can be achieved by putting "." at the beginning of the
     // JAVA_LIBRARY_PATH environment variable.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 + strlen(l) + 1 +
-                                             system_ext_size + 3,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
+    const size_t ld_library_path_size = strlen(v) + 1 + strlen(l) + 1 + system_ext_size + 3;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, ld_library_path_size, mtInternal);
+    os::snprintf_checked(ld_library_path, ld_library_path_size, "%s%s%s%s%s" SYS_EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS ":.",
             v, v_colon, l, l_colon, user_home_dir);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
@@ -486,7 +483,7 @@ void os::init_system_properties_values() {
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator (so actually one byte more
   // than necessary is allocated).
-  sprintf(buf, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
+  os::snprintf_checked(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
           user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
@@ -836,9 +833,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
-
 static int local_dladdr(const void* addr, Dl_info* info) {
 #ifdef __APPLE__
   if (addr == (void*)-1) {
@@ -944,7 +938,6 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
-// ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional
@@ -1477,18 +1470,6 @@ void os::jvm_path(char *buf, jint buflen) {
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
-int os::vm_page_size() {
-  // Seems redundant as all get out
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
-
-// Solaris allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Bsd::page_size() != -1, "must call os::init");
-  return os::Bsd::page_size();
-}
-
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
@@ -1666,7 +1647,7 @@ bool os::pd_release_memory(char* addr, size_t size) {
 
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_down((intptr_t)addr, os::Bsd::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -1675,7 +1656,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Bsd::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
   Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
@@ -1929,11 +1910,13 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  Bsd::set_page_size(getpagesize());
-  if (Bsd::page_size() == -1) {
-    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
+  int page_size = getpagesize();
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() <= 0) {
+    fatal("os_bsd.cpp: os::init: getpagesize() failed (%s)", os::strerror(errno));
   }
-  _page_sizes.add(Bsd::page_size());
+  _page_sizes.add(os::vm_page_size());
 
   Bsd::initialize_system_info();
 
@@ -2182,28 +2165,6 @@ int os::open(const char *path, int oflag, int mode) {
     errno = ENAMETOOLONG;
     return -1;
   }
-  int fd;
-
-  fd = ::open(path, oflag, mode);
-  if (fd == -1) return -1;
-
-  // If the open succeeded, the file might still be a directory
-  {
-    struct stat buf;
-    int ret = ::fstat(fd, &buf);
-    int st_mode = buf.st_mode;
-
-    if (ret != -1) {
-      if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
-        ::close(fd);
-        return -1;
-      }
-    } else {
-      ::close(fd);
-      return -1;
-    }
-  }
 
   // All file descriptors that are opened in the JVM and not
   // specifically destined for a subprocess should have the
@@ -2226,14 +2187,27 @@ int os::open(const char *path, int oflag, int mode) {
   // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
   // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
   //
-#ifdef FD_CLOEXEC
+
+  int fd = ::open(path, oflag | O_CLOEXEC, mode);
+  if (fd == -1) return -1;
+
+  // If the open succeeded, the file might still be a directory
   {
-    int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1) {
-      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
+
+    if (ret != -1) {
+      if ((st_mode & S_IFMT) == S_IFDIR) {
+        errno = EISDIR;
+        ::close(fd);
+        return -1;
+      }
+    } else {
+      ::close(fd);
+      return -1;
     }
   }
-#endif
 
   return fd;
 }

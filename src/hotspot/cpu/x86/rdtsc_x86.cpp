@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
 #include "rdtsc_x86.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "vm_version_x86.hpp"
-
-// The following header contains the implementations of rdtsc()
-#include OS_CPU_HEADER_INLINE(os)
 
 static jlong _epoch = 0;
 static bool rdtsc_elapsed_counter_enabled = false;

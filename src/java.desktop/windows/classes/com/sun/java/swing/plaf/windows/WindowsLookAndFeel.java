@@ -326,7 +326,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         LazyValue dialogBold12 = t -> new FontUIResource(Font.DIALOG, Font.BOLD, 12);
 
         // *** Colors
-        // XXX - some of these doens't seem to be used
+        // XXX - some of these doesn't seem to be used
         ColorUIResource red = new ColorUIResource(Color.red);
         ColorUIResource black = new ColorUIResource(Color.black);
         ColorUIResource white = new ColorUIResource(Color.white);
@@ -645,7 +645,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Button.dashedRectGapHeight", new XPValue(Integer.valueOf(6), Integer.valueOf(8)),
             "Button.textShiftOffset", new XPValue(Integer.valueOf(0),
                                                   Integer.valueOf(1)),
-            // W2K keyboard navigation hidding.
+            // W2K keyboard navigation hiding.
             "Button.showMnemonics", showMnemonics,
             "Button.focusInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
@@ -2431,7 +2431,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         protected void updateUI() {
             super.updateUI();
 
-            // Make sure property change listener is readded each time
+            // Make sure property change listener is re-added each time
             getValueFromDesktop();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ final class Plaintext {
     final byte       minorVersion;
     final int        recordEpoch;     // increments on every cipher state change
     final long       recordSN;        // epoch | sequence number
-    final ByteBuffer fragment;        // null if need to be reassembled
+    final ByteBuffer fragment;        // null if it needs to be reassembled
 
     HandshakeStatus  handshakeStatus; // null if not used or not handshaking
 

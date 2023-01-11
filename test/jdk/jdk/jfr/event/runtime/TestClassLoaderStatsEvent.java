@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,11 @@ public class TestClassLoaderStatsEvent {
     private final static String CLASS_LOADER_NAME = "MyDummyClassLoader";
     private final static String CLASSLOADER_TYPE_NAME = "jdk.jfr.event.runtime.TestClassLoaderStatsEvent$DummyClassLoader";
     public static DummyClassLoader dummyloader;
+    public static Class<?>[] classes;
 
     public static void main(String[] args) throws Throwable {
         createDummyClassLoader(CLASS_LOADER_NAME);
+        System.gc();
 
         Recording recording = new Recording();
         recording.enable(EVENT_NAME);
@@ -106,7 +108,7 @@ public class TestClassLoaderStatsEvent {
 
         Method m = c.getDeclaredMethod("createNonFindableClasses", byte[].class);
         m.setAccessible(true);
-        m.invoke(null, klassbuf);
+        classes = (Class[]) m.invoke(null, klassbuf);
     }
 
     public static class DummyClassLoader extends ClassLoader {

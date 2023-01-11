@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class SubjectDelegator {
             permissions.add(new SubjectDelegationPermission(pname));
         }
         PrivilegedAction<Void> action =
-            new PrivilegedAction<Void>() {
+            new PrivilegedAction<>() {
                 public Void run() {
                     for (Permission sdp : permissions) {
                         AccessController.checkPermission(sdp);

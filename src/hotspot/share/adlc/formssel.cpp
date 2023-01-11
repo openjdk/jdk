@@ -25,6 +25,8 @@
 // FORMS.CPP - Definitions for ADL Parser Forms Classes
 #include "adlc.hpp"
 
+#define remaining_buflen(buffer, position) (sizeof(buffer) - ((position) - (buffer)))
+
 //==============================Instructions===================================
 //------------------------------InstructForm-----------------------------------
 InstructForm::InstructForm(const char *id, bool ideal_only)
@@ -65,7 +67,7 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
   : _ident(id), _ideal_only(false),
     _localNames(instr->_localNames),
     _effects(instr->_effects),
-    _is_mach_constant(false),
+    _is_mach_constant(instr->_is_mach_constant),
     _needs_constant_base(false),
     _has_call(false)
 {
@@ -1533,7 +1535,7 @@ Predicate *InstructForm::build_predicate() {
         s += strlen(s);
       }
       // Add predicate to working buffer
-      sprintf(s,"/*%s*/(",(char*)i._key);
+      snprintf_checked(s, remaining_buflen(buf, s), "/*%s*/(",(char*)i._key);
       s += strlen(s);
       mnode->build_instr_pred(s,(char*)i._key, 0, path_bitmask, 0);
       s += strlen(s);
@@ -3472,7 +3474,7 @@ void MatchNode::build_internalop( ) {
                        _rChild->_internalop : _rChild->_opType) : "";
   len += (int)strlen(lstr) + (int)strlen(rstr);
   subtree = (char *)AdlAllocateHeap(len);
-  sprintf(subtree,"_%s_%s_%s", _opType, lstr, rstr);
+  snprintf_checked(subtree, len, "_%s_%s_%s", _opType, lstr, rstr);
   // Hash the subtree string in _internalOps; if a name exists, use it
   iop = (char *)_AD._internalOps[subtree];
   // Else create a unique name, and add it to the hash table
@@ -3919,8 +3921,9 @@ void MatchRule::matchrule_swap_commutative_op(const char* instr_ident, int count
   MatchRule* clone = new MatchRule(_AD, this);
   // Swap operands of commutative operation
   ((MatchNode*)clone)->swap_commutative_op(true, count);
-  char* buf = (char*) AdlAllocateHeap(strlen(instr_ident) + 4);
-  sprintf(buf, "%s_%d", instr_ident, match_rules_cnt++);
+  const size_t buf_size = strlen(instr_ident) + 4;
+  char* buf = (char*) AdlAllocateHeap(buf_size);
+  snprintf_checked(buf, buf_size, "%s_%d", instr_ident, match_rules_cnt++);
   clone->_result = buf;
 
   clone->_next = this->_next;
@@ -4090,12 +4093,6 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
-        strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
@@ -4111,8 +4108,9 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
         strcmp(opType,"MaskAll")==0 ||
-        0 /* 0 to line up columns nicely */ )
+        0 /* 0 to line up columns nicely */ ) {
       return 1;
+    }
   }
   return 0;
 }
@@ -4228,7 +4226,7 @@ bool MatchRule::is_vector() const {
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
     "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
-    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
+    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",

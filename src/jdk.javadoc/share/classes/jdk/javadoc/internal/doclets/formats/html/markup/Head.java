@@ -31,7 +31,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -254,8 +253,8 @@ public class Head extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**
@@ -328,9 +327,7 @@ public class Head extends Content {
         }
 
         if (index) {
-            // The order of the addStylesheet(...) calls is important
             addStylesheet(head, DocPaths.SCRIPT_DIR.resolve(DocPaths.JQUERY_UI_CSS));
-            addStylesheet(head, DocPaths.JQUERY_OVERRIDES_CSS);
         }
     }
 

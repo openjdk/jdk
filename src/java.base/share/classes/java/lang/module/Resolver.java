@@ -867,7 +867,7 @@ final class Resolver {
         Set<ModuleReference> result = new HashSet<>(beforeModules);
         for (ModuleReference mref : afterModules) {
             String name = mref.descriptor().name();
-            if (!beforeFinder.find(name).isPresent()
+            if (beforeFinder.find(name).isEmpty()
                     && findInParent(name) == null) {
                 result.add(mref);
             }
