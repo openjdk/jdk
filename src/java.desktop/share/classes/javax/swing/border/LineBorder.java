@@ -24,8 +24,6 @@
  */
 package javax.swing.border;
 
-import com.sun.java.swing.SwingUtilities3;
-
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Color;
@@ -36,6 +34,8 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.ConstructorProperties;
+
+import com.sun.java.swing.SwingUtilities3;
 
 /**
  * A class which implements a line border of arbitrary thickness
@@ -146,13 +146,13 @@ public class LineBorder extends AbstractBorder
         SwingUtilities3.paintBorder(c, g, x, y, width, height, this::paintUnscaledBorder);
     }
 
-    private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+    private void paintUnscaledBorder(Component c, Graphics g,
                                      int w, int h, double scaleFactor) {
         if ((this.thickness > 0) && (g instanceof Graphics2D)) {
             Graphics2D g2d = (Graphics2D) g;
             int offs = this.thickness * (int) scaleFactor;
-            Color oldColor = g.getColor();
-            g.setColor(this.lineColor);
+            Color oldColor = g2d.getColor();
+            g2d.setColor(this.lineColor);
 
             Shape outer;
             Shape inner;
@@ -161,8 +161,7 @@ public class LineBorder extends AbstractBorder
                 float arc = .2f * offs;
                 outer = new RoundRectangle2D.Float(0, 0, w, h, offs, offs);
                 inner = new RoundRectangle2D.Float(offs, offs, w - size, h - size, arc, arc);
-            }
-            else {
+            } else {
                 outer = new Rectangle2D.Float(0, 0, w, h);
                 inner = new Rectangle2D.Float(offs, offs, w - size, h - size);
             }

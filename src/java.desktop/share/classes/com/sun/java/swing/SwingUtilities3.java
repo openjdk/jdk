@@ -43,7 +43,6 @@ import javax.swing.RepaintManager;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
-
 import static sun.java2d.pipe.Region.clipRound;
 
 /**
@@ -146,12 +145,12 @@ public class SwingUtilities3 {
 
     @FunctionalInterface
     public interface UnscaledBorderPainter {
-        void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+        void paintUnscaledBorder(Component c, Graphics g,
                                  int w, int h, double scaleFactor);
     }
 
     public static void paintBorder(Component c, Graphics g, int x, int y,
-                            int w, int h, UnscaledBorderPainter painter) {
+                                   int w, int h, UnscaledBorderPainter painter) {
 
         // Step 1: Reset Transform
         AffineTransform at = null;
@@ -172,8 +171,8 @@ public class SwingUtilities3 {
 
             // if m01 or m10 is non-zero, then there is a rotation or shear
             // or if scale=1, skip resetting the transform
-            resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0)) &&
-                    ((at.getScaleX() > 1) || (at.getScaleY() > 1));
+            resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0))
+                    && ((at.getScaleX() > 1) || (at.getScaleY() > 1));
 
             if (resetTransform) {
                 /* Deactivate the HiDPI scaling transform,
@@ -193,14 +192,16 @@ public class SwingUtilities3 {
         g.translate(xtranslation, ytranslation);
 
         // Step 2: Call respective paintBorder with transformed values
-        painter.paintUnscaledBorder(c, g, x, y, width, height, scaleFactor);
+        painter.paintUnscaledBorder(c, g, width, height, scaleFactor);
 
-        // Step 3: Restore Transform
+        // Step 3: Restore previous stroke & transform
         g.translate(-xtranslation, -ytranslation);
-        if (resetTransform) {
+        if (g instanceof Graphics2D) {
             Graphics2D g2d = (Graphics2D) g;
-            g2d.setTransform(at);
             g2d.setStroke(oldStk);
+            if (resetTransform) {
+                g2d.setTransform(at);
+            }
         }
     }
 }

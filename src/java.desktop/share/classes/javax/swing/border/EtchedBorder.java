@@ -31,6 +31,7 @@ import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Component;
 import java.beans.ConstructorProperties;
+
 import com.sun.java.swing.SwingUtilities3;
 
 /**
@@ -152,8 +153,8 @@ public class EtchedBorder extends AbstractBorder
         SwingUtilities3.paintBorder(c, g, x, y, width, height, this::paintUnscaledBorder);
     }
 
-    private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
-                                    int w, int h, double scaleFactor) {
+    private void paintUnscaledBorder(Component c, Graphics g,
+                                     int w, int h, double scaleFactor) {
         int stkWidth = (int) Math.floor(scaleFactor);
         if (g instanceof Graphics2D) {
             Graphics2D g2d = (Graphics2D) g;

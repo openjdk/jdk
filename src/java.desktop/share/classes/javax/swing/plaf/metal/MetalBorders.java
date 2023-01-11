@@ -66,7 +66,6 @@ import sun.swing.SwingUtilities2;
 
 import static sun.java2d.pipe.Region.clipRound;
 
-
 /**
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
  * @author Steve Wilson
@@ -253,7 +252,7 @@ public class MetalBorders {
             SwingUtilities3.paintBorder(c, g, x, y, w, h, this::paintUnscaledBorder);
         }
 
-        private void paintUnscaledBorder(Component c, Graphics g, int x, int y,
+        private void paintUnscaledBorder(Component c, Graphics g,
                                          int width, int height, double scaleFactor) {
             Color background;
             Color highlight;
