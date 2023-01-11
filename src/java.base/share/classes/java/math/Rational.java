@@ -711,8 +711,43 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code this % divisor}.
      * @throws ArithmeticException if {@code divisor==0}
      */
-    public BigDecimal remainder(BigDecimal divisor) {
+    public Rational remainder(Rational divisor) {
         return divideAndRemainder(divisor)[1];
+    }
+
+    /**
+     * Returns a {@code Rational} whose value is
+     * <code>(this<sup>n</sup>)</code>.  The current implementation uses
+     * the core algorithm defined in ANSI standard X3.274-1996.
+     * Note that future releases may use a different algorithm with
+     * an increased allowable exponent range.
+     *
+     * <p>The X3.274-1996 algorithm is:
+     *
+     * <ul>
+     * <li> An {@code ArithmeticException} exception is thrown if
+     *  <ul>
+     *    <li>{@code abs(n) > 999999999}
+     *  </ul>
+     *
+     * <li> if {@code n} is zero, {@link #ONE} is returned even if
+     * {@code this} is zero, otherwise
+     * <ul>
+     *   <li> if {@code n} is positive, the result is calculated via
+     *   the repeated squaring technique into a single accumulator.
+     *
+     *   <li> if {@code n} is negative, the result is calculated as if
+     *   {@code n} were positive; this value is then divided into one.
+     *   </ul>
+     * </ul>
+     *
+     * @param  n power to raise this {@code Rational} to.
+     * @return <code>this<sup>n</sup></code> using the ANSI standard X3.274-1996
+     *         algorithm
+     * @throws ArithmeticException if {@code n} is out of range.
+     */
+    public BigDecimal pow(int n) {
+        
     }
 
     /**
