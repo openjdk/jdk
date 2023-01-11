@@ -21,88 +21,77 @@
  * questions.
  */
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /*
  * @test
  * @bug 8299684
- * @summary Verify that JNI NewDirectByteBuffer throws IllegalArgumentException
- * if the capacity is negative or greater than Integer::MAX_VALUE
- * @run main/native NewDirectByteBuffer
+ * @summary Verify that JNI NewDirectByteBuffer throws
+ * IllegalArgumentException if the capacity is negative or greater than
+ * Integer::MAX_VALUE
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8g)
+ * @run junit/othervm/native NewDirectByteBuffer
  */
 public class NewDirectByteBuffer {
     static {
         System.loadLibrary("NewDirectByteBuffer");
     }
 
-    private static final long[] LEGAL_CAPACITIES = {
-        0L,
-        1L,
-        (long)Integer.MAX_VALUE/2,
-        (long)Integer.MAX_VALUE - 1,
-        (long)Integer.MAX_VALUE
-    };
-
-    private static final long[] ILLEGAL_CAPACITIES = {
-        Long.MIN_VALUE,
-        (long)Integer.MIN_VALUE - 1L,
-        -1L,
-        (long)Integer.MAX_VALUE + 1L,
-        3_000_000_000L,
-        5_000_000_000L,
-        Long.MAX_VALUE
-    };
-
     private static final void checkBuffer(ByteBuffer buf, long capacity) {
-        if (!buf.isDirect())
-            throw new RuntimeException("Buffer is not direct");
-        long bufferCapacity = getDirectByteBufferCapacity(buf);
-        if (bufferCapacity != capacity)
-            throw new RuntimeException("GetDirectBufferCapacity "
-                + bufferCapacity + " is not " + capacity);
-        if (buf.capacity() != capacity)
-            throw new RuntimeException("buf.capacity() "
-                + buf.capacity() + " is not " + capacity);
-        if (buf.position() != 0)
-            throw new RuntimeException("buf.position() "
-                + buf.position() + " is nonzero");
-        if (buf.limit() != capacity)
-            throw new RuntimeException("buf.limit() "
-                + buf.limit() + " is not " + capacity);
+        Assertions.assertTrue(buf.isDirect(), "Buffer is not direct");
+        Assertions.assertEquals(capacity, getDirectByteBufferCapacity(buf),
+            "GetDirectBufferCapacity returned unexpected value");
+        Assertions.assertEquals(capacity, buf.capacity(),
+            "Buffer::capacity returned unexpected value");
+        Assertions.assertEquals(0L, buf.position(),
+            "Buffer::position returned unexpected value");
+        Assertions.assertEquals(capacity, buf.limit(),
+            "Buffer::limit returned unexpected value");
     }
 
-    public static void main(String[] args) {
-        System.out.println("--- Legal Capacities ---");
-        for (long cap : LEGAL_CAPACITIES) {
-            System.out.println("Capacity " + cap);
-            try {
-                ByteBuffer buf = newDirectByteBuffer(cap);
-                if (buf != null) {
-                    try {
-                        checkBuffer(buf, cap);
-                        System.out.println("Verified buffer for capacity " + cap);
-                    } finally {
+    @ParameterizedTest
+    @ValueSource(longs = {0L, 1L, (long)Integer.MAX_VALUE/2,
+        (long)Integer.MAX_VALUE - 1, (long)Integer.MAX_VALUE})
+    void legalCapacities(long capacity) {
+        try {
+            final AtomicReference<ByteBuffer> bufHolder = new AtomicReference();
+            Assertions.assertDoesNotThrow(() -> {
+                try {
+                    bufHolder.set(newDirectByteBuffer(capacity));
+                } finally {
+                    ByteBuffer buf = bufHolder.get();
+                    if (buf != null) {
                         freeDirectByteBufferMemory(buf);
                     }
-                } else {
-                    throw new RuntimeException("Direct buffer is null but no OOME");
                 }
-            } catch (OutOfMemoryError ignored) {
-                // Ignore the error so test may continue
+            });
+            ByteBuffer buf = bufHolder.get();
+            if (buf != null) {
+                checkBuffer(buf, capacity);
             }
+        } catch (OutOfMemoryError ignored) {
+            // Ignore the error
         }
+    }
 
-        System.out.println("\n--- Illegal Capacities ---");
-        for (long cap : ILLEGAL_CAPACITIES) {
-            System.out.println("Capacity " + cap);
-            try {
-                ByteBuffer buf = newDirectByteBuffer(cap);
+    @ParameterizedTest
+    @ValueSource(longs = {Long.MIN_VALUE, (long)Integer.MIN_VALUE - 1L, -1L,
+        (long)Integer.MAX_VALUE + 1L, 3_000_000_000L, 5_000_000_000L,
+        Long.MAX_VALUE})
+    void illegalCapacities(long capacity) {
+        try {
+            Assertions.assertThrows(IllegalArgumentException.class, () -> {
+                ByteBuffer buf = newDirectByteBuffer(capacity);
                 if (buf != null) {
                     freeDirectByteBufferMemory(buf);
                 }
-                throw new RuntimeException("IAE not thrown for capacity " + cap);
-            } catch (IllegalArgumentException expected) {
-                System.out.println("Caught expected IAE for capacity " + cap);
-            }
+            });
+        } catch (OutOfMemoryError ignored) {
+            // Ignore the error
         }
     }
 
