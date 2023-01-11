@@ -63,8 +63,11 @@ T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint column
   size_t total_size = table_size + rows * row_size + alignment;
 
   // Allocate a chunk of memory large enough to allow alignment of the chunk.
-  void* chunk = NEW_C_HEAP_ARRAY(uint8_t, total_size, flags);
+  uint8_t* chunk = NEW_C_HEAP_ARRAY(uint8_t, total_size, flags);
+
   // Clear the allocated memory.
+  memset(chunk, '\0', total_size);
+
   // Align the chunk of memory.
   T** result = (T**)align_up(chunk, alignment);
   void* data_start = (void*)((uintptr_t)result + table_size);
