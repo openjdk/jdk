@@ -1154,7 +1154,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-13-jdk-asm+1.0",
+            revision: "3.0-14-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
