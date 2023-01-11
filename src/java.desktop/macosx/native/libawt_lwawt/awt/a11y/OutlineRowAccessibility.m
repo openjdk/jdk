@@ -90,12 +90,12 @@ static jclass sjc_CAccessible = NULL;
 
 - (NSAccessibilitySubrole)accessibilitySubrole
 {
-    return NSAccessibilityOutlineRowSubrole;;
+    return NSAccessibilityOutlineRowSubrole;
 }
 
 - (NSAccessibilityRole)accessibilityRole
 {
-    return NSAccessibilityRowRole;;
+    return NSAccessibilityRowRole;
 }
 
 - (BOOL)isAccessibilitySelected

@@ -292,7 +292,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
   if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
     st->print("ldr t0, [guard]\n\t");
-    st->print("ldr t1, [Rthread, #thread_disarmed_offset]\n\t");
+    st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("cmp t0, t1\n\t");
     st->print("beq skip\n\t");
     st->print("blr #nmethod_entry_barrier_stub\n\t");

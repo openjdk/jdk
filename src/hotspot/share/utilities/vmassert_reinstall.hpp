@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/decay.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "utilities/debug.hpp"
+// Intentionally no #include guard.  May be included multiple times for effect.
 
-class TestDecay: AllStatic {
-  class A: AllStatic {};
+// See vmassert_uninstall.hpp for usage.
 
-  typedef const volatile A cvA;
-  typedef const volatile A& cvAref;
-  typedef const volatile A* cvAptr;
-  typedef const volatile A* const volatile cvAptrcv;
-  typedef A& Aref;
+// Remove possible stdlib assert macro (or any others, for that matter).
+#undef assert
 
-  typedef Decay<cvAref>::type rr_cvAref;
-  static const bool decay_cvAref_is_A = IsSame<rr_cvAref, A>::value;
-  STATIC_ASSERT(decay_cvAref_is_A);
+// Reinstall HotSpot's assert macro, if previously defined.
+#ifdef vmassert
+#define assert(p, ...) vmassert(p, __VA_ARGS__)
+#endif
 
-  typedef Decay<cvAptrcv>::type rr_cvAptrcv;
-  static const bool decay_cvAptrcv_is_cvAptr = IsSame<rr_cvAptrcv, cvAptr>::value;
-  STATIC_ASSERT(decay_cvAptrcv_is_cvAptr);
-};
