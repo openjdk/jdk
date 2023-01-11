@@ -28,18 +28,17 @@
 
 package java.io;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
 final class ExpiringCache {
+    private static final int QUERY_OVERFLOW = 300;
+    private static final int MAX_ENTRIES = 200;
     private final long millisUntilExpiration;
     private final Map<String,Entry> map;
     // Clear out old entries every few queries
     private int queryCount;
-    private final int queryOverflow = 300;
-    private static final int MAX_ENTRIES = 200;
 
     static final class Entry {
         private long   timestamp;
@@ -72,7 +71,7 @@ final class ExpiringCache {
     }
 
     synchronized String get(String key) {
-        if (++queryCount >= queryOverflow) {
+        if (++queryCount >= QUERY_OVERFLOW) {
             cleanup();
         }
         Entry entry = entryFor(key);
@@ -83,7 +82,7 @@ final class ExpiringCache {
     }
 
     synchronized void put(String key, String val) {
-        if (++queryCount >= queryOverflow) {
+        if (++queryCount >= QUERY_OVERFLOW) {
             cleanup();
         }
         Entry entry = entryFor(key);
