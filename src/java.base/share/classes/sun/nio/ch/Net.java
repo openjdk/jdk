@@ -168,19 +168,19 @@ public class Net {
             throw se;
         Exception nx = x;
         if (x instanceof ClosedChannelException)
-            nx = new SocketException("Socket is closed");
+            nx = newSocketException("Socket is closed");
         else if (x instanceof NotYetConnectedException)
-            nx = new SocketException("Socket is not connected");
+            nx = newSocketException("Socket is not connected");
         else if (x instanceof AlreadyBoundException)
-            nx = new SocketException("Already bound");
+            nx = newSocketException("Already bound");
         else if (x instanceof NotYetBoundException)
-            nx = new SocketException("Socket is not bound yet");
+            nx = newSocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
-            nx = new SocketException("Unsupported address type");
+            nx = newSocketException("Unsupported address type");
         else if (x instanceof UnresolvedAddressException)
-            nx = new SocketException("Unresolved address");
+            nx = newSocketException("Unresolved address");
         else if (x instanceof IOException) {
-            nx = new SocketException(x.getMessage());
+            nx = newSocketException(x.getMessage());
         }
         if (nx != x)
             nx.initCause(x);
@@ -323,12 +323,7 @@ public class Net {
      */
     static int inet4AsInt(InetAddress ia) {
         if (ia instanceof Inet4Address) {
-            byte[] addr = ia.getAddress();
-            int address  = addr[3] & 0xFF;
-            address |= ((addr[2] << 8) & 0xFF00);
-            address |= ((addr[1] << 16) & 0xFF0000);
-            address |= ((addr[0] << 24) & 0xFF000000);
-            return address;
+            return getInt(ia.getAddress());
         }
         throw shouldNotReachHere();
     }
@@ -339,10 +334,7 @@ public class Net {
      */
     static InetAddress inet4FromInt(int address) {
         byte[] addr = new byte[4];
-        addr[0] = (byte) ((address >>> 24) & 0xFF);
-        addr[1] = (byte) ((address >>> 16) & 0xFF);
-        addr[2] = (byte) ((address >>> 8) & 0xFF);
-        addr[3] = (byte) (address & 0xFF);
+        putInt(addr, address);
         try {
             return InetAddress.getByAddress(addr);
         } catch (UnknownHostException uhe) {
@@ -832,6 +824,10 @@ public class Net {
 
     private static AssertionError shouldNotReachHere() {
         return new AssertionError("Should not reach here");
+    }
+
+    private static SocketException newSocketException(String msg) {
+        return new SocketException(msg);
     }
 
     // Network-ordered accessors for int values in byte arrays
