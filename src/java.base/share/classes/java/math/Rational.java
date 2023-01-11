@@ -723,6 +723,24 @@ public class Rational extends Number implements Comparable<Rational> {
         // if negative n, calculate the reciprocal
         return n >= 0 ? acc : acc.invert();
     }
+    
+    // Scaling/Rounding Operations
+
+    /**
+     * Returns a {@code Rational} rounded according to the
+     * {@code MathContext} settings.  If the precision setting is 0 then
+     * no rounding takes place.
+     *
+     * <p>The effect of this method is identical to call
+     * {@code new #Rational(toBigDecimal(mc))} method.
+     *
+     * @param mc the context to use.
+     * @return a {@code Rational} rounded according to the
+     *         {@code MathContext} settings.
+     */
+    public Rational round(MathContext mc) {
+        return new Rational(toBigDecimal(mc));
+    }
 
     /**
      * Converts this {@code Rational} to a {@code BigInteger}. This conversion is
@@ -743,6 +761,8 @@ public class Rational extends Number implements Comparable<Rational> {
         // force to an integer, quietly
         return signum == -1 ? floor.negate() : floor;
     }
+    
+    // Format Converters
 
     /**
      * Converts this {@code Rational} to a {@code BigInteger}, checking for lost
@@ -918,41 +938,7 @@ public class Rational extends Number implements Comparable<Rational> {
     public long longValueExact() {
         return toBigIntegerExact().longValueExact();
     }
-
-    /**
-     * Compares this Rational with the specified Object for equality.
-     *
-     * @param obj Object to which this Rational is to be compared.
-     * @return {@code true} if and only if the specified Object is a Rational whose
-     *         value is numerically equal to this Rational.
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-
-        if (!(obj instanceof Rational r))
-            return false;
-
-        if (signum != r.signum)
-            return false;
-
-        if (signum == 0) // values are both zero
-            return true;
-
-        return floor.equals(r.floor) && numerator.equals(r.numerator) && denominator.equals(r.denominator);
-    }
-
-    /**
-     * Returns the hash code for this Rational.
-     *
-     * @return hash code for this Rational.
-     */
-    @Override
-    public int hashCode() {
-        return signum == 0 ? 0 : signum * Objects.hash(floor, numerator, denominator);
-    }
-
+    
     /**
      * Returns the decimal String representation of this Rational:
      * <i>numerator</i>/<i>denominator</i>.
@@ -980,6 +966,44 @@ public class Rational extends Number implements Comparable<Rational> {
 
         return b.append(floor).append(signum == -1 ? '-' : '+').append(numerator).append('/').append(denominator)
                 .toString();
+    }
+    
+    // Hash Function
+    
+    /**
+     * Returns the hash code for this Rational.
+     *
+     * @return hash code for this Rational.
+     */
+    @Override
+    public int hashCode() {
+        return signum == 0 ? 0 : signum * Objects.hash(floor, numerator, denominator);
+    }
+    
+    // Comparison Operations
+
+    /**
+     * Compares this Rational with the specified Object for equality.
+     *
+     * @param obj Object to which this Rational is to be compared.
+     * @return {@code true} if and only if the specified Object is a Rational whose
+     *         value is numerically equal to this Rational.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        if (!(obj instanceof Rational r))
+            return false;
+
+        if (signum != r.signum)
+            return false;
+
+        if (signum == 0) // values are both zero
+            return true;
+
+        return floor.equals(r.floor) && numerator.equals(r.numerator) && denominator.equals(r.denominator);
     }
 
     /**
