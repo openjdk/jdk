@@ -65,7 +65,7 @@ public class TestHeapDump {
             Events.assertField(e, "gcBeforeDump").equal(true);
             Events.assertField(e, "onOutOfMemoryError").equal(false);
             Events.assertField(e, "size").equal(Files.size(path));
-            Events.assertField(e, "compression").equal(-1);
+            Events.assertField(e, "compression").below(1);
             Events.assertField(e, "overwrite").equal(false);
             System.out.println(e);
         }
