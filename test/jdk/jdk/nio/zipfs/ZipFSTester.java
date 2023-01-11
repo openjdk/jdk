@@ -1083,6 +1083,11 @@ public class ZipFSTester {
         return path;
     }
 
+    /**
+     * Tests if certain methods throws a NullPointerException if invoked with null
+     * as specified in java.nio.file.package-info.java
+     * @param fs file system containing at least one ZipFileStore
+     */
     static void testFileStoreNullArgs(FileSystem fs)  {
         FileStore store = fs.getFileStores().iterator().next();
 
