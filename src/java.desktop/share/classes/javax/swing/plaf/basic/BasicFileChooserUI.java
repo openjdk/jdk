@@ -583,10 +583,10 @@ public class BasicFileChooserUI extends FileChooserUI {
             return tooltipText;
         }
 
-        if(fc.getDialogType() == JFileChooser.OPEN_DIALOG ||
+        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG ||
                 fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonToolTipText;
-        } else if(fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonToolTipText;
         }
         return null;
