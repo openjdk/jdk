@@ -66,6 +66,7 @@ jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
     assert(!current_thread_in_native(), "must not be in native");
+    STATIC_ASSERT(TypeTag::local == 0);
     return thread->active_handles()->allocate_handle(thread, obj, alloc_failmode);
   }
 }
@@ -138,8 +139,6 @@ oop JNIHandles::resolve_external_guard(jobject handle) {
 
 bool JNIHandles::is_global_weak_cleared(jweak handle) {
   assert(handle != NULL, "precondition");
-  assert(is_jweak_tagged(handle), "not a weak handle");
-  assert(!is_global_tagged(handle), "not a weak handle");
   oop* oop_ptr = jweak_ptr(handle);
   oop value = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(oop_ptr);
   return value == NULL;
@@ -147,8 +146,6 @@ bool JNIHandles::is_global_weak_cleared(jweak handle) {
 
 void JNIHandles::destroy_global(jobject handle) {
   if (handle != NULL) {
-    assert(is_global_tagged(handle), "must be global handle");
-    assert(!is_jweak_tagged(handle), "wrong method for destroying jweak");
     oop* oop_ptr = global_ptr(handle);
     NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
     global_handles()->release(oop_ptr);
@@ -158,8 +155,6 @@ void JNIHandles::destroy_global(jobject handle) {
 
 void JNIHandles::destroy_weak_global(jobject handle) {
   if (handle != NULL) {
-    assert(is_jweak_tagged(handle), "JNI handle not jweak");
-    assert(!is_global_tagged(handle), "wrong method for destroying global");
     oop* oop_ptr = jweak_ptr(handle);
     NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(oop_ptr, (oop)NULL);
     weak_global_handles()->release(oop_ptr);

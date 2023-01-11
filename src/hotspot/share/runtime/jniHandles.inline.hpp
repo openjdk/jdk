@@ -50,6 +50,7 @@ inline bool JNIHandles::is_global_tagged(jobject handle) {
 
 inline oop* JNIHandles::jobject_ptr(jobject handle) {
   assert(is_local_tagged(handle), "precondition");
+  STATIC_ASSERT(TypeTag::local == 0);
   return reinterpret_cast<oop*>(handle);
 }
 
@@ -118,8 +119,6 @@ inline oop JNIHandles::resolve_non_null(jobject handle) {
 
 inline void JNIHandles::destroy_local(jobject handle) {
   if (handle != NULL) {
-    assert(!is_jweak_tagged(handle), "Invalid JNI local handle");
-    assert(!is_global_tagged(handle), "Invalid JNI local handle");
     *jobject_ptr(handle) = NULL;
   }
 }
