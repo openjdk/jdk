@@ -9,11 +9,5 @@ class StaticNestedNonStaticSuper{
     public abstract class NonStaticNested {
         public static class StaticNested extends NonStaticNested {
         }
-        public static NonStaticNested create() {
-            return new StaticNested();
-        }
-    }
-    public static void main(String[] args) {
-        NonStaticNested.create();
     }
 }
