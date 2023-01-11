@@ -585,9 +585,9 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0)
             throw new ArithmeticException("Divide by zero");
 
-        BigInteger completeNum = floor.multiply(denominator).add(numerator);
-        BigInteger[] quotAndRem = denominator.divideAndRemainder(completeNum);
-        return valueOf(signum, quotAndRem[0], quotAndRem[1], completeNum);
+        BigInteger plainNum = floor.multiply(denominator).add(numerator);
+        BigInteger[] quotAndRem = denominator.divideAndRemainder(plainNum);
+        return valueOf(signum, quotAndRem[0], quotAndRem[1], plainNum);
     }
 
     /**
