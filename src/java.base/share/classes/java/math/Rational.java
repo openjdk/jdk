@@ -680,6 +680,22 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
+     * Returns a {@code Rational} whose value is {@code (this % divisor)}.
+     *
+     * <p>The remainder is given by
+     * {@code this.subtract(this.divideToIntegralValue(divisor).multiply(divisor))}.
+     * Note that this is <em>not</em> the modulo operation (the result can be
+     * negative).
+     *
+     * @param  divisor value by which this {@code Rational} is to be divided.
+     * @return {@code this % divisor}.
+     * @throws ArithmeticException if {@code divisor==0}
+     */
+    public BigDecimal remainder(BigDecimal divisor) {
+        return divideAndRemainder(divisor)[1];
+    }
+
+    /**
      * Converts this {@code Rational} to a {@code BigInteger}.
      * This conversion is analogous to the
      * <i>narrowing primitive conversion</i> from {@code double} to
