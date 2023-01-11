@@ -674,8 +674,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String javaHome = StaticProperty.javaHome();
-            zoneID = getSystemTimeZoneID(javaHome);
+            zoneID = getSystemTimeZoneID(StaticProperty.javaHome());
             if (zoneID == null) {
                 zoneID = GMT_ID;
             }
