@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 8081474
- * @summary  Verifies if SwingWorker calls 'done' 
+ * @summary  Verifies if SwingWorker calls 'done'
  *           before the 'doInBackground' is finished
  * @run main TestSwingWorker
  */
@@ -34,7 +34,7 @@ public class TestSwingWorker {
     static boolean doInBackground =  false;
 
     public static void main(String[] args) throws InterruptedException {
-        SwingWorker<String, String> worker = 
+        SwingWorker<String, String> worker =
             new SwingWorker<String, String>() {
             @Override
             protected String doInBackground() throws Exception {
@@ -42,23 +42,20 @@ public class TestSwingWorker {
                     while (!Thread.currentThread().isInterrupted()) {
                         System.out.println("Working...");
                         Thread.sleep(1000);
-                        
                     }
                 }
                 catch (InterruptedException ex) {
                     System.out.println("Got interrupted!");
                 }
-                
                 try {
                     System.out.println("Cleaning up");
                     Thread.sleep(5000);
                     System.out.println("Done cleaning");
-		    doInBackground = true;
+                    doInBackground = true;
                 }
                 catch (InterruptedException ex) {
                     System.out.println("Got interrupted second time!");
                 }
-                
                 return null;
             }
             
@@ -66,14 +63,14 @@ public class TestSwingWorker {
             protected void done() {
                 if (!doInBackground) {
                     throw new RuntimeException("done called before doInBackground");
-		}		    
+                }		    
                 System.out.println("Done");
             }
         };
-        
+
         worker.execute();
         Thread.sleep(5000);
-        
+
         worker.cancel(true);
         Thread.sleep(2000);
     }
