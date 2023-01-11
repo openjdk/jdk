@@ -38,6 +38,12 @@ private:
 
   size_t index_for_offset(uintptr_t offset) const;
 
+  static T* allocate_array(size_t count);
+
+  static void deallocate_array(T* ptr, size_t count);
+
+  static size_t size_for_array(size_t count);
+
 public:
   ZGranuleMap(size_t max_offset);
   ~ZGranuleMap();

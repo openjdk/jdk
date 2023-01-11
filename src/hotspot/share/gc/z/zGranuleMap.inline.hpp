@@ -30,20 +30,20 @@
 #include "gc/z/zGlobals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 template <typename T>
 inline ZGranuleMap<T>::ZGranuleMap(size_t max_offset) :
     _size(max_offset >> ZGranuleSizeShift),
-    _map(NEW_C_HEAP_ARRAY(T, _size, mtGC)) {
-  memset(_map, '\0', sizeof(T) * _size);
+    _map(allocate_array(_size)) {
   assert(is_aligned(max_offset, ZGranuleSize), "Misaligned");
 }
 
 template <typename T>
 inline ZGranuleMap<T>::~ZGranuleMap() {
-  FREE_C_HEAP_ARRAY(T, _map);
+  deallocate_array(_map, _size);
 }
 
 template <typename T>
@@ -51,6 +51,29 @@ inline size_t ZGranuleMap<T>::index_for_offset(uintptr_t offset) const {
   const size_t index = offset >> ZGranuleSizeShift;
   assert(index < _size, "Invalid index");
   return index;
+}
+
+template <typename T>
+T* ZGranuleMap<T>::allocate_array(size_t count) {
+  size_t size = size_for_array(count);
+  void* addr = os::reserve_memory(size, !ExecMem, mtGC);
+  if (addr == nullptr) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
+  }
+  os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
+  return static_cast<T*>(addr);
+}
+
+template <typename T>
+void ZGranuleMap<T>::deallocate_array(T* ptr, size_t count) {
+  bool result = os::release_memory(static_cast<char*>(static_cast<void*>(ptr)),
+                                   size_for_array(count));
+  assert(result, "Allocator (release");
+}
+
+template <typename T>
+size_t ZGranuleMap<T>::size_for_array(size_t count) {
+  return align_up(count * sizeof(T), os::vm_allocation_granularity());
 }
 
 template <typename T>
