@@ -57,6 +57,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -83,6 +84,7 @@ public class ExceptionText {
     static final InetSocketAddress dest  = Utils.refusingEndpoint();
     static final String PORT = ":" + Integer.toString(dest.getPort());
     static final String HOST = dest.getHostString();
+    static final InetAddress ADDRESS = dest.getAddress();
 
     static void test(boolean withProperty) {
         // Socket
@@ -104,11 +106,12 @@ public class ExceptionText {
                 throw new RuntimeException("Test failed: exception contains address info");
             }
         } else {
-            if (!msg.contains(HOST) || !msg.contains(PORT)) {
+            if (!msg.contains(HOST) || !msg.contains(PORT)  || 
+                (!msg.contains(ADDRESS.getHostAddress()))) {
                 if (e instanceof ClosedChannelException)
                     return; // has no detail msg
                 System.err.println("msg = " + msg);
-                throw new RuntimeException("Test failed: exception does not contain address info");
+                throw new RuntimeException("Test failed: exception does not contain address info: " + msg);
             }
         }
     }

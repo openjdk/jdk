@@ -27,6 +27,7 @@ package sun.net.util;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.SocketAddress;
@@ -69,10 +70,19 @@ public final class SocketExceptions {
     private static IOException ofInet(IOException e, InetSocketAddress addr) {
         int port = addr.getPort();
         String host = addr.getHostString();
+        InetAddress resolved = addr.getAddress();
         StringBuilder sb = new StringBuilder();
         sb.append(e.getMessage());
         sb.append(": ");
         sb.append(host);
+        if (resolved != null) {
+            String resolvedAddr = resolved.getHostAddress();
+            if (resolvedAddr != null && !resolvedAddr.equals(host)) {
+                sb.append('(');
+                sb.append(resolvedAddr);
+                sb.append(')');
+            }
+        }
         sb.append(':');
         sb.append(Integer.toString(port));
         String enhancedMsg = sb.toString();
