@@ -50,7 +50,7 @@ public class Padding {
             assertEquals("-12", String.format("%3d", -12));
             assertEquals(" -12", String.format("%4d", -12));
             assertEquals("  -12", String.format("%5d", -12));
-            assertEquals("        12", String.format("%10d", 12));
+            assertEquals("       -12", String.format("%10d", -12));
         }
 
         @Test
@@ -243,6 +243,118 @@ public class Padding {
             assertEquals("-1.2", String.format("%- 4.1f", -1.2));
             assertEquals("-1.2 ", String.format("%- 5.1f", -1.2));
             assertEquals("-1.2      ", String.format("%- 10.1f", -1.2));
+        }
+
+    }
+
+    @Nested
+    class ZeroPaddingInt {
+
+        @Test
+        void zeroPad_d() {
+            assertEquals("12", String.format("%01d", 12));
+            assertEquals("12", String.format("%02d", 12));
+            assertEquals("012", String.format("%03d", 12));
+            assertEquals("0012", String.format("%04d", 12));
+            assertEquals("00012", String.format("%05d", 12));
+            assertEquals("0000000012", String.format("%010d", 12));
+
+            assertEquals("-12", String.format("%01d", -12));
+            assertEquals("-12", String.format("%02d", -12));
+            assertEquals("-12", String.format("%03d", -12));
+            assertEquals("-012", String.format("%04d", -12));
+            assertEquals("-0012", String.format("%05d", -12));
+            assertEquals("-000000012", String.format("%010d", -12));
+        }
+
+        @Test
+        void zeroPad_plus_d() {
+            assertEquals("+12", String.format("%+01d", 12));
+            assertEquals("+12", String.format("%+02d", 12));
+            assertEquals("+12", String.format("%+03d", 12));
+            assertEquals("+012", String.format("%+04d", 12));
+            assertEquals("+0012", String.format("%+05d", 12));
+            assertEquals("+000000012", String.format("%+010d", 12));
+
+            assertEquals("-12", String.format("%+01d", -12));
+            assertEquals("-12", String.format("%+02d", -12));
+            assertEquals("-12", String.format("%+03d", -12));
+            assertEquals("-012", String.format("%+04d", -12));
+            assertEquals("-0012", String.format("%+05d", -12));
+            assertEquals("-000000012", String.format("%+010d", -12));
+        }
+
+        @Test
+        void zeroPad_blank_d() {
+            assertEquals(" 12", String.format("% 01d", 12));
+            assertEquals(" 12", String.format("% 02d", 12));
+            assertEquals(" 12", String.format("% 03d", 12));
+            assertEquals(" 012", String.format("% 04d", 12));
+            assertEquals(" 0012", String.format("% 05d", 12));
+            assertEquals(" 000000012", String.format("% 010d", 12));
+
+            assertEquals("-12", String.format("% 01d", -12));
+            assertEquals("-12", String.format("% 02d", -12));
+            assertEquals("-12", String.format("% 03d", -12));
+            assertEquals("-012", String.format("% 04d", -12));
+            assertEquals("-0012", String.format("% 05d", -12));
+            assertEquals("-000000012", String.format("% 010d", -12));
+        }
+
+    }
+
+    @Nested
+    class ZeroPaddingDouble {
+
+        @Test
+        void zeroPad_d() {
+            assertEquals("1.2", String.format("%01.1f", 1.2));
+            assertEquals("1.2", String.format("%02.1f", 1.2));
+            assertEquals("1.2", String.format("%03.1f", 1.2));
+            assertEquals("01.2", String.format("%04.1f", 1.2));
+            assertEquals("001.2", String.format("%05.1f", 1.2));
+            assertEquals("00000001.2", String.format("%010.1f", 1.2));
+
+            assertEquals("-1.2", String.format("%01.1f", -1.2));
+            assertEquals("-1.2", String.format("%02.1f", -1.2));
+            assertEquals("-1.2", String.format("%03.1f", -1.2));
+            assertEquals("-1.2", String.format("%04.1f", -1.2));
+            assertEquals("-01.2", String.format("%05.1f", -1.2));
+            assertEquals("-0000001.2", String.format("%010.1f", -1.2));
+        }
+
+        @Test
+        void zeroPad_plus_d() {
+            assertEquals("+1.2", String.format("%+01.1f", 1.2));
+            assertEquals("+1.2", String.format("%+02.1f", 1.2));
+            assertEquals("+1.2", String.format("%+03.1f", 1.2));
+            assertEquals("+1.2", String.format("%+04.1f", 1.2));
+            assertEquals("+01.2", String.format("%+05.1f", 1.2));
+            assertEquals("+0000001.2", String.format("%+010.1f", 1.2));
+
+            assertEquals("-1.2", String.format("%+01.1f", -1.2));
+            assertEquals("-1.2", String.format("%+02.1f", -1.2));
+            assertEquals("-1.2", String.format("%+03.1f", -1.2));
+            assertEquals("-1.2", String.format("%+04.1f", -1.2));
+            assertEquals("-01.2", String.format("%+05.1f", -1.2));
+            assertEquals("-0000001.2", String.format("%+010.1f", -1.2));
+        }
+
+        @Test
+        void zeroPad_blank_d() {
+            assertEquals(" 1.2", String.format("% 01.1f", 1.2));
+            assertEquals(" 1.2", String.format("% 02.1f", 1.2));
+            assertEquals(" 1.2", String.format("% 03.1f", 1.2));
+            assertEquals(" 1.2", String.format("% 04.1f", 1.2));
+            assertEquals(" 01.2", String.format("% 05.1f", 1.2));
+            assertEquals(" 0000001.2", String.format("% 010.1f", 1.2));
+
+            assertEquals("-1.2", String.format("% 01.1f", -1.2));
+            assertEquals("-1.2", String.format("% 02.1f", -1.2));
+            assertEquals("-1.2", String.format("% 03.1f", -1.2));
+            assertEquals("-1.2", String.format("% 04.1f", -1.2));
+            assertEquals("-01.2", String.format("% 05.1f", -1.2));
+            assertEquals("-0000001.2", String.format("% 010.1f", -1.2));
         }
 
     }
