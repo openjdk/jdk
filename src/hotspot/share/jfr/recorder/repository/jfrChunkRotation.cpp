@@ -42,8 +42,10 @@ static jobject install_chunk_monitor(JavaThread* thread) {
   static const char signature[] = "Ljava/lang/Object;";
   JavaValue result(T_OBJECT);
   JfrJavaArguments field_args(&result, klass, field, signature, thread);
-  JfrJavaSupport::get_field_global_ref(&field_args, thread);
-  chunk_monitor = result.get_jobject();
+  bool success = JfrJavaSupport::get_field_global_ref(&field_args, thread);
+  if (success) {
+    chunk_monitor = result.get_jobject();
+  }
   return chunk_monitor;
 }
 

@@ -62,7 +62,7 @@ class JfrJavaSupport : public AllStatic {
 
   // global jni handle result
   static void new_object_global_ref(JfrJavaArguments* args, TRAPS);
-  static void get_field_global_ref(JfrJavaArguments* args, TRAPS);
+  static bool get_field_global_ref(JfrJavaArguments* args, TRAPS);
 
   // local jni handle result
   static void new_object_local_ref(JfrJavaArguments* args, TRAPS);

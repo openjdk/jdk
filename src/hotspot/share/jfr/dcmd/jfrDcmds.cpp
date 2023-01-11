@@ -244,6 +244,7 @@ void JfrDCmd::print_help(const char* name) const {
   JavaValue result(T_OBJECT);
   JfrJavaArguments printHelp(&result, javaClass(), "printHelp", signature, thread);
   invoke(printHelp, thread);
+  assert(result.get_type() == T_OBJECT, "just checking");
   handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
 }
 

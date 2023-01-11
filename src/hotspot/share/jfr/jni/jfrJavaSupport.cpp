@@ -486,18 +486,20 @@ void JfrJavaSupport::get_field_local_ref(JfrJavaArguments* args, TRAPS) {
   }
 }
 
-void JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
+bool JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
   assert(args != NULL, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
 
   JavaValue* const result = args->result();
   assert(result != NULL, "invariant");
   assert(result->get_type() == T_OBJECT, "invariant");
-  read_field(args, result, CHECK);
+  read_field(args, result, CHECK_(false));
   const oop obj = result->get_oop();
   if (obj != NULL) {
     result->set_jobject(global_jni_handle(obj, THREAD));
+    return true;
   }
+  return false;
 }
 
 /*
