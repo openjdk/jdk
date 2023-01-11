@@ -55,7 +55,7 @@ public class NewDirectByteBuffer {
     private static final void checkBuffer(ByteBuffer buf, long capacity) {
         if (!buf.isDirect())
             throw new RuntimeException("Buffer is not direct");
-        long bufferCapacity = getDirectBufferCapacity(buf);
+        long bufferCapacity = getDirectByteBufferCapacity(buf);
         if (bufferCapacity != capacity)
             throw new RuntimeException("GetDirectBufferCapacity "
                 + bufferCapacity + " is not " + capacity);
@@ -81,7 +81,7 @@ public class NewDirectByteBuffer {
                         checkBuffer(buf, cap);
                         System.out.println("Verified buffer for capacity " + cap);
                     } finally {
-                        freeDirectBufferMemory(buf);
+                        freeDirectByteBufferMemory(buf);
                     }
                 } else {
                     throw new RuntimeException("Direct buffer is null but no OOME");
@@ -97,7 +97,7 @@ public class NewDirectByteBuffer {
             try {
                 ByteBuffer buf = newDirectByteBuffer(cap);
                 if (buf != null) {
-                    freeDirectBufferMemory(buf);
+                    freeDirectByteBufferMemory(buf);
                 }
                 throw new RuntimeException("IAE not thrown for capacity " + cap);
             } catch (IllegalArgumentException expected) {
@@ -108,6 +108,6 @@ public class NewDirectByteBuffer {
 
     // See libNewDirectByteBuffer.c for implementations.
     private static native ByteBuffer newDirectByteBuffer(long size);
-    private static native long getDirectBufferCapacity(ByteBuffer buf);
-    private static native void freeDirectBufferMemory(ByteBuffer buf);
+    private static native long getDirectByteBufferCapacity(ByteBuffer buf);
+    private static native void freeDirectByteBufferMemory(ByteBuffer buf);
 }

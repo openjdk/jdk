@@ -47,17 +47,17 @@ Java_NewDirectByteBuffer_newDirectByteBuffer
     return dbb;
 }
 
-// private static native long getDirectBufferCapacity(ByteBuffer buf)
+// private static native long getDirectByteBufferCapacity(ByteBuffer buf)
 JNIEXPORT jlong JNICALL
-Java_NewDirectByteBuffer_getDirectBufferCapacity
+Java_NewDirectByteBuffer_getDirectByteBufferCapacity
     (JNIEnv *env, jclass cls, jobject buf)
 {
     return (*env)->GetDirectBufferCapacity(env, buf);
 }
 
-// private static native void freeDirectBufferMemory(ByteBuffer buf)
+// private static native void freeDirectByteBufferMemory(ByteBuffer buf)
 JNIEXPORT void JNICALL
-Java_NewDirectByteBuffer_freeDirectBufferMemory
+Java_NewDirectByteBuffer_freeDirectByteBufferMemory
     (JNIEnv *env, jclass cls, jobject buf)
 {
     void* addr = (*env)->GetDirectBufferAddress(env, buf);
