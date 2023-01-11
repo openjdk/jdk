@@ -117,7 +117,7 @@ void JvmtiTagMapTable::update(oop obj, jlong tag) {
 void JvmtiTagMapTable::remove(oop obj) {
   JvmtiTagMapKey jtme(obj);
   bool is_removed = _table.remove(jtme);
-  assert(is_removed, "remove not succesfull.")
+  assert(is_removed, "remove not succesfull.");
 }
 
 void JvmtiTagMapTable::entry_iterate(JvmtiTagMapKeyClosure* closure) {
