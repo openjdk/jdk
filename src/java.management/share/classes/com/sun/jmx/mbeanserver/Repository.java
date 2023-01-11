@@ -117,7 +117,7 @@ public class Repository {
             for (NamedObject no : moiTb.values()) {
                 final ObjectName on = no.getName();
                 // if all couples (property, value) are contained
-                if (pattern.apply(on)) result.add(no);
+                if (pattern.apply(ObjectName.getInstance(on))) result.add(no);
             }
         }
     }
@@ -406,7 +406,7 @@ public class Repository {
             pattern.getCanonicalName().length() == 0 ||
             pattern.equals(ObjectName.WILDCARD))
            name = ObjectName.WILDCARD;
-        else name = pattern;
+        else name = ObjectName.getInstance(pattern);
 
         lock.readLock().lock();
         try {
