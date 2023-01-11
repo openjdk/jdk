@@ -182,11 +182,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
      */
     private BitSet(long[] words) {
         this.words = words;
-        wordsInUse = words.length;
+        this.wordsInUse = words.length;
         computeCardinality();
         checkInvariants();
     }
-    
+
     private void computeCardinality() {
         cardinality = bitCount(0, wordsInUse);
     }
