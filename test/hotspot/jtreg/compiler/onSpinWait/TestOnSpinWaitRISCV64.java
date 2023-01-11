@@ -72,8 +72,8 @@ public class TestOnSpinWaitRISCV64 {
         if (compiler.equals("c2")) {
             analyzer.shouldContain("java.lang.Thread::onSpinWait (1 bytes)   (intrinsic)");
         } else {
-	    analyzer.shouldContain("java.lang.Thread::onSpinWait (1 bytes)   intrinsic");
-	}
+            analyzer.shouldContain("java.lang.Thread::onSpinWait (1 bytes)   intrinsic");
+        }
     }
 
     static class Launcher {
