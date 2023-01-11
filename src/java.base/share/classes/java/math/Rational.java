@@ -1018,4 +1018,33 @@ public class Rational extends Number implements Comparable<Rational> {
 
         return signum * absComp; // adjust comparison with signum
     }
+
+    /**
+     * Returns the minimum of this {@code Rational} and
+     * {@code val}.
+     *
+     * @param  val value with which the minimum is to be computed.
+     * @return the {@code Rational} whose value is the lesser of this
+     *         {@code Rational} and {@code val}.  If they are equal,
+     *         as defined by the {@link #compareTo(Rational) compareTo}
+     *         method, {@code this} is returned.
+     * @see    #compareTo(Rational)
+     */
+    public Rational min(Rational val) {
+        return (compareTo(val) <= 0 ? this : val);
+    }
+
+    /**
+     * Returns the maximum of this {@code Rational} and {@code val}.
+     *
+     * @param  val value with which the maximum is to be computed.
+     * @return the {@code Rational} whose value is the greater of this
+     *         {@code Rational} and {@code val}.  If they are equal,
+     *         as defined by the {@link #compareTo(Rational) compareTo}
+     *         method, {@code this} is returned.
+     * @see    #compareTo(Rational)
+     */
+    public Rational max(Rational val) {
+        return (compareTo(val) >= 0 ? this : val);
+    }
 }
