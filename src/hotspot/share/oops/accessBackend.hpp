@@ -30,7 +30,6 @@
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "oops/accessDecorators.hpp"
@@ -1094,7 +1093,7 @@ namespace AccessInternal {
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
-                   (IsPointer<T>::value || IsIntegral<T>::value) ||
+                   (IsPointer<T>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // not allowed primitive type
   }
 
@@ -1214,7 +1213,7 @@ namespace AccessInternal {
                         arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                         size_t length) {
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
-                   (IsSame<T, void>::value || IsIntegral<T>::value) ||
+                   (IsSame<T, void>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
     using DecayedT = std::decay_t<T>;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
