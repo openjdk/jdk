@@ -185,8 +185,19 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
 
+        markDuplicateGraphs();
         filterGraphs();
         selectGraph(graph);
+    }
+
+    public void markDuplicateGraphs() {
+        InputGraph previous = null;
+        for (InputGraph graph : group.getGraphs()) {
+            if (previous != null && graph.isSameContent(previous)) {
+                graph.getProperties().setProperty("_isDuplicate", "true");
+            }
+            previous = graph;
+        }
     }
 
     public ChangedEvent<DiagramViewModel> getDiagramChangedEvent() {

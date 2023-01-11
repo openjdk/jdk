@@ -356,13 +356,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             return false;
         }
         return Objects.equals(this.nodes, i.nodes)
-            && Objects.equals(this.edges, i.edges)
-            && Objects.equals(this.parent, i.parent)
-            && Objects.equals(this.parentGroup, i.parentGroup)
-            && Objects.equals(this.blocks, i.blocks)
-            && Objects.equals(this.blockEdges, i.blockEdges)
-            && Objects.equals(this.nodeToBlock, i.nodeToBlock)
-            && Objects.equals(this.isDiffGraph, i.isDiffGraph);
+            && Objects.equals(this.edges, i.edges);    
     }
 
 }
