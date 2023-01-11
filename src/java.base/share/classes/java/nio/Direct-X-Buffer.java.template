@@ -194,11 +194,11 @@ class Direct$Type$Buffer$RW$$BO$
         if (capacity < 0) {
             throw new IllegalArgumentException
                 ("JNI NewDirectByteBuffer passed capacity < 0: ("
-                + capacity + " < 0)");
+                + capacity + ")");
         } else if (capacity > Integer.MAX_VALUE) {
             throw new IllegalArgumentException
                 ("JNI NewDirectByteBuffer passed capacity > Integer.MAX_VALUE: ("
-                + capacity + " > Integer.MAX_VALUE)");
+                + capacity + ")");
         }
         return (int)capacity;
     }

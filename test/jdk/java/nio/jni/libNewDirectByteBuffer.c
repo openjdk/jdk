@@ -32,8 +32,8 @@ Java_NewDirectByteBuffer_newDirectByteBuffer
     // if throwing the OOME fails
     void* addr = malloc(size);
     if (addr == NULL) {
-        jclass rtExCls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
-        if ((*env)->ThrowNew(env, rtExCls, "malloc failed") < 0) {
+        jclass oomeCls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+        if ((*env)->ThrowNew(env, oomeCls, "malloc failed") < 0) {
             return NULL;
         }
     }

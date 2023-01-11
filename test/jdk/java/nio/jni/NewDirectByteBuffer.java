@@ -43,11 +43,13 @@ public class NewDirectByteBuffer {
     };
 
     private static final long[] ILLEGAL_CAPACITIES = {
+        Long.MIN_VALUE,
         (long)Integer.MIN_VALUE - 1L,
         -1L,
         (long)Integer.MAX_VALUE + 1L,
         3_000_000_000L,
-        5_000_000_000L
+        5_000_000_000L,
+        Long.MAX_VALUE
     };
 
     private static final void checkBuffer(ByteBuffer buf, long capacity) {
@@ -72,16 +74,20 @@ public class NewDirectByteBuffer {
         System.out.println("--- Legal Capacities ---");
         for (long cap : LEGAL_CAPACITIES) {
             System.out.println("Capacity " + cap);
-            ByteBuffer buf = newDirectByteBuffer(cap);
-            if (buf != null) {
-                try {
-                    checkBuffer(buf, cap);
-                    System.out.println("Verified buffer for capacity " + cap);
-                } finally {
-                    freeDirectBufferMemory(buf);
+            try {
+                ByteBuffer buf = newDirectByteBuffer(cap);
+                if (buf != null) {
+                    try {
+                        checkBuffer(buf, cap);
+                        System.out.println("Verified buffer for capacity " + cap);
+                    } finally {
+                        freeDirectBufferMemory(buf);
+                    }
+                } else {
+                    throw new RuntimeException("Direct buffer is null but no OOME");
                 }
-            } else {
-                throw new RuntimeException("Direct buffer is null but no OOME");
+            } catch (OutOfMemoryError ignored) {
+                // Ignore the error so test may continue
             }
         }
 

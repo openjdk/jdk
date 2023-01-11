@@ -78,7 +78,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := -I$(TEST_LIB_NATIVE_SRC)
 
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := jvm.lib
-  BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := -ljava -lc
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := $(WIN_LIB_JAVA)
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
