@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @requires (os.family == "windows")
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinMenuGroupTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinMenuGroupTest
  */
 

@@ -619,7 +619,7 @@ $(foreach n, 0 1 2, \
   $(eval specs_bottom_rel_path := $(specs_bottom_rel_path)../) \
 )
 
-SPECS_TOP := $(if $(filter true, $(IS_DRAFT)), <header class="draft-header">$(DRAFT_TEXT)</header>)
+SPECS_TOP := $(if $(filter true, $(IS_DRAFT)), <header class="draft-header" role="banner">$(DRAFT_TEXT)</header>)
 
 # For all html files in $module/share/specs directories, copy and add the
 # copyright footer.

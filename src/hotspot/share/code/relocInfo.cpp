@@ -86,7 +86,7 @@ relocInfo* relocInfo::finish_prefix(short* prefix_limit) {
     return this+1;
   }
   // cannot compact, so just update the count and return the limit pointer
-  (*this) = prefix_relocInfo(plen);   // write new datalen
+  (*this) = prefix_info(plen);       // write new datalen
   assert(data() + datalen() == prefix_limit, "pointers must line up");
   return (relocInfo*)prefix_limit;
 }
