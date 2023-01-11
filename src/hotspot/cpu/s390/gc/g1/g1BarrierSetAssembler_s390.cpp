@@ -400,7 +400,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
 
-  __ z_tmll(tmp1, JNIHandles::TypeTag::weak); // Test for jweak tag.
+  __ z_tmll(tmp1, JNIHandles::TypeTag::weak_global); // Test for jweak tag.
   __ z_braz(Lnot_weak);
   __ verify_oop(value, FILE_AND_LINE);
   DecoratorSet decorators = IN_NATIVE | ON_PHANTOM_OOP_REF;

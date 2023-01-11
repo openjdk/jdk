@@ -378,7 +378,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ beq(CCR0, done);         // Use NULL as-is.
 
   __ clrrdi(tmp1, value, JNIHandles::tag_size);
-  __ andi_(tmp2, value, JNIHandles::TypeTag::weak);
+  __ andi_(tmp2, value, JNIHandles::TypeTag::weak_global);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
   __ beq(CCR0, not_weak);     // Test for jweak tag.

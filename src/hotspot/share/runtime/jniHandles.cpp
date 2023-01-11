@@ -104,10 +104,10 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
   return res;
 }
 
-jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
+jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   assert(!current_thread_in_native(), "must not be in native");
-  jobject res = NULL;
+  jweak res = NULL;
   if (!obj.is_null()) {
     // ignore null handles
     assert(oopDesc::is_oop(obj()), "not an oop");
@@ -116,8 +116,8 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
     if (ptr != NULL) {
       assert(NativeAccess<AS_NO_KEEPALIVE>::oop_load(ptr) == oop(NULL), "invariant");
       NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(ptr, obj());
-      char* tptr = reinterpret_cast<char*>(ptr) + TypeTag::weak;
-      res = reinterpret_cast<jobject>(tptr);
+      char* tptr = reinterpret_cast<char*>(ptr) + TypeTag::weak_global;
+      res = reinterpret_cast<jweak>(tptr);
     } else {
       report_handle_allocation_failure(alloc_failmode, "weak global");
     }
@@ -137,9 +137,9 @@ oop JNIHandles::resolve_external_guard(jobject handle) {
   return result;
 }
 
-bool JNIHandles::is_global_weak_cleared(jweak handle) {
+bool JNIHandles::is_weak_global_cleared(jweak handle) {
   assert(handle != NULL, "precondition");
-  oop* oop_ptr = jweak_ptr(handle);
+  oop* oop_ptr = weak_global_ptr(handle);
   oop value = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(oop_ptr);
   return value == NULL;
 }
@@ -153,9 +153,9 @@ void JNIHandles::destroy_global(jobject handle) {
 }
 
 
-void JNIHandles::destroy_weak_global(jobject handle) {
+void JNIHandles::destroy_weak_global(jweak handle) {
   if (handle != NULL) {
-    oop* oop_ptr = jweak_ptr(handle);
+    oop* oop_ptr = weak_global_ptr(handle);
     NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(oop_ptr, (oop)NULL);
     weak_global_handles()->release(oop_ptr);
   }
@@ -183,8 +183,8 @@ inline bool is_storage_handle(const OopStorage* storage, const oop* ptr) {
 jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
   assert(handle != NULL, "precondition");
   jobjectRefType result = JNIInvalidRefType;
-  if (is_jweak_tagged(handle)) {
-    if (is_storage_handle(weak_global_handles(), jweak_ptr(handle))) {
+  if (is_weak_global_tagged(handle)) {
+    if (is_storage_handle(weak_global_handles(), weak_global_ptr(handle))) {
       result = JNIWeakGlobalRefType;
     }
   } else if (is_global_tagged(handle)) {
@@ -249,8 +249,8 @@ bool JNIHandles::is_global_handle(jobject handle) {
 
 bool JNIHandles::is_weak_global_handle(jobject handle) {
   assert(handle != NULL, "precondition");
-  assert(!is_jweak_tagged(handle) || is_storage_handle(weak_global_handles(), jweak_ptr(handle)), "invalid storage");
-  return is_jweak_tagged(handle);
+  assert(!is_weak_global_tagged(handle) || is_storage_handle(weak_global_handles(), weak_global_ptr(handle)), "invalid storage");
+  return is_weak_global_tagged(handle);
 }
 
 // We assume this is called at a safepoint: no lock is needed.

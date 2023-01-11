@@ -40,15 +40,15 @@ inline bool JNIHandles::is_local_tagged(jobject handle) {
   return is_tagged_with(handle, TypeTag::local);
 }
 
-inline bool JNIHandles::is_jweak_tagged(jobject handle) {
-  return is_tagged_with(handle, TypeTag::weak);
+inline bool JNIHandles::is_weak_global_tagged(jobject handle) {
+  return is_tagged_with(handle, TypeTag::weak_global);
 }
 
 inline bool JNIHandles::is_global_tagged(jobject handle) {
   return is_tagged_with(handle, TypeTag::global);
 }
 
-inline oop* JNIHandles::jobject_ptr(jobject handle) {
+inline oop* JNIHandles::local_ptr(jobject handle) {
   assert(is_local_tagged(handle), "precondition");
   STATIC_ASSERT(TypeTag::local == 0);
   return reinterpret_cast<oop*>(handle);
@@ -60,9 +60,9 @@ inline oop* JNIHandles::global_ptr(jobject handle) {
   return reinterpret_cast<oop*>(ptr);
 }
 
-inline oop* JNIHandles::jweak_ptr(jobject handle) {
-  assert(is_jweak_tagged(handle), "precondition");
-  char* ptr = reinterpret_cast<char*>(handle) - TypeTag::weak;
+inline oop* JNIHandles::weak_global_ptr(jweak handle) {
+  assert(is_weak_global_tagged(handle), "precondition");
+  char* ptr = reinterpret_cast<char*>(handle) - TypeTag::weak_global;
   return reinterpret_cast<oop*>(ptr);
 }
 
@@ -72,15 +72,15 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
   assert(handle != NULL, "precondition");
   assert(!current_thread_in_native(), "must not be in native");
   oop result;
-  if (is_jweak_tagged(handle)) {       // Unlikely
-    result = NativeAccess<ON_PHANTOM_OOP_REF|decorators>::oop_load(jweak_ptr(handle));
+  if (is_weak_global_tagged(handle)) {       // Unlikely
+    result = NativeAccess<ON_PHANTOM_OOP_REF|decorators>::oop_load(weak_global_ptr(handle));
   } else if (is_global_tagged(handle)) {
     result = NativeAccess<decorators>::oop_load(global_ptr(handle));
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
     assert(external_guard || result != NULL, "Invalid JNI handle");
   } else {
-    result = *jobject_ptr(handle);
+    result = *local_ptr(handle);
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
     assert(external_guard || result != NULL, "Invalid JNI handle");
@@ -119,7 +119,7 @@ inline oop JNIHandles::resolve_non_null(jobject handle) {
 
 inline void JNIHandles::destroy_local(jobject handle) {
   if (handle != NULL) {
-    *jobject_ptr(handle) = NULL;
+    *local_ptr(handle) = NULL;
   }
 }
 

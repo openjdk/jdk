@@ -46,11 +46,11 @@ class JNIHandles : AllStatic {
   static OopStorage* weak_global_handles();
 
   inline static bool is_local_tagged(jobject handle);
-  inline static bool is_jweak_tagged(jobject handle);
+  inline static bool is_weak_global_tagged(jobject handle);
   inline static bool is_global_tagged(jobject handle);
-  inline static oop* jobject_ptr(jobject handle); // NOT jweak or global!
+  inline static oop* local_ptr(jobject handle);
   inline static oop* global_ptr(jobject handle);
-  inline static oop* jweak_ptr(jobject handle);
+  inline static oop* weak_global_ptr(jweak handle);
 
   template <DecoratorSet decorators, bool external_guard> inline static oop resolve_impl(jobject handle);
 
@@ -66,7 +66,7 @@ class JNIHandles : AllStatic {
   // the underlying storage type is unsuitable for performance reasons.
   enum TypeTag {
     local = 0b00,
-    weak = 0b01,
+    weak_global = 0b01,
     global = 0b10,
   };
 
@@ -78,7 +78,7 @@ public:
   static const uintptr_t tag_mask = ((1u << tag_size) - 1u);
 
   STATIC_ASSERT((TypeTag::local & tag_mask) == TypeTag::local);
-  STATIC_ASSERT((TypeTag::weak & tag_mask) == TypeTag::weak);
+  STATIC_ASSERT((TypeTag::weak_global & tag_mask) == TypeTag::weak_global);
   STATIC_ASSERT((TypeTag::global & tag_mask) == TypeTag::global);
 
   // Resolve handle into oop
@@ -103,10 +103,10 @@ public:
   static void destroy_global(jobject handle);
 
   // Weak global handles
-  static jobject make_weak_global(Handle obj,
-                                  AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  static void destroy_weak_global(jobject handle);
-  static bool is_global_weak_cleared(jweak handle); // Test jweak without resolution
+  static jweak make_weak_global(Handle obj,
+                                AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  static void destroy_weak_global(jweak handle);
+  static bool is_weak_global_cleared(jweak handle); // Test jweak without resolution
 
   // Debugging
   static void print_on(outputStream* st);

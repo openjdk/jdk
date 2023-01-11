@@ -127,7 +127,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
   __ b(verify);
 
   __ bind(tagged);
-  __ andi_(tmp1, value, JNIHandles::TypeTag::weak);
+  __ andi_(tmp1, value, JNIHandles::TypeTag::weak_global);
   __ clrrdi(value, value, JNIHandles::tag_size); // Untag.
   __ bne(CCR0, weak_tagged);   // Test for jweak tag.
 

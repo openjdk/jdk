@@ -2470,7 +2470,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   b(done);
 
   bind(tagged);
-  STATIC_ASSERT(JNIHandles::TypeTag::weak == 0b1);
+  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
   tbnz(value, 0, weak_tagged);    // Test for weak tag.
 
   // Resolve global handle
@@ -2481,7 +2481,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 value, Address(value, -JNIHandles::TypeTag::weak), tmp1, tmp2);
+                 value, Address(value, -JNIHandles::TypeTag::weak_global), tmp1, tmp2);
   verify_oop(value);
 
   bind(done);
