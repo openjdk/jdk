@@ -100,7 +100,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
     /**
      * The number of bits set to {@code true} in this {@code BitSet}.
-     * 
+     *
      * @since 21
      */
     private transient int cardinality = 0;
@@ -374,7 +374,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
     /**
      * Ensures that the BitSet can hold enough words.
-     * 
+     *
      * @param wordsRequired the minimum acceptable number of words.
      */
     private void ensureCapacity(int wordsRequired) {
@@ -390,7 +390,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Ensures that the BitSet can accommodate a given wordIndex, temporarily
      * violating the invariants. The caller must restore the invariants before
      * returning to the user, possibly using recalculateWordsInUse().
-     * 
+     *
      * @param wordIndex the index to be accommodated.
      */
     private void expandTo(int wordIndex) {
@@ -1114,7 +1114,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *
      * <p>
      * The hash code is defined to be the result of the following calculation:
-     * 
+     *
      * <pre> {@code
      * public int hashCode() {
      *     long h = 1234;
@@ -1124,7 +1124,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *     return (int) ((h >> 32) ^ h);
      * }
      * }</pre>
-     * 
+     *
      * Note that the hash code changes if the set of bits is altered.
      *
      * @return the hash code value for this bit set
@@ -1153,11 +1153,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * if and only if the argument is not {@code null} and is a {@code BitSet}
      * object that has exactly the same set of bits set to {@code true} as this bit
      * set. That is, for every nonnegative {@code int} index {@code k},
-     * 
+     *
      * <pre>
      * ((BitSet) obj).get(k) == this.get(k)
      * </pre>
-     * 
+     *
      * must be true. The current sizes of the two bit sets are not compared.
      *
      * @param obj the object to compare with
@@ -1265,24 +1265,24 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *
      * <p>
      * Example:
-     * 
+     *
      * <pre>
      * BitSet drPepper = new BitSet();
      * </pre>
-     * 
+     *
      * Now {@code drPepper.toString()} returns "{@code {}}".
-     * 
+     *
      * <pre>
      * drPepper.set(2);
      * </pre>
-     * 
+     *
      * Now {@code drPepper.toString()} returns "{@code {2}}".
-     * 
+     *
      * <pre>
      * drPepper.set(4);
      * drPepper.set(10);
      * </pre>
-     * 
+     *
      * Now {@code drPepper.toString()} returns "{@code {2, 4, 10}}".
      *
      * @return a string representation of this bit set
