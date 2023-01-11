@@ -116,7 +116,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   new_frame->pc = SharedRuntime::get_handle_wrong_method_stub();
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
@@ -124,23 +124,14 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   // Disarms the nmethod guard emitted by BarrierSetAssembler::nmethod_entry_barrier.
   // Symmetric "LDR; DMB ISHLD" is in the nmethod barrier.
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  barrier->set_value(disarmed_value());
+  barrier->set_value(value);
 }
 
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+int BarrierSetNMethod::guard_value(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
-    return;
+    return disarmed_guard_value();
   }
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  barrier->set_value(arm_value);
-}
-
-bool BarrierSetNMethod::is_armed(nmethod* nm) {
-  if (!supports_entry_barrier(nm)) {
-    return false;
-  }
-
-  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  return barrier->get_value() != disarmed_value();
+  return barrier->get_value();
 }
