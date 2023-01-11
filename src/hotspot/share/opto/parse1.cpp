@@ -616,32 +616,31 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAS
   set_map_clone(entry_map);
 
   if (_caller_state) {
-    PEAState& init = entry_block->state();
-    // only arguments flow into callee. Caller pushed arguments and 'dec_sp(nargs)' changed them to arguments
+    PEAState& init = jvms()->alloc_state();
+    // only arguments flow into the callee. Caller pushes arguments and 'dec_sp(nargs)' changes them to the arguments
     // of callee. refer to Parse::do_call().
     uint nargs = _method->arg_size();
     // arguments are bound to locals
     for (uint i = 0; i < nargs; ++i) {
       Node* arg = local(i);
-      ObjID alloc = _caller_state->is_alias(arg);
+      ObjID id = _caller_state->is_alias(arg);
 
-      if (alloc != nullptr) {
-        bool created;
-        ObjectState** obj_state = init._state.put_if_absent(alloc, &created);
-
-        if (created) {
-          *obj_state = _caller_state->get_object_state(alloc);
+      if (id != nullptr) {
+        if (!init.contains(id)) {
+          ObjectState* os = _caller_state->get_object_state(id)->clone();
+          init.update(id, os);
         }
       }
     }
 
     _caller_state->_alias.iterate([&](Node* node, ObjID alloc) {
-       if (init._state.contains(alloc)) {
-         init._alias.put(node, alloc);
+       if (init.contains(alloc)) {
+         init.add_alias(alloc, node);
        }
        return true;
     });
   }
+  
   merge_common(entry_block, entry_block->next_path_num());
 #ifndef PRODUCT
   BytecodeParseHistogram *parse_histogram_obj = new (C->env()->arena()) BytecodeParseHistogram(this, C);
@@ -1539,7 +1538,7 @@ void Parse::Block::record_state(Parse* p, int pnum) {
   _init_pnum = pnum;
   // it looks like op->block() is null only when the current method is java.lang.Object.<init>
   if (p->block() != nullptr) {
-    _state = p->block()->state();
+    PEAState& pstate = p->block()->state();
 
     // purge all dead
     JVMState* jvms = _start_map->jvms();
@@ -1547,10 +1546,10 @@ void Parse::Block::record_state(Parse* p, int pnum) {
 
     for (int i = 0; i < jvms->loc_size(); ++i) {
       Node* lv = _start_map->local(jvms, i);
-      ObjID obj = _state.is_alias(lv);
+      ObjID obj = pstate.is_alias(lv);
+
       if (!mrs.at(i) && obj != nullptr) {
-        _state._alias.remove(lv);
-        _state._state.remove(obj);
+        pstate.remove_alias(obj, lv);
       }
     }
   }

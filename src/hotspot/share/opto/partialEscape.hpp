@@ -25,11 +25,13 @@
 #ifndef SHARE_OPTO_PARTIAL_ESCAPE_HPP
 #define SHARE_OPTO_PARTIAL_ESCAPE_HPP
 
-#include "opto/callnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/resourceHash.hpp"
 
 class ObjectState {
+ protected:
+  int _refcnt = 0;
+
  public:
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
@@ -38,6 +40,10 @@ class ObjectState {
 
   virtual bool is_virtual() const = 0;
   virtual Node* get_materialized_value() = 0;
+  virtual ObjectState* clone() const = 0;
+  
+  void ref_inc() { _refcnt++; }
+  int ref_dec() { return --_refcnt; }
 };
 
 class VirtualState: public ObjectState {
@@ -45,11 +51,17 @@ class VirtualState: public ObjectState {
   int _lockCount;
   Node** _entries;
   DEBUG_ONLY(uint _nfields);
-
+  
+ protected:
+  VirtualState(const VirtualState& other);
  public:
   VirtualState(uint nfields);
+
   bool is_virtual() const override { return true; }
   Node* get_materialized_value() override { return nullptr; }
+  ObjectState* clone() const override {
+    return new VirtualState(*this);
+  }
   void update_field(int idx, Node* val);
 };
 
@@ -58,8 +70,12 @@ class EscapedState: public ObjectState {
 
  public:
   EscapedState(Node* materialized) : _materialized(materialized) {}
+
   bool is_virtual() const override { return false;}
   Node* get_materialized_value() override { return _materialized; }
+  ObjectState* clone() const override {
+    return new EscapedState(_materialized);
+  }
 };
 
 template<typename K, typename V>
@@ -90,7 +106,7 @@ class PEAState {
     }
   }
 
-  void add_new_allocation(Node* obj);
+
   bool contains(ObjID id) const {
 #ifdef ASSERT
     if (id == nullptr) {
@@ -105,17 +121,18 @@ class PEAState {
     _state.put(id, os);
   }
 
+  // refcount is the no. of aliases which refer to the object.
+  // we do garbage collection if refcnt drops to 0.
   void add_alias(ObjID id, Node* var) {
     assert(contains(id), "sanity check");
+    if (_alias.contains(var)) return;
     _alias.put(var, id);
+    get_object_state(id)->ref_inc();
   }
 
-  void remove_alias(ObjID id, Node* var) {
-    assert(contains(id), "sanity check");
-    assert(_alias.contains(var) && (*_alias.get(var)) == id, "sanity check");
-    _alias.remove(var);
-  }
+  void remove_alias(ObjID id, Node* var);
 
+  void add_new_allocation(Node* obj);
   EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
 #ifndef PRODUCT
   void print_on(outputStream* os);

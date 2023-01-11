@@ -171,7 +171,6 @@ class Parse : public GraphKit {
     Block**            _predecessors;
     Block*             _from_block;
     int                _init_pnum;      // the pnum of Block where _state is copied from.
-    PEAState           _state; // Keep track all allocations
 
     const MethodLivenessResult& liveness() const {
       if (!_live_locals.is_valid()) {
@@ -203,7 +202,10 @@ class Parse : public GraphKit {
     bool is_merged() const                 { return _start_map != NULL; }
     Block* from_block() const              { return _from_block; }
     int init_pnum() const                  { return _init_pnum; }
-    PEAState& state()                      { return _state; }
+    PEAState& state()                      {
+      assert(is_merged(), "sanity check");
+      return _start_map->jvms()->alloc_state();
+    }
 #ifdef ASSERT
     // True after backedge predecessor flows control into this block
     bool has_merged_backedge() const       { return _has_merged_backedge; }

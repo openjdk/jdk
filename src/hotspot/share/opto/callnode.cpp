@@ -614,6 +614,7 @@ JVMState* JVMState::clone_shallow(Compile* C) const {
   n->set_endoff(_endoff);
   n->set_sp(_sp);
   n->set_map(_map);
+  n->_alloc_state = _alloc_state;
   return n;
 }
 

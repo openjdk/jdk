@@ -29,6 +29,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/partialEscape.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/replacednodes.hpp"
 #include "opto/type.hpp"
@@ -208,6 +209,8 @@ private:
   ReexecuteState    _reexecute; // Whether this bytecode need to be re-executed
   ciMethod*         _method;    // Method Pointer
   SafePointNode*    _map;       // Map node associated with this scope
+  PEAState          _alloc_state;
+
 public:
   friend class Compile;
   friend class PreserveReexecuteState;
@@ -301,6 +304,7 @@ public:
   void      set_map_deep(SafePointNode *map);// reset map for all callers
   void      adapt_position(int delta);       // Adapt offsets in in-array after adding an edge.
   int       interpreter_frame_size() const;
+  PEAState&        alloc_state() { return _alloc_state; }
 
 #ifndef PRODUCT
   void      print_method_with_lineno(outputStream* st, bool show_name) const;

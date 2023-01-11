@@ -325,6 +325,13 @@ VirtualState::VirtualState(uint nfields): _lockCount(0) {
   }
   DEBUG_ONLY(_nfields = nfields);
 }
+// do NOT call base's copy constructor. we would like to reset refcnt!
+
+VirtualState::VirtualState(const VirtualState& other) {
+  _lockCount = other._lockCount;
+  _entries   = other._entries;
+  DEBUG_ONLY(_nfields = other._nfields);
+}
 
 void VirtualState::update_field(int idx, Node* val) {
   assert(idx >= 0 && (uint)idx < _nfields, "sanity check");
@@ -353,8 +360,7 @@ void PEAState::add_new_allocation(Node* obj) {
     AllocateNode* alloc = obj->in(1)->in(0)->as_Allocate();
     bool result = _state.put(alloc, new VirtualState(nfields));
     assert(result, "the key existed in _state");
-    result = _alias.put(obj, alloc);
-    assert(result, "the key existed in _alias");
+    add_alias(alloc, obj);
   }
 }
 
@@ -373,6 +379,17 @@ PEAState& PEAState::operator=(const PEAState& init) {
   });
 
   return *this;
+}
+
+
+void PEAState::remove_alias(ObjID id, Node* var) {
+  assert(contains(id), "sanity check");
+  assert(_alias.contains(var) && (*_alias.get(var)) == id, "sanity check");
+  _alias.remove(var);
+
+  if (!get_object_state(id)->ref_dec()) {
+    _state.remove(id);
+  }
 }
 
 // Inspired by GraphKit::replace_in_map. Besides the replacement of old object
