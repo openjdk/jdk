@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1739,7 +1739,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("\n\t");
     st->print("ldr  rscratch1, [guard]\n\t");
     st->print("dmb ishld\n\t");
-    st->print("ldr  rscratch2, [rthread, #thread_disarmed_offset]\n\t");
+    st->print("ldr  rscratch2, [rthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("cmp  rscratch1, rscratch2\n\t");
     st->print("b.eq skip");
     st->print("\n\t");
@@ -7558,7 +7558,7 @@ instruct storeimmL0(immL0 zero, memory8 mem)
 instruct storeP(iRegP src, memory8 mem)
 %{
   match(Set mem (StoreP mem src));
-  predicate(!needs_releasing_store(n));
+  predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
 
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# ptr" %}
@@ -7572,7 +7572,7 @@ instruct storeP(iRegP src, memory8 mem)
 instruct storeimmP0(immP0 zero, memory8 mem)
 %{
   match(Set mem (StoreP mem zero));
-  predicate(!needs_releasing_store(n));
+  predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
 
   ins_cost(INSN_COST);
   format %{ "str zr, $mem\t# ptr" %}
@@ -7973,6 +7973,7 @@ instruct storeimmL0_volatile(immL0 zero, /* sync_memory*/indirect mem)
 instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
 %{
   match(Set mem (StoreP mem src));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "stlr  $src, $mem\t# ptr" %}
@@ -7985,6 +7986,7 @@ instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
 instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
 %{
   match(Set mem (StoreP mem zero));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "stlr  zr, $mem\t# ptr" %}
@@ -9654,6 +9656,90 @@ instruct get_and_addIi_no_resAcq(indirect mem, Universe dummy, immIAddSub incr) 
   ins_pipe(pipe_serial);
 %}
 
+// Manifest a CmpU result in an integer register.
+// (src1 < src2) ? -1 : ((src1 > src2) ? 1 : 0)
+instruct cmpU3_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(INSN_COST * 3);
+  format %{
+      "cmpw $src1, $src2\n\t"
+      "csetw $dst, ne\n\t"
+      "cnegw $dst, lo\t# CmpU3(reg)"
+  %}
+  ins_encode %{
+    __ cmpw($src1$$Register, $src2$$Register);
+    __ csetw($dst$$Register, Assembler::NE);
+    __ cnegw($dst$$Register, $dst$$Register, Assembler::LO);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpU3_reg_imm(iRegINoSp dst, iRegI src1, immIAddSub src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(INSN_COST * 3);
+  format %{
+      "subsw zr, $src1, $src2\n\t"
+      "csetw $dst, ne\n\t"
+      "cnegw $dst, lo\t# CmpU3(imm)"
+  %}
+  ins_encode %{
+    __ subsw(zr, $src1$$Register, (int32_t)$src2$$constant);
+    __ csetw($dst$$Register, Assembler::NE);
+    __ cnegw($dst$$Register, $dst$$Register, Assembler::LO);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+// Manifest a CmpUL result in an integer register.
+// (src1 < src2) ? -1 : ((src1 > src2) ? 1 : 0)
+instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL src1, iRegL src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(INSN_COST * 3);
+  format %{
+      "cmp $src1, $src2\n\t"
+      "csetw $dst, ne\n\t"
+      "cnegw $dst, lo\t# CmpUL3(reg)"
+  %}
+  ins_encode %{
+    __ cmp($src1$$Register, $src2$$Register);
+    __ csetw($dst$$Register, Assembler::NE);
+    __ cnegw($dst$$Register, $dst$$Register, Assembler::LO);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpUL3_reg_imm(iRegINoSp dst, iRegL src1, immLAddSub src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(INSN_COST * 3);
+  format %{
+      "subs zr, $src1, $src2\n\t"
+      "csetw $dst, ne\n\t"
+      "cnegw $dst, lo\t# CmpUL3(imm)"
+  %}
+  ins_encode %{
+    __ subs(zr, $src1$$Register, (int32_t)$src2$$constant);
+    __ csetw($dst$$Register, Assembler::NE);
+    __ cnegw($dst$$Register, $dst$$Register, Assembler::LO);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 // Manifest a CmpL result in an integer register.
 // (src1 < src2) ? -1 : ((src1 > src2) ? 1 : 0)
 instruct cmpL3_reg_reg(iRegINoSp dst, iRegL src1, iRegL src2, rFlagsReg flags)
@@ -9661,13 +9747,12 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL src1, iRegL src2, rFlagsReg flags)
   match(Set dst (CmpL3 src1 src2));
   effect(KILL flags);
 
-  ins_cost(INSN_COST * 6);
+  ins_cost(INSN_COST * 3);
   format %{
-      "cmp $src1, $src2"
-      "csetw $dst, ne"
-      "cnegw $dst, lt"
+      "cmp $src1, $src2\n\t"
+      "csetw $dst, ne\n\t"
+      "cnegw $dst, lt\t# CmpL3(reg)"
   %}
-  // format %{ "CmpL3 $dst, $src1, $src2" %}
   ins_encode %{
     __ cmp($src1$$Register, $src2$$Register);
     __ csetw($dst$$Register, Assembler::NE);
@@ -9682,19 +9767,14 @@ instruct cmpL3_reg_imm(iRegINoSp dst, iRegL src1, immLAddSub src2, rFlagsReg fla
   match(Set dst (CmpL3 src1 src2));
   effect(KILL flags);
 
-  ins_cost(INSN_COST * 6);
+  ins_cost(INSN_COST * 3);
   format %{
-      "cmp $src1, $src2"
-      "csetw $dst, ne"
-      "cnegw $dst, lt"
+      "subs zr, $src1, $src2\n\t"
+      "csetw $dst, ne\n\t"
+      "cnegw $dst, lt\t# CmpL3(imm)"
   %}
   ins_encode %{
-    int32_t con = (int32_t)$src2$$constant;
-     if (con < 0) {
-      __ adds(zr, $src1$$Register, -con);
-    } else {
-      __ subs(zr, $src1$$Register, con);
-    }
+    __ subs(zr, $src1$$Register, (int32_t)$src2$$constant);
     __ csetw($dst$$Register, Assembler::NE);
     __ cnegw($dst$$Register, $dst$$Register, Assembler::LT);
   %}
