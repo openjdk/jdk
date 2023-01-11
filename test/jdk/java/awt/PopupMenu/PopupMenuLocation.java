@@ -69,12 +69,12 @@ public final class PopupMenuLocation {
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
             Point point = new Point(screenBounds.x + insets.left,
                                     screenBounds.y + insets.top);
-            while (point.y <
-                   screenBounds.y + screenBounds.height - insets.bottom -
-                   SIZE) {
-                while (point.x <
-                       screenBounds.x + screenBounds.width - insets.right -
-                       SIZE) {
+            final int yBound = screenBounds.y + screenBounds.height
+                               - insets.bottom - SIZE;
+            final int xBound = screenBounds.x + screenBounds.width
+                               - insets.right - SIZE;
+            while (point.y < yBound) {
+                while (point.x < xBound) {
                     test(point);
                     point.translate(screenBounds.width / 5, 0);
                 }
@@ -84,7 +84,7 @@ public final class PopupMenuLocation {
         }
     }
 
-    private static void test(final Point tmp) {
+    private static void test(final Point loc) {
         frame = new Frame();
         PopupMenu pm = new PopupMenu();
         IntStream.rangeClosed(1, 6).forEach(i -> pm.add(TEXT + i));
@@ -100,8 +100,8 @@ public final class PopupMenuLocation {
             frame.add(pm);
             frame.pack();
             frame.setSize(SIZE, SIZE);
+            frame.setLocation(loc);
             frame.setVisible(true);
-            frame.setLocation(tmp.x, tmp.y);
 
             frame.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
