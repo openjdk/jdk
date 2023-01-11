@@ -24,7 +24,7 @@
  // key: compiler.note.preview.filename
  // key: compiler.note.preview.recompile
  // key: compiler.err.not.template.processor.type
- // options: --enable-preview  -source 20
+ // options: --enable-preview  -source 21
 
 import java.lang.template.*;
 

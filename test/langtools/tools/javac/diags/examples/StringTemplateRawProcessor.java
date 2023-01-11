@@ -26,7 +26,7 @@
  // key: compiler.misc.unexpected.ret.val
  // key: compiler.err.prob.found.req
  // key: compiler.err.template.processor.type.cannot.be.a.raw.type
- // options: --enable-preview -source 20
+ // options: --enable-preview -source 21
 
 import java.lang.template.*;
 
