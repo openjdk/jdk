@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,8 +510,10 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
-// Thread start routine for all newly created threads
-static unsigned __stdcall thread_native_entry(Thread* thread) {
+// Thread start routine for all newly created threads.
+// Called with the associated Thread* as the argument.
+unsigned __stdcall os::win32::thread_native_entry(void* t) {
+  Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
   thread->initialize_thread_current();
@@ -744,7 +746,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(NULL,
                              (unsigned)stack_size,
-                             (unsigned (__stdcall *)(void*)) thread_native_entry,
+                             &os::win32::thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
@@ -5356,11 +5358,14 @@ void Parker::unpark() {
 // Platform Monitor implementation
 
 // Must already be locked
-int PlatformMonitor::wait(jlong millis) {
-  assert(millis >= 0, "negative timeout");
+int PlatformMonitor::wait(uint64_t millis) {
   int ret = OS_TIMEOUT;
+  // The timeout parameter for SleepConditionVariableCS is a DWORD
+  if (millis > UINT_MAX) {
+    millis = UINT_MAX;
+  }
   int status = SleepConditionVariableCS(&_cond, &_mutex,
-                                        millis == 0 ? INFINITE : millis);
+                                        millis == 0 ? INFINITE : (DWORD)millis);
   if (status != 0) {
     ret = OS_OK;
   }

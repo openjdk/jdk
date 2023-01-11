@@ -279,7 +279,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     return;
   }
   Register thread = r15_thread;
-  Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_offset()));
+  Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
   // The immediate is the last 4 bytes, so if we align the start of the cmp
   // instruction to 4 bytes, we know that the second half of it is also 4
   // byte aligned, which means that the immediate will not cross a cache line
@@ -310,7 +310,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, La
 
   Register tmp = rdi;
   __ push(tmp);
-  __ movptr(tmp, (intptr_t)bs_nm->disarmed_value_address());
+  __ movptr(tmp, (intptr_t)bs_nm->disarmed_guard_value_address());
   Address disarmed_addr(tmp, 0);
   __ align(4);
   __ cmpl_imm32(disarmed_addr, 0);

@@ -486,7 +486,7 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
-  TenuredSpace* space = (TenuredSpace*)_the_space;
+  TenuredSpace* space = _the_space;
   space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {

@@ -366,7 +366,7 @@ public class TestGCLogMessages {
     static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
             jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
-            WB.g1StartConcMarkCycle();
+            WB.g1StartConcurrentGC();
         }
     }
 
