@@ -136,7 +136,7 @@ public interface ObjectStreamConstants {
     /**
      * First wire handle to be assigned.
      */
-    static int BASE_WIRE_HANDLE = 0x7e0000;
+    static int baseWireHandle = 0x7e0000;
 
 
     /* *******************************************************************/

@@ -1214,7 +1214,7 @@ public class ObjectOutputStream
      */
     private void writeHandle(int handle) throws IOException {
         bout.writeByte(TC_REFERENCE);
-        bout.writeInt(BASE_WIRE_HANDLE + handle);
+        bout.writeInt(baseWireHandle + handle);
     }
 
     /**
