@@ -2347,7 +2347,7 @@ public class Types {
         for (Type type = innerType.getEnclosingType();
                 type != null && type.hasTag(CLASS);
                 type = type.getEnclosingType()) {
-            if (erasure(type).equalsIgnoreMetadata(outerType)) {
+            if (isSameType(type, outerType)) {
                 return true;
             }
         }
