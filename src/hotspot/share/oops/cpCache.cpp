@@ -868,6 +868,33 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
+bool ConstantPoolCache::save_and_throw_indy_exc(
+  const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
+
+  assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
+  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
+         "No LinkageError exception");
+
+  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
+
+  // if f1 is not null or the indy_resolution_failed flag is set then another
+  // thread either succeeded in resolving the method or got a LinkageError
+  // exception, before this thread was able to record its failure.  So, clear
+  // this thread's exception and return false so caller can use the earlier
+  // thread's result.
+  if (resolved_indy_info(index)->is_resolved() || resolved_indy_info(index)->resolution_failed()) {
+    CLEAR_PENDING_EXCEPTION;
+    return false;
+  }
+
+  Symbol* error = PENDING_EXCEPTION->klass()->name();
+  Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
+
+  SystemDictionary::add_resolution_error(cpool, index, error, message);
+  resolved_indy_info(index)->set_resolution_failed();
+  return true;
+}
+
 oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   ResourceMark rm;
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());

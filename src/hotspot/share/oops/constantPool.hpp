@@ -639,7 +639,11 @@ class ConstantPool : public Metadata {
   void shrink_operands(int new_len, TRAPS);
 
   int bootstrap_method_ref_index_at(int which) {
-    assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
+    //assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
+    if (!tag_at(which).has_bootstrap()) {
+      tty->print_cr("Break here!");
+      ShouldNotReachHere();
+    }
     int op_base = bootstrap_operand_base(which);
     return operands()->at(op_base + _indy_bsm_offset);
   }

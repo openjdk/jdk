@@ -76,9 +76,11 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
       result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
       Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
       return true;
-    } else {
+    } else if (_pool->resolved_indy_info(_indy_index)->resolution_failed()) {
       int encoded_index = _pool->resolved_indy_info(_indy_index)->cpool_index();
-      //ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
+      ConstantPool::throw_resolution_error(_pool, _indy_index, CHECK_false); // Doesn't necessarily need to be resolved yet
+      return true;
+    } else {
       return false;
     }
   } else {
@@ -230,13 +232,22 @@ void BootstrapInfo::resolve_args(TRAPS) {
 bool BootstrapInfo::save_and_throw_indy_exc(TRAPS) {
   assert(HAS_PENDING_EXCEPTION, "");
   assert(_indy_index != -1, "");
-  ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
-  int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
-  bool recorded_res_status = cpce->save_and_throw_indy_exc(_pool, _bss_index,
-                                                           encoded_index,
+  if (UseNewIndyCode) {
+    int encoded_index = ResolutionErrorTable::encode_cpcache_index(ConstantPool::encode_invokedynamic_index(_indy_index));
+    bool recorded_res_status = _pool->cache()->save_and_throw_indy_exc(_pool, _bss_index,
+                                                           _indy_index,
                                                            pool()->tag_at(_bss_index),
                                                            CHECK_false);
-  return recorded_res_status;
+    return recorded_res_status;
+  } else {
+    ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
+    int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
+    bool recorded_res_status = cpce->save_and_throw_indy_exc(_pool, _bss_index,
+                                                            encoded_index,
+                                                            pool()->tag_at(_bss_index),
+                                                            CHECK_false);
+    return recorded_res_status;
+  }
 }
 
 void BootstrapInfo::resolve_newly_linked_invokedynamic(CallInfo& result, TRAPS) {
@@ -249,8 +260,14 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   char what[20];
   st = st ? st : tty;
 
-  if (_indy_index != -1)
-    os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
+  if (_indy_index != -1) {
+    if (UseNewIndyCode) {
+      sprintf(what, "indy#%d", _indy_index);
+      os::snprintf_checked(what, sizeof(what), "indy#%d", _indy_index);
+    } else {
+      os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
+    }
+  }
   else
     os::snprintf_checked(what, sizeof(what), "condy");
   bool have_msg = (msg != NULL && strlen(msg) > 0);

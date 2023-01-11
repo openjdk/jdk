@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
 #ifndef SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
 #define SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
 
@@ -11,6 +35,7 @@ class ResolvedIndyInfo : public MetaspaceObj {
      u2 _number_of_parameters;
      u1 _return_type;
      bool _has_appendix;
+     bool _resolution_failed;
 
 public:
     ResolvedIndyInfo() :
@@ -19,14 +44,16 @@ public:
         _cpool_index(0),
         _number_of_parameters(0),
         _return_type(0),
-        _has_appendix(false) {}
+        _has_appendix(false),
+        _resolution_failed(false) {}
     ResolvedIndyInfo(u2 resolved_references_index, u2 cpool_index) :
         _method(nullptr),
         _resolved_references_index(resolved_references_index),
         _cpool_index(cpool_index),
         _number_of_parameters(0),
         _return_type(0),
-        _has_appendix(false) {}
+        _has_appendix(false),
+        _resolution_failed(false) {}
 
     // Getters
     Method* method() const               { return _method;                    }
@@ -38,6 +65,7 @@ public:
     bool has_local_signature() const     { return true;                       }
     bool is_final() const                { return true;                       }
     bool is_resolved() const             { return _method != nullptr;         }
+    bool resolution_failed()             { return _resolution_failed;         }
 
     // Printing
     void print_on(outputStream* st) const;
@@ -56,6 +84,11 @@ public:
         //_method = m;
         Atomic::release_store(&_method, m);
     }
+
+    void set_resolution_failed() {
+        _resolution_failed = true;
+    }
+
     void metaspace_pointers_do(MetaspaceClosure* it);
 
     // Offsets

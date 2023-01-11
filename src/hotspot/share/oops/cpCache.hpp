@@ -543,6 +543,9 @@ class ConstantPoolCache: public MetaspaceObj {
   void record_gc_epoch();
   uint64_t gc_epoch() { return _gc_epoch; }
 
+  bool save_and_throw_indy_exc(const constantPoolHandle& cpool,
+                                                  int cpool_index, int index,
+                                                  constantTag tag, TRAPS);
   oop set_dynamic_call(const CallInfo &call_info, int index);
 
   // Printing
