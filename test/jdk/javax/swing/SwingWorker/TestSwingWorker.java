@@ -58,12 +58,12 @@ public class TestSwingWorker {
                 }
                 return null;
             }
-            
+
             @Override
             protected void done() {
                 if (!doInBackground) {
                     throw new RuntimeException("done called before doInBackground");
-                }		    
+                }
                 System.out.println("Done");
             }
         };
@@ -74,4 +74,4 @@ public class TestSwingWorker {
         worker.cancel(true);
         Thread.sleep(2000);
     }
-} 
+}
