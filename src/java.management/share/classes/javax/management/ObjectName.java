@@ -2021,7 +2021,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             // This ObjectName is the pattern
             // The other ObjectName is the string.
             return Util.wildmatch(name._canonicalName, _canonicalName,
-                   0, 0, name.getDomainLength(), getDomainLength());
+                   0, name.getDomainLength(), 0, getDomainLength());
         }
         return (getDomainLength() == name.getDomainLength() &&
                _canonicalName.regionMatches(0, name._canonicalName, 0, getDomainLength()));
