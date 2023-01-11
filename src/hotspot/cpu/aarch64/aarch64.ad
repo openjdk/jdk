@@ -7558,7 +7558,7 @@ instruct storeimmL0(immL0 zero, memory8 mem)
 instruct storeP(iRegP src, memory8 mem)
 %{
   match(Set mem (StoreP mem src));
-  predicate(!needs_releasing_store(n));
+  predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
 
   ins_cost(INSN_COST);
   format %{ "str  $src, $mem\t# ptr" %}
@@ -7572,7 +7572,7 @@ instruct storeP(iRegP src, memory8 mem)
 instruct storeimmP0(immP0 zero, memory8 mem)
 %{
   match(Set mem (StoreP mem zero));
-  predicate(!needs_releasing_store(n));
+  predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
 
   ins_cost(INSN_COST);
   format %{ "str zr, $mem\t# ptr" %}
@@ -7973,6 +7973,7 @@ instruct storeimmL0_volatile(immL0 zero, /* sync_memory*/indirect mem)
 instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
 %{
   match(Set mem (StoreP mem src));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "stlr  $src, $mem\t# ptr" %}
@@ -7985,6 +7986,7 @@ instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
 instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
 %{
   match(Set mem (StoreP mem zero));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "stlr  zr, $mem\t# ptr" %}
