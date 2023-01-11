@@ -60,7 +60,7 @@ T* ZGranuleMap<T>::allocate_array(size_t count) {
   if (addr == nullptr) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }
-  os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
+  os::commit_memory_or_exit(static_cast<char*>(addr), size, !ExecMem, "Allocator (commit)");
   return static_cast<T*>(addr);
 }
 
