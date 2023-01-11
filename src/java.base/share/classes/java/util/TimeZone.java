@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * along with a time zone ID. For instance, the time zone ID for the
  * U.S. Pacific Time zone is "America/Los_Angeles". So, you can get a
  * U.S. Pacific Time {@code TimeZone} object with:
- * <blockquote><pre>
+ * {@snippet lang=java :
  * TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
- * </pre></blockquote>
+ * }
  * You can use the {@code getAvailableIDs} method to iterate through
  * all the supported time zone IDs. You can then choose a
  * supported ID to get a {@code TimeZone}.
@@ -309,10 +309,10 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the default locale.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
-     * getDisplayName(false, {@link #LONG},
-     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     * getDisplayName(false, LONG, // @link substring="LONG" target="#LONG"
+     *                Locale.getDefault(Locale.Category.DISPLAY)) // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY"
+     * }
      *
      * @return the human-readable name of this time zone in the default locale.
      * @since 1.2
@@ -330,9 +330,9 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the specified {@code locale}.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
-     * getDisplayName(false, {@link #LONG}, locale)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     * getDisplayName(false, LONG, locale) // @link substring="LONG" target="#LONG"
+     * }
      *
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
@@ -352,10 +352,10 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Time). Otherwise, a Standard Time name is returned.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
+     * {@snippet lang=java :
      * getDisplayName(daylight, style,
-     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </pre></blockquote>
+     *                Locale.getDefault(Locale.Category.DISPLAY)) // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY"
+     * }
      *
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
      *                 {@code false} specifying a Standard Time name
