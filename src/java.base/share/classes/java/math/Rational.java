@@ -449,18 +449,21 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a {@code Rational} whose value is {@code (this +
-     * augend)}.
-     * Assumes that the augends are concordant.
+     * Returns a {@code Rational} whose value is {@code signum() * (abs(this) +
+     * abs(augend))}.
      */
-    private Rational addConcordant(Rational augend, BigInteger gcd, BigInteger[] lcdNums,  BigInteger resDen) {
+    private Rational addAbs(Rational augend) {
+        BigInteger gcd = denominator.gcd(augend.denominator);
+        BigInteger[] lcdNums = lcdNumerators(augend, gcd);
+        // less common denominator
+        BigInteger resDen = denominator.divide(gcd).multiply(augend.denominator);
         // compute abs(this) + abs(augend)
         BigInteger resFloor = floor.add(augend.floor);
         BigInteger resNum = lcdNums[0].add(lcdNums[1]);
 
         // carry propagation
         BigInteger remainder = resNum.subtract(resDen);
-        if (remainder.signum >= 0) { // frational part >= 1
+        if (remainder.signum >= 0) { // decimal part >= 1
             resFloor = resFloor.add(BigInteger.ONE);
             resNum = remainder;
         }
@@ -469,11 +472,15 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a {@code Rational} whose value is {@code (this +
-     * augend)}.
-     * Assumes that the augends are discordant.
+     * Returns a {@code Rational} whose value is {@code signum() * (abs(this) -
+     * abs(augend))} if {@code abs(this) >= abs(augend)}, otherwise the returned
+     * value is {@code -signum() * (abs(augend) - abs(this))}.
      */
-    private Rational addDiscordant(Rational augend, BigInteger gcd, BigInteger[] lcdNums,  BigInteger resDen) {
+    private Rational subtractAbs(Rational augend) {
+        BigInteger gcd = denominator.gcd(augend.denominator);
+        BigInteger[] lcdNums = lcdNumerators(augend, gcd);
+        // less common denominator
+        BigInteger resDen = denominator.divide(gcd).multiply(augend.denominator);
         // compute abs(this) - abs(augend)
         BigInteger resFloor = floor.subtract(augend.floor);
         BigInteger resNum = lcdNums[0].subtract(lcdNums[1]);
@@ -483,20 +490,20 @@ public class Rational extends Number implements Comparable<Rational> {
             if (resNum.signum == 0) // abs(this) == abs(augend)
                 return ZERO;
 
-            resSign = resNum.signum;
+            resSign = signum * resNum.signum;
             resNum = resNum.abs();
         } else { // floor != augend.floor
             if (resFloor.signum == 1) // abs(this) > abs(augend)
                 resSign = signum;
             else { // abs(this) < abs(augend)
-                resSign = augend.signum;
+                resSign = -signum;
                 // abs(abs(this) - abs(augend)) = - (abs(this) - abs(augend))
                 resFloor = resFloor.negate();
                 resNum = resNum.negate();
             }
 
             // borrow propagation
-            if (resNum.signum == -1) { // frational part < 0
+            if (resNum.signum == -1) { // decimal part < 0
                 // correct because abs(floor - augend.floor) >= 1
                 resFloor = resFloor.subtract(BigInteger.ONE);
                 resNum = resNum.add(resDen);
@@ -521,15 +528,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (augend.signum == 0)
             return this;
 
-        BigInteger gcd = denominator.gcd(augend.denominator);
-        BigInteger[] lcdNums = lcdNumerators(augend, gcd);
-        // less common denominator
-        BigInteger resDen = denominator.divide(gcd).multiply(augend.denominator);
-
-        if (signum == augend.signum)
-            return addConcordant(augend, gcd, lcdNums, resDen);
-        
-        return addDiscordant(augend, gcd, lcdNums, resDen);
+        return signum == augend.signum ? addAbs(augend) : subtractAbs(augend);
     }
 
     /**
@@ -540,11 +539,18 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code this - subtrahend}
      */
     public Rational subtract(Rational subtrahend) {
-        return add(subtrahend.negate());
+        if (signum == 0)
+            return subtrahend.negate();
+
+        if (subtrahend.signum == 0)
+            return this;
+
+        // do as if subtrahend were a negated augend
+        return signum == subtrahend.signum ? subtractAbs(subtrahend) : addAbs(subtrahend);
     }
 
     /**
-     * Computes the numerators of this {@code Rational} and of the specified
+     * Computes the numerators of this {@code Rational} and the specified
      * {@code Rational}, relative to the least common denominator of
      * {@code denominator} and {@code val.denominator}
      * 
@@ -693,7 +699,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public BigInteger toBigInteger() {
         // force to an integer, quietly
-        return numerator.divide(denominator);
+        return signum == -1 ? floor.negate() : floor;
     }
 
     /**
@@ -707,12 +713,10 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public BigInteger toBigIntegerExact() {
         // round to an integer, with Exception if decimal part non-0
-        BigInteger[] res = numerator.divideAndRemainder(denominator);
-
-        if (res[1].signum() != 0)
+        if (numerator.signum == 1)
             throw new ArithmeticException("Rounding necessary");
 
-        return signum == -1 ? res[0].negate() : res[0];
+        return toBigInteger();
     }
 
     /**
@@ -728,7 +732,8 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return this {@code Rational} converted to a {@code BigDecimal}.
      */
     public BigDecimal toBigDecimal(MathContext mc) {
-        BigDecimal absVal = new BigDecimal(numerator).divide(denominator, mc);
+        BigDecimal decimalPart = new BigDecimal(numerator).divide(new BigDecimal(denominator), mc);
+        BigDecimal absVal = new BigDecimal(floor).add(decimalPart);
         return signum == -1 ? absVal.negate() : absVal;
     }
 
@@ -913,10 +918,10 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum != r.signum)
             return false;
 
-        if (signum == 0)
+        if (signum == 0) // values are both zero
             return true;
 
-        return numerator.equals(r.numerator) && denominator.equals(r.denominator);
+        return floor.equals(r.floor) && numerator.equals(r.numerator) && denominator.equals(r.denominator);
     }
 
     /**
@@ -926,7 +931,7 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public int hashCode() {
-        return signum == 0 ? 0 : signum * Objects.hash(numerator, denominator);
+        return signum == 0 ? 0 : signum * Objects.hash(floor, numerator, denominator);
     }
 
     /**
@@ -946,13 +951,17 @@ public class Rational extends Number implements Comparable<Rational> {
     @Override
     public String toString() {
         final int radix = 10;
-        int capacity = numerator.numChars(radix) + denominator.numChars(radix) + 1 + (signum < 0 ? 1 : 0);
+        int capacity = floor.numChars(radix);
+        capacity += numerator.numChars(radix);
+        capacity += denominator.numChars(radix);
+        capacity += 2 + (signum == -1 ? 1 : 0);
         StringBuilder b = new StringBuilder(capacity);
 
         if (signum == -1)
             b.append('-');
 
-        return b.append(numerator).append('/').append(denominator).toString();
+        return b.append(floor).append(signum == -1 ? '-' : '+').append(numerator).append('/').append(denominator)
+                .toString();
     }
 
     /**
@@ -977,21 +986,18 @@ public class Rational extends Number implements Comparable<Rational> {
             return 0;
 
         // compare absolute values
-        final int absComp;
-        // compare to one
-        int unitComp = numerator.compareTo(denominator);
-        int valUnitComp = val.numerator.compareTo(val.denominator);
+        final int absComp = floor.compareTo(val.floor);
 
-        if (unitComp != valUnitComp)
-            absComp = unitComp > valUnitComp ? 1 : -1;
-        else if (denominator.equals(val.denominator))
-            absComp = numerator.compareTo(val.numerator); // a/b < c/b <=> a < c
-        else if (numerator.equals(val.numerator))
-            absComp = val.denominator.compareTo(denominator); // a/b < a/c <=> c < b
-        else {
-            // compare using least common denominator
-            BigInteger[] lcdNums = lcdNumerators(val, denominator.gcd(val.denominator));
-            absComp = lcdNums[0].compareTo(lcdNums[1]);
+        if (absComp == 0) { // values have the same floor
+            if (denominator.equals(val.denominator))
+                absComp = numerator.compareTo(val.numerator);
+            else if (numerator.equals(val.numerator))
+                absComp = val.denominator.compareTo(denominator); // a/b < a/c <=> c < b
+            else {
+                // compare using least common denominator
+                BigInteger[] lcdNums = lcdNumerators(val, denominator.gcd(val.denominator));
+                absComp = lcdNums[0].compareTo(lcdNums[1]);
+            }
         }
 
         return signum * absComp; // adjust comparison with signum
