@@ -42,11 +42,12 @@ public class CustomApproveButtonTest {
     private JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        String aquaLAF = "com.apple.laf.AquaLookAndFeel";
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
                 for (UIManager.LookAndFeelInfo look : lookAndFeel) {
-                    if (look.getName().equals("Aqua")) {
+                    if (look.getClassName().equals(aquaLAF)) {
                         continue;
                     }
                     new CustomApproveButtonTest(look.getClassName());
