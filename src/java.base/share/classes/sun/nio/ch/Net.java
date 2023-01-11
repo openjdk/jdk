@@ -27,8 +27,6 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -41,7 +39,6 @@ import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
-import java.nio.ByteOrder;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
@@ -323,7 +320,12 @@ public class Net {
      */
     static int inet4AsInt(InetAddress ia) {
         if (ia instanceof Inet4Address) {
-            return getInt(ia.getAddress());
+            byte[] addr = ia.getAddress();
+            int address  = addr[3] & 0xFF;
+            address |= ((addr[2] << 8) & 0xFF00);
+            address |= ((addr[1] << 16) & 0xFF0000);
+            address |= ((addr[0] << 24) & 0xFF000000);
+            return address;
         }
         throw shouldNotReachHere();
     }
@@ -334,7 +336,10 @@ public class Net {
      */
     static InetAddress inet4FromInt(int address) {
         byte[] addr = new byte[4];
-        putInt(addr, address);
+        addr[0] = (byte) ((address >>> 24) & 0xFF);
+        addr[1] = (byte) ((address >>> 16) & 0xFF);
+        addr[2] = (byte) ((address >>> 8) & 0xFF);
+        addr[3] = (byte) (address & 0xFF);
         try {
             return InetAddress.getByAddress(addr);
         } catch (UnknownHostException uhe) {
@@ -805,12 +810,9 @@ public class Net {
             String exclBindProp = GetPropertyAction
                     .privilegedGetProperty("sun.net.useExclusiveBind");
             if (exclBindProp != null) {
-                EXCLUSIVE_BIND = exclBindProp.isEmpty() ?
-                        true : Boolean.parseBoolean(exclBindProp);
-            } else if (availLevel == 1) {
-                EXCLUSIVE_BIND = true;
+                EXCLUSIVE_BIND = exclBindProp.isEmpty() || Boolean.parseBoolean(exclBindProp);
             } else {
-                EXCLUSIVE_BIND = false;
+                EXCLUSIVE_BIND = availLevel == 1;
             }
         } else {
             EXCLUSIVE_BIND = false;
@@ -828,17 +830,6 @@ public class Net {
 
     private static SocketException newSocketException(String msg) {
         return new SocketException(msg);
-    }
-
-    // Network-ordered accessors for int values in byte arrays
-
-    private static final VarHandle INT = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
-
-    private static int getInt(byte[] b) {
-        return (int) INT.get(b, 0);
-    }
-    private static void putInt(byte[] b, int val) {
-        INT.set(b, 0, val);
     }
 
 }
