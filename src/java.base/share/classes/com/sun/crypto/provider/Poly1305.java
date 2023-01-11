@@ -226,6 +226,12 @@ final class Poly1305 {
 
     private static final String BLAH = System.getenv("APH_FOO_BAX");
 
+    static {
+        if (BLAH == null) {
+            System.out.println("BLAH not set");
+        }
+    }
+
     /**
      * Process a single block of data.  This should only be called
      * when the block array is complete.  That may not necessarily
@@ -257,6 +263,12 @@ final class Poly1305 {
         if (printing) {
             System.out.println("r = " + r.asBigInteger().toString(16));
             System.out.println("x = " + a.asBigInteger().toString(16));
+            System.out.print("limbs = ");
+            long[] limbs = a.getLimbs();
+            for (int i = limbs.length - 1; i >= 0; --i) {
+                System.out.print(Long.toString(limbs[i], 16) + ":");
+            }
+            System.out.println();
         }
     }
 

@@ -46,6 +46,8 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
 
     public static final IntegerPolynomial1305 ONE = new IntegerPolynomial1305();
 
+    private static final String BLAH = System.getenv("APH_FOO_BAX");
+
     private IntegerPolynomial1305() {
         super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }

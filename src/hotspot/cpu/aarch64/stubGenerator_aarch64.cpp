@@ -6930,7 +6930,6 @@ typedef uint32_t u32;
   static void do_poly1305_processBlocks(char *input_start, jlong length, julong *acc_start, julong *r_start) {
     setbuf(stdout, NULL);
 
-    while (length >= BLOCK_LENGTH) {
       julong ctx_h[5];
 
       ctx_h[0] = acc_start[0] >> 0;
@@ -6963,7 +6962,25 @@ typedef uint32_t u32;
 
       ctx_r[4] = r_start[4] >> 24;
 
-      u32 *ctx_c = (u32 *)input_start;
+
+    for (int i = 0; i < 5; i++) {
+      acc_start[i] = ctx_h[i];
+    }
+
+    u32 *ctx_c = (u32 *)input_start;
+
+    u64 b_s0;
+    u64 b_s1;
+    u32 b_s2;
+
+    u64 *b_h = (u64*)ctx_h;
+
+    u128 b_u0 = b_h[0], b_u1 = b_h[1], b_u2;
+
+    while (length >= BLOCK_LENGTH) {
+
+      ctx_c = (u32 *)input_start;
+      u64 *b_c = (u64*)ctx_c;
 
       // s = h + c, without carry propagation
       const u64 s0 = ctx_h[0] + (u64)ctx_c[0]; // s0 <= 1_fffffffe
@@ -6972,12 +6989,11 @@ typedef uint32_t u32;
       const u64 s3 = ctx_h[3] + (u64)ctx_c[3]; // s3 <= 1_fffffffe
       const u32 s4 = ctx_h[4];                 // s4 <=          5
 
-      u64 *b_h = (u64*)ctx_h;
-      u64 *b_c = (u64*)ctx_c;
       uint32_t carry = 0;
-      u64 b_s0; ADC(b_s0, carry, b_h[0], b_c[0]); if (carry) printf("#");
-      u64 b_s1; ADC(b_s1, carry, b_h[1], b_c[1]); if (carry) printf("*");
-      u32 b_s2 = s4 + carry;
+
+      ADC(b_s0, carry, b_u0, b_c[0]); if (carry) printf("#");
+      ADC(b_s1, carry, b_u1, b_c[1]); if (carry) printf("*");
+      b_s2 = b_u2 + carry;
 
       if (length > BLOCK_LENGTH) {
         b_s2 += 1;
@@ -6992,9 +7008,11 @@ typedef uint32_t u32;
       }
 
       printf("\n");
-      printf("C: %08x:%08x:%08x:%08x\n", ctx_c[3], ctx_c[2], ctx_c[1], ctx_c[0]);
+      // printf("C: %08x:%08x:%08x:%08x\n", ctx_c[3], ctx_c[2], ctx_c[1], ctx_c[0]);
+      printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
+      printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
       printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);
-      printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", (u64)s4, s3, s2, s1, s0);
+      // printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", (u64)s4, s3, s2, s1, s0);
 
       // Local all the things!
       const u32 r0 = ctx_r[0];       // r0  <= 0fffffff
@@ -7028,10 +7046,10 @@ typedef uint32_t u32;
                     );
 
       printf("R:   %016lx:%016lx\n", b_r1, b_r0);
-      printf("R:  %08x:%08x:%08x:%08x\n", r3, r2, r1, r0);
+      // printf("R:  %08x:%08x:%08x:%08x\n", r3, r2, r1, r0);
 
       printf("RR:   %016lx:%016lx\n", b_rr1, b_rr0);
-      printf("RR:  %08x:%08x:%08x:%08x\n", rr3, rr2, rr1, rr0);
+      // printf("RR:  %08x:%08x:%08x:%08x\n", rr3, rr2, rr1, rr0);
 
       // {
       //   const u64 tx0 = s0*r0+ s1*rr3;
@@ -7061,31 +7079,30 @@ typedef uint32_t u32;
       const u64 u3 = (u2 >> 32)     + (x3 & 0xffffffff) + (x2 >> 32);
       const u64 u4 = (u3 >> 32)     + (u5 & 3);
 
-      const u128 b_u3 = b_x2 + (b_x1 >> 64);
-      const u128 b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
-      const u128 b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
-      const u128 b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
+      u128 b_u3 = b_x2 + (b_x1 >> 64);
+      b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
+      b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
+      b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
 
-      // // Update the hash
-      // ctx_h[0] = (u32)u0; // u0 <= 1_9ffffff0
-      // ctx_h[1] = (u32)u1; // u1 <= 1_97ffffe0
-      // ctx_h[2] = (u32)u2; // u2 <= 1_8fffffe2
-      // ctx_h[3] = (u32)u3; // u3 <= 1_87ffffe4
-      // ctx_h[4] = (u32)u4; // u4 <=          4
-
-      ctx_h[0] = b_u0         & 0x3ffffff;
-      ctx_h[1] = (b_u0 >> 26) & 0x3ffffff;
-      ctx_h[2] = ((b_u0 >> 52) | (b_u1 << 12)) & 0x3ffffff;
-      ctx_h[3] = (b_u1 >> 14) & 0x3ffffff;
-      ctx_h[4] = ((b_u1 >> 40) | (b_u2 << 24)) & 0x3ffffff;
-
+      // Update the hash
+      ctx_h[0] = (u32)u0; // u0 <= 1_9ffffff0
+      ctx_h[1] = (u32)u1; // u1 <= 1_97ffffe0
+      ctx_h[2] = (u32)u2; // u2 <= 1_8fffffe2
+      ctx_h[3] = (u32)u3; // u3 <= 1_87ffffe4
+      ctx_h[4] = (u32)u4; // u4 <=          4
 
       printf("U:   %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
-      printf("U: %x:%08x:%08x:%08x:%08x\n", ctx_h[4], ctx_h[3], ctx_h[2], ctx_h[1], ctx_h[0]);
+      // printf("U: %lx:%08lx:%08lx:%08lx:%08lx\n", ctx_h[4], ctx_h[3], ctx_h[2], ctx_h[1], ctx_h[0]);
 
       input_start += BLOCK_LENGTH;
       length -= BLOCK_LENGTH;
     }
+
+    acc_start[0] = b_u0         & 0x3ffffff;
+    acc_start[1] = (b_u0 >> 26) & 0x3ffffff;
+    acc_start[2] = ((b_u0 >> 52) | (b_u1 << 12)) & 0x3ffffff;
+    acc_start[3] = (b_u1 >> 14) & 0x3ffffff;
+    acc_start[4] = ((b_u1 >> 40) | (b_u2 << 24)) & 0x3ffffff;
   }
 
   address generate_poly1305_processBlocks() {
