@@ -907,4 +907,8 @@ public class VaListTest extends NativeTestHelper {
         assertThrows(NoSuchElementException.class, () -> nextVarg(vaList, next));
     }
 
+    @Test(dataProvider = "emptyVaLists")
+    public void testEmptyVaListScope(VaList vaList) {
+        assertEquals(vaList.segment().scope(), SegmentScope.global());
+    }
 }

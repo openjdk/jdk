@@ -256,7 +256,7 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
                 super.mouseClicked(e);
             }
         }
-    };    /// End BorderListener Class
+    }    /// End BorderListener Class
 
 
     /**

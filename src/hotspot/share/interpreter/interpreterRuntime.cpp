@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::
     if (rindex < 0)
       rindex = m->constants()->cp_to_object_index(ldc2.pool_index());
     if (rindex >= 0) {
-      oop coop = m->constants()->resolved_references()->obj_at(rindex);
+      oop coop = m->constants()->resolved_reference_at(rindex);
       oop roop = (result == NULL ? Universe::the_null_sentinel() : result);
       assert(roop == coop, "expected result for assembly code");
     }

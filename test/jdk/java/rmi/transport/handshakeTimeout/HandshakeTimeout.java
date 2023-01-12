@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4322806
+ * @bug 4322806 8189338
  * @summary When an RMI (JRMP) connection is made to a TCP address that is
  * listening, so the connection is accepted, but the server never responds
  * to the initial JRMP handshake (nor does it terminate the connection),
@@ -38,8 +38,11 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @run main/othervm HandshakeTimeout
+ * @run main/othervm HandshakeTimeout SSL
  */
 
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.rmi.ConnectException;
 import java.rmi.ConnectIOException;
@@ -60,12 +63,19 @@ public class HandshakeTimeout {
          * Listen on port, but never process connections made to it.
          */
         ServerSocket serverSocket = new ServerSocket(0);
-        int port = serverSocket.getLocalPort();
+        InetSocketAddress address = (InetSocketAddress) serverSocket.getLocalSocketAddress();
 
         /*
          * Attempt RMI call to port in separate thread.
          */
-        Registry registry = LocateRegistry.getRegistry(port);
+        Registry registry;
+        if (args.length == 0) {
+            registry = LocateRegistry.getRegistry(address.getPort());
+        } else {
+            registry = LocateRegistry.getRegistry(address.getHostString(),
+                    address.getPort(), new SslRMIClientSocketFactory());
+        }
+
         Connector connector = new Connector(registry);
         Thread t = new Thread(connector);
         t.setDaemon(true);
