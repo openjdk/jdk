@@ -83,9 +83,9 @@ class ResizeableResourceHashtable : public ResourceHashtableBase<
 
   using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
                                      K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>;
+  using Node = ResourceHashtableNode<K, V>;
   NONCOPYABLE(ResizeableResourceHashtable);
 public:
-  using Node = ResourceHashtableNode<K, V>;
   ResizeableResourceHashtable(unsigned size, unsigned max_size = 0)
   : BASE(size), _max_size(max_size) {
     assert(size <= 0x3fffffff && max_size <= 0x3fffffff, "avoid overflow in resize");

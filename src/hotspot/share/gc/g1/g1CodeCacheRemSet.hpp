@@ -69,7 +69,7 @@ class G1CodeRootSetTable : public CHeapObj<mtGC>  {
     return sizeof(_purge_list);
   }
 
-  size_t mem_size();
+  size_t mem_size() const;
 };
 
 

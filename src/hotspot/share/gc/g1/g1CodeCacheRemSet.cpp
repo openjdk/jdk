@@ -38,10 +38,8 @@
 
 G1CodeRootSetTable* volatile G1CodeRootSetTable::_purge_list = NULL;
 
-size_t G1CodeRootSetTable::mem_size() {
-  return sizeof(*this) +
-    _table.table_size() * sizeof(Table::Node*) +
-    _table.number_of_entries() * sizeof(Table::Node);
+size_t G1CodeRootSetTable::mem_size() const {
+  return sizeof(*this) + _table.mem_size() - sizeof(_table); // do not double count _table
 }
 
 bool G1CodeRootSetTable::add(nmethod* nm) {
