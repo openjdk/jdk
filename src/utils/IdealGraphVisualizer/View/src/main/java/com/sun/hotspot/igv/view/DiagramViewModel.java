@@ -66,6 +66,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
     private boolean hideDuplicates;
+    private boolean markedDuplicates;
     private static boolean globalSelection = false;
 
     private final ChangedListener<FilterChain> filterChainChangedListener = source -> filterChanged();
@@ -132,6 +133,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.hideDuplicates = hideDuplicates;
         InputGraph currentGraph = getFirstGraph();
         if (hideDuplicates) {
+            markDuplicateGraphs();
             // Back up to the unhidden equivalent graph
             int index = graphs.indexOf(currentGraph);
             while (graphs.get(index).getProperties().get("_isDuplicate") != null) {
@@ -185,19 +187,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filterChain.getChangedEvent().addListener(filterChainChangedListener);
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
 
-        markDuplicateGraphs();
         filterGraphs();
         selectGraph(graph);
-    }
-
-    public void markDuplicateGraphs() {
-        InputGraph previous = null;
-        for (InputGraph graph : group.getGraphs()) {
-            if (previous != null && graph.isSameContent(previous)) {
-                graph.getProperties().setProperty("_isDuplicate", "true");
-            }
-            previous = graph;
-        }
     }
 
     public ChangedEvent<DiagramViewModel> getDiagramChangedEvent() {
@@ -477,4 +468,19 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             }
         };
     }
+
+    private void markDuplicateGraphs() {
+        if (markedDuplicates) {
+            return;
+        }
+        InputGraph previous = null;
+        for (InputGraph graph : group.getGraphs()) {
+            if (previous != null && graph.isSameContent(previous)) {
+                graph.getProperties().setProperty("_isDuplicate", "true");
+            }
+            previous = graph;
+        }
+        markedDuplicates = true;
+    }
+
 }
