@@ -2035,11 +2035,13 @@ void MacroAssembler::post_call_nop() {
   }
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
+  PostCallNopCounter nopCounter(this);
   emit_int8((int8_t)0x0f);
   emit_int8((int8_t)0x1f);
   emit_int8((int8_t)0x84);
   emit_int8((int8_t)0x00);
   emit_int32(0x00);
+  nopCounter.register_nop();
 }
 
 // A 5 byte nop that is safe for patching (see patch_verified_entry)

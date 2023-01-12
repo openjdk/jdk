@@ -1185,7 +1185,9 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
+  PostCallNopCounter nopCounter(this);
   nop();
+  nopCounter.register_nop();
 }
 
 void MacroAssembler::call_VM_base(Register oop_result,

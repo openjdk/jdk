@@ -152,6 +152,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   if (_interpreter_invocation_count == 0)
     _interpreter_invocation_count = 1;
   _instructions_size = -1;
+  _inline_instructions_size = -1;
   if (ReplayCompiles) {
     ciReplay::initialize(this);
   }
@@ -173,6 +174,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _method_blocks(          NULL),
   _intrinsic_id(           vmIntrinsics::_none),
   _instructions_size(-1),
+  _inline_instructions_size(-1),
   _can_be_statically_bound(false),
   _can_omit_stack_trace(true),
   _liveness(               NULL)
@@ -1129,6 +1131,21 @@ int ciMethod::instructions_size() {
                      );
   }
   return _instructions_size;
+}
+
+int ciMethod::inline_instructions_size() {
+  if (_inline_instructions_size == -1) {
+    GUARDED_VM_ENTRY(
+                     CompiledMethod* code = get_Method()->code();
+                     if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
+                       int isize = code->insts_end() - code->verified_entry_point() - code->post_call_nop_size();
+                       _inline_instructions_size = isize > 0 ? isize : 0;
+                     } else {
+                       _inline_instructions_size = 0;
+                     }
+                     );
+  }
+  return _inline_instructions_size;
 }
 
 // ------------------------------------------------------------------
