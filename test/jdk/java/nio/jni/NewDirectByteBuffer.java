@@ -111,16 +111,12 @@ public class NewDirectByteBuffer {
         (long)Integer.MAX_VALUE + 1L, 3_000_000_000L, 5_000_000_000L,
         Long.MAX_VALUE})
     void illegalCapacities(long capacity) {
-        try {
-            assertThrows(IllegalArgumentException.class, () -> {
-                ByteBuffer buf = newDirectByteBuffer(capacity);
-                if (buf != null) {
-                    freeDirectByteBufferMemory(buf);
-                }
-            });
-        } catch (OutOfMemoryError ignored) {
-            // Ignore the error
-        }
+        assertThrows(IllegalArgumentException.class, () -> {
+            ByteBuffer buf = newDirectByteBuffer(capacity);
+            if (buf != null) {
+                freeDirectByteBufferMemory(buf);
+            }
+        });
     }
 
     // See libNewDirectByteBuffer.c for implementations.
