@@ -41,7 +41,6 @@ void fill_call_trace_given_top(JavaThread* thd,
                                int depth,
                                frame top_frame,
                                bool skip_c_frames) {
-  NoHandleMark nhm;
   assert(trace->frames != NULL, "trace->frames must be non-NULL");
   trace->frame_info = NULL;
   StackWalker st(thd, top_frame, skip_c_frames,
@@ -79,6 +78,17 @@ void fill_call_trace_given_top(JavaThread* thd,
     }
   }
   trace->num_frames = count;
+}
+
+// thd cannot be null, as we use assertions that require it
+void fill_call_trace_given_top_with_thread(JavaThread* thd,
+                               ASGST_CallTrace* trace,
+                               int depth,
+                               frame top_frame,
+                               bool skip_c_frames) {
+  assert(thd != NULL, "thd cannot be null");
+  NoHandleMark nhm;
+  fill_call_trace_given_top(thd, trace, depth, top_frame, skip_c_frames);
 }
 
 // check if the frame has at least valid pointers
@@ -207,7 +217,7 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
           return;
         }
       }
-      fill_call_trace_given_top(thread, trace, depth, ret_frame,
+      fill_call_trace_given_top_with_thread(thread, trace, depth, ret_frame,
         !include_c_frames);
     }
     break;
