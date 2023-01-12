@@ -1253,6 +1253,14 @@ namespace AccessInternal {
     inline bool operator !=(const T& other) const {
       return load<decorators | INTERNAL_VALUE_IS_OOP, P, T>(_addr) != other;
     }
+
+    inline bool operator ==(std::nullptr_t) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr) == nullptr;
+    }
+
+    inline bool operator !=(std::nullptr_t) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr) != nullptr;
+    }
   };
 
   // Infer the type that should be returned from an Access::load_at.

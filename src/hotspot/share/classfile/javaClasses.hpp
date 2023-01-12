@@ -1294,9 +1294,6 @@ class java_lang_invoke_MemberName: AllStatic {
     MN_TRUSTED_FINAL         = 0x00200000, // trusted final field
     MN_REFERENCE_KIND_SHIFT  = 24, // refKind
     MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
-    // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-    MN_SEARCH_SUPERCLASSES   = 0x00100000, // walk super classes
-    MN_SEARCH_INTERFACES     = 0x00200000, // walk implemented interfaces
     MN_NESTMATE_CLASS        = 0x00000001,
     MN_HIDDEN_CLASS          = 0x00000002,
     MN_STRONG_LOADER_LINK    = 0x00000004,
