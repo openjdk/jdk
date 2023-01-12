@@ -35,6 +35,8 @@
 #include "prims/stackWalker.hpp"
 #include "prims/jvmtiExport.hpp"
 
+#define PRINT_C_FRAME_INFO 0
+
 // thd can be null for non java threads (only c frames then)
 void fill_call_trace_given_top(JavaThread* thd,
                                ASGST_CallTrace* trace,
@@ -75,6 +77,12 @@ void fill_call_trace_given_top(JavaThread* thd,
           st.base_frame()->pc()
         }
       };
+      #if PRINT_C_FRAME_INFO
+      char buf[1000];
+      int offset;
+      os::dll_address_to_function_name(st.base_frame()->pc(), buf, 1000, &offset);
+      printf("C frame: %s\n", buf);
+      #endif
     }
   }
   trace->num_frames = count;

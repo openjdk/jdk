@@ -43,6 +43,10 @@
 #include "jvmti.h"
 #include "profile.h"
 
+#ifdef _GNU_SOURCE
+#include <dlfcn.h>
+#endif
+
 #ifdef DEBUG
 // more space for debug info
 const int METHOD_HEADER_SIZE = 0x200;
@@ -192,6 +196,12 @@ template <size_t N = 0> void printNonJavaFrame(FILE* stream, ASGST_NonJavaFrame 
     fprintf(stream, " (%s)", method_name);
   } else {
     fprintf(stream, " (%p)", frame.pc);
+    #ifdef _GNU_SOURCE
+    Dl_info info;
+    if (dladdr(frame.pc, &info) != 0 && info.dli_sname != NULL) {
+      fprintf(stream, " (%s)", info.dli_sname);
+    }
+    #endif
   }
 }
 
