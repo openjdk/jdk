@@ -5157,20 +5157,14 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
       // l is irreducible: we just found a second entry m.
       _has_irreducible_loops = true;
       RegionNode* secondary_entry = m->as_Region();
-      assert(secondary_entry != nullptr, "irreducible loop secondary_entry is Region");
-      assert(secondary_entry->loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry,
-             "secondary_entry has wrong loop_status");
-      assert(!secondary_entry->is_Loop(), "LoopNode cannot be secondary entry to irreducible loop");
+      DEBUG_ONLY(secondary_entry->verify_can_be_irreducible_entry();)
 
       // Walk up the loop-tree, mark all loops that are already post-visited as irreducible
       // Since m is a secondary entry to them all.
       while( is_postvisited(l->_head) ) {
         l->_irreducible = 1; // = true
         RegionNode* head = l->_head->as_Region();
-        assert(head != nullptr, "irreducible loop head is Region");
-        assert(head->loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry,
-               "head has wrong loop_status");
-        assert(!head->is_Loop(), "LoopNode cannot be irreducible loop head");
+        DEBUG_ONLY(head->verify_can_be_irreducible_entry();)
         l = l->_parent;
         // Check for bad CFG here to prevent crash, and bailout of compile
         if (l == NULL) {
@@ -5253,7 +5247,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
   return pre_order;
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 //--------------------------verify_regions_in_irreducible_loops----------------
 // Iterate down from Root through CFG, verify for every region:
 // if it is in an irreducible loop it must be marked as such
@@ -5277,10 +5271,8 @@ void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
       if (is_in_irreducible_loop(region) &&
           region->loop_status() == RegionNode::LoopStatus::Reducible) {
         failure = true;
-#ifdef ASSERT
         tty->print("irreducible! ");
         region->dump();
-#endif
       }
     }
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
@@ -5294,6 +5286,7 @@ void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
 }
 
 //---------------------------is_in_irreducible_loop-------------------------
+// Analogous to ciTypeFlow::Block::is_in_irreducible_loop
 bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
   if (!_has_irreducible_loops) {
     return false; // no irreducible loop in graph
@@ -5308,10 +5301,18 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
     }
     l = l->_parent;
   } while (l != nullptr);
-  // Infinite loops are not always properly attached to the loop-tree. Infinite
-  // loops do not exit out into other loops, hence they are not nested in any
-  // loops, including any irreducible loops.
   assert(region->is_in_infinite_subgraph(), "must be in infinite subgraph");
+  // We have "l->_parent == nullptr", which happens only for infinite loops,
+  // where no parent is attached to the loop. We did not find any irreducible
+  // loop from this block out to lp. Thus lp only has one entry, and no exit
+  // (it is infinite and reducible). We can always rewrite an infinite loop
+  // that is nested inside other loops:
+  // while(condition) { infinite_loop; }
+  // with an equivalent program where the infinite loop is an outermost loop
+  // that is not nested in any loop:
+  // while(condition) { break; } infinite_loop;
+  // Thus, we can understand lp as an outermost loop, and can terminate and
+  // conclude: this block is in no irreducible loop.
   return false;
 }
 #endif

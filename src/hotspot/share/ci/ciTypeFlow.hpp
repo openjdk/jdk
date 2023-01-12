@@ -761,6 +761,7 @@ public:
     // Mark non-single entry to loop
     void set_irreducible(Block* entry) {
       _irreducible = true;
+      head()->set_irreducible_loop_head();
       entry->set_irreducible_loop_secondary_entry();
     }
     bool is_irreducible() const { return _irreducible; }

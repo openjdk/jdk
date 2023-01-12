@@ -1064,7 +1064,7 @@ private:
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
 
-#ifndef PRODUCT
+#ifdef ASSERT
   // verify that regions in irreducible loops are marked is_in_irreducible_loop
   void verify_regions_in_irreducible_loops();
   bool is_in_irreducible_loop(RegionNode* region);

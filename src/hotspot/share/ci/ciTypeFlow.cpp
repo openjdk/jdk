@@ -1843,6 +1843,7 @@ void ciTypeFlow::Block::set_backedge_copy(bool z) {
   _backedge_copy = z;
 }
 
+// Analogous to PhaseIdealLoop::is_in_irreducible_loop
 bool ciTypeFlow::Block::is_in_irreducible_loop() const {
   if (!outer()->has_irreducible_entry()) {
     return false; // No irreducible loop in method.
@@ -1862,9 +1863,17 @@ bool ciTypeFlow::Block::is_in_irreducible_loop() const {
     }
     lp = lp->parent();
   } while (lp != nullptr);
-  // Head of infinite loop, no parent was attached because no exit found
-  // Since this infinite loop does not exit into another loop, it is not
-  // nested in any loop, hence also not in an irreducible loop.
+  // We have "lp->parent() == nullptr", which happens only for infinite loops,
+  // where no parent is attached to the loop. We did not find any irreducible
+  // loop from this block out to lp. Thus lp only has one entry, and no exit
+  // (it is infinite and reducible). We can always rewrite an infinite loop
+  // that is nested inside other loops:
+  // while(condition) { infinite_loop; }
+  // with an equivalent program where the infinite loop is an outermost loop
+  // that is not nested in any loop:
+  // while(condition) { break; } infinite_loop;
+  // Thus, we can understand lp as an outermost loop, and can terminate and
+  // conclude: this block is in no irreducible loop.
   return false;
 }
 
@@ -2690,11 +2699,9 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
     // Check for irreducible loop.
     // Successor has already been visited. If the successor's loop head
     // has already been post-visited, then this is another entry into the loop.
-    Block* outermost_irreducible_head = nullptr;
     while (lp->head()->is_post_visited() && lp != loop_tree_root()) {
       _has_irreducible_entry = true;
       lp->set_irreducible(succ);
-      outermost_irreducible_head = lp->head();
       if (!succ->is_on_work_list()) {
         // Assume irreducible entries need more data flow
         add_to_work_list(succ);
@@ -2706,9 +2713,6 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
         break;
       }
       lp = plp;
-    }
-    if (outermost_irreducible_head != nullptr) {
-      outermost_irreducible_head->set_irreducible_loop_head();
     }
 
     // Merge loop tree branch for all successors.

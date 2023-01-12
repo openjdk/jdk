@@ -441,6 +441,13 @@ void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
   _loop_status = status;
 }
 
+#ifdef ASSERT
+void RegionNode::verify_can_be_irreducible_entry() const {
+  assert(loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry, "must be marked irreducible");
+  assert(!is_Loop(), "LoopNode cannot be irreducible loop entry");
+}
+#endif //ASSERT
+
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //
@@ -1962,13 +1969,11 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
 
 // If the Phi's Region is in an irreducible loop, and the Region
 // has had an input removed, but not yet transformed, it could be
-// that the Region (and this Phi) are not unreachable from Root.
+// that the Region (and this Phi) are not reachable from Root.
 // If we allow the Phi to collapse before the Region, this may lead
 // to dead-loop data. Wait for the Region to check for reachability,
 // and potentially remove the dead code.
 bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
-  assert(in(0) != nullptr && in(0)->is_Region(),
-         "Phi must have Region as control");
   RegionNode* region = in(0)->as_Region();
   if (region->loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
     Node* top = phase->C->top();

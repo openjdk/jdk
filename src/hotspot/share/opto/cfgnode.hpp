@@ -115,6 +115,9 @@ private:
 public:
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
+#ifdef ASSERT
+  void verify_can_be_irreducible_entry() const;
+#endif //ASSERT
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
