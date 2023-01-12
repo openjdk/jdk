@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 /**
  * Generate serialized form for serializable fields.
@@ -88,7 +87,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         content.add(heading);
         var pre = new HtmlTree(TagName.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
+                configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, fieldType));
         pre.add(fieldContent);
         pre.add(" ");
         pre.add(fieldName);

@@ -142,7 +142,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                         } else {
                             content.add(", ");
                         }
-                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.TREE, intf, content);
+                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, intf, content);
                     }
                 }
             }
@@ -159,6 +159,6 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param content the content to which the information will be added
      */
     protected void addPartialInfo(TypeElement typeElement, Content content) {
-        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.TREE, typeElement, content);
+        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, typeElement, content);
     }
 }

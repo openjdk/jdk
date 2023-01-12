@@ -703,7 +703,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             if (!displayServiceDirective(t, usesTrees)) {
                 continue;
             }
-            typeLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PACKAGE, t));
+            typeLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, t));
             Content summary = new ContentBuilder();
             if (display(usesTrees)) {
                 description = usesTrees.get(t);
@@ -733,7 +733,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 continue;
             }
             implSet = entry.getValue();
-            Content srvLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PACKAGE, srv));
+            Content srvLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, srv));
             Content desc = new ContentBuilder();
             if (display(providesTrees)) {
                 description = providesTrees.get(srv);
@@ -755,7 +755,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 String sep = "";
                 for (TypeElement impl : implSet) {
                     desc.add(sep);
-                    desc.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PACKAGE, impl)));
+                    desc.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, impl)));
                     sep = ", ";
                 }
                 desc.add(")");

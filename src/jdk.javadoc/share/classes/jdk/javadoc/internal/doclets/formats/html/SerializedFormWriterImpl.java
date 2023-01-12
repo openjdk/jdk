@@ -125,16 +125,16 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     @Override
     public Content getClassHeader(TypeElement typeElement) {
         Content classLink = (isVisibleClass(typeElement))
-                ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, typeElement)
+                ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : Text.of(utils.getFullyQualifiedName(typeElement));
         var section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
                 .setId(htmlIds.forClass(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
-                ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SERIALIZED_FORM,
+                ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
                         typeElement.getSuperclass()))
                 : null;
-        Content interfaceLink = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SERIALIZED_FORM,
+        Content interfaceLink = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
                 utils.isExternalizable(typeElement)
                         ? utils.getExternalizableType()
                         : utils.getSerializableType()));

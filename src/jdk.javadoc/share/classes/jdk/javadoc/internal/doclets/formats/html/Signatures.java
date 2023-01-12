@@ -135,7 +135,8 @@ public class Signatures {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.CLASS_SIGNATURE, typeElement);
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement);
+            linkInfo.showTypeParameterAnnotations = true;
             //Let's not link to ourselves in the signature.
             linkInfo.linkToSelf = false;
             nameSpan.add(writer.getTypeParameterLinks(linkInfo));
@@ -152,7 +153,7 @@ public class Signatures {
                         content.add(Text.NL);
                         extendsImplements.add("extends ");
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                                 superclass));
                         extendsImplements.add(link);
                     }
@@ -173,7 +174,7 @@ public class Signatures {
                             extendsImplements.add(", ");
                         }
                         Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.CLASS_SIGNATURE_PARENT_NAME,
+                                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                                 type));
                         extendsImplements.add(link);
                     }
@@ -199,7 +200,7 @@ public class Signatures {
                         permitsSpan.add(", ");
                     }
                     Content link = writer.getLink(new HtmlLinkInfo(configuration,
-                            HtmlLinkInfo.Kind.PERMITTED_SUBCLASSES,
+                            HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                             type));
                     permitsSpan.add(link);
                 }
@@ -221,7 +222,7 @@ public class Signatures {
                 content.add(sep);
                 writer.getAnnotations(e.getAnnotationMirrors(), false)
                         .forEach(a -> content.add(a).add(" "));
-                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.RECORD_COMPONENT,
+                Content link = writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
                         e.asType()));
                 content.add(link);
                 content.add(Entity.NO_BREAK_SPACE);
@@ -402,7 +403,7 @@ public class Signatures {
          * @return this instance
          */
         MemberSignature setType(TypeMirror type) {
-            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.MEMBER, type));
+            this.returnType = memberWriter.writer.getLink(new HtmlLinkInfo(memberWriter.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, type));
             return this;
         }
 

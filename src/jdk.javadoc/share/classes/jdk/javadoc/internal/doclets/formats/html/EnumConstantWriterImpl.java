@@ -172,7 +172,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
+        return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member, name);
     }
 
     @Override
