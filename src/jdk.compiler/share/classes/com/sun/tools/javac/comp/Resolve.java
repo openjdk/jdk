@@ -4173,17 +4173,34 @@ public class Resolve {
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
             Symbol ws = c.fst.asMemberOf(site, types);
-            return diags.create(dkind, log.currentSource(), pos,
-                      "cant.apply.symbol",
-                      compactMethodDiags ?
-                              d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
-                      kindName(ws),
-                      ws.name == names.init ? ws.owner.name : ws.name,
-                      methodArguments(ws.type.getParameterTypes()),
-                      methodArguments(argtypes),
-                      kindName(ws.owner),
-                      ws.owner.type,
-                      c.snd);
+
+            // If the problem is due to type arguments, then the method parameters aren't relevant,
+            // so use the error message that omits them to avoid confusion.
+            switch (c.snd.getCode()) {
+                case "compiler.misc.wrong.number.type.args":
+                case "compiler.misc.explicit.param.do.not.conform.to.bounds":
+                    return diags.create(dkind, log.currentSource(), pos,
+                              "cant.apply.symbol.noargs",
+                              compactMethodDiags ?
+                                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
+                              kindName(ws),
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              kindName(ws.owner),
+                              ws.owner.type,
+                              c.snd);
+                default:
+                    return diags.create(dkind, log.currentSource(), pos,
+                              "cant.apply.symbol",
+                              compactMethodDiags ?
+                                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
+                              kindName(ws),
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              methodArguments(ws.type.getParameterTypes()),
+                              methodArguments(argtypes),
+                              kindName(ws.owner),
+                              ws.owner.type,
+                              c.snd);
+            }
         }
 
         @Override
