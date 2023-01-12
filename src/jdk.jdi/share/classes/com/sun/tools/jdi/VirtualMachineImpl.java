@@ -1445,7 +1445,7 @@ class VirtualMachineImpl extends MirrorImpl
         return object;
     }
 
-    synchronized void removeObjectMirror(SoftObjectReference ref) {
+    private synchronized void removeObjectMirror(SoftObjectReference ref) {
         /*
          * This will remove the soft reference if it has not been
          * replaced in the cache.
