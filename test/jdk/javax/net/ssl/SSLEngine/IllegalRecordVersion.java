@@ -37,8 +37,12 @@ import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;
 import java.security.*;
 import java.nio.*;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
 
 public class IllegalRecordVersion {
+    private static final boolean DEBUG = Boolean.getBoolean("test.debug");
+
     private static final String PATH_TO_STORES = "../etc";
     private static final String KEYSTORE_FILE = "keystore";
     private static final String TRUSTSTORE_FILE = "truststore";
@@ -51,8 +55,8 @@ public class IllegalRecordVersion {
                     "/" + TRUSTSTORE_FILE;
 
     private static SSLContext getSSLContext() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
         char[] passphrase = "passphrase".toCharArray();
 
         ks.load(new FileInputStream(KEYSTORE_PATH), passphrase);
@@ -71,15 +75,36 @@ public class IllegalRecordVersion {
         return sslCtx;
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String [] args) throws Exception {
+        executeTest("TLSv1.2",
+                new String[]{"TLSv1.2"}, new String[]{"TLSv1.3", "TLSv1.2"});
+
+        executeTest("TLSv1.2",
+                new String[]{"TLSv1.3", "TLSv1.2"}, new String[]{"TLSv1.2"});
+
+        executeTest("TLSv1.3",
+                new String[]{"TLSv1.2", "TLSv1.3"}, new String[]{"TLSv1.3"});
+
+        executeTest("TLSv1.3",
+                new String[]{"TLSv1.3"}, new String[]{"TLSv1.2", "TLSv1.3"});
+    }
+
+
+    private static void executeTest(String expectedProtocol, String[] clientProtocols,
+                                    String[] serverProtocols) throws Exception {
+        System.out.printf("Executing test%n"
+                + "Client protocols: %s%nServer protocols: %s%nExpected negotiated: %s%n",
+                Arrays.toString(clientProtocols), Arrays.toString(serverProtocols),
+                expectedProtocol);
+        
         SSLContext context = getSSLContext();
 
         SSLEngine cliEngine = context.createSSLEngine();
         cliEngine.setUseClientMode(true);
-        cliEngine.setEnabledProtocols(new String[]{"TLSv1.2"});
+        cliEngine.setEnabledProtocols(clientProtocols);
         SSLEngine srvEngine = context.createSSLEngine();
         srvEngine.setUseClientMode(false);
-        srvEngine.setEnabledProtocols(new String[]{"TLSv1.3", "TLSv1.2"});
+        srvEngine.setEnabledProtocols(serverProtocols);
 
         SSLSession session = cliEngine.getSession();
         int netBufferMax = session.getPacketBufferSize();
@@ -90,68 +115,75 @@ public class IllegalRecordVersion {
         ByteBuffer cliOBuff = ByteBuffer.wrap("I'm client".getBytes());
 
 
-        System.out.println("client hello (record version(0xa9, 0xa2))");
+        System.out.println("Generating ClientHello");
         SSLEngineResult cliRes = cliEngine.wrap(cliOBuff, cliToSrv);
         checkResult(cliRes, HandshakeStatus.NEED_UNWRAP);
-        System.out.println("Client wrap result: " + cliRes);
+        log("Client wrap result: " + cliRes);
         cliToSrv.flip();
         if (cliToSrv.limit() > 5) {
+            System.out.println("Setting record version to (0xa9, 0xa2)");
             cliToSrv.put(1, (byte)0xa9);
             cliToSrv.put(2, (byte)0xa2);
+        } else {
+            throw new RuntimeException("ClientHello message is only "
+                    + cliToSrv.limit() + "bytes. Expecting at least 6 bytes. ");
         }
 
         SSLEngineResult srv = srvEngine.unwrap(cliToSrv, srvIBuff);
         checkResult(srv, HandshakeStatus.NEED_TASK);
         runDelegatedTasks(srvEngine);
 
-        handshake(cliEngine, srvEngine, netBufferMax);
+        finishHandshake(cliEngine, srvEngine);
 
         if (!cliEngine.getSession().getProtocol()
-                .equals(srvEngine.getSession().getProtocol())) {
-            throw new RuntimeException("Holy Crap!");
+                .equals(srvEngine.getSession().getProtocol())
+            || !cliEngine.getSession().getProtocol().equals(expectedProtocol)) {
+            throw new RuntimeException("Client and server did not negotiate protocol. "
+                    + "Expected: " + expectedProtocol + ". Negotiated: "
+                    + cliEngine.getSession().getProtocol());
         }
     }
     private static boolean isHandshaking(SSLEngine e) {
         return (e.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING);
     }
 
-    private static void handshake(SSLEngine client, SSLEngine server, int capacity) throws Exception {
+    private static void finishHandshake(SSLEngine client, SSLEngine server) throws Exception {
         boolean clientDone = false;
         boolean serverDone = false;
-        SSLEngineResult result2;
-        SSLEngineResult result1;
+        SSLEngineResult serverResult;
+        SSLEngineResult clientResult;
+        int capacity = client.getSession().getPacketBufferSize();
         ByteBuffer emptyBuffer = ByteBuffer.allocate(capacity);
         ByteBuffer serverToClient = ByteBuffer.allocate(capacity);
         ByteBuffer clientToServer = ByteBuffer.allocate(capacity);
+
         while (isHandshaking(client) ||
                 isHandshaking(server)) {
 
-            System.out.println("================");
+            log("================");
 
-            result1 = client.wrap(emptyBuffer, clientToServer);
-            //checkResult(result1, null, null, 0, -1, clientDone);
-            result2 = server.wrap(emptyBuffer, serverToClient);
-            //checkResult(result2, null, null, 0, -1, serverDone);
+            clientResult = client.wrap(emptyBuffer, clientToServer);
+            serverResult = server.wrap(emptyBuffer, serverToClient);
 
-            if (result1.getHandshakeStatus() == HandshakeStatus.FINISHED) {
+            if (clientResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
                 clientDone = true;
             }
 
-            if (result2.getHandshakeStatus() == HandshakeStatus.FINISHED) {
+            if (serverResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
                 serverDone = true;
             }
 
-            System.out.println("wrap1 = " + result1);
-            System.out.println("wrap2 = " + result2);
+            log("wrap1 = " + clientResult);
+            log("wrap2 = " + serverResult);
 
-            if (result1.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
+            if (clientResult.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
                 Runnable runnable;
                 while ((runnable = client.getDelegatedTask()) != null) {
                     runnable.run();
                 }
             }
 
-            if (result2.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
+            if (serverResult.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
                 Runnable runnable;
                 while ((runnable = server.getDelegatedTask()) != null) {
                     runnable.run();
@@ -161,32 +193,30 @@ public class IllegalRecordVersion {
             clientToServer.flip();
             serverToClient.flip();
 
-            System.out.println("----");
+            log("----");
 
-            result1 = client.unwrap(serverToClient, emptyBuffer);
-            //checkResult(result1, null, null, -1, 0, clientDone);
-            result2 = server.unwrap(clientToServer, emptyBuffer);
-            //checkResult(result2, null, null, -1, 0, serverDone);
+            clientResult = client.unwrap(serverToClient, emptyBuffer);
+            serverResult = server.unwrap(clientToServer, emptyBuffer);
 
-            if (result1.getHandshakeStatus() == HandshakeStatus.FINISHED) {
+            if (clientResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
                 clientDone = true;
             }
 
-            if (result2.getHandshakeStatus() == HandshakeStatus.FINISHED) {
+            if (serverResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
                 serverDone = true;
             }
 
-            System.out.println("unwrap1 = " + result1);
-            System.out.println("unwrap2 = " + result2);
+            log("unwrap1 = " + clientResult);
+            log("unwrap2 = " + serverResult);
 
-            if (result1.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
+            if (clientResult.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
                 Runnable runnable;
                 while ((runnable = client.getDelegatedTask()) != null) {
                     runnable.run();
                 }
             }
 
-            if (result2.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
+            if (serverResult.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
                 Runnable runnable;
                 while ((runnable = server.getDelegatedTask()) != null) {
                     runnable.run();
@@ -197,8 +227,8 @@ public class IllegalRecordVersion {
             serverToClient.clear();
         }
 
-        System.out.println("\nDONE HANDSHAKING");
-        System.out.println("================");
+        log("\nDONE HANDSHAKING");
+        log("================");
 
         if (!clientDone || !serverDone) {
             throw new RuntimeException("Both should be true:\n" +
@@ -209,7 +239,7 @@ public class IllegalRecordVersion {
     private static void runDelegatedTasks(SSLEngine engine) {
         Runnable runnable;
         while ((runnable = engine.getDelegatedTask()) != null) {
-            System.out.println("\trunning delegated task...");
+            log("\trunning delegated task...");
             runnable.run();
         }
     }
@@ -222,15 +252,9 @@ public class IllegalRecordVersion {
         }
     }
 
-    private static void dumpBuffer(ByteBuffer buffer) {
-        ByteBuffer tmp = buffer.duplicate();
-        int count = 1;
-        while(tmp.remaining() > 0) {
-            System.out.printf("%02X ", tmp.get());
-            if (count++ == 16) {
-                System.out.println();
-                count = 1;
-            }
+    private static void log(Object msg) {
+        if (DEBUG) {
+            System.out.println(msg);
         }
     }
 }
