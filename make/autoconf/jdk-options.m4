@@ -451,6 +451,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
 [
+  # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
+  # Silence them for now.
+  UBSAN_CFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_LDFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero"
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
       CHECK_AVAILABLE: [
@@ -464,10 +468,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
         fi
       ],
       IF_ENABLED: [
-        # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
-        # Silence them for now.
-        UBSAN_CFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
-        UBSAN_LDFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero"
         JVM_CFLAGS="$JVM_CFLAGS $UBSAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $UBSAN_LDFLAGS"
         CFLAGS_JDKLIB="$CFLAGS_JDKLIB $UBSAN_CFLAGS"
@@ -477,6 +477,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $UBSAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $UBSAN_LDFLAGS"
       ])
+  if test "x$UBSAN_ENABLED" = xfalse; then
+    UBSAN_CFLAGS=""
+    UBSAN_LDFLAGS=""
+  fi
+  AC_SUBST(UBSAN_CFLAGS)
+  AC_SUBST(UBSAN_LDFLAGS)
   AC_SUBST(UBSAN_ENABLED)
 ])
 
