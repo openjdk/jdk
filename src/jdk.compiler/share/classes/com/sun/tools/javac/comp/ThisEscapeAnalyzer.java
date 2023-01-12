@@ -300,11 +300,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // TODO: eliminate sealed classes where all permitted subclasses are in this compilation unit
 
         // Now analyze all of the analyzable constructors we found
-        for (Map.Entry<Symbol, MethodInfo> entry : this.methodMap.entrySet()) {
+        for (MethodInfo methodInfo : methodMap.values()) {
 
             // We are looking for analyzable constructors only
-            final Symbol sym = entry.getKey();
-            final MethodInfo methodInfo = entry.getValue();
             if (!methodInfo.isAnalyzable())
                 continue;
 
