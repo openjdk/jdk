@@ -131,7 +131,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     private final Log log;
     private       Lint lint;
 
-// These fields are scoped to the entire COMPILATION UNIT
+// These fields are scoped to the entire compilation unit
 
     /** Maps symbols of all methods to their corresponding declarations.
      */
@@ -150,7 +150,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private final ArrayList<DiagnosticPosition[]> warningList = new ArrayList<>();
 
-// These fields are scoped to the CONSTRUCTOR BEING ANALYZED
+// These fields are scoped to the constructor being analyzed
 
     /** The declaring class of the "invoked" method we're currently analyzing.
      *  This is either the analyzed constructor or some method it invokes.
@@ -172,7 +172,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private DiagnosticPosition[] pendingWarning;
 
-// These fields are scoped to the CONSTRUCTOR OR INVOKED METHOD BEING ANALYZED
+// These fields are scoped to the constructor or invoked method being analyzed
 
     /** Current lexical scope depth in the constructor or method we're currently analyzing.
      *  Depth zero is the outermost scope. Depth -1 means we're not analyzing.
