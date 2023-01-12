@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1443,23 +1443,6 @@ class VirtualMachineImpl extends MirrorImpl
         }
 
         return object;
-    }
-
-    synchronized void removeObjectMirror(ObjectReferenceImpl object) {
-        // Handle any queue elements that are not strongly reachable
-        processQueue();
-
-        SoftObjectReference ref = objectsByID.remove(object.ref());
-        if (ref != null) {
-            batchForDispose(ref);
-        } else {
-            /*
-             * If there's a live ObjectReference about, it better be part
-             * of the cache.
-             */
-            throw new InternalException("ObjectReference " + object.ref() +
-                                        " not found in object cache");
-        }
     }
 
     synchronized void removeObjectMirror(SoftObjectReference ref) {
