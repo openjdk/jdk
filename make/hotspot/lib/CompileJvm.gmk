@@ -86,10 +86,11 @@ CFLAGS_VM_VERSION := \
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     empty-body ignored-qualifiers implicit-fallthrough int-in-bool-context \
     maybe-uninitialized missing-field-initializers parentheses \
-    shift-negative-value unknown-pragmas
+    shift-negative-value unknown-pragmas invalid-offsetof
 
 DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
-    missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
+    missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas \
+    invalid-offsetof
 
 ifneq ($(DEBUG_LEVEL), release)
   # Assert macro gives warning
