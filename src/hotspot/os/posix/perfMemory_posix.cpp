@@ -24,8 +24,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1205,7 +1205,10 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
-  if (fd == OS_ERR || HAS_PENDING_EXCEPTION) {
+  if (HAS_PENDING_EXCEPTION) {
+    assert(fd == OS_ERR, "open_sharedmem_file always return OS_ERR on exceptions");
+  }
+  if (fd == OS_ERR) {
     return;
   }
 

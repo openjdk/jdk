@@ -24,13 +24,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,8 +45,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
@@ -169,13 +169,9 @@ const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
-// We want to be runnable with both old and new glibcs.
-// Old glibcs offer mallinfo(). New glibcs deprecate mallinfo() and offer mallinfo2()
-// as replacement. Future glibc's may remove the deprecated mallinfo().
-// Therefore we may have one, both, or possibly neither (?). Code should tolerate all
-// cases, which is why we resolve the functions dynamically. Outside code should use
-// the Linux::get_mallinfo() utility function which exists to hide this mess.
-struct glibc_mallinfo {
+// We want to be buildable and runnable on older and newer glibcs, so resolve both
+// mallinfo and mallinfo2 dynamically.
+struct old_mallinfo {
   int arena;
   int ordblks;
   int smblks;
@@ -187,9 +183,22 @@ struct glibc_mallinfo {
   int fordblks;
   int keepcost;
 };
-typedef struct glibc_mallinfo (*mallinfo_func_t)(void);
-typedef struct os::Linux::glibc_mallinfo2 (*mallinfo2_func_t)(void);
+typedef struct old_mallinfo (*mallinfo_func_t)(void);
 static mallinfo_func_t g_mallinfo = NULL;
+
+struct new_mallinfo {
+  size_t arena;
+  size_t ordblks;
+  size_t smblks;
+  size_t hblks;
+  size_t hblkhd;
+  size_t usmblks;
+  size_t fsmblks;
+  size_t uordblks;
+  size_t fordblks;
+  size_t keepcost;
+};
+typedef struct new_mallinfo (*mallinfo2_func_t)(void);
 static mallinfo2_func_t g_mallinfo2 = NULL;
 #endif // __GLIBC__
 
@@ -2122,22 +2131,17 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   size_t total_allocated = 0;
   size_t free_retained = 0;
   bool might_have_wrapped = false;
-  glibc_mallinfo2 mi;
-  mallinfo_retval_t mirc = os::Linux::get_mallinfo(&mi);
-  if (mirc != mallinfo_retval_t::error) {
-    size_t total_allocated = mi.uordblks + mi.hblkhd;
-    size_t free_retained = mi.fordblks;
+  glibc_mallinfo mi;
+  os::Linux::get_mallinfo(&mi, &might_have_wrapped);
+  total_allocated = mi.uordblks + mi.hblkhd;
+  free_retained = mi.fordblks;
 #ifdef _LP64
-    // If all we had is old mallinf(3), the values may have wrapped. Since that can confuse readers
-    // of this output, print a hint.
-    // We do this by checking virtual size of the process: if that is <4g, we could not have wrapped.
-    might_have_wrapped = (mirc == mallinfo_retval_t::ok_but_possibly_wrapped) &&
-                         ((info.vmsize * K) > UINT_MAX);
+  // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
+  might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
 #endif
-    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
-                 total_allocated / K, free_retained / K,
-                 might_have_wrapped ? " (may have wrapped)" : "");
-  }
+  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+               total_allocated / K, free_retained / K,
+               might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
   print_glibc_malloc_tunables(st);
   st->cr();
@@ -2933,10 +2937,10 @@ bool os::Linux::libnuma_init() {
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
         // Create an index -> node mapping, since nodes are not always consecutive
-        _nindex_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
         // Create a cpu -> node mapping
-        _cpu_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _cpu_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_cpu_to_node_map();
         return true;
       }
@@ -5349,34 +5353,64 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
 }
 
 #ifdef __GLIBC__
-os::Linux::mallinfo_retval_t os::Linux::get_mallinfo(glibc_mallinfo2* out) {
+void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
   if (g_mallinfo2) {
-    glibc_mallinfo2 mi = g_mallinfo2();
-    *out = mi;
-    return mallinfo_retval_t::ok;
+    new_mallinfo mi = g_mallinfo2();
+    out->arena = mi.arena;
+    out->ordblks = mi.ordblks;
+    out->smblks = mi.smblks;
+    out->hblks = mi.hblks;
+    out->hblkhd = mi.hblkhd;
+    out->usmblks = mi.usmblks;
+    out->fsmblks = mi.fsmblks;
+    out->uordblks = mi.uordblks;
+    out->fordblks = mi.fordblks;
+    out->keepcost =  mi.keepcost;
+    *might_have_wrapped = false;
   } else if (g_mallinfo) {
-    // mallinfo() returns 32-bit values. Not perfect but still useful if
-    // process virt size < 4g
-    glibc_mallinfo mi = g_mallinfo();
-    out->arena = (int) mi.arena;
-    out->ordblks = (int) mi.ordblks;
-    out->smblks = (int) mi.smblks;
-    out->hblks = (int) mi.hblks;
-    out->hblkhd = (int) mi.hblkhd;
-    out->usmblks = (int) mi.usmblks;
-    out->fsmblks = (int) mi.fsmblks;
-    out->uordblks = (int) mi.uordblks;
-    out->fordblks = (int) mi.fordblks;
-    out->keepcost = (int) mi.keepcost;
-    return mallinfo_retval_t::ok_but_possibly_wrapped;
+    old_mallinfo mi = g_mallinfo();
+    // glibc reports unsigned 32-bit sizes in int form. First make unsigned, then extend.
+    out->arena = (size_t)(unsigned)mi.arena;
+    out->ordblks = (size_t)(unsigned)mi.ordblks;
+    out->smblks = (size_t)(unsigned)mi.smblks;
+    out->hblks = (size_t)(unsigned)mi.hblks;
+    out->hblkhd = (size_t)(unsigned)mi.hblkhd;
+    out->usmblks = (size_t)(unsigned)mi.usmblks;
+    out->fsmblks = (size_t)(unsigned)mi.fsmblks;
+    out->uordblks = (size_t)(unsigned)mi.uordblks;
+    out->fordblks = (size_t)(unsigned)mi.fordblks;
+    out->keepcost = (size_t)(unsigned)mi.keepcost;
+    *might_have_wrapped = NOT_LP64(false) LP64_ONLY(true);
+  } else {
+    // We should have either mallinfo or mallinfo2
+    ShouldNotReachHere();
   }
-  return mallinfo_retval_t::ok;
 }
 #endif // __GLIBC__
 
-// Trim-native support
-bool os::can_trim_native_heap() {
+bool os::trim_native_heap(os::size_change_t* rss_change) {
 #ifdef __GLIBC__
+  os::Linux::meminfo_t info1;
+  os::Linux::meminfo_t info2;
+
+  bool have_info1 = rss_change != nullptr &&
+                    os::Linux::query_process_memory_info(&info1);
+  ::malloc_trim(0);
+  bool have_info2 = rss_change != nullptr && have_info1 &&
+                    os::Linux::query_process_memory_info(&info2);
+  ssize_t delta = (ssize_t) -1;
+  if (rss_change != nullptr) {
+    if (have_info1 && have_info2 &&
+        info1.vmrss != -1 && info2.vmrss != -1 &&
+        info1.vmswap != -1 && info2.vmswap != -1) {
+      // Note: query_process_memory_info returns values in K
+      rss_change->before = (info1.vmrss + info1.vmswap) * K;
+      rss_change->after = (info2.vmrss + info2.vmswap) * K;
+    } else {
+      rss_change->after = rss_change->before = SIZE_MAX;
+    }
+  }
+
   return true;
 #else
   return false; // musl
@@ -5402,40 +5436,16 @@ bool os::should_trim_native_heap() {
   //
   // In the end we want to prevent obvious bogus attempts to trim, and for that fordblks
   // is good enough.
-  os::Linux::glibc_mallinfo2 mi;
-  os::Linux::mallinfo_retval_t mirc = os::Linux::get_mallinfo(&mi);
-  const size_t total_free = mi.fordblks;
-  if (mirc == os::Linux::mallinfo_retval_t::ok) {
-    rc = retain_size < total_free;
-  }
-  return rc;
+  os::Linux::glibc_mallinfo mi;
+  bool possibly_wrapped;
+  os::Linux::get_mallinfo(&mi, &possibly_wrapped);
+  // If we cannot say for sure because we use an older glibc, assume trimming makes sense.
+  return possibly_wrapped ? true : retain_size < mi.fordblks;
 #else
   return false; // musl
 #endif
 }
 
-bool os::trim_native_heap(os::size_change_t* rss_change) {
-#ifdef __GLIBC__
-  os::Linux::meminfo_t info1;
-  os::Linux::meminfo_t info2;
 
-  bool have_info1 = os::Linux::query_process_memory_info(&info1);
-  ::malloc_trim(retain_size);
-  bool have_info2 = have_info1 && os::Linux::query_process_memory_info(&info2);
 
-  ssize_t delta = (ssize_t) -1;
-  if (have_info1 && have_info2 &&
-    info1.vmrss != -1 && info2.vmrss != -1 &&
-    info1.vmswap != -1 && info2.vmswap != -1) {
-    // Note: query_process_memory_info returns values in K
-    rss_change->before = (info1.vmrss + info1.vmswap) * K;
-    rss_change->after = (info2.vmrss + info2.vmswap) * K;
-  } else {
-    rss_change->after = rss_change->before = SIZE_MAX;
-  }
 
-  return true;
-#else
-  return false; // musl
-#endif
-}

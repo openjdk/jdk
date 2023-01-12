@@ -24,11 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "trimCHeapDCmd.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 #include <malloc.h>
 

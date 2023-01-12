@@ -380,7 +380,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // CodeBuffers must be allocated on the stack except for a single
   // special case during expansion which is handled internally.  This
   // is done to guarantee proper cleanup of resources.
-  void* operator new(size_t size) throw() { return ResourceObj::operator new(size); }
+  void* operator new(size_t size) throw() { return resource_allocate_bytes(size); }
   void  operator delete(void* p)          { ShouldNotCallThis(); }
 
  public:

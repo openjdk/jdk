@@ -31,7 +31,7 @@
 // ciExceptionHandler
 //
 // This class represents an exception handler for a method.
-class ciExceptionHandler : public ResourceObj {
+class ciExceptionHandler : public AnyObj {
 private:
   friend class ciMethod;
 

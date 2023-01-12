@@ -394,7 +394,24 @@ class os::Linux {
   static void* resolve_function_descriptor(void* p);
 
 #ifdef __GLIBC__
-  struct glibc_mallinfo2 {
+  // os::Linux::get_mallinfo() hides the complexity of dealing with mallinfo() or
+  // mallinfo2() from the user. Use this function instead of raw mallinfo/mallinfo2()
+  // to keep the JVM runtime-compatible with different glibc versions.
+  //
+  // mallinfo2() was added with glibc (>2.32). Legacy mallinfo() was deprecated with
+  // 2.33 and may vanish in future glibcs. So we may have both or either one of
+  // them.
+  //
+  // mallinfo2() is functionally equivalent to legacy mallinfo but returns sizes as
+  // 64-bit on 64-bit platforms. Legacy mallinfo uses 32-bit fields. However, legacy
+  // mallinfo is still perfectly fine to use if we know the sizes cannot have wrapped.
+  // For example, if the process virtual size does not exceed 4G, we cannot have
+  // malloc'ed more than 4G, so the results from legacy mallinfo() can still be used.
+  //
+  // os::Linux::get_mallinfo() will always prefer mallinfo2() if found, but will fall back
+  // to legacy mallinfo() if only that is available. In that case, it will return true
+  // in *might_have_wrapped.
+  struct glibc_mallinfo {
     size_t arena;
     size_t ordblks;
     size_t smblks;
@@ -406,12 +423,8 @@ class os::Linux {
     size_t fordblks;
     size_t keepcost;
   };
-  enum class mallinfo_retval_t { ok, error, ok_but_possibly_wrapped };
-  // get_mallinfo() is a wrapper for mallinfo/mallinfo2. It will prefer mallinfo2() if found.
-  // If we only have mallinfo(), values may be 32-bit truncated, which is signaled via
-  // "ok_but_possibly_wrapped".
-  static mallinfo_retval_t get_mallinfo(glibc_mallinfo2* out);
-#endif
+  static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
+#endif // GLIBC
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

@@ -1003,6 +1003,7 @@ int SafepointTracing::_nof_running = 0;
 int SafepointTracing::_page_trap = 0;
 VM_Operation::VMOp_Type SafepointTracing::_current_type;
 jlong     SafepointTracing::_max_sync_time = 0;
+jlong     SafepointTracing::_max_cleanup_time = 0;
 jlong     SafepointTracing::_max_vmop_time = 0;
 uint64_t  SafepointTracing::_op_count[VM_Operation::VMOp_Terminating] = {0};
 
@@ -1072,6 +1073,8 @@ void SafepointTracing::statistics_exit_log() {
 
   log_info(safepoint, stats)("Maximum sync time  " INT64_FORMAT" ns",
                               (int64_t)(_max_sync_time));
+  log_info(safepoint, stats)("Maximum cleanup time  " INT64_FORMAT" ns",
+                              (int64_t)(_max_cleanup_time));
   log_info(safepoint, stats)("Maximum vm operation time (except for Exit VM operation)  "
                               INT64_FORMAT " ns",
                               (int64_t)(_max_vmop_time));
@@ -1110,6 +1113,9 @@ void SafepointTracing::end() {
   if (_max_sync_time < (_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns)) {
     _max_sync_time = _last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns;
   }
+  if (_max_cleanup_time < (_last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns)) {
+    _max_cleanup_time = _last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns;
+  }
   if (_max_vmop_time < (_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns)) {
     _max_vmop_time = _last_safepoint_end_time_ns - _last_safepoint_sync_time_ns;
   }
@@ -1121,14 +1127,16 @@ void SafepointTracing::end() {
      "Safepoint \"%s\", "
      "Time since last: " JLONG_FORMAT " ns, "
      "Reaching safepoint: " JLONG_FORMAT " ns, "
+     "Cleanup: " JLONG_FORMAT " ns, "
      "At safepoint: " JLONG_FORMAT " ns, "
      "Total: " JLONG_FORMAT " ns",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
-      _last_safepoint_cleanup_time_ns - _last_safepoint_begin_time_ns,
+      _last_safepoint_sync_time_ns    - _last_safepoint_begin_time_ns,
+      _last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns,
       _last_safepoint_end_time_ns     - _last_safepoint_cleanup_time_ns,
       _last_safepoint_end_time_ns     - _last_safepoint_begin_time_ns
      );
 
-  RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_cleanup_time_ns);
+  RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);
 }

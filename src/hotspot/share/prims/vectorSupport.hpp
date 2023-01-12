@@ -25,8 +25,8 @@
 #ifndef SHARE_PRIMS_VECTORSUPPORT_HPP
 #define SHARE_PRIMS_VECTORSUPPORT_HPP
 
-#include "jni.h"
 #include "code/debugInfo.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/registerMap.hpp"

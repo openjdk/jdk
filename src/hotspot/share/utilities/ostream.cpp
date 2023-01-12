@@ -23,14 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"

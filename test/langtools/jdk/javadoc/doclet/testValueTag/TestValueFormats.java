@@ -46,8 +46,8 @@ public class TestValueFormats extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestValueFormats tester = new TestValueFormats();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestValueFormats();
+        tester.runTests();
     }
 
     TestValueFormats() {
@@ -86,7 +86,7 @@ public class TestValueFormats extends JavadocTester {
                 """
                     <h3>pi</h3>
                     <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type">double</span>&nbsp;<span class="element-name">pi</span></div>
-                    <div class="block">The value 3.1415926525 is  3.14.</div>""");
+                    <div class="block">The value 3.1415926525 is %5.2f.</div>""".formatted(3.14));
     }
 
     @Test

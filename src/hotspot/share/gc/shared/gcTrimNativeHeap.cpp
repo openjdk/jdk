@@ -30,7 +30,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"

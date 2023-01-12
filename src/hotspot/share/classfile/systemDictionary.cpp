@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -49,6 +48,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -113,9 +113,9 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -178,6 +178,11 @@ oop SystemDictionary::get_platform_class_loader_impl(TRAPS) {
                          vmSymbols::void_classloader_signature(),
                          CHECK_NULL);
   return result.get_oop();
+}
+
+// Helper function
+inline ClassLoaderData* class_loader_data(Handle class_loader) {
+  return ClassLoaderData::class_loader_data(class_loader());
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool create_mirror_cld) {
@@ -1064,7 +1069,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
     // Need to reload it now.
     TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
     if (pkg_name != NULL) {
-      pkg_entry = ClassLoaderData::class_loader_data(class_loader())->packages()->lookup_only(pkg_name);
+      pkg_entry = class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
     }
   }
 
@@ -1180,7 +1185,7 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   // The lambda proxy class and its nest host have the same class loader and class loader data,
   // as verified in SystemDictionaryShared::add_lambda_proxy_class()
   assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
+  assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
   ik->set_nest_host(shared_nest_host);
 
   return loaded_ik;
@@ -1228,7 +1233,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   // loaders, including the bootstrap loader via the placeholder table,
   // this lock is currently a nop.
 
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
+  ClassLoaderData* loader_data = class_loader_data(class_loader);
   {
     HandleMark hm(THREAD);
     Handle lockObject = get_loader_lock_or_null(class_loader);
@@ -1264,12 +1269,11 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     ResourceMark rm(THREAD);
     PackageEntry* pkg_entry = NULL;
     bool search_only_bootloader_append = false;
-    ClassLoaderData *loader_data = class_loader_data(class_loader);
 
     // Find the package in the boot loader's package entry table.
     TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
     if (pkg_name != NULL) {
-      pkg_entry = loader_data->packages()->lookup_only(pkg_name);
+      pkg_entry = class_loader_data(class_loader)->packages()->lookup_only(pkg_name);
     }
 
     // Prior to attempting to load the class, enforce the boot loader's
@@ -1410,22 +1414,22 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* name,
   // If everything was OK (no exceptions, no null return value), and
   // class_loader is NOT the defining loader, do a little more bookkeeping.
   if (loaded_class != NULL &&
-    loaded_class->class_loader() != class_loader()) {
+      loaded_class->class_loader() != class_loader()) {
 
-    check_constraints(loaded_class, class_loader, false, CHECK_NULL);
+    ClassLoaderData* loader_data = class_loader_data(class_loader);
+    check_constraints(loaded_class, loader_data, false, CHECK_NULL);
 
     // Record dependency for non-parent delegation.
     // This recording keeps the defining class loader of the klass (loaded_class) found
     // from being unloaded while the initiating class loader is loaded
     // even if the reference to the defining class loader is dropped
     // before references to the initiating class loader.
-    ClassLoaderData* loader_data = class_loader_data(class_loader);
     loader_data->record_dependency(loaded_class);
 
     { // Grabbing the Compile_lock prevents systemDictionary updates
       // during compilations.
       MutexLocker mu(THREAD, Compile_lock);
-      update_dictionary(THREAD, loaded_class, class_loader);
+      update_dictionary(THREAD, loaded_class, loader_data);
     }
 
     if (JvmtiExport::should_post_class_load()) {
@@ -1469,9 +1473,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // classloader lock held
   // Parallel classloaders will call find_or_define_instance_class
   // which will require a token to perform the define class
-  Symbol*  name_h = k->name();
-  Dictionary* dictionary = loader_data->dictionary();
-  check_constraints(k, class_loader, true, CHECK);
+  check_constraints(k, loader_data, true, CHECK);
 
   // Register class just loaded with class loader (placed in ArrayList)
   // Note we do this before updating the dictionary, as this can
@@ -1495,7 +1497,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
 
     // Add to systemDictionary - so other classes can see it.
     // Grabs and releases SystemDictionary_lock
-    update_dictionary(THREAD, k, class_loader);
+    update_dictionary(THREAD, k, loader_data);
   }
 
   // notify jvmti
@@ -1528,7 +1530,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
 InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handle class_loader,
                                                        InstanceKlass* k, TRAPS) {
 
-  Symbol*  name_h = k->name(); // passed in class_name may be null
+  Symbol* name_h = k->name();
   ClassLoaderData* loader_data = class_loader_data(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
 
@@ -1725,7 +1727,7 @@ void SystemDictionary::initialize(TRAPS) {
 // if initiating loader, then ok if InstanceKlass matches existing entry
 
 void SystemDictionary::check_constraints(InstanceKlass* k,
-                                         Handle class_loader,
+                                         ClassLoaderData* loader_data,
                                          bool defining,
                                          TRAPS) {
   ResourceMark rm(THREAD);
@@ -1733,8 +1735,7 @@ void SystemDictionary::check_constraints(InstanceKlass* k,
   bool throwException = false;
 
   {
-    Symbol *name = k->name();
-    ClassLoaderData *loader_data = class_loader_data(class_loader);
+    Symbol* name = k->name();
 
     MutexLocker mu(THREAD, SystemDictionary_lock);
 
@@ -1755,13 +1756,13 @@ void SystemDictionary::check_constraints(InstanceKlass* k,
     }
 
     if (throwException == false) {
-      if (LoaderConstraintTable::check_or_update(k, class_loader, name) == false) {
+      if (LoaderConstraintTable::check_or_update(k, loader_data, name) == false) {
         throwException = true;
         ss.print("loader constraint violation: loader %s", loader_data->loader_name_and_id());
         ss.print(" wants to load %s %s.",
                  k->external_kind(), k->external_name());
-        Klass *existing_klass = LoaderConstraintTable::find_constrained_klass(name, class_loader);
-        if (existing_klass != NULL && existing_klass->class_loader() != class_loader()) {
+        Klass *existing_klass = LoaderConstraintTable::find_constrained_klass(name, loader_data);
+        if (existing_klass != NULL && existing_klass->class_loader_data() != loader_data) {
           ss.print(" A different %s with the same name was previously loaded by %s. (%s)",
                    existing_klass->external_kind(),
                    existing_klass->class_loader_data()->loader_name_and_id(),
@@ -1784,23 +1785,20 @@ void SystemDictionary::check_constraints(InstanceKlass* k,
 // have been called.
 void SystemDictionary::update_dictionary(JavaThread* current,
                                          InstanceKlass* k,
-                                         Handle class_loader) {
+                                         ClassLoaderData* loader_data) {
   // Compile_lock prevents systemDictionary updates during compilations
   assert_locked_or_safepoint(Compile_lock);
-  Symbol*  name  = k->name();
-  ClassLoaderData *loader_data = class_loader_data(class_loader);
+  Symbol* name  = k->name();
 
-  {
-    MutexLocker mu1(SystemDictionary_lock);
+  MutexLocker mu1(SystemDictionary_lock);
 
-    // Make a new dictionary entry.
-    Dictionary* dictionary = loader_data->dictionary();
-    InstanceKlass* sd_check = dictionary->find_class(current, name);
-    if (sd_check == NULL) {
-      dictionary->add_klass(current, name, k);
-    }
-    SystemDictionary_lock->notify_all();
+  // Make a new dictionary entry.
+  Dictionary* dictionary = loader_data->dictionary();
+  InstanceKlass* sd_check = dictionary->find_class(current, name);
+  if (sd_check == NULL) {
+    dictionary->add_klass(current, name, k);
   }
+  SystemDictionary_lock->notify_all();
 }
 
 
@@ -1831,7 +1829,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
       klass = Universe::typeArrayKlassObj(t);
     } else {
       MutexLocker mu(current, SystemDictionary_lock);
-      klass = LoaderConstraintTable::find_constrained_klass(ss.as_symbol(), class_loader);
+      klass = LoaderConstraintTable::find_constrained_klass(ss.as_symbol(), class_loader_data(class_loader));
     }
     // If element class already loaded, allocate array klass
     if (klass != NULL) {
@@ -1840,7 +1838,7 @@ Klass* SystemDictionary::find_constrained_instance_or_array_klass(
   } else {
     MutexLocker mu(current, SystemDictionary_lock);
     // Non-array classes are easy: simply check the constraint table.
-    klass = LoaderConstraintTable::find_constrained_klass(class_name, class_loader);
+    klass = LoaderConstraintTable::find_constrained_klass(class_name, class_loader_data(class_loader));
   }
 
   return klass;
@@ -1880,8 +1878,8 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     MutexLocker mu_s(SystemDictionary_lock);
     InstanceKlass* klass1 = dictionary1->find_class(current, constraint_name);
     InstanceKlass* klass2 = dictionary2->find_class(current, constraint_name);
-    bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, class_loader1,
-                                                   klass2, class_loader2);
+    bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, loader_data1,
+                                                   klass2, loader_data2);
 #if INCLUDE_CDS
     if (Arguments::is_dumping_archive() && klass_being_linked != NULL &&
         !klass_being_linked->is_shared()) {
@@ -2442,10 +2440,6 @@ void SystemDictionary::invoke_bootstrap_method(BootstrapInfo& bootstrap_specifie
           bootstrap_specifier.resolved_method().not_null()), "bootstrap method call failed");
 }
 
-
-ClassLoaderData* SystemDictionary::class_loader_data(Handle class_loader) {
-  return ClassLoaderData::class_loader_data(class_loader());
-}
 
 bool SystemDictionary::is_nonpublic_Object_method(Method* m) {
   assert(m != NULL, "Unexpected NULL Method*");

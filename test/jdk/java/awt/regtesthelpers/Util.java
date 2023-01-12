@@ -450,6 +450,7 @@ public final class Util {
             Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.Module.class);
             // We may be called from non-X11 system, and this permission cannot be delegated to a test.
             m_addExports.invoke(null, "sun.awt.X11", Util.class.getModule());
+            @SuppressWarnings("removal")
             Method m_getWMID = (Method)AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
                         try {
