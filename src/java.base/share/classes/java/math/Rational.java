@@ -362,7 +362,7 @@ public class Rational extends Number implements Comparable<Rational> {
     public static Rational valueOf(double val) {
         return new Rational(Double.toString(val));
     }
-    
+
     /**
      * Returns a Rational whose value is represented by the fraction with the
      * specified numerator and denominator.
@@ -376,10 +376,10 @@ public class Rational extends Number implements Comparable<Rational> {
     public static Rational valueOf(BigDecimal num, BigDecimal den) {
         if (den.signum() == 0)
             throw new ArithmeticException("Denominator is zero");
-        
+
         if (num.signum() == 0)
             return ZERO;
-        
+
         return new Rational(num).divide(new Rational(den));
     }
 
