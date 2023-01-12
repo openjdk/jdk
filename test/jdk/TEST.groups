@@ -620,11 +620,6 @@ jdk_core_manual_no_input = \
     java/foreign/TestMatrix.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
-    java/beans/Performance/Test7184799.java \
-    java/beans/Performance/TestIntrospector.java \
-    java/beans/Performance/TestVetoableChangeSupport.java \
-    java/beans/Performance/Test7122740.java \
-    java/beans/Performance/TestPropertyChangeSupport.java
 
 jdk_core_manual_no_input_security = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
