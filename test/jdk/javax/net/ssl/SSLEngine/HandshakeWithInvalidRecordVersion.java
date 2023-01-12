@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8042449 8299870
+ * @library /javax/net/ssl/templates
  * @summary Verify successful handshake ignores invalid record version
  *
  * @run main/timeout=300 HandshakeWithInvalidRecordVersion
@@ -36,7 +37,7 @@ import java.security.*;
 import java.nio.*;
 import java.util.Arrays;
 
-public class HandshakeWithInvalidRecordVersion {
+public class HandshakeWithInvalidRecordVersion implements SSLContextTemplate {
     private static final boolean DEBUG = Boolean.getBoolean("test.debug");
 
     private static final String PATH_TO_STORES = "../etc";
@@ -49,56 +50,34 @@ public class HandshakeWithInvalidRecordVersion {
     private static final String TRUSTSTORE_PATH =
             System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
                     "/" + TRUSTSTORE_FILE;
-
-    private static SSLContext getSSLContext() throws Exception {
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
-        char[] passphrase = "passphrase".toCharArray();
-
-        ks.load(new FileInputStream(KEYSTORE_PATH), passphrase);
-        ts.load(new FileInputStream(TRUSTSTORE_PATH), passphrase);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        return sslCtx;
-    }
-
+    
     public static void main(String [] args) throws Exception {
-        executeTest("TLSv1.2",
+        var runner = new HandshakeWithInvalidRecordVersion();
+        runner.executeTest("TLSv1.2",
                 new String[]{"TLSv1.2"}, new String[]{"TLSv1.3", "TLSv1.2"});
 
-        executeTest("TLSv1.2",
+        runner.executeTest("TLSv1.2",
                 new String[]{"TLSv1.3", "TLSv1.2"}, new String[]{"TLSv1.2"});
 
-        executeTest("TLSv1.3",
+        runner.executeTest("TLSv1.3",
                 new String[]{"TLSv1.2", "TLSv1.3"}, new String[]{"TLSv1.3"});
 
-        executeTest("TLSv1.3",
+        runner.executeTest("TLSv1.3",
                 new String[]{"TLSv1.3"}, new String[]{"TLSv1.2", "TLSv1.3"});
     }
 
 
-    private static void executeTest(String expectedProtocol, String[] clientProtocols,
+    private void executeTest(String expectedProtocol, String[] clientProtocols,
                                     String[] serverProtocols) throws Exception {
         System.out.printf("Executing test%n"
                 + "Client protocols: %s%nServer protocols: %s%nExpected negotiated: %s%n",
                 Arrays.toString(clientProtocols), Arrays.toString(serverProtocols),
                 expectedProtocol);
 
-        SSLContext context = getSSLContext();
-
-        SSLEngine cliEngine = context.createSSLEngine();
+        SSLEngine cliEngine = createClientSSLContext().createSSLEngine();
         cliEngine.setUseClientMode(true);
         cliEngine.setEnabledProtocols(clientProtocols);
-        SSLEngine srvEngine = context.createSSLEngine();
+        SSLEngine srvEngine = createServerSSLContext().createSSLEngine();
         srvEngine.setUseClientMode(false);
         srvEngine.setEnabledProtocols(serverProtocols);
 
@@ -140,11 +119,11 @@ public class HandshakeWithInvalidRecordVersion {
                     + cliEngine.getSession().getProtocol());
         }
     }
-    private static boolean isHandshaking(SSLEngine e) {
+    private boolean isHandshaking(SSLEngine e) {
         return (e.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING);
     }
 
-    private static void finishHandshake(SSLEngine client, SSLEngine server) throws Exception {
+    private void finishHandshake(SSLEngine client, SSLEngine server) throws Exception {
         boolean clientDone = false;
         boolean serverDone = false;
         SSLEngineResult serverResult;
