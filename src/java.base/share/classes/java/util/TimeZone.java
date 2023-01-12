@@ -310,8 +310,10 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * <p>This method is equivalent to:
      * {@snippet lang=java :
-     * getDisplayName(false, LONG, // @link substring="LONG" target="#LONG"
-     *                Locale.getDefault(Locale.Category.DISPLAY)) // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY"
+     * // @link substring="LONG" target="#LONG" :
+     * getDisplayName(false, LONG,
+     *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
+     *                Locale.getDefault(Locale.Category.DISPLAY))
      * }
      *
      * @return the human-readable name of this time zone in the default locale.
@@ -331,7 +333,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * <p>This method is equivalent to:
      * {@snippet lang=java :
-     * getDisplayName(false, LONG, locale) // @link substring="LONG" target="#LONG"
+     * // @link substring="LONG" target="#LONG" :
+     * getDisplayName(false, LONG, locale)
      * }
      *
      * @param locale the locale in which to supply the display name.
@@ -354,7 +357,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * <p>This method is equivalent to:
      * {@snippet lang=java :
      * getDisplayName(daylight, style,
-     *                Locale.getDefault(Locale.Category.DISPLAY)) // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY"
+     *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
+     *                Locale.getDefault(Locale.Category.DISPLAY))
      * }
      *
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
