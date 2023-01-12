@@ -30,6 +30,7 @@
  */
 
 import java.awt.BorderLayout;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
@@ -47,6 +48,8 @@ public class bug7171812 {
     static String listData[];
     static JListWithScroll<String> list;
     static JScrollPane scrollPane;
+    static volatile Point pt;
+    static volatile int height;
 
     /**
      * @param args the command line arguments
@@ -66,16 +69,17 @@ public class bug7171812 {
 
         robot.waitForIdle();
         robot.delay(1000);
-        robot.mouseMove(scrollPane.getLocationOnScreen().x + 5,
-                        scrollPane.getLocationOnScreen().y + 5);
+        SwingUtilities.invokeAndWait(() -> {
+            pt = scrollPane.getLocationOnScreen();
+            height = scrollPane.getHeight();
+        });
+        robot.mouseMove(pt.x + 5, pt.y + 5);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        for(int offset = 5; offset < scrollPane.getHeight()-20; offset++) {
-            robot.mouseMove(scrollPane.getLocationOnScreen().x+5,
-                            scrollPane.getLocationOnScreen().y+offset);
+        for(int offset = 5; offset < height - 20; offset++) {
+            robot.mouseMove(pt.x + 5, pt.y + offset);
         }
         for(int offset = 5; offset < 195; offset++) {
-            robot.mouseMove(scrollPane.getLocationOnScreen().x+offset,
-                            scrollPane.getLocationOnScreen().y+scrollPane.getHeight()-20);
+            robot.mouseMove(pt.x + offset, pt.y + height - 20);
         }
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         try {
