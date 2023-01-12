@@ -439,7 +439,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * The value 0.1, with a scale of 1.
      */
-    private static final BigDecimal ONE_TENTH = valueOf(1L, 1);
+    static final BigDecimal ONE_TENTH = valueOf(1L, 1);
 
     /**
      * The value 0.5, with a scale of 1.
@@ -2253,21 +2253,21 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 guessPrecision *= 2;
             } while (guessPrecision < targetPrecision + 2);
 
-            BigDecimal result;
+            BigDecimal result = approx.scaleByPowerOfTen(-scaleAdjust/2);
             RoundingMode targetRm = mc.getRoundingMode();
             if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
                 RoundingMode tmpRm =
                     (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
                 MathContext mcTmp = new MathContext(targetPrecision, tmpRm);
-                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mcTmp);
+                result = result.round(mcTmp);
 
                 // If result*result != this numerically, the square
                 // root isn't exact
-                if (this.subtract(result.square()).compareTo(ZERO) != 0) {
+                if (result.square().compareTo(this) != 0) {
                     throw new ArithmeticException("Computed square root not exact.");
                 }
             } else {
-                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mc);
+                result = result.round(mc);
 
                 switch (targetRm) {
                 case DOWN:
@@ -2345,7 +2345,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
-    private BigDecimal square() {
+    BigDecimal square() {
         return this.multiply(this);
     }
 
@@ -2368,7 +2368,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * the input and (result-ulp)^2 must be {@code <} the input.
      * </ul>
      */
-    private boolean squareRootResultAssertions(BigDecimal result, MathContext mc) {
+    boolean squareRootResultAssertions(BigDecimal result, MathContext mc) {
         if (result.signum() == 0) {
             return squareRootZeroResultAssertions(result, mc);
         } else {
@@ -2446,7 +2446,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private boolean squareRootZeroResultAssertions(BigDecimal result, MathContext mc) {
-        return this.compareTo(ZERO) == 0;
+        return signum() == 0;
     }
 
     /**

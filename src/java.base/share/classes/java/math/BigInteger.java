@@ -2191,7 +2191,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @return <code>this<sup>2</sup></code>
      */
-    private BigInteger square() {
+    BigInteger square() {
         return square(false, false, 0);
     }
 
