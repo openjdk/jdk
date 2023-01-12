@@ -41,6 +41,7 @@ import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -54,8 +55,8 @@ public class OCSPNoContentLength {
     static String ROOT_ALIAS = "root";
     static String EE_ALIAS = "endentity";
 
-    // Turn on debugging
-    static final boolean debug = true;
+    // Enable debugging for additional output
+    static final boolean debug = false;
 
     // PKI components we will need for this test
     static X509Certificate rootCert;        // The root CA certificate
@@ -99,15 +100,14 @@ public class OCSPNoContentLength {
      * for each entity, a client trust store, and starts the OCSP responders.
      */
     private static void createPKI() throws Exception {
-        sun.security.testlibrary.CertificateBuilder cbld =
-                new sun.security.testlibrary.CertificateBuilder();
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-        keyGen.initialize(2048);
+        CertificateBuilder cbld = new CertificateBuilder();
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+        keyGen.initialize(new ECGenParameterSpec("secp256r1"));
         KeyStore.Builder keyStoreBuilder =
                 KeyStore.Builder.newInstance("PKCS12", null,
                         new KeyStore.PasswordProtection(passwd.toCharArray()));
 
-        // Generate Root, IntCA, EE keys
+        // Generate Root and EE keys
         KeyPair rootCaKP = keyGen.genKeyPair();
         log("Generated Root CA KeyPair");
         KeyPair eeKP = keyGen.genKeyPair();
@@ -125,7 +125,7 @@ public class OCSPNoContentLength {
         addCommonCAExts(cbld);
         // Make our Root CA Cert!
         rootCert = cbld.build(null, rootCaKP.getPrivate(),
-                "SHA256withRSA");
+                "SHA256withECDSA");
         log("Root CA Created:\n%s", certInfo(rootCert));
 
         // Now build a keystore and add the keys and cert
@@ -135,20 +135,23 @@ public class OCSPNoContentLength {
                 passwd.toCharArray(), rootChain);
 
         // Now fire up the OCSP responder
-        rootOcsp = new sun.security.testlibrary.SimpleOCSPServer(rootKeystore,
-                passwd, ROOT_ALIAS, null);
+        rootOcsp = new SimpleOCSPServer(rootKeystore, passwd, ROOT_ALIAS, null);
         rootOcsp.enableLog(debug);
         rootOcsp.setNextUpdateInterval(3600);
         rootOcsp.setDisableContentLength(true);
         rootOcsp.start();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
-            Thread.sleep(50);
+        boolean readyStatus = rootOcsp.awaitServerReady(5, TimeUnit.SECONDS);
+        if (!readyStatus) {
+            throw new RuntimeException("Server not ready");
         }
-        if (!rootOcsp.isServerReady()) {
-            throw new RuntimeException("Server not ready yet");
-        }
+//        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
+//            Thread.sleep(50);
+//        }
+//        if (!rootOcsp.isServerReady()) {
+//            throw new RuntimeException("Server not ready yet");
+//        }
 
         rootOcspPort = rootOcsp.getPort();
         String rootRespURI = "http://localhost:" + rootOcspPort;
@@ -167,7 +170,7 @@ public class OCSPNoContentLength {
 
         // Add extensions
         addCommonExts(cbld, eeKP.getPublic(), rootCaKP.getPublic());
-        boolean[] kuBits = {true, false, true, false, false, false,
+        boolean[] kuBits = {true, false, false, false, false, false,
                 false, false, false};
         cbld.addKeyUsageExt(kuBits);
         List<String> ekuOids = new ArrayList<>();
@@ -178,7 +181,7 @@ public class OCSPNoContentLength {
         cbld.addAIAExt(Collections.singletonList(rootRespURI));
         // Make our End Entity Cert!
         eeCert = cbld.build(rootCert, rootCaKP.getPrivate(),
-                "SHA256withRSA");
+                "SHA256withECDSA");
         log("SSL Certificate Created:\n%s", certInfo(eeCert));
 
         // Provide end entity cert revocation info to the Root CA
