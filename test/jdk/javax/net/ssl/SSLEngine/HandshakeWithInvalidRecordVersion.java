@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,12 @@
  * questions.
  */
 
-// This test case relies on updated static security property, no way to re-use
-// security property in samevm/agentvm mode.
-
 /*
  * @test
- * @bug 8042449
- * @summary Issue for negative byte major record version
+ * @bug 8042449 8299870
+ * @summary Verify successful handshake ignores invalid record version
  *
- * @run main/othervm/timeout=300 IllegalRecordVersion
+ * @run main/timeout=300 HandshakeWithInvalidRecordVersion
  */
 
 import javax.net.ssl.*;
@@ -37,10 +34,9 @@ import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;
 import java.security.*;
 import java.nio.*;
-import java.security.cert.CertificateException;
 import java.util.Arrays;
 
-public class IllegalRecordVersion {
+public class HandshakeWithInvalidRecordVersion {
     private static final boolean DEBUG = Boolean.getBoolean("test.debug");
 
     private static final String PATH_TO_STORES = "../etc";
@@ -96,7 +92,7 @@ public class IllegalRecordVersion {
                 + "Client protocols: %s%nServer protocols: %s%nExpected negotiated: %s%n",
                 Arrays.toString(clientProtocols), Arrays.toString(serverProtocols),
                 expectedProtocol);
-        
+
         SSLContext context = getSSLContext();
 
         SSLEngine cliEngine = context.createSSLEngine();
@@ -129,6 +125,7 @@ public class IllegalRecordVersion {
                     + cliToSrv.limit() + "bytes. Expecting at least 6 bytes. ");
         }
 
+        System.out.println("Processing ClientHello");
         SSLEngineResult srv = srvEngine.unwrap(cliToSrv, srvIBuff);
         checkResult(srv, HandshakeStatus.NEED_TASK);
         runDelegatedTasks(srvEngine);
@@ -157,6 +154,7 @@ public class IllegalRecordVersion {
         ByteBuffer serverToClient = ByteBuffer.allocate(capacity);
         ByteBuffer clientToServer = ByteBuffer.allocate(capacity);
 
+        System.out.println("Finishing handshake...");
         while (isHandshaking(client) ||
                 isHandshaking(server)) {
 
@@ -227,8 +225,7 @@ public class IllegalRecordVersion {
             serverToClient.clear();
         }
 
-        log("\nDONE HANDSHAKING");
-        log("================");
+        System.out.println("Handshake complete");
 
         if (!clientDone || !serverDone) {
             throw new RuntimeException("Both should be true:\n" +
