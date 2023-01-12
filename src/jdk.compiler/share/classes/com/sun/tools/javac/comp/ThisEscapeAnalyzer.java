@@ -434,6 +434,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Discard any direct 'this' reference that can't be valid because its
         // type is not compatible with the target class we're analyzing for.
+        // Note, tricky code could cast away and then cast back to evade this.
         if (referenceExpressionNode) {
 
             // We treat instance methods as having a "value" equal to their instance
