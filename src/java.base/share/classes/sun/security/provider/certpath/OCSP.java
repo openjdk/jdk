@@ -206,11 +206,17 @@ public final class OCSP {
                 out.flush();
             }
 
-            // Check the response
-            if (debug != null &&
-                con.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                debug.println("Received HTTP error: " + con.getResponseCode()
-                    + " - " + con.getResponseMessage());
+            // Check the response.  Non-200 codes will generate an exception
+            // but path validation may complete successfully if revocation info
+            // can be obtained elsewhere (e.g. CRL).
+            int respCode = con.getResponseCode();
+            if (respCode != HttpURLConnection.HTTP_OK) {
+                String msg = "Received HTTP error: " + respCode + " - " +
+                        con.getResponseMessage();
+                if (debug != null) {
+                    debug.println(msg);
+                }
+                throw new IOException(msg);
             }
 
             int contentLength = con.getContentLength();
