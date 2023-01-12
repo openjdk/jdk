@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -681,8 +681,6 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 ############################################################################
 
 # jdk_text
-
-java/text/Format/NumberFormat/CurrencyFormat.java 8299439 generic-all
 
 ############################################################################
 
