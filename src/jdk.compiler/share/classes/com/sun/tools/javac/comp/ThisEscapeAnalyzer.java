@@ -198,10 +198,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
 //
 
     public void analyzeTree(Env<AttrContext> env) {
-        analyzeTree(env, env.tree);
-    }
-
-    public void analyzeTree(Env<AttrContext> env, JCTree tree) {
 
         // Sanity check
         Assert.check(checkInvariants(false, false));
@@ -294,7 +290,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                   !(currentClass.sym.owner.kind == MTH) &&
                   !privateOuter;
             }
-        }.scan(tree);
+        }.scan(env.tree);
 
         // TODO: eliminate sealed classes where all permitted subclasses are in this compilation unit
 
