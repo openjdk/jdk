@@ -98,15 +98,11 @@ public class NewDirectByteBuffer {
     @ValueSource(longs = {0L, 1L, (long)Integer.MAX_VALUE/2,
         (long)Integer.MAX_VALUE - 1, (long)Integer.MAX_VALUE})
     void legalCapacities(long capacity) {
+        ByteBuffer buf = newDirectByteBuffer(capacity);
         try {
-            ByteBuffer buf = newDirectByteBuffer(capacity);
-            try {
-                checkBuffer(buf, capacity);
-            } finally {
-                freeDirectByteBufferMemory(buf);
-            }
-        } catch (OutOfMemoryError ignored) {
-            // Ignore the error
+            checkBuffer(buf, capacity);
+        } finally {
+            freeDirectByteBufferMemory(buf);
         }
     }
 
