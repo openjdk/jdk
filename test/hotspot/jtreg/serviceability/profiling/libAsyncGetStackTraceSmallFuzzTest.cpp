@@ -181,6 +181,17 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
   return JNI_VERSION_1_8;
 }
 
+#ifdef DEBUG
+// max increase of sp
+int sp_max_fuzz = 5000;
+int sp_max_random_fuzz = 1000000;
+// max increase of fp
+int fp_max_fuzz = 5000;
+int fp_max_random_fuzz = 1000000;
+// granularity of sp and fp increases
+int granularity = 1;
+int random_fuzzes = 500000;
+#else
 // max increase of sp
 int sp_max_fuzz = 10000;
 int sp_max_random_fuzz = 1000000;
@@ -190,6 +201,7 @@ int fp_max_random_fuzz = 1000000;
 // granularity of sp and fp increases
 int granularity = 1;
 int random_fuzzes = 1000000;
+#endif
 
 void fuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int options, int sp_fuzz, int fp_fuzz) {
   ucontext_t uc;
