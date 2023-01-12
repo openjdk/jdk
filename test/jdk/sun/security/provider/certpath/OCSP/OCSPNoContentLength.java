@@ -146,12 +146,6 @@ public class OCSPNoContentLength {
         if (!readyStatus) {
             throw new RuntimeException("Server not ready");
         }
-//        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
-//            Thread.sleep(50);
-//        }
-//        if (!rootOcsp.isServerReady()) {
-//            throw new RuntimeException("Server not ready yet");
-//        }
 
         rootOcspPort = rootOcsp.getPort();
         String rootRespURI = "http://localhost:" + rootOcspPort;
