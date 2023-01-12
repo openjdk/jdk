@@ -34,8 +34,13 @@
 #include "jvmti.h"
 #include "profile.h"
 
+#ifdef DEBUG
+const int INTERVAL_NS = 20000; // 20us, 50 000 times per second
+                               // 1000 times more than in a normal profiling run
+#else
 const int INTERVAL_NS = 1000; // 1us, 1 0000 000 times per second
                               // 20000 times more than in a normal profiling run
+#endif
 
 static jvmtiEnv* jvmti;
 
