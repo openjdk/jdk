@@ -486,11 +486,11 @@ static void get_field_ref(JfrJavaArguments* args, bool local_ref, TRAPS) {
 }
 
 void JfrJavaSupport::get_field_local_ref(JfrJavaArguments* args, TRAPS) {
-  get_field_ref(args, true, THREAD);
+  get_field_ref(args, true /* local_ref */, THREAD);
 }
 
 void JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
-  get_field_ref(args, false, THREAD);
+  get_field_ref(args, false /* local_ref */, THREAD);
 }
 
 /*
