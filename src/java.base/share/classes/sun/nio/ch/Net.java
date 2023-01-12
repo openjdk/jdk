@@ -73,21 +73,21 @@ public class Net {
 
     // -- Miscellaneous utilities --
 
-    private static final boolean IP_V6_AVAILABLE;
-    private static final boolean REUSE_PORT_AVAILABLE;
+    private static final boolean IPV6_AVAILABLE;
+    private static final boolean SO_REUSEPORT_AVAILABLE;
 
     /**
      * Tells whether dual-IPv4/IPv6 sockets should be used.
      */
     static boolean isIPv6Available() {
-        return IP_V6_AVAILABLE;
+        return IPV6_AVAILABLE;
     }
 
     /**
      * Tells whether SO_REUSEPORT is supported.
      */
     static boolean isReusePortAvailable() {
-        return REUSE_PORT_AVAILABLE;
+        return SO_REUSEPORT_AVAILABLE;
     }
 
     /**
@@ -190,6 +190,10 @@ public class Net {
             throw new Error("Untranslated exception", nx);
     }
 
+    private static SocketException newSocketException(String msg) {
+        return new SocketException(msg);
+    }
+
     static void translateException(Exception x,
                                    boolean unknownHostForUnresolved)
         throws IOException
@@ -244,40 +248,40 @@ public class Net {
         return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }
 
-    private static final InetAddress ANY_LOCAL_INET_4_ADDRESS;
-    private static final InetAddress ANY_LOCAL_INET_6_ADDRESS;
-    private static final InetAddress INET_4_LOOPBACK_ADDRESS;
-    private static final InetAddress INET_6_LOOPBACK_ADDRESS;
+    private static final InetAddress ANY_LOCAL_INET4ADDRESS;
+    private static final InetAddress ANY_LOCAL_INET6ADDRESS;
+    private static final InetAddress INET4_LOOPBACK_ADDRESS;
+    private static final InetAddress INET6_LOOPBACK_ADDRESS;
     static {
         try {
-            ANY_LOCAL_INET_4_ADDRESS = inet4FromInt(0);
-            assert ANY_LOCAL_INET_4_ADDRESS instanceof Inet4Address
-                    && ANY_LOCAL_INET_4_ADDRESS.isAnyLocalAddress();
+            ANY_LOCAL_INET4ADDRESS = inet4FromInt(0);
+            assert ANY_LOCAL_INET4ADDRESS instanceof Inet4Address
+                    && ANY_LOCAL_INET4ADDRESS.isAnyLocalAddress();
 
-            ANY_LOCAL_INET_6_ADDRESS = InetAddress.getByAddress(new byte[16]);
-            assert ANY_LOCAL_INET_6_ADDRESS instanceof Inet6Address
-                    && ANY_LOCAL_INET_6_ADDRESS.isAnyLocalAddress();
+            ANY_LOCAL_INET6ADDRESS = InetAddress.getByAddress(new byte[16]);
+            assert ANY_LOCAL_INET6ADDRESS instanceof Inet6Address
+                    && ANY_LOCAL_INET6ADDRESS.isAnyLocalAddress();
 
-            INET_4_LOOPBACK_ADDRESS = inet4FromInt(0x7f000001);
-            assert INET_4_LOOPBACK_ADDRESS instanceof Inet4Address
-                    && INET_4_LOOPBACK_ADDRESS.isLoopbackAddress();
+            INET4_LOOPBACK_ADDRESS = inet4FromInt(0x7f000001);
+            assert INET4_LOOPBACK_ADDRESS instanceof Inet4Address
+                    && INET4_LOOPBACK_ADDRESS.isLoopbackAddress();
 
             byte[] bytes = new byte[16];
             bytes[15] = 0x01;
-            INET_6_LOOPBACK_ADDRESS = InetAddress.getByAddress(bytes);
-            assert INET_6_LOOPBACK_ADDRESS instanceof Inet6Address
-                    && INET_6_LOOPBACK_ADDRESS.isLoopbackAddress();
+            INET6_LOOPBACK_ADDRESS = InetAddress.getByAddress(bytes);
+            assert INET6_LOOPBACK_ADDRESS instanceof Inet6Address
+                    && INET6_LOOPBACK_ADDRESS.isLoopbackAddress();
         } catch (Exception e) {
             throw new InternalError(e);
         }
     }
 
     static InetAddress inet4LoopbackAddress() {
-        return INET_4_LOOPBACK_ADDRESS;
+        return INET4_LOOPBACK_ADDRESS;
     }
 
     static InetAddress inet6LoopbackAddress() {
-        return INET_6_LOOPBACK_ADDRESS;
+        return INET6_LOOPBACK_ADDRESS;
     }
 
     /**
@@ -287,9 +291,9 @@ public class Net {
      */
     static InetAddress anyLocalAddress(ProtocolFamily family) {
         if (family == StandardProtocolFamily.INET) {
-            return ANY_LOCAL_INET_4_ADDRESS;
+            return ANY_LOCAL_INET4ADDRESS;
         } else if (family == StandardProtocolFamily.INET6) {
-            return ANY_LOCAL_INET_6_ADDRESS;
+            return ANY_LOCAL_INET6ADDRESS;
         } else {
             throw new IllegalArgumentException();
         }
@@ -812,7 +816,7 @@ public class Net {
             if (exclBindProp != null) {
                 EXCLUSIVE_BIND = exclBindProp.isEmpty() || Boolean.parseBoolean(exclBindProp);
             } else {
-                EXCLUSIVE_BIND = availLevel == 1;
+                EXCLUSIVE_BIND = (availLevel == 1);
             }
         } else {
             EXCLUSIVE_BIND = false;
@@ -820,16 +824,12 @@ public class Net {
 
         FAST_LOOPBACK = isFastTcpLoopbackRequested();
 
-        IP_V6_AVAILABLE = isIPv6Available0();
-        REUSE_PORT_AVAILABLE = isReusePortAvailable0();
+        IPV6_AVAILABLE = isIPv6Available0();
+        SO_REUSEPORT_AVAILABLE = isReusePortAvailable0();
     }
 
     private static AssertionError shouldNotReachHere() {
         return new AssertionError("Should not reach here");
-    }
-
-    private static SocketException newSocketException(String msg) {
-        return new SocketException(msg);
     }
 
 }
