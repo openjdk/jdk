@@ -5445,7 +5445,3 @@ bool os::should_trim_native_heap() {
   return false; // musl
 #endif
 }
-
-
-
-

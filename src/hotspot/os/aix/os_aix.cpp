@@ -2984,8 +2984,3 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
-
-// stubbed-out trim-native support
-bool os::can_trim_native_heap() { return false; }
-bool os::should_trim_native_heap() { return false; }
-bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
