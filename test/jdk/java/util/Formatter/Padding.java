@@ -23,340 +23,291 @@
 
 /*
  * @test
+ * @bug 4906370
+ * @summary Tests to excercise padding on int and double values,
+ *      with various flag combinations.
  * @run junit Padding
  */
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class Padding {
 
-    @Nested
-    class BlankPaddingInt {
+    static Arguments[] padding() {
+        return new Arguments[] {
+                /* blank padding, right adjusted, optional plus sign */
+                arguments("12", "%1d", 12),
+                arguments("12", "%2d", 12),
+                arguments(" 12", "%3d", 12),
+                arguments("  12", "%4d", 12),
+                arguments("   12", "%5d", 12),
+                arguments("        12", "%10d", 12),
 
-        @Test
-        void blankPad_d() {
-            assertEquals("12", String.format("%1d", 12));
-            assertEquals("12", String.format("%2d", 12));
-            assertEquals(" 12", String.format("%3d", 12));
-            assertEquals("  12", String.format("%4d", 12));
-            assertEquals("   12", String.format("%5d", 12));
-            assertEquals("        12", String.format("%10d", 12));
+                arguments("-12", "%1d", -12),
+                arguments("-12", "%2d", -12),
+                arguments("-12", "%3d", -12),
+                arguments(" -12", "%4d", -12),
+                arguments("  -12", "%5d", -12),
+                arguments("       -12", "%10d", -12),
 
-            assertEquals("-12", String.format("%1d", -12));
-            assertEquals("-12", String.format("%2d", -12));
-            assertEquals("-12", String.format("%3d", -12));
-            assertEquals(" -12", String.format("%4d", -12));
-            assertEquals("  -12", String.format("%5d", -12));
-            assertEquals("       -12", String.format("%10d", -12));
-        }
+                arguments("1.2", "%1.1f", 1.2),
+                arguments("1.2", "%2.1f", 1.2),
+                arguments("1.2", "%3.1f", 1.2),
+                arguments(" 1.2", "%4.1f", 1.2),
+                arguments("  1.2", "%5.1f", 1.2),
+                arguments("       1.2", "%10.1f", 1.2),
 
-        @Test
-        void blankPad_plus_d() {
-            assertEquals("+12", String.format("%+1d", 12));
-            assertEquals("+12", String.format("%+2d", 12));
-            assertEquals("+12", String.format("%+3d", 12));
-            assertEquals(" +12", String.format("%+4d", 12));
-            assertEquals("  +12", String.format("%+5d", 12));
-            assertEquals("       +12", String.format("%+10d", 12));
+                arguments("-1.2", "%1.1f", -1.2),
+                arguments("-1.2", "%2.1f", -1.2),
+                arguments("-1.2", "%3.1f", -1.2),
+                arguments("-1.2", "%4.1f", -1.2),
+                arguments(" -1.2", "%5.1f", -1.2),
+                arguments("      -1.2", "%10.1f", -1.2),
 
-            assertEquals("-12", String.format("%+1d", -12));
-            assertEquals("-12", String.format("%+2d", -12));
-            assertEquals("-12", String.format("%+3d", -12));
-            assertEquals(" -12", String.format("%+4d", -12));
-            assertEquals("  -12", String.format("%+5d", -12));
-            assertEquals("       -12", String.format("%+10d", -12));
-        }
+                /* blank padding, right adjusted, mandatory plus sign */
+                arguments("+12", "%+1d", 12),
+                arguments("+12", "%+2d", 12),
+                arguments("+12", "%+3d", 12),
+                arguments(" +12", "%+4d", 12),
+                arguments("  +12", "%+5d", 12),
+                arguments("       +12", "%+10d", 12),
 
-        @Test
-        void blankPad_blank_d() {
-            assertEquals(" 12", String.format("% 1d", 12));
-            assertEquals(" 12", String.format("% 2d", 12));
-            assertEquals(" 12", String.format("% 3d", 12));
-            assertEquals("  12", String.format("% 4d", 12));
-            assertEquals("   12", String.format("% 5d", 12));
-            assertEquals("        12", String.format("% 10d", 12));
+                arguments("-12", "%+1d", -12),
+                arguments("-12", "%+2d", -12),
+                arguments("-12", "%+3d", -12),
+                arguments(" -12", "%+4d", -12),
+                arguments("  -12", "%+5d", -12),
+                arguments("       -12", "%+10d", -12),
 
-            assertEquals("-12", String.format("% 1d", -12));
-            assertEquals("-12", String.format("% 2d", -12));
-            assertEquals("-12", String.format("% 3d", -12));
-            assertEquals(" -12", String.format("% 4d", -12));
-            assertEquals("  -12", String.format("% 5d", -12));
-            assertEquals("       -12", String.format("% 10d", -12));
-        }
+                arguments("+1.2", "%+1.1f", 1.2),
+                arguments("+1.2", "%+2.1f", 1.2),
+                arguments("+1.2", "%+3.1f", 1.2),
+                arguments("+1.2", "%+4.1f", 1.2),
+                arguments(" +1.2", "%+5.1f", 1.2),
+                arguments("      +1.2", "%+10.1f", 1.2),
 
-        @Test
-        void blankPad_minus_d() {
-            assertEquals("12", String.format("%-1d", 12));
-            assertEquals("12", String.format("%-2d", 12));
-            assertEquals("12 ", String.format("%-3d", 12));
-            assertEquals("12  ", String.format("%-4d", 12));
-            assertEquals("12   ", String.format("%-5d", 12));
-            assertEquals("12        ", String.format("%-10d", 12));
+                arguments("-1.2", "%+1.1f", -1.2),
+                arguments("-1.2", "%+2.1f", -1.2),
+                arguments("-1.2", "%+3.1f", -1.2),
+                arguments("-1.2", "%+4.1f", -1.2),
+                arguments(" -1.2", "%+5.1f", -1.2),
+                arguments("      -1.2", "%+10.1f", -1.2),
 
-            assertEquals("-12", String.format("%-1d", -12));
-            assertEquals("-12", String.format("%-2d", -12));
-            assertEquals("-12", String.format("%-3d", -12));
-            assertEquals("-12 ", String.format("%-4d", -12));
-            assertEquals("-12  ", String.format("%-5d", -12));
-            assertEquals("-12       ", String.format("%-10d", -12));
-        }
+                /* blank padding, right adjusted, mandatory blank sign */
+                arguments(" 12", "% 1d", 12),
+                arguments(" 12", "% 2d", 12),
+                arguments(" 12", "% 3d", 12),
+                arguments("  12", "% 4d", 12),
+                arguments("   12", "% 5d", 12),
+                arguments("        12", "% 10d", 12),
 
-        @Test
-        void blankPad_minus_plus_d() {
-            assertEquals("+12", String.format("%-+1d", 12));
-            assertEquals("+12", String.format("%-+2d", 12));
-            assertEquals("+12", String.format("%-+3d", 12));
-            assertEquals("+12 ", String.format("%-+4d", 12));
-            assertEquals("+12  ", String.format("%-+5d", 12));
-            assertEquals("+12       ", String.format("%-+10d", 12));
+                arguments("-12", "% 1d", -12),
+                arguments("-12", "% 2d", -12),
+                arguments("-12", "% 3d", -12),
+                arguments(" -12", "% 4d", -12),
+                arguments("  -12", "% 5d", -12),
+                arguments("       -12", "% 10d", -12),
 
-            assertEquals("-12", String.format("%-+1d", -12));
-            assertEquals("-12", String.format("%-+2d", -12));
-            assertEquals("-12", String.format("%-+3d", -12));
-            assertEquals("-12 ", String.format("%-+4d", -12));
-            assertEquals("-12  ", String.format("%-+5d", -12));
-            assertEquals("-12       ", String.format("%-+10d", -12));
-        }
+                arguments(" 1.2", "% 1.1f", 1.2),
+                arguments(" 1.2", "% 2.1f", 1.2),
+                arguments(" 1.2", "% 3.1f", 1.2),
+                arguments(" 1.2", "% 4.1f", 1.2),
+                arguments("  1.2", "% 5.1f", 1.2),
+                arguments("       1.2", "% 10.1f", 1.2),
 
-        @Test
-        void blankPad_minus_blank_d() {
-            assertEquals(" 12", String.format("%- 1d", 12));
-            assertEquals(" 12", String.format("%- 2d", 12));
-            assertEquals(" 12", String.format("%- 3d", 12));
-            assertEquals(" 12 ", String.format("%- 4d", 12));
-            assertEquals(" 12  ", String.format("%- 5d", 12));
-            assertEquals(" 12       ", String.format("%- 10d", 12));
+                arguments("-1.2", "% 1.1f", -1.2),
+                arguments("-1.2", "% 2.1f", -1.2),
+                arguments("-1.2", "% 3.1f", -1.2),
+                arguments("-1.2", "% 4.1f", -1.2),
+                arguments(" -1.2", "% 5.1f", -1.2),
+                arguments("      -1.2", "% 10.1f", -1.2),
 
-            assertEquals("-12", String.format("%- 1d", -12));
-            assertEquals("-12", String.format("%- 2d", -12));
-            assertEquals("-12", String.format("%- 3d", -12));
-            assertEquals("-12 ", String.format("%- 4d", -12));
-            assertEquals("-12  ", String.format("%- 5d", -12));
-            assertEquals("-12       ", String.format("%- 10d", -12));
-        }
+                /* blank padding, left adjusted, optional sign */
+                arguments("12", "%-1d", 12),
+                arguments("12", "%-2d", 12),
+                arguments("12 ", "%-3d", 12),
+                arguments("12  ", "%-4d", 12),
+                arguments("12   ", "%-5d", 12),
+                arguments("12        ", "%-10d", 12),
 
+                arguments("-12", "%-1d", -12),
+                arguments("-12", "%-2d", -12),
+                arguments("-12", "%-3d", -12),
+                arguments("-12 ", "%-4d", -12),
+                arguments("-12  ", "%-5d", -12),
+                arguments("-12       ", "%-10d", -12),
+
+                arguments("1.2", "%-1.1f", 1.2),
+                arguments("1.2", "%-2.1f", 1.2),
+                arguments("1.2", "%-3.1f", 1.2),
+                arguments("1.2 ", "%-4.1f", 1.2),
+                arguments("1.2  ", "%-5.1f", 1.2),
+                arguments("1.2       ", "%-10.1f", 1.2),
+
+                arguments("-1.2", "%-1.1f", -1.2),
+                arguments("-1.2", "%-2.1f", -1.2),
+                arguments("-1.2", "%-3.1f", -1.2),
+                arguments("-1.2", "%-4.1f", -1.2),
+                arguments("-1.2 ", "%-5.1f", -1.2),
+                arguments("-1.2      ", "%-10.1f", -1.2),
+
+                /* blank padding, left adjusted, mandatory plus sign */
+                arguments("+12", "%-+1d", 12),
+                arguments("+12", "%-+2d", 12),
+                arguments("+12", "%-+3d", 12),
+                arguments("+12 ", "%-+4d", 12),
+                arguments("+12  ", "%-+5d", 12),
+                arguments("+12       ", "%-+10d", 12),
+
+                arguments("-12", "%-+1d", -12),
+                arguments("-12", "%-+2d", -12),
+                arguments("-12", "%-+3d", -12),
+                arguments("-12 ", "%-+4d", -12),
+                arguments("-12  ", "%-+5d", -12),
+                arguments("-12       ", "%-+10d", -12),
+
+                arguments("+1.2", "%-+1.1f", 1.2),
+                arguments("+1.2", "%-+2.1f", 1.2),
+                arguments("+1.2", "%-+3.1f", 1.2),
+                arguments("+1.2", "%-+4.1f", 1.2),
+                arguments("+1.2 ", "%-+5.1f", 1.2),
+                arguments("+1.2      ", "%-+10.1f", 1.2),
+
+                arguments("-1.2", "%-+1.1f", -1.2),
+                arguments("-1.2", "%-+2.1f", -1.2),
+                arguments("-1.2", "%-+3.1f", -1.2),
+                arguments("-1.2", "%-+4.1f", -1.2),
+                arguments("-1.2 ", "%-+5.1f", -1.2),
+                arguments("-1.2      ", "%-+10.1f", -1.2),
+
+                /* blank padding, left adjusted, mandatory blank sign */
+                arguments(" 12", "%- 1d", 12),
+                arguments(" 12", "%- 2d", 12),
+                arguments(" 12", "%- 3d", 12),
+                arguments(" 12 ", "%- 4d", 12),
+                arguments(" 12  ", "%- 5d", 12),
+                arguments(" 12       ", "%- 10d", 12),
+
+                arguments("-12", "%- 1d", -12),
+                arguments("-12", "%- 2d", -12),
+                arguments("-12", "%- 3d", -12),
+                arguments("-12 ", "%- 4d", -12),
+                arguments("-12  ", "%- 5d", -12),
+                arguments("-12       ", "%- 10d", -12),
+
+                arguments(" 1.2", "%- 1.1f", 1.2),
+                arguments(" 1.2", "%- 2.1f", 1.2),
+                arguments(" 1.2", "%- 3.1f", 1.2),
+                arguments(" 1.2", "%- 4.1f", 1.2),
+                arguments(" 1.2 ", "%- 5.1f", 1.2),
+                arguments(" 1.2      ", "%- 10.1f", 1.2),
+
+                arguments("-1.2", "%- 1.1f", -1.2),
+                arguments("-1.2", "%- 2.1f", -1.2),
+                arguments("-1.2", "%- 3.1f", -1.2),
+                arguments("-1.2", "%- 4.1f", -1.2),
+                arguments("-1.2 ", "%- 5.1f", -1.2),
+                arguments("-1.2      ", "%- 10.1f", -1.2),
+
+                /* zero padding, right adjusted, optional sign */
+                arguments("12", "%01d", 12),
+                arguments("12", "%02d", 12),
+                arguments("012", "%03d", 12),
+                arguments("0012", "%04d", 12),
+                arguments("00012", "%05d", 12),
+                arguments("0000000012", "%010d", 12),
+
+                arguments("-12", "%01d", -12),
+                arguments("-12", "%02d", -12),
+                arguments("-12", "%03d", -12),
+                arguments("-012", "%04d", -12),
+                arguments("-0012", "%05d", -12),
+                arguments("-000000012", "%010d", -12),
+
+                arguments("1.2", "%01.1f", 1.2),
+                arguments("1.2", "%02.1f", 1.2),
+                arguments("1.2", "%03.1f", 1.2),
+                arguments("01.2", "%04.1f", 1.2),
+                arguments("001.2", "%05.1f", 1.2),
+                arguments("00000001.2", "%010.1f", 1.2),
+
+                arguments("-1.2", "%01.1f", -1.2),
+                arguments("-1.2", "%02.1f", -1.2),
+                arguments("-1.2", "%03.1f", -1.2),
+                arguments("-1.2", "%04.1f", -1.2),
+                arguments("-01.2", "%05.1f", -1.2),
+                arguments("-0000001.2", "%010.1f", -1.2),
+
+                /* zero padding, right adjusted, mandatory plus sign */
+                arguments("+12", "%+01d", 12),
+                arguments("+12", "%+02d", 12),
+                arguments("+12", "%+03d", 12),
+                arguments("+012", "%+04d", 12),
+                arguments("+0012", "%+05d", 12),
+                arguments("+000000012", "%+010d", 12),
+
+                arguments("-12", "%+01d", -12),
+                arguments("-12", "%+02d", -12),
+                arguments("-12", "%+03d", -12),
+                arguments("-012", "%+04d", -12),
+                arguments("-0012", "%+05d", -12),
+                arguments("-000000012", "%+010d", -12),
+
+                arguments("+1.2", "%+01.1f", 1.2),
+                arguments("+1.2", "%+02.1f", 1.2),
+                arguments("+1.2", "%+03.1f", 1.2),
+                arguments("+1.2", "%+04.1f", 1.2),
+                arguments("+01.2", "%+05.1f", 1.2),
+                arguments("+0000001.2", "%+010.1f", 1.2),
+
+                arguments("-1.2", "%+01.1f", -1.2),
+                arguments("-1.2", "%+02.1f", -1.2),
+                arguments("-1.2", "%+03.1f", -1.2),
+                arguments("-1.2", "%+04.1f", -1.2),
+                arguments("-01.2", "%+05.1f", -1.2),
+                arguments("-0000001.2", "%+010.1f", -1.2),
+
+                /* zero padding, right adjusted, mandatory blank sign */
+                arguments(" 12", "% 01d", 12),
+                arguments(" 12", "% 02d", 12),
+                arguments(" 12", "% 03d", 12),
+                arguments(" 012", "% 04d", 12),
+                arguments(" 0012", "% 05d", 12),
+                arguments(" 000000012", "% 010d", 12),
+
+                arguments("-12", "% 01d", -12),
+                arguments("-12", "% 02d", -12),
+                arguments("-12", "% 03d", -12),
+                arguments("-012", "% 04d", -12),
+                arguments("-0012", "% 05d", -12),
+                arguments("-000000012", "% 010d", -12),
+
+                arguments(" 1.2", "% 01.1f", 1.2),
+                arguments(" 1.2", "% 02.1f", 1.2),
+                arguments(" 1.2", "% 03.1f", 1.2),
+                arguments(" 1.2", "% 04.1f", 1.2),
+                arguments(" 01.2", "% 05.1f", 1.2),
+                arguments(" 0000001.2", "% 010.1f", 1.2),
+
+                arguments("-1.2", "% 01.1f", -1.2),
+                arguments("-1.2", "% 02.1f", -1.2),
+                arguments("-1.2", "% 03.1f", -1.2),
+                arguments("-1.2", "% 04.1f", -1.2),
+                arguments("-01.2", "% 05.1f", -1.2),
+                arguments("-0000001.2", "% 010.1f", -1.2),
+
+        };
     }
 
-    @Nested
-    class BlankPaddingDouble {
-
-        @Test
-        void blankPad_f() {
-            assertEquals("1.2", String.format("%1.1f", 1.2));
-            assertEquals("1.2", String.format("%2.1f", 1.2));
-            assertEquals("1.2", String.format("%3.1f", 1.2));
-            assertEquals(" 1.2", String.format("%4.1f", 1.2));
-            assertEquals("  1.2", String.format("%5.1f", 1.2));
-            assertEquals("       1.2", String.format("%10.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%1.1f", -1.2));
-            assertEquals("-1.2", String.format("%2.1f", -1.2));
-            assertEquals("-1.2", String.format("%3.1f", -1.2));
-            assertEquals("-1.2", String.format("%4.1f", -1.2));
-            assertEquals(" -1.2", String.format("%5.1f", -1.2));
-            assertEquals("      -1.2", String.format("%10.1f", -1.2));
-        }
-
-        @Test
-        void blankPad_plus_f() {
-            assertEquals("+1.2", String.format("%+1.1f", 1.2));
-            assertEquals("+1.2", String.format("%+2.1f", 1.2));
-            assertEquals("+1.2", String.format("%+3.1f", 1.2));
-            assertEquals("+1.2", String.format("%+4.1f", 1.2));
-            assertEquals(" +1.2", String.format("%+5.1f", 1.2));
-            assertEquals("      +1.2", String.format("%+10.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%+1.1f", -1.2));
-            assertEquals("-1.2", String.format("%+2.1f", -1.2));
-            assertEquals("-1.2", String.format("%+3.1f", -1.2));
-            assertEquals("-1.2", String.format("%+4.1f", -1.2));
-            assertEquals(" -1.2", String.format("%+5.1f", -1.2));
-            assertEquals("      -1.2", String.format("%+10.1f", -1.2));
-        }
-
-        @Test
-        void blankPad_blank_f() {
-            assertEquals(" 1.2", String.format("% 1.1f", 1.2));
-            assertEquals(" 1.2", String.format("% 2.1f", 1.2));
-            assertEquals(" 1.2", String.format("% 3.1f", 1.2));
-            assertEquals(" 1.2", String.format("% 4.1f", 1.2));
-            assertEquals("  1.2", String.format("% 5.1f", 1.2));
-            assertEquals("       1.2", String.format("% 10.1f", 1.2));
-
-            assertEquals("-1.2", String.format("% 1.1f", -1.2));
-            assertEquals("-1.2", String.format("% 2.1f", -1.2));
-            assertEquals("-1.2", String.format("% 3.1f", -1.2));
-            assertEquals("-1.2", String.format("% 4.1f", -1.2));
-            assertEquals(" -1.2", String.format("% 5.1f", -1.2));
-            assertEquals("      -1.2", String.format("% 10.1f", -1.2));
-        }
-
-        @Test
-        void blankPad_minus_f() {
-            assertEquals("1.2", String.format("%-1.1f", 1.2));
-            assertEquals("1.2", String.format("%-2.1f", 1.2));
-            assertEquals("1.2", String.format("%-3.1f", 1.2));
-            assertEquals("1.2 ", String.format("%-4.1f", 1.2));
-            assertEquals("1.2  ", String.format("%-5.1f", 1.2));
-            assertEquals("1.2       ", String.format("%-10.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%-1.1f", -1.2));
-            assertEquals("-1.2", String.format("%-2.1f", -1.2));
-            assertEquals("-1.2", String.format("%-3.1f", -1.2));
-            assertEquals("-1.2", String.format("%-4.1f", -1.2));
-            assertEquals("-1.2 ", String.format("%-5.1f", -1.2));
-            assertEquals("-1.2      ", String.format("%-10.1f", -1.2));
-        }
-
-        @Test
-        void blankPad_minus_plus_f() {
-            assertEquals("+1.2", String.format("%-+1.1f", 1.2));
-            assertEquals("+1.2", String.format("%-+2.1f", 1.2));
-            assertEquals("+1.2", String.format("%-+3.1f", 1.2));
-            assertEquals("+1.2", String.format("%-+4.1f", 1.2));
-            assertEquals("+1.2 ", String.format("%-+5.1f", 1.2));
-            assertEquals("+1.2      ", String.format("%-+10.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%-+1.1f", -1.2));
-            assertEquals("-1.2", String.format("%-+2.1f", -1.2));
-            assertEquals("-1.2", String.format("%-+3.1f", -1.2));
-            assertEquals("-1.2", String.format("%-+4.1f", -1.2));
-            assertEquals("-1.2 ", String.format("%-+5.1f", -1.2));
-            assertEquals("-1.2      ", String.format("%-+10.1f", -1.2));
-        }
-
-        @Test
-        void blankPad_minus_blank_f() {
-            assertEquals(" 1.2", String.format("%- 1.1f", 1.2));
-            assertEquals(" 1.2", String.format("%- 2.1f", 1.2));
-            assertEquals(" 1.2", String.format("%- 3.1f", 1.2));
-            assertEquals(" 1.2", String.format("%- 4.1f", 1.2));
-            assertEquals(" 1.2 ", String.format("%- 5.1f", 1.2));
-            assertEquals(" 1.2      ", String.format("%- 10.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%- 1.1f", -1.2));
-            assertEquals("-1.2", String.format("%- 2.1f", -1.2));
-            assertEquals("-1.2", String.format("%- 3.1f", -1.2));
-            assertEquals("-1.2", String.format("%- 4.1f", -1.2));
-            assertEquals("-1.2 ", String.format("%- 5.1f", -1.2));
-            assertEquals("-1.2      ", String.format("%- 10.1f", -1.2));
-        }
-
-    }
-
-    @Nested
-    class ZeroPaddingInt {
-
-        @Test
-        void zeroPad_d() {
-            assertEquals("12", String.format("%01d", 12));
-            assertEquals("12", String.format("%02d", 12));
-            assertEquals("012", String.format("%03d", 12));
-            assertEquals("0012", String.format("%04d", 12));
-            assertEquals("00012", String.format("%05d", 12));
-            assertEquals("0000000012", String.format("%010d", 12));
-
-            assertEquals("-12", String.format("%01d", -12));
-            assertEquals("-12", String.format("%02d", -12));
-            assertEquals("-12", String.format("%03d", -12));
-            assertEquals("-012", String.format("%04d", -12));
-            assertEquals("-0012", String.format("%05d", -12));
-            assertEquals("-000000012", String.format("%010d", -12));
-        }
-
-        @Test
-        void zeroPad_plus_d() {
-            assertEquals("+12", String.format("%+01d", 12));
-            assertEquals("+12", String.format("%+02d", 12));
-            assertEquals("+12", String.format("%+03d", 12));
-            assertEquals("+012", String.format("%+04d", 12));
-            assertEquals("+0012", String.format("%+05d", 12));
-            assertEquals("+000000012", String.format("%+010d", 12));
-
-            assertEquals("-12", String.format("%+01d", -12));
-            assertEquals("-12", String.format("%+02d", -12));
-            assertEquals("-12", String.format("%+03d", -12));
-            assertEquals("-012", String.format("%+04d", -12));
-            assertEquals("-0012", String.format("%+05d", -12));
-            assertEquals("-000000012", String.format("%+010d", -12));
-        }
-
-        @Test
-        void zeroPad_blank_d() {
-            assertEquals(" 12", String.format("% 01d", 12));
-            assertEquals(" 12", String.format("% 02d", 12));
-            assertEquals(" 12", String.format("% 03d", 12));
-            assertEquals(" 012", String.format("% 04d", 12));
-            assertEquals(" 0012", String.format("% 05d", 12));
-            assertEquals(" 000000012", String.format("% 010d", 12));
-
-            assertEquals("-12", String.format("% 01d", -12));
-            assertEquals("-12", String.format("% 02d", -12));
-            assertEquals("-12", String.format("% 03d", -12));
-            assertEquals("-012", String.format("% 04d", -12));
-            assertEquals("-0012", String.format("% 05d", -12));
-            assertEquals("-000000012", String.format("% 010d", -12));
-        }
-
-    }
-
-    @Nested
-    class ZeroPaddingDouble {
-
-        @Test
-        void zeroPad_f() {
-            assertEquals("1.2", String.format("%01.1f", 1.2));
-            assertEquals("1.2", String.format("%02.1f", 1.2));
-            assertEquals("1.2", String.format("%03.1f", 1.2));
-            assertEquals("01.2", String.format("%04.1f", 1.2));
-            assertEquals("001.2", String.format("%05.1f", 1.2));
-            assertEquals("00000001.2", String.format("%010.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%01.1f", -1.2));
-            assertEquals("-1.2", String.format("%02.1f", -1.2));
-            assertEquals("-1.2", String.format("%03.1f", -1.2));
-            assertEquals("-1.2", String.format("%04.1f", -1.2));
-            assertEquals("-01.2", String.format("%05.1f", -1.2));
-            assertEquals("-0000001.2", String.format("%010.1f", -1.2));
-        }
-
-        @Test
-        void zeroPad_plus_f() {
-            assertEquals("+1.2", String.format("%+01.1f", 1.2));
-            assertEquals("+1.2", String.format("%+02.1f", 1.2));
-            assertEquals("+1.2", String.format("%+03.1f", 1.2));
-            assertEquals("+1.2", String.format("%+04.1f", 1.2));
-            assertEquals("+01.2", String.format("%+05.1f", 1.2));
-            assertEquals("+0000001.2", String.format("%+010.1f", 1.2));
-
-            assertEquals("-1.2", String.format("%+01.1f", -1.2));
-            assertEquals("-1.2", String.format("%+02.1f", -1.2));
-            assertEquals("-1.2", String.format("%+03.1f", -1.2));
-            assertEquals("-1.2", String.format("%+04.1f", -1.2));
-            assertEquals("-01.2", String.format("%+05.1f", -1.2));
-            assertEquals("-0000001.2", String.format("%+010.1f", -1.2));
-        }
-
-        @Test
-        void zeroPad_blank_f() {
-            assertEquals(" 1.2", String.format("% 01.1f", 1.2));
-            assertEquals(" 1.2", String.format("% 02.1f", 1.2));
-            assertEquals(" 1.2", String.format("% 03.1f", 1.2));
-            assertEquals(" 1.2", String.format("% 04.1f", 1.2));
-            assertEquals(" 01.2", String.format("% 05.1f", 1.2));
-            assertEquals(" 0000001.2", String.format("% 010.1f", 1.2));
-
-            assertEquals("-1.2", String.format("% 01.1f", -1.2));
-            assertEquals("-1.2", String.format("% 02.1f", -1.2));
-            assertEquals("-1.2", String.format("% 03.1f", -1.2));
-            assertEquals("-1.2", String.format("% 04.1f", -1.2));
-            assertEquals("-01.2", String.format("% 05.1f", -1.2));
-            assertEquals("-0000001.2", String.format("% 010.1f", -1.2));
-        }
-
+    @ParameterizedTest
+    @MethodSource
+    void padding(String expected, String format, Object value) {
+        assertEquals(expected, String.format(format, value));
     }
 
 }

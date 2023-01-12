@@ -4597,7 +4597,7 @@ public final class Formatter implements Closeable, Flushable {
 
             // apply zero padding
             if (width > sb.length() && Flags.contains(f, Flags.ZERO_PAD)) {
-                String zeros = Character.toString(zero).repeat(width - sb.length());
+                String zeros = String.valueOf(zero).repeat(width - sb.length());
                 sb.insert(begin, zeros);
             }
 
