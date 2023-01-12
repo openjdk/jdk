@@ -111,10 +111,10 @@ bool PdhDll::PdhAttach(void) {
   }
   while (InterlockedCompareExchange(&_critical_section, 0, 1) == 0);
   return (_PdhAddCounter != NULL && _PdhOpenQuery != NULL
-         && _PdhCloseQuery != NULL && PdhCollectQueryData != NULL
+         && _PdhCloseQuery != NULL && _PdhCollectQueryData != NULL
          && _PdhGetFormattedCounterValue != NULL && _PdhEnumObjectItems != NULL
-         && _PdhRemoveCounter != NULL && PdhLookupPerfNameByIndex != NULL
-         && _PdhMakeCounterPath != NULL && _PdhExpandWildCardPath != NULL);
+         && _PdhRemoveCounter != NULL && _PdhMakeCounterPath != NULL
+         && _PdhExpandWildCardPath != NULL);
 }
 
 PDH_STATUS PdhDll::PdhAddCounter(HQUERY hQuery, LPCSTR szFullCounterPath, DWORD dwUserData, HCOUNTER* phCounter) {
