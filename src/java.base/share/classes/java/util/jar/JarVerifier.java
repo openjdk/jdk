@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,7 @@ class JarVerifier {
 
         if (parsingMeta) {
             String uname = name.toUpperCase(Locale.ENGLISH);
-            if ((uname.startsWith("META-INF/") ||
-                 uname.startsWith("/META-INF/"))) {
+            if (isInMetaInf(uname)) {
 
                 if (je.isDirectory()) {
                     mev.setEntry(null, je);
@@ -194,6 +193,14 @@ class JarVerifier {
 
         // don't compute the digest for this entry
         mev.setEntry(null, je);
+    }
+
+    /**
+     * Returns true iff the entry resides directly in the META-INF/ directory
+     */
+    private boolean isInMetaInf(String uname) {
+        return (uname.startsWith("META-INF/") || uname.startsWith("/META-INF/") )
+                && uname.lastIndexOf('/') < "META-INF/".length();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,7 +731,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (ze.getName().startsWith(META_INF)) {
+            if (isInMetaInf(ze)) {
                 // Store META-INF files in vector, so they can be written
                 // out first
                 mfFiles.addElement(ze);
@@ -959,7 +959,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (!ze.getName().startsWith(META_INF)) {
+            if (!isInMetaInf(ze)) {
                 if (handler != null) {
                     if (manifest.getAttributes(ze.getName()) != null) {
                         handler.accept("signing", ze.getName());
@@ -972,6 +972,13 @@ public final class JarSigner {
         }
         zipFile.close();
         zos.close();
+    }
+
+    /**
+     * Returns true iff the entry resides directly in the META-INF/ directory
+     */
+    private boolean isInMetaInf(ZipEntry ze) {
+        return ze.getName().startsWith(META_INF) && ze.getName().lastIndexOf('/') < META_INF.length();
     }
 
     private void writeEntry(ZipFile zf, ZipOutputStream os, ZipEntry ze)
