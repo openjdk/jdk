@@ -6915,8 +6915,10 @@ typedef uint64_t u64;
 typedef uint32_t u32;
 
 #define ADC(result, carry, n, m) {              \
-  result = n + m + carry;                       \
-  carry = (u128)n + m > result;                 \
+  u64 c1 = (n >> 64) + carry;                   \
+  u64 n1 = n;                                   \
+  result = n1 + m + c1;                         \
+  carry = (u128)n1 > result;                    \
 }
 
   static constexpr int BLOCK_LENGTH = 16;
@@ -6991,6 +6993,14 @@ typedef uint32_t u32;
 
       uint32_t carry = 0;
 
+      if (b_u1 == 0x8a4850e9af0cf61c) {
+        asm("nop");
+      }
+
+      if (b_u1 == 0x209c0f42766e4ca9) {
+        asm("nop");
+      }
+
       ADC(b_s0, carry, b_u0, b_c[0]); if (carry) printf("#");
       ADC(b_s1, carry, b_u1, b_c[1]); if (carry) printf("*");
       b_s2 = b_u2 + carry;
@@ -7063,13 +7073,13 @@ typedef uint32_t u32;
 
       const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
       const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
-      const u64 b_x2 = b_s2 * (b_r0 & 3);
+      const u64 b_x2 = b_s2 * (b_r0 & 3); // ...recover 2 bits    // <=                f
 
       printf("X: ");
       print128(b_x2); printf(":");
       print128(b_x1); printf(":");
       print128(b_x0); printf("\n");
-      printf("X: %x:%017lx:%017lx:%017lx:%017lx\n", x4, x3, x2, x1, x0);
+      // printf("X: %x:%017lx:%017lx:%017lx:%017lx\n", x4, x3, x2, x1, x0);
 
       // partial reduction modulo 2^130 - 5
       const u32 u5 = x4 + (x3 >> 32); // u5 <= 7ffffff5
@@ -7084,6 +7094,10 @@ typedef uint32_t u32;
       b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
       b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
 
+      b_u0 &= 0xffffffffffffffff;
+      b_u1 &= 0xffffffffffffffff;
+      b_u2 &= 0xffffffffffffffff;
+
       // Update the hash
       ctx_h[0] = (u32)u0; // u0 <= 1_9ffffff0
       ctx_h[1] = (u32)u1; // u1 <= 1_97ffffe0
@@ -7096,6 +7110,14 @@ typedef uint32_t u32;
 
       input_start += BLOCK_LENGTH;
       length -= BLOCK_LENGTH;
+    }
+
+    {
+      // Fully reduce modulo 2^130 - 5
+      int carry = 0;
+      ADC(b_u0, carry, b_u0, (b_u2 >> 2) * 5); if (carry) printf("#");
+      ADC(b_u1, carry, b_u1, 0);               if (carry) printf("*");
+      b_u2 = (b_u2 + carry) & 3;
     }
 
     acc_start[0] = b_u0         & 0x3ffffff;
