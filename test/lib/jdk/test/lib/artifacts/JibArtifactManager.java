@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,6 @@ public class JibArtifactManager implements ArtifactManager {
         return resolve(artifact.name(), artifactDescription, artifact.unpack());
     }
 
-    @Override
     public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack)
             throws ArtifactResolverException {
         Path path;

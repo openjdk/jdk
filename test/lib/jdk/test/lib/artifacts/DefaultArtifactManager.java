@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.test.lib.artifacts;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 
 public class DefaultArtifactManager implements ArtifactManager {
     @Override
@@ -41,7 +40,6 @@ public class DefaultArtifactManager implements ArtifactManager {
         }
         return Paths.get(location);
     }
-
     private static String artifactProperty(String name) {
         return "jdk.test.lib.artifacts." + name;
     }
