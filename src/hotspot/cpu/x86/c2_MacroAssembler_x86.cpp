@@ -819,12 +819,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     jccb(Assembler::zero, Stacked);
     if (UseFastLocking) {
       // If the owner is ANONYMOUS, we need to fix it - in the slow-path.
-      Label L;
-      cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
-      jccb(Assembler::notEqual, L);
-      testptr(objReg, objReg); // Clear ZF to indicate failure at DONE_LABEL.
-      jmp(DONE_LABEL);
-      bind(L);
+      testptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
+      jcc(Assembler::notEqual, NO_COUNT);
     }
   }
 
