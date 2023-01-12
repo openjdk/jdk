@@ -1059,7 +1059,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 // produces the same result as /*runtime*/create_mirror().
 //
 // Note: we archive the "scratch mirror" instead of k->java_mirror(), because the
-// later may contain dumptime-specific information that cannot be archived
+// latter may contain dumptime-specific information that cannot be archived
 // (e.g., ClassLoaderData*, or static fields that are modified by Java code execution).
 void java_lang_Class::create_scratch_mirror(Klass* k, TRAPS) {
   if (k->class_loader() != NULL &&
@@ -1344,8 +1344,7 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
   } else {
     assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
   }
-  assert(Universe::java_mirror(type) == java_class ||
-         HeapShared::scratch_java_mirror(type) == java_class, "must be consistent");
+  assert(Universe::java_mirror(type) == java_class, "must be consistent");
   return type;
 }
 

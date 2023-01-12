@@ -140,6 +140,7 @@ KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = NULL;
 OopHandle HeapShared::_roots;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
+KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = NULL;
 
 #ifdef ASSERT
 bool HeapShared::is_archived_object_during_dumptime(oop p) {
@@ -375,8 +376,6 @@ public:
     }
   }
 };
-
-static KlassToOopHandleTable* _scratch_java_mirror_table = NULL;
 
 void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
