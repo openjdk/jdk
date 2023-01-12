@@ -447,7 +447,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             }
 
             // If the expression type is incompatible with 'this', discard it
-            if (type != null && !isSubtype(targetClass.sym.type, type))
+            if (type != null && !targetClass.sym.isSubClass(type.tsym, types))
                 refs.remove(ExprRef.direct(depth));
         }
     }
@@ -668,7 +668,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         if (explicitOuterThis != null) {
             scan(explicitOuterThis);
             refs.removeExprs(depth, direct -> outerRefs.add(new OuterRef(direct)));
-        } else if (types.hasOuterClass(type, methodClass.type)) {
+        } else if (type.tsym != methodClass.sym && type.tsym.isEnclosedBy(methodClass.sym)) {
             if (refs.contains(ThisRef.direct()))
                 outerRefs.add(OuterRef.direct());
             if (refs.contains(ThisRef.indirect()))
@@ -786,7 +786,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Explicit 'this' reference?
         Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
-        if (TreeInfo.isExplicitThisReference(types, currentClassType, tree)) {
+        if (isExplicitThisReference(types, currentClassType, tree)) {
             if (refs.contains(ThisRef.direct()))
                 refs.add(ExprRef.direct(depth));
             if (refs.contains(ThisRef.indirect()))
@@ -797,9 +797,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Explicit outer 'this' reference?
         Type selectedType = types.erasure(tree.selected.type);
         if (selectedType.hasTag(CLASS)) {
-            Type.ClassType selectedClassType = (Type.ClassType)selectedType;
+            ClassSymbol currentClassSym = (ClassSymbol)currentClassType.tsym;
+            ClassSymbol selectedTypeSym = (ClassSymbol)selectedType.tsym;
             if (tree.name == names._this &&
-                types.hasOuterClass(currentClassType, selectedClassType)) {
+                    selectedTypeSym != currentClassSym &&
+                    currentClassSym.isEnclosedBy(selectedTypeSym)) {
                 if (refs.contains(OuterRef.direct()))
                     refs.add(ExprRef.direct(depth));
                 if (refs.contains(OuterRef.indirect()))
@@ -891,9 +893,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
             MethodSymbol sym = (MethodSymbol)tree.sym;
 
             // Check for implicit 'this' reference
-            Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
-            Type methodOwnerType = sym.owner.type;
-            if (isSubtype(currentClassType, methodOwnerType)) {
+            ClassSymbol methodClassSym = methodClass.sym;
+            if (methodClassSym.isSubClass(sym.owner, types)) {
                 if (refs.contains(ThisRef.direct()))
                     refs.add(ExprRef.direct(depth));
                 if (refs.contains(ThisRef.indirect()))
@@ -902,7 +903,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             }
 
             // Check for implicit outer 'this' reference
-            if (types.hasOuterClass(currentClassType, methodOwnerType)) {
+            if (methodClassSym.isEnclosedBy((ClassSymbol)sym.owner)) {
                 if (refs.contains(OuterRef.direct()))
                     refs.add(ExprRef.direct(depth));
                 if (refs.contains(OuterRef.indirect()))
@@ -1165,9 +1166,41 @@ class ThisEscapeAnalyzer extends TreeScanner {
             (sym.owner.kind == MTH || sym.owner.kind == VAR);
     }
 
-    // Is type A a subtype of B when both types are erased?
-    private boolean isSubtype(Type a, Type b) {
-        return types.isSubtypeUnchecked(types.erasure(a), types.erasure(b));
+    /** Check if the given tree is an explicit reference to the 'this' instance of the
+     *  class currently being compiled. This is true if tree is:
+     *  - An unqualified 'this' identifier
+     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
+     *    but also NOT an enclosing outer class of 'currentClass'.
+     */
+    private boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isExplicitThisReference(types, currentClass, TreeInfo.skipParens(tree));
+            case IDENT:
+            {
+                JCIdent ident = (JCIdent)tree;
+                Names names = ident.name.table.names;
+                return ident.name == names._this;
+            }
+            case SELECT:
+            {
+                JCFieldAccess select = (JCFieldAccess)tree;
+                Type selectedType = types.erasure(select.selected.type);
+                if (!selectedType.hasTag(CLASS))
+                    return false;
+                ClassSymbol currentClassSym = (ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
+                ClassSymbol selectedClassSym = (ClassSymbol)((Type.ClassType)selectedType).tsym;
+                Names names = select.name.table.names;
+                return currentClassSym.isSubClass(selectedClassSym, types) &&
+                        (select.name == names._super ||
+                        (select.name == names._this &&
+                            (currentClassSym == selectedClassSym ||
+                            !currentClassSym.isEnclosedBy(selectedClassSym))));
+            }
+            default:
+                return false;
+        }
     }
 
     // When scanning nodes we can be in one of two modes:
