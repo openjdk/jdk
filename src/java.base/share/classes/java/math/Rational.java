@@ -666,7 +666,7 @@ public class Rational extends Number implements Comparable<Rational> {
             if (k.signum == 1) {
                 BigInteger gcdNL = n.gcd(l);
                 BigInteger gcdMK = m.gcd(k);
-                Rational aug = valueOf(1, n.divide(gcdNL).multiply(k.divide(gcdMK)),
+                Rational aug = new Rational(1, BigInteger.ZERO, n.divide(gcdNL).multiply(k.divide(gcdMK)),
                         m.divide(gcdMK).multiply(l.divide(gcdNL)));
                 absRes = absRes.add(aug); // absRes += (n / m) * (k / l)
             }
@@ -744,7 +744,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0)
             return ZERO;
 
-        // (a + n / m)**2 == a**2 + (n / m)**2 + 2 * a * (n / m)
+        // (a + n / m)**2 == a**2 + 2 * a * (n / m) + (n / m)**2
         Rational res = ZERO;
 
         if (floor.signum == 1) {
@@ -868,16 +868,33 @@ public class Rational extends Number implements Comparable<Rational> {
         // point.
 
         final int scaleAdjust;
-        Rational working;
-        if (floor.signum == 1) {
-            // non-zero integer part
-            scaleAdjust = -new BigDecimal(floor).precision();
-            working = divide(new Rational(1, BigDecimal.bigTenToThe(-scaleAdjust)));
+        Rational working = this;
+        if (floor.signum == 1) { // non-zero integer part
+            int scale = -new BigDecimal(floor).precision();
+            // scaleAdjust must be even
+            scaleAdjust = scale & 1 == 0 ? scale : scale + 1;
+
+            if (scaleAdjust != 0) {
+                Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigDecimal.bigTenToThe(-scaleAdjust));
+                working = working.multiply(mul);
+            }
         } else {
-            int numDigits = numerator.toString().length();
-            int denDigits = denominator.toString().length();
-            scaleAdjust = denDigits - numDigits;
-            working = multiply(new Rational(1, BigDecimal.bigTenToThe(scaleAdjust)));
+            BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
+            int scale = den.precision() - num.precision();
+            BigDecimal scaledNum = num.scaleByPowerOfTen(scale);
+
+            // scaleAdjust must be even
+            if (scale & 1 == 0)
+                scaleAdjust = scale;
+            else if (scaledNum.compareTo(den) >= 0) // fractional part >= 1
+                scaleAdjust = scale - 1;
+            else // fractional part < 1
+                scaleAdjust = scale + 1;
+
+            if (scaleAdjust != 0) {
+                Rational mul = new Rational(1, BigDecimal.bigTenToThe(scaleAdjust));
+                working = working.multiply(mul);
+            }
         }
 
         assert // Verify 0.1 <= working < 10
@@ -907,7 +924,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // low-enough precision, the post-Newton rounding logic
         // could be applied directly.)
 
-        Rational guess = new Rational(Math.sqrt(working.doubleValue()));
+        Rational approx = new Rational(Math.sqrt(working.doubleValue()));
         int guessPrecision = 15;
         int originalPrecision = mc.getPrecision();
         int targetPrecision;
@@ -917,15 +934,15 @@ public class Rational extends Number implements Comparable<Rational> {
         // an N digit number by itself yield a 2N-1 digit or 2N
         // digit result.
         if (originalPrecision == 0) {
-            BigDecimal decimal = null;
+            BigDecimal stripped;
             try {
-                decimal = toBigDecimalExact();
+                stripped = toBigDecimalExact().stripTrailingZeros();
             } catch (ArithmeticException e) {
                 // this Rational has a non-terminating decimal expansion
                 throw new ArithmeticException("Computed square root not exact.");
             }
 
-            targetPrecision = decimal.precision() / 2 + 1;
+            targetPrecision = stripped.precision() / 2 + 1;
         } else {
             /*
              * To avoid the need for post-Newton fix-up logic, in the case of half-way
@@ -947,21 +964,24 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         }
 
-        Rational approx = guess;
         do {
             // approx = 0.5 * (approx + fraction / approx)
             approx = working.divide(approx).add(approx).multiply(ONE_HALF);
             guessPrecision <<= 1;
         } while (guessPrecision < targetPrecision + 2);
 
-        Rational result;
+        Rational result = approx;
+        
+        if (scaleAdjust != 0)
+            if (floor.signum == 1) { // non-zero integer part
+                Rational mul = new Rational(1, BigDecimal.bigTenToThe(-scaleAdjust / 2));
+                result = result.multiply(mul);
+            } else {
+                Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigDecimal.bigTenToThe(scaleAdjust / 2));
+                result = result.multiply(mul);
+            }
+
         BigDecimal decimalRes;
-
-        if (floor.signum == 1)
-            result = approx.multiply(new Rational(1, BigDecimal.bigTenToThe(-scaleAdjust / 2)));
-        else
-            result = approx.divide(new Rational(1, BigDecimal.bigTenToThe(scaleAdjust / 2)));
-
         RoundingMode targetRm = mc.getRoundingMode();
         if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
             RoundingMode tmpRm = (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
@@ -992,14 +1012,18 @@ public class Rational extends Number implements Comparable<Rational> {
                         ulp = ulp.multiply(BigDecimal.ONE_TENTH);
 
                     result = result.subtract(new Rational(ulp));
+                    decimalRes = decimalRes.subtract(ulp);
                 }
                 break;
 
             case UP:
             case CEILING:
                 // Check if too small
-                if (result.square().compareTo(this) < 0)
-                    result = result.add(new Rational(decimalRes.ulp()));
+                if (result.square().compareTo(this) < 0) {
+                    BigDecimal ulp = decimalRes.ulp();
+                    result = result.add(new Rational(ulp));
+                    decimalRes = decimalRes.add(ulp);
+                }
 
                 break;
             // No additional work, rely on "2p + 2" property
@@ -1104,7 +1128,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @throws ArithmeticException if this {@code Rational} has a non-terminating
      *                             decimal expansion.
      */
-    public BigDecimal toBigDecimalExact() {
+    publBigDecimalmal toBigDecimalExact() {
         return toBigDecimal(MathContext.UNLIMITED);
     }
 
