@@ -28,6 +28,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -59,41 +60,48 @@ public class CustomApproveButtonTest {
 
     private CustomApproveButtonTest(String lookAndFeel) {
         System.out.println("Testing Look & Feel : " + lookAndFeel);
-        frame = new JFrame("CustomApproveButtonTest");
+
+        setLookAndFeel(lookAndFeel);
 
         try {
-            UIManager.setLookAndFeel(lookAndFeel);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to set " + lookAndFeel +
-                    " LookAndFeel. Error : " + e);
-        }
+            frame = new JFrame("CustomApproveButtonTest");
 
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogType(JFileChooser.CUSTOM_DIALOG);
-        frame.add(fileChooser);
-        frame.setVisible(true);
-        frame.pack();
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogType(JFileChooser.CUSTOM_DIALOG);
+            frame.add(fileChooser);
+            frame.pack();
+            frame.setVisible(true);
 
-        JButton customApproveButton = fileChooser.getUI().getDefaultButton(fileChooser);
 
-        if (customApproveButton == null) {
-            fail("Cannot find Custom Approve Button in FileChooser!");
-            return;
-        }
-        if (customApproveButton.getText() == null) {
-            fail("Custom Approve Button Text is null in FileChooser!");
-            return;
-        }
+            JButton customApproveButton = fileChooser.getUI().getDefaultButton(fileChooser);
 
-        if (frame != null) {
-            frame.dispose();
+            if (customApproveButton == null) {
+                fail("Cannot find Custom Approve Button in FileChooser!");
+                return;
+            }
+            if (customApproveButton.getText() == null) {
+                fail("Custom Approve Button Text is null in FileChooser!");
+                return;
+            }
+        } finally {
+            if (frame != null) {
+                frame.dispose();
+            }
         }
     }
 
     private void fail(String s) {
-        if (frame != null) {
-            frame.dispose();
-        }
         throw new RuntimeException("Test failed: " + s);
+    }
+
+    private void setLookAndFeel(String laf) {
+        try {
+            UIManager.setLookAndFeel(laf);
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported L&F: " + laf);
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
