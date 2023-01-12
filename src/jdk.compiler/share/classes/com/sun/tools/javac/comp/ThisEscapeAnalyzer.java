@@ -437,7 +437,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Sanity check
         Assert.check(checkInvariants(true, referenceExpressionNode));
 
-        // Discard any direct 'this' reference that's incompatible with the target type
+        // Discard any direct 'this' reference that can't be valid because its
+        // type is not compatible with the target class we're analyzing for.
         if (referenceExpressionNode) {
 
             // We treat instance methods as having a "value" equal to their instance
