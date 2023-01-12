@@ -144,8 +144,15 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // its cache line with _header.
   DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
                         sizeof(WeakHandle));
-  // Used by async deflation as a marker in the _owner field:
-  #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
+  // Used by async deflation as a marker in the _owner field.
+  // Note that the choice of the two markers is peculiar:
+  // - They need to represent values that cannot be pointers. In particular,
+  //   we achieve this by using the lowest two bits
+  // - ANONYMOUS_OWNER should be a small value, it is used in generated code
+  //   and small values encode much better
+  // - We test for anonymous owner by testing for the lowest bit, therefore
+  //   DEFLATER_MARKER must *not* have that bit set.
+  #define DEFLATER_MARKER reinterpret_cast<void*>(2)
   #define ANONYMOUS_OWNER reinterpret_cast<void*>(1)
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor

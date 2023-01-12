@@ -3924,13 +3924,8 @@ encode %{
 
     if (UseFastLocking) {
       // If the owner is anonymous, we need to fix it -- in the slow-path.
-      Label L;
       __ ldr(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ cmp(disp_hdr, (unsigned char)(intptr_t) ANONYMOUS_OWNER);
-      __ br(Assembler::NE, L);
-      __ tst(oop, oop); // Indicate failure at cont -- dive into slow-path.
-      __ b(cont);
-      __ bind(L);
+      __ tbnz(disp_hdr, (unsigned char)(intptr_t) ANONYMOUS_OWNER, cont);
     }
 
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
