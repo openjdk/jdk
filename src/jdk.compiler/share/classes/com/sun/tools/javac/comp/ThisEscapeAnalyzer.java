@@ -959,7 +959,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
     @Override
     public void visitThrow(JCThrow tree) {
         this.scan(tree.expr);
-        this.refs.discardExprs(this.depth);      // we don't try to follow refs from thrown exceptions
+        if (this.refs.discardExprs(this.depth))     // we don't try to "catch" refs from thrown exceptions
+            this.leakAt(tree);
     }
 
     @Override
