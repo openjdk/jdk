@@ -28,5 +28,8 @@ import java.util.Map;
 
 public interface ArtifactManager {
     public Path resolve(Artifact artifact) throws ArtifactResolverException;
-    Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack) throws ArtifactResolverException;
+    default public Path resolve(String name, Map<String, Object> artifactDescription,
+                        boolean unpack) throws ArtifactResolverException {
+        throw new ArtifactResolverException("not implemented");
+    }
 }

@@ -42,12 +42,6 @@ public class DefaultArtifactManager implements ArtifactManager {
         return Paths.get(location);
     }
 
-    // Unused
-    @Override
-    public Path resolve(String name, Map<String, Object> artifactDescription, boolean unpack) {
-        return null;
-    }
-
     private static String artifactProperty(String name) {
         return "jdk.test.lib.artifacts." + name;
     }

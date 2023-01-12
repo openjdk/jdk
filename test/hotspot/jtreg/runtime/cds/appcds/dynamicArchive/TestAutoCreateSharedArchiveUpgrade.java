@@ -107,8 +107,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         // Example path: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz/jdk-19/bin/java
         if (fetchVersion >= 19) {
             oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
-            if (!oldJVM.equals(BOOT_JDK + FS + "bin" + FS + "java"))
-                is_default = false;
+            is_default = false;
         } else if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
