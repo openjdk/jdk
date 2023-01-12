@@ -353,7 +353,7 @@ class AbstractAssembler : public ResourceObj  {
   void      set_inst_mark()       {        code_section()->set_mark();   }
   void    clear_inst_mark()       {        code_section()->clear_mark(); }
 
-  
+
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {
     assert(!pd_check_instruction_mark()
