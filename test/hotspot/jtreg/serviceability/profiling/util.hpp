@@ -43,6 +43,13 @@
 #include "jvmti.h"
 #include "profile.h"
 
+#ifdef DEBUG
+// more space for debug info
+const int METHOD_HEADER_SIZE = 0x200;
+#else
+const int METHOD_HEADER_SIZE = 0x100;
+#endif
+
 static jvmtiEnv* jvmti;
 
 typedef void (*SigAction)(int, siginfo_t*, void*);
@@ -93,7 +100,7 @@ template <typename T> bool doesFrameBelongToMethod(ASGST_CallFrame frame, T* met
   ASGST_NonJavaFrame non_java_frame = frame.non_java_frame;
   size_t pc = (size_t)non_java_frame.pc;
   size_t expected_pc_start = (size_t)method;
-  size_t expected_pc_end = (size_t)method + 0x100;
+  size_t expected_pc_end = (size_t)method + METHOD_HEADER_SIZE;
   if (pc < expected_pc_start || pc > expected_pc_end) {
     fprintf(stderr, "%s: Expected PC in range [%p, %p], got %p\n", msg_prefix,
       (void*)expected_pc_start, (void*)expected_pc_end, (void*)pc);
@@ -154,7 +161,7 @@ template <size_t N = 0> const char* lookForMethod(void* pc, std::array<std::pair
   std::array<std::pair<const char*, size_t>, N> distances;
   int i = 0;
   for (auto method : methods) {
-    if (pc >= method.second && pc < (void*)((size_t)method.second + 0x100)) {
+    if (pc >= method.second && pc < (void*)((size_t)method.second + METHOD_HEADER_SIZE)) {
       distances[i] = std::make_pair(method.first, (size_t)pc - (size_t)method.second);
     }
     i++;
