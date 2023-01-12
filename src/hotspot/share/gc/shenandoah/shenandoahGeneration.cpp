@@ -142,7 +142,7 @@ void ShenandoahGeneration::increase_allocated(size_t bytes) {
   Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
 
-void ShenandoahGeneration::log_status() const {
+void ShenandoahGeneration::log_status(const char *msg) const {
   typedef LogTarget(Info, gc, ergo) LogGcInfo;
 
   if (!LogGcInfo::is_enabled()) {
@@ -156,14 +156,17 @@ void ShenandoahGeneration::log_status() const {
   size_t v_soft_max_capacity = soft_max_capacity();
   size_t v_max_capacity = max_capacity();
   size_t v_available = available();
-  LogGcInfo::print("%s generation used: " SIZE_FORMAT "%s, used regions: " SIZE_FORMAT "%s, "
-                   "soft capacity: " SIZE_FORMAT "%s, max capacity: " SIZE_FORMAT " %s, available: " SIZE_FORMAT " %s",
-                   name(),
+  size_t v_adjusted_avail = adjusted_available();
+  LogGcInfo::print("%s: %s generation used: " SIZE_FORMAT "%s, used regions: " SIZE_FORMAT "%s, "
+                   "soft capacity: " SIZE_FORMAT "%s, max capacity: " SIZE_FORMAT "%s, available: " SIZE_FORMAT "%s, "
+                   "adjusted available: " SIZE_FORMAT "%s",
+                   msg, name(),
                    byte_size_in_proper_unit(v_used), proper_unit_for_byte_size(v_used),
                    byte_size_in_proper_unit(v_used_regions), proper_unit_for_byte_size(v_used_regions),
                    byte_size_in_proper_unit(v_soft_max_capacity), proper_unit_for_byte_size(v_soft_max_capacity),
                    byte_size_in_proper_unit(v_max_capacity), proper_unit_for_byte_size(v_max_capacity),
-                   byte_size_in_proper_unit(v_available), proper_unit_for_byte_size(v_available));
+                   byte_size_in_proper_unit(v_available), proper_unit_for_byte_size(v_available),
+                   byte_size_in_proper_unit(v_adjusted_avail), proper_unit_for_byte_size(v_adjusted_avail));
 }
 
 void ShenandoahGeneration::reset_mark_bitmap() {

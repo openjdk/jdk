@@ -3307,3 +3307,13 @@ ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahRegionAffiliation
   ShouldNotReachHere();
   return nullptr;
 }
+
+void ShenandoahHeap::log_heap_status(const char* msg) const {
+  if (mode()->is_generational()) {
+    young_generation()->log_status(msg);
+    old_generation()->log_status(msg);
+  } else {
+    global_generation()->log_status(msg);
+  }
+}
+

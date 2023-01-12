@@ -243,11 +243,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       heap->reset_old_evac_expended();
       heap->set_promoted_reserve(0);
     }
-    log_info(gc, ergo)("At end of Concurrent GC, old_available: " SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
-                       byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
-                       byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
   }
-
   return true;
 }
 

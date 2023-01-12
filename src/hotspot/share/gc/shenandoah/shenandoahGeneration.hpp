@@ -125,7 +125,7 @@ private:
     _soft_max_capacity = soft_max_capacity;
   }
 
-  void log_status() const;
+  void log_status(const char* msg) const;
 
   // Used directly by FullGC
   void reset_mark_bitmap();

@@ -190,7 +190,6 @@ public:
   void service_concurrent_cycle(const ShenandoahHeap* heap, ShenandoahGeneration* generation, GCCause::Cause &cause,
                                 bool do_old_gc_bootstrap);
 
-  void log_heap_status(const ShenandoahHeap* heap);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP

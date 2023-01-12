@@ -56,11 +56,7 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    size_t old_available = heap->old_generation()->available();
-    size_t young_available = heap->young_generation()->available();
-    log_info(gc, ergo)("At end of Degenerated GC, old_available: " SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
-                       byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
-                       byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
+    heap->log_heap_status("At end of Degenerated GC");
   }
   return true;
 }

@@ -474,17 +474,24 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(
     default:
       ShouldNotReachHere();
   }
-  log_heap_status(heap);
+  const char* msg;
+  if (heap->cancelled_gc()) {
+    msg = (generation == YOUNG)? "At end of Interrupted Concurrent Young GC": "At end of Interrupted Concurrent Bootstrap GC";
+  } else {
+    msg = (generation == YOUNG)? "At end of Concurrent Young GC": "At end of Concurrent Bootstrap GC";
+  }
+  heap->log_heap_status(msg);
 }
 
 void ShenandoahControlThread::service_concurrent_old_cycle(const ShenandoahHeap* heap, GCCause::Cause &cause) {
 
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahYoungGeneration* young_generation = heap->young_generation();
+  ShenandoahOldGeneration::State original_state = old_generation->state();
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
-  switch (old_generation->state()) {
+  switch (original_state) {
     case ShenandoahOldGeneration::IDLE: {
       assert(!heap->is_concurrent_old_mark_in_progress(), "Old already in progress.");
       assert(old_generation->task_queues()->is_empty(), "Old mark queues should be empty.");
@@ -537,6 +544,11 @@ void ShenandoahControlThread::service_concurrent_old_cycle(const ShenandoahHeap*
       bool marking_complete = resume_concurrent_old_cycle(old_generation, cause);
       if (marking_complete) {
         assert(old_generation->state() != ShenandoahOldGeneration::MARKING, "Should not still be marking.");
+        if (original_state == ShenandoahOldGeneration::MARKING) {
+          heap->log_heap_status("At end of Concurrent Old Marking finishing increment");
+        }
+      } else if (original_state == ShenandoahOldGeneration::MARKING) {
+        heap->log_heap_status("At end of Concurrent Old Marking increment");
       }
       break;
     }
@@ -578,15 +590,6 @@ bool ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* 
     return false;
   }
   return true;
-}
-
-void ShenandoahControlThread::log_heap_status(const ShenandoahHeap* heap) {
-  if (heap->mode()->is_generational()) {
-    heap->young_generation()->log_status();
-    heap->old_generation()->log_status();
-  } else {
-    heap->global_generation()->log_status();
-  }
 }
 
 bool ShenandoahControlThread::check_soft_max_changed() const {

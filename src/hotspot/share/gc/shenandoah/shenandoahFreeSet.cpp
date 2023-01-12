@@ -65,6 +65,33 @@ bool ShenandoahFreeSet::is_collector_free(size_t idx) const {
   return _collector_free_bitmap.at(idx);
 }
 
+// This is a temporary solution to work around a shortcoming with the existing free set implementation.
+// TODO:
+//   Remove this function after restructing FreeSet representation.  A problem in the existing implementation is that old-gen
+//   regions are not considered to reside within the is_collector_free range.
+//
+HeapWord* ShenandoahFreeSet::allocate_with_old_affiliation(ShenandoahAllocRequest& req, bool& in_new_region) {
+  ShenandoahRegionAffiliation affiliation = ShenandoahRegionAffiliation::OLD_GENERATION;
+
+  size_t rightmost = MAX2(_collector_rightmost, _mutator_rightmost);
+  size_t leftmost = MIN2(_collector_leftmost, _mutator_leftmost);
+
+  for (size_t c = rightmost + 1; c > leftmost; c--) {
+    // size_t is unsigned, need to dodge underflow when _leftmost = 0
+    size_t idx = c - 1;
+    ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (r->affiliation() == affiliation && !r->is_humongous()) {
+      if (!r->is_cset() && !has_no_alloc_capacity(r)) {
+        HeapWord* result = try_allocate_in(r, req, in_new_region);
+        if (result != NULL) {
+          return result;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
 HeapWord* ShenandoahFreeSet::allocate_with_affiliation(ShenandoahRegionAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region) {
   for (size_t c = _collector_rightmost + 1; c > _collector_leftmost; c--) {
     // size_t is unsigned, need to dodge underflow when _leftmost = 0
@@ -145,7 +172,14 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 
     case ShenandoahAllocRequest::_alloc_shared_gc: {
       // First try to fit into a region that is already in use in the same generation.
-      HeapWord* result = allocate_with_affiliation(req.affiliation(), req, in_new_region);
+      HeapWord* result;
+      if (req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
+        // TODO: this is a work around to address a deficiency in FreeSet representation.  A better solution fixes
+        // the FreeSet implementation to deal more efficiently with old-gen regions as being in the "collector free set"
+        result = allocate_with_old_affiliation(req, in_new_region);
+      } else {
+        result = allocate_with_affiliation(req.affiliation(), req, in_new_region);
+      }
       if (result != NULL) {
         return result;
       }
