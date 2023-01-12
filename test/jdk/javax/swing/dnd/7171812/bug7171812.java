@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,21 @@
  * @key headful
  * @bug 7171812
  * @summary [macosx] Views keep scrolling back to the drag position after DnD
- * @author Alexander Zuev
  * @run main bug7171812
  */
 
-import java.awt.*;
-import java.awt.dnd.*;
+import java.awt.BorderLayout;
+import java.awt.Robot;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.InputEvent;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 public class bug7171812 {
     static JFrame mainFrame;
@@ -46,6 +53,10 @@ public class bug7171812 {
      */
     public static void main(String[] args) throws Exception{
 
+        Robot robot = new Robot();
+        robot.setAutoDelay(100);
+        robot.setAutoWaitForIdle(true);
+
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -53,18 +64,20 @@ public class bug7171812 {
             }
         });
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(10);
         robot.waitForIdle();
-        robot.mouseMove(scrollPane.getLocationOnScreen().x + 5, scrollPane.getLocationOnScreen().y + 5);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.delay(1000);
+        robot.mouseMove(scrollPane.getLocationOnScreen().x + 5,
+                        scrollPane.getLocationOnScreen().y + 5);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         for(int offset = 5; offset < scrollPane.getHeight()-20; offset++) {
-            robot.mouseMove(scrollPane.getLocationOnScreen().x+5, scrollPane.getLocationOnScreen().y+offset);
+            robot.mouseMove(scrollPane.getLocationOnScreen().x+5,
+                            scrollPane.getLocationOnScreen().y+offset);
         }
         for(int offset = 5; offset < 195; offset++) {
-            robot.mouseMove(scrollPane.getLocationOnScreen().x+offset, scrollPane.getLocationOnScreen().y+scrollPane.getHeight()-20);
+            robot.mouseMove(scrollPane.getLocationOnScreen().x+offset,
+                            scrollPane.getLocationOnScreen().y+scrollPane.getHeight()-20);
         }
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
