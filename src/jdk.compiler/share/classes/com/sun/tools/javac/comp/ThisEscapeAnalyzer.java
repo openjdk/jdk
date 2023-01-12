@@ -403,7 +403,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Can this expression node possibly leave a 'this' reference on the stack?
         boolean referenceExpressionNode;
         switch (tree.getTag()) {
-        case CASE:
         case SWITCH_EXPRESSION:
         case CONDEXPR:
         case YIELD:
@@ -723,7 +722,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             refs.discardExprs(depth);
             RefSet<ExprRef> combinedRefs = new RefSet<>();
             for (List<JCCase> cases = t.cases; cases.nonEmpty(); cases = cases.tail) {
-                scan(cases.head);
+                scan(cases.head.stats);
                 combinedRefs.addAll(refs.removeExprs(depth));
             }
             refs.addAll(combinedRefs);
