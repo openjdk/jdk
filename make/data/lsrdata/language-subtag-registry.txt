@@ -1,4 +1,4 @@
-File-Date: 2021-05-11
+File-Date: 2022-03-02
 %%
 Type: language
 Subtag: aa
@@ -2146,9 +2146,16 @@ Added: 2009-07-29
 Macrolanguage: ar
 %%
 Type: language
+Subtag: ajs
+Description: Algerian Jewish Sign Language
+Added: 2022-02-25
+%%
+Type: language
 Subtag: ajt
 Description: Judeo-Tunisian Arabic
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Preferred-Value: aeb
 Macrolanguage: jrb
 %%
 Type: language
@@ -5772,6 +5779,11 @@ Added: 2009-07-29
 Deprecated: 2020-03-28
 %%
 Type: language
+Subtag: bpc
+Description: Mbuk
+Added: 2022-02-25
+%%
+Type: language
 Subtag: bpd
 Description: Banda-Banda
 Added: 2009-07-29
@@ -6016,6 +6028,7 @@ Added: 2005-10-16
 %%
 Type: language
 Subtag: brb
+Description: Brao
 Description: Lave
 Added: 2009-07-29
 %%
@@ -8155,6 +8168,11 @@ Added: 2020-03-28
 Macrolanguage: zh
 %%
 Type: language
+Subtag: cnq
+Description: Chung
+Added: 2022-02-25
+%%
+Type: language
 Subtag: cnr
 Description: Montenegrin
 Added: 2018-01-23
@@ -8757,6 +8775,8 @@ Subtag: cug
 Description: Chungmboko
 Description: Cung
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Comments: see bpc, cnq
 %%
 Type: language
 Subtag: cuh
@@ -10176,6 +10196,11 @@ Description: Tadaksahak
 Added: 2009-07-29
 %%
 Type: language
+Subtag: dsz
+Description: Mardin Sign Language
+Added: 2022-02-25
+%%
+Type: language
 Subtag: dta
 Description: Daur
 Added: 2009-07-29
@@ -10602,6 +10627,11 @@ Description: Emilian
 Added: 2009-07-29
 %%
 Type: language
+Subtag: egm
+Description: Benamanga
+Added: 2022-02-25
+%%
+Type: language
 Subtag: ego
 Description: Eggon
 Added: 2009-07-29
@@ -10913,7 +10943,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: env
-Description: Enwan (Edu State)
+Description: Enwan (Edo State)
 Added: 2009-07-29
 %%
 Type: language
@@ -11329,6 +11359,7 @@ Added: 2009-07-29
 Type: language
 Subtag: fit
 Description: Tornedalen Finnish
+Description: Meänkieli
 Added: 2009-07-29
 %%
 Type: language
@@ -12836,6 +12867,11 @@ Type: language
 Subtag: gou
 Description: Gavar
 Added: 2009-07-29
+%%
+Type: language
+Subtag: gov
+Description: Goo
+Added: 2022-02-25
 %%
 Type: language
 Subtag: gow
@@ -14939,6 +14975,11 @@ Type: language
 Subtag: ims
 Description: Marsian
 Added: 2009-07-29
+%%
+Type: language
+Subtag: imt
+Description: Imotong
+Added: 2022-02-25
 %%
 Type: language
 Subtag: imy
@@ -19458,6 +19499,8 @@ Type: language
 Subtag: lak
 Description: Laka (Nigeria)
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Preferred-Value: ksp
 %%
 Type: language
 Subtag: lal
@@ -19951,6 +19994,11 @@ Subtag: lgn
 Description: T'apo
 Description: Opuuo
 Added: 2009-07-29
+%%
+Type: language
+Subtag: lgo
+Description: Lango (South Sudan)
+Added: 2022-02-25
 %%
 Type: language
 Subtag: lgq
@@ -20552,6 +20600,8 @@ Type: language
 Subtag: lno
 Description: Lango (South Sudan)
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Comments: see imt, lgo, lqr, oie
 %%
 Type: language
 Subtag: lns
@@ -20724,6 +20774,11 @@ Description: Lopit
 Added: 2009-07-29
 %%
 Type: language
+Subtag: lqr
+Description: Logir
+Added: 2022-02-25
+%%
+Type: language
 Subtag: lra
 Description: Rara Bakati'
 Added: 2009-07-29
@@ -20809,6 +20864,12 @@ Description: Langue des Signes Burundaise
 Added: 2021-02-20
 %%
 Type: language
+Subtag: lsc
+Description: Albarradas Sign Language
+Description: Lengua de señas Albarradas
+Added: 2022-02-25
+%%
+Type: language
 Subtag: lsd
 Description: Lishana Deni
 Added: 2009-07-29
@@ -20881,6 +20942,13 @@ Type: language
 Subtag: lsv
 Description: Sivia Sign Language
 Added: 2019-04-16
+%%
+Type: language
+Subtag: lsw
+Description: Seychelles Sign Language
+Description: Lalang Siny Seselwa
+Description: Langue des Signes Seychelloise
+Added: 2022-02-25
 %%
 Type: language
 Subtag: lsy
@@ -26779,6 +26847,11 @@ Description: Nawaru
 Added: 2009-07-29
 %%
 Type: language
+Subtag: nww
+Description: Ndwewe
+Added: 2022-02-25
+%%
+Type: language
 Subtag: nwx
 Description: Middle Newar
 Added: 2009-07-29
@@ -27199,6 +27272,11 @@ Type: language
 Subtag: oia
 Description: Oirata
 Added: 2009-07-29
+%%
+Type: language
+Subtag: oie
+Description: Okolie
+Added: 2022-02-25
 %%
 Type: language
 Subtag: oin
@@ -28472,6 +28550,11 @@ Added: 2005-10-16
 Scope: collection
 %%
 Type: language
+Subtag: phj
+Description: Pahari
+Added: 2022-02-25
+%%
+Type: language
 Subtag: phk
 Description: Phake
 Added: 2009-07-29
@@ -28572,6 +28655,7 @@ Type: language
 Subtag: pii
 Description: Pini
 Added: 2009-07-29
+Deprecated: 2022-02-25
 %%
 Type: language
 Subtag: pij
@@ -29419,6 +29503,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: psc
+Description: Iranian Sign Language
 Description: Persian Sign Language
 Added: 2009-07-29
 %%
@@ -29772,7 +29857,13 @@ Description: Pyen
 Added: 2009-07-29
 %%
 Type: language
+Subtag: pzh
+Description: Pazeh
+Added: 2022-02-25
+%%
+Type: language
 Subtag: pzn
+Description: Jejara Naga
 Description: Para Naga
 Added: 2009-07-29
 %%
@@ -30394,6 +30485,11 @@ Description: Riang (India)
 Added: 2009-07-29
 %%
 Type: language
+Subtag: rib
+Description: Bribri Sign Language
+Added: 2022-02-25
+%%
+Type: language
 Subtag: rie
 Description: Rien
 Added: 2009-07-29
@@ -30627,6 +30723,11 @@ Added: 2009-07-29
 Deprecated: 2016-05-30
 %%
 Type: language
+Subtag: rnb
+Description: Brunca Sign Language
+Added: 2022-02-25
+%%
+Type: language
 Subtag: rnd
 Description: Ruund
 Added: 2009-07-29
@@ -30770,6 +30871,12 @@ Added: 2009-07-29
 Deprecated: 2017-02-23
 %%
 Type: language
+Subtag: rsk
+Description: Ruthenian
+Description: Rusyn
+Added: 2022-02-25
+%%
+Type: language
 Subtag: rsl
 Description: Russian Sign Language
 Added: 2009-07-29
@@ -30778,6 +30885,11 @@ Type: language
 Subtag: rsm
 Description: Miriwoong Sign Language
 Added: 2016-05-30
+%%
+Type: language
+Subtag: rsn
+Description: Rwandan Sign Language
+Added: 2022-02-25
 %%
 Type: language
 Subtag: rtc
@@ -32276,6 +32388,8 @@ Type: language
 Subtag: smd
 Description: Sama
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Preferred-Value: kmb
 %%
 Type: language
 Subtag: smf
@@ -32382,6 +32496,8 @@ Type: language
 Subtag: snb
 Description: Sebuyau
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Preferred-Value: iba
 %%
 Type: language
 Subtag: snc
@@ -35199,6 +35315,11 @@ Description: Tojolabal
 Added: 2009-07-29
 %%
 Type: language
+Subtag: tok
+Description: Toki Pona
+Added: 2022-02-25
+%%
+Type: language
 Subtag: tol
 Description: Tolowa
 Added: 2009-07-29
@@ -35541,6 +35662,8 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: trv
+Description: Sediq
+Description: Seediq
 Description: Taroko
 Added: 2009-07-29
 %%
@@ -36432,6 +36555,11 @@ Description: Ughele
 Added: 2009-07-29
 %%
 Type: language
+Subtag: ugh
+Description: Kubachi
+Added: 2022-02-25
+%%
+Type: language
 Subtag: ugn
 Description: Ugandan Sign Language
 Added: 2009-07-29
@@ -36742,6 +36870,11 @@ Deprecated: 2015-02-12
 Preferred-Value: ema
 %%
 Type: language
+Subtag: uon
+Description: Kulon
+Added: 2022-02-25
+%%
+Type: language
 Subtag: upi
 Description: Umeda
 Added: 2009-07-29
@@ -36944,6 +37077,8 @@ Type: language
 Subtag: uun
 Description: Kulon-Pazeh
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Comments: see pzh, uon
 %%
 Type: language
 Subtag: uur
@@ -37714,6 +37849,11 @@ Description: Wadikali
 Added: 2013-09-10
 %%
 Type: language
+Subtag: wdt
+Description: Wendat
+Added: 2022-02-25
+%%
+Type: language
 Subtag: wdu
 Description: Wadjigu
 Added: 2009-07-29
@@ -38348,6 +38488,7 @@ Type: language
 Subtag: wrd
 Description: Warduji
 Added: 2009-07-29
+Deprecated: 2022-02-25
 %%
 Type: language
 Subtag: wrg
@@ -38613,6 +38754,8 @@ Type: language
 Subtag: wya
 Description: Wyandot
 Added: 2009-07-29
+Deprecated: 2022-02-25
+Comments: see wdt, wyn
 %%
 Type: language
 Subtag: wyb
@@ -38628,6 +38771,11 @@ Type: language
 Subtag: wym
 Description: Wymysorys
 Added: 2009-07-29
+%%
+Type: language
+Subtag: wyn
+Description: Wyandot
+Added: 2022-02-25
 %%
 Type: language
 Subtag: wyr
@@ -38936,6 +39084,11 @@ Description: Kwandu
 Added: 2017-02-23
 %%
 Type: language
+Subtag: xdq
+Description: Kaitag
+Added: 2022-02-25
+%%
+Type: language
 Subtag: xdy
 Description: Malayic Dayak
 Added: 2009-07-29
@@ -39079,6 +39232,11 @@ Added: 2009-07-29
 Macrolanguage: lah
 %%
 Type: language
+Subtag: xhm
+Description: Middle Khmer (1400 to 1850 CE)
+Added: 2022-02-25
+%%
+Type: language
 Subtag: xhr
 Description: Hernican
 Added: 2009-07-29
@@ -39215,6 +39373,7 @@ Added: 2009-07-29
 %%
 Type: language
 Subtag: xkk
+Description: Kachok
 Description: Kaco'
 Added: 2009-07-29
 %%
@@ -39469,6 +39628,7 @@ Macrolanguage: mg
 %%
 Type: language
 Subtag: xmx
+Description: Salawati
 Description: Maden
 Added: 2009-07-29
 %%
@@ -41728,6 +41888,12 @@ Added: 2009-07-29
 Macrolanguage: zap
 %%
 Type: language
+Subtag: zcd
+Description: Las Delicias Zapotec
+Added: 2022-02-25
+Macrolanguage: zap
+%%
+Type: language
 Subtag: zch
 Description: Central Hongshuihe Zhuang
 Added: 2009-07-29
@@ -42700,6 +42866,13 @@ Prefix: ar
 Macrolanguage: ar
 %%
 Type: extlang
+Subtag: ajs
+Description: Algerian Jewish Sign Language
+Added: 2022-02-25
+Preferred-Value: ajs
+Prefix: sgn
+%%
+Type: extlang
 Subtag: apc
 Description: North Levantine Arabic
 Added: 2009-07-29
@@ -43101,6 +43274,13 @@ Subtag: dsl
 Description: Danish Sign Language
 Added: 2009-07-29
 Preferred-Value: dsl
+Prefix: sgn
+%%
+Type: extlang
+Subtag: dsz
+Description: Mardin Sign Language
+Added: 2022-02-25
+Preferred-Value: dsz
 Prefix: sgn
 %%
 Type: extlang
@@ -43538,6 +43718,14 @@ Preferred-Value: lsb
 Prefix: sgn
 %%
 Type: extlang
+Subtag: lsc
+Description: Albarradas Sign Language
+Description: Lengua de señas Albarradas
+Added: 2022-02-25
+Preferred-Value: lsc
+Prefix: sgn
+%%
+Type: extlang
 Subtag: lsg
 Description: Lyons Sign Language
 Added: 2009-07-29
@@ -43586,6 +43774,15 @@ Subtag: lsv
 Description: Sivia Sign Language
 Added: 2019-04-16
 Preferred-Value: lsv
+Prefix: sgn
+%%
+Type: extlang
+Subtag: lsw
+Description: Seychelles Sign Language
+Description: Lalang Siny Seselwa
+Description: Langue des Signes Seychelloise
+Added: 2022-02-25
+Preferred-Value: lsw
 Prefix: sgn
 %%
 Type: extlang
@@ -43880,6 +44077,7 @@ Prefix: sgn
 %%
 Type: extlang
 Subtag: psc
+Description: Iranian Sign Language
 Description: Persian Sign Language
 Added: 2009-07-29
 Preferred-Value: psc
@@ -43944,10 +44142,24 @@ Preferred-Value: pys
 Prefix: sgn
 %%
 Type: extlang
+Subtag: rib
+Description: Bribri Sign Language
+Added: 2022-02-25
+Preferred-Value: rib
+Prefix: sgn
+%%
+Type: extlang
 Subtag: rms
 Description: Romanian Sign Language
 Added: 2009-07-29
 Preferred-Value: rms
+Prefix: sgn
+%%
+Type: extlang
+Subtag: rnb
+Description: Brunca Sign Language
+Added: 2022-02-25
+Preferred-Value: rnb
 Prefix: sgn
 %%
 Type: extlang
@@ -43970,6 +44182,13 @@ Subtag: rsm
 Description: Miriwoong Sign Language
 Added: 2016-05-30
 Preferred-Value: rsm
+Prefix: sgn
+%%
+Type: extlang
+Subtag: rsn
+Description: Rwandan Sign Language
+Added: 2022-02-25
+Preferred-Value: rsn
 Prefix: sgn
 %%
 Type: extlang
@@ -44793,6 +45012,11 @@ Description: Katakana
 Added: 2005-10-16
 %%
 Type: script
+Subtag: Kawi
+Description: Kawi
+Added: 2021-12-24
+%%
+Type: script
 Subtag: Khar
 Description: Kharoshthi
 Added: 2005-10-16
@@ -45010,6 +45234,11 @@ Subtag: Mymr
 Description: Myanmar
 Description: Burmese
 Added: 2005-10-16
+%%
+Type: script
+Subtag: Nagm
+Description: Nag Mundari
+Added: 2021-12-24
 %%
 Type: script
 Subtag: Nand
@@ -45288,6 +45517,11 @@ Type: script
 Subtag: Sund
 Description: Sundanese
 Added: 2006-07-21
+%%
+Type: script
+Subtag: Sunu
+Description: Sunuwar
+Added: 2021-12-24
 %%
 Type: script
 Subtag: Sylo
@@ -47357,6 +47591,12 @@ Added: 2010-10-23
 Comments: Indicates that the content is transcribed according to X-SAMPA
 %%
 Type: variant
+Subtag: gallo
+Description: Gallo
+Added: 2021-08-05
+Prefix: fr
+%%
+Type: variant
 Subtag: gascon
 Description: Gascon
 Added: 2018-04-22
@@ -47777,6 +48017,13 @@ Added: 2010-06-29
 Prefix: rm
 Comments: Sutsilvan is one of the five traditional written standards or
   "idioms" of the Romansh language.
+%%
+Type: variant
+Subtag: synnejyl
+Description: Synnejysk
+Description: South Jutish
+Added: 2021-07-17
+Prefix: da
 %%
 Type: variant
 Subtag: tarask
