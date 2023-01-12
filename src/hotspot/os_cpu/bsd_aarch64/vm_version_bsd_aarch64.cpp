@@ -53,26 +53,39 @@ static bool cpu_has(const char* optional) {
 void VM_Version::get_os_cpu_info() {
   size_t sysctllen;
 
-  // hw.optional.floatingpoint always returns 1.
-  // See https://github.com/apple/darwin-xnu/blob/main/bsd/kern/kern_mib.c#L744
-  // ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
-  // See https://developer.arm.com/documentation/ddi0595/2021-12/AArch64-Registers/ID-AA64PFR0-EL1--AArch64-Processor-Feature-Register-0
+  // cpu_has() uses sysctlbyname function to check the existence of CPU
+  // features. References: Apple developer document [1] and XNU kernel [2].
+  // [1] https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics
+  // [2] https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mib.c
+  //
+  // Note that for some features (e.g., ASIMD, LSE, SHA512 and SHA3) there are
+  // two parameters for sysctlbyname, which are invented at different times.
+  // Considering backward compatibility, we check both here.
+  //
+  // Floating-point and Advance SIMD features are standard in Apple processors
+  // beginning with M1 and A7 [1].
+  // 1) hw.optional.floatingpoint always returns 1 [2].
+  // 2) ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
+  //    See the Arm ARM, section "ID_AA64PFR0_EL1, AArch64 Processor Feature
+  //    Register 0".
   assert(cpu_has("hw.optional.floatingpoint"), "should be");
-  assert(cpu_has("hw.optional.neon"), "should be");
+  assert(cpu_has("hw.optional.AdvSIMD") ||
+         cpu_has("hw.optional.neon"), "should be");
   _features = CPU_FP | CPU_ASIMD;
 
   // All Apple-darwin Arm processors have AES, PMULL, SHA1 and SHA2.
+  // See https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/commpage/commpage.c#L412
+  assert(cpu_has("hw.optional.arm.FEAT_AES"), "should be");
+  assert(cpu_has("hw.optional.arm.FEAT_PMULL"), "should be");
+  assert(cpu_has("hw.optional.arm.FEAT_SHA1"), "should be");
+  assert(cpu_has("hw.optional.arm.FEAT_SHA256"), "should be");
   _features |= CPU_AES | CPU_PMULL | CPU_SHA1 | CPU_SHA2;
 
-  // Only few features are available via sysctl.
-  // See https://github.com/apple/darwin-xnu/blob/main/bsd/kern/kern_mib.c#L855
-  // Regarding SHA512 and SHA3, there are two sysctl flags for them, which
-  // might be invented at different times. We check both here.
-  // See https://git.tartarus.org/?p=simon/putty.git;a=blob_plain;f=unix/utils/arm_arch_queries.c;hb=HEAD
   if (cpu_has("hw.optional.armv8_crc32")) {
     _features |= CPU_CRC32;
   }
-  if (cpu_has("hw.optional.armv8_1_atomics")) {
+  if (cpu_has("hw.optional.arm.FEAT_LSE") ||
+      cpu_has("hw.optional.armv8_1_atomics")) {
     _features |= CPU_LSE;
   }
   if (cpu_has("hw.optional.arm.FEAT_SHA512") ||
