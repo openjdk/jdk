@@ -137,7 +137,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private final Map<Symbol, MethodInfo> methodMap = new LinkedHashMap<>();
 
-    /** Contains symbols of fields and methods that have warnings suppressed.
+    /** Contains symbols of fields and constructors that have warnings suppressed.
      */
     private final Set<Symbol> suppressed = new HashSet<>();
 
@@ -212,7 +212,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Build a mapping from symbols of methods to their declarations.
         // Classify all ctors and methods as analyzable and/or invokable.
-        // Track which methods and variables have warnings are suppressed.
+        // Track which constructors and fields have warnings suppressed.
         new TreeScanner() {
 
             private Lint lint = ThisEscapeAnalyzer.this.lint;
@@ -244,8 +244,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 final Lint lintPrev = this.lint;
                 this.lint = this.lint.augment(tree.sym);
                 try {
-                    // Track warning suppression
-                    if (!this.lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
+
+                    // Track warning suppression of fields
+                    if (tree.sym.owner.kind == TYP && !this.lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
                         ThisEscapeAnalyzer.this.suppressed.add(tree.sym);
 
                     // Recurse
@@ -260,8 +261,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 final Lint lintPrev = this.lint;
                 this.lint = this.lint.augment(tree.sym);
                 try {
-                    // Track warning suppression
-                    if (!this.lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
+
+                    // Track warning suppression of constructors
+                    if (TreeInfo.isConstructor(tree) && !this.lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
                         ThisEscapeAnalyzer.this.suppressed.add(tree.sym);
 
                     // Determine if this is a constructor we should analyze
@@ -472,7 +474,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     @Override
     public void visitVarDef(JCVariableDecl tree) {
 
-        // Skip if ignoring warnings for this variable
+        // Skip if ignoring warnings for this field
         if (this.suppressed.contains(tree.sym))
             return;
 
@@ -527,7 +529,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     private void invoke(JCTree site, MethodSymbol sym, List<JCExpression> args, RefSet<?> receiverRefs) {
 
-        // Skip if ignoring warnings for the invoked method
+        // Skip if ignoring warnings for a constructor invoked via 'this()'
         if (this.suppressed.contains(sym))
             return;
 
