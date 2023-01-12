@@ -13825,7 +13825,7 @@ instruct cmovI_reg_immM1_ge(iRegINoSp dst, iRegI src1, rFlagsReg cr)
 instruct minI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
 %{
   match(Set dst (MinI src imm));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13838,7 +13838,7 @@ instruct minI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
 instruct minI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
 %{
   match(Set dst (MinI imm src));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13851,7 +13851,7 @@ instruct minI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
 instruct minI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
 %{
   match(Set dst (MinI src imm));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13864,7 +13864,7 @@ instruct minI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
 instruct minI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
 %{
   match(Set dst (MinI imm src));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13877,7 +13877,7 @@ instruct minI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
 instruct minI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
 %{
   match(Set dst (MinI src imm));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13890,7 +13890,7 @@ instruct minI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
 instruct minI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
 %{
   match(Set dst (MinI imm src));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13903,7 +13903,7 @@ instruct minI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
 instruct maxI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
 %{
   match(Set dst (MaxI src imm));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13916,7 +13916,7 @@ instruct maxI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
 instruct maxI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
 %{
   match(Set dst (MaxI imm src));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13929,7 +13929,7 @@ instruct maxI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
 instruct maxI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
 %{
   match(Set dst (MaxI src imm));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13942,7 +13942,7 @@ instruct maxI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
 instruct maxI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
 %{
   match(Set dst (MaxI imm src));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13955,7 +13955,7 @@ instruct maxI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
 instruct maxI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
 %{
   match(Set dst (MaxI src imm));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);
@@ -13968,7 +13968,7 @@ instruct maxI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
 instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
 %{
   match(Set dst (MaxI imm src));
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     compI_reg_imm0(cr, src);

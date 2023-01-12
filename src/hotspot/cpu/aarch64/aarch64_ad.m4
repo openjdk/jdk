@@ -594,7 +594,7 @@ instruct downcase($1)$2_imm$4_reg(iReg$2NoSp dst, imm$2$3$4 imm, iReg$2`'ORL2I($
   ifelse($6,,
   match(Set dst ($1$2 src imm));,
   match(Set dst ($1$2 imm src));)
-  ins_cost(INSN_COST * 2);
+  ins_cost(INSN_COST * 3);
   expand %{
     rFlagsReg cr;
     comp$2_reg_imm0(cr, src);
