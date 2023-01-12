@@ -19,7 +19,7 @@ class LivenessMarkBitMap : public MarkBitMap {
     // ZGC uses pointers that hold metadata about the object
     // check_mark calls Heap::is_in which requires an unmasked pointer
     // set_bit requires a masked pointer
-    // Because of this we must override this method
+    // Because of this we must redefine this method and call it directly
     bool par_mark(oop obj) {
       HeapWord* addr = cast_from_oop<HeapWord*>(obj);
       check_mark(addr);
@@ -38,7 +38,7 @@ class LivenessMarkBitMap : public MarkBitMap {
       assert(_covered.contains(addr),
             "Address " PTR_FORMAT " is outside underlying space from " PTR_FORMAT " to " PTR_FORMAT,
             p2i(addr), p2i(_covered.start()), p2i(_covered.end()));
-      
+
       return _bm.par_at(addr_to_offset(addr));
     }
 };
@@ -75,7 +75,6 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   friend class LivenessConcurrentMarkTask;
   friend class LivenessConcurrentRootMarkTask;
 
-
  public:
   LivenessEstimatorThread();
 
@@ -86,7 +85,7 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
 
   static size_t get_live_heap_usage() { return live_heap_usage; }
   static size_t get_live_object_count() { return live_object_count; }
-  
+
  private:
   bool estimation_begin();
   void estimation_end(bool completed);

@@ -17,7 +17,7 @@ public class TestConcurrentLivenessWhenGCAlwaysRuns {
 
         Runnable runnable = () -> {
             while (true) {
-                System.gc(); 
+                System.gc();
             }
         };
 
@@ -33,7 +33,7 @@ public class TestConcurrentLivenessWhenGCAlwaysRuns {
             if (heap.getUsed() != 0) {
                 throw new RuntimeException("Concurrent liveness ran during concurrent GC. Estimate should be zero but is " + heap.getUsed());
             }
-            
+
             Thread.sleep(100);
         }
     }

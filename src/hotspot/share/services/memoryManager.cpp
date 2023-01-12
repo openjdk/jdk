@@ -268,7 +268,6 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       _current_gc_stat->set_after_gc_usage(i, usage);
     }
 
-    size_t heapMemoryAfterGCUse = 0;
     // Set last collection usage of the memory pools managed by this collector
     for (i = 0; i < num_memory_pools(); i++) {
       MemoryPool* pool = get_memory_pool(i);
@@ -279,21 +278,6 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
         pool->set_last_collection_usage(usage);
         LowMemoryDetector::detect_after_gc_memory(pool);
       }
-
-      // Mimics the Coral 'HeapMemoryAfterGCUse' metric which queries last_collection_usage.
-      // Note that for some pools (e.g. G1 old gen) this value is not updated for every gc, only full gc, hence
-      // we check last_collection_usage instead of the usage value for *this* gc.
-      if (pool->is_heap()) { // TODO: also exclude any 'Eden' pools
-        log_info(gc, estimator)("HeapMemoryAfterGCUse | %s : " SIZE_FORMAT "MB", pool->name(), pool->get_last_collection_usage().used()/M);
-        heapMemoryAfterGCUse += pool->get_last_collection_usage().used();
-      }
-    }
-    if (allMemoryPoolsAffected) {
-      log_info(gc, estimator)("HeapMemoryAfterGCUse [allMemoryPoolsAffected] total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
-    } else {
-      log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
-                              heapMemoryAfterGCUse, byte_size_in_proper_unit(heapMemoryAfterGCUse),
-                              proper_unit_for_byte_size(heapMemoryAfterGCUse));
     }
   }
 

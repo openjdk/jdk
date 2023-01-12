@@ -19,7 +19,7 @@ public class TestConcurrentLivenessWhenMemoryUsageChanges {
     
     // 100 MB
     private static final int allocationSize = 1024 * 1024 * 100;
-    
+
     // Error we give to estimator
     private static final double epsilon = 0.05;
 
@@ -44,7 +44,7 @@ public class TestConcurrentLivenessWhenMemoryUsageChanges {
 
         if (getError(incHeap.getUsed(), initHeap.getUsed() + allocationSize) > epsilon) {
             throw new RuntimeException(
-                "Expected ConcLivenessEstimate to increase but error of " + 
+                "Expected ConcLivenessEstimate to increase but error of " +
                 getError(incHeap.getUsed(), initHeap.getUsed() + allocationSize) +
                 " is not within allowed error of " + epsilon
             );
@@ -58,7 +58,7 @@ public class TestConcurrentLivenessWhenMemoryUsageChanges {
 
         if (getError(decHeap.getUsed(), incHeap.getUsed() - allocationSize) > epsilon) {
             throw new RuntimeException(
-                "Expected ConcLivenessEstimate to decrease but error of " + 
+                "Expected ConcLivenessEstimate to decrease but error of " +
                 getError(decHeap.getUsed(), incHeap.getUsed() - allocationSize) +
                 " is not within allowed error of " + epsilon
             );
@@ -69,3 +69,4 @@ public class TestConcurrentLivenessWhenMemoryUsageChanges {
         return Math.abs(num1 - num2) / ((num1 + num2) / 2.0);
     }
 }
+

@@ -15,8 +15,9 @@
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/stack.inline.hpp"
+#include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/ticks.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
@@ -29,11 +30,11 @@ class VM_LivenessRootScan : public VM_Operation {
   explicit VM_LivenessRootScan(LivenessEstimatorThread* estimator)
     : _estimator(estimator) {}
 
-  virtual VMOp_Type type() const override {
+  VMOp_Type type() const override {
     return VMOp_LivenessRootScan;
   }
 
-  virtual void doit() override {
+  void doit() override {
     Ticks start = Ticks::now();
     if (ConcLivenessVerify) {
       // Walk the roots
@@ -84,8 +85,8 @@ class LivenessOopClosure : public BasicOopIterateClosure {
   explicit LivenessOopClosure(LivenessEstimatorThread* estimator)
     : _estimator(estimator), _task_num(0) {}
 
-  virtual void do_oop(oop* o) override       { do_oop_work(o); }
-  virtual void do_oop(narrowOop* o) override { do_oop_work(o); }
+  void do_oop(oop* o) override       { do_oop_work(o); }
+  void do_oop(narrowOop* o) override { do_oop_work(o); }
 };
 
 class LivenessConcurrentMarkTask : public WorkerTask {
@@ -95,14 +96,14 @@ public:
     _estimator(estimator),
     _cit(cit) {}
 
-  LivenessConcurrentMarkTask(LivenessEstimatorThread* estimator) :
-    LivenessConcurrentMarkTask(estimator, NULL) {}
+  explicit LivenessConcurrentMarkTask(LivenessEstimatorThread* estimator) :
+    LivenessConcurrentMarkTask(estimator, nullptr) {}
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     unsigned int collections = Universe::heap()->total_collections();
-    
+
     SuspendibleThreadSetJoiner sst;
-    
+
     if (collections != Universe::heap()->total_collections()) {
       // The gc has run while this thread was joining the collection set. The oops in the
       // mark stack from the root scan cannot be used.
@@ -124,7 +125,7 @@ public:
       }
 
       obj->oop_iterate(&cl);
-      if (ConcLivenessHisto && _cit != NULL) {
+      if (ConcLivenessHisto && _cit != nullptr) {
         _cit->record_instance(obj);
       }
     }
@@ -138,13 +139,13 @@ private:
 
 class ThreadRootsTaskClosure : public ThreadClosure {
 public:
-  ThreadRootsTaskClosure(LivenessEstimatorThread* estimator) :
+  explicit ThreadRootsTaskClosure(LivenessEstimatorThread* estimator) :
     _estimator(estimator) {}
 
-  virtual void do_thread(Thread* thread) {
+  void do_thread(Thread* thread) override {
     LivenessOopClosure cl(_estimator);
 
-    thread->oops_do(&cl, NULL);
+    thread->oops_do(&cl, nullptr);
   }
 
 private:
@@ -155,12 +156,12 @@ class LivenessConcurrentRootMarkTask : public WorkerTask {
 OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
 
 public:
-  LivenessConcurrentRootMarkTask(LivenessEstimatorThread* estimator) :
+  explicit LivenessConcurrentRootMarkTask(LivenessEstimatorThread* estimator) :
     WorkerTask("Liveness Concurrent Mark"),
     _estimator(estimator),
     _strong_roots_scope(estimator->get_num_workers()) {}
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ResourceMark rm;
 
     log_debug(gc, estimator)("Worker %d started", worker_id);
@@ -184,6 +185,10 @@ private:
 LivenessEstimatorThread::LivenessEstimatorThread()
   : ConcurrentGCThread()
   , _lock(Mutex::safepoint - 1, "LivenessEstimator_lock", true)
+  , _workers(nullptr)
+  , _task_queues(nullptr)
+  , _estimated_object_count(nullptr)
+  , _estimated_object_size_words(nullptr)
   , _actual_object_count(0)
   , _actual_object_size_words(0)
   , _task_failed(false)
@@ -322,7 +327,7 @@ void LivenessEstimatorThread::verify_estimate() {
     all_object_size_words += _estimated_object_size_words[i];
     all_object_count += _estimated_object_count[i];
   }
-  
+
   _object_count_error.sample(all_object_count, _actual_object_count);
   _object_size_error.sample(all_object_size_words, _actual_object_size_words);
 
@@ -339,7 +344,7 @@ class HistoClosure : public KlassInfoClosure {
  public:
   explicit HistoClosure(KlassInfoHisto* cih) : _cih(cih) {}
 
-  void do_cinfo(KlassInfoEntry* cie) {
+  void do_cinfo(KlassInfoEntry* cie) override {
     _cih->add(cie);
   }
 };
@@ -413,7 +418,7 @@ bool LivenessEstimatorThread::estimate_liveness() {
 
 class IsAliveClosure: public BoolObjectClosure {
 public:
-  bool do_object_b(oop p) {
+  bool do_object_b(oop p) override {
     return !CompressedOops::is_null(p);
   }
 };
@@ -425,7 +430,7 @@ void LivenessEstimatorThread::do_roots() {
   LivenessOopClosure cl(this);
 
   // This adds support for parallel weak oop marking
-  // After initial testing this was noticibly worse than
+  // After initial testing this was noticably worse than
   // doing it with a single thread. Testing with an application
   // with many weak oops may cause this to show improvements
   // but for now it is disabled
@@ -449,7 +454,7 @@ void LivenessEstimatorThread::do_roots() {
 
   Ticks c = Ticks::now();
 
-  MarkingCodeBlobClosure code_blob_closure(&cl, false);
+  MarkingCodeBlobClosure code_blob_closure(&cl, false, false);
   CodeCache::blobs_do(&code_blob_closure);
   Ticks d = Ticks::now();
 
@@ -527,7 +532,7 @@ template<typename EventT>
 void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_bytes) {
   LivenessEstimatorThread::set_live_heap_usage(size_bytes);
   LivenessEstimatorThread::set_live_object_count(count);
-  
+
   EventT evt;
   if (evt.should_commit()) {
     log_info(gc, estimator)("Sending JFR event: %d", evt.id());
