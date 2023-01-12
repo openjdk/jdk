@@ -852,7 +852,7 @@ public class Rational extends Number implements Comparable<Rational> {
          * the value to the numerical range [1, 10) using the following relations:
          *
          * x = y * 10 ^ exp sqrt(x) = sqrt(y) * 10^(exp / 2) if exp is even sqrt(x) =
-         * sqrt(y/10) * 10 ^((exp+1)/2) is exp is odd
+         * sqrt(y/10) * 10 ^((exp+1)/2) if exp is odd
          *
          * Then use Newton's iteration on the reduced value to compute the numerical
          * digits of the desired result.
