@@ -278,8 +278,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                         (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
 
                     // Add method or constructor to map
-                    final MethodInfo info = new MethodInfo(currentClass, tree, analyzable, invokable);
-                    methodMap.put(tree.sym, info);
+                    methodMap.put(tree.sym, new MethodInfo(currentClass, tree, analyzable, invokable));
 
                     // Recurse
                     super.visitMethodDef(tree);
