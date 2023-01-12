@@ -148,7 +148,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     /** Snapshots of {@link #callStack} where possible 'this' escapes occur.
      */
-    private ArrayList<DiagnosticPosition[]> warningList = new ArrayList<>();
+    private final ArrayList<DiagnosticPosition[]> warningList = new ArrayList<>();
 
 // These fields are scoped to the CONSTRUCTOR BEING ANALYZED
 
@@ -221,9 +221,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             @Override
             public void visitClassDef(JCClassDecl tree) {
-                final JCClassDecl currentClassPrev = currentClass;
-                final boolean privateOuterPrev = privateOuter;
-                final Lint lintPrev = lint;
+                JCClassDecl currentClassPrev = currentClass;
+                boolean privateOuterPrev = privateOuter;
+                Lint lintPrev = lint;
                 lint = lint.augment(tree.sym);
                 try {
                     currentClass = tree;
@@ -241,7 +241,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             @Override
             public void visitVarDef(JCVariableDecl tree) {
-                final Lint lintPrev = lint;
+                Lint lintPrev = lint;
                 lint = lint.augment(tree.sym);
                 try {
 
@@ -258,7 +258,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             @Override
             public void visitMethodDef(JCMethodDecl tree) {
-                final Lint lintPrev = lint;
+                Lint lintPrev = lint;
                 lint = lint.augment(tree.sym);
                 try {
 
@@ -267,13 +267,13 @@ class ThisEscapeAnalyzer extends TreeScanner {
                         suppressed.add(tree.sym);
 
                     // Determine if this is a constructor we should analyze
-                    final boolean analyzable = currentClassIsExternallyExtendable() &&
+                    boolean analyzable = currentClassIsExternallyExtendable() &&
                         TreeInfo.isConstructor(tree) &&
                         !tree.sym.isPrivate() &&
                         !suppressed.contains(tree.sym);
 
                     // Determine if this method is "invokable" in an analysis (can't be overridden)
-                    final boolean invokable = !currentClassIsExternallyExtendable() ||
+                    boolean invokable = !currentClassIsExternallyExtendable() ||
                         TreeInfo.isConstructor(tree) ||
                         (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
 
@@ -330,7 +330,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Eliminate duplicate warnings. Warning B duplicates warning A if the stack trace of A is a prefix
         // of the stack trace of B. For example, if constructor Foo(int x) has a leak, and constructor
         // Foo() invokes this(0), then emitting a warning for Foo() would be redundant.
-        final BiPredicate<DiagnosticPosition[], DiagnosticPosition[]> extendsAsPrefix = (warning1, warning2) -> {
+        BiPredicate<DiagnosticPosition[], DiagnosticPosition[]> extendsAsPrefix = (warning1, warning2) -> {
             if (warning2.length < warning1.length)
                 return false;
             for (int index = 0; index < warning1.length; index++) {
@@ -342,19 +342,19 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Stack traces are ordered top to bottom, and so duplicates always have the same first element(s).
         // Sort the stack traces lexicographically, so that duplicates immediately follow what they duplicate.
-        final Comparator<DiagnosticPosition[]> ordering = (warning1, warning2) -> {
+        Comparator<DiagnosticPosition[]> ordering = (warning1, warning2) -> {
             for (int index1 = 0, index2 = 0; true; index1++, index2++) {
-                final boolean end1 = index1 >= warning1.length;
-                final boolean end2 = index2 >= warning2.length;
+                boolean end1 = index1 >= warning1.length;
+                boolean end2 = index2 >= warning2.length;
                 if (end1 && end2)
                     return 0;
                 if (end1)
                     return -1;
                 if (end2)
                     return 1;
-                final int posn1 = warning1[index1].getPreferredPosition();
-                final int posn2 = warning2[index2].getPreferredPosition();
-                final int diff = Integer.compare(posn1, posn2);
+                int posn1 = warning1[index1].getPreferredPosition();
+                int posn2 = warning2[index2].getPreferredPosition();
+                int diff = Integer.compare(posn1, posn2);
                 if (diff != 0)
                     return diff;
             }
@@ -374,7 +374,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             JCDiagnostic.Warning key = Warnings.PossibleThisEscape;
             int remain = warning.length;
             do {
-                final DiagnosticPosition pos = warning[--remain];
+                DiagnosticPosition pos = warning[--remain];
                 log.warning(Lint.LintCategory.THIS_ESCAPE, pos, key);
                 key = Warnings.PossibleThisEscapeLocation;
             } while (remain > 0);
@@ -405,7 +405,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         Assert.check(checkInvariants(true, false));
 
         // Can this expression node possibly leave a 'this' reference on the stack?
-        final boolean referenceExpressionNode;
+        boolean referenceExpressionNode;
         switch (tree.getTag()) {
         case CASE:
         case SWITCH_EXPRESSION:
@@ -442,7 +442,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             // We treat instance methods as having a "value" equal to their instance
             Type type = tree.type;
-            final Symbol sym = TreeInfo.symbolFor(tree);
+            Symbol sym = TreeInfo.symbolFor(tree);
             if (sym != null &&
                 sym.kind == MTH &&
                 (sym.flags() & Flags.STATIC) == 0) {
@@ -496,15 +496,15 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitApply(JCMethodInvocation invoke) {
 
         // Get method symbol
-        final MethodSymbol sym = (MethodSymbol)TreeInfo.symbolFor(invoke.meth);
+        MethodSymbol sym = (MethodSymbol)TreeInfo.symbolFor(invoke.meth);
 
         // Recurse on method expression
         scan(invoke.meth);
-        final boolean direct = refs.remove(ExprRef.direct(depth));
-        final boolean indirect = refs.remove(ExprRef.indirect(depth));
+        boolean direct = refs.remove(ExprRef.direct(depth));
+        boolean indirect = refs.remove(ExprRef.indirect(depth));
 
         // Determine if method receiver represents a possible reference
-        final RefSet<ThisRef> receiverRefs = RefSet.newEmpty();
+        RefSet<ThisRef> receiverRefs = RefSet.newEmpty();
         if (sym != null && !sym.isStatic()) {
             if (direct)
                 receiverRefs.add(ThisRef.direct());
@@ -514,7 +514,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // If "super()": ignore - we don't try to track into superclasses.
         // However, we do need to "invoke" non-static initializers/blocks.
-        final Name name = TreeInfo.name(invoke.meth);
+        Name name = TreeInfo.name(invoke.meth);
         if (name == names._super) {
             scanInitializers();
             return;
@@ -539,7 +539,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         // Analyze method if possible, otherwise assume nothing
-        final MethodInfo methodInfo = methodMap.get(sym);
+        MethodInfo methodInfo = methodMap.get(sym);
         if (methodInfo != null && methodInfo.isInvokable())
             invokeInvokable(site, args, receiverRefs, methodInfo);
         else
@@ -548,7 +548,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     // Scan field initializers and initialization blocks
     private void scanInitializers() {
-        final DiagnosticPosition[] pendingWarningPrev = pendingWarning;
+        DiagnosticPosition[] pendingWarningPrev = pendingWarning;
         pendingWarning = null;
         try {
             for (List<JCTree> defs = methodClass.defs; defs.nonEmpty(); defs = defs.tail) {
@@ -581,11 +581,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
         Assert.check(methodInfo.isInvokable());
 
         // Collect 'this' references found in method parameters
-        final JCMethodDecl method = methodInfo.getDeclaration();
-        final RefSet<VarRef> paramRefs = RefSet.newEmpty();
+        JCMethodDecl method = methodInfo.getDeclaration();
+        RefSet<VarRef> paramRefs = RefSet.newEmpty();
         List<JCVariableDecl> params = method.params;
         while (args.nonEmpty() && params.nonEmpty()) {
-            final VarSymbol sym = params.head.sym;
+            VarSymbol sym = params.head.sym;
             scan(args.head);
             refs.removeExprs(depth, direct -> paramRefs.add(new VarRef(sym, direct)));
             args = args.tail;
@@ -593,11 +593,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         // "Invoke" the method
-        final JCClassDecl methodClassPrev = methodClass;
+        JCClassDecl methodClassPrev = methodClass;
         methodClass = methodInfo.getDeclaringClass();
-        final RefSet<Ref> refsPrev = refs;
+        RefSet<Ref> refsPrev = refs;
         refs = RefSet.newEmpty();
-        final int depthPrev = depth;
+        int depthPrev = depth;
         depth = 0;
         callStack.push(site);
         try {
@@ -613,7 +613,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 return;
 
             // Stop infinite recursion here
-            final Pair<JCTree, RefSet<Ref>> invocation = Pair.of(site, refs.clone());
+            Pair<JCTree, RefSet<Ref>> invocation = Pair.of(site, refs.clone());
             if (!invocations.add(invocation))
                 return;
 
@@ -658,7 +658,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitNewClass(JCNewClass tree) {
-        final MethodInfo methodInfo = methodMap.get(tree.constructor);
+        MethodInfo methodInfo = methodMap.get(tree.constructor);
         if (methodInfo != null && methodInfo.isInvokable())
             invokeInvokable(tree, tree.args, outerThisRefs(tree.encl, tree.clazz.type), methodInfo);
         else
@@ -667,7 +667,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     // Determine 'this' references passed to a constructor via the outer 'this' instance
     private RefSet<OuterRef> outerThisRefs(JCExpression explicitOuterThis, Type type) {
-        final RefSet<OuterRef> outerRefs = RefSet.newEmpty();
+        RefSet<OuterRef> outerRefs = RefSet.newEmpty();
         if (explicitOuterThis != null) {
             scan(explicitOuterThis);
             refs.removeExprs(depth, direct -> outerRefs.add(new OuterRef(direct)));
@@ -724,7 +724,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         visitScoped(tree, true, t -> {
             scan(t.selector);
             refs.discardExprs(depth);
-            final RefSet<ExprRef> combinedRefs = new RefSet<>();
+            RefSet<ExprRef> combinedRefs = new RefSet<>();
             for (List<JCCase> cases = t.cases; cases.nonEmpty(); cases = cases.tail) {
                 scan(cases.head);
                 combinedRefs.addAll(refs.removeExprs(depth));
@@ -759,7 +759,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         scan(tree.lhs);
         refs.discardExprs(depth);
         scan(tree.rhs);
-        final VarSymbol sym = (VarSymbol)TreeInfo.symbolFor(tree.lhs);
+        VarSymbol sym = (VarSymbol)TreeInfo.symbolFor(tree.lhs);
         if (isParamOrVar(sym))
             refs.replaceExprs(depth, direct -> new VarRef(sym, direct));
         else
@@ -770,7 +770,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitIndexed(JCArrayAccess tree) {
         scan(tree.indexed);
         refs.remove(ExprRef.direct(depth));
-        final boolean indirectRef = refs.remove(ExprRef.indirect(depth));
+        boolean indirectRef = refs.remove(ExprRef.indirect(depth));
         scan(tree.index);
         refs.discardExprs(depth);
         if (indirectRef) {
@@ -784,11 +784,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Scan the selected thing
         scan(tree.selected);
-        final boolean selectedDirectRef = refs.remove(ExprRef.direct(depth));
-        final boolean selectedIndirectRef = refs.remove(ExprRef.indirect(depth));
+        boolean selectedDirectRef = refs.remove(ExprRef.direct(depth));
+        boolean selectedIndirectRef = refs.remove(ExprRef.indirect(depth));
 
         // Explicit 'this' reference?
-        final Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
+        Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
         if (TreeInfo.isExplicitThisReference(types, currentClassType, tree)) {
             if (refs.contains(ThisRef.direct()))
                 refs.add(ExprRef.direct(depth));
@@ -798,9 +798,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         // Explicit outer 'this' reference?
-        final Type selectedType = types.erasure(tree.selected.type);
+        Type selectedType = types.erasure(tree.selected.type);
         if (selectedType.hasTag(CLASS)) {
-            final Type.ClassType selectedClassType = (Type.ClassType)selectedType;
+            Type.ClassType selectedClassType = (Type.ClassType)selectedType;
             if (tree.name == names._this &&
                 types.hasOuterClass(currentClassType, selectedClassType)) {
                 if (refs.contains(OuterRef.direct()))
@@ -812,7 +812,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         // Methods - the "value" of a non-static method is a reference to its instance
-        final Symbol sym = tree.sym;
+        Symbol sym = tree.sym;
         if (sym.kind == MTH) {
             if ((sym.flags() & Flags.STATIC) == 0) {
                 if (selectedDirectRef)
@@ -832,11 +832,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Scan target expression and extract 'this' references, if any
         scan(tree.expr);
-        final boolean direct = refs.remove(ExprRef.direct(depth));
-        final boolean indirect = refs.remove(ExprRef.indirect(depth));
+        boolean direct = refs.remove(ExprRef.direct(depth));
+        boolean indirect = refs.remove(ExprRef.indirect(depth));
 
         // Gather receiver references for deferred invocation
-        final RefSet<Ref> receiverRefs = RefSet.newEmpty();
+        RefSet<Ref> receiverRefs = RefSet.newEmpty();
         switch (tree.kind) {
         case UNBOUND:
         case STATIC:
@@ -880,7 +880,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Parameter or local variable?
         if (isParamOrVar(tree.sym)) {
-            final VarSymbol sym = (VarSymbol)tree.sym;
+            VarSymbol sym = (VarSymbol)tree.sym;
             if (refs.contains(VarRef.direct(sym)))
                 refs.add(ExprRef.direct(depth));
             if (refs.contains(VarRef.indirect(sym)))
@@ -891,11 +891,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // An unqualified, non-static method invocation must reference 'this' or outer 'this'.
         // The "value" of a non-static method is a reference to its instance.
         if (tree.sym.kind == MTH && (tree.sym.flags() & Flags.STATIC) == 0) {
-            final MethodSymbol sym = (MethodSymbol)tree.sym;
+            MethodSymbol sym = (MethodSymbol)tree.sym;
 
             // Check for implicit 'this' reference
-            final Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
-            final Type methodOwnerType = sym.owner.type;
+            Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
+            Type methodOwnerType = sym.owner.type;
             if (isSubtype(currentClassType, methodOwnerType)) {
                 if (refs.contains(ThisRef.direct()))
                     refs.add(ExprRef.direct(depth));
@@ -933,7 +933,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitConditional(JCConditional tree) {
         scan(tree.cond);
         refs.discardExprs(depth);
-        final RefSet<ExprRef> combinedRefs = new RefSet<>();
+        RefSet<ExprRef> combinedRefs = new RefSet<>();
         scan(tree.truepart);
         combinedRefs.addAll(refs.removeExprs(depth));
         scan(tree.falsepart);
@@ -1083,10 +1083,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
     // leaked, we create an indirect ExprRef because it must be holding a 'this' reference.
     // If the deferred code would not leak, then obviously no leak is possible, period.
     private <T extends JCTree> void visitDeferred(Runnable recurse) {
-        final DiagnosticPosition[] pendingWarningPrev = pendingWarning;
+        DiagnosticPosition[] pendingWarningPrev = pendingWarning;
         pendingWarning = null;
-        final RefSet<Ref> refsPrev = refs.clone();
-        final boolean deferredCodeLeaks;
+        RefSet<Ref> refsPrev = refs.clone();
+        boolean deferredCodeLeaks;
         try {
             recurse.run();
             deferredCodeLeaks = pendingWarning != null;
@@ -1102,7 +1102,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     private <T extends JCTree> void visitLooped(T tree, Consumer<T> visitor) {
         visitScoped(tree, false, t -> {
             while (true) {
-                final RefSet<Ref> prevRefs = refs.clone();
+                RefSet<Ref> prevRefs = refs.clone();
                 visitor.accept(t);
                 if (refs.equals(prevRefs))
                     break;
@@ -1242,14 +1242,14 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 return true;
             if (obj == null || obj.getClass() != getClass())
                 return false;
-            final Ref that = (Ref)obj;
+            Ref that = (Ref)obj;
             return depth == that.depth
               && direct == that.direct;
         }
 
         @Override
         public String toString() {
-            final ArrayList<String> properties = new ArrayList<>();
+            ArrayList<String> properties = new ArrayList<>();
             addProperties(properties);
             return getClass().getSimpleName()
               + "[" + properties.stream().collect(Collectors.joining(",")) + "]";
@@ -1365,7 +1365,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 return true;
             if (!super.equals(obj))
                 return false;
-            final VarRef that = (VarRef)obj;
+            VarRef that = (VarRef)obj;
             return Objects.equals(sym, that.sym);
         }
 
