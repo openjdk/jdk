@@ -52,14 +52,12 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
 bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava,
   bool forceUContextUsage) {
-  JavaThread* jt = (JavaThread *)this;
-
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
   // But forceUContextUsage == true overrides this.
   if (ucontext == NULL ||
-      (!forceUContextUsage && jt->has_last_Java_frame() && jt->frame_anchor()->walkable())) {
-    *fr_addr = jt->pd_last_frame();
+      (!forceUContextUsage && has_last_Java_frame() && frame_anchor()->walkable())) {
+    *fr_addr = pd_last_frame();
     return true;
   }
 

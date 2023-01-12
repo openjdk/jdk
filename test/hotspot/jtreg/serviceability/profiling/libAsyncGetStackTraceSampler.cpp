@@ -34,6 +34,9 @@
 #include "jvmti.h"
 #include "profile.h"
 
+const int INTERVAL_NS = 1000; // 1us, 1 0000 000 times per second
+                              // 20000 times more than in a normal profiling run
+
 static jvmtiEnv* jvmti;
 
 typedef void (*SigAction)(int, siginfo_t*, void*);
@@ -145,7 +148,7 @@ static void JNICALL OnVMInit(jvmtiEnv *jvmti, JNIEnv *jni_env, jthread thread) {
     GetJMethodIDs(classList[i]);
   }
 
-  startITimerSampler(1000); // 1us
+  startITimerSampler(INTERVAL_NS);
 }
 
 extern "C" {

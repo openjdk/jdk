@@ -45,8 +45,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
   // But forceUContextUsage == true overrides this.
-  if (ucontext == NULL ||
-      (!forceUContextUsage && has_last_Java_frame() && frame_anchor()->walkable())) {
+  if (has_last_Java_frame() && frame_anchor()->walkable() &&
+      (ucontext == NULL || !forceUContextUsage)) {
     intptr_t* sp = last_Java_sp();
     address pc = _anchor.last_Java_pc();
     // pc can be seen as null because not all writers use store pc + release store sp.

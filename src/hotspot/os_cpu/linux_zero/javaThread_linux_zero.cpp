@@ -40,8 +40,7 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
                                          void* ucontext,
                                          bool isInJava,
                                          bool forceUContextUsage) {
-  if (ucontext == NULL ||
-      (!forceUContextUsage && has_last_Java_frame())) {
+  if (has_last_Java_frame() && (ucontext == NULL || !forceUContextUsage)) {
     *fr_addr = pd_last_frame();
     return true;
   }
