@@ -78,7 +78,7 @@ public class CustomApproveButtonTest {
                 throw new RuntimeException("Cannot find Approve button in FileChooser!");
             }
             if (customApproveButton.getText() == null) {
-                throw new RuntimeException("Approve Button Text is null in FileChooser!");
+                throw new RuntimeException("Approve button text is null in FileChooser!");
             }
         } finally {
             if (frame != null) {
