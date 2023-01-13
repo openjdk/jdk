@@ -841,7 +841,7 @@ public class SimpleTimeZone extends TimeZone {
      * Queries if the given date is in daylight saving time.
      * @return true if daylight saving time is in effective at the
      * given date; false otherwise.
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if {@code date} is {@code null}
      */
     public boolean inDaylightTime(Date date)
     {
