@@ -690,15 +690,8 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // (rsp or the address of the box) into  m->owner is harmless.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
-  cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  cmpxchgptr(thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
-  // If we weren't able to swing _owner from NULL to the BasicLock
-  // then take the slow path.
-  jccb  (Assembler::notZero, NO_COUNT);
-  // update _owner from BasicLock to thread
-  get_thread (scrReg);                    // beware: clobbers ICCs
-  movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
-  xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
   // If the CAS fails we can either retry or pass control to the slow path.
   // We use the latter tactic.
