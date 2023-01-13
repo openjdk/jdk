@@ -9897,7 +9897,7 @@ instruct cmovI_cmpI(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOp cop) %
                  as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmovI_cmpU(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOpU cop) %{
@@ -9914,7 +9914,7 @@ instruct cmovI_cmpU(iRegINoSp dst, iRegI src, iRegI op1, iRegI op2, cmpOpU cop) 
                  as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmovI_cmpL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOp cop) %{
@@ -9931,7 +9931,7 @@ instruct cmovI_cmpL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOp cop) %
                  as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %{
@@ -9948,7 +9948,7 @@ instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %
                  as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmovL_cmpUL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOpU cop) %{
@@ -9965,7 +9965,7 @@ instruct cmovL_cmpUL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOpU cop)
                  as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmovI_cmpUL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOpU cop) %{
@@ -9982,7 +9982,7 @@ instruct cmovI_cmpUL(iRegINoSp dst, iRegI src, iRegL op1, iRegL op2, cmpOpU cop)
                  as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}
 
 
