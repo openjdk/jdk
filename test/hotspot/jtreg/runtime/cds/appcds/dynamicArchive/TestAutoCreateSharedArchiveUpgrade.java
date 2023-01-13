@@ -83,12 +83,10 @@ public class TestAutoCreateSharedArchiveUpgrade {
         }
 
         String[] versions = JDK_VERSIONS.split(",");
-        boolean is_default = false;
-        for (int i = 0; i < versions.length && !is_default; i++) {
+        for (int i = 0; i < versions.length; i++) {
             System.out.println("Testing JDK: " + versions[i]);
             try {
-                // If boot JDK runs because old JDK is not found, only run once
-                is_default = setupJVMs(Integer.parseInt(versions[i]));
+                setupJVMs(Integer.parseInt(versions[i]));
                 doTest();
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Invalid AutoCreateSharedArchive JDK version: " + versions[i]);
@@ -96,8 +94,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         }
     }
 
-    static boolean setupJVMs(int fetchVersion) throws Throwable {
-        boolean is_default = true;
+    static void setupJVMs(int fetchVersion) throws Throwable {
         if (TEST_JDK == null) {
             throw new RuntimeException("-Dtest.jdk should point to the JDK being tested");
         }
@@ -107,7 +104,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
         // Example path: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz/jdk-19/bin/java
         if (fetchVersion >= 19) {
             oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
-            is_default = false;
         } else if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
@@ -120,7 +116,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         System.out.println("Using newJVM = " + newJVM);
         System.out.println("Using oldJVM = " + oldJVM);
-        return is_default;
     }
 
     static void doTest() throws Throwable {
@@ -175,7 +170,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     // Fetch JDK artifact depending on platform
     // If the artifact cannot be found, default to the test.boot.jdk property
-    private static String fetchJDK(int version) {
+    private static String fetchJDK(int version) throws Throwable {
         int build;
         String architecture;
         HashMap<String, Object> jdkArtifactMap = new HashMap<>();
@@ -192,8 +187,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 build = 29;
                 break;
             default:
-                build = 0;
-                break;
+                throw new RuntimeException("Unsupported JDK version " + version);
         }
         jdkArtifactMap.put("version", version);
         jdkArtifactMap.put("build_number", build);
@@ -204,7 +198,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
         } else if (Platform.isAArch64()) {
             architecture = "aarch";
         } else {
-            return BOOT_JDK;
+            throw new RuntimeException("Unsupported architecture " + Platform.getOsArch());
         }
 
         // File name is bundles/<os>-<architecture>64/jdk-<version>_<os>-<architecture>64_bin.<extension>
@@ -219,13 +213,13 @@ public class TestAutoCreateSharedArchiveUpgrade {
             jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
             return fetchJDK(jdkArtifactMap, version);
         } else {
-            return BOOT_JDK;
+            throw new RuntimeException("Unsupported operating system " + Platform.getOsName());
         }
     }
 
     // Fetch JDK artifact
     private static String fetchJDK(HashMap<String, Object> jdkArtifactMap, int version) {
-        String path = BOOT_JDK;
+        String path = null;
         try {
             path = ArtifactResolver.resolve("jdk", jdkArtifactMap, true) + "/jdk-" + version;
             System.out.println("Boot JDK path: " + path);
