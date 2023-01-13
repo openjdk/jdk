@@ -61,7 +61,7 @@ public class AddTests {
         System.out.println("" + b1 + "\t+\t" + b2 + "\t=\t" + s);
     }
 
-    private static int outOfMemoryErrorTest() {
+    private static int arithmeticExceptionTest() {
         int failures = 0;
         Rational x;
         try {
@@ -69,11 +69,11 @@ public class AddTests {
             // The string representation "1e2147483647", which is equivalent
             // to 10^Integer.MAX_VALUE, is used to create an augend too big
             // to be represented into a Rational, so the program must throw
-            // an OutOfMemoryError
+            // an ArithmeticException
             //
             x = new Rational("1e2147483647").add(new Rational(1));
             failures++;
-        } catch (OutOfMemoryError e) {
+        } catch (ArithmeticException e) {
         }
         return failures;
     }
@@ -83,7 +83,7 @@ public class AddTests {
 
         failures += simpleTests();
         failures += extremaTests();
-        failures += outOfMemoryErrorTest();
+        failures += arithmeticExceptionTest();
 
         if (failures > 0) {
             throw new RuntimeException("Incurred " + failures + " failures while testing rounding add.");
