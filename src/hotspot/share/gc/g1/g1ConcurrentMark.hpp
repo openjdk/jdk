@@ -171,6 +171,12 @@ private:
   // memory if successful.
   bool resize(size_t new_capacity);
 
+  static TaskQueueEntryChunk* allocate_array(size_t count);
+
+  static void deallocate_array(TaskQueueEntryChunk* ptr, size_t count);
+
+  static size_t size_for_array(size_t count);
+
  public:
   G1CMMarkStack();
   ~G1CMMarkStack();

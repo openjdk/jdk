@@ -108,18 +108,41 @@ bool G1CMMarkStack::resize(size_t new_capacity) {
   assert(new_capacity <= _max_chunk_capacity,
          "Trying to resize stack to " SIZE_FORMAT " chunks when the maximum is " SIZE_FORMAT, new_capacity, _max_chunk_capacity);
 
-  TaskQueueEntryChunk* new_base = REALLOC_C_HEAP_ARRAY_RETURN_NULL(TaskQueueEntryChunk, _base, new_capacity, mtGC);
-
+  TaskQueueEntryChunk* new_base = allocate_array(new_capacity);
   if (new_base == NULL) {
     log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
     return false;
   }
+  deallocate_array(_base, _chunk_capacity);
 
   _base = new_base;
   _chunk_capacity = new_capacity;
   set_empty();
 
   return true;
+}
+
+TaskQueueEntryChunk* G1CMMarkStack::allocate_array(size_t count) {
+  const size_t size = size_for_array(count);
+
+  void* const addr = os::reserve_memory(size, !ExecMem, mtGC);
+  if (addr == nullptr) {
+    return nullptr;
+  }
+
+  os::commit_memory_or_exit(static_cast<char*>(addr), size, !ExecMem, "Failed to commit G1CMMarkStack memory");
+
+  return static_cast<TaskQueueEntryChunk*>(addr);
+}
+
+void G1CMMarkStack::deallocate_array(TaskQueueEntryChunk* ptr, size_t count) {
+  const bool result = os::release_memory(static_cast<char*>(static_cast<void*>(ptr)),
+                                         size_for_array(count));
+  assert(result, "Failed to release G1CMMarkStack memory");
+}
+
+size_t G1CMMarkStack::size_for_array(size_t count) {
+  return align_up(count * sizeof(TaskQueueEntryChunk), os::vm_allocation_granularity());
 }
 
 size_t G1CMMarkStack::capacity_alignment() {
@@ -165,7 +188,7 @@ void G1CMMarkStack::expand() {
 
 G1CMMarkStack::~G1CMMarkStack() {
   if (_base != NULL) {
-    FREE_C_HEAP_ARRAY(TaskQueueEntryChunk, _base);
+    deallocate_array(_base, _chunk_capacity);
   }
 }
 
