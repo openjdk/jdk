@@ -106,7 +106,7 @@ public class ExceptionText {
                 throw new RuntimeException("Test failed: exception contains address info");
             }
         } else {
-            if (!msg.contains(HOST) || !msg.contains(PORT)  || 
+            if (!msg.contains(HOST) || !msg.contains(PORT)  ||
                 (!msg.contains(ADDRESS.getHostAddress()))) {
                 if (e instanceof ClosedChannelException)
                     return; // has no detail msg
