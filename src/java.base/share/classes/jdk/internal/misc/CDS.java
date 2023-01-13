@@ -122,12 +122,14 @@ public class CDS {
     static final String DELEGATING_HOLDER_CLASS_NAME = "java.lang.invoke.DelegatingMethodHandle$Holder";
     static final String BASIC_FORMS_HOLDER_CLASS_NAME = "java.lang.invoke.LambdaForm$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = "java.lang.invoke.Invokers$Holder";
+    static final String RESOLVERS_HOLDER_CLASS_NAME = "java.lang.invoke.LambdaFormResolvers$Holder";
 
     private static boolean isValidHolderName(String name) {
         return name.equals(DIRECT_HOLDER_CLASS_NAME)      ||
                name.equals(DELEGATING_HOLDER_CLASS_NAME)  ||
                name.equals(BASIC_FORMS_HOLDER_CLASS_NAME) ||
-               name.equals(INVOKERS_HOLDER_CLASS_NAME);
+               name.equals(INVOKERS_HOLDER_CLASS_NAME)    ||
+               name.equals(RESOLVERS_HOLDER_CLASS_NAME);
     }
 
     private static boolean isBasicTypeChar(char c) {
