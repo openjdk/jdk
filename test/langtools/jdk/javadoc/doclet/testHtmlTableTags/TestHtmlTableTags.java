@@ -42,7 +42,7 @@ public class TestHtmlTableTags extends JavadocTester {
 
 
     public static void main(String... args) throws Exception {
-        TestHtmlTableTags tester = new TestHtmlTableTags();
+        var tester = new TestHtmlTableTags();
         tester.runTests();
     }
 

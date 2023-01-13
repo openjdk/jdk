@@ -135,7 +135,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     __ load_const(Z_R1_scratch, (uint64_t)StubRoutines::zarch::nmethod_entry_barrier()); // 2*6 bytes
 
     // Load value from current java object:
-    __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_offset()), Z_thread); // 6 bytes
+    __ z_lg(Z_R0_scratch, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), Z_thread); // 6 bytes
 
     // Compare to current patched value:
     __ z_cfi(Z_R0_scratch, /* to be patched */ -1); // 6 bytes (2 + 4 byte imm val)

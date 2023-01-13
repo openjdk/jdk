@@ -27,6 +27,7 @@
 
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "subnode.hpp"
 
 //------------------------------Opaque1Node------------------------------------
 // A node to prevent unwanted optimizations.  Allows constant folding.
@@ -72,9 +73,16 @@ class OpaqueLoopStrideNode : public Opaque1Node {
 
 class OpaqueZeroTripGuardNode : public Opaque1Node {
 public:
-  OpaqueZeroTripGuardNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+  // This captures the test that returns true when the loop is entered. It depends on whether the loop goes up or down.
+  // This is used by CmpINode::Value.
+  BoolTest::mask _loop_entered_mask;
+  OpaqueZeroTripGuardNode(Compile* C, Node* n, BoolTest::mask loop_entered_test) :
+          Opaque1Node(C, n), _loop_entered_mask(loop_entered_test) {
   }
   virtual int Opcode() const;
+  virtual uint size_of() const {
+    return sizeof(*this);
+  }
 };
 
 //------------------------------Opaque3Node------------------------------------

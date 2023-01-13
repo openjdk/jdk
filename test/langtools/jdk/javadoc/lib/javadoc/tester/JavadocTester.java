@@ -97,7 +97,7 @@ import javax.tools.StandardJavaFileManager;
  * <pre><code>
  *  public class MyTester extends JavadocTester {
  *      public static void main(String... args) throws Exception {
- *          MyTester tester = new MyTester();
+ *          var tester = new MyTester();
  *          tester.runTests();
  *      }
  *

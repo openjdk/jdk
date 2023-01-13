@@ -408,10 +408,13 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   push_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
 
   mv(c_rarg0, reg); // c_rarg0 : x10
-  // The length of the instruction sequence emitted should be independent
-  // of the value of the local char buffer address so that the size of mach
-  // nodes for scratch emit and normal emit matches.
-  movptr(t0, (address)b);
+  {
+    // The length of the instruction sequence emitted should not depend
+    // on the address of the char buffer so that the size of mach nodes for
+    // scratch emit and normal emit matches.
+    IncompressibleRegion ir(this);  // Fixed length
+    movptr(t0, (address) b);
+  }
 
   // call indirectly to solve generation ordering problem
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
@@ -450,10 +453,13 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ld(x10, addr);
   }
 
-  // The length of the instruction sequence emitted should be independent
-  // of the value of the local char buffer address so that the size of mach
-  // nodes for scratch emit and normal emit matches.
-  movptr(t0, (address)b);
+  {
+    // The length of the instruction sequence emitted should not depend
+    // on the address of the char buffer so that the size of mach nodes for
+    // scratch emit and normal emit matches.
+    IncompressibleRegion ir(this);  // Fixed length
+    movptr(t0, (address) b);
+  }
 
   // call indirectly to solve generation ordering problem
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());

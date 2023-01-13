@@ -156,7 +156,6 @@ import sun.java2d.cmm.PCMM;
  * @see DataBuffer
  */
 public abstract class ColorModel implements Transparency{
-    private long pData;         // Placeholder for data for native functions
 
     /**
      * The total number of bits in the pixel.

@@ -1065,9 +1065,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param byteSize the size (in bytes) of the returned native segment.
      * @return a zero-length native segment with the given address and size.
      * @throws IllegalArgumentException if {@code byteSize < 0}.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static MemorySegment ofAddress(long address, long byteSize) {
@@ -1088,7 +1086,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang = java:
      * ofAddress(address, byteSize, scope, null);
      *}
-     *
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      * @param address the returned segment's address.
      * @param byteSize the desired size.
      * @param scope the scope associated with the returned native segment.
@@ -1097,9 +1098,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if {@code scope} is not {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code scope.isAccessibleBy(T) == false}.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     @ForceInline
@@ -1140,9 +1139,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if {@code scope} is not {@linkplain SegmentScope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code scope.isAccessibleBy(T) == false}.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static MemorySegment ofAddress(long address, long byteSize, SegmentScope scope, Runnable cleanupAction) {
@@ -1737,6 +1734,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
      */
     @ForceInline
     default void set(ValueLayout.OfAddress layout, long offset, MemorySegment value) {
@@ -2082,6 +2080,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException when the access operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfAddress layout, long index, MemorySegment value) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2495,7 +2495,7 @@ void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   assert(dest != NULL, "must have a target");
   intptr_t disp = dest - (pc() + sizeof(int32_t));
   assert(is_simm32(disp), "must be 32bit offset (jmp)");
-  emit_data(disp, rspec.reloc(), call32_operand);
+  emit_data(disp, rspec, call32_operand);
 }
 
 void Assembler::jmpb_0(Label& L, const char* file, int line) {
@@ -13451,6 +13451,11 @@ void Assembler::orq(Address dst, Register src) {
 void Assembler::orq(Register dst, int32_t imm32) {
   (void) prefixq_and_encode(dst->encoding());
   emit_arith(0x81, 0xC8, dst, imm32);
+}
+
+void Assembler::orq_imm32(Register dst, int32_t imm32) {
+  (void) prefixq_and_encode(dst->encoding());
+  emit_arith_imm32(0x81, 0xC8, dst, imm32);
 }
 
 void Assembler::orq(Register dst, Address src) {
