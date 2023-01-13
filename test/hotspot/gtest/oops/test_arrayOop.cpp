@@ -117,15 +117,15 @@ TEST_VM(arrayOopDesc, base_offset) {
     }
   }
 #else
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_SHORT),   8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_CHAR),    8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_INT),     8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_FLOAT),   8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_LONG),    8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_DOUBLE),  8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT),  8);
-  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),   8);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_SHORT),   12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_CHAR),    12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_INT),     12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_FLOAT),   12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_LONG),    16);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_DOUBLE),  16);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT),  12);
+  EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),   12);
 #endif
 }
