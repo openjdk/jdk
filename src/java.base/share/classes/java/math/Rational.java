@@ -7,252 +7,169 @@ import java.util.Objects;
 /**
  * Immutable, infinite-precision signed rational numbers.
  *
- * <p>The {@code Rational} class provides operations for
- * arithmetic, rounding, comparison, hashing, and
- * format conversion.  The {@link #toString} method provides a
- * canonical representation of a {@code Rational}.
+ * <p>
+ * The {@code Rational} class provides operations for arithmetic, rounding,
+ * comparison, hashing, and format conversion. The {@link #toString} method
+ * provides a canonical representation of a {@code Rational}.
  *
- * <p>All the calculation performed have an exact result, except
- * for square root, in which the user can specify the rounding behavior.
+ * <p>
+ * All the calculations performed have an exact result, except for the square
+ * root, in which the user can specify the rounding behavior.
  *
- * <p>When a {@code MathContext} object is supplied with a precision
- * setting of 0 (for example, {@link MathContext#UNLIMITED}),
- * arithmetic operations are exact, as are the arithmetic methods
- * which take no {@code MathContext} object. As a corollary of
- * computing the exact result, the rounding mode setting of a {@code
- * MathContext} object with a precision setting of 0 is not used and
- * thus irrelevant.  In the case of divide, the exact quotient could
- * have an infinitely long decimal expansion; for example, 1 divided
- * by 3.  If the quotient has a nonterminating decimal expansion and
- * the operation is specified to return an exact result, an {@code
- * ArithmeticException} is thrown.  Otherwise, the exact result of the
- * division is returned, as done for other operations.
+ * <p>
+ * When a {@code MathContext} object is supplied with a precision setting of 0
+ * (for example, {@link MathContext#UNLIMITED}), arithmetic operations are
+ * exact, as are the arithmetic methods which take no {@code MathContext}
+ * object. As a corollary of computing the exact result, the rounding mode
+ * setting of a {@code MathContext} object with a precision setting of 0 is not
+ * used and thus irrelevant. In the case of square root, the exact result could
+ * not be represented as a fraction; for example, sqrt(2). If the square root
+ * has a nonterminating decimal expansion and the operation is specified to
+ * return an exact result, an {@code ArithmeticException} is thrown. Otherwise,
+ * the exact result is returned, as done for other operations.
  *
- * <p>When the precision setting is not 0, the rules of {@code
- * BigDecimal} arithmetic are broadly compatible with selected modes
- * of operation of the arithmetic defined in ANSI X3.274-1996 and ANSI
- * X3.274-1996/AM 1-2000 (section 7.4).  Unlike those standards,
- * {@code BigDecimal} includes many rounding modes.  Any conflicts
- * between these ANSI standards and the {@code BigDecimal}
- * specification are resolved in favor of {@code BigDecimal}.
- *
- * <p>Since the same numerical value can have different
- * representations (with different scales), the rules of arithmetic
- * and rounding must specify both the numerical result and the scale
- * used in the result's representation.
- *
- * The different representations of the same numerical value are
- * called members of the same <i>cohort</i>. The {@linkplain
- * compareTo(BigDecimal) natural order} of {@code BigDecimal}
- * considers members of the same cohort to be equal to each other. In
- * contrast, the {@link equals equals} method requires both the
- * numerical value and representation to be the same for equality to
- * hold. The results of methods like {@link scale} and {@link
- * unscaledValue} will differ for numerically equal values with
- * different representations.
- *
- * <p>In general the rounding modes and precision setting determine
- * how operations return results with a limited number of digits when
- * the exact result has more digits (perhaps infinitely many in the
- * case of division and square root) than the number of digits returned.
+ * <p>
+ * In general the rounding modes and precision setting determine how the
+ * operation returns results with a limited number of digits when the exact
+ * result has more digits (perhaps infinitely many) than the number of digits
+ * returned.
  *
  * First, the total number of digits to return is specified by the
- * {@code MathContext}'s {@code precision} setting; this determines
- * the result's <i>precision</i>.  The digit count starts from the
- * leftmost nonzero digit of the exact result.  The rounding mode
- * determines how any discarded trailing digits affect the returned
+ * {@code MathContext}'s {@code precision} setting; this determines the result's
+ * <i>precision</i>. The digit count starts from the leftmost nonzero digit of
+ * the exact result. The rounding mode determines how any discarded trailing
+ * digits affect the returned result.
+ *
+ * <p>
+ * The operation is carried out as though an exact intermediate result were
+ * first calculated and then rounded to the number of digits specified by the
+ * precision setting (if necessary), using the selected rounding mode. If the
+ * exact result is not returned, some digit positions of the exact result are
+ * discarded. When rounding increases the magnitude of the returned result, it
+ * is possible for a new digit position to be created by a carry propagating to
+ * a leading {@literal "9"} digit. For example, rounding the value 999.9 to
+ * three digits rounding up would be numerically equal to one thousand. In such
+ * cases, the new {@literal "1"} is the leading digit position of the returned
  * result.
  *
- * <p>For all arithmetic operators, the operation is carried out as
- * though an exact intermediate result were first calculated and then
- * rounded to the number of digits specified by the precision setting
- * (if necessary), using the selected rounding mode.  If the exact
- * result is not returned, some digit positions of the exact result
- * are discarded.  When rounding increases the magnitude of the
- * returned result, it is possible for a new digit position to be
- * created by a carry propagating to a leading {@literal "9"} digit.
- * For example, rounding the value 999.9 to three digits rounding up
- * would be numerically equal to one thousand, represented as
- * 100&times;10<sup>1</sup>.  In such cases, the new {@literal "1"} is
- * the leading digit position of the returned result.
+ * <p>
+ * For methods and constructors with a {@code MathContext} parameter, if the
+ * result is inexact but the rounding mode is {@link RoundingMode#UNNECESSARY
+ * UNNECESSARY}, an {@code ArithmeticException} will be thrown.
  *
- * <p>For methods and constructors with a {@code MathContext}
- * parameter, if the result is inexact but the rounding mode is {@link
- * RoundingMode#UNNECESSARY UNNECESSARY}, an {@code
- * ArithmeticException} will be thrown.
+ * <p>
+ * Before rounding, the precision of the logical exact intermediate result is
+ * the preferred precision for the operation. If the exact numerical result
+ * cannot be represented in {@code precision} digits, rounding selects the set
+ * of digits to return and the precision of the result is reduced from the
+ * precision of the intermediate result to the least precision which can
+ * represent the {@code precision} digits actually returned. If the exact result
+ * can be represented with at most {@code precision} digits, the representation
+ * of the result with the precision closest to the preferred precision is
+ * returned.
  *
- * <p>Besides a logical exact result, each arithmetic operation has a
- * preferred scale for representing a result.  The preferred
- * scale for each operation is listed in the table below.
+ * <p>
+ * One operation is provided for manipulating the precision of a
+ * {@code Rational}: the rounding operation. Rounding operation {@link #round
+ * round}) returns a {@code Rational} whose value is approximately (or exactly)
+ * equal to that of the operand, but whose precision is the specified value;
+ * that is, it decrease the precision of the stored number with minimal effect
+ * on its value.
  *
- * <table class="striped" style="text-align:left">
- * <caption>Preferred Scales for Results of Arithmetic Operations
- * </caption>
- * <thead>
- * <tr><th scope="col">Operation</th><th scope="col">Preferred Scale of Result</th></tr>
- * </thead>
- * <tbody>
- * <tr><th scope="row">Add</th><td>max(addend.scale(), augend.scale())</td>
- * <tr><th scope="row">Subtract</th><td>max(minuend.scale(), subtrahend.scale())</td>
- * <tr><th scope="row">Multiply</th><td>multiplier.scale() + multiplicand.scale()</td>
- * <tr><th scope="row">Divide</th><td>dividend.scale() - divisor.scale()</td>
- * <tr><th scope="row">Square root</th><td>radicand.scale()/2</td>
- * </tbody>
- * </table>
+ * <p>
+ * Rational must support fractional values in the range
+ * -2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) to
+ * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) and may support values
+ * outside of that range.
  *
- * These scales are the ones used by the methods which return exact
- * arithmetic results; except that an exact divide may have to use a
- * larger scale since the exact result may have more digits.  For
- * example, {@code 1/32} is {@code 0.03125}.
+ * An {@code ArithmeticException} is thrown when a Rational constructor or
+ * method would generate a value outside of the supported range.
  *
- * <p>Before rounding, the scale of the logical exact intermediate
- * result is the preferred scale for that operation.  If the exact
- * numerical result cannot be represented in {@code precision}
- * digits, rounding selects the set of digits to return and the scale
- * of the result is reduced from the scale of the intermediate result
- * to the least scale which can represent the {@code precision}
- * digits actually returned.  If the exact result can be represented
- * with at most {@code precision} digits, the representation
- * of the result with the scale closest to the preferred scale is
- * returned.  In particular, an exactly representable quotient may be
- * represented in fewer than {@code precision} digits by removing
- * trailing zeros and decreasing the scale.  For example, rounding to
- * three digits using the {@linkplain RoundingMode#FLOOR floor}
- * rounding mode, <br>
+ * <p>
+ * For the sake of brevity and clarity, pseudo-code is used throughout the
+ * descriptions of {@code Rational} methods. The pseudo-code expression
+ * {@code (i + j)} is shorthand for "a {@code Rational} whose value is that of
+ * the {@code Rational} {@code i} added to that of the {@code Rational}
+ * {@code j}." The pseudo-code expression {@code (i == j)} is shorthand for
+ * "{@code true} if and only if the {@code Rational} {@code i} represents the
+ * same value as the {@code Rational} {@code j}." Other pseudo-code expressions
+ * are interpreted similarly. Square brackets are used to represent the
+ * particular fraction defining a @code Rational} value; for example [19/100] is
+ * the {@code Rational} numerically equal to 0.19.
  *
- * {@code 19/100 = 0.19   // integer=19,  scale=2} <br>
+ * <p>
+ * All methods and constructors for this class throw
+ * {@code NullPointerException} when passed a {@code null} object reference for
+ * any input parameter.
  *
- * but<br>
+ * @apiNote
+ *          <h2>Relation to IEEE 754 Decimal Arithmetic</h2>
  *
- * {@code 21/110 = 0.190  // integer=190, scale=3} <br>
+ *          Starting with its 2008 revision, the <cite>IEEE 754 Standard for
+ *          Floating-point Arithmetic</cite> has covered decimal formats and
+ *          operations. While there are broad similarities in the decimal
+ *          arithmetic defined by IEEE 754 and by this class, there are notable
+ *          differences as well. The fundamental similarity shared by {@code
+ * Rational} and IEEE 754 decimal arithmetic is the conceptual operation of
+ *          computing the mathematical infinitely precise real number value of
+ *          an operation and then mapping that real number to a representable
+ *          fractional value under a <em>rounding policy</em>. The rounding
+ *          policy is called a {@linkplain RoundingMode rounding mode} for
+ *          {@code Rational} and called a rounding-direction attribute in IEEE
+ *          754-2019. When the exact value is not representable, the rounding
+ *          policy determines which of the two representable decimal values
+ *          bracketing the exact value is selected as the computed result. The
+ *          notion of a <em>preferred precision</em> is also shared by both
+ *          systems.
  *
- * <p>Note that for add, subtract, and multiply, the reduction in
- * scale will equal the number of digit positions of the exact result
- * which are discarded. If the rounding causes a carry propagation to
- * create a new high-order digit position, an additional digit of the
- * result is discarded than when no new digit position is created.
+ *          <p>
+ *          For differences, IEEE 754 includes several kinds of values not
+ *          modeled by {@code Rational} including negative zero, signed
+ *          infinities, and NaN (not-a-number). IEEE 754 defines formats, which
+ *          are parameterized by base (binary or decimal), number of digits of
+ *          precision, and exponent range. A format determines the set of
+ *          representable values. Most operations accept as input one or more
+ *          values of a given format and produce a result in the same format.
+ *          {@code Rational} values do not have a format in the same sense; all
+ *          values have a unique representation. Instead, for the
+ *          {@code Rational} operations taking a {@code MathContext} parameter,
+ *          if the {@code MathContext} has a nonzero precision, the set of
+ *          possible representable values for the result is determined by the
+ *          precision of the {@code MathContext} argument. For example in
+ *          {@code Rational}, if a nonzero three-digit number is square rooted
+ *          in the context of a {@code MathContext} object having a precision of
+ *          three, the result will have at most three digits (assuming no
+ *          overflow or underflow, etc.).
  *
- * <p>Other methods may have slightly different rounding semantics.
- * For example, the result of the {@code pow} method using the
- * {@linkplain #pow(int, MathContext) specified algorithm} can
- * occasionally differ from the rounded mathematical result by more
- * than one unit in the last place, one <i>{@linkplain #ulp() ulp}</i>.
+ *          <p>
+ *          The rounding policies implemented by {@code Rational} operations
+ *          indicated by {@linkplain RoundingMode rounding modes} are a proper
+ *          superset of the IEEE 754 rounding-direction attributes.
+ * 
+ *          <p>
+ *          {@code Rational} arithmetic will most resemble IEEE 754 decimal
+ *          arithmetic if a {@code MathContext} corresponding to an IEEE 754
+ *          decimal format, such as {@linkplain MathContext#DECIMAL64 decimal64}
+ *          or {@linkplain MathContext#DECIMAL128 decimal128} is used to round
+ *          all starting values and intermediate operations. The numerical
+ *          values computed can differ if the exponent range of the IEEE 754
+ *          format being approximated is exceeded since a {@code
+ * MathContext} does not constrain the precision of {@code Rational} results.
+ *          Operations that would generate a NaN or exact infinity, such as
+ *          dividing by zero, throw an {@code ArithmeticException} in
+ *          {@code Rational} arithmetic.
  *
- * <p>Two types of operations are provided for manipulating the scale
- * of a {@code BigDecimal}: scaling/rounding operations and decimal
- * point motion operations.  Scaling/rounding operations ({@link
- * #setScale setScale} and {@link #round round}) return a
- * {@code BigDecimal} whose value is approximately (or exactly) equal
- * to that of the operand, but whose scale or precision is the
- * specified value; that is, they increase or decrease the precision
- * of the stored number with minimal effect on its value.  Decimal
- * point motion operations ({@link #movePointLeft movePointLeft} and
- * {@link #movePointRight movePointRight}) return a
- * {@code BigDecimal} created from the operand by moving the decimal
- * point a specified distance in the specified direction.
+ * @see BigInteger
+ * @see BigDecimal
+ * @see MathContext
+ * @see RoundingMode
+ * @see java.util.SortedMap
+ * @see java.util.SortedSet
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/"> <cite>IEEE Standard
+ *      for Floating-Point Arithmetic</cite></a>
  *
- * <p>As a 32-bit integer, the set of values for the scale is large,
- * but bounded. If the scale of a result would exceed the range of a
- * 32-bit integer, either by overflow or underflow, the operation may
- * throw an {@code ArithmeticException}.
- *
- * <p>For the sake of brevity and clarity, pseudo-code is used
- * throughout the descriptions of {@code BigDecimal} methods.  The
- * pseudo-code expression {@code (i + j)} is shorthand for "a
- * {@code BigDecimal} whose value is that of the {@code BigDecimal}
- * {@code i} added to that of the {@code BigDecimal}
- * {@code j}." The pseudo-code expression {@code (i == j)} is
- * shorthand for "{@code true} if and only if the
- * {@code BigDecimal} {@code i} represents the same value as the
- * {@code BigDecimal} {@code j}." Other pseudo-code expressions
- * are interpreted similarly.  Square brackets are used to represent
- * the particular {@code BigInteger} and scale pair defining a
- * {@code BigDecimal} value; for example [19, 2] is the
- * {@code BigDecimal} numerically equal to 0.19 having a scale of 2.
- *
- * <p>All methods and constructors for this class throw
- * {@code NullPointerException} when passed a {@code null} object
- * reference for any input parameter.
- *
- * @apiNote Care should be exercised if {@code BigDecimal} objects are
- * used as keys in a {@link java.util.SortedMap SortedMap} or elements
- * in a {@link java.util.SortedSet SortedSet} since {@code
- * BigDecimal}'s <i>{@linkplain compareTo(BigDecimal) natural
- * ordering}</i> is <em>inconsistent with equals</em>.  See {@link
- * Comparable}, {@link java.util.SortedMap} or {@link
- * java.util.SortedSet} for more information.
- *
- * <h2>Relation to IEEE 754 Decimal Arithmetic</h2>
- *
- * Starting with its 2008 revision, the <cite>IEEE 754 Standard for
- * Floating-point Arithmetic</cite> has covered decimal formats and
- * operations. While there are broad similarities in the decimal
- * arithmetic defined by IEEE 754 and by this class, there are notable
- * differences as well. The fundamental similarity shared by {@code
- * BigDecimal} and IEEE 754 decimal arithmetic is the conceptual
- * operation of computing the mathematical infinitely precise real
- * number value of an operation and then mapping that real number to a
- * representable decimal floating-point value under a <em>rounding
- * policy</em>. The rounding policy is called a {@linkplain
- * RoundingMode rounding mode} for {@code BigDecimal} and called a
- * rounding-direction attribute in IEEE 754-2019. When the exact value
- * is not representable, the rounding policy determines which of the
- * two representable decimal values bracketing the exact value is
- * selected as the computed result. The notion of a <em>preferred
- * scale/preferred exponent</em> is also shared by both systems.
- *
- * <p>For differences, IEEE 754 includes several kinds of values not
- * modeled by {@code BigDecimal} including negative zero, signed
- * infinities, and NaN (not-a-number). IEEE 754 defines formats, which
- * are parameterized by base (binary or decimal), number of digits of
- * precision, and exponent range. A format determines the set of
- * representable values. Most operations accept as input one or more
- * values of a given format and produce a result in the same format.
- * A {@code BigDecimal}'s {@linkplain scale() scale} is equivalent to
- * negating an IEEE 754 value's exponent. {@code BigDecimal} values do
- * not have a format in the same sense; all values have the same
- * possible range of scale/exponent and the {@linkplain
- * unscaledValue() unscaled value} has arbitrary precision. Instead,
- * for the {@code BigDecimal} operations taking a {@code MathContext}
- * parameter, if the {@code MathContext} has a nonzero precision, the
- * set of possible representable values for the result is determined
- * by the precision of the {@code MathContext} argument. For example
- * in {@code BigDecimal}, if a nonzero three-digit number and a
- * nonzero four-digit number are multiplied together in the context of
- * a {@code MathContext} object having a precision of three, the
- * result will have three digits (assuming no overflow or underflow,
- * etc.).
- *
- * <p>The rounding policies implemented by {@code BigDecimal}
- * operations indicated by {@linkplain RoundingMode rounding modes}
- * are a proper superset of the IEEE 754 rounding-direction
- * attributes.
-
- * <p>{@code BigDecimal} arithmetic will most resemble IEEE 754
- * decimal arithmetic if a {@code MathContext} corresponding to an
- * IEEE 754 decimal format, such as {@linkplain MathContext#DECIMAL64
- * decimal64} or {@linkplain MathContext#DECIMAL128 decimal128} is
- * used to round all starting values and intermediate operations. The
- * numerical values computed can differ if the exponent range of the
- * IEEE 754 format being approximated is exceeded since a {@code
- * MathContext} does not constrain the scale of {@code BigDecimal}
- * results. Operations that would generate a NaN or exact infinity,
- * such as dividing by zero, throw an {@code ArithmeticException} in
- * {@code BigDecimal} arithmetic.
- *
- * @see     BigInteger
- * @see     MathContext
- * @see     RoundingMode
- * @see     java.util.SortedMap
- * @see     java.util.SortedSet
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
- *
- * @author  Josh Bloch
- * @author  Mike Cowlishaw
- * @author  Joseph D. Darcy
- * @author  Sergey V. Kuksenko
- * @since 1.1
+ * @author Fabio Romano
+ * @since 21
  */
 public class Rational extends Number implements Comparable<Rational> {
 	/**
