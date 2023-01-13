@@ -926,12 +926,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitIf(JCIf tree) {
         scan(tree.cond);
         refs.discardExprs(depth);
-        RefSet<ExprRef> combinedRefs = new RefSet<>();
         scan(tree.thenpart);
-        combinedRefs.addAll(refs.removeExprs(depth));
         scan(tree.elsepart);
-        combinedRefs.addAll(refs.removeExprs(depth));
-        refs.addAll(combinedRefs);
     }
 
     @Override
