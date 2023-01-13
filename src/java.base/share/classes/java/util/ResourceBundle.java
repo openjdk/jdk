@@ -267,7 +267,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * .properties} file format.  Typically {@code .properties} resource bundles
  * are packaged in a JAR file.  Resource bundle only JAR file can be readily
  * deployed as an {@linkplain java.lang.module.ModuleFinder##automatic-modules
- * automatic module1}.  For example, if the JAR file contains the
+ * automatic module}.  For example, if the JAR file contains the
  * entry "{@code p/q/Foo_ja.properties}" and no {@code .class} entry,
  * when resolved and defined as an automatic module, no package is derived
  * for this module.  This allows resource bundles in {@code .properties}
