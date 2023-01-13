@@ -31,14 +31,14 @@
 #include <stdlib.h>
 #include <Wincon.h>
 
-extern HANDLE java_io_Console_hStdIn;
-
 JNIEXPORT jboolean JNICALL
 Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env, jclass cls, jboolean on)
 {
     DWORD fdwMode;
     jboolean old;
-    if (! GetConsoleMode(java_io_Console_hStdIn, &fdwMode)) {
+    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (! GetConsoleMode(hStdIn, &fdwMode)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
         return !on;
     }
@@ -48,7 +48,7 @@ Java_jdk_internal_io_JdkConsoleImpl_echo(JNIEnv *env, jclass cls, jboolean on)
     } else {
         fdwMode &= ~ENABLE_ECHO_INPUT;
     }
-    if (! SetConsoleMode(java_io_Console_hStdIn, fdwMode)) {
+    if (! SetConsoleMode(hStdIn, fdwMode)) {
         JNU_ThrowIOExceptionWithLastError(env, "SetConsoleMode failed");
     }
     return old;

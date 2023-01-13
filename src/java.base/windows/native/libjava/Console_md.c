@@ -31,22 +31,22 @@
 #include <stdlib.h>
 #include <Wincon.h>
 
-static HANDLE hStdOut = INVALID_HANDLE_VALUE;
-HANDLE java_io_Console_hStdIn = INVALID_HANDLE_VALUE;
 JNIEXPORT jboolean JNICALL
 Java_java_io_Console_istty(JNIEnv *env, jclass cls)
 {
-    if (java_io_Console_hStdIn == INVALID_HANDLE_VALUE &&
-        (java_io_Console_hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (hStdIn == INVALID_HANDLE_VALUE ||
+        hStdOut == INVALID_HANDLE_VALUE) {
         return JNI_FALSE;
     }
-    if (hStdOut == INVALID_HANDLE_VALUE &&
-        (hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+
+    if (GetFileType(hStdIn) != FILE_TYPE_CHAR ||
+        GetFileType(hStdOut) != FILE_TYPE_CHAR) {
         return JNI_FALSE;
     }
-    if (GetFileType(java_io_Console_hStdIn) != FILE_TYPE_CHAR ||
-        GetFileType(hStdOut) != FILE_TYPE_CHAR)
-        return JNI_FALSE;
+
     return JNI_TRUE;
 }
 
