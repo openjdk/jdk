@@ -1,5 +1,0 @@
-ThisEscapeCtors.java:19:13: compiler.warn.possible.this.escape
-ThisEscapeCtors.java:32:23: compiler.warn.possible.this.escape.location
-ThisEscapeCtors.java:25:13: compiler.warn.possible.this.escape
-ThisEscapeCtors.java:32:23: compiler.warn.possible.this.escape.location
-4 warnings

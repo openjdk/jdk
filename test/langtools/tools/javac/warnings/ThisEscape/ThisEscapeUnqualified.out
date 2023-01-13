@@ -1,3 +1,0 @@
-ThisEscapeUnqualified.java:14:13: compiler.warn.possible.this.escape
-ThisEscapeUnqualified.java:19:26: compiler.warn.possible.this.escape.location
-2 warnings

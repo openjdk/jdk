@@ -1,3 +1,0 @@
-ThisEscapeParameter.java:11:35: compiler.warn.possible.this.escape
-ThisEscapeParameter.java:15:21: compiler.warn.possible.this.escape.location
-2 warnings
