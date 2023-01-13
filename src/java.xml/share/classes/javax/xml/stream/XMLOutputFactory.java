@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import javax.xml.transform.Result;
  * <p>The following paragraphs describe the namespace and prefix repair algorithm:
  *
  * <p>The property can be set with the following code line:
- * {@code setProperty("javax.xml.stream.isRepairingNamespaces", new Boolean(true|false));}
+ * {@code setProperty("javax.xml.stream.isRepairingNamespaces", Boolean.TRUE);}
  *
  * <p>This property specifies that the writer default namespace prefix declarations.
  * The default value is false.
