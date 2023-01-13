@@ -138,7 +138,18 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #define FORMAT64_MODIFIER "ll"
 #endif // _LP64
 
-#define offset_of(klass,field) offsetof(klass, field)
+// GCC/Clang warns about applying offsetof() to types that are not standard layout or calculating
+// offset directly when base address is NULL. Technically using offsetof() on non-standard layout is
+// undefined behavior before C++17 and "conditionally-supported" after C++17. Rather than take our
+// chances we use our own implementation which both GCC/Clang ultimately produce a constant for but
+// is not a constant expression.
+#define offset_of(klass, field)                         \
+__attribute__((always_inline)) []() {                   \
+  alignas(klass) char space[sizeof(klass)];             \
+  klass* dummyObj = (klass*)space;                      \
+  char* c = (char*)(void*)&dummyObj->field;             \
+  return (size_t)(c - space);                           \
+}()
 
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"
