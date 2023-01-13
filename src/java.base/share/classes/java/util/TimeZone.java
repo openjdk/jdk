@@ -316,7 +316,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * // @link substring="LONG" target="#LONG" :
      * getDisplayName(false, LONG,
      *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
-     *                Locale.getDefault(Locale.Category.DISPLAY))
+     *                Locale.getDefault(Locale.Category.DISPLAY));
      * }
      * </blockquote>
      *
@@ -339,7 +339,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * <blockquote>
      * {@snippet lang=java :
      * // @link substring="LONG" target="#LONG" :
-     * getDisplayName(false, LONG, locale)
+     * getDisplayName(false, LONG, locale);
      * }
      * </blockquote>
      *
@@ -365,7 +365,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * {@snippet lang=java :
      * getDisplayName(daylight, style,
      *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
-     *                Locale.getDefault(Locale.Category.DISPLAY))
+     *                Locale.getDefault(Locale.Category.DISPLAY));
      * }
      * </blockquote>
      *
