@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5859,6 +5859,8 @@ public class Collections {
      * @since 1.6
      */
     public static <E> Set<E> newSetFromMap(Map<E, Boolean> map) {
+        if (! map.isEmpty())
+            throw new IllegalArgumentException("Map is non-empty");
         return new SetFromMap<>(map);
     }
 
@@ -5869,12 +5871,10 @@ public class Collections {
         implements Set<E>, Serializable
     {
         @SuppressWarnings("serial") // Conditionally serializable
-        private final Map<E, Boolean> m;  // The backing map
+        final Map<E, Boolean> m;          // The backing map
         private transient Set<E> s;       // Its keySet
 
         SetFromMap(Map<E, Boolean> map) {
-            if (!map.isEmpty())
-                throw new IllegalArgumentException("Map is non-empty");
             m = map;
             s = map.keySet();
         }
@@ -5923,6 +5923,11 @@ public class Collections {
             stream.defaultReadObject();
             s = m.keySet();
         }
+
+        @java.io.Serial
+        private void readObjectNoData() throws java.io.ObjectStreamException {
+            throw new java.io.InvalidObjectException("missing SetFromMap data");
+        }
     }
 
     /**
@@ -5958,15 +5963,15 @@ public class Collections {
      * @since 21
      */
     public static <E> SequencedSet<E> newSequencedSetFromMap(SequencedMap<E, Boolean> map) {
+        if (! map.isEmpty())
+            throw new IllegalArgumentException("Map is non-empty");
         return new SequencedSetFromMap<>(map);
     }
 
-    // TODO: serialization
+    /**
+     * @serial include
+     */
     private static class SequencedSetFromMap<E> extends SetFromMap<E> implements SequencedSet<E> {
-        private static final long serialVersionUID = 0L;
-
-        transient final SequencedMap<E, Boolean> map;
-
         private final E nsee(Map.Entry<E, Boolean> e) {
             if (e == null) {
                 throw new NoSuchElementException();
@@ -5975,19 +5980,28 @@ public class Collections {
             }
         }
 
-        SequencedSetFromMap(SequencedMap<E, Boolean> map) {
-            super(map);
-            this.map = map;
+        private final SequencedMap<E, Boolean> map() {
+            return (SequencedMap<E, Boolean>) super.m;
         }
 
-        public SequencedSet<E> reversed() { return new SequencedSetFromMap<>(map.reversed()); }
+        SequencedSetFromMap(SequencedMap<E, Boolean> map) {
+            super(map);
+        }
 
-        public void addFirst(E e) { map.putFirst(e, Boolean.TRUE); }
-        public void addLast(E e)  { map.putLast(e, Boolean.TRUE); }
-        public E getFirst()       { return nsee(map.firstEntry()); }
-        public E getLast()        { return nsee(map.lastEntry()); }
-        public E removeFirst()    { return nsee(map.pollFirstEntry()); }
-        public E removeLast()     { return nsee(map.pollLastEntry()); }
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed map view, which usually isn't
+        // serializable.
+        public SequencedSet<E> reversed() { return new SequencedSetFromMap<>(map().reversed()); }
+
+        public void addFirst(E e) { map().putFirst(e, Boolean.TRUE); }
+        public void addLast(E e)  { map().putLast(e, Boolean.TRUE); }
+        public E getFirst()       { return nsee(map().firstEntry()); }
+        public E getLast()        { return nsee(map().lastEntry()); }
+        public E removeFirst()    { return nsee(map().pollFirstEntry()); }
+        public E removeLast()     { return nsee(map().pollLastEntry()); }
+
+        @java.io.Serial
+        private static final long serialVersionUID = -3943479744841433802L;
     }
 
     /**

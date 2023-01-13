@@ -48,6 +48,13 @@ public class Basic {
 
     static final List<String> ORIGINAL = List.of("a", "b", "c", "d", "e", "f", "g");
 
+    static SequencedSet<String> setFromMap(List<String> contents) {
+        var lhm = new LinkedHashMap<String, Boolean>();
+        var ss = Collections.newSequencedSetFromMap(lhm);
+        ss.addAll(contents);
+        return ss;
+    }
+
     @DataProvider(name="all")
     public Iterator<Object[]> all() {
         var result = new ArrayList<Object[]>();
@@ -63,6 +70,7 @@ public class Basic {
             new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
+            new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
@@ -77,6 +85,7 @@ public class Basic {
             new Object[] { "AsList", Arrays.asList(new String[0]), List.of() },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(), List.of() },
             new Object[] { "ListOf", List.of(), List.of() },
+            new Object[] { "SetFromMap", setFromMap(List.of()), List.of() },
             new Object[] { "SimpleDeque", new SimpleDeque<>(), List.of() },
             new Object[] { "SimpleList", new SimpleList<>(), List.of() },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(), List.of() },
@@ -90,6 +99,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL }
         ).iterator();
@@ -101,6 +111,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
