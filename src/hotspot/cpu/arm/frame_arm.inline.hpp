@@ -62,7 +62,7 @@ inline void frame::init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, add
   if (original_pc != nullptr) {
     _pc = original_pc;
     #ifdef ASSERT
-    if (JavaThread::currently_in_in_async_stack_walking()) {
+    if (!JavaThread::currently_in_async_stack_walking()) {
       assert(_cb->as_compiled_method()->insts_contains_inclusive(_pc),
              "original PC must be in the main code section of the compiled method (or must be immediately following it)");
     }

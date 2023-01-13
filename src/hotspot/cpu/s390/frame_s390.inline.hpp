@@ -61,7 +61,7 @@ inline void frame::setup() {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
     #ifdef ASSERT
-    if (JavaThread::currently_in_in_async_stack_walking()) {
+    if (!JavaThread::currently_in_async_stack_walking()) {
       assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
              "original PC must be in the main code section of the compiled method (or must be immediately following it)");
     }

@@ -334,7 +334,7 @@ bool frame::upcall_stub_frame_is_first() const {
 // for MethodHandle call sites.
 #ifdef ASSERT
 void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
-  if (JavaThread::currently_in_in_async_stack_walking()) {
+  if (JavaThread::currently_in_async_stack_walking()) {
     return;
   }
 

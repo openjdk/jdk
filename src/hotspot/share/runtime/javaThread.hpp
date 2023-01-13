@@ -1192,7 +1192,7 @@ public:
   inline bool in_async_stack_walking() { return _in_async_stack_walking; }
   inline void set_in_async_stack_walking(bool b) { _in_async_stack_walking = b; }
 
-  static bool currently_in_in_async_stack_walking() {
+  static bool currently_in_async_stack_walking() {
     JavaThread* thread = JavaThread::checked_current_or_null();
     return thread != NULL && thread->in_async_stack_walking();
   }
