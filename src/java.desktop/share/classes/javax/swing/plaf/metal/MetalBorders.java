@@ -249,11 +249,14 @@ public class MetalBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
-            SwingUtilities3.paintBorder(c, g, x, y, w, h, this::paintUnscaledBorder);
+            SwingUtilities3.paintBorder(c, g,
+                                        x, y, w, h,
+                                        this::paintUnscaledBorder);
         }
 
         private void paintUnscaledBorder(Component c, Graphics g,
-                                         int width, int height, double scaleFactor) {
+                                         int width, int height,
+                                         double scaleFactor) {
             Color background;
             Color highlight;
             Color shadow;
@@ -289,8 +292,7 @@ public class MetalBorders {
                 int corner = (int) Math.round(CORNER * scaleFactor);
 
                 if (g instanceof Graphics2D) {
-                    Graphics2D g2d = (Graphics2D) g;
-                    g2d.setStroke(new BasicStroke((float) stkWidth));
+                    ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
                 }
 
                 // Draw the Long highlight lines

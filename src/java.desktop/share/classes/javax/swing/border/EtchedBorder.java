@@ -150,15 +150,18 @@ public class EtchedBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        SwingUtilities3.paintBorder(c, g, x, y, width, height, this::paintUnscaledBorder);
+        SwingUtilities3.paintBorder(c, g,
+                                    x, y,
+                                    width, height,
+                                    this::paintUnscaledBorder);
     }
 
     private void paintUnscaledBorder(Component c, Graphics g,
-                                     int w, int h, double scaleFactor) {
+                                     int w, int h,
+                                     double scaleFactor) {
         int stkWidth = (int) Math.floor(scaleFactor);
         if (g instanceof Graphics2D) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setStroke(new BasicStroke((float) stkWidth));
+            ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
         }
 
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)

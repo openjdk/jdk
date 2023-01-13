@@ -143,14 +143,24 @@ public class SwingUtilities3 {
         return delegate;
     }
 
+    /**
+     * Used within border classes to add specific border implementation details.
+     */
     @FunctionalInterface
     public interface UnscaledBorderPainter {
         void paintUnscaledBorder(Component c, Graphics g,
-                                 int w, int h, double scaleFactor);
+                                 int w, int h,
+                                 double scaleFactor);
     }
 
-    public static void paintBorder(Component c, Graphics g, int x, int y,
-                                   int w, int h, UnscaledBorderPainter painter) {
+    /**
+     * Performs common scaling transformation steps required for rendering
+     * the border correctly at different scales.
+     */
+    public static void paintBorder(Component c, Graphics g,
+                                   int x, int y,
+                                   int w, int h,
+                                   UnscaledBorderPainter painter) {
 
         // Step 1: Reset Transform
         AffineTransform at = null;
@@ -169,8 +179,8 @@ public class SwingUtilities3 {
             oldStk = g2d.getStroke();
             scaleFactor = Math.min(at.getScaleX(), at.getScaleY());
 
-            // if m01 or m10 is non-zero, then there is a rotation or shear
-            // or if scale=1, skip resetting the transform
+            // if m01 or m10 is non-zero, then there is a rotation or shear,
+            // or if scale=1, skip resetting the transform in these cases.
             resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0))
                     && ((at.getScaleX() > 1) || (at.getScaleY() > 1));
 

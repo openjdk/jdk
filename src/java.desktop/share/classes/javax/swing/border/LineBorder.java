@@ -143,19 +143,25 @@ public class LineBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        SwingUtilities3.paintBorder(c, g, x, y, width, height, this::paintUnscaledBorder);
+        SwingUtilities3.paintBorder(c, g,
+                                    x, y,
+                                    width, height,
+                                    this::paintUnscaledBorder);
     }
 
     private void paintUnscaledBorder(Component c, Graphics g,
-                                     int w, int h, double scaleFactor) {
+                                     int w, int h,
+                                     double scaleFactor) {
         if ((this.thickness > 0) && (g instanceof Graphics2D)) {
             Graphics2D g2d = (Graphics2D) g;
-            int offs = this.thickness * (int) scaleFactor;
+
             Color oldColor = g2d.getColor();
             g2d.setColor(this.lineColor);
 
             Shape outer;
             Shape inner;
+
+            int offs = this.thickness * (int) scaleFactor;
             int size = offs + offs;
             if (this.roundedCorners) {
                 float arc = .2f * offs;
@@ -170,7 +176,8 @@ public class LineBorder extends AbstractBorder
             path.append(outer, false);
             path.append(inner, false);
             g2d.fill(path);
-            g.setColor(oldColor);
+
+            g2d.setColor(oldColor);
         }
     }
 
