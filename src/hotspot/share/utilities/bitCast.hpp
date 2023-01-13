@@ -32,18 +32,12 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-#include <stdint.h>
-#include <string.h>
-
+#include <cstdint>
+#include <cstring>
 #include <type_traits>
 
 // Trivial implementation when To and From are the same.
-template <typename To, typename From,
-          ENABLE_IF(sizeof(To) == sizeof(From) &&
-                    std::is_trivially_copyable<To>::value &&
-                    std::is_trivially_copyable<From>::value &&
-                    std::is_default_constructible<To>::value &&
-                    std::is_same<From, To>::value)>
+template <typename To, typename From, ENABLE_IF(std::is_same<From, To>::value)>
 constexpr To bit_cast(const From& from) {
   return from;
 }
@@ -196,13 +190,7 @@ inline To bit_cast(const From& from) {
 #else
   // Most modern compilers will produce optimal code for memcpy.
   To to;
-#if HAS_BUILTIN(__builtin_addressof)
-  ::memcpy(__builtin_addressof(to), __builtin_addressof(from), sizeof(To));
-#else
-  ::memcpy(reinterpret_cast<To*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(to))),
-           reinterpret_cast<From*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(from))),
-           sizeof(To));
-#endif
+  std::memcpy(&to, &from, sizeof(To));
   return to;
 #endif
 }
