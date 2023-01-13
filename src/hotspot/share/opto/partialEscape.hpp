@@ -80,7 +80,7 @@ class EscapedState: public ObjectState {
 
 template<typename K, typename V>
 using PEAMap = ResourceHashtable<K, V, 17, /*table_size*/
-                                 AnyObj::RESOURCE_AREA, mtCompiler>;
+                                 AnyObj::C_HEAP, mtCompiler>;
 // forward declaration
 class GraphKit;
 
@@ -105,7 +105,6 @@ class PEAState {
       return nullptr;
     }
   }
-
 
   bool contains(ObjID id) const {
 #ifdef ASSERT
