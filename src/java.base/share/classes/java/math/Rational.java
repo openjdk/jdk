@@ -126,8 +126,8 @@ public class Rational extends Number implements Comparable<Rational> {
                 int shift = Math.min(-exponent, Long.numberOfTrailingZeros(significand));
                 significand >>= shift;
                 exponent += shift;
-                // exponent <= 0
-                // now the significand and the denominator are relative primes
+                // now exponent <= 0
+                // and the significand and the denominator are relative primes
                 // the significand is odd or the denominator is one
                 
                 int quot = significand >>> -exponent;
