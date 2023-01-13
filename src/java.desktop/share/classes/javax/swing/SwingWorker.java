@@ -751,13 +751,6 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 }
             };
         if (SwingUtilities.isEventDispatchThread()) {
-            if (state != StateValue.DONE) {
-                do {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {}
-                } while (state != StateValue.DONE);
-            }
             doDone.run();
         } else {
             if (state != StateValue.DONE) {
