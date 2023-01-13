@@ -106,7 +106,6 @@ create-sysroot-riscv64:
         --with-version-opt="${JDK_VERSION_OPT}"                                \
         --with-sysroot=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}           \
         --with-boot-jdk=/usr/lib/jvm/temurin-20                                \
-        --with-build-jdk=/usr/lib/jvm/temurin-20                               \
         --disable-precompiled-headers                                          \
         --with-zlib=system
     - make ${MAKE_TARGETS} LOG_LEVEL=info
