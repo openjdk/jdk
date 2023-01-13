@@ -718,6 +718,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             RefSet<ExprRef> combinedRefs = new RefSet<>();
             for (List<JCCase> cases = t.cases; cases.nonEmpty(); cases = cases.tail) {
                 scan(cases.head.stats);
+                refs.replace(YieldRef.class, direct -> new ExprRef(depth, direct));
                 combinedRefs.addAll(refs.removeExprs(depth));
             }
             refs.addAll(combinedRefs);
@@ -727,6 +728,12 @@ class ThisEscapeAnalyzer extends TreeScanner {
     @Override
     public void visitCase(JCCase tree) {
         scan(tree.stats);          // no need to scan labels
+    }
+
+    @Override
+    public void visitYield(JCYield tree) {
+        scan(tree.value);
+        refs.replaceExprs(depth, YieldRef::new);
     }
 
     @Override
@@ -1320,6 +1327,15 @@ class ThisEscapeAnalyzer extends TreeScanner {
     private static class ReturnRef extends Ref {
 
         ReturnRef(boolean direct) {
+            super(0, direct);
+        }
+    }
+
+    /** A reference from the yield value of the current switch expression.
+     */
+    private static class YieldRef extends Ref {
+
+        YieldRef(boolean direct) {
             super(0, direct);
         }
     }
