@@ -123,6 +123,9 @@ class StackWalker {
 
   void process_normal();
 
+  // additional check used in process_normal
+  bool is_frame_indecipherable();
+
   void process_in_compiled();
 
 public:

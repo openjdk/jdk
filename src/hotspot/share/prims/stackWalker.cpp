@@ -385,6 +385,15 @@ void StackWalker::process() {
 // assumes that _frame has been advanced and not already in compiled stream
 // leaves the _frame unchanged
 void StackWalker::process_normal() {
+  if (!os::is_readable_pointer(_frame.cb())){
+    set_state(STACKWALKER_C_FRAME);
+    return;
+  }
+  if (is_frame_indecipherable()) {
+    set_state(STACKWALKER_INDECIPHERABLE_FRAME);
+    return;
+  }
+
   if (_frame.is_native_frame()) {
     CompiledMethod* nm = _frame.cb()->as_compiled_method();
     if (!is_decipherable_native_frame(&_frame, nm)) {
@@ -432,6 +441,15 @@ void StackWalker::process_normal() {
     }
   }
   set_state(STACKWALKER_C_FRAME);
+}
+
+bool StackWalker::is_frame_indecipherable() {
+  if (_frame.cb()->is_compiled()) {
+    if (!os::is_readable_pointer(_frame.cb()->as_compiled_method()->method())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // assumes that work has to be done with compiledFrameStream
