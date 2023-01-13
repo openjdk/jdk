@@ -55,20 +55,23 @@ inline size_t ZGranuleMap<T>::index_for_offset(uintptr_t offset) const {
 
 template <typename T>
 T* ZGranuleMap<T>::allocate_array(size_t count) {
-  size_t size = size_for_array(count);
-  void* addr = os::reserve_memory(size, !ExecMem, mtGC);
+  const size_t size = size_for_array(count);
+
+  void* const addr = os::reserve_memory(size, !ExecMem, mtGC);
   if (addr == nullptr) {
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to reserve ZGranuleMap memory");
   }
-  os::commit_memory_or_exit(static_cast<char*>(addr), size, !ExecMem, "Allocator (commit)");
+
+  os::commit_memory_or_exit(static_cast<char*>(addr), size, !ExecMem, "Failed to commit ZGranuleMap memory");
+
   return static_cast<T*>(addr);
 }
 
 template <typename T>
 void ZGranuleMap<T>::deallocate_array(T* ptr, size_t count) {
-  bool result = os::release_memory(static_cast<char*>(static_cast<void*>(ptr)),
-                                   size_for_array(count));
-  assert(result, "Allocator (release");
+  const bool result = os::release_memory(static_cast<char*>(static_cast<void*>(ptr)),
+                                         size_for_array(count));
+  assert(result, "Failed to release ZGranuleMap memory");
 }
 
 template <typename T>
