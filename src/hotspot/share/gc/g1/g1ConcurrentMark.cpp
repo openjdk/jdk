@@ -122,7 +122,7 @@ bool G1CMMarkStack::resize(size_t new_capacity) {
   return true;
 }
 
-TaskQueueEntryChunk* G1CMMarkStack::allocate_array(size_t count) {
+G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_array(size_t count) {
   const size_t size = size_for_array(count);
 
   void* const addr = os::reserve_memory(size, !ExecMem, mtGC);
