@@ -72,16 +72,13 @@ public class CustomApproveButtonTest {
             frame.pack();
             frame.setVisible(true);
 
-
             JButton customApproveButton = fileChooser.getUI().getDefaultButton(fileChooser);
 
             if (customApproveButton == null) {
-                fail("Cannot find Custom Approve Button in FileChooser!");
-                return;
+                throw new RuntimeException("Cannot find Approve button in FileChooser!");
             }
             if (customApproveButton.getText() == null) {
-                fail("Custom Approve Button Text is null in FileChooser!");
-                return;
+                throw new RuntimeException("Approve Button Text is null in FileChooser!");
             }
         } finally {
             if (frame != null) {
@@ -90,11 +87,7 @@ public class CustomApproveButtonTest {
         }
     }
 
-    private void fail(String s) {
-        throw new RuntimeException("Test failed: " + s);
-    }
-
-    private void setLookAndFeel(String laf) {
+    private static void setLookAndFeel(String laf) {
         try {
             UIManager.setLookAndFeel(laf);
         } catch (UnsupportedLookAndFeelException ignored) {
