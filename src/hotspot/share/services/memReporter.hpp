@@ -71,9 +71,13 @@ class MemReporterBase : public StackObj {
   }
 
   // Convert diff amount in bytes to current reporting scale
+  // We use int64_t instead of ssize_t because on 32-bit it allows us to express deltas larger than 2 gb.
+  // On 64-bit we never expect memory sizes larger than INT64_MAX.
   int64_t diff_in_current_scale(size_t s1, size_t s2) const {
     // _scale should not be 0, otherwise division by zero at return.
     assert(_scale != 0, "wrong scale");
+
+    LP64_ONLY(assert(s1 < INT64_MAX && s2 < INT64_MAX, "size overflow");)
 
     bool is_negative = false;
     if (s1 < s2) {
@@ -82,16 +86,20 @@ class MemReporterBase : public StackObj {
     }
 
     size_t amount = s1 - s2;
-    assert(amount <= SIZE_MAX - _scale / 2, "size_t overflow");
+    // We can split amount into p + q, where
+    //     q = amount % _scale
+    // and p = amount - q   (which is also (amount / _scale) * _scale).
+    // Then use
+    //   size_t scaled = (p + q + _scale/2) / _scale;
+    // =>
+    //   size_t scaled = (p / _scale) + ((q + _scale/2) / _scale);
+    // The lefthand side of the addition is exact.
+    // The righthand side is 0 if q <= (_scale - 1)/2, else 1. (The -1 is to account for odd _scale values.)
     size_t scaled = (amount / _scale);
     if ((amount % _scale) > (_scale - 1)/2) {
       scaled += 1;
     }
 
-    if (scaled == 0) {
-      return 0;
-    }
-    assert(scaled <= INT64_MAX, "overflow");
     int64_t result = static_cast<int64_t>(scaled);
     return is_negative ? -result : result;
   }
