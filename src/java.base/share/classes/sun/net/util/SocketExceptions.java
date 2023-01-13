@@ -68,23 +68,10 @@ public final class SocketExceptions {
     }
 
     private static IOException ofInet(IOException e, InetSocketAddress addr) {
-        int port = addr.getPort();
-        String host = addr.getHostString();
-        InetAddress resolved = addr.getAddress();
         StringBuilder sb = new StringBuilder();
         sb.append(e.getMessage());
         sb.append(": ");
-        sb.append(host);
-        if (resolved != null) {
-            String resolvedAddr = resolved.getHostAddress();
-            if (resolvedAddr != null && !resolvedAddr.equals(host)) {
-                sb.append('(');
-                sb.append(resolvedAddr);
-                sb.append(')');
-            }
-        }
-        sb.append(':');
-        sb.append(Integer.toString(port));
+        sb.append(addr.toString());
         String enhancedMsg = sb.toString();
         return create(e, enhancedMsg);
     }
