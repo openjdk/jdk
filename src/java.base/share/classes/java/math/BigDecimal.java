@@ -2349,7 +2349,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return this.multiply(this);
     }
 
-    private boolean isPowerOfTen() {
+    boolean isPowerOfTen() {
         return BigInteger.ONE.equals(this.unscaledValue());
     }
 
@@ -2368,7 +2368,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * the input and (result-ulp)^2 must be {@code <} the input.
      * </ul>
      */
-    boolean squareRootResultAssertions(BigDecimal result, MathContext mc) {
+    private boolean squareRootResultAssertions(BigDecimal result, MathContext mc) {
         if (result.signum() == 0) {
             return squareRootZeroResultAssertions(result, mc);
         } else {
