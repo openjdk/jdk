@@ -1277,9 +1277,9 @@ public class Rational extends Number implements Comparable<Rational> {
     @Override
     public String toString() {
         final int radix = 10;
-        int capacity = floor.numChars(radix, floor.bitLength());
-        capacity += numerator.numChars(radix, numerator.bitLength());
-        capacity += denominator.numChars(radix, denominator.bitLength());
+        int capacity = floor.numChars(radix);
+        capacity += numerator.numChars(radix);
+        capacity += denominator.numChars(radix);
         capacity += 2 + (signum == -1 ? 1 : 0);
         StringBuilder b = new StringBuilder(capacity);
 
