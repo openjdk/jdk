@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,9 +314,12 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
     assert(region().contains(aligned_region), "Sanity");
     // First we tell the OS which page size we want in the given range. The underlying
     // large page can be broken down if we require small pages.
-    os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
+    const size_t os_align = UseLargePages ? page_size() : os::vm_page_size();
+    os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // Then we uncommit the pages in the range.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
+    // The alignment_hint argument must be less than or equal to the small page
+    // size if not using large pages or else this function does nothing.
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), lgrp_id);
   }
@@ -373,12 +376,6 @@ void MutableNUMASpace::update() {
     }
   }
 
-  if (NUMAStats) {
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      lgrp_spaces()->at(i)->accumulate_statistics(page_size());
-    }
-  }
-
   scan_pages(NUMAPageScanRate);
 }
 
@@ -401,12 +398,6 @@ void MutableNUMASpace::accumulate_statistics() {
       lgrp_spaces()->at(i)->sample();
     }
     increment_samples_count();
-  }
-
-  if (NUMAStats) {
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      lgrp_spaces()->at(i)->accumulate_statistics(page_size());
-    }
   }
 }
 
@@ -867,14 +858,11 @@ void MutableNUMASpace::print_on(outputStream* st) const {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
       st->print("    local/remote/unbiased/uncommitted: " SIZE_FORMAT "K/"
-                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT
-                "K, large/small pages: " SIZE_FORMAT "/" SIZE_FORMAT "\n",
+                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT "K\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
                 ls->space_stats()->_unbiased_space / K,
-                ls->space_stats()->_uncommited_space / K,
-                ls->space_stats()->_large_pages,
-                ls->space_stats()->_small_pages);
+                ls->space_stats()->_uncommited_space / K);
     }
   }
 }
@@ -892,28 +880,25 @@ void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
   clear_space_stats();
   char *start = (char*)align_up(space()->bottom(), page_size);
   char* end = (char*)align_down(space()->end(), page_size);
-  if (start < end) {
-    for (char *p = start; p < end;) {
-      os::page_info info;
-      if (os::get_page_info(p, &info)) {
-        if (info.size > 0) {
-          if (info.size > (size_t)os::vm_page_size()) {
-            space_stats()->_large_pages++;
-          } else {
-            space_stats()->_small_pages++;
-          }
-          if (info.lgrp_id == lgrp_id()) {
-            space_stats()->_local_space += info.size;
-          } else {
-            space_stats()->_remote_space += info.size;
-          }
-          p += info.size;
-        } else {
-          p += os::vm_page_size();
+  for (char *p = start; p < end; ) {
+    static const size_t PagesPerIteration = 128;
+    const void* pages[PagesPerIteration];
+    int lgrp_ids[PagesPerIteration];
+
+    size_t npages = 0;
+    for (; npages < PagesPerIteration && p < end; p += os::vm_page_size()) {
+      pages[npages++] = p;
+    }
+
+    if (os::numa_get_group_ids_for_range(pages, lgrp_ids, npages)) {
+      for (size_t i = 0; i < npages; i++) {
+        if (lgrp_ids[i] < 0) {
           space_stats()->_uncommited_space += os::vm_page_size();
+        } else if (lgrp_ids[i] == lgrp_id()) {
+          space_stats()->_local_space += os::vm_page_size();
+        } else {
+          space_stats()->_remote_space += os::vm_page_size();
         }
-      } else {
-        return;
       }
     }
   }

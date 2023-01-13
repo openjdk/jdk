@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -505,7 +505,20 @@ class Address {
   }
 
   bool uses(Register reg) const {
-    return base() == reg || index() == reg;
+    switch (_mode) {
+    case literal:
+    case no_mode:
+      return false;
+    case base_plus_offset:
+    case base_plus_offset_reg:
+    case pre:
+    case post:
+    case post_reg:
+      return base() == reg || index() == reg;
+    default:
+      ShouldNotReachHere();
+      return false;
+    }
   }
 
   address target() const {
@@ -2716,6 +2729,7 @@ template<typename R, typename... Rx>
   INSN(fabd, 1, 1, 0b110101);
   INSN(fadd, 0, 0, 0b110101);
   INSN(fdiv, 1, 0, 0b111111);
+  INSN(faddp, 1, 0, 0b110101);
   INSN(fmul, 1, 0, 0b110111);
   INSN(fsub, 0, 1, 0b110101);
   INSN(fmla, 0, 0, 0b110011);
