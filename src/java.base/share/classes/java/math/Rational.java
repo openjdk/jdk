@@ -118,24 +118,29 @@ public class Rational extends Number implements Comparable<Rational> {
             floor = BigInteger.ZERO;
             numerator = BigInteger.ZERO;
             denominator = BigInteger.ONE;
-        } else if (exponent < 0) {
-            // Simplify even significands
-            int zeros = Long.numberOfTrailingZeros(significand);
-            significand >>= zeros;
-            exponent += zeros;
-
-            // now the significand and the denominator are relative primes
-            // the significand is odd and the denominator is a power of two
-            signum = sign;
-            int quot = significand >>> -exponent;
-            floor = BigInteger.valueOf(quot);
-            numerator = BigInteger.valueOf(significand - (quot << -exponent));
-            denominator = BigInteger.ONE.shiftLeft(-exponent);
         } else {
             signum = sign;
-            floor = BigInteger.valueOf(significand).shiftLeft(exponent);
-            numerator = BigInteger.ZERO;
-            denominator = BigInteger.ONE;
+
+            if (exponent < 0) {
+                // Simplify even significands
+                int zeros = Long.numberOfTrailingZeros(significand);
+                significand >>= zeros;
+                exponent += zeros;
+                // now the significand and the denominator are relative primes
+                // the significand is odd and the denominator is a power of two
+            }
+
+            // check the exponent again, may be changed
+            if (exponent < 0) {
+                int quot = significand >>> -exponent;
+                floor = BigInteger.valueOf(quot);
+                numerator = BigInteger.valueOf(significand - (quot << -exponent));
+                denominator = BigInteger.ONE.shiftLeft(-exponent);
+            } else {
+                floor = BigInteger.valueOf(significand).shiftLeft(exponent);
+                numerator = BigInteger.ZERO;
+                denominator = BigInteger.ONE;
+            }
         }
     }
 
