@@ -119,8 +119,8 @@ void ShenandoahMmuTracker::initialize() {
 ShenandoahGenerationSizer::ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_tracker)
   : _sizer_kind(SizerDefaults),
     _use_adaptive_sizing(true),
-    _min_desired_young_size(0),
-    _max_desired_young_size(0),
+    _min_desired_young_regions(0),
+    _max_desired_young_regions(0),
     _resize_increment(double(YoungGenerationSizeIncrement) / 100.0),
     _mmu_tracker(mmu_tracker) {
 
@@ -144,64 +144,62 @@ ShenandoahGenerationSizer::ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_t
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {
-    _min_desired_young_size = MAX2(NewSize, ShenandoahHeapRegion::region_size_bytes());
+    _min_desired_young_regions = MAX2(uint(NewSize / ShenandoahHeapRegion::region_size_bytes()), 1U);
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      _max_desired_young_size = MAX2(MaxNewSize, ShenandoahHeapRegion::region_size_bytes());
+      _max_desired_young_regions = MAX2(uint(MaxNewSize / ShenandoahHeapRegion::region_size_bytes()), 1U);
       _sizer_kind = SizerMaxAndNewSize;
-      _use_adaptive_sizing = _min_desired_young_size != _max_desired_young_size;
+      _use_adaptive_sizing = _min_desired_young_regions != _max_desired_young_regions;
     } else {
       _sizer_kind = SizerNewSizeOnly;
     }
   } else if (FLAG_IS_CMDLINE(MaxNewSize)) {
-    _max_desired_young_size = MAX2(MaxNewSize, ShenandoahHeapRegion::region_size_bytes());
+    _max_desired_young_regions = MAX2(uint(MaxNewSize / ShenandoahHeapRegion::region_size_bytes()), 1U);
     _sizer_kind = SizerMaxNewSizeOnly;
   }
 }
 
-size_t ShenandoahGenerationSizer::calculate_min_size(size_t heap_size) {
-  size_t default_value = (heap_size * ShenandoahMinYoungPercentage) / 100;
-  default_value &= ~ShenandoahHeapRegion::region_size_bytes_mask();
-  return MAX2(ShenandoahHeapRegion::region_size_bytes(), default_value);
+size_t ShenandoahGenerationSizer::calculate_min_young_regions(size_t heap_region_count) {
+  size_t min_young_regions = (heap_region_count * ShenandoahMinYoungPercentage) / 100;
+  return MAX2(uint(min_young_regions), 1U);
 }
 
-size_t ShenandoahGenerationSizer::calculate_max_size(size_t heap_size) {
-  size_t default_value = (heap_size * ShenandoahMaxYoungPercentage) / 100;
-  default_value &= ~ShenandoahHeapRegion::region_size_bytes_mask();
-  return MAX2(ShenandoahHeapRegion::region_size_bytes(), default_value);
+size_t ShenandoahGenerationSizer::calculate_max_young_regions(size_t heap_region_count) {
+  size_t max_young_regions = (heap_region_count * ShenandoahMaxYoungPercentage) / 100;
+  return MAX2(uint(max_young_regions), 1U);
 }
 
-void ShenandoahGenerationSizer::recalculate_min_max_young_length(size_t heap_size) {
-  assert(heap_size > 0, "Heap must be initialized");
+void ShenandoahGenerationSizer::recalculate_min_max_young_length(size_t heap_region_count) {
+  assert(heap_region_count > 0, "Heap must be initialized");
 
   switch (_sizer_kind) {
     case SizerDefaults:
-      _min_desired_young_size = calculate_min_size(heap_size);
-      _max_desired_young_size = calculate_max_size(heap_size);
+      _min_desired_young_regions = calculate_min_young_regions(heap_region_count);
+      _max_desired_young_regions = calculate_max_young_regions(heap_region_count);
       break;
     case SizerNewSizeOnly:
-      _max_desired_young_size = calculate_max_size(heap_size);
-      _max_desired_young_size = MAX2(_min_desired_young_size, _max_desired_young_size);
+      _max_desired_young_regions = calculate_max_young_regions(heap_region_count);
+      _max_desired_young_regions = MAX2(_min_desired_young_regions, _max_desired_young_regions);
       break;
     case SizerMaxNewSizeOnly:
-      _min_desired_young_size = calculate_min_size(heap_size);
-      _min_desired_young_size = MIN2(_min_desired_young_size, _max_desired_young_size);
+      _min_desired_young_regions = calculate_min_young_regions(heap_region_count);
+      _min_desired_young_regions = MIN2(_min_desired_young_regions, _max_desired_young_regions);
       break;
     case SizerMaxAndNewSize:
       // Do nothing. Values set on the command line, don't update them at runtime.
       break;
     case SizerNewRatio:
-      _min_desired_young_size = MAX2((heap_size / (NewRatio + 1)), ShenandoahHeapRegion::region_size_bytes());
-      _max_desired_young_size = _min_desired_young_size;
+      _min_desired_young_regions = MAX2(uint(heap_region_count / (NewRatio + 1)), 1U);
+      _max_desired_young_regions = _min_desired_young_regions;
       break;
     default:
       ShouldNotReachHere();
   }
 
-  assert(_min_desired_young_size <= _max_desired_young_size, "Invalid min/max young gen size values");
+  assert(_min_desired_young_regions <= _max_desired_young_regions, "Invalid min/max young gen size values");
 }
 
 void ShenandoahGenerationSizer::heap_size_changed(size_t heap_size) {
-  recalculate_min_max_young_length(heap_size);
+  recalculate_min_max_young_length(heap_size / ShenandoahHeapRegion::region_size_bytes());
 }
 
 bool ShenandoahGenerationSizer::adjust_generation_sizes() const {
@@ -261,52 +259,59 @@ bool ShenandoahGenerationSizer::transfer_capacity(ShenandoahGeneration* from, Sh
   }
 
   size_t regions_to_transfer = MAX2(1u, uint(double(available_regions) * _resize_increment));
-  size_t bytes_to_transfer = regions_to_transfer * ShenandoahHeapRegion::region_size_bytes();
   if (from->generation_mode() == YOUNG) {
-    bytes_to_transfer = adjust_transfer_from_young(from, bytes_to_transfer);
+    regions_to_transfer = adjust_transfer_from_young(from, regions_to_transfer);
   } else {
-    bytes_to_transfer = adjust_transfer_to_young(to, bytes_to_transfer);
+    regions_to_transfer = adjust_transfer_to_young(to, regions_to_transfer);
   }
 
-  if (bytes_to_transfer == 0) {
-    log_debug(gc)("No capacity available to transfer from: %s (" SIZE_FORMAT "%s) to: %s (" SIZE_FORMAT "%s)",
+  if (regions_to_transfer == 0) {
+    log_info(gc)("No capacity available to transfer from: %s (" SIZE_FORMAT "%s) to: %s (" SIZE_FORMAT "%s)",
                   from->name(), byte_size_in_proper_unit(from->max_capacity()), proper_unit_for_byte_size(from->max_capacity()),
                   to->name(), byte_size_in_proper_unit(to->max_capacity()), proper_unit_for_byte_size(to->max_capacity()));
     return false;
   }
 
-  assert(bytes_to_transfer <= regions_to_transfer * ShenandoahHeapRegion::region_size_bytes(), "Cannot transfer more than available in free regions.");
-  log_info(gc)("Transfer " SIZE_FORMAT "%s from %s to %s", byte_size_in_proper_unit(bytes_to_transfer),
-               proper_unit_for_byte_size(bytes_to_transfer), from->name(), to->name());
-  from->decrease_capacity(bytes_to_transfer);
-  to->increase_capacity(bytes_to_transfer);
+  log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s", regions_to_transfer, from->name(), to->name());
+  from->decrease_capacity(regions_to_transfer * ShenandoahHeapRegion::region_size_bytes());
+  to->increase_capacity(regions_to_transfer * ShenandoahHeapRegion::region_size_bytes());
   return true;
 }
 
-size_t ShenandoahGenerationSizer::adjust_transfer_from_young(ShenandoahGeneration* from, size_t bytes_to_transfer) const {
+size_t ShenandoahGenerationSizer::adjust_transfer_from_young(ShenandoahGeneration* from, size_t regions_to_transfer) const {
   assert(from->generation_mode() == YOUNG, "Expect to transfer from young");
-  size_t new_young_size = from->max_capacity() - bytes_to_transfer;
-  size_t minimum_size = min_young_size();
+  size_t young_capacity_regions = from->max_capacity() / ShenandoahHeapRegion::region_size_bytes();
+  size_t new_young_regions = young_capacity_regions - regions_to_transfer;
+  size_t minimum_young_regions = min_young_regions();
   // Check that we are not going to violate the minimum size constraint.
-  if (new_young_size < minimum_size) {
-    assert(minimum_size <= from->max_capacity(), "Young is under minimum capacity.");
+  if (new_young_regions < minimum_young_regions) {
+    assert(minimum_young_regions <= young_capacity_regions, "Young is under minimum capacity.");
     // If the transfer violates the minimum size and there is still some capacity to transfer,
     // adjust the transfer to take the size to the minimum. Note that this may be zero.
-    bytes_to_transfer = align_down(from->max_capacity() - minimum_size, ShenandoahHeapRegion::region_size_bytes());
+    regions_to_transfer = young_capacity_regions - minimum_young_regions;
   }
-  return bytes_to_transfer;
+  return regions_to_transfer;
 }
 
-size_t ShenandoahGenerationSizer::adjust_transfer_to_young(ShenandoahGeneration* to, size_t bytes_to_transfer) const {
+size_t ShenandoahGenerationSizer::adjust_transfer_to_young(ShenandoahGeneration* to, size_t regions_to_transfer) const {
   assert(to->generation_mode() == YOUNG, "Can only transfer between young and old.");
-  size_t new_young_size = to->max_capacity() + bytes_to_transfer;
-  size_t maximum_size = max_young_size();
+  size_t young_capacity_regions = to->max_capacity() / ShenandoahHeapRegion::region_size_bytes();
+  size_t new_young_regions = young_capacity_regions + regions_to_transfer;
+  size_t maximum_young_regions = max_young_regions();
   // Check that we are not going to violate the maximum size constraint.
-  if (new_young_size > maximum_size) {
-    assert(maximum_size >= to->max_capacity(), "Young is over maximum capacity");
+  if (new_young_regions > maximum_young_regions) {
+    assert(maximum_young_regions >= young_capacity_regions, "Young is over maximum capacity");
     // If the transfer violates the maximum size and there is still some capacity to transfer,
     // adjust the transfer to take the size to the maximum. Note that this may be zero.
-    bytes_to_transfer = align_down(maximum_size - to->max_capacity(), ShenandoahHeapRegion::region_size_bytes());
+    regions_to_transfer = maximum_young_regions - young_capacity_regions;
   }
-  return bytes_to_transfer;
+  return regions_to_transfer;
+}
+
+size_t ShenandoahGenerationSizer::min_young_size() const {
+  return min_young_regions() * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahGenerationSizer::max_young_size() const {
+  return max_young_regions() * ShenandoahHeapRegion::region_size_bytes();
 }

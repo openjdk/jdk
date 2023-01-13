@@ -101,23 +101,23 @@ private:
   // true otherwise.
   bool _use_adaptive_sizing;
 
-  size_t _min_desired_young_size;
-  size_t _max_desired_young_size;
+  size_t _min_desired_young_regions;
+  size_t _max_desired_young_regions;
 
   double _resize_increment;
   ShenandoahMmuTracker* _mmu_tracker;
 
-  static size_t calculate_min_size(size_t heap_size);
-  static size_t calculate_max_size(size_t heap_size);
+  static size_t calculate_min_young_regions(size_t heap_region_count);
+  static size_t calculate_max_young_regions(size_t heap_region_count);
 
   // Update the given values for minimum and maximum young gen length in regions
   // given the number of heap regions depending on the kind of sizing algorithm.
-  void recalculate_min_max_young_length(size_t heap_size);
+  void recalculate_min_max_young_length(size_t heap_region_count);
 
   // These two methods are responsible for enforcing the minimum and maximum
   // constraints for the size of the generations.
-  size_t adjust_transfer_from_young(ShenandoahGeneration* from, size_t bytes_to_transfer) const;
-  size_t adjust_transfer_to_young(ShenandoahGeneration* to, size_t bytes_to_transfer) const;
+  size_t adjust_transfer_from_young(ShenandoahGeneration* from, size_t regions_to_transfer) const;
+  size_t adjust_transfer_to_young(ShenandoahGeneration* to, size_t regions_to_transfer) const;
 
   // This will attempt to transfer capacity from one generation to the other. It
   // returns true if a transfer is made, false otherwise.
@@ -129,11 +129,16 @@ public:
   // depending on the sizing algorithm.
   void heap_size_changed(size_t heap_size);
 
-  size_t min_young_size() const {
-    return _min_desired_young_size;
+  // Minimum size of young generation in bytes as multiple of region size.
+  size_t min_young_size() const;
+  size_t min_young_regions() const {
+    return _min_desired_young_regions;
   }
-  size_t max_young_size() const {
-    return _max_desired_young_size;
+
+  // Maximum size of young generation in bytes as multiple of region size.
+  size_t max_young_size() const;
+  size_t max_young_regions() const {
+    return _max_desired_young_regions;
   }
 
   bool use_adaptive_sizing() const {
