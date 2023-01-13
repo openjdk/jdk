@@ -248,10 +248,9 @@ class AbstractAssembler : public ResourceObj  {
     address _nop_start;
    public:
     PostCallNopCounter(AbstractAssembler* assm) : _assm(assm), _nop_start(assm->pc()) {
-      assert(assm->inst_mark() == NULL, "overlapping instructions");
     }
     void register_nop() {
-        _assm->count_post_call_nop(_assm->pc() - _nop_start);
+      _assm->count_post_call_nop(_assm->pc() - _nop_start);
     }
   };
   friend class PostCallNopCounter;

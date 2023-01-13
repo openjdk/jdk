@@ -1122,13 +1122,13 @@ int ciMethod::code_size_for_inlining() {
 int ciMethod::instructions_size() {
   if (_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-                     CompiledMethod* code = get_Method()->code();
-                     if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
-                       _instructions_size = code->insts_end() - code->verified_entry_point();
-                     } else {
-                       _instructions_size = 0;
-                     }
-                     );
+      CompiledMethod* code = get_Method()->code();
+      if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
+        _instructions_size = code->insts_end() - code->verified_entry_point();
+      } else {
+        _instructions_size = 0;
+      }
+    );
   }
   return _instructions_size;
 }
@@ -1136,14 +1136,14 @@ int ciMethod::instructions_size() {
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-                     CompiledMethod* code = get_Method()->code();
-                     if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
-                       int isize = code->insts_end() - code->verified_entry_point() - code->post_call_nop_size();
-                       _inline_instructions_size = isize > 0 ? isize : 0;
-                     } else {
-                       _inline_instructions_size = 0;
-                     }
-                     );
+      CompiledMethod* code = get_Method()->code();
+      if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
+        int isize = code->insts_end() - code->verified_entry_point() - code->post_call_nop_size();
+        _inline_instructions_size = isize > 0 ? isize : 0;
+      } else {
+        _inline_instructions_size = 0;
+      }
+    );
   }
   return _inline_instructions_size;
 }

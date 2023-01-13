@@ -208,7 +208,7 @@ class CodeSection {
   }
 
   void count_post_call_nop(int size) {
-      _post_call_nop_size += size;
+    _post_call_nop_size += size;
   }
 
   // Code emission
