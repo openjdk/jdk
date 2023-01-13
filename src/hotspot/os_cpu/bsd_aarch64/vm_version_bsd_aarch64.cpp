@@ -58,19 +58,16 @@ void VM_Version::get_os_cpu_info() {
   // [1] https://developer.apple.com/documentation/kernel/1387446-sysctlbyname/determining_instruction_set_characteristics
   // [2] https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_mib.c
   //
-  // Note that for some features (e.g., ASIMD, LSE, SHA512 and SHA3) there are
-  // two parameters for sysctlbyname, which are invented at different times.
+  // Note that for some features (e.g., LSE, SHA512 and SHA3) there are two
+  // parameters for sysctlbyname, which are invented at different times.
   // Considering backward compatibility, we check both here.
   //
   // Floating-point and Advance SIMD features are standard in Apple processors
-  // beginning with M1 and A7 [1].
+  // beginning with M1 and A7, and don't need to be checked [1].
   // 1) hw.optional.floatingpoint always returns 1 [2].
   // 2) ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
   //    See the Arm ARM, section "ID_AA64PFR0_EL1, AArch64 Processor Feature
   //    Register 0".
-  assert(cpu_has("hw.optional.floatingpoint"), "should be");
-  assert(cpu_has("hw.optional.AdvSIMD") ||
-         cpu_has("hw.optional.neon"), "should be");
   _features = CPU_FP | CPU_ASIMD;
 
   // All Apple-darwin Arm processors have AES, PMULL, SHA1 and SHA2.
