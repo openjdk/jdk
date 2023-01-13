@@ -123,15 +123,13 @@ public class Rational extends Number implements Comparable<Rational> {
 
             if (exponent < 0) {
                 // Simplify even significands
-                int zeros = Long.numberOfTrailingZeros(significand);
-                significand >>= zeros;
-                exponent += zeros;
+                int shift = Math.min(-exponent, Long.numberOfTrailingZeros(significand));
+                significand >>= shift;
+                exponent += shift;
                 // now the significand and the denominator are relative primes
                 // the significand is odd and the denominator is a power of two
-            }
-
-            // check the exponent again, may be changed
-            if (exponent < 0) {
+                // and exponent <= 0
+                
                 int quot = significand >>> -exponent;
                 floor = BigInteger.valueOf(quot);
                 numerator = BigInteger.valueOf(significand - (quot << -exponent));
