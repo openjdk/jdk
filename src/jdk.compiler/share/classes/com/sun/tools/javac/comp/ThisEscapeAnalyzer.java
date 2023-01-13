@@ -297,34 +297,45 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // TODO: eliminate sealed classes where all permitted subclasses are in this compilation unit
 
-        // Now analyze all of the analyzable constructors we found
-        for (MethodInfo methodInfo : methodMap.values()) {
+        // Analyze non-static field initializers and initialization blocks,
+        // but only for classes having at least one analyzable constructor.
+        methodMap.values().stream()
+                .filter(MethodInfo::isAnalyzable)
+                .map(MethodInfo::getDeclaringClass)
+                .distinct()
+                .forEach(klass -> {
+            for (List<JCTree> defs = klass.defs; defs.nonEmpty(); defs = defs.tail) {
 
-            // We are looking for analyzable constructors only
-            if (!methodInfo.isAnalyzable())
-                continue;
+                // Ignore static stuff
+                if ((TreeInfo.flags(defs.head) & Flags.STATIC) != 0)
+                    continue;
 
-            // Analyze constructor body
-            targetClass = methodInfo.getDeclaringClass();
-            methodClass = targetClass;
-            Assert.check(depth == -1);
-            Assert.check(refs == null);
-            pushScope();
-            try {
+                // Handle field initializers
+                if (defs.head.hasTag(VARDEF)) {
+                    JCVariableDecl vardef = (JCVariableDecl)defs.head;
+                    visitTopLevel(klass, () -> {
+                        scan(vardef);
+                        copyPendingWarning();
+                    });
+                    continue;
+                }
 
-                // Add the initial 'this' reference
-                refs = RefSet.newEmpty();
-                refs.add(ThisRef.direct());
-
-                // Scan constructor statements
-                analyzeStatements(methodInfo.getDeclaration().body.stats);
-            } finally {
-                popScope();
-                methodClass = null;
-                targetClass = null;
-                refs = null;
+                // Handle initialization blocks
+                if (defs.head.hasTag(BLOCK)) {
+                    JCBlock block = (JCBlock)defs.head;
+                    visitTopLevel(klass, () -> analyzeStatements(block.stats));
+                    continue;
+                }
             }
-        }
+        });
+
+        // Analyze all of the analyzable constructors we found
+        methodMap.values().stream()
+                .filter(MethodInfo::isAnalyzable)
+                .forEach(methodInfo -> {
+            visitTopLevel(methodInfo.getDeclaringClass(),
+                () -> analyzeStatements(methodInfo.getDeclaration().body.stats));
+        });
 
         // Eliminate duplicate warnings. Warning B duplicates warning A if the stack trace of A is a prefix
         // of the stack trace of B. For example, if constructor Foo(int x) has a leak, and constructor
@@ -381,15 +392,12 @@ class ThisEscapeAnalyzer extends TreeScanner {
         warningList.clear();
     }
 
+    // Analyze statements, but stop at (and record) the first warning generated
     private void analyzeStatements(List<JCStatement> stats) {
         for (JCStatement stat : stats) {
-
-            // Analyze statement
             scan(stat);
-
-            // Capture any pending warning generated
             if (copyPendingWarning())
-                break;                      // report at most one warning per constructor
+                break;
         }
     }
 
@@ -512,13 +520,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 receiverRefs.add(ThisRef.indirect());
         }
 
-        // If "super()": ignore - we don't try to track into superclasses.
-        // However, we do need to "invoke" non-static initializers/blocks.
-        Name name = TreeInfo.name(invoke.meth);
-        if (name == names._super) {
-            scanInitializers();
+        // If "super()": ignore - we don't try to track into superclasses
+        if (TreeInfo.name(invoke.meth) == names._super)
             return;
-        }
 
         // "Invoke" the method
         invoke(invoke, sym, invoke.args, receiverRefs);
@@ -544,35 +548,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
             invokeInvokable(site, args, receiverRefs, methodInfo);
         else
             invokeUnknown(site, args, receiverRefs);
-    }
-
-    // Scan field initializers and initialization blocks
-    private void scanInitializers() {
-        DiagnosticPosition[] pendingWarningPrev = pendingWarning;
-        pendingWarning = null;
-        try {
-            for (List<JCTree> defs = methodClass.defs; defs.nonEmpty(); defs = defs.tail) {
-
-                // Ignore static stuff
-                if ((TreeInfo.flags(defs.head) & Flags.STATIC) != 0)
-                    continue;
-
-                // Handle field initializers
-                if (defs.head.hasTag(VARDEF)) {
-                    scan((JCVariableDecl)defs.head);
-                    copyPendingWarning();
-                    continue;
-                }
-
-                // Handle initialization block
-                if (defs.head.hasTag(BLOCK)) {
-                    visitScoped((JCBlock)defs.head, false, block -> analyzeStatements(block.stats));
-                    continue;
-                }
-            }
-        } finally {
-            pendingWarning = pendingWarningPrev;
-        }
     }
 
     // Handle the invocation of a local analyzable method or constructor
@@ -680,7 +655,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitBlock(JCBlock tree) {
-        visitScoped(tree, false, super::visitBlock);
+        visitScoped(false, () -> super.visitBlock(tree));
         Assert.check(checkInvariants(true, false));
     }
 
@@ -706,20 +681,20 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitSwitch(JCSwitch tree) {
-        visitScoped(tree, false, t -> {
-            scan(t.selector);
+        visitScoped(false, () -> {
+            scan(tree.selector);
             refs.discardExprs(depth);
-            scan(t.cases);
+            scan(tree.cases);
         });
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        visitScoped(tree, true, t -> {
-            scan(t.selector);
+        visitScoped(true, () -> {
+            scan(tree.selector);
             refs.discardExprs(depth);
             RefSet<ExprRef> combinedRefs = new RefSet<>();
-            for (List<JCCase> cases = t.cases; cases.nonEmpty(); cases = cases.tail) {
+            for (List<JCCase> cases = tree.cases; cases.nonEmpty(); cases = cases.tail) {
                 scan(cases.head.stats);
                 refs.replace(YieldRef.class, direct -> new ExprRef(depth, direct));
                 combinedRefs.addAll(refs.removeExprs(depth));
@@ -741,7 +716,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitLetExpr(LetExpr tree) {
-        visitScoped(tree, true, super::visitLetExpr);
+        visitScoped(true, () -> super.visitLetExpr(tree));
     }
 
     @Override
@@ -752,7 +727,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitLambda(JCLambda lambda) {
-        visitDeferred(() -> visitScoped(lambda, false, super::visitLambda));
+        visitDeferred(() -> visitScoped(false, () -> super.visitLambda(lambda)));
     }
 
     @Override
@@ -1060,6 +1035,29 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
 // Helper methods
 
+    private void visitTopLevel(JCClassDecl klass, Runnable action) {
+        Assert.check(targetClass == null);
+        Assert.check(methodClass == null);
+        Assert.check(depth == -1);
+        Assert.check(refs == null);
+        targetClass = klass;
+        methodClass = klass;
+        try {
+
+            // Add the initial 'this' reference
+            refs = RefSet.newEmpty();
+            refs.add(ThisRef.direct());
+
+            // Perform action
+            this.visitScoped(false, action);
+        } finally {
+            Assert.check(depth == -1);
+            methodClass = null;
+            targetClass = null;
+            refs = null;
+        }
+    }
+
     // Recurse through indirect code that might get executed later, e.g., a lambda.
     // We stash any pending warning and the current RefSet, then recurse into the deferred
     // code (still using the current RefSet) to see if it would leak. Then we restore the
@@ -1084,28 +1082,29 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     // Repeat loop as needed until the current set of references converges
     private <T extends JCTree> void visitLooped(T tree, Consumer<T> visitor) {
-        visitScoped(tree, false, t -> {
+        visitScoped(false, () -> {
             while (true) {
                 RefSet<Ref> prevRefs = refs.clone();
-                visitor.accept(t);
+                visitor.accept(tree);
                 if (refs.equals(prevRefs))
                     break;
             }
         });
     }
 
-    // Handle the tree node within a new scope
-    private <T extends JCTree> void visitScoped(T tree, boolean promote, Consumer<T> handler) {
+    // Perform the given action within a new scope
+    private <T> void visitScoped(boolean promote, Runnable action) {
         pushScope();
         try {
 
-            // Invoke handler
+            // Perform action
             Assert.check(checkInvariants(true, false));
-            handler.accept(tree);
+            action.run();
             Assert.check(checkInvariants(true, promote));
 
-            // "Promote" any remaining ExprRef's to the enclosing lexical scope
+            // "Promote" ExprRef's to the enclosing lexical scope, if requested
             if (promote) {
+                Assert.check(depth > 0);
                 refs.removeExprs(depth, direct -> refs.add(new ExprRef(depth - 1, direct)));
             }
         } finally {
