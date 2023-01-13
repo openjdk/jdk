@@ -45,6 +45,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -127,6 +128,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 class ThisEscapeAnalyzer extends TreeScanner {
 
     private final Names names;
+    private final Symtab syms;
     private final Types types;
     private final Log log;
     private       Lint lint;
@@ -186,8 +188,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
 // Constructor
 
-    ThisEscapeAnalyzer(Names names, Types types, Log log, Lint lint) {
+    ThisEscapeAnalyzer(Names names, Symtab syms, Types types, Log log, Lint lint) {
         this.names = names;
+        this.syms = syms;
         this.types = types;
         this.log = log;
         this.lint = lint;
@@ -530,7 +533,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Ignore final methods in java.lang.Object (getClass(), notify(), etc.)
         if (sym != null &&
             sym.owner.kind == TYP &&
-            ((ClassSymbol)sym.owner).fullname == names.java_lang_Object &&
+            sym.owner.type.tsym == syms.objectType.tsym &&
             sym.isFinal()) {
             return;
         }
