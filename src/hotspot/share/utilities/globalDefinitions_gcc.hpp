@@ -144,12 +144,12 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // chances we use our own implementation which both GCC/Clang ultimately produce a constant for but
 // is not a constant expression.
 #define offset_of(klass, field)                         \
-__attribute__((always_inline)) []() {                   \
+(__attribute__((always_inline)) []() {                  \
   alignas(klass) char space[sizeof(klass)];             \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
-}()
+}())
 
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"
