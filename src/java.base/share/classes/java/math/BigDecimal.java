@@ -4373,7 +4373,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @param b the BigInteger
      * @return the length of the unscaled value, in decimal digits
      */
-    private static int bigDigitLength(BigInteger b) {
+    static int bigDigitLength(BigInteger b) {
         /*
          * Same idea as the long version, but we need a better
          * approximation of log10(2). Using 646456993/2^31

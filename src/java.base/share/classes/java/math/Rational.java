@@ -870,7 +870,7 @@ public class Rational extends Number implements Comparable<Rational> {
         final int scaleAdjust;
         Rational working = this;
         if (floor.signum == 1) { // non-zero integer part
-            int scale = -new BigDecimal(floor).precision();
+            int scale = -BigDecimal.bigDigitLength(floor);
             // scaleAdjust must be even
             scaleAdjust = scale & 1 == 0 ? scale : scale + 1;
 
