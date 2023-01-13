@@ -87,6 +87,11 @@ class JavaThread: public Thread {
  private:
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
 
+#ifdef ASSERT
+  // to adapt assertions during asynchronous stack walking
+  bool _in_async_stack_walking;
+#endif
+
   // All references to Java objects managed via OopHandles. These
   // have to be released by the ServiceThread after the JavaThread has
   // terminated - see add_oop_handles_for_release().
@@ -978,6 +983,10 @@ private:
   // Returns the current thread as a JavaThread, or nullptr if not attached
   static inline JavaThread* current_or_null();
 
+  // Returns the current thread as a JavaThread, or NULL if not attached,
+  // or if the current thread is not a JavaThread
+  static inline JavaThread* checked_current_or_null();
+
   // Casts
   static JavaThread* cast(Thread* t) {
     assert(t->is_Java_thread(), "incorrect cast to JavaThread");
@@ -1178,6 +1187,17 @@ public:
   // resource allocation failure.
   static void vm_exit_on_osthread_failure(JavaThread* thread);
 
+ #ifdef ASSERT
+  // to adapt assertions during asynchronous stack walking
+  inline bool in_async_stack_walking() { return _in_async_stack_walking; }
+  inline void set_in_async_stack_walking(bool b) { _in_async_stack_walking = b; }
+
+  static bool currently_in_in_async_stack_walking() {
+    JavaThread* thread = JavaThread::checked_current_or_null();
+    return thread != NULL && thread->in_async_stack_walking();
+  }
+ #endif
+
   // Deferred OopHandle release support
  private:
   // List of OopHandles to be released - guarded by the Service_lock.
@@ -1196,6 +1216,11 @@ public:
 inline JavaThread* JavaThread::current_or_null() {
   Thread* current = Thread::current_or_null();
   return current != nullptr ? JavaThread::cast(current) : nullptr;
+}
+
+inline JavaThread* JavaThread::checked_current_or_null() {
+  Thread* current = Thread::current_or_null();
+  return current != nullptr && current->is_Java_thread() ? JavaThread::cast(current) : nullptr;
 }
 
 class UnlockFlagSaver {

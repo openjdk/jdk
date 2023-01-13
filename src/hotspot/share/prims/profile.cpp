@@ -200,6 +200,8 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     return;
   }
 
+  DEBUG_ONLY(thread->set_in_async_stack_walking(true));
+
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
@@ -222,6 +224,7 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
         // check without forced ucontext again
         if (!include_c_frames || !thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, false)) {
           trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
+          DEBUG_ONLY(thread->set_in_async_stack_walking(false));
           return;
         }
       }
@@ -234,4 +237,5 @@ extern "C" JNIEXPORT void AsyncGetStackTrace(ASGST_CallTrace *trace, jint depth,
     trace->num_frames = (jint)ASGST_UNKNOWN_STATE; // -7
     break;
   }
+  DEBUG_ONLY(thread->set_in_async_stack_walking(false));
 }

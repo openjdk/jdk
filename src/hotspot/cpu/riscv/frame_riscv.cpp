@@ -393,6 +393,10 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
 // given unextended SP.
 #ifdef ASSERT
 void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp) {
+  if (JavaThread::currently_in_in_async_stack_walking()) {
+    return;
+  }
+
   frame fr;
 
   // This is ugly but it's better than to change {get,set}_original_pc
