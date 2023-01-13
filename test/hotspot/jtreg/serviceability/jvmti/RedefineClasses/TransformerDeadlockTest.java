@@ -58,7 +58,7 @@ public class TransformerDeadlockTest {
         String agentJar = buildAgent();
         ProcessTools.executeProcess(
                 ProcessTools.createJavaProcessBuilder(
-                        "-javaagent:" + agentJar,
+                        "-javaagent:" + agentJar, "-Xlog:exceptions", "-XX:+UseNewCode2",
                         TransformerDeadlockTest.Agent.class.getName())
         ).shouldHaveExitValue(0);
     }

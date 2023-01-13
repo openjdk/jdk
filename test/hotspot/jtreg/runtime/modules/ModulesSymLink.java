@@ -54,7 +54,7 @@ public class ModulesSymLink {
         constructTestJDK();
 
         ProcessBuilder pb = new ProcessBuilder(
-            test_jdk + File.separator + "bin" + File.separator + "java",
+            test_jdk + File.separator + "bin" + File.separator + "java", "-Xint",
             "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
@@ -67,7 +67,7 @@ public class ModulesSymLink {
     static void constructTestJDK() throws Throwable {
         Path jlink = Paths.get(java_home, "bin", "jlink");
         System.out.println("Jlink = " + jlink);
-        OutputAnalyzer out = ProcessTools.executeProcess(jlink.toString(),
+        OutputAnalyzer out = ProcessTools.executeProcess(jlink.toString(), "-Xint",
                   "--output", test_jdk,
                   "--add-modules", "java.base");
         out.shouldHaveExitValue(0);

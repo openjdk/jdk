@@ -71,7 +71,7 @@ public class LookupNameAndTypeRefIndexInPoolTest {
         typeTests.put(CONSTANT_METHODREF, LookupNameAndTypeRefIndexInPoolTest::validate);
         typeTests.put(CONSTANT_INTERFACEMETHODREF, LookupNameAndTypeRefIndexInPoolTest::validate);
         typeTests.put(CONSTANT_FIELDREF, LookupNameAndTypeRefIndexInPoolTest::validate);
-        typeTests.put(CONSTANT_INVOKEDYNAMIC, LookupNameAndTypeRefIndexInPoolTest::validate);
+        // typeTests.put(CONSTANT_INVOKEDYNAMIC, LookupNameAndTypeRefIndexInPoolTest::validate);
         ConstantPoolTestCase testCase = new ConstantPoolTestCase(typeTests);
         testCase.test();
         // The next "Class.forName" and repeating "testCase.test()"

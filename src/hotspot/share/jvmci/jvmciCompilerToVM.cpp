@@ -275,6 +275,7 @@ C2V_VMENTRY_NULL(jbyteArray, getBytecode, (JNIEnv* env, jobject, ARGUMENT_PAIR(m
         }
 
         case Bytecodes::_invokedynamic: {
+          fatal("jvmciCompilerToVM indy");
           int cp_index = Bytes::get_native_u4((address) reconstituted_code + (bci + 1));
           Bytes::put_Java_u4((address) reconstituted_code + (bci + 1), (u4) cp_index);
           break;
@@ -1515,6 +1516,12 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
     }
 
     return Bytecodes::_invokevirtual;
+  }
+  if (cp->is_invokedynamic_index(index)) {
+    fatal("1");
+    if (cp->resolved_indy_info(cp->decode_cpcache_index(index))->is_resolved()) {
+      return Bytecodes::_invokedynamic;
+    }
   }
   if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
     return Bytecodes::_invokedynamic;

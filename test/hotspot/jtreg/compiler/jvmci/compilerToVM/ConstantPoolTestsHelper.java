@@ -81,6 +81,7 @@ public class ConstantPoolTestsHelper {
             for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
                 if (WB.remapInstructionOperandFromCPCache(this.klass, cpci) == cpi) {
                     if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
+                        System.out.println(cpci);
                         return WB.encodeConstantPoolIndyIndex(cpci) + indexTag;
                     }
                     return cpci;

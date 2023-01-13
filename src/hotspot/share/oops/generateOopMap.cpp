@@ -1317,6 +1317,10 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokedynamic:
+      if (UseNewIndyCode) {
+        // Use resolved indyinfo
+      }
+      break;
     case Bytecodes::_invokeinterface: {
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
       ConstantPool* cp      = method()->constants();

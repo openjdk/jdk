@@ -89,6 +89,9 @@ public:
         _resolution_failed = true;
     }
 
+    void adjust_method_entry(Method* new_method) { _method = new_method; }
+    bool check_no_old_or_obsolete_entry();
+
     void metaspace_pointers_do(MetaspaceClosure* it);
 
     // Offsets

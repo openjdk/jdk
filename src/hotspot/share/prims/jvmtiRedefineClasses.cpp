@@ -612,7 +612,6 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     {
       // leave a breadcrumb
       jbyte bad_value = scratch_cp->tag_at(scratch_i).value();
-      ShouldNotReachHere();
     } break;
   } // end switch tag value
 } // end append_entry()
@@ -1425,6 +1424,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
       } else if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
       } else {  // Just in case more exceptions can be thrown..
+        ShouldNotReachHere();
         return JVMTI_ERROR_FAILS_VERIFICATION;
       }
     }
@@ -1485,6 +1485,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
         return JVMTI_ERROR_OUT_OF_MEMORY;
       } else {
         // tell the caller the bytecodes are bad
+        //fatal("2");
         return JVMTI_ERROR_FAILS_VERIFICATION;
       }
     }

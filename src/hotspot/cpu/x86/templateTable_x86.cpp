@@ -3991,7 +3991,6 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ profile_arguments_type(rdx, rbx_method, rbcp, false);
 
   __ verify_oop(rax_callsite);
-  if (UseNewCode2) {__ hlt();}
   __ jump_from_interpreted(rbx_method, rdx);
 }
 

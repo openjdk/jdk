@@ -819,6 +819,17 @@ void ConstantPoolCache::set_archived_references(oop o) {
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
 void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
+  if (UseNewIndyCode && _resolved_indy_info != nullptr) {
+    for (int j = 0; j < _resolved_indy_info->length(); j++) {
+      Method* old_method = resolved_indy_info(j)->method();
+      if (old_method == nullptr || !old_method->is_old()) {
+        continue;
+      }
+      Method* new_method = old_method->get_new_method();
+      resolved_indy_info(j)->adjust_method_entry(new_method);
+      log_adjust("indy", old_method, new_method, trace_name_printed);
+    }
+  }
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* entry = entry_at(i);
     Method* old_method = entry->get_interesting_method_entry();
@@ -838,6 +849,19 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   ResourceMark rm;
+  if (UseNewIndyCode && _resolved_indy_info) {
+    for (int i = 0; i < _resolved_indy_info->length(); i++) {
+      Method* m = resolved_indy_info(i)->method();
+      if (m != nullptr && !resolved_indy_info(i)->check_no_old_or_obsolete_entry()) {
+        log_trace(redefine, class, update, constantpool)
+          ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
+           constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
+        return false;
+      }
+    }
+    //return true;
+  }
+
   for (int i = 1; i < length(); i++) {
     Method* m = entry_at(i)->get_interesting_method_entry();
     if (m != NULL && !entry_at(i)->check_no_old_or_obsolete_entries()) {
