@@ -77,14 +77,14 @@ import java.util.zip.ZipOutputStream;
  * <p>
  * Example:
  * {@snippet lang="java" :
- * JarSigner signer = new JarSigner.Builder(key, certPath)
- *         .digestAlgorithm("SHA-256")
- *         .signatureAlgorithm("SHA256withRSA")
- *         .build();
- * try (ZipFile in = new ZipFile(inputFile);
- *         FileOutputStream out = new FileOutputStream(outputFile)) {
- *     signer.sign(in, out);
- * }
+ *     JarSigner signer = new JarSigner.Builder(key, certPath)
+ *             .digestAlgorithm("SHA-256")
+ *             .signatureAlgorithm("SHA256withRSA")
+ *             .build();
+ *     try (ZipFile  in = new ZipFile(inputFile);
+ *             FileOutputStream out = new FileOutputStream(outputFile)) {
+ *         signer.sign(in, out);
+ *     }
  * }
  *
  * @since 9
