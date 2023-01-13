@@ -334,7 +334,7 @@ void LivenessEstimatorThread::verify_estimate() {
   long count_difference = long(_actual_object_count) - long(all_object_count);
   long size_difference = long(_actual_object_size_words) - long(all_object_size_words);
 
-  log_info(gc, estimator)("Verified - estimate: " INT64_FORMAT " objects, " INT64_FORMAT " bytes.",
+  log_info(gc, estimator)("Verified - estimate: %ld objects, %ld bytes.",
                       count_difference, size_difference * HeapWordSize);
 }
 
