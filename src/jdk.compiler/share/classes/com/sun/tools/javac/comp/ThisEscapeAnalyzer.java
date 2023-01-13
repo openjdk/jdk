@@ -622,10 +622,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             }
 
             // "Return" any references from method return value
-            if (refs.remove(ReturnRef.direct()))
-                refsPrev.add(ExprRef.direct(depthPrev));
-            if (refs.remove(ReturnRef.indirect()))
-                refsPrev.add(ExprRef.indirect(depthPrev));
+            refs.mapInto(refsPrev, ReturnRef.class, direct -> new ExprRef(depthPrev, direct));
         } finally {
             callStack.pop();
             depth = depthPrev;
@@ -669,10 +666,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             scan(explicitOuterThis);
             refs.removeExprs(depth, direct -> outerRefs.add(new OuterRef(direct)));
         } else if (type.tsym != methodClass.sym && type.tsym.isEnclosedBy(methodClass.sym)) {
-            if (refs.contains(ThisRef.direct()))
-                outerRefs.add(OuterRef.direct());
-            if (refs.contains(ThisRef.indirect()))
-                outerRefs.add(OuterRef.indirect());
+            refs.mapInto(outerRefs, ThisRef.class, OuterRef::new);
         }
         return outerRefs;
     }
@@ -787,10 +781,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Explicit 'this' reference?
         Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
         if (isExplicitThisReference(types, currentClassType, tree)) {
-            if (refs.contains(ThisRef.direct()))
-                refs.add(ExprRef.direct(depth));
-            if (refs.contains(ThisRef.indirect()))
-                refs.add(ExprRef.indirect(depth));
+            refs.mapInto(refs, ThisRef.class, direct -> new ExprRef(depth, direct));
             return;
         }
 
@@ -802,10 +793,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
             if (tree.name == names._this &&
                     selectedTypeSym != currentClassSym &&
                     currentClassSym.isEnclosedBy(selectedTypeSym)) {
-                if (refs.contains(OuterRef.direct()))
-                    refs.add(ExprRef.direct(depth));
-                if (refs.contains(OuterRef.indirect()))
-                    refs.add(ExprRef.indirect(depth));
+                refs.mapInto(refs, OuterRef.class, direct -> new ExprRef(depth, direct));
                 return;
             }
         }
@@ -843,10 +831,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         case ARRAY_CTOR:
             return;
         case SUPER:
-            if (refs.contains(ThisRef.direct()))
-                receiverRefs.add(ThisRef.direct());
-            if (refs.contains(ThisRef.indirect()))
-                receiverRefs.add(ThisRef.indirect());
+            refs.mapInto(receiverRefs, ThisRef.class, ThisRef::new);
             break;
         case BOUND:
             if (direct)
@@ -870,10 +855,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Reference to this?
         if (tree.name == names._this || tree.name == names._super) {
-            if (refs.contains(ThisRef.direct()))
-                refs.add(ExprRef.direct(depth));
-            if (refs.contains(ThisRef.indirect()))
-                refs.add(ExprRef.indirect(depth));
+            refs.mapInto(refs, ThisRef.class, direct -> new ExprRef(depth, direct));
             return;
         }
 
@@ -895,19 +877,13 @@ class ThisEscapeAnalyzer extends TreeScanner {
             // Check for implicit 'this' reference
             ClassSymbol methodClassSym = methodClass.sym;
             if (methodClassSym.isSubClass(sym.owner, types)) {
-                if (refs.contains(ThisRef.direct()))
-                    refs.add(ExprRef.direct(depth));
-                if (refs.contains(ThisRef.indirect()))
-                    refs.add(ExprRef.indirect(depth));
+                refs.mapInto(refs, ThisRef.class, direct -> new ExprRef(depth, direct));
                 return;
             }
 
             // Check for implicit outer 'this' reference
             if (methodClassSym.isEnclosedBy((ClassSymbol)sym.owner)) {
-                if (refs.contains(OuterRef.direct()))
-                    refs.add(ExprRef.direct(depth));
-                if (refs.contains(OuterRef.indirect()))
-                    refs.add(ExprRef.indirect(depth));
+                refs.mapInto(refs, OuterRef.class, direct -> new ExprRef(depth, direct));
                 return;
             }
 
@@ -1319,14 +1295,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
         OuterRef(boolean direct) {
             super(0, direct);
         }
-
-        public static OuterRef direct() {
-            return new OuterRef(true);
-        }
-
-        public static OuterRef indirect() {
-            return new OuterRef(false);
-        }
     }
 
     /** A reference from the expression that was just evaluated.
@@ -1353,14 +1321,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         ReturnRef(boolean direct) {
             super(0, direct);
-        }
-
-        public static ReturnRef direct() {
-            return new ReturnRef(true);
-        }
-
-        public static ReturnRef indirect() {
-            return new ReturnRef(false);
         }
     }
 
@@ -1449,10 +1409,37 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         /**
+         * Replace any references of the given type.
+         */
+        public void replace(Class<? extends Ref> type, Function<Boolean, ? extends T> mapper) {
+            final List<Ref> oldRefs = this.stream()
+              .filter(type::isInstance)
+              .collect(List.collector());             // avoid ConcurrentModificationException
+            this.removeAll(oldRefs);
+            oldRefs.stream()
+              .map(Ref::isDirect)
+              .map(mapper)
+              .forEach(this::add);
+        }
+
+        /**
          * Replace any {@link ExprRef}'s at the specified depth.
          */
         public void replaceExprs(int depth, Function<Boolean, ? extends T> mapper) {
             removeExprs(depth, direct -> add(mapper.apply(direct)));
+        }
+
+        /**
+         * Find references of the given type, map them, and add them to {@code dest}.
+         */
+        public <S extends Ref> void mapInto(RefSet<S> dest, Class<? extends Ref> type,
+                Function<Boolean, ? extends S> mapper) {
+            final List<S> newRefs = this.stream()
+              .filter(type::isInstance)
+              .map(Ref::isDirect)
+              .map(mapper)
+              .collect(List.collector());             // avoid ConcurrentModificationException
+            dest.addAll(newRefs);
         }
 
         @Override
