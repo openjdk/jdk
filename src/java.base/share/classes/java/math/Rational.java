@@ -971,13 +971,14 @@ public class Rational extends Number implements Comparable<Rational> {
         } while (guessPrecision < targetPrecision + 2);
 
         Rational result = approx;
-        
+
         if (scaleAdjust != 0)
             if (floor.signum == 1) { // non-zero integer part
                 Rational mul = new Rational(1, BigDecimal.bigTenToThe(-scaleAdjust / 2));
                 result = result.multiply(mul);
             } else {
-                Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigDecimal.bigTenToThe(scaleAdjust / 2));
+                Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE,
+                        BigDecimal.bigTenToThe(scaleAdjust / 2));
                 result = result.multiply(mul);
             }
 
@@ -1276,17 +1277,17 @@ public class Rational extends Number implements Comparable<Rational> {
     @Override
     public String toString() {
         final int radix = 10;
-        int capacity = floor.numChars(radix);
-        capacity += numerator.numChars(radix);
-        capacity += denominator.numChars(radix);
+        int capacity = floor.numChars(radix, floor.bitLength());
+        capacity += numerator.numChars(radix, numerator.bitLength());
+        capacity += denominator.numChars(radix, denominator.bitLength());
         capacity += 2 + (signum == -1 ? 1 : 0);
         StringBuilder b = new StringBuilder(capacity);
 
         if (signum == -1)
             b.append('-');
 
-        return b.append(floor).append(signum == -1 ? '-' : '+').append(numerator).append('/').append(denominator)
-                .toString();
+        b.append(floor).append(signum == -1 ? '-' : '+').append(numerator).append('/').append(denominator);
+        return b.toString();
     }
 
     // Hash Function
