@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/heapShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -432,14 +431,6 @@ PackageEntry* ObjArrayKlass::package() const {
   assert(bottom_klass() != NULL, "ObjArrayKlass returned unexpected NULL bottom_klass");
   return bottom_klass()->package();
 }
-
-#if INCLUDE_CDS_JAVA_HEAP
-void ObjArrayKlass::deallocate_contents(ClassLoaderData* loader_data) {
-  if (DumpSharedSpaces) {
-    HeapShared::remove_scratch_objects(this);
-  }
-}
-#endif
 
 // Printing
 
