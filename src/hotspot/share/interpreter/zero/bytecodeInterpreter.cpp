@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-
-// no precompiled headers
 
 /*
  * USELABELS - If using GCC, then use labels for the opcode dispatching
@@ -2129,7 +2127,7 @@ run:
 
           case JVM_CONSTANT_String:
             {
-              oop result = constants->resolved_references()->obj_at(index);
+              oop result = constants->resolved_reference_at(index);
               if (result == NULL) {
                 CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
                 SET_STACK_OBJECT(THREAD->vm_result(), 0);
@@ -2234,7 +2232,7 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPool* constants = METHOD->constants();
-        oop result = constants->resolved_references()->obj_at(index);
+        oop result = constants->resolved_reference_at(index);
         if (result == NULL) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);

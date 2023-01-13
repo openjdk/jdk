@@ -179,7 +179,6 @@ class CheckCastPPNode: public ConstraintCastNode {
     init_req(0, c);
   }
 
-  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }

@@ -24,8 +24,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
-#include "runtime/os.hpp" // malloc
 
 static LogDecorators::Decorator decorator_array[] = {
 #define DECORATOR(name, abbr) LogDecorators::name##_decorator,
@@ -174,7 +174,7 @@ TEST(LogDecorators, combine_with) {
 
   // Select first and third decorator for dec1
   char input[64];
-  sprintf(input, "%s,%s", decorator_name_array[0], decorator_name_array[3]);
+  os::snprintf_checked(input, sizeof(input), "%s,%s", decorator_name_array[0], decorator_name_array[3]);
   dec1.parse(input);
   EXPECT_TRUE(dec1.is_decorator(decorator_array[0]));
   EXPECT_TRUE(dec1.is_decorator(decorator_array[3]));

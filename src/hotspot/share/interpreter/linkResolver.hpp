@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,26 +154,29 @@ class LinkInfo : public StackObj {
            AccessCheck check_access = AccessCheck::required,
            LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_klass), _current_method(methodHandle()),
-    _check_access(check_access == AccessCheck::required),
-    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+      _name(name),
+      _signature(signature),
+      _resolved_klass(resolved_klass),
+      _current_klass(current_klass),
+      _current_method(methodHandle()),
+      _check_access(check_access == AccessCheck::required),
+      _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required),
+      _tag(tag) {
+    assert(_resolved_klass != nullptr, "must always have a resolved_klass");
+  }
 
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, const methodHandle& current_method,
            AccessCheck check_access = AccessCheck::required,
            LoaderConstraintCheck check_loader_constraints = LoaderConstraintCheck::required,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_method->method_holder()), _current_method(current_method),
-    _check_access(check_access == AccessCheck::required),
-    _check_loader_constraints(check_loader_constraints == LoaderConstraintCheck::required), _tag(tag) {}
+    LinkInfo(resolved_klass, name, signature, current_method->method_holder(), check_access, check_loader_constraints, tag) {
+    _current_method = current_method;
+  }
 
-
-  // Case where we just find the method and don't check access against the current class
+  // Case where we just find the method and don't check access against the current class, used by JavaCalls
   LinkInfo(Klass* resolved_klass, Symbol*name, Symbol* signature) :
-    _name(name),
-    _signature(signature), _resolved_klass(resolved_klass), _current_klass(NULL), _current_method(methodHandle()),
-    _check_access(false), _check_loader_constraints(false), _tag(JVM_CONSTANT_Invalid) {}
+    LinkInfo(resolved_klass, name, signature, nullptr, AccessCheck::skip, LoaderConstraintCheck::skip,
+             JVM_CONSTANT_Invalid) {}
 
   // accessors
   Symbol* name() const                  { return _name; }

@@ -446,12 +446,14 @@ extern "C" JNIEXPORT void disnm(intptr_t p) {
 
 extern "C" JNIEXPORT void printnm(intptr_t p) {
   char buffer[256];
-  sprintf(buffer, "printnm: " INTPTR_FORMAT, p);
+  os::snprintf_checked(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
   CodeBlob* cb = CodeCache::find_blob((address) p);
-  if (cb->is_nmethod()) {
+  if (cb != NULL && cb->is_nmethod()) {
     nmethod* nm = (nmethod*)cb;
     nm->print_nmethod(true);
+  } else {
+    tty->print_cr("Invalid address");
   }
 }
 
@@ -745,7 +747,7 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
   Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
+  VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
 }
 
 //
@@ -765,7 +767,7 @@ extern "C" JNIEXPORT void pns2() { // print native stack
   } else {
     Thread* t = Thread::current_or_null();
     frame fr = os::current_frame();
-    VMError::print_native_stack(tty, fr, t, false, buf, sizeof(buf));
+    VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
   }
 }
 #endif

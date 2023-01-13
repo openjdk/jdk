@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import toolbox.ToolBox;
 public class TestJavaFXMissingPropComments extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestJavaFXMissingPropComments tester = new TestJavaFXMissingPropComments();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestJavaFXMissingPropComments();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();
@@ -100,7 +100,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     <dd>the value of the <code>value</code> property</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#valueProperty()"><code>valueProperty()</code></a></li>
                     </ul>
                     </dd>
@@ -164,7 +164,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     <dd>the value of the <code>value</code> property</dd>
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><a href="#valueProperty()"><code>valueProperty()</code></a></li>
                     </ul>
                     </dd>

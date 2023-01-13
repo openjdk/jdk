@@ -947,6 +947,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VBMI;
     _features &= ~CPU_AVX512_VBMI2;
     _features &= ~CPU_AVX512_BITALG;
+    _features &= ~CPU_AVX512_IFMA;
   }
 
   if (UseAVX < 2)
@@ -955,6 +956,7 @@ void VM_Version::get_processor_features() {
   if (UseAVX < 1) {
     _features &= ~CPU_AVX;
     _features &= ~CPU_VZEROUPPER;
+    _features &= ~CPU_F16C;
   }
 
   if (logical_processors_per_package() == 1) {
@@ -978,6 +980,7 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_FLUSHOPT;
       _features &= ~CPU_GFNI;
       _features &= ~CPU_AVX512_BITALG;
+      _features &= ~CPU_AVX512_IFMA;
     }
   }
 
@@ -987,7 +990,7 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  char buf[512];
+  char buf[1024];
   int res = jio_snprintf(
               buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
@@ -1118,6 +1121,22 @@ void VM_Version::get_processor_features() {
     if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics))
       warning("GHASH intrinsic requires CLMUL and SSE2 instructions on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  // ChaCha20 Intrinsics
+  // As long as the system supports AVX as a baseline we can do a
+  // SIMD-enabled block function.  StubGenerator makes the determination
+  // based on the VM capabilities whether to use an AVX2 or AVX512-enabled
+  // version.
+  if (UseAVX >= 1) {
+      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          UseChaCha20Intrinsics = true;
+      }
+  } else if (UseChaCha20Intrinsics) {
+      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          warning("ChaCha20 intrinsic requires AVX instructions");
+      }
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
@@ -1329,6 +1348,18 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // COMPILER2 && ASSERT
+
+#ifdef _LP64
+  if (supports_avx512ifma() && supports_avx512vlbw() && MaxVectorSize >= 64) {
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+    }
+  } else
+#endif
+  if (UsePoly1305Intrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, false);
+  }
 
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
@@ -2894,6 +2925,8 @@ uint64_t VM_Version::feature_flags() {
         result |= CPU_AVX512CD;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512dq != 0)
         result |= CPU_AVX512DQ;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512ifma != 0)
+        result |= CPU_AVX512_IFMA;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512pf != 0)
         result |= CPU_AVX512PF;
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx512er != 0)

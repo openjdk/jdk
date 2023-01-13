@@ -23,7 +23,6 @@
  */
 #include "precompiled.hpp"
 #include "jvm_io.h"
-#include "utilities/ostream.hpp"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
