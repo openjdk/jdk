@@ -697,11 +697,11 @@
           " of live objects in the heap. This does not use a barrier "      \
           " so it is an estimate only.")                                    \
                                                                             \
-  product(intx, ConcLivenessEstimateSeconds, 10, EXPERIMENTAL,              \
+  product(uintx, ConcLivenessEstimateSeconds, 10, EXPERIMENTAL,             \
           "The number of seconds between the end of producing a liveness"   \
           " estimate and beginning the next.")                              \
                                                                             \
-  product(intx, ConcLivenessThreads, 1, EXPERIMENTAL,                       \
+  product(uintx, ConcLivenessThreads, 1, EXPERIMENTAL,                      \
           "The number of parallel marking threads.")                        \
                                                                             \
   product(bool, ConcLivenessVerify, false, EXPERIMENTAL,                    \
