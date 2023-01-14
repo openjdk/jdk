@@ -38,10 +38,12 @@ import sun.security.util.SignatureFileVerifier;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.security.CodeSigner;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.*;
@@ -60,8 +62,9 @@ public class VerifyUnrelatedSignatureFiles {
     public static void main(String[] args) throws Exception {
 
         File j = createJarFile();
-        File s = signJarFile(j, "signed");
+        File s = signJarFile(j, "SIGNER1", "signed");
         File m = moveSignatureRelated(s);
+        File sm = signJarFile(m, "SIGNER2", "modified-signed");
 
         // 1: Check ZipFile.Source.isSignatureRelated
         try(JarFile jarFile = new JarFile(m)) {
@@ -86,10 +89,7 @@ public class VerifyUnrelatedSignatureFiles {
             }
         }
 
-        // 4: Check that jar with unrelated .SF, .RSA files are signed as-if they are unsigned
-
-        File sm = signJarFile(m, "modified-signed");
-
+        // 4: Check that a JAR containing unrelated .SF, .RSA files is signed as-if it is unsigned
         try(ZipFile zf = new ZipFile(sm)) {
             final ZipEntry mf = zf.getEntry("META-INF/MANIFEST.MF");
             try(InputStream stream = zf.getInputStream(mf)) {
@@ -101,6 +101,43 @@ public class VerifyUnrelatedSignatureFiles {
                     throw new Exception("JarSigner unexpectedly treated unsigned jar as signed");
                 }
             }
+        }
+
+        // 5: Check that a JAR containing non signature related .SF, .RSA files can be signed
+        try(JarFile jf = new JarFile(sm, true)) {
+            checkSignedBy(jf, "a.txt", "CN=SIGNER2");
+            checkSignedBy(jf, "META-INF/subdirectory/META-INF/SIGNER1.SF", "CN=SIGNER2");
+        }
+    }
+
+    /**
+     * Check that a path of a given JAR is signed once by the expected signer CN
+     */
+    private static void checkSignedBy(JarFile jf, String name, String expectedSigner) throws Exception {
+        JarEntry je = jf.getJarEntry(name);
+
+        // Read the contents to trigger verification
+        try(InputStream in = jf.getInputStream(je)) {
+            in.transferTo(OutputStream.nullOutputStream());
+        }
+
+        // Verify that the entry is signed
+        CodeSigner[] signers = je.getCodeSigners();
+        if (signers == null) {
+            throw new Exception(String.format("Expected %s to be signed", name));
+        }
+
+        // There should be a single signer
+        if (signers.length != 1) {
+            throw new Exception(String.format("Expected %s to be signed by exactly one signer", name));
+        }
+
+        String actualSigner = ((X509Certificate) signers[0]
+                .getSignerCertPath().getCertificates().get(0))
+                .getIssuerX500Principal().getName();
+
+        if(!actualSigner.equals(expectedSigner)) {
+            throw new Exception(String.format("Expected %s to be signed by %s, was signed by %s", name, expectedSigner, actualSigner));
         }
     }
 
@@ -124,14 +161,14 @@ public class VerifyUnrelatedSignatureFiles {
     /**
      * Create a signed version of the given jar file
      */
-    private static File signJarFile(File f, String classifier) throws Exception {
+    private static File signJarFile(File f, String signerName, String classifier) throws Exception {
         File s = File.createTempFile("unrelated-signature-files-" + classifier +"-", ".jar");
 
         new File("ks").delete();
 
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit -dname" +
-                        " CN=RSA -alias r -genkeypair -keyalg rsa").split(" "));
+                        " CN=" + signerName +" -alias r -genkeypair -keyalg rsa").split(" "));
 
         char[] pass = "changeit".toCharArray();
 
@@ -145,6 +182,7 @@ public class VerifyUnrelatedSignatureFiles {
         JarSigner signer = new JarSigner.Builder(pkr, cp)
                 .digestAlgorithm("SHA-256")
                 .signatureAlgorithm("SHA256withRSA")
+                .signerName(signerName)
                 .build();
 
         try(ZipFile in = new ZipFile(f);
