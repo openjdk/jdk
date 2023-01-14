@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,11 +40,12 @@ package gc.g1;
  *                   gc.g1.TestRemarkCleanupMXBean
  */
 
+import static jdk.test.whitebox.WhiteBox.getWhiteBox;
+
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.gc.GC;
-import gc.testlibrary.g1.MixedGCProvoker;
 
 public class TestRemarkCleanupMXBean {
     public static void main(String[] args) throws Exception {
@@ -60,7 +62,7 @@ public class TestRemarkCleanupMXBean {
         }
 
         long before = g1ConcGCBean.getCollectionCount();
-        MixedGCProvoker.provokeConcMarkCycle();
+        getWhiteBox().g1RunConcurrentGC();
         long after = g1ConcGCBean.getCollectionCount();
 
         if (after >= before + 2) { // Must report a Remark and a Cleanup

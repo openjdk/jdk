@@ -132,29 +132,6 @@ vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java 828541
 vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 8285415 generic-all
 
 ###
-# These 2 tests try to create 10 vthreads and have them all block on a synchronized
-# method call, but on some hosts there are not enough carrier threads to support pinning
-# all 10 vthreads, so the test deadlocks. -Djdk.defaultScheduler.parallelism=<n>
-# could be used with the debuggee to ensure there are enough carrier threads.
-
-vmTestbase/nsk/jdi/EventRequestManager/stepRequests/stepreq002/TestDescription.java 8285416 generic-all
-vmTestbase/nsk/jdi/EventRequestManager/deleteEventRequests/delevtreqs002/TestDescription.java 8285416 generic-all
-
-###
-# These tests all create 5 virtual threads that block on a synchronized block, which causes
-# them to pin the carrier therad. On some of the macOS hosts there are only 4 cores,
-# so by default you only get 4 carrier threads. When this happesn the test is unable to get all
-# of the virtual threads started, and ends up timing out. -Djdk.defaultScheduler.parallelism=<n>
-# could be used with the debuggee to ensure there are enough carrier threads.
-
-vmTestbase/nsk/jdb/kill/kill001/kill001.java 8282383 macosx-x64
-vmTestbase/nsk/jdi/LocatableEvent/thread/thread001/TestDescription.java 8282383 macosx-x64
-vmTestbase/nsk/jdi/Event/request/request001/TestDescription.java 8282383 macosx-x64
-vmTestbase/nsk/jdi/EventIterator/nextEvent/nextevent001/TestDescription.java 8282383 macosx-x64
-vmTestbase/nsk/jdi/EventRequestManager/stepRequests/stepreq001/TestDescription.java 8282383 macosx-x64
-vmTestbase/nsk/jdi/ObjectReference/waitingThreads/waitingthreads002/TestDescription.java 8282383 macosx-x64
-
-###
 # This test always times out on windows. This is due to the test forcing OOME in the
 # debuggee, which has the side affect of making the Read-Poller thread exit. Because
 # of this no vthreads can complete their reads, and the test times out as a result.
