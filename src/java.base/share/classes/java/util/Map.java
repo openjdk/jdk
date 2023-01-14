@@ -402,7 +402,7 @@ public interface Map<K, V> {
      * iterating the {@link Map#entrySet} view of a map, either explicitly by using an
      * {@link Iterator} or implicitly via the enhanced {@code for} statement. This connection
      * to the backing map is valid <i>only</i> during iteration of the entry-set view. During
-     * the iteration, if supported by the backing map, a change to a Entry's value via
+     * the iteration, if supported by the backing map, a change to an Entry's value via
      * the {@link Map.Entry#setValue setValue} method will be visible in the backing map.
      * The behavior of such an Entry is undefined outside of iteration of the map's entry-set
      * view. It is also undefined if the backing map has been modified after the Entry was
@@ -410,7 +410,7 @@ public interface Map<K, V> {
      * a change to the value of a mapping in the backing map might or might not be
      * visible in the corresponding Entry of the entry-set view.
      * <p>
-     * An Entry may also be extracted from a map's entry-set view by other means, for
+     * An Entry may also be obtained from a map's entry-set view by other means, for
      * example, using the
      * {@link Set#parallelStream parallelStream},
      * {@link Set#stream stream},
@@ -418,8 +418,8 @@ public interface Map<K, V> {
      * any of the
      * {@link Set#toArray toArray} overloads,
      * or by copying the entry-set view into another collection. It is unspecified whether
-     * the Entry instances thus obtained are connected to the underlying map, whether
-     * changes to an Entry will affect the underlying the map and vice-versa, and whether
+     * the obtained Entry instances are connected to the underlying map, whether changes
+     * to such an Entry will affect the underlying the map and vice-versa, and whether
      * such an Entry supports the optional {@link Map.Entry#setValue setValue} method.
      * <p>
      * In addition, an Entry may be obtained directly from a map, for example via calls

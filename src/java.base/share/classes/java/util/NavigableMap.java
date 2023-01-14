@@ -76,7 +76,7 @@ package java.util;
  * {@link #pollFirstEntry}, and
  * {@link #pollLastEntry}
  * return {@link Map.Entry} instances that represent snapshots of mappings as
- * of the time of the call, and they do <em>not</em> support mutation of the
+ * of the time of the call. They do <em>not</em> support mutation of the
  * underlying map via the optional {@link Map.Entry#setValue setValue} method.
  *
  * <p>Methods
