@@ -5334,7 +5334,7 @@ class StubGenerator: public StubCodeGenerator {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       // We can get here despite the nmethod being good, if we have not
       // yet applied our cross modification fence (or data fence).
-      Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
       __ lea(rscratch2, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ ldrw(rscratch2, rscratch2);
       __ strw(rscratch2, thread_epoch_addr);

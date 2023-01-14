@@ -51,20 +51,14 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
   if (top_obj != NULL) {
     if (_sp->block_is_obj(top_obj)) {
-      if (_precision == CardTable::ObjHeadPreciseArray) {
-        if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
-          // An arrayOop is starting on the dirty card - since we do exact
-          // store checks for objArrays we are done.
-        } else {
-          // Otherwise, it is possible that the object starting on the dirty
-          // card spans the entire card, and that the store happened on a
-          // later card.  Figure out where the object ends.
-          // Use the block_size() method of the space over which
-          // the iteration is being done.  That space (e.g. CMS) may have
-          // specific requirements on object sizes which will
-          // be reflected in the block_size() method.
-          top = top_obj + cast_to_oop(top_obj)->size();
-        }
+      if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
+        // An arrayOop is starting on the dirty card - since we do exact
+        // store checks for objArrays we are done.
+      } else {
+        // Otherwise, it is possible that the object starting on the dirty
+        // card spans the entire card, and that the store happened on a
+        // later card.  Figure out where the object ends.
+        top = top_obj + cast_to_oop(top_obj)->size();
       }
     } else {
       top = top_obj;
@@ -115,12 +109,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   HeapWord* bottom_obj;
   HeapWord* top_obj;
 
-  assert(_precision == CardTable::ObjHeadPreciseArray ||
-         _precision == CardTable::Precise,
-         "Only ones we deal with for now.");
-
-  assert(_precision != CardTable::ObjHeadPreciseArray ||
-         _last_bottom == NULL || top <= _last_bottom,
+  assert(_last_bottom == NULL || top <= _last_bottom,
          "Not decreasing");
   NOT_PRODUCT(_last_bottom = mr.start());
 
@@ -136,9 +125,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   top = get_actual_top(top, top_obj);
 
   // If the previous call did some part of this region, don't redo.
-  if (_precision == CardTable::ObjHeadPreciseArray &&
-      _min_done != NULL &&
-      _min_done < top) {
+  if (_min_done != NULL && _min_done < top) {
     top = _min_done;
   }
 
@@ -148,9 +135,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   bottom = MIN2(bottom, top);
   MemRegion extended_mr = MemRegion(bottom, top);
   assert(bottom <= top &&
-         (_precision != CardTable::ObjHeadPreciseArray ||
-          _min_done == NULL ||
-          top <= _min_done),
+         (_min_done == NULL || top <= _min_done),
          "overlap!");
 
   // Walk the region if it is not empty; otherwise there is nothing to do.
@@ -164,18 +149,16 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
                                                HeapWord* top_obj) {
   if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
-    if (_precision == CardTable::ObjHeadPreciseArray) {
-      if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
-        // An arrayOop is starting on the dirty card - since we do exact
-        // store checks for objArrays we are done.
-      } else {
-        // Otherwise, it is possible that the object starting on the dirty
-        // card spans the entire card, and that the store happened on a
-        // later card.  Figure out where the object ends.
-        assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
-          "Block size and object size mismatch");
-        top = top_obj + cast_to_oop(top_obj)->size();
-      }
+    if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
+      // An arrayOop is starting on the dirty card - since we do exact
+      // store checks for objArrays we are done.
+    } else {
+      // Otherwise, it is possible that the object starting on the dirty
+      // card spans the entire card, and that the store happened on a
+      // later card.  Figure out where the object ends.
+      assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
+        "Block size and object size mismatch");
+      top = top_obj + cast_to_oop(top_obj)->size();
     }
   } else {
     top = (_sp->toContiguousSpace())->top();
@@ -235,9 +218,8 @@ ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
 ContiguousSpace::new_dcto_cl(OopIterateClosure* cl,
-                             CardTable::PrecisionStyle precision,
                              HeapWord* boundary) {
-  return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
+  return new ContiguousSpaceDCTOC(this, cl, boundary);
 }
 
 void Space::initialize(MemRegion mr,
