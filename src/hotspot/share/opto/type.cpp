@@ -1963,11 +1963,11 @@ static const char* longname(char* buf, size_t buf_size, jlong n) {
     return "max";
   else if (n > max_jlong - 10000)
     os::snprintf_checked(buf, buf_size, "max-" JLONG_FORMAT, max_jlong - n);
-  else if ((str = longnamenear(max_juint, "maxuint", buf, n)) != NULL)
+  else if ((str = longnamenear(max_juint, "maxuint", buf, buf_size, n)) != NULL)
     return str;
-  else if ((str = longnamenear(max_jint, "maxint", buf, n)) != NULL)
+  else if ((str = longnamenear(max_jint, "maxint", buf, buf_size, n)) != NULL)
     return str;
-  else if ((str = longnamenear(min_jint, "minint", buf, n)) != NULL)
+  else if ((str = longnamenear(min_jint, "minint", buf, buf_size, n)) != NULL)
     return str;
   else
     os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
