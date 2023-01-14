@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * A reverse-order view of a List.
+ * Provides a reverse-ordered view of a List. Not serializable.
  *
  * TODO: RandomAccess
- * @author smarks 2020-04-27
  */
 class ReverseOrderListView<E> implements List<E> {
 

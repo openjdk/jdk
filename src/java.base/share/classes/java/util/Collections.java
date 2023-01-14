@@ -1166,6 +1166,9 @@ public class Collections {
             return (SequencedCollection<E>) c;
         }
 
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed collection view, which usually isn't
+        // serializable.
         public SequencedCollection<E> reversed() {
             return new UnmodifiableSequencedCollection<>(rc().reversed());
         }
@@ -1272,6 +1275,9 @@ public class Collections {
             return (SequencedSet<E>) c;
         }
 
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed set view, which usually isn't
+        // serializable.
         public SequencedSet<E> reversed() {
             return new UnmodifiableSequencedSet<>(ss().reversed());
         }
@@ -1983,6 +1989,9 @@ public class Collections {
             return (SequencedMap<K, V>) m;
         }
 
+        // Even though this wrapper class is serializable, the reversed view is effectively
+        // not serializable because it points to the reversed map view, which usually isn't
+        // serializable.
         public SequencedMap<K, V> reversed() {
             return new UnmodifiableSequencedMap<>(sm().reversed());
         }

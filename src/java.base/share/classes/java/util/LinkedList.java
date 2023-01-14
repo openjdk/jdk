@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package java.util;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -1280,10 +1283,9 @@ public class LinkedList<E>
     }
 
     // all operations are delegated to the reverse-ordered views.
-    // TODO disable serialization
     // TODO audit all overridden methods
     @SuppressWarnings("serial")
-    static class ReverseOrderLinkedListView<E> extends LinkedList<E> {
+    static class ReverseOrderLinkedListView<E> extends LinkedList<E> implements java.io.Externalizable {
         final LinkedList<E> list;
         final List<E> rlist;
         final Deque<E> rdeque;
@@ -1520,6 +1522,14 @@ public class LinkedList<E>
 
         public E getFirst() {
             return rdeque.getFirst();
+        }
+
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            throw new java.io.InvalidObjectException("not serializable");
+        }
+
+        public void writeExternal(ObjectOutput out) throws IOException {
+            throw new java.io.InvalidObjectException("not serializable");
         }
     }
 }
