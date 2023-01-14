@@ -41,9 +41,16 @@ class ObjectState {
   virtual bool is_virtual() const = 0;
   virtual Node* get_materialized_value() = 0;
   virtual ObjectState* clone() const = 0;
-  
+
   void ref_inc() { _refcnt++; }
   int ref_dec() { return --_refcnt; }
+  int ref_cnt() const { return _refcnt; }
+  int ref_cnt(int cnt) {
+    int old = _refcnt;
+    _refcnt = cnt;
+    return old;
+  }
+
 };
 
 class VirtualState: public ObjectState {
@@ -51,7 +58,7 @@ class VirtualState: public ObjectState {
   int _lockCount;
   Node** _entries;
   DEBUG_ONLY(uint _nfields);
-  
+
  protected:
   VirtualState(const VirtualState& other);
  public:
@@ -116,7 +123,9 @@ class PEAState {
   }
 
   void update(ObjID id, ObjectState* os) {
-    //assert(contains(id), "sanity check");
+    if (contains(id)) {
+      os->ref_cnt(get_object_state(id)->ref_cnt());
+    }
     _state.put(id, os);
   }
 

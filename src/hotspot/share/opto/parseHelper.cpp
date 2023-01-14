@@ -527,9 +527,8 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
   } else {
     assert(false, "array not support yet!");
   }
-
   EscapedState* escaped = new EscapedState(objx);
-  _state.put(alloc, escaped);
+  update(alloc, escaped);
 
 #ifndef PRODUCT
   if (Verbose) {
@@ -540,8 +539,8 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 
   // replace obj with objx
   replace_in_map(kit, obj, objx);
-  _alias.remove(obj);
   _alias.put(objx, alloc);
+  _alias.remove(obj);
   return escaped;
 }
 
@@ -550,7 +549,7 @@ void PEAState::print_on(outputStream* os) {
   os->print_cr("PEAState:");
 
   _state.iterate([&](ObjID obj, ObjectState* state) {
-    os->print("Obj#%d(%s)  aliases = [", obj->_idx, state->is_virtual() ? "Virt" : "Mat");
+    os->print("Obj#%d(%s) ref = %d aliases = [", obj->_idx, state->is_virtual() ? "Virt" : "Mat", state->ref_cnt());
 
     _alias.iterate([&](Node* node, ObjID obj2) {
       if (obj == obj2){

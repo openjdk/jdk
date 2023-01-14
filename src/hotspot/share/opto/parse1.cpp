@@ -1846,6 +1846,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                 ObjID id = as.is_alias(m);
 
                 if (id != nullptr) {
+                  as.add_alias(id, phi); // order matters here since we use refcnt to delete dead id.
+
                   if (as.get_object_state(id)->is_virtual() && id == pred_as.is_alias(n)) {
                     ObjectState* pred_os = pred_as.get_object_state(id);
 
@@ -1862,10 +1864,10 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                       // TODO: merge two virtuals
                     }
                   }
-                  if (as.is_alias(m)) {// materialization remove it.
+
+                  if (as.is_alias(m)) {  // materialization above has removed it.
                     as.remove_alias(id, m);
                   }
-                  as.add_alias(id, phi);
                 }
               } // DoPartialEscapeAnalysis
             }
