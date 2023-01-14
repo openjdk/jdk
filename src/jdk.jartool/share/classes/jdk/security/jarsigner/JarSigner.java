@@ -76,16 +76,16 @@ import java.util.zip.ZipOutputStream;
  * a {@link NullPointerException}.
  * <p>
  * Example:
- * <pre>
- * JarSigner signer = new JarSigner.Builder(key, certPath)
- *         .digestAlgorithm("SHA-1")
- *         .signatureAlgorithm("SHA1withDSA")
- *         .build();
- * try (ZipFile in = new ZipFile(inputFile);
- *         FileOutputStream out = new FileOutputStream(outputFile)) {
- *     signer.sign(in, out);
+ * {@snippet lang="java" :
+ *     JarSigner signer = new JarSigner.Builder(key, certPath)
+ *             .digestAlgorithm("SHA-256")
+ *             .signatureAlgorithm("SHA256withRSA")
+ *             .build();
+ *     try (ZipFile  in = new ZipFile(inputFile);
+ *             FileOutputStream out = new FileOutputStream(outputFile)) {
+ *         signer.sign(in, out);
+ *     }
  * }
- * </pre>
  *
  * @since 9
  */

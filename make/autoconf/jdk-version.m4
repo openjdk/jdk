@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,11 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 
   # Outer [ ] to quote m4.
   [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+
+  # $USER may be not defined in dockers, so try to check with $WHOAMI
+  if test "x$USERNAME" = x && test "x$WHOAMI" != x; then
+    [ USERNAME=`$WHOAMI | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  fi
 
   # Setup username (for use in adhoc version strings etc)
   UTIL_ARG_WITH(NAME: build-user, TYPE: string,
