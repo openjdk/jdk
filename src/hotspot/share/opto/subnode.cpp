@@ -1080,7 +1080,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
 
   // return the ConP(Foo.klass)
   assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
-  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass()));
+  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
 }
 
 //------------------------------Ideal------------------------------------------

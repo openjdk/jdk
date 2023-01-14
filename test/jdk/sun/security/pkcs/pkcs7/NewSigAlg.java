@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_DECAY_HPP
-#define SHARE_METAPROGRAMMING_DECAY_HPP
+/*
+ * @test
+ * @bug 8299746
+ * @summary Accept unknown signatureAlgorithm in PKCS7 SignerInfo
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.x509
+ * @library /test/lib
+ */
 
-#include "memory/allStatic.hpp"
-#include "metaprogramming/removeReference.hpp"
+import jdk.test.lib.Asserts;
+import sun.security.pkcs.SignerInfo;
+import sun.security.x509.AlgorithmId;
 
-#include <type_traits>
+public class NewSigAlg {
+    public static void main(String[] args) throws Exception {
+        test("SHA-1", "RSA", "SHA1withRSA");
+        test("SHA-1", "SHA1withRSA", "SHA1withRSA");
+        test("SHA-1", "SHA256withRSA", "SHA1withRSA");
+        // Sorry I have to use something that has an OID but not known
+        // as a signature algorithm.
+        test("SHA-1", "PBES2", "PBES2");
+    }
 
-// This trait trims the type from CV qualifiers and references.
-// This trait provides a subset of the functionality of std::decay;
-// array types and function types are not supported here.
-
-template <typename T>
-struct Decay: AllStatic {
-  using type = std::remove_cv_t<typename RemoveReference<T>::type>;
-};
-
-#endif // SHARE_METAPROGRAMMING_DECAY_HPP
+    static void test(String d, String e, String s) throws Exception {
+        Asserts.assertEQ(s, SignerInfo.makeSigAlg(
+                AlgorithmId.get(d), AlgorithmId.get(s), false));
+    }
+}
