@@ -2349,7 +2349,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return this.multiply(this);
     }
 
-    boolean isPowerOfTen() {
+    private boolean isPowerOfTen() {
         return BigInteger.ONE.equals(this.unscaledValue());
     }
 
@@ -4373,7 +4373,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @param b the BigInteger
      * @return the length of the unscaled value, in decimal digits
      */
-    static int bigDigitLength(BigInteger b) {
+    private static int bigDigitLength(BigInteger b) {
         /*
          * Same idea as the long version, but we need a better
          * approximation of log10(2). Using 646456993/2^31
