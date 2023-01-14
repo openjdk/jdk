@@ -442,25 +442,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Sanity check
         Assert.check(checkInvariants(true, referenceExpressionNode));
-
-        // Discard any direct 'this' reference that can't be valid because its
-        // type is not compatible with the target class we're analyzing for.
-        // Note, tricky code could cast away and then cast back to evade this.
-        if (referenceExpressionNode) {
-
-            // We treat instance methods as having a "value" equal to their instance
-            Type type = tree.type;
-            Symbol sym = TreeInfo.symbolFor(tree);
-            if (sym != null &&
-                sym.kind == MTH &&
-                (sym.flags() & Flags.STATIC) == 0) {
-                type = sym.owner.type;
-            }
-
-            // If the expression type is incompatible with 'this', discard it
-            if (type != null && !targetClass.sym.isSubClass(type.tsym, types))
-                refs.remove(ExprRef.direct(depth));
-        }
     }
 
 //
