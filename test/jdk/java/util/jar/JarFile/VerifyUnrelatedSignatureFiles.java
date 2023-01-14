@@ -53,7 +53,7 @@ public class VerifyUnrelatedSignatureFiles {
 
     private static final JavaUtilZipFileAccess JUZA = SharedSecrets.getJavaUtilZipFileAccess();
 
-    // These paths do not reside directly in META-INF/ and should not be considered signature related
+    // This path resides in a subdirectory of META-INF, so it should not be considered signature related
     public static final String SUBDIR_SF_PATH = "META-INF/subdirectory/META-INF/SIGNER.SF";
 
 
