@@ -24,8 +24,11 @@
 /**
  * @test
  * @summary Make sure signature related files in subdirectories of META-INF are not considered for verification
- * @compile --add-exports java.base/jdk.internal.access=ALL-UNNAMED --add-exports java.base/sun.security.util=ALL-UNNAMED --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED VerifyUnrelatedSignatureFiles.java
- * @run main/othervm --add-exports java.base/jdk.internal.access=ALL-UNNAMED  --add-exports java.base/sun.security.util=ALL-UNNAMED --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED VerifyUnrelatedSignatureFiles
+ * @modules java.base/jdk.internal.access
+ * @modules java.base/sun.security.util
+ * @modules java.base/sun.security.tools.keytool
+ * @compile VerifyUnrelatedSignatureFiles.java
+ * @run main/othervm VerifyUnrelatedSignatureFiles
  */
 
 import jdk.internal.access.JavaUtilZipFileAccess;
