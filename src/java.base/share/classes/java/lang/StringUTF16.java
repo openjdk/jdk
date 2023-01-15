@@ -415,7 +415,7 @@ final class StringUTF16 {
         return switch (value.length) {
             case 0 -> 0;
             case 2 -> getChar(value, 0);
-            default -> ArraysSupport.vectorizedHashCode(value, ArraysSupport.UTF16);
+            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length >> 1, 0, ArraysSupport.T_CHAR);
         };
     }
 

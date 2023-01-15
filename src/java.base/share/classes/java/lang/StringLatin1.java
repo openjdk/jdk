@@ -192,7 +192,7 @@ final class StringLatin1 {
         return switch (value.length) {
             case 0 -> 0;
             case 1 -> value[0] & 0xff;
-            default -> ArraysSupport.vectorizedHashCode(value, ArraysSupport.LATIN1);
+            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length, 0, ArraysSupport.T_BOOLEAN);
         };
     }
 

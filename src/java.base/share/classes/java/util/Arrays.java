@@ -4301,7 +4301,7 @@ public class Arrays {
         return switch (a.length) {
             case 0 -> 1;
             case 1 -> 31 + a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, ArraysSupport.INT);
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_INT);
         };
     }
 
@@ -4328,7 +4328,7 @@ public class Arrays {
         return switch (a.length) {
             case 0 -> 1;
             case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, ArraysSupport.SHORT);
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_SHORT);
         };
     }
 
@@ -4355,7 +4355,7 @@ public class Arrays {
         return switch (a.length) {
             case 0 -> 1;
             case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, ArraysSupport.CHAR);
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_CHAR);
         };
     }
 
@@ -4382,7 +4382,7 @@ public class Arrays {
         return switch (a.length) {
             case 0 -> 1;
             case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, ArraysSupport.BYTE);
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_BYTE);
         };
     }
 

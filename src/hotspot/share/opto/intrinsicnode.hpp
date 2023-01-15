@@ -169,29 +169,8 @@ class CountPositivesNode: public StrIntrinsicNode {
 //------------------------------VectorizedHashCodeNode----------------------
 class VectorizedHashCodeNode: public Node {
  public:
-  // Possible hashing modes, corresponding to the primitive being encoded,
-  // as well as adjusting for special treatment of various encoding of String
-  // arrays. Must correspond to declared constants in jdk.internal.util.ArraysSupport
-  typedef enum HashModes { LATIN1 = 0, UTF16 = 1, BYTE = 2, CHAR = 3, SHORT = 4, INT = 5 } HashMode;
-  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, Node* mode)
-    : Node(control, ary_mem, arg1, cnt1, mode) {};
-  static BasicType adr_basic_type(HashMode mode) {
-    switch (mode) {
-    case LATIN1:
-    case BYTE:
-      return T_BYTE;
-    case UTF16:
-    case CHAR:
-      return T_CHAR;
-    case SHORT:
-      return T_SHORT;
-    case INT:
-      return T_INT;
-    default:
-      ShouldNotReachHere();
-      return T_ILLEGAL;
-    }
-  }
+  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, Node* result, Node* basic_type)
+    : Node(control, ary_mem, arg1, cnt1, result, basic_type) {};  
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }

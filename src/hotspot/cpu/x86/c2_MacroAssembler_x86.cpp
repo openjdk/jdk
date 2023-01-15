@@ -3205,35 +3205,25 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
 int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
+  case T_BOOLEAN: return sizeof(jboolean);
   case T_BYTE:  return sizeof(jbyte);
   case T_SHORT: return sizeof(jshort);
   case T_CHAR:  return sizeof(jchar);
   case T_INT:   return sizeof(jint);
-  case T_FLOAT: return sizeof(jfloat);
   default:
     ShouldNotReachHere();
     return -1;
   }
 }
 
-void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype, bool is_string_hashcode) {
+void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
   switch (eltype) {
-  case T_BYTE:
-    if (is_string_hashcode) {
-      movzbl(dst, src);
-    } else {
-      movsbl(dst, src);
-    }
-    break;
-  case T_SHORT:
-    movswl(dst, src);
-    break;
-  case T_CHAR:
-    movzwl(dst, src);
-    break;
-  case T_INT:
-    movl(dst, src);
-    break;
+  // T_BOOLEAN used as surrogate for unsigned byte
+  case T_BOOLEAN: movzbl(dst, src);   break;
+  case T_BYTE:    movsbl(dst, src);   break;
+  case T_SHORT:   movswl(dst, src);   break;
+  case T_CHAR:    movzwl(dst, src);   break;
+  case T_INT:     movl(dst, src);     break;
   default:
     ShouldNotReachHere();
   }
@@ -3247,21 +3237,13 @@ void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, AddressLiteral 
   load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
 }
 
-void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype, bool is_string_hashcode) {
+void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype) {
+  const int vlen = Assembler::AVX_256bit;
   switch (eltype) {
-  case T_BYTE:
-    if (is_string_hashcode) {
-      vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_BYTE, T_INT);
-    } else {
-      vector_signed_cast(dst, dst, Assembler::AVX_256bit, T_BYTE, T_INT);
-    }
-    break;
-  case T_SHORT:
-    vector_signed_cast(dst, dst, Assembler::AVX_256bit, T_SHORT, T_INT);
-    break;
-  case T_CHAR:
-    vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_SHORT, T_INT);
-    break;
+  case T_BOOLEAN: vector_unsigned_cast(dst, dst, vlen, T_BYTE, T_INT);  break;
+  case T_BYTE:      vector_signed_cast(dst, dst, vlen, T_BYTE, T_INT);  break;
+  case T_SHORT:     vector_signed_cast(dst, dst, vlen, T_SHORT, T_INT); break;
+  case T_CHAR:    vector_unsigned_cast(dst, dst, vlen, T_SHORT, T_INT); break;
   case T_INT:
     // do nothing
     break;
@@ -3275,7 +3257,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
                                         XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
                                         XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
                                         XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
-                                        int mode) {
+                                        BasicType eltype) {
   ShortBranchVerifier sbv(this);
   assert(UseAVX >= 2, "AVX2 intrinsics are required");
   assert_different_registers(ary1, cnt1, result, index, tmp2, tmp3);
@@ -3286,15 +3268,13 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
         UNROLLED_SCALAR_LOOP_BEGIN, UNROLLED_SCALAR_SKIP, UNROLLED_SCALAR_RESUME,
         UNROLLED_VECTOR_LOOP_BEGIN,
         END;
-
-  switch (mode) {
-  case VectorizedHashCodeNode::LATIN1: BLOCK_COMMENT("arrays_hashcode(LATIN1) {"); break;
-  case VectorizedHashCodeNode::UTF16:  BLOCK_COMMENT("arrays_hashcode(UTF16) {");  break;
-  case VectorizedHashCodeNode::BYTE:   BLOCK_COMMENT("arrays_hashcode(BYTE) {");   break;
-  case VectorizedHashCodeNode::CHAR:   BLOCK_COMMENT("arrays_hashcode(CHAR) {");   break;
-  case VectorizedHashCodeNode::SHORT:  BLOCK_COMMENT("arrays_hashcode(SHORT) {");  break;
-  case VectorizedHashCodeNode::INT:    BLOCK_COMMENT("arrays_hashcode(INT) {");    break;
-  default:                             BLOCK_COMMENT("arrays_hashcode {");    break;
+  switch (eltype) {
+  case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode(unsigned byte) {"); break;
+  case T_CHAR:    BLOCK_COMMENT("arrays_hashcode(char) {");          break;
+  case T_BYTE:    BLOCK_COMMENT("arrays_hashcode(byte) {");          break;
+  case T_SHORT:   BLOCK_COMMENT("arrays_hashcode(short) {");         break;
+  case T_INT:     BLOCK_COMMENT("arrays_hashcode(int) {");           break;
+  default:        BLOCK_COMMENT("arrays_hashcode {");                break;
   }
 
   // For "renaming" for readibility of the code
@@ -3302,18 +3282,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
               vresult[] = { vresult0, vresult1, vresult2, vresult3 },
               vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
 
-  const VectorizedHashCodeNode::HashMode hashMode = (VectorizedHashCodeNode::HashMode)mode;
-  const BasicType eltype = VectorizedHashCodeNode::adr_basic_type(hashMode);
-  const bool is_string_hashcode = hashMode == VectorizedHashCodeNode::LATIN1 || hashMode == VectorizedHashCodeNode::UTF16;
-  const bool is_unsigned = is_string_hashcode || hashMode == VectorizedHashCodeNode::CHAR;
   const int elsize = arrays_hashcode_elsize(eltype);
 
-  // int result = 0|1;
-  if (is_string_hashcode) {
-    xorl(result, result);
-  } else {
-    movl(result, 1);
-  }
   /*
     if (cnt1 >= 2) {
       if (cnt1 >= 32) {
@@ -3323,10 +3293,6 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
     }
     SINGLE SCALAR
    */
-
-  if (hashMode == VectorizedHashCodeNode::UTF16) {
-    shrl(cnt1, 1);
-  }
 
   cmpl(cnt1, 32);
   jcc(Assembler::less, SHORT_UNROLLED_BEGIN);
@@ -3353,9 +3319,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // for (; index < bound; index += 32) {
   bind(UNROLLED_VECTOR_LOOP_BEGIN);
   // result *= next;
-  if (!is_string_hashcode) {
-    imull(result, next);
-  }
+  imull(result, next);
   // loop fission to upfront the cost of fetching from memory, OOO execution
   // can then hopefully do a better job of prefetching
   for (int idx = 0; idx < 4; idx++) {
@@ -3364,7 +3328,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // vresult = vresult * vnext + ary1[index+8*idx:index+8*idx+7];
   for (int idx = 0; idx < 4; idx++) {
     vpmulld(vresult[idx], vresult[idx], vnext, Assembler::AVX_256bit);
-    arrays_hashcode_elvcast(vtmp[idx], eltype, is_string_hashcode);
+    arrays_hashcode_elvcast(vtmp[idx], eltype);
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
   }
   // index += 32;
@@ -3401,12 +3365,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   bind(SHORT_UNROLLED_LOOP_BEGIN);
   movl(tmp3, 961);
   imull(result, tmp3);
-  arrays_hashcode_elload(tmp2, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
+  arrays_hashcode_elload(tmp2, Address(ary1, index, Address::times(elsize), -elsize), eltype);
   movl(tmp3, tmp2);
   shll(tmp3, 5);
   subl(tmp3, tmp2);
   addl(result, tmp3);
-  arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize)), eltype, is_string_hashcode);
+  arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize)), eltype);
   addl(result, tmp3);
   addl(index, 2);
   cmpl(index, cnt1);
@@ -3419,7 +3383,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   movl(tmp2, result);
   shll(result, 5);
   subl(result, tmp2);
-  arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize), -elsize), eltype, is_string_hashcode);
+  arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize), -elsize), eltype);
   addl(result, tmp3);
   // }
   bind(END);

@@ -85,7 +85,7 @@ Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 uint VectorizedHashCodeNode::match_edge(uint idx) const {
   // Do not match memory edge.
-  return idx == 2 || idx == 3; // VectorizedHashCodeNode (Binary ary1 cnt1)
+  return idx >= 2 && idx <=  5; // VectorizedHashCodeNode (Binary ary1 cnt1) (Binary result bt)
 }
 
 Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {

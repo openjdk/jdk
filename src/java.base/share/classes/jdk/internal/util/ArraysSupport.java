@@ -162,12 +162,17 @@ public class ArraysSupport {
         }
     }
 
-    public static final byte LATIN1 = 0,
-        UTF16 = 1,
-        BYTE = 2,
-        CHAR = 3,
-        SHORT = 4,
-        INT = 5;
+    // Possible values for the type operand of the NEWARRAY instruction.
+    // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
+
+    public static final int T_BOOLEAN = 4;
+    public static final int T_CHAR = 5;
+    public static final int T_FLOAT = 6;
+    public static final int T_DOUBLE = 7;
+    public static final int T_BYTE = 8;
+    public static final int T_SHORT = 9;
+    public static final int T_INT = 10;
+    public static final int T_LONG = 11;
 
     /**
      * Calculate the hash code for an array in a way that enables efficient
@@ -178,67 +183,68 @@ public class ArraysSupport {
      * method.
      *
      * @param array for which to calculate hash code
-     * @param mode describing array type and hash code calculation,
+     * @param start start index, scaled to bytesPerElement
+     * @param end end index, scaled to bytesPerElement
+     * @param initialValue the initial value for the hash code calculation, typically 0 or 1
+     * @param basicType JVMS-style type operand denoting how to interpret the array content.
+     *                  T_BOOLEAN is used to signify unsigned bytes, and T_CHAR might be used
+     *                  even if array is a byte[]
      * @return the calculated hash value
      */
     @IntrinsicCandidate
-    public static int vectorizedHashCode(Object array, byte mode) {
-        return switch (mode) {
-            case LATIN1 -> latin1HashCode((byte[]) array);
-            case UTF16 -> utf16hashCode((byte[]) array);
-            case BYTE -> hashCode((byte[]) array);
-            case CHAR -> hashCode((char[]) array);
-            case SHORT -> hashCode((short[]) array);
-            case INT -> hashCode((int[]) array);
-            default -> throw new IllegalArgumentException("unrecognized mode: " + mode);
+    public static int vectorizedHashCode(Object array, int start, int end, int initialValue,
+                                         int basicType) {
+        return switch (basicType) {
+            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, start, end);
+            case T_CHAR -> array instanceof byte[]
+                    ? utf16hashCode(initialValue, (byte[]) array, start, end)
+                    : hashCode(initialValue, (char[]) array, start, end);
+            case T_BYTE -> hashCode(initialValue, (byte[]) array, start, end);
+            case T_SHORT -> hashCode(initialValue, (short[]) array, start, end);
+            case T_INT -> hashCode(initialValue, (int[]) array, start, end);
+                default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
         };
     }
 
-    private static int latin1HashCode(byte[] a) {
-        int result = 0;
-        for (byte value : a) {
-            result = 31 * result + (value & 0xff);
+    private static int signedHashCode(int result, byte[] a, int start, int end) {
+        for (int i = start; i < end; i++) {
+            result = 31 * result + (a[i] & 0xff);
         }
         return result;
     }
 
-    private static int hashCode(byte[] a) {
-        int result = 1;
-        for (byte value : a) {
-            result = 31 * result + value;
+    private static int hashCode(int result, byte[] a, int start, int end) {
+        for (int i = start; i < end; i++) {
+            result = 31 * result + a[i];
         }
         return result;
     }
 
-    private static int hashCode(char[] a) {
-        int result = 1;
-        for (char value : a) {
-            result = 31 * result + value;
+    private static int hashCode(int result, char[] a, int start, int end) {
+        for (int i = start; i < end; i++) {
+            result = 31 * result + a[i];
         }
         return result;
     }
 
-    private static int hashCode(short[] a) {
-        int result = 1;
-        for (short value : a) {
-            result = 31 * result + value;
+    private static int hashCode(int result, short[] a, int start, int end) {
+        for (int i = start; i < end; i++) {
+            result = 31 * result + a[i];
         }
         return result;
     }
 
-    private static int hashCode(int[] a) {
-        int result = 1;
-        for (int value : a) {
-            result = 31 * result + value;
+    private static int hashCode(int result, int[] a, int start, int end) {
+        for (int i = start; i < end; i++) {
+            result = 31 * result + a[i];
         }
         return result;
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    public static int utf16hashCode(byte[] value) {
-        int len = value.length >> 1;
-        int result = 0;
-        for (int index = 0; index < len; index++) {
+    public static int utf16hashCode(int result, byte[] value, int start, int end) {
+        // start and end must already be scaled to char
+        for (int index = start; index < end; index++) {
             result = 31 * result + JLA.getUTF16Char(value, index);
         }
         return result;

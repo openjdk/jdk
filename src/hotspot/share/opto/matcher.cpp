@@ -2416,7 +2416,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_StrComp:
-    case Op_StrIndexOf: {
+    case Op_StrIndexOf:
+    case Op_VectorizedHashCode: {
       Node* pair1 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair1);
       Node* pair2 = new BinaryNode(n->in(4),n->in(5));
@@ -2427,8 +2428,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     }
     case Op_EncodeISOArray:
     case Op_StrCompressedCopy:
-    case Op_StrInflatedCopy:
-    case Op_VectorizedHashCode: {
+    case Op_StrInflatedCopy: {
       // Restructure into a binary tree for Matching.
       Node* pair = new BinaryNode(n->in(3), n->in(4));
       n->set_req(3, pair);

@@ -5933,26 +5933,29 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 bool LibraryCallKit::inline_vectorizedHashCode() {
   assert(UseVectorizedHashCodeIntrinsic, "not implemented on this platform");
 
-  assert(callee()->signature()->size() == 2, "vectorizedHashCode has 2 parameters");
-  Node* arg1 = argument(0);
-  Node* mode = argument(1);
+  assert(callee()->signature()->size() == 5, "vectorizedHashCode has 5 parameters");
+  Node* array          = argument(0);
+  Node* offset         = argument(1);
+  Node* count          = argument(2);
+  Node* initialValue   = argument(3);
+  Node* basic_type     = argument(4);
 
-  arg1 = must_be_not_null(arg1, true);
-  if (mode == top()) {
+  array = must_be_not_null(array, true);
+  if (basic_type == top()) {
     return false; // failed input validation
   }
 
-  const TypeInt* mode_t = _gvn.type(mode)->is_int();
-  if (!mode_t->is_con()) {
+  const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
+  if (!basic_type_t->is_con()) {
     return false; // Only intrinsify if mode argument is constant
   }
-  VectorizedHashCodeNode::HashMode mode_value = (VectorizedHashCodeNode::HashMode)mode_t->get_con();
-  BasicType bt = VectorizedHashCodeNode::adr_basic_type(mode_value);
-  // Get start addr and length of first argument
-  Node* arg1_start  = array_element_address(arg1, intcon(0), bt);
-  Node* arg1_cnt    = load_array_length(arg1);
+  BasicType bt = (BasicType)basic_type_t->get_con();
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)), arg1_start, arg1_cnt, mode)));
+  // Resolve address of first element
+  Node* array_start = array_element_address(array, offset, bt);
+
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+    array_start, count, initialValue, basic_type)));
   clear_upper_avx();
 
   return true;
