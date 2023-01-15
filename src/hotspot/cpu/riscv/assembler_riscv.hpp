@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -690,10 +690,6 @@ public:
     patch((address)&insn, 27, 24, predecessor); // pred
     patch((address)&insn, 31, 28, 0b0000);      // fm
     emit(insn);
-  }
-
-  void pause() {
-    fence(w, 0);
   }
 
 #define INSN(NAME, op, funct3, funct7)                      \

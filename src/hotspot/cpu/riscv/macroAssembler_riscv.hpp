@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,6 +362,10 @@ class MacroAssembler: public Assembler {
 
   static int pred_succ_to_membar_mask(uint32_t predecessor, uint32_t successor) {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
+  }
+
+  void pause() {
+    fence(w, 0);
   }
 
   // prints msg, dumps registers and stops execution
