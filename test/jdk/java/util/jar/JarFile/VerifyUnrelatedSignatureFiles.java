@@ -118,9 +118,11 @@ public class VerifyUnrelatedSignatureFiles {
                     "META-INF/MANIFEST.MF",
                     "META-INF/SIGNER2.SF",
                     "META-INF/SIGNER2.RSA",
-                    "a.txt",
                     "META-INF/subdirectory/META-INF/SIGNER1.SF",
-                    "META-INF/subdirectory/META-INF/SIGNER1.RSA"
+                    "META-INF/subdirectory/META-INF/SIGNER1.RSA",
+                    "a.txt",
+                    "META-INF/subdirectory2/META-INF/SIGNER1.SF",
+                    "META-INF/subdirectory2/META-INF/SIGNER1.RSA"
             );
 
             if(!expectedOrder.equals(actualOrder)) {
@@ -235,13 +237,16 @@ public class VerifyUnrelatedSignatureFiles {
             out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
             out.write("manifest-version: 1.0\n\n".getBytes(StandardCharsets.UTF_8));
 
+            copy("META-INF/SIGNER1.SF", "META-INF/subdirectory/META-INF/SIGNER1.SF", in, out);
+            copy("META-INF/SIGNER1.RSA", "META-INF/subdirectory/META-INF/SIGNER1.RSA", in, out);
+
             // Copy over the regular a.txt file
             copy("a.txt", "a.txt", in, out);
 
             // These are also just regular files in their new location, but putting them at end
             // allows us to verify that JarSigner does not move them to the beginning of the signed JAR
-            copy("META-INF/SIGNER1.SF", "META-INF/subdirectory/META-INF/SIGNER1.SF", in, out);
-            copy("META-INF/SIGNER1.RSA", "META-INF/subdirectory/META-INF/SIGNER1.RSA", in, out);
+            copy("META-INF/SIGNER1.SF", "META-INF/subdirectory2/META-INF/SIGNER1.SF", in, out);
+            copy("META-INF/SIGNER1.RSA", "META-INF/subdirectory2/META-INF/SIGNER1.RSA", in, out);
         }
         return m;
     }
