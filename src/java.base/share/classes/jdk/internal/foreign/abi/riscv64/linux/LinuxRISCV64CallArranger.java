@@ -153,7 +153,6 @@ public class LinuxRISCV64CallArranger {
 
         // Aggregates or scalars passed on the stack are aligned to the greater of
         // the type alignment and XLEN bits, but never more than the stack alignment.
-        // No alignment of scalar will greater than STACK_SLOT_SIZE now.
         void alignStack(long alignment) {
             alignment = Utils.alignUp(Math.min(Math.max(alignment, STACK_SLOT_SIZE), 16), STACK_SLOT_SIZE);
             stackOffset = Utils.alignUp(stackOffset, alignment);
@@ -167,8 +166,8 @@ public class LinuxRISCV64CallArranger {
         }
 
         Optional<VMStorage> regAlloc(int storageClass) {
-            var availableRegs = MAX_REGISTER_ARGUMENTS - nRegs[storageClass];
-            if (availableRegs > 0) {
+            var regsAvailable = MAX_REGISTER_ARGUMENTS - nRegs[storageClass];
+            if (regsAvailable > 0) {
                 VMStorage[] source = (forArguments ? CLinux.inputStorage : CLinux.outputStorage)[storageClass];
                 Optional<VMStorage> result = Optional.of(source[nRegs[storageClass]]);
                 nRegs[storageClass] += 1;
@@ -177,7 +176,6 @@ public class LinuxRISCV64CallArranger {
             return Optional.empty();
         }
 
-        // Try to get Storage corresponding to storageClass,
         VMStorage getStorage(int storageClass) {
             Optional<VMStorage> storage = regAlloc(storageClass);
             if (storage.isPresent()) {
@@ -209,16 +207,16 @@ public class LinuxRISCV64CallArranger {
             return storages;
         }
 
-        boolean availableRegs(int integerReg, int floatReg) {
-            return nRegs[IntegerRegIdx] + integerReg <= MAX_REGISTER_ARGUMENTS &&
-                   nRegs[FloatRegIdx] + floatReg <= MAX_REGISTER_ARGUMENTS;
+        boolean regsAvailable(int integerRegs, int floatRegs) {
+            return nRegs[IntegerRegIdx] + integerRegs <= MAX_REGISTER_ARGUMENTS &&
+                   nRegs[FloatRegIdx] + floatRegs <= MAX_REGISTER_ARGUMENTS;
         }
 
-        // Variadic arguments with 2 * XLEN-bit alignment and size at most 2 * XLEN bits are passed
-        // in an aligned register pair (i.e., the first register in the pair is even-numbered),
-        // or on the stack by value if none is available.
-        // After a variadic argument has been passed on the stack, all future arguments will
-        // also be passed on the stack.
+        // Variadic arguments with 2 * XLEN-bit alignment and size at most 2 * XLEN bits
+        // are passed in an aligned register pair (i.e., the first register in the pair
+        // is even-numbered), or on the stack by value if none is available.
+        // After a variadic argument has been passed on the stack, all future arguments
+        // will also be passed on the stack.
         void alignStorage() {
             if (nRegs[IntegerRegIdx] + 2 <= MAX_REGISTER_ARGUMENTS) {
                 nRegs[IntegerRegIdx] = (nRegs[IntegerRegIdx] + 1) & -2;
@@ -298,7 +296,7 @@ public class LinuxRISCV64CallArranger {
 
                     // When no register is available, struct will be passed by stack.
                     // Before allocation, stack must be aligned.
-                    if (!storageCalculator.availableRegs(1, 0)) {
+                    if (!storageCalculator.regsAvailable(1, 0)) {
                         storageCalculator.alignStack(layout.byteAlignment());
                     }
                     VMStorage[] locations = storageCalculator.getStorages(layout, isVariadicArg);
@@ -320,7 +318,7 @@ public class LinuxRISCV64CallArranger {
                 case STRUCT_REGISTER_F -> {
                     assert carrier == MemorySegment.class;
                     List<FlattenedFieldDesc> descs = getFlattenedFields((GroupLayout) layout);
-                    if (storageCalculator.availableRegs(0, descs.size())) {
+                    if (storageCalculator.regsAvailable(0, descs.size())) {
                         for (int i = 0; i < descs.size(); i++) {
                             FlattenedFieldDesc desc = descs.get(i);
                             Class<?> type = desc.layout().carrier();
@@ -339,7 +337,7 @@ public class LinuxRISCV64CallArranger {
 
                 case STRUCT_REGISTER_XF -> {
                     assert carrier == MemorySegment.class;
-                    if (storageCalculator.availableRegs(1, 1)) {
+                    if (storageCalculator.regsAvailable(1, 1)) {
                         List<FlattenedFieldDesc> descs = getFlattenedFields((GroupLayout) layout);
                         for (int i = 0; i < 2; i++) {
                             FlattenedFieldDesc desc = descs.get(i);
@@ -415,7 +413,7 @@ public class LinuxRISCV64CallArranger {
 
                     // When no register is available, struct will be passed by stack.
                     // Before allocation, stack must be aligned.
-                    if (!storageCalculator.availableRegs(1, 0)) {
+                    if (!storageCalculator.regsAvailable(1, 0)) {
                         storageCalculator.alignStack(layout.byteAlignment());
                     }
                     bindings.allocate(layout);
@@ -436,7 +434,7 @@ public class LinuxRISCV64CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     List<FlattenedFieldDesc> descs = getFlattenedFields((GroupLayout) layout);
-                    if (storageCalculator.availableRegs(0, descs.size())) {
+                    if (storageCalculator.regsAvailable(0, descs.size())) {
                         for (FlattenedFieldDesc desc : descs) {
                             Class<?> type = desc.layout().carrier();
                             VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);
@@ -452,7 +450,7 @@ public class LinuxRISCV64CallArranger {
                 case STRUCT_REGISTER_XF -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
-                    if (storageCalculator.availableRegs(1, 1)) {
+                    if (storageCalculator.regsAvailable(1, 1)) {
                         List<FlattenedFieldDesc> descs = getFlattenedFields((GroupLayout) layout);
                         for (int i = 0; i < 2; i++) {
                             FlattenedFieldDesc desc = descs.get(i);
@@ -482,6 +480,7 @@ public class LinuxRISCV64CallArranger {
 
                 default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);
             }
+
             return bindings.build();
         }
     }
