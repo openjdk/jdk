@@ -29,8 +29,18 @@
 #include "utilities/resourceHash.hpp"
 
 class ObjectState {
+  friend class PEAState;
+
+  //  ObjectState(const ObjectState&) = delete;
  protected:
   int _refcnt = 0;
+  void ref_inc() { _refcnt++; }
+  int ref_dec() { return --_refcnt; }
+  int ref_cnt(int cnt) {
+    int old = _refcnt;
+    _refcnt = cnt;
+    return old;
+  }
 
  public:
   inline void* operator new(size_t x) throw() {
@@ -40,16 +50,10 @@ class ObjectState {
 
   virtual bool is_virtual() const = 0;
   virtual Node* get_materialized_value() = 0;
+  // clone contents but not refcnt;
   virtual ObjectState* clone() const = 0;
 
-  void ref_inc() { _refcnt++; }
-  int ref_dec() { return --_refcnt; }
   int ref_cnt() const { return _refcnt; }
-  int ref_cnt(int cnt) {
-    int old = _refcnt;
-    _refcnt = cnt;
-    return old;
-  }
 
 };
 
@@ -142,8 +146,13 @@ class PEAState {
 
   void add_new_allocation(Node* obj);
   EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
+
 #ifndef PRODUCT
-  void print_on(outputStream* os);
+  void print_on(outputStream* os) const;
+#endif
+
+#ifdef ASSERT
+  void validate() const;
 #endif
 };
 

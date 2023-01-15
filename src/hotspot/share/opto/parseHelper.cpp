@@ -325,8 +325,8 @@ VirtualState::VirtualState(uint nfields): _lockCount(0) {
   }
   DEBUG_ONLY(_nfields = nfields);
 }
-// do NOT call base's copy constructor. we would like to reset refcnt!
 
+// do NOT call base's copy constructor. we would like to reset refcnt!
 VirtualState::VirtualState(const VirtualState& other) {
   _lockCount = other._lockCount;
   _entries   = other._entries;
@@ -368,15 +368,19 @@ PEAState& PEAState::operator=(const PEAState& init) {
   assert(0 == _state.number_of_entries(), "invalid state");
   assert(0 == _alias.number_of_entries(), "invalid state");
 
-  init._state.iterate([&](AllocateNode* key, ObjectState* value) {
-    _state.put(key, value);
+  init._state.iterate([&](ObjID key, ObjectState* value) {
+    _state.put(key, value->clone());
     return true;
   });
 
-  init._alias.iterate([&](Node* key, AllocateNode* value) {
-    _alias.put(key, value);
+  init._alias.iterate([&](Node* key, ObjID id) {
+    add_alias(id, key);
     return true;
   });
+
+#ifdef ASSERT
+  validate();
+#endif
 
   return *this;
 }
@@ -541,11 +545,15 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
   replace_in_map(kit, obj, objx);
   _alias.put(objx, alloc);
   _alias.remove(obj);
+
+#ifdef ASSERT
+  validate();
+#endif
   return escaped;
 }
 
 #ifndef PRODUCT
-void PEAState::print_on(outputStream* os) {
+void PEAState::print_on(outputStream* os) const {
   os->print_cr("PEAState:");
 
   _state.iterate([&](ObjID obj, ObjectState* state) {
@@ -559,6 +567,30 @@ void PEAState::print_on(outputStream* os) {
     });
 
     os->print_cr("]");
+    return true;
+  });
+
+  validate();
+}
+#endif
+
+#ifdef ASSERT
+void PEAState::validate() const {
+  _state.iterate([&](ObjID obj, ObjectState* state) {
+    int cnt = 0;
+    _alias.iterate([&](Node* node, ObjID obj2) {
+      if (obj == obj2){
+        cnt++;
+      }
+      return true;
+    });
+    assert(cnt == state->ref_cnt(), "refcount is broken");
+    return true;
+  });
+
+
+  _alias.iterate([&](Node* var, ObjID obj) {
+    assert(contains(obj), "id must exist");
     return true;
   });
 }
