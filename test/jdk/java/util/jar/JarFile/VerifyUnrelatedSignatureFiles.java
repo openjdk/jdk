@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.jar.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class VerifyUnrelatedSignatureFiles {
 
@@ -107,6 +107,30 @@ public class VerifyUnrelatedSignatureFiles {
         try(JarFile jf = new JarFile(sm, true)) {
             checkSignedBy(jf, "a.txt", "CN=SIGNER2");
             checkSignedBy(jf, "META-INF/subdirectory/META-INF/SIGNER1.SF", "CN=SIGNER2");
+        }
+
+        // 6: Check that JarSigner does not move unrelated [SF,RSA] files to the beginning of signed JARs
+        try(JarFile zf = new JarFile(sm)) {
+
+            List<String> actualOrder = zf.stream().map(ZipEntry::getName).toList();
+
+            List<String> expectedOrder = List.of(
+                    "META-INF/MANIFEST.MF",
+                    "META-INF/SIGNER2.SF",
+                    "META-INF/SIGNER2.RSA",
+                    "a.txt",
+                    "META-INF/subdirectory/META-INF/SIGNER1.SF",
+                    "META-INF/subdirectory/META-INF/SIGNER1.RSA"
+            );
+
+            if(!expectedOrder.equals(actualOrder)) {
+                String msg = ("""
+                        Unexpected file order in JAR with unrelated SF,RSA files
+                        Expected order: %s
+                        Actual order: %s""")
+                        .formatted(expectedOrder, actualOrder);
+                throw new Exception(msg);
+            }
         }
     }
 
@@ -201,34 +225,32 @@ public class VerifyUnrelatedSignatureFiles {
      * Since the signature related files are moved out of META-INF/, the returned jar file should
      * not be considered signed
      */
-    private static File moveSignatureRelated(File s) throws IOException {
+    private static File moveSignatureRelated(File s) throws Exception {
         File m = File.createTempFile("unrelated-signature-files-modified-", ".jar");
 
+        try(ZipFile in = new ZipFile(s);
+            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(m))) {
 
-        try(ZipInputStream in = new JarInputStream(new FileInputStream(s));
-            JarOutputStream out = new JarOutputStream(new FileOutputStream(m))) {
-
+            // Change the digest of the manifest by lower-casing the Manifest-Version attribute:
             out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
             out.write("manifest-version: 1.0\n\n".getBytes(StandardCharsets.UTF_8));
 
-            ZipEntry entry;
-            while((entry = in.getNextEntry()) != null) {
-                String name = entry.getName();
+            // Copy over the regular a.txt file
+            copy("a.txt", "a.txt", in, out);
 
-                // Skip the existing manifest
-                if("META-INF/MANIFEST.MF".equals(name)) {
-                    continue;
-                }
-
-                // Move signature related files into subdirectory of META-INF
-                if(name.endsWith(".SF") || name.endsWith(".RSA")) {
-                    name = "META-INF/subdirectory/" + name;
-                }
-
-                out.putNextEntry(new ZipEntry(name));
-                in.transferTo(out);
-            }
+            // These are also just regular files in their new location, but putting them at end
+            // allows us to verify that JarSigner does not move them to the beginning of the signed JAR
+            copy("META-INF/SIGNER1.SF", "META-INF/subdirectory/META-INF/SIGNER1.SF", in, out);
+            copy("META-INF/SIGNER1.RSA", "META-INF/subdirectory/META-INF/SIGNER1.RSA", in, out);
         }
         return m;
+    }
+
+    // Copy a file from a ZipFile into a ZipOutputStream
+    private static void copy(String from, String to, ZipFile in, ZipOutputStream out) throws Exception {
+        out.putNextEntry(new ZipEntry(to));
+        try(InputStream zi = in.getInputStream(new ZipEntry(from))) {
+            zi.transferTo(out);
+        }
     }
 }
