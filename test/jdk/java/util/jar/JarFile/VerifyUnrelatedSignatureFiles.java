@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8300140
  * @summary Make sure signature related files in subdirectories of META-INF are not considered for verification
  * @modules java.base/jdk.internal.access
  * @modules java.base/sun.security.util
