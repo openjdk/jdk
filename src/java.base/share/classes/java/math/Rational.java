@@ -996,14 +996,14 @@ public class Rational extends Number implements Comparable<Rational> {
      * decimal value for the precision in question. If the rounding mode is
      * {@link RoundingMode#HALF_UP HALF_UP}, {@link RoundingMode#HALF_DOWN
      * HALF_DOWN}, or {@link RoundingMode#HALF_EVEN HALF_EVEN}, the result is within
-     * one half an ulp of the exact decimal value.
+     * one half an ulp of the exact value.
      *
      * @param mc the context to use.
      * @return the square root of {@code this}.
      * @throws ArithmeticException if {@code this} is less than zero.
      * @throws ArithmeticException if an exact result is requested
      *                             ({@code mc.getPrecision()==0}) and there is no
-     *                             finite decimal expansion of the exact result
+     *                             fractional representation of the exact result.
      * @throws ArithmeticException if
      *                             {@code (mc.getRoundingMode()==RoundingMode.UNNECESSARY})
      *                             and the exact result cannot fit in
@@ -1024,7 +1024,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // so compute sqrt(this) as sqrt((floor * den + num) / den)
         // == sqrt(floor * den + num) / sqrt(den)
         if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
-            // simplify radicand to improve the sqrt algorithm performance
+            // simplify the radicand to improve the sqrt algorithm performance
             BigInteger[] radicand = simplify(plainNumerator(), denominator);
             BigInteger[] sqrtNumRem = radicand[0].sqrtAndRemainder();
 
@@ -1179,13 +1179,14 @@ public class Rational extends Number implements Comparable<Rational> {
         // round with mc
         BigDecimal decimalRes = result.toBigDecimal(mc);
         result = new Rational(decimalRes);
+        BigDecimal ulp = decimalRes.ulp();
+
         switch (targetRm) {
         case DOWN:
         case FLOOR:
             // Check if too big
             if (result.square().compareTo(this) > 0) {
-                BigDecimal ulp = decimalRes.ulp();
-                // Adjust increment down in case of 1.0 = 10^0
+                // Adjust increment down in case of 1 = 10^0
                 // since the next smaller number is only 1/10
                 // as far way as the next larger at exponent
                 // boundaries. Test approx and *not* result to
@@ -1203,7 +1204,6 @@ public class Rational extends Number implements Comparable<Rational> {
         case CEILING:
             // Check if too small
             if (result.square().compareTo(this) < 0) {
-                BigDecimal ulp = decimalRes.ulp();
                 result = result.add(new Rational(ulp));
                 decimalRes = decimalRes.add(ulp);
             }
@@ -1222,13 +1222,254 @@ public class Rational extends Number implements Comparable<Rational> {
         }
 
         // Test numerical properties
-        assert rootResultAssertions(2, result, decimalRes, mc);
+        assert rootResultAssertions(2, result, ulp, mc);
         return result;
     }
 
     /**
-     * Check numerical correctness properties of the computed nth-root for the
-     * chosen rounding mode.
+     * Returns an approximation to the {@code n}th root of {@code this} with rounding
+     * according to the context settings.
+     *
+     * <p>
+     * The value of the returned result is always within one ulp of the exact
+     * decimal value for the precision in question. If the rounding mode is
+     * {@link RoundingMode#HALF_UP HALF_UP}, {@link RoundingMode#HALF_DOWN
+     * HALF_DOWN}, or {@link RoundingMode#HALF_EVEN HALF_EVEN}, the result is within
+     * one half an ulp of the exact value.
+     *
+     * @param n the root degree
+     * @param mc the context to use.
+     * @return the {@code n}th root of {@code this}.
+     * @throws ArithmeticException if {@code n} is even and {@code this} is less than zero.
+     * @throws ArithmeticException if an exact result is requested
+     *                             ({@code mc.getPrecision()==0}) and there is no
+     *                             fractional representation of the exact result.
+     * @throws ArithmeticException if
+     *                             {@code (mc.getRoundingMode()==RoundingMode.UNNECESSARY})
+     *                             and the exact result cannot fit in
+     *                             {@code mc.getPrecision()} digits.
+     * @see BigDecimal#sqrt(MathContext)
+     * @see BigInteger#sqrt()
+     * @see #sqrt(MathContext)
+     */
+    public Rational root(int n, MathContext mc) {
+        if ((n & 1) == 0 && signum == -1)
+            throw new ArithmeticException("Attempted " + n + "th root of negative Rational");
+
+        if (signum == 0)
+            return ZERO;
+
+        final RoundingMode targetRm = mc.getRoundingMode();
+        final int originalPrecision = mc.getPrecision();
+        // If an exact value is requested, it must be a rational number
+        // so compute nth-root(this) as nth-root((floor * den + num) / den)
+        // == nth-root(floor * den + num) / nth-root(den)
+        if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
+            // simplify the radicand to improve the algorithm performance
+            BigInteger[] radicand = simplify(plainNumerator(), denominator);
+            BigInteger[] rootNumRem = radicand[0].sqrtAndRemainder();
+
+            if (sqrtNumRem[1].signum != 0)
+                throw new ArithmeticException("Computed square root not exact.");
+
+            BigInteger[] sqrtDenRem = radicand[1].sqrtAndRemainder();
+
+            if (sqrtDenRem[1].signum != 0)
+                throw new ArithmeticException("Computed square root not exact.");
+
+            Rational result = valueOf(1, sqrtNumRem[0], sqrtDenRem[0]);
+
+            if (originalPrecision != 0) {
+                // => targetRm == UNNECESSARY, user-specified number of digits for exact result
+                result = result.round(new MathContext(originalPrecision, RoundingMode.DOWN));
+
+                // If result*result != this numerically, the square root isn't exact
+                if (result.square().compareTo(this) != 0)
+                    throw new ArithmeticException("Computed square root not exact.");
+            }
+
+            return result;
+        }
+
+        /*
+         * The following code draws on the algorithm presented in
+         * "Properly Rounded Variable Precision Square Root," Hull and Abrham, ACM
+         * Transactions on Mathematical Software, Vol 11, No. 3, September 1985, Pages
+         * 229-237.
+         *
+         * The Rational computational model differs from the one presented in the paper
+         * in several ways: first Rational numbers aren't normalized, second many more
+         * rounding modes are supported, including UNNECESSARY, and exact results can be
+         * requested.
+         *
+         * The main steps of the algorithm below are as follows, first argument reduce
+         * the value to the numerical range [1, 2) using the following relations:
+         *
+         * x = y * 2 ^ exp sqrt(x) = sqrt(y) * 2^(exp / 2) if exp is even sqrt(x) =
+         * sqrt(y/2) * 2 ^((exp+1)/2) if exp is odd
+         *
+         * Then use Newton's iteration on the reduced value to compute the numerical
+         * digits of the desired result.
+         *
+         * Finally, scale back to the desired exponent range and perform any adjustment
+         * to get the preferred scale in the representation.
+         */
+
+        // To allow binary floating-point hardware to be used to get
+        // approximately a 15 digit approximation to the square
+        // root, it is helpful to instead normalize this so that
+        // the significand portion is to right of the decimal
+        // point.
+
+        final int expAdjust;
+        Rational working = this;
+        if (floor.signum == 1) { // non-zero integer part
+            int exp = -floor.bitLength();
+            // scaleAdjust must be even
+            expAdjust = (exp & 1) == 0 ? exp : exp + 1;
+
+            if (expAdjust != 0) {
+                Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE.shiftLeft(-expAdjust));
+                working = working.multiply(mul);
+            }
+        } else {
+            BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
+            int exp = denominator.bitLength() - numerator.bitLength();
+            BigDecimal shiftedNum = numerator.shiftLeft(exp);
+
+            // expAdjust must be even
+            if ((exp & 1) == 0)
+                expAdjust = exp;
+            else if (shiftedNum.compareTo(denominator) >= 0) // shifted fractional part >= 1
+                expAdjust = exp - 1;
+            else // shifted fractional part < 1
+                expAdjust = exp + 1;
+
+            if (expAdjust != 0) {
+                Rational mul = new Rational(1, BigInteger.ONE.shiftLeft(expAdjust));
+                working = working.multiply(mul);
+            }
+        }
+
+        assert // Verify 0.5 <= working < 2
+        ONE_HALF.compareTo(working) <= 0 && working.compareTo(TWO) < 0;
+
+        // Use good ole' Math.sqrt to get the initial guess for
+        // the Newton iteration, good to at least 15 decimal
+        // digits. This approach does incur the cost of a
+        //
+        // Rational -> double -> Rational
+        //
+        // conversion cycle, but it avoids the need for several
+        // Newton iterations in Rational arithmetic to get the
+        // working answer to 15 digits of precision. If many fewer
+        // than 15 digits were needed, it might be faster to do
+        // the loop entirely in Rational arithmetic.
+        //
+        // (A double value might have as many as 17 decimal
+        // digits of precision; it depends on the relative density
+        // of binary and rational numbers at different regions of
+        // the number line.)
+        //
+        // (It would be possible to check for certain special
+        // cases to avoid doing any Newton iterations. For
+        // example, if the Rational -> double conversion was
+        // known to be exact and the rounding mode had a
+        // low-enough precision, the post-Newton rounding logic
+        // could be applied directly.)
+
+        Rational approx = new Rational(Math.sqrt(working.doubleValue()));
+        int guessPrecision = 15;
+        int targetPrecision;
+
+        /*
+         * To avoid the need for post-Newton fix-up logic, in the case of half-way
+         * rounding modes, double the target precision so that the "2p + 2" property can
+         * be relied on to accomplish the final rounding.
+         */
+        switch (targetRm) {
+        case HALF_UP:
+        case HALF_DOWN:
+        case HALF_EVEN:
+            targetPrecision = 2 * originalPrecision;
+            if (targetPrecision < 0) // Overflow
+                targetPrecision = Integer.MAX_VALUE - 2;
+            break;
+
+        default:
+            targetPrecision = originalPrecision;
+            break;
+        }
+
+        do {
+            // approx = 0.5 * (approx + fraction / approx)
+            approx = working.divide(approx).add(approx).multiply(ONE_HALF);
+            guessPrecision <<= 1;
+        } while (guessPrecision < targetPrecision + 2);
+
+        Rational result = approx;
+
+        if (expAdjust < 0) { // non-zero integer part
+            Rational mul = new Rational(1, BigInteger.ONE.shiftLeft(-expAdjust / 2));
+            result = result.multiply(mul);
+        } else if (expAdjust > 0) {
+            Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE.shiftLeft(expAdjust / 2));
+            result = result.multiply(mul);
+        }
+
+        // round with mc
+        BigDecimal decimalRes = result.toBigDecimal(mc);
+        result = new Rational(decimalRes);
+        BigDecimal ulp = decimalRes.ulp();
+
+        switch (targetRm) {
+        case DOWN:
+        case FLOOR:
+            // Check if too big
+            if (result.square().compareTo(this) > 0) {
+                // Adjust increment down in case of 1 = 10^0
+                // since the next smaller number is only 1/10
+                // as far way as the next larger at exponent
+                // boundaries. Test approx and *not* result to
+                // avoid having to detect an arbitrary power
+                // of ten.
+                if (approx.compareTo(ONE) == 0)
+                    ulp = ulp.multiply(BigDecimal.ONE_TENTH);
+
+                result = result.subtract(new Rational(ulp));
+                decimalRes = decimalRes.subtract(ulp);
+            }
+            break;
+
+        case UP:
+        case CEILING:
+            // Check if too small
+            if (result.square().compareTo(this) < 0) {
+                result = result.add(new Rational(ulp));
+                decimalRes = decimalRes.add(ulp);
+            }
+
+            break;
+        // No additional work, rely on "2p + 2" property
+        // for correct rounding. Alternatively, could
+        // instead run the Newton iteration to around p
+        // digits and then do tests and fix-ups on the
+        // rounded value. One possible set of tests and
+        // fix-ups is given in the Hull and Abrham paper;
+        // however, additional half-way cases can occur
+        // for Rational given the more varied
+        // combinations of input and output precisions
+        // supported.
+        }
+
+        // Test numerical properties
+        assert rootResultAssertions(2, result, ulp, mc);
+        return result;
+    }
+
+    /**
+     * Check numerical correctness properties of the computed {@code n}th root for
+     * the chosen rounding mode {@code rm} and error {@code delta}.
      *
      * For the directed rounding modes:
      * 
@@ -1238,28 +1479,31 @@ public class Rational extends Number implements Comparable<Rational> {
      * <ul>
      *
      * <li>For DOWN and FLOOR, {@code result^n} must be {@code <=} the input and
-     * {@code (result+ulp)^n} must be {@code >} the input.
+     * {@code (result+delta)^n} must be {@code >} the input.
      *
      * <li>Conversely, for UP and CEIL, {@code result^n} must be {@code >=} the
-     * input and {@code (result+ulp)^n} must be {@code <} the input.
+     * input and {@code (result+delta)^n} must be {@code <} the input.
      * </ul>
      * 
      * <li>If {@code this < 0 && n % 2 == 1}:
      * <ul>
      *
      * <li>For DOWN and CEIL, {@code result^n} must be {@code <=} the input and
-     * {@code (result+ulp)^n} must be {@code >} the input.
+     * {@code (result+delta)^n} must be {@code >} the input.
      *
      * <li>Conversely, for UP and FLOOR, {@code result^n} must be {@code >=} the
-     * input and {@code (result+ulp)^n} must be {@code <} the input.
+     * input and {@code (result+delta)^n} must be {@code <} the input.
      * </ul>
      * </ul>
      */
-    private boolean rootResultAssertions(int n, Rational result, BigDecimal decimalRes, MathContext mc) {
+    private boolean rootResultAssertions(int n, Rational result, BigDecimal ulp, MathContext mc) {
         RoundingMode rm = mc.getRoundingMode();
-        BigDecimal ulp = decimalRes.ulp();
-        Rational neighborCeil = new Rational(decimalRes.add(ulp));
-        Rational neighborFloor = new Rational(decimalRes.subtract(ulp));
+        BigDecimal neighborUp = result.add(ulp);
+        // Make neighbor down accurate even for powers of ten
+        if (result.isPowerOfTen())
+            ulp = ulp.divide(TEN);
+
+        BigDecimal neighborDown = result.subtract(ulp);
 
         // The starting value and result should be concordant.
         assert (result.signum() == this.signum) : "Bad signum of this and/or its " + n + "th-root.";

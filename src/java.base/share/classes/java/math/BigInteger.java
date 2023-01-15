@@ -2596,21 +2596,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (partToSquare.mag.length == 1 && scaleFactor <= 62) {
             // Small number algorithm.  Everything fits into a long.
             int newSign = (signum <0  && (exponent&1) == 1 ? -1 : 1);
-            long result = 1;
-            long baseToPow2 = partToSquare.mag[0] & LONG_MASK;
-
-            int workingExponent = exponent;
-
-            // Perform exponentiation using repeated squaring trick
-            while (workingExponent != 0) {
-                if ((workingExponent & 1) == 1) {
-                    result = result * baseToPow2;
-                }
-
-                if ((workingExponent >>>= 1) != 0) {
-                    baseToPow2 = baseToPow2 * baseToPow2;
-                }
-            }
+            long result = pow(partToSquare.mag[0] & LONG_MASK, exponent);
 
             // Multiply back the powers of two (quickly, by shifting left)
             if (powersOfTwo > 0) {
@@ -2655,6 +2641,21 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return answer;
             }
         }
+    }
+    
+    static long pow(long base, int exp) {
+        // Perform exponentiation using repeated squaring trick
+        long result = 1;
+        
+        while (exp != 0) {
+            if ((exp & 1) == 1)
+                result *= base;
+
+            if ((exp >>>= 1) != 0)
+                base *= base;
+        }
+        
+        return result;
     }
 
     /**
