@@ -215,6 +215,9 @@ JDKOPT_SETUP_CODE_COVERAGE
 # AddressSanitizer
 JDKOPT_SETUP_ADDRESS_SANITIZER
 
+# UndefinedBehaviorSanitizer
+JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.

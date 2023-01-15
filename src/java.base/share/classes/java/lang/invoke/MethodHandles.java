@@ -7931,8 +7931,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
      * atomic access is only guaranteed with respect to the largest power of two that divides the GCD of {@code A} and {@code S}.
      * <p>
-     * Finally, in all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
+     * In all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
      * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
+     * <p>
+     * Finally, if {@code T} is {@code MemorySegment} all write access modes throw {@link IllegalArgumentException}
+     * unless the value to be written is a {@linkplain MemorySegment#isNative() native} memory segment.
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.
