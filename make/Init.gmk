@@ -324,7 +324,7 @@ else # HAS_SPEC=true
           ifneq ($(PARALLEL_TARGETS), )
 	    $(call PrepareFailureLogs)
 	    $(call StartGlobalTimer)
-	    $(call PrepareSmartJavac)
+	    $(call PrepareJavacServer)
             # JOBS will only be empty for a bootcycle-images recursive call
             # or if specified via a make argument directly. In those cases
             # treat it as NOT using jobs at all.
@@ -339,7 +339,7 @@ else # HAS_SPEC=true
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
 	            HAS_SPEC=true on-failure ; \
 	        exit $$exitcode ) )
-	    $(call CleanupSmartJavac)
+	    $(call CleanupJavacServer)
 	    $(call StopGlobalTimer)
 	    $(call ReportBuildTimes)
           endif
@@ -351,7 +351,7 @@ else # HAS_SPEC=true
         endif
 
     on-failure:
-	$(call CleanupSmartJavac)
+	$(call CleanupJavacServer)
 	$(call StopGlobalTimer)
 	$(call ReportBuildTimes)
 	$(call PrintFailureReports)
@@ -364,11 +364,11 @@ else # HAS_SPEC=true
 
     # Support targets for COMPARE_BUILD, used for makefile development
     pre-compare-build:
-	$(call WaitForSmartJavacFinish)
+	$(call WaitForJavacServerFinish)
 	$(call PrepareCompareBuild)
 
     post-compare-build:
-	$(call WaitForSmartJavacFinish)
+	$(call WaitForJavacServerFinish)
 	$(call CleanupCompareBuild)
 	$(call CompareBuildDoComparison)
 

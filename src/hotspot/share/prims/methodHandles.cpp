@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -35,6 +34,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -138,8 +138,6 @@ enum {
   TRUSTED_FINAL        = java_lang_invoke_MemberName::MN_TRUSTED_FINAL,
   REFERENCE_KIND_SHIFT = java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT,
   REFERENCE_KIND_MASK  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
-  SEARCH_SUPERCLASSES  = java_lang_invoke_MemberName::MN_SEARCH_SUPERCLASSES,
-  SEARCH_INTERFACES    = java_lang_invoke_MemberName::MN_SEARCH_INTERFACES,
   LM_UNCONDITIONAL     = java_lang_invoke_MemberName::MN_UNCONDITIONAL_MODE,
   LM_MODULE            = java_lang_invoke_MemberName::MN_MODULE_MODE,
   LM_TRUSTED           = java_lang_invoke_MemberName::MN_TRUSTED_MODE,
@@ -932,116 +930,6 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
   THROW_MSG(vmSymbols::java_lang_InternalError(), "unrecognized MemberName format");
 }
 
-int MethodHandles::find_MemberNames(Klass* k,
-                                    Symbol* name, Symbol* sig,
-                                    int mflags, Klass* caller,
-                                    int skip, objArrayHandle results, TRAPS) {
-  // %%% take caller into account!
-
-  if (k == NULL || !k->is_instance_klass())  return -1;
-
-  int rfill = 0, rlimit = results->length(), rskip = skip;
-  // overflow measurement:
-  int overflow = 0, overflow_limit = MAX2(1000, rlimit);
-
-  int match_flags = mflags;
-  bool search_superc = ((match_flags & SEARCH_SUPERCLASSES) != 0);
-  bool search_intfc  = ((match_flags & SEARCH_INTERFACES)   != 0);
-  bool local_only = !(search_superc | search_intfc);
-
-  if (name != NULL) {
-    if (name->utf8_length() == 0)  return 0; // a match is not possible
-  }
-  if (sig != NULL) {
-    if (sig->starts_with(JVM_SIGNATURE_FUNC))
-      match_flags &= ~(IS_FIELD | IS_TYPE);
-    else
-      match_flags &= ~(IS_CONSTRUCTOR | IS_METHOD);
-  }
-
-  if ((match_flags & IS_TYPE) != 0) {
-    // NYI, and Core Reflection works quite well for this query
-  }
-
-  if ((match_flags & IS_FIELD) != 0) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    for (FieldStream st(ik, local_only, !search_intfc); !st.eos(); st.next()) {
-      if (name != NULL && st.name() != name)
-          continue;
-      if (sig != NULL && st.signature() != sig)
-        continue;
-      // passed the filters
-      if (rskip > 0) {
-        --rskip;
-      } else if (rfill < rlimit) {
-        Handle result(THREAD, results->obj_at(rfill++));
-        if (!java_lang_invoke_MemberName::is_instance(result()))
-          return -99;  // caller bug!
-        oop saved = MethodHandles::init_field_MemberName(result, st.field_descriptor());
-        if (saved != result())
-          results->obj_at_put(rfill-1, saved);  // show saved instance to user
-      } else if (++overflow >= overflow_limit) {
-        match_flags = 0; break; // got tired of looking at overflow
-      }
-    }
-  }
-
-  if ((match_flags & (IS_METHOD | IS_CONSTRUCTOR)) != 0) {
-    // watch out for these guys:
-    Symbol* init_name   = vmSymbols::object_initializer_name();
-    Symbol* clinit_name = vmSymbols::class_initializer_name();
-    if (name == clinit_name)  clinit_name = NULL; // hack for exposing <clinit>
-    bool negate_name_test = false;
-    // fix name so that it captures the intention of IS_CONSTRUCTOR
-    if (!(match_flags & IS_METHOD)) {
-      // constructors only
-      if (name == NULL) {
-        name = init_name;
-      } else if (name != init_name) {
-        return 0;               // no constructors of this method name
-      }
-    } else if (!(match_flags & IS_CONSTRUCTOR)) {
-      // methods only
-      if (name == NULL) {
-        name = init_name;
-        negate_name_test = true; // if we see the name, we *omit* the entry
-      } else if (name == init_name) {
-        return 0;               // no methods of this constructor name
-      }
-    } else {
-      // caller will accept either sort; no need to adjust name
-    }
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    for (MethodStream st(ik, local_only, !search_intfc); !st.eos(); st.next()) {
-      Method* m = st.method();
-      Symbol* m_name = m->name();
-      if (m_name == clinit_name)
-        continue;
-      if (name != NULL && ((m_name != name) ^ negate_name_test))
-          continue;
-      if (sig != NULL && m->signature() != sig)
-        continue;
-      // passed the filters
-      if (rskip > 0) {
-        --rskip;
-      } else if (rfill < rlimit) {
-        Handle result(THREAD, results->obj_at(rfill++));
-        if (!java_lang_invoke_MemberName::is_instance(result()))
-          return -99;  // caller bug!
-        CallInfo info(m, NULL, CHECK_0);
-        oop saved = MethodHandles::init_method_MemberName(result, info);
-        if (saved != result())
-          results->obj_at_put(rfill-1, saved);  // show saved instance to user
-      } else if (++overflow >= overflow_limit) {
-        match_flags = 0; break; // got tired of looking at overflow
-      }
-    }
-  }
-
-  // return number of elements we at leasted wanted to initialize
-  return rfill + overflow;
-}
-
 void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 
@@ -1117,8 +1005,6 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
     template(java_lang_invoke_MemberName,MN_IS_TYPE) \
     template(java_lang_invoke_MemberName,MN_CALLER_SENSITIVE) \
     template(java_lang_invoke_MemberName,MN_TRUSTED_FINAL) \
-    template(java_lang_invoke_MemberName,MN_SEARCH_SUPERCLASSES) \
-    template(java_lang_invoke_MemberName,MN_SEARCH_INTERFACES) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_MASK) \
     template(java_lang_invoke_MemberName,MN_NESTMATE_CLASS) \
@@ -1326,49 +1212,6 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
 }
 JVM_END
 
-
-
-//  static native int getMembers(Class<?> defc, String matchName, String matchSig,
-//          int matchFlags, Class<?> caller, int skip, MemberName[] results);
-JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
-                               jclass clazz_jh, jstring name_jh, jstring sig_jh,
-                               int mflags, jclass caller_jh, jint skip, jobjectArray results_jh)) {
-  if (clazz_jh == NULL || results_jh == NULL)  return -1;
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz_jh));
-
-  objArrayHandle results(THREAD, (objArrayOop) JNIHandles::resolve(results_jh));
-  if (results.is_null() || !results->is_objArray())  return -1;
-
-  TempNewSymbol name = NULL;
-  TempNewSymbol sig = NULL;
-  if (name_jh != NULL) {
-    name = java_lang_String::as_symbol_or_null(JNIHandles::resolve_non_null(name_jh));
-    if (name == NULL)  return 0; // a match is not possible
-  }
-  if (sig_jh != NULL) {
-    sig = java_lang_String::as_symbol_or_null(JNIHandles::resolve_non_null(sig_jh));
-    if (sig == NULL)  return 0; // a match is not possible
-  }
-
-  Klass* caller = NULL;
-  if (caller_jh != NULL) {
-    oop caller_oop = JNIHandles::resolve_non_null(caller_jh);
-    if (!java_lang_Class::is_instance(caller_oop))  return -1;
-    caller = java_lang_Class::as_Klass(caller_oop);
-  }
-
-  if (name != NULL && sig != NULL && results.not_null()) {
-    // try a direct resolve
-    // %%% TO DO
-  }
-
-  int res = MethodHandles::find_MemberNames(k, name, sig, mflags,
-                                            caller, skip, results, CHECK_0);
-  // TO DO: expand at least some of the MemberNames, to avoid massive callbacks
-  return res;
-}
-JVM_END
-
 JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
   Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
   Handle target   (THREAD, JNIHandles::resolve_non_null(target_jh));
@@ -1543,9 +1386,6 @@ static JNINativeMethod MHN_methods[] = {
   {CC "resolve",                   CC "(" MEM "" CLS "IZ)" MEM,              FN_PTR(MHN_resolve_Mem)},
   //  static native int getNamedCon(int which, Object[] name)
   {CC "getNamedCon",               CC "(I[" OBJ ")I",                        FN_PTR(MHN_getNamedCon)},
-  //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
-  //          int matchFlags, Class<?> caller, int skip, MemberName[] results);
-  {CC "getMembers",                CC "(" CLS "" STRG "" STRG "I" CLS "I[" MEM ")I", FN_PTR(MHN_getMembers)},
   {CC "objectFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_objectFieldOffset)},
   {CC "setCallSiteTargetNormal",   CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetNormal)},
   {CC "setCallSiteTargetVolatile", CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetVolatile)},

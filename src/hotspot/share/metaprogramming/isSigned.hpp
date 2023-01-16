@@ -26,12 +26,13 @@
 #define SHARE_METAPROGRAMMING_ISSIGNED_HPP
 
 #include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/removeCV.hpp"
+
 #include <limits>
+#include <type_traits>
 
 template<typename T>
 struct IsSigned
-  : public IntegralConstant<bool, std::numeric_limits<typename RemoveCV<T>::type>::is_signed>
+  : public IntegralConstant<bool, std::numeric_limits<typename std::remove_cv<T>::type>::is_signed>
 {};
 
 #endif // SHARE_METAPROGRAMMING_ISSIGNED_HPP

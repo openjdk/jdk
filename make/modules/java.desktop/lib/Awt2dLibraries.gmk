@@ -120,11 +120,6 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-ifeq ($(call isTargetOs, linux), true)
-  # FIXME: This is probably not what we want to do, but keep it now for compatibility.
-  LIBAWT_CFLAGS += $(EXPORT_ALL_SYMBOLS)
-endif
-
 # Turn off all warnings for debug_mem.c This is needed because the specific warning
 # about initializing a declared 'extern' cannot be turned off individually. Only
 # applies to debug builds. This limitation in gcc is tracked in
@@ -274,7 +269,7 @@ endif
 ################################################################################
 
 # The fast floor code loses precision.
-LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
+LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
@@ -305,7 +300,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         common/awt/debug \
         libawt/java2d, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation, \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -414,7 +409,7 @@ ifeq ($(FREETYPE_TO_USE), system)
   LIBFREETYPE_LIBS := $(FREETYPE_LIBS)
 else
   BUILD_LIBFREETYPE_HEADER_DIRS := $(TOPDIR)/src/$(MODULE)/share/native/libfreetype/include
-  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY $(EXPORT_ALL_SYMBOLS)
+  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY
 
   # For use by libfontmanager:
   LIBFREETYPE_CFLAGS := -I$(BUILD_LIBFREETYPE_HEADER_DIRS)

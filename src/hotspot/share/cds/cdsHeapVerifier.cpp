@@ -236,7 +236,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ls.print("Value: ");
     orig_obj->print_on(&ls);
     ls.print_cr("--- trace begin ---");
-    trace_to_root(orig_obj, NULL, &value);
+    trace_to_root(&ls, orig_obj, NULL, &value);
     ls.print_cr("--- trace end ---");
     ls.cr();
     _problems ++;
@@ -248,54 +248,62 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
 class CDSHeapVerifier::TraceFields : public FieldClosure {
   oop _orig_obj;
   oop _orig_field;
-  LogStream* _ls;
+  outputStream* _st;
 
 public:
-  TraceFields(oop orig_obj, oop orig_field, LogStream* ls)
-    : _orig_obj(orig_obj), _orig_field(orig_field), _ls(ls) {}
+  TraceFields(oop orig_obj, oop orig_field, outputStream* st)
+    : _orig_obj(orig_obj), _orig_field(orig_field), _st(st) {}
 
   void do_field(fieldDescriptor* fd) {
     if (fd->field_type() == T_OBJECT || fd->field_type() == T_ARRAY) {
       oop obj_field = _orig_obj->obj_field(fd->offset());
       if (obj_field == _orig_field) {
-        _ls->print("::%s (offset = %d)", fd->name()->as_C_string(), fd->offset());
+        _st->print("::%s (offset = %d)", fd->name()->as_C_string(), fd->offset());
       }
     }
   }
 };
 
-// Hint: to exercise this function, uncomment out one of the ADD_EXCL lines above.
-int CDSHeapVerifier::trace_to_root(oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p) {
+// Call this function (from gdb, etc) if you want to know why an object is archived.
+void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
+  HeapShared::CachedOopInfo* info = HeapShared::archived_object_cache()->get(orig_obj);
+  if (info != NULL) {
+    trace_to_root(st, orig_obj, NULL, info);
+  } else {
+    st->print_cr("Not an archived object??");
+  }
+}
+
+int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
   int level = 0;
-  LogStream ls(Log(cds, heap)::warning());
-  if (p->_referrer != NULL) {
-    HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(p->_referrer);
+  if (info->_referrer != NULL) {
+    HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(info->_referrer);
     assert(ref != NULL, "sanity");
-    level = trace_to_root(p->_referrer, orig_obj, ref) + 1;
+    level = trace_to_root(st, info->_referrer, orig_obj, ref) + 1;
   } else if (java_lang_String::is_instance(orig_obj)) {
-    ls.print_cr("[%2d] (shared string table)", level++);
+    st->print_cr("[%2d] (shared string table)", level++);
   }
   Klass* k = orig_obj->klass();
   ResourceMark rm;
-  ls.print("[%2d] ", level);
-  orig_obj->print_address_on(&ls);
-  ls.print(" %s", k->internal_name());
+  st->print("[%2d] ", level);
+  orig_obj->print_address_on(st);
+  st->print(" %s", k->internal_name());
   if (orig_field != NULL) {
     if (k->is_instance_klass()) {
-      TraceFields clo(orig_obj, orig_field, &ls);;
+      TraceFields clo(orig_obj, orig_field, st);
       InstanceKlass::cast(k)->do_nonstatic_fields(&clo);
     } else {
       assert(orig_obj->is_objArray(), "must be");
       objArrayOop array = (objArrayOop)orig_obj;
       for (int i = 0; i < array->length(); i++) {
         if (array->obj_at(i) == orig_field) {
-          ls.print(" @[%d]", i);
+          st->print(" @[%d]", i);
           break;
         }
       }
     }
   }
-  ls.cr();
+  st->cr();
 
   return level;
 }

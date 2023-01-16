@@ -293,10 +293,7 @@ public class TestStressRSetCoarsening {
                 if (pre > cur) {
                     // Number of references went down.
                     // Need to provoke recalculation of RSet.
-                    WB.g1StartConcMarkCycle();
-                    while (WB.g1InConcurrentMark()) {
-                        Thread.sleep(1);
-                    }
+                    WB.g1RunConcurrentGC(false);
                 }
 
                 // To force the use of rememebered set entries we need to provoke a GC.

@@ -276,7 +276,7 @@ static void initTemplatePipelineDescriptors() {
 - (id<MTLTexture>) stencilTextureRef {
     if (_dstOps == NULL) return nil;
 
-    return _dstOps->pStencilTexture;;
+    return _dstOps->pStencilTexture;
 }
 
 - (NSUInteger)shapeX {

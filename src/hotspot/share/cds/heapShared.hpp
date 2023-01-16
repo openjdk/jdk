@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
+class KlassToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
@@ -156,12 +157,26 @@ public:
   }
 
   static bool is_subgraph_root_class(InstanceKlass* ik);
+
+  // Scratch objects for archiving Klass::java_mirror()
+  static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
   static DumpedInternedStrings *_dumped_interned_strings;
   static GrowableArrayCHeap<Metadata**, mtClassShared>* _native_pointers;
 
+  // statistics
+  constexpr static int ALLOC_STAT_SLOTS = 16;
+  static size_t _alloc_count[ALLOC_STAT_SLOTS];
+  static size_t _alloc_size[ALLOC_STAT_SLOTS];
+  static size_t _total_obj_count;
+  static size_t _total_obj_size; // in HeapWords
+
+  static void count_allocation(size_t size);
+  static void print_stats();
 public:
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
@@ -183,14 +198,14 @@ private:
 
   typedef ResourceHashtable<oop, CachedOopInfo,
       36137, // prime number
-      ResourceObj::C_HEAP,
+      AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   typedef ResourceHashtable<oop, oop,
       36137, // prime number
-      ResourceObj::C_HEAP,
+      AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> OriginalObjectTable;
   static OriginalObjectTable* _original_object_table;
@@ -198,7 +213,7 @@ private:
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
                                137, // prime number
-                               ResourceObj::C_HEAP,
+                               AnyObj::C_HEAP,
                                mtClassShared,
                                DumpTimeSharedClassTable_hash> {
   public:
@@ -238,6 +253,7 @@ private:
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
   static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
+  static void check_default_subgraph_classes();
 
   static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
@@ -254,18 +270,27 @@ private:
 
   typedef ResourceHashtable<oop, bool,
       15889, // prime number
-      ResourceObj::C_HEAP,
+      AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 
+  // The "default subgraph" is the root of all archived objects that do not belong to any
+  // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
+  //    - interned strings
+  //    - Klass::java_mirror()
+  //    - ConstantPool::resolved_references()
+  static KlassSubGraphInfo* _default_subgraph_info;
+
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
+  static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
+  static KlassToOopHandleTable* _scratch_java_mirror_table;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == NULL, "must be");
-    _seen_objects_table = new (ResourceObj::C_HEAP, mtClass)SeenObjectsTable();
+    _seen_objects_table = new (mtClass)SeenObjectsTable();
   }
   static void delete_seen_objects_table() {
     assert(_seen_objects_table != NULL, "must be");
@@ -292,7 +317,6 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
 
-  static void check_module_oop(oop orig_module_obj);
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
@@ -318,10 +342,10 @@ private:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache(bool create_orig_table) {
     _archived_object_cache =
-      new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();
+      new (mtClass)ArchivedObjectCache();
     if (create_orig_table) {
       _original_object_table =
-        new (ResourceObj::C_HEAP, mtClass)OriginalObjectTable();
+        new (mtClass)OriginalObjectTable();
     } else {
       _original_object_table = NULL;
     }
@@ -350,7 +374,7 @@ private:
   static oop find_archived_heap_object(oop obj);
   static oop archive_object(oop obj);
 
-  static void archive_klass_objects();
+  static void archive_java_mirrors();
 
   static void archive_objects(GrowableArray<MemRegion>* closed_regions,
                               GrowableArray<MemRegion>* open_regions);
@@ -365,6 +389,10 @@ private:
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
   static ResourceBitMap calculate_ptrmap(MemRegion region); // marks all the native pointers
   static void add_to_dumped_interned_strings(oop string);
+
+  // Scratch objects for archiving Klass::java_mirror()
+  static void set_scratch_java_mirror(Klass* k, oop mirror);
+  static void remove_scratch_objects(Klass* k);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
   // archived heap regions are not prematurely collected. These roots include:
@@ -395,6 +423,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void run_full_gc_in_vm_thread() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_heap_region(int idx) {
@@ -410,7 +439,8 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_root(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
   static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   // Returns the address of a heap object when it's mapped at the
@@ -426,7 +456,7 @@ private:
 class DumpedInternedStrings :
   public ResourceHashtable<oop, bool,
                            15889, // prime number
-                           ResourceObj::C_HEAP,
+                           AnyObj::C_HEAP,
                            mtClassShared,
                            HeapShared::string_oop_hash>
 {};

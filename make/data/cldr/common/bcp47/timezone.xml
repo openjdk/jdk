@@ -280,6 +280,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mwblz" description="Blantyre, Malawi" alias="Africa/Blantyre"/>
             <type name="mxchi" description="Chihuahua, Mexico" alias="America/Chihuahua"/>
             <type name="mxcun" description="Cancún, Mexico" alias="America/Cancun"/>
+            <type name="mxcjs" description="Ciudad Juárez, Mexico" alias="America/Ciudad_Juarez"/>
             <type name="mxhmo" description="Hermosillo, Mexico" alias="America/Hermosillo"/>
             <type name="mxmam" description="Matamoros, Mexico" alias="America/Matamoros"/>
             <type name="mxmex" description="Mexico City, Mexico" alias="America/Mexico_City Mexico/General"/>

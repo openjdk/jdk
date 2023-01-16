@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -113,7 +113,6 @@ class MacroAssembler: public Assembler {
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
-    code_section()->relocate(inst_mark(), a.rspec());
     a.lea(this, r);
   }
 
@@ -1085,9 +1084,6 @@ public:
                bool acquire, bool release, bool weak,
                Register result);
 
-private:
-  void compare_eq(Register rn, Register rm, enum operand_size size);
-
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
   // call generation (see trampoline_call() below),  when a set of Labels must
@@ -1101,6 +1097,9 @@ private:
     lbl.reset();
   }
 #endif
+
+private:
+  void compare_eq(Register rn, Register rm, enum operand_size size);
 
 public:
   // AArch64 OpenJDK uses four different types of calls:
@@ -1178,7 +1177,7 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Check if branches to the the non nmethod section require a far jump
+  // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
@@ -1449,6 +1448,13 @@ public:
                       FloatRegister data = v0, int unrolls = 1);
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
+
+  // ChaCha20 functions support block
+  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
+          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
+          FloatRegister tbl);
+  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
+          FloatRegister dVec, bool colToDiag);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

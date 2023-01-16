@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "jimage.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
@@ -45,6 +43,8 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "jimage.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
@@ -237,6 +237,10 @@ const char* ClassPathEntry::copy_path(const char* path) {
   return copy;
 }
 
+ClassPathDirEntry::~ClassPathDirEntry() {
+  FREE_C_HEAP_ARRAY(char, _dir);
+}
+
 ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char* name) {
   // construct full path name
   assert((_dir != NULL) && (name != NULL), "sanity");
@@ -251,7 +255,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
     int file_handle = os::open(path, 0, 0);
     if (file_handle != -1) {
       // read contents into resource array
-      u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
+      u1* buffer = NEW_RESOURCE_ARRAY_IN_THREAD(current, u1, st.st_size);
       size_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
       // close file
       ::close(file_handle);
@@ -260,7 +264,11 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
-        FREE_RESOURCE_ARRAY(char, path, path_len);
+#ifdef ASSERT
+        // Freeing path is a no-op here as buffer prevents it from being reclaimed. But we keep it for
+        // debug builds so that we guard against use-after-free bugs.
+        FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
+#endif
         // Resource allocated
         return new ClassFileStream(buffer,
                                    st.st_size,
@@ -269,7 +277,7 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
       }
     }
   }
-  FREE_RESOURCE_ARRAY(char, path, path_len);
+  FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
   return NULL;
 }
 
@@ -567,7 +575,7 @@ void ClassLoader::setup_patch_mod_entries() {
   int num_of_entries = patch_mod_args->length();
 
   // Set up the boot loader's _patch_mod_entries list
-  _patch_mod_entries = new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
+  _patch_mod_entries = new (mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (patch_mod_args->at(i))->module_name();
@@ -649,10 +657,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
           _jrt_entry = new ClassPathImageEntry(JImage_file, canonical_path);
           assert(_jrt_entry != NULL && _jrt_entry->is_modules_image(), "No java runtime image present");
           assert(_jrt_entry->jimage() != NULL, "No java runtime image");
-        } else {
-          // It's an exploded build.
-          ClassPathEntry* new_entry = create_class_path_entry(current, path, &st, false, false);
-        }
+        } // else it's an exploded build.
       } else {
         // If path does not exist, exit
         vm_exit_during_initialization("Unable to establish the boot loader search path", path);
@@ -666,6 +671,18 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   }
 }
 
+// Gets the exploded path for the named module. The memory for the path
+// is allocated on the C heap if `c_heap` is true otherwise in the resource area.
+static const char* get_exploded_module_path(const char* module_name, bool c_heap) {
+  const char *home = Arguments::get_java_home();
+  const char file_sep = os::file_separator()[0];
+  // 10 represents the length of "modules" + 2 file separators + \0
+  size_t len = strlen(home) + strlen(module_name) + 10;
+  char *path = c_heap ? NEW_C_HEAP_ARRAY(char, len, mtModule) : NEW_RESOURCE_ARRAY(char, len);
+  jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
+  return path;
+}
+
 // During an exploded modules build, each module defined to the boot loader
 // will be added to the ClassLoader::_exploded_entries array.
 void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module_sym) {
@@ -675,12 +692,7 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
   // Find the module's symbol
   ResourceMark rm(current);
   const char *module_name = module_sym->as_C_string();
-  const char *home = Arguments::get_java_home();
-  const char file_sep = os::file_separator()[0];
-  // 10 represents the length of "modules" + 2 file separators + \0
-  size_t len = strlen(home) + strlen(module_name) + 10;
-  char *path = NEW_RESOURCE_ARRAY(char, len);
-  jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
+  const char *path = get_exploded_module_path(module_name, false);
 
   struct stat st;
   if (os::stat(path, &st) == 0) {
@@ -1410,6 +1422,20 @@ char* ClassLoader::lookup_vm_options() {
   return options;
 }
 
+bool ClassLoader::is_module_observable(const char* module_name) {
+  assert(JImageOpen != NULL, "jimage library should have been opened");
+  if (JImage_file == NULL) {
+    struct stat st;
+    const char *path = get_exploded_module_path(module_name, true);
+    bool res = os::stat(path, &st) == 0;
+    FREE_C_HEAP_ARRAY(char, path);
+    return res;
+  }
+  jlong size;
+  const char *jimage_version = get_jimage_version_string();
+  return (*JImageFindResource)(JImage_file, module_name, jimage_version, "module-info.class", &size) != 0;
+}
+
 #if INCLUDE_CDS
 void ClassLoader::initialize_shared_path(JavaThread* current) {
   if (Arguments::is_dumping_archive()) {
@@ -1507,7 +1533,7 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
     // done before loading any classes, by the same thread that will
     // subsequently do the first class load. So, no lock is needed for this.
     assert(_exploded_entries == NULL, "Should only get initialized once");
-    _exploded_entries = new (ResourceObj::C_HEAP, mtModule)
+    _exploded_entries = new (mtModule)
       GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, mtModule);
     add_to_exploded_build_list(current, vmSymbols::java_base());
   }

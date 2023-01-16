@@ -1004,6 +1004,8 @@ public final class ProcessBuilder
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the process builder's {@link #environment()}.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      *
      * <p>If there is a security manager, its
      * {@link SecurityManager#checkExec checkExec}
@@ -1181,6 +1183,8 @@ public final class ProcessBuilder
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the process builder's {@link #environment()}.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      * <p>
      * If there is a security manager, its
      * {@link SecurityManager#checkExec checkExec}

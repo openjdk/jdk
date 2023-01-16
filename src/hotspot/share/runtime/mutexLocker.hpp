@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ extern Mutex*   SymbolArena_lock;                // a lock on the symbol table a
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
-extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute
@@ -127,6 +126,7 @@ extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t 
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable
 extern Mutex*   LambdaFormInvokers_lock;         // Protecting LambdaFormInvokers::_lambdaform_lines
+extern Mutex*   ScratchObjects_lock;             // Protecting _scratch_xxx_table in heapShared.cpp
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
@@ -177,19 +177,15 @@ extern Mutex* tty_lock;                          // lock to synchronize output.
 void print_owned_locks_on_error(outputStream* st);
 void print_lock_ranks(outputStream* st);
 
-char *lock_name(Mutex *mutex);
-
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock);
 void assert_locked_or_safepoint_weak(const Mutex* lock);
 void assert_lock_strong(const Mutex* lock);
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread);
 #else
 #define assert_locked_or_safepoint(lock)
 #define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
-#define assert_locked_or_safepoint_or_handshake(lock, thread)
 #endif
 
 class MutexLocker: public StackObj {

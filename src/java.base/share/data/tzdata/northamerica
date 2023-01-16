@@ -852,7 +852,6 @@ Zone America/Phoenix	-7:28:18 -	LMT	1883 Nov 18 19:00u
 			-7:00	-	MST	1967
 			-7:00	US	M%sT	1968 Mar 21
 			-7:00	-	MST
-Link America/Phoenix America/Creston
 
 # From Arthur David Olson (1988-02-13):
 # A writer from the Inter Tribal Council of Arizona, Inc.,
@@ -1626,23 +1625,6 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 
 # Ontario
 
-# From Paul Eggert (2006-07-09):
-# Shanks & Pottenger write that since 1970 most of Ontario has been like
-# Toronto.
-# Thunder Bay skipped DST in 1973.
-# Many smaller locales did not observe peacetime DST until 1974;
-# Nipigon (EST) and Rainy River (CST) are the largest that we know of.
-# Far west Ontario is like Winnipeg; far east Quebec is like Halifax.
-
-# From Jeffery Nichols (2020-02-06):
-# According to the [Shanks] atlas, those western Ontario zones are huge,
-# covering most of Ontario northwest of Sault Ste Marie and Timmins.
-# The zones seem to include towns bigger than the ones they're named after,
-# like Dryden in America/Rainy_River and Wawa (and maybe Attawapiskat) in
-# America/Nipigon.  I assume it's too much trouble to change the name of the
-# zone (like when you found out that America/Glace_Bay includes Sydney, Nova
-# Scotia)....
-
 # From Mark Brader (2003-07-26):
 # [According to the Toronto Star] Orillia, Ontario, adopted DST
 # effective Saturday, 1912-06-22, 22:00; the article mentions that
@@ -1663,17 +1645,6 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 
 # From Mark Brader (2010-03-06):
 #
-# Currently the database has:
-#
-# # Ontario
-#
-# # From Paul Eggert (2006-07-09):
-# # Shanks & Pottenger write that since 1970 most of Ontario has been like
-# # Toronto.
-# # Thunder Bay skipped DST in 1973.
-# # Many smaller locales did not observe peacetime DST until 1974;
-# # Nipigon (EST) and Rainy River (CST) are the largest that we know of.
-#
 # In the (Toronto) Globe and Mail for Saturday, 1955-09-24, in the bottom
 # right corner of page 1, it says that Toronto will return to standard
 # time at 2 am Sunday morning (which agrees with the database), and that:
@@ -1681,10 +1652,8 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 #     The one-hour setback will go into effect throughout most of Ontario,
 #     except in areas like Windsor which remains on standard time all year.
 #
-# Windsor is, of course, a lot larger than Nipigon.
-#
-# I only came across this incidentally.  I don't know if Windsor began
-# observing DST when Detroit did, or in 1974, or on some other date.
+# ... I don't know if Windsor began observing DST when Detroit did,
+# or in 1974, or on some other date.
 #
 # By the way, the article continues by noting that:
 #
@@ -1766,23 +1735,7 @@ Rule	Toronto	1951	1956	-	Sep	lastSun	2:00	0	S
 # Toronto Star, which said that DST was ending 1971-10-31 as usual.
 Rule	Toronto	1957	1973	-	Oct	lastSun	2:00	0	S
 
-# From Paul Eggert (2003-07-27):
-# Willett (1914-03) writes (p. 17) "In the Cities of Fort William, and
-# Port Arthur, Ontario, the principle of the Bill has been in
-# operation for the past three years, and in the City of Moose Jaw,
-# Saskatchewan, for one year."
-
-# From David Bryan via Tory Tronrud, Director/Curator,
-# Thunder Bay Museum (2003-11-12):
-# There is some suggestion, however, that, by-law or not, daylight
-# savings time was being practiced in Fort William and Port Arthur
-# before 1909.... [I]n 1910, the line between the Eastern and Central
-# Time Zones was permanently moved about two hundred miles west to
-# include the Thunder Bay area....  When Canada adopted daylight
-# savings time in 1916, Fort William and Port Arthur, having done so
-# already, did not change their clocks....  During the Second World
-# War,... [t]he cities agreed to implement DST during the summer
-# months for the remainder of the war years.
+# The Bahamas match Toronto since 1970.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Toronto	-5:17:32 -	LMT	1895
@@ -1791,22 +1744,6 @@ Zone America/Toronto	-5:17:32 -	LMT	1895
 			-5:00	Canada	E%sT	1946
 			-5:00	Toronto	E%sT	1974
 			-5:00	Canada	E%sT
-Link America/Toronto America/Nassau
-Zone America/Thunder_Bay -5:57:00 -	LMT	1895
-			-6:00	-	CST	1910
-			-5:00	-	EST	1942
-			-5:00	Canada	E%sT	1970
-			-5:00	Toronto	E%sT	1973
-			-5:00	-	EST	1974
-			-5:00	Canada	E%sT
-Zone America/Nipigon	-5:53:04 -	LMT	1895
-			-5:00	Canada	E%sT	1940 Sep 29
-			-5:00	1:00	EDT	1942 Feb  9  2:00s
-			-5:00	Canada	E%sT
-Zone America/Rainy_River -6:18:16 -	LMT	1895
-			-6:00	Canada	C%sT	1940 Sep 29
-			-6:00	1:00	CDT	1942 Feb  9  2:00s
-			-6:00	Canada	C%sT
 # For Atikokan see America/Panama.
 
 
@@ -2055,6 +1992,37 @@ Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
 
 # Northwest Territories, Nunavut, Yukon
 
+# From Chris Walton (2022-11-06):
+# Whitehorse Star - Thursday April 22, 1965 - page 1
+# title: DST Starts Monday ...
+# https://www.newspapers.com/image/578587481/
+# The title of this first article is wrong and/or misleading.
+# Also, the start time shown in the  article is vague; it simply says "after
+# midnight" when it probably should have stated 2:00a.m....
+#
+# Whitehorse Star - Monday October 25, 1965 - page 15 ...
+# https://www.newspapers.com/image/578589147/
+# The 1965 Yukon Council minutes can be found here:
+# http://assets.yukonarchives.ca/PER_YG_06_1965_C20_S02_v1.pdf
+# ... I do not currently believe that NWT touched any of its clocks in 1965....
+#
+# Whitehorse Star - Thursday Feb 24,1966 - page 2
+# title: It's Time for YDT ...
+# https://www.newspapers.com/image/578575979/ ...
+# America/Whitehorse as a permanent change from UTC-9(YST) to
+# UTC-8(PST) at 00:00 on Sunday February 27, 1966....
+#
+# Whitehorse Star - Friday April 28,1972 - page 6
+# title: Daylight Saving Time for N.W.T....
+# https://www.newspapers.com/image/578701610/ ...
+# Nunavut and NWT zones ... DST starting in 1972.... Start and End ...
+# should be the same as the rest of Canada
+#
+#
+# From Paul Eggert (2022-11-06):
+# For now, assume Yukon's 1965-04-22 spring forward was 00:00 -> 02:00, as this
+# seems likely than 02:00 -> 04:00 and matches "after midnight".
+
 # From Paul Eggert (2006-03-22):
 # Dawson switched to PST in 1973.  Inuvik switched to MST in 1979.
 # Mathew Englander (1996-10-07) gives the following refs:
@@ -2169,6 +2137,13 @@ Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
 # * Interpretation Act, RSY 2002, c 125
 # https://www.canlii.org/en/yk/laws/stat/rsy-2002-c-125/latest/rsy-2002-c-125.html
 
+# From Chris Walton (2022-11-06):
+# The 5th edition of the Atlas of Canada contains a time zone map that
+# shows both legislated and observed time zone boundaries.
+# All communities on Baffin Island are shown to be observing Eastern time.
+# The date on the map is 1984.
+# https://ftp.maps.canada.ca/pub/nrcan_rncan/raster/atlas_5_ed/eng/other/referencemaps/mcr4056.pdf
+
 # From Rives McDow (1999-09-04):
 # Nunavut ... moved ... to incorporate the whole territory into one time zone.
 # Nunavut moves to single time zone Oct. 31
@@ -2181,40 +2156,7 @@ Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
 # From Paul Eggert (1999-09-20):
 # Basic Facts: The New Territory
 # http://www.nunavut.com/basicfacts/english/basicfacts_1territory.html
-# (1999) reports that Pangnirtung operates on eastern time,
-# and that Coral Harbour does not observe DST.  We don't know when
-# Pangnirtung switched to eastern time; we'll guess 1995.
-
-# From Rives McDow (1999-11-08):
-# On October 31, when the rest of Nunavut went to Central time,
-# Pangnirtung wobbled.  Here is the result of their wobble:
-#
-# The following businesses and organizations in Pangnirtung use Central Time:
-#
-#	First Air, Power Corp, Nunavut Construction, Health Center, RCMP,
-#	Eastern Arctic National Parks, A & D Specialist
-#
-# The following businesses and organizations in Pangnirtung use Eastern Time:
-#
-#	Hamlet office, All other businesses, Both schools, Airport operator
-#
-# This has made for an interesting situation there, which warranted the news.
-# No one there that I spoke with seems concerned, or has plans to
-# change the local methods of keeping time, as it evidently does not
-# really interfere with any activities or make things difficult locally.
-# They plan to celebrate New Year's turn-over twice, one hour apart,
-# so it appears that the situation will last at least that long.
-# The Nunavut Intergovernmental Affairs hopes that they will "come to
-# their senses", but the locals evidently don't see any problem with
-# the current state of affairs.
-
-# From Michaela Rodrigue, writing in the
-# Nunatsiaq News (1999-11-19):
-# http://www.nunatsiaqonline.ca/archives/nunavut991130/nvt91119_17.html
-# Clyde River, Pangnirtung and Sanikiluaq now operate with two time zones,
-# central - or Nunavut time - for government offices, and eastern time
-# for municipal offices and schools....  Igloolik [was similar but then]
-# made the switch to central time on Saturday, Nov. 6.
+# (1999) reports that ... Coral Harbour does not observe DST.
 
 # From Paul Eggert (2000-10-02):
 # Matthews and Vincent (1998) say the following, but we lack histories
@@ -2373,18 +2315,12 @@ Rule	NT_YK	1919	only	-	Nov	 1	0:00	0	S
 Rule	NT_YK	1942	only	-	Feb	 9	2:00	1:00	W # War
 Rule	NT_YK	1945	only	-	Aug	14	23:00u	1:00	P # Peace
 Rule	NT_YK	1945	only	-	Sep	30	2:00	0	S
-Rule	NT_YK	1965	only	-	Apr	lastSun	0:00	2:00	DD
-Rule	NT_YK	1965	only	-	Oct	lastSun	2:00	0	S
-Rule	NT_YK	1980	1986	-	Apr	lastSun	2:00	1:00	D
-Rule	NT_YK	1980	2006	-	Oct	lastSun	2:00	0	S
+Rule	NT_YK	1972	1986	-	Apr	lastSun	2:00	1:00	D
+Rule	NT_YK	1972	2006	-	Oct	lastSun	2:00	0	S
 Rule	NT_YK	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
+Rule	Yukon	1965	only	-	Apr	lastSun	0:00	2:00	DD
+Rule	Yukon	1965	only	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-# aka Panniqtuuq
-Zone America/Pangnirtung 0	-	-00	1921 # trading post est.
-			-4:00	NT_YK	A%sT	1995 Apr Sun>=1  2:00
-			-5:00	Canada	E%sT	1999 Oct 31  2:00
-			-6:00	Canada	C%sT	2000 Oct 29  2:00
-			-5:00	Canada	E%sT
 # formerly Frobisher Bay
 Zone America/Iqaluit	0	-	-00	1942 Aug # Frobisher Bay est.
 			-5:00	NT_YK	E%sT	1999 Oct 31  2:00
@@ -2417,13 +2353,15 @@ Zone America/Inuvik	0	-	-00	1953 # Inuvik founded
 			-7:00	NT_YK	M%sT	1980
 			-7:00	Canada	M%sT
 Zone America/Whitehorse	-9:00:12 -	LMT	1900 Aug 20
-			-9:00	NT_YK	Y%sT	1967 May 28  0:00
-			-8:00	NT_YK	P%sT	1980
+			-9:00	NT_YK	Y%sT	1965
+			-9:00	Yukon	Y%sT	1966 Feb 27  0:00
+			-8:00	-	PST	1980
 			-8:00	Canada	P%sT	2020 Nov  1
 			-7:00	-	MST
 Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
-			-9:00	NT_YK	Y%sT	1973 Oct 28  0:00
-			-8:00	NT_YK	P%sT	1980
+			-9:00	NT_YK	Y%sT	1965
+			-9:00	Yukon	Y%sT	1973 Oct 28  0:00
+			-8:00	-	PST	1980
 			-8:00	Canada	P%sT	2020 Nov  1
 			-7:00	-	MST
 
@@ -2639,6 +2577,20 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # 5- The islands, reefs and keys shall take their timezone from the
 #    longitude they are located at.
 
+# From Paul Eggert (2022-10-28):
+# The new Mexican law was published today:
+# https://www.dof.gob.mx/nota_detalle.php?codigo=5670045&fecha=28/10/2022
+# This abolishes DST except where US DST rules are observed,
+# and in addition changes all of Chihuahua to -06 with no DST.
+
+# From Heitor David Pinto (2022-11-28):
+# Now the northern municipalities want to have the same time zone as the
+# respective neighboring cities in the US, for example Juárez in UTC-7 with
+# DST, matching El Paso, and Ojinaga in UTC-6 with DST, matching Presidio....
+# the president authorized the publication of the decree for November 29,
+# so the time change would occur on November 30 at 0:00.
+# http://puentelibre.mx/noticia/ciudad_juarez_cambio_horario_noviembre_2022/
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Mexico	1931	only	-	May	1	23:00	1:00	D
 Rule	Mexico	1931	only	-	Oct	1	0:00	0	S
@@ -2654,8 +2606,8 @@ Rule	Mexico	1996	2000	-	Apr	Sun>=1	2:00	1:00	D
 Rule	Mexico	1996	2000	-	Oct	lastSun	2:00	0	S
 Rule	Mexico	2001	only	-	May	Sun>=1	2:00	1:00	D
 Rule	Mexico	2001	only	-	Sep	lastSun	2:00	0	S
-Rule	Mexico	2002	max	-	Apr	Sun>=1	2:00	1:00	D
-Rule	Mexico	2002	max	-	Oct	lastSun	2:00	0	S
+Rule	Mexico	2002	2022	-	Apr	Sun>=1	2:00	1:00	D
+Rule	Mexico	2002	2022	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Quintana Roo; represented by Cancún
 Zone America/Cancun	-5:47:04 -	LMT	1922 Jan  1  6:00u
@@ -2670,14 +2622,12 @@ Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  6:00u
 			-6:00	Mexico	C%sT
 # Coahuila, Nuevo León, Tamaulipas (near US border)
 # This includes the following municipalities:
-#   in Coahuila: Ocampo, Acuña, Zaragoza, Jiménez, Piedras Negras, Nava,
-#     Guerrero, Hidalgo.
-#   in Nuevo León: Anáhuac, Los Aldama.
+#   in Coahuila: Acuña, Allende, Guerrero, Hidalgo, Jiménez, Morelos, Nava,
+#     Ocampo, Piedras Negras, Villa Unión, Zaragoza
+#   in Nuevo León: Anáhuac
 #   in Tamaulipas: Nuevo Laredo, Guerrero, Mier, Miguel Alemán, Camargo,
 #     Gustavo Díaz Ordaz, Reynosa, Río Bravo, Valle Hermoso, Matamoros.
-# See: Inicia mañana Horario de Verano en zona fronteriza, El Universal,
-# 2016-03-12
-# http://www.eluniversal.com.mx/articulo/estados/2016/03/12/inicia-manana-horario-de-verano-en-zona-fronteriza
+# https://www.dof.gob.mx/nota_detalle.php?codigo=5670045&fecha=28/10/2022
 Zone America/Matamoros	-6:30:00 -	LMT	1922 Jan  1  6:00u
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
@@ -2696,10 +2646,24 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
 			-6:00	Mexico	C%sT	2001 Sep 30  2:00
 			-6:00	-	CST	2002 Feb 20
 			-6:00	Mexico	C%sT
-# Chihuahua (near US border)
+# Chihuahua (near US border - western side)
 # This includes the municipalities of Janos, Ascensión, Juárez, Guadalupe,
-# Práxedis G Guerrero, Coyame del Sotol, Ojinaga, and Manuel Benavides.
-# (See the 2016-03-12 El Universal source mentioned above.)
+# and Práxedis G Guerrero.
+# http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
+Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
+			-7:00	-	MST	1927 Jun 10 23:00
+			-6:00	-	CST	1930 Nov 15
+			-7:00	Mexico	M%sT	1932 Apr  1
+			-6:00	-	CST	1996
+			-6:00	Mexico	C%sT	1998
+			-6:00	-	CST	1998 Apr Sun>=1  3:00
+			-7:00	Mexico	M%sT	2010
+			-7:00	US	M%sT	2022 Oct 30  2:00
+			-6:00	-	CST	2022 Nov 30  0:00
+			-7:00	US	M%sT
+# Chihuahua (near US border - eastern side)
+# The municipalities of Coyame del Sotol, Ojinaga, and Manuel Benavides.
+# http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
 Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
@@ -2708,7 +2672,9 @@ Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-6:00	Mexico	C%sT	1998
 			-6:00	-	CST	1998 Apr Sun>=1  3:00
 			-7:00	Mexico	M%sT	2010
-			-7:00	US	M%sT
+			-7:00	US	M%sT	2022 Oct 30  2:00
+			-6:00	-	CST	2022 Nov 30  0:00
+			-6:00	US	C%sT
 # Chihuahua (away from US border)
 Zone America/Chihuahua	-7:04:20 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
@@ -2717,7 +2683,8 @@ Zone America/Chihuahua	-7:04:20 -	LMT	1922 Jan  1  7:00u
 			-6:00	-	CST	1996
 			-6:00	Mexico	C%sT	1998
 			-6:00	-	CST	1998 Apr Sun>=1  3:00
-			-7:00	Mexico	M%sT
+			-7:00	Mexico	M%sT	2022 Oct 30  2:00
+			-6:00	-	CST
 # Sonora
 Zone America/Hermosillo	-7:23:52 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
@@ -2728,6 +2695,18 @@ Zone America/Hermosillo	-7:23:52 -	LMT	1922 Jan  1  7:00u
 			-8:00	-	PST	1970
 			-7:00	Mexico	M%sT	1999
 			-7:00	-	MST
+
+# Baja California Sur, Nayarit (except Bahía de Banderas), Sinaloa
+Zone America/Mazatlan	-7:05:40 -	LMT	1922 Jan  1  7:00u
+			-7:00	-	MST	1927 Jun 10 23:00
+			-6:00	-	CST	1930 Nov 15
+			-7:00	Mexico	M%sT	1932 Apr  1
+			-6:00	-	CST	1942 Apr 24
+			-7:00	-	MST	1949 Jan 14
+			-8:00	-	PST	1970
+			-7:00	Mexico	M%sT
+
+# Bahía de Banderas
 
 # From Alexander Krivenyshev (2010-04-21):
 # According to news, Bahía de Banderas (Mexican state of Nayarit)
@@ -2756,17 +2735,6 @@ Zone America/Hermosillo	-7:23:52 -	LMT	1922 Jan  1  7:00u
 # From Arthur David Olson (2010-05-01):
 # Use "Bahia_Banderas" to keep the name to fourteen characters.
 
-# Mazatlán
-Zone America/Mazatlan	-7:05:40 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
-			-6:00	-	CST	1930 Nov 15
-			-7:00	Mexico	M%sT	1932 Apr  1
-			-6:00	-	CST	1942 Apr 24
-			-7:00	-	MST	1949 Jan 14
-			-8:00	-	PST	1970
-			-7:00	Mexico	M%sT
-
-# Bahía de Banderas
 Zone America/Bahia_Banderas -7:01:00 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
@@ -2815,19 +2783,15 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  7:00u
 # http://dof.gob.mx/nota_detalle.php?codigo=5127480&fecha=06/01/2010
 # It has been moved to the 'backward' file.
 #
+# From Paul Eggert (2022-10-28):
+# Today's new law states that the entire state of Baja California
+# follows US DST rules, which agrees with simplifications noted above.
+#
 #
 # Revillagigedo Is
 # no information
 
 ###############################################################################
-
-# Anguilla
-# Antigua and Barbuda
-# See America/Puerto_Rico.
-
-# The Bahamas
-# See America/Toronto.
-
 
 # Barbados
 
@@ -3040,12 +3004,6 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1890	# Hamilton
 			-4:00	Bermuda	A%sT	1974 Apr 28  2:00
 			-4:00	Canada	A%sT	1976
 			-4:00	US	A%sT
-
-# Caribbean Netherlands
-# See America/Puerto_Rico.
-
-# Cayman Is
-# See America/Panama.
 
 # Costa Rica
 
@@ -3272,9 +3230,6 @@ Zone	America/Havana	-5:29:28 -	LMT	1890
 			-5:29:36 -	HMT	1925 Jul 19 12:00 # Havana MT
 			-5:00	Cuba	C%sT
 
-# Dominica
-# See America/Puerto_Rico.
-
 # Dominican Republic
 
 # From Steffen Thorsen (2000-10-30):
@@ -3320,12 +3275,6 @@ Rule	Salv	1987	1988	-	Sep	lastSun	0:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/El_Salvador -5:56:48 -	LMT	1921 # San Salvador
 			-6:00	Salv	C%sT
-
-# Grenada
-# Guadeloupe
-# St Barthélemy
-# St Martin (French part)
-# See America/Puerto_Rico.
 
 # Guatemala
 #
@@ -3512,9 +3461,6 @@ Zone America/Martinique	-4:04:20 -      LMT	1890        # Fort-de-France
 			-4:00	1:00	ADT	1980 Sep 28
 			-4:00	-	AST
 
-# Montserrat
-# See America/Puerto_Rico.
-
 # Nicaragua
 #
 # This uses Shanks & Pottenger for times before 2005.
@@ -3580,44 +3526,39 @@ Zone	America/Managua	-5:45:08 -	LMT	1890
 			-5:00	-	EST	1997
 			-6:00	Nic	C%sT
 
+# Cayman Is
 # Panama
+#
+# Atikokan and Coral Harbour, Canada, match Panama since 1970.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Panama	-5:18:08 -	LMT	1890
 			-5:19:36 -	CMT	1908 Apr 22 # Colón Mean Time
 			-5:00	-	EST
-Link America/Panama America/Atikokan
-Link America/Panama America/Cayman
 
+# Anguilla
+# Antigua & Barbuda
+# Aruba
+# Caribbean Netherlands
+# Curaçao
+# Dominica
+# Grenada
+# Guadeloupe
+# Montserrat
 # Puerto Rico
+# St Barthélemy
+# St Kitts-Nevis
+# Sint Maarten / St Martin
+# St Lucia
+# St Vincent & the Grenadines
+# Trinidad & Tobago
+# Virgin Is (UK & US)
+#
 # There are too many San Juans elsewhere, so we'll use 'Puerto_Rico'.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 			-4:00	-	AST	1942 May  3
 			-4:00	US	A%sT	1946
 			-4:00	-	AST
-Link America/Puerto_Rico America/Anguilla
-Link America/Puerto_Rico America/Antigua
-Link America/Puerto_Rico America/Aruba
-Link America/Puerto_Rico America/Curacao
-Link America/Puerto_Rico America/Blanc-Sablon	# Quebec (Lower North Shore)
-Link America/Puerto_Rico America/Dominica
-Link America/Puerto_Rico America/Grenada
-Link America/Puerto_Rico America/Guadeloupe
-Link America/Puerto_Rico America/Kralendijk	# Caribbean Netherlands
-Link America/Puerto_Rico America/Lower_Princes	# Sint Maarten
-Link America/Puerto_Rico America/Marigot	# St Martin (French part)
-Link America/Puerto_Rico America/Montserrat
-Link America/Puerto_Rico America/Port_of_Spain	# Trinidad & Tobago
-Link America/Puerto_Rico America/St_Barthelemy	# St Barthélemy
-Link America/Puerto_Rico America/St_Kitts	# St Kitts & Nevis
-Link America/Puerto_Rico America/St_Lucia
-Link America/Puerto_Rico America/St_Thomas	# Virgin Islands (US)
-Link America/Puerto_Rico America/St_Vincent
-Link America/Puerto_Rico America/Tortola	# Virgin Islands (UK)
-
-# St Kitts-Nevis
-# St Lucia
-# See America/Puerto_Rico.
 
 # St Pierre and Miquelon
 # There are too many St Pierres elsewhere, so we'll use 'Miquelon'.
@@ -3626,12 +3567,6 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 			-4:00	-	AST	1980 May
 			-3:00	-	-03	1987
 			-3:00	Canada	-03/-02
-
-# St Vincent and the Grenadines
-# See America/Puerto_Rico.
-
-# Sint Maarten
-# See America/Puerto_Rico.
 
 # Turks and Caicos
 #
@@ -3701,11 +3636,6 @@ Zone America/Grand_Turk	-4:44:32 -	LMT	1890
 			-5:00	US	E%sT	2015 Mar  8  2:00
 			-4:00	-	AST	2018 Mar 11  3:00
 			-5:00	US	E%sT
-
-# British Virgin Is
-# US Virgin Is
-# See America/Puerto_Rico.
-
 
 # Local Variables:
 # coding: utf-8
