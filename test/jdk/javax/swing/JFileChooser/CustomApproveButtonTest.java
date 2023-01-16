@@ -34,8 +34,8 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @test
  * @bug 8299522 8300084
  * @key headful
- * @summary JFileChooser Test to check for FileChooser's Approve Button Text
- *          when CUSTOM_DIALOG type is set and check getDefaultButton() (AquaL&F)
+ * @summary Verifies JFileChooser's Approve button text is non-null
+ *          when CUSTOM_DIALOG type is set.
  * @run main CustomApproveButtonTest
  */
 
