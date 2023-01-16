@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1803,7 +1803,7 @@ typedef void (*voidfun_t)();
 
 // Crash with an authentic sigfpe
 volatile int sigfpe_int = 0;
-static void crash_with_sigfpe() {
+static void ALWAYSINLINE crash_with_sigfpe() {
 
   // generate a native synchronous SIGFPE where possible;
   sigfpe_int = sigfpe_int/sigfpe_int;
@@ -1819,7 +1819,7 @@ static void crash_with_sigfpe() {
 } // end: crash_with_sigfpe
 
 // crash with sigsegv at non-null address.
-static void crash_with_segfault() {
+static void ALWAYSINLINE crash_with_segfault() {
 
   int* crash_addr = reinterpret_cast<int*>(VMError::segfault_address);
   *crash_addr = 1;
