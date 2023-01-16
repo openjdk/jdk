@@ -1074,7 +1074,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     }
 
     // Perform the given action within a new scope
-    private <T> void visitScoped(boolean promote, Runnable action) {
+    private void visitScoped(boolean promote, Runnable action) {
         pushScope();
         try {
 
