@@ -41,10 +41,11 @@ public class AquaDefaultButtonTest {
         UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                JFileChooser fileChooser = new JFileChooser();
-                JButton defaultApproveButton = fileChooser.getUI().getDefaultButton(fileChooser);
-                if (defaultApproveButton == null) {
-                    throw new RuntimeException("getDefaultButton() method returns null for Aqua L&F!");
+                JFileChooser fc = new JFileChooser();
+                JButton defApproveBtn = fc.getUI().getDefaultButton(fc);
+                if (defApproveBtn == null) {
+                    throw new RuntimeException("getDefaultButton() method " +
+                            "returns null for Aqua L&F!");
                 }
             }
         });
