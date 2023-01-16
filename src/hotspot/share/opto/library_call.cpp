@@ -5936,7 +5936,7 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   assert(callee()->signature()->size() == 5, "vectorizedHashCode has 5 parameters");
   Node* array          = argument(0);
   Node* offset         = argument(1);
-  Node* count          = argument(2);
+  Node* end            = argument(2);
   Node* initialValue   = argument(3);
   Node* basic_type     = argument(4);
 
@@ -5953,6 +5953,8 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
 
   // Resolve address of first element
   Node* array_start = array_element_address(array, offset, bt);
+
+  Node* count = _gvn.transform(new SubINode(end, offset));
 
   set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
     array_start, count, initialValue, basic_type)));
