@@ -22,9 +22,10 @@
  *
  */
 
+#include "precompiled.hpp"
+
 #include "profile.h"
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safefetch.hpp"
