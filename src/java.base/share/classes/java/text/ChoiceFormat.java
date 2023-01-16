@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ import java.util.Arrays;
  * pattform.setFormats(testFormats);
  * Object[] testArgs = {null, "ADisk", null};
  * for (int i = 0; i < 4; ++i) {
- *     testArgs[0] = new Integer(i);
+ *     testArgs[0] = Integer.valueOf(i);
  *     testArgs[2] = testArgs[0];
  *     System.out.println(pattform.format(testArgs));
  * }

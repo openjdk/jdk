@@ -28,11 +28,10 @@
 #include "memory/allocation.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isIntegral.hpp"
 #include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
+#include "metaprogramming/isSigned.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
-#include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
@@ -393,7 +392,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || IsPointer<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value || IsPointer<T>::value>::type>
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -445,7 +444,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value>::type>
 {
   void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
@@ -510,14 +509,14 @@ struct Atomic::PlatformStore {
 
 template<typename D>
 inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
+  STATIC_ASSERT(IsPointer<D>::value || std::is_integral<D>::value);
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
   Atomic::add(dest, I(1), order);
 }
 
 template<typename D>
 inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
+  STATIC_ASSERT(IsPointer<D>::value || std::is_integral<D>::value);
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
@@ -526,8 +525,8 @@ inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
 
 template<typename D, typename I>
 inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
-  STATIC_ASSERT(IsIntegral<I>::value);
+  STATIC_ASSERT(IsPointer<D>::value || std::is_integral<D>::value);
+  STATIC_ASSERT(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
   // matching signedness of I.  Otherwise, use D as the addend type.
   typedef typename Conditional<IsSigned<I>::value, intptr_t, uintptr_t>::type PI;
@@ -676,8 +675,8 @@ inline D Atomic::fetch_and_add(D volatile* dest, I add_value,
 template<typename D, typename I>
 struct Atomic::AddImpl<
   D, I,
-  typename EnableIf<IsIntegral<I>::value &&
-                    IsIntegral<D>::value &&
+  typename EnableIf<std::is_integral<I>::value &&
+                    std::is_integral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
                     (IsSigned<I>::value == IsSigned<D>::value)>::type>
 {
@@ -694,7 +693,7 @@ struct Atomic::AddImpl<
 template<typename P, typename I>
 struct Atomic::AddImpl<
   P*, I,
-  typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
+  typename EnableIf<std::is_integral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
@@ -769,7 +768,7 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
 template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
-  typename EnableIf<IsIntegral<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value>::type>
 {
   T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
@@ -904,7 +903,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<IsIntegral<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value>::type>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.

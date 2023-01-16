@@ -31,7 +31,7 @@
 #include "D3DRenderer.h"
 #include "D3DRenderQueue.h"
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawLine(D3DContext *d3dc,
                      jint x1, jint y1, jint x2, jint y2)
 {
@@ -42,7 +42,7 @@ D3DRenderer_DrawLine(D3DContext *d3dc,
     return d3dc->pVCacher->DrawLine(x1, y1, x2, y2);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawRect(D3DContext *d3dc,
                      jint x, jint y, jint w, jint h)
 {
@@ -54,7 +54,7 @@ D3DRenderer_DrawRect(D3DContext *d3dc,
     return d3dc->pVCacher->DrawRect(x, y, x + w, y + h);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillRect(D3DContext *d3dc,
                      jint x, jint y, jint w, jint h)
 {
@@ -66,7 +66,7 @@ D3DRenderer_FillRect(D3DContext *d3dc,
     return d3dc->pVCacher->FillRect(x, y, x + w, y + h);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawPoly(D3DContext *d3dc,
                      jint nPoints, jboolean isClosed,
                      jint transX, jint transY,
@@ -85,7 +85,7 @@ D3DRenderer_DrawPoly(D3DContext *d3dc,
                                     xPoints, yPoints);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawScanlines(D3DContext *d3dc,
                           jint scanlineCount, jint *scanlines)
 {
@@ -102,7 +102,7 @@ D3DRenderer_DrawScanlines(D3DContext *d3dc,
     return d3dc->pVCacher->DrawScanlines(scanlineCount, scanlines);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillSpans(D3DContext *d3dc, jint spanCount, jint *spans)
 {
     J2dTraceLn(J2D_TRACE_INFO, "D3DRenderer_FillSpans");
@@ -114,7 +114,7 @@ D3DRenderer_FillSpans(D3DContext *d3dc, jint spanCount, jint *spans)
     return d3dc->pVCacher->FillSpans(spanCount, spans);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillParallelogram(D3DContext *d3dc,
                               jfloat fx11, jfloat fy11,
                               jfloat dx21, jfloat dy21,
@@ -135,7 +135,7 @@ D3DRenderer_FillParallelogram(D3DContext *d3dc,
                                              dx12, dy12);
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawParallelogram(D3DContext *d3dc,
                               jfloat fx11, jfloat fy11,
                               jfloat dx21, jfloat dy21,
@@ -242,7 +242,7 @@ D3DRenderer_DrawParallelogram(D3DContext *d3dc,
     return res;
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_FillAAParallelogram(D3DContext *d3dc,
                                 jfloat fx11, jfloat fy11,
                                 jfloat dx21, jfloat dy21,
@@ -274,7 +274,7 @@ D3DRenderer_FillAAParallelogram(D3DContext *d3dc,
     return res;
 }
 
-HRESULT D3DPIPELINE_API
+HRESULT
 D3DRenderer_DrawAAParallelogram(D3DContext *d3dc,
                                 jfloat fx11, jfloat fy11,
                                 jfloat dx21, jfloat dy21,
@@ -349,8 +349,6 @@ D3DRenderer_DrawAAParallelogram(D3DContext *d3dc,
     return res;
 }
 
-#ifndef D3D_PPL_DLL
-
 extern "C"
 {
 
@@ -388,5 +386,3 @@ Java_sun_java2d_d3d_D3DRenderer_drawPoly
 }
 
 }
-
-#endif // D3D_PPL_DLL
