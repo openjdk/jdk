@@ -74,10 +74,10 @@ class MemReporterBase : public StackObj {
   // We use int64_t instead of ssize_t because on 32-bit it allows us to express deltas larger than 2 gb.
   // On 64-bit we never expect memory sizes larger than INT64_MAX.
   int64_t diff_in_current_scale(size_t s1, size_t s2) const {
-    // _scale should not be 0, otherwise division by zero at return.
     assert(_scale != 0, "wrong scale");
 
-    LP64_ONLY(assert(s1 < INT64_MAX && s2 < INT64_MAX, "size overflow");)
+    LP64_ONLY(assert(s1 < INT64_MAX, "exceeded possible memory limits");)
+    LP64_ONLY(assert(s2 < INT64_MAX, "exceeded possible memory limits");)
 
     bool is_negative = false;
     if (s1 < s2) {
