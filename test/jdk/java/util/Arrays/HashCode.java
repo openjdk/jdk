@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle, Inc. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 /**
  * @test
  * @summary Basic array hashCode functionality
- * @run main/othervm -Xcomp -Xbatch HashCode
+ * @run main/othervm --add-exports java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
  */
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public class HashCode {
@@ -46,6 +47,12 @@ public class HashCode {
     private static int[] expectedUnsigned = { 1, 63, 128, 536518979, -1174896354, 584369596, -2025326028};
 
     public static void main(String[] args) throws Exception {
+
+        // Deep introspection into range-based hash functions
+        Class<?> arraysSupport = Class.forName("jdk.internal.util.ArraysSupport");
+        Method vectorizedHashCode = arraysSupport.getDeclaredMethod("vectorizedHashCode", Object.class, int.class, int.class, int.class, int.class);
+        vectorizedHashCode.setAccessible(true);
+
         for (int i = 0; i < tests.length; i++) {
             testBytes[i] = tests[i].getBytes("UTF-8");
             int len = testBytes[i].length;
@@ -53,9 +60,9 @@ public class HashCode {
             testShorts[i] = new short[len];
             testInts[i] = new int[len];
             for (int j = 0; j < len; j++) {
-                testChars[i][j] = (char)testBytes[i][j];
-                testShorts[i][j] = (short)testBytes[i][j];
-                testInts[i][j] = (int)testBytes[i][j];
+                testChars[i][j] = (char) testBytes[i][j];
+                testShorts[i][j] = testBytes[i][j];
+                testInts[i][j] = testBytes[i][j];
             }
         }
 
@@ -64,6 +71,7 @@ public class HashCode {
             int zeroResult = 1;
             for (int i = 0; i < 64; i++) {
                 byte[] zeroes = new byte[i];
+                byte[] extraZeroes = new byte[i + 47];
                 for (int j = 0; j < 10_000; j++) {
                     int hashCode = Arrays.hashCode(zeroes);
                     if (hashCode != zeroResult) {
@@ -72,11 +80,19 @@ public class HashCode {
                                 + ", hashCode = " + hashCode
                                 + ", repetition = " + j);
                     }
+                    hashCode = (int) vectorizedHashCode.invoke(null, extraZeroes, 17, i, 1, /* ArraysSupport.T_BYTE */ 8);
+                    if (hashCode != zeroResult) {
+                        throw new RuntimeException("byte[] subrange \"" + Arrays.toString(extraZeroes)
+                                + "\" at offset 17, limit " + i + ": "
+                                + " e = " + zeroResult
+                                + ", hashCode = " + hashCode
+                                + ", repetition = " + j);
+                    }
                 }
                 zeroResult *= 31;
             }
             for (int i = 0; i < tests.length; i++) {
-                for (int j = 0; j < 20_000; j++) {
+                for (int j = 0; j < 64; j++) {
                     int e = expected[i];
                     int hashCode = Arrays.hashCode(testBytes[i]);
                     if (hashCode != e) {
@@ -95,7 +111,7 @@ public class HashCode {
 
         try {
             for (int i = 0; i < tests.length; i++) {
-                for (int j = 0; j < 20_000; j++) {
+                for (int j = 0; j < 64; j++) {
                     int e = expected[i];
                     int hashCode = Arrays.hashCode(testShorts[i]);
                     if (hashCode != e) {
@@ -114,7 +130,7 @@ public class HashCode {
 
         try {
             for (int i = 0; i < tests.length; i++) {
-                for (int j = 0; j < 20_000; j++) {
+                for (int j = 0; j < 64; j++) {
                     int e = expected[i];
                     int hashCode = Arrays.hashCode(testInts[i]);
                     if (hashCode != e) {
@@ -133,7 +149,7 @@ public class HashCode {
 
         try {
             for (int i = 0; i < tests.length; i++) {
-                for (int j = 0; j < 20_000; j++) {
+                for (int j = 0; j < 64; j++) {
                     int e = expectedUnsigned[i];
                     int hashCode = Arrays.hashCode(testChars[i]);
                     if (hashCode != e) {

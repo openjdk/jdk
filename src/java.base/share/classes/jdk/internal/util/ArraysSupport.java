@@ -183,69 +183,80 @@ public class ArraysSupport {
      * method.
      *
      * @param array for which to calculate hash code
-     * @param start start index, scaled to bytesPerElement
-     * @param end end index, scaled to bytesPerElement
-     * @param initialValue the initial value for the hash code calculation, typically 0 or 1
-     * @param basicType JVMS-style type operand denoting how to interpret the array content.
+     * @param fromIndex start index, scaled to basicType
+     * @param length number of elements to include in the hash
+     * @param initialValue the initial value for the hash (typically constant 0 or 1)
+     * @param basicType type constant denoting how to interpret the array content.
      *                  T_BOOLEAN is used to signify unsigned bytes, and T_CHAR might be used
-     *                  even if array is a byte[]
+     *                  even if array is a byte[].
+     * @implNote currently basicType must be constant at the call site for this method
+     *           to be intrinsified.
+     *
      * @return the calculated hash value
      */
     @IntrinsicCandidate
-    public static int vectorizedHashCode(Object array, int start, int end, int initialValue,
+    public static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
                                          int basicType) {
         return switch (basicType) {
-            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, start, end);
+            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, fromIndex, length);
             case T_CHAR -> array instanceof byte[]
-                    ? utf16hashCode(initialValue, (byte[]) array, start, end)
-                    : hashCode(initialValue, (char[]) array, start, end);
-            case T_BYTE -> hashCode(initialValue, (byte[]) array, start, end);
-            case T_SHORT -> hashCode(initialValue, (short[]) array, start, end);
-            case T_INT -> hashCode(initialValue, (int[]) array, start, end);
+                    ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
+                    : hashCode(initialValue, (char[]) array, fromIndex, length);
+            case T_BYTE -> hashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_SHORT -> hashCode(initialValue, (short[]) array, fromIndex, length);
+            case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
                 default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
         };
     }
 
-    private static int signedHashCode(int result, byte[] a, int start, int end) {
-        for (int i = start; i < end; i++) {
+    private static int signedHashCode(int result, byte[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
             result = 31 * result + (a[i] & 0xff);
         }
         return result;
     }
 
-    private static int hashCode(int result, byte[] a, int start, int end) {
-        for (int i = start; i < end; i++) {
+    private static int hashCode(int result, byte[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
             result = 31 * result + a[i];
         }
         return result;
     }
 
-    private static int hashCode(int result, char[] a, int start, int end) {
-        for (int i = start; i < end; i++) {
+    private static int hashCode(int result, char[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
             result = 31 * result + a[i];
         }
         return result;
     }
 
-    private static int hashCode(int result, short[] a, int start, int end) {
-        for (int i = start; i < end; i++) {
+    private static int hashCode(int result, short[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
             result = 31 * result + a[i];
         }
         return result;
     }
 
-    private static int hashCode(int result, int[] a, int start, int end) {
-        for (int i = start; i < end; i++) {
+    private static int hashCode(int result, int[] a, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
             result = 31 * result + a[i];
         }
         return result;
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    public static int utf16hashCode(int result, byte[] value, int start, int end) {
-        // start and end must already be scaled to char
-        for (int index = start; index < end; index++) {
-            result = 31 * result + JLA.getUTF16Char(value, index);
+    /*
+     * fromIndex and length must be scaled to char indexes.
+     */
+    public static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + JLA.getUTF16Char(value, i);
         }
         return result;
     }
