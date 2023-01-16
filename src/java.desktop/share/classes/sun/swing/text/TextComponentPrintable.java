@@ -103,8 +103,7 @@ public class TextComponentPrintable implements CountingPrintable {
     /*
      * The FontRenderContext to layout and print with
      */
-    private final AtomicReference<FontRenderContext> frc =
-        new AtomicReference<FontRenderContext>(null);
+    private volatile FontRenderContext frc;
 
     /**
      * Special text component used to print to the printer.
@@ -340,9 +339,9 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
         } else if (textComponent instanceof JTextField) {
@@ -354,9 +353,9 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
         } else if (textComponent instanceof JTextArea) {
@@ -370,9 +369,9 @@ public class TextComponentPrintable implements CountingPrintable {
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                 };
         } else if (textComponent instanceof JTextPane) {
@@ -380,9 +379,9 @@ public class TextComponentPrintable implements CountingPrintable {
                 new JTextPane() {
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                     @Override
                     public EditorKit getEditorKit() {
@@ -398,9 +397,9 @@ public class TextComponentPrintable implements CountingPrintable {
                 new JEditorPane() {
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
-                        return (frc.get() == null)
+                        return (frc == null)
                             ? super.getFontMetrics(font)
-                            : FontDesignMetrics.getMetrics(font, frc.get());
+                            : FontDesignMetrics.getMetrics(font, frc);
                     }
                     @Override
                     public EditorKit getEditorKit() {
@@ -466,7 +465,7 @@ public class TextComponentPrintable implements CountingPrintable {
             final int pageIndex) throws PrinterException {
         if (!isLayouted) {
             if (graphics instanceof Graphics2D) {
-                frc.set(((Graphics2D)graphics).getFontRenderContext());
+                frc = ((Graphics2D)graphics).getFontRenderContext();
             }
             layout((int)Math.floor(pf.getImageableWidth()));
             calculateRowsMetrics();
