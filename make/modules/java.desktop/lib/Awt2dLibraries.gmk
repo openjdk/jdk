@@ -120,11 +120,6 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-ifeq ($(call isTargetOs, linux), true)
-  # FIXME: This is probably not what we want to do, but keep it now for compatibility.
-  LIBAWT_CFLAGS += $(EXPORT_ALL_SYMBOLS)
-endif
-
 # Turn off all warnings for debug_mem.c This is needed because the specific warning
 # about initializing a declared 'extern' cannot be turned off individually. Only
 # applies to debug builds. This limitation in gcc is tracked in
@@ -414,7 +409,7 @@ ifeq ($(FREETYPE_TO_USE), system)
   LIBFREETYPE_LIBS := $(FREETYPE_LIBS)
 else
   BUILD_LIBFREETYPE_HEADER_DIRS := $(TOPDIR)/src/$(MODULE)/share/native/libfreetype/include
-  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY $(EXPORT_ALL_SYMBOLS)
+  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY
 
   # For use by libfontmanager:
   LIBFREETYPE_CFLAGS := -I$(BUILD_LIBFREETYPE_HEADER_DIRS)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,10 +432,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
-    objArrayOop resolved_references = cpool->resolved_references();
-    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
-    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
-    resolved_references->obj_at_put(appendix_index, appendix());
+    oop old_oop = cpool->set_resolved_reference_at(appendix_index, appendix());
+    assert(old_oop == nullptr, "init just once");
   }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
@@ -531,8 +529,7 @@ oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool
   if (!has_appendix())
     return NULL;
   const int ref_index = f2_as_index();
-  objArrayOop resolved_references = cpool->resolved_references();
-  return resolved_references->obj_at(ref_index);
+  return cpool->resolved_reference_at(ref_index);
 }
 
 

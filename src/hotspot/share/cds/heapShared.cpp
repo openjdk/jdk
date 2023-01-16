@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/moduleEntry.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -56,6 +55,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
@@ -83,6 +83,11 @@ struct ArchivableStaticFieldInfo {
 bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
 GrowableArrayCHeap<Metadata**, mtClassShared>* HeapShared::_native_pointers = NULL;
+
+size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_alloc_size[HeapShared::ALLOC_STAT_SLOTS];
+size_t HeapShared::_total_obj_count;
+size_t HeapShared::_total_obj_size;
 
 #ifndef PRODUCT
 #define ARCHIVE_TEST_FIELD_NAME "archivedObjects"
@@ -131,8 +136,11 @@ static ArchivableStaticFieldInfo fmg_open_archive_subgraph_entry_fields[] = {
   {NULL, NULL},
 };
 
+KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = NULL;
 OopHandle HeapShared::_roots;
+OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
+KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = NULL;
 
 #ifdef ASSERT
 bool HeapShared::is_archived_object_during_dumptime(oop p) {
@@ -301,6 +309,7 @@ oop HeapShared::archive_object(oop obj) {
 
   oop archived_oop = cast_to_oop(G1CollectedHeap::heap()->archive_mem_allocate(len));
   if (archived_oop != NULL) {
+    count_allocation(len);
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), cast_from_oop<HeapWord*>(archived_oop), len);
     // Reinitialize markword to remove age/marking/locking/etc.
     //
@@ -338,21 +347,108 @@ oop HeapShared::archive_object(oop obj) {
   return archived_oop;
 }
 
-void HeapShared::archive_klass_objects() {
+class KlassToOopHandleTable: public ResourceHashtable<Klass*, OopHandle,
+    36137, // prime number
+    AnyObj::C_HEAP,
+    mtClassShared> {
+public:
+  oop get_oop(Klass* k) {
+    MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+    OopHandle* handle = get(k);
+    if (handle != NULL) {
+      return handle->resolve();
+    } else {
+      return NULL;
+    }
+  }
+  void set_oop(Klass* k, oop o) {
+    MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+    OopHandle handle(Universe::vm_global(), o);
+    bool is_new = put(k, handle);
+    assert(is_new, "cannot set twice");
+  }
+  void remove_oop(Klass* k) {
+    MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+    OopHandle* handle = get(k);
+    if (handle != NULL) {
+      handle->release(Universe::vm_global());
+      remove(k);
+    }
+  }
+};
+
+void HeapShared::init_scratch_objects(TRAPS) {
+  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+    BasicType bt = (BasicType)i;
+    if (!is_reference_type(bt)) {
+      oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
+      _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
+    }
+  }
+  _scratch_java_mirror_table = new (mtClass)KlassToOopHandleTable();
+}
+
+oop HeapShared::scratch_java_mirror(BasicType t) {
+  assert((uint)t < T_VOID+1, "range check");
+  assert(!is_reference_type(t), "sanity");
+  return _scratch_basic_type_mirrors[t].resolve();
+}
+
+oop HeapShared::scratch_java_mirror(Klass* k) {
+  return _scratch_java_mirror_table->get_oop(k);
+}
+
+void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
+  _scratch_java_mirror_table->set_oop(k, mirror);
+}
+
+void HeapShared::remove_scratch_objects(Klass* k) {
+  _scratch_java_mirror_table->remove_oop(k);
+}
+
+void HeapShared::archive_java_mirrors() {
+  init_seen_objects_table();
+
+  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+    BasicType bt = (BasicType)i;
+    if (!is_reference_type(bt)) {
+      oop m = _scratch_basic_type_mirrors[i].resolve();
+      assert(m != NULL, "sanity");
+      oop archived_m = archive_reachable_objects_from(1, _default_subgraph_info, m, /*is_closed_archive=*/ false);
+      assert(archived_m != NULL, "sanity");
+
+      log_trace(cds, heap, mirror)(
+        "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
+        type2name(bt), p2i(m), p2i(archived_m));
+
+      Universe::set_archived_basic_type_mirror_index(bt, append_root(archived_m));
+    }
+  }
+
   GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
   assert(klasses != NULL, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
-    Klass* k = ArchiveBuilder::get_buffered_klass(klasses->at(i));
+    Klass* orig_k = klasses->at(i);
+    oop m = scratch_java_mirror(orig_k);
+    if (m != NULL) {
+      Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
+      oop archived_m = archive_reachable_objects_from(1, _default_subgraph_info, m, /*is_closed_archive=*/ false);
+      guarantee(archived_m != NULL, "scratch mirrors should not point to any unachivable objects");
+      buffered_k->set_archived_java_mirror(append_root(archived_m));
+      ResourceMark rm;
+      log_trace(cds, heap, mirror)(
+        "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
+        buffered_k->external_name(), p2i(m), p2i(archived_m));
 
-    // archive mirror object
-    java_lang_Class::archive_mirror(k);
-
-    // archive the resolved_referenes array
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      ik->constants()->archive_resolved_references();
+      // archive the resolved_referenes array
+      if (buffered_k->is_instance_klass()) {
+        InstanceKlass* ik = InstanceKlass::cast(buffered_k);
+        ik->constants()->archive_resolved_references();
+      }
     }
   }
+
+  delete_seen_objects_table();
 }
 
 void HeapShared::mark_native_pointers(oop orig_obj, oop archived_obj) {
@@ -496,6 +592,8 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
   {
     NoSafepointVerifier nsv;
 
+    _default_subgraph_info = init_subgraph_info(vmClasses::Object_klass(), false);
+
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache(log_is_enabled(Info, cds, map));
 
@@ -511,6 +609,7 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
     copy_open_objects(open_regions);
 
     CDSHeapVerifier::verify();
+    check_default_subgraph_classes();
   }
 
   G1HeapVerifier::verify_archive_regions();
@@ -537,9 +636,7 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
 
   G1CollectedHeap::heap()->begin_archive_alloc_range(true /* open */);
 
-  java_lang_Class::archive_basic_type_mirrors();
-
-  archive_klass_objects();
+  archive_java_mirrors();
 
   archive_object_subgraphs(open_archive_subgraph_entry_fields,
                            false /* is_closed_archive */,
@@ -548,7 +645,7 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
     archive_object_subgraphs(fmg_open_archive_subgraph_entry_fields,
                              false /* is_closed_archive */,
                              true /* is_full_module_graph */);
-    ClassLoaderDataShared::init_archived_oops();
+    Modules::verify_archived_modules();
   }
 
   copy_roots();
@@ -586,6 +683,7 @@ void HeapShared::copy_roots() {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
   log_info(cds)("archived obj roots[%d] = " SIZE_FORMAT " words, klass = %p, obj = %p", length, size, k, mem);
+  count_allocation(roots()->size());
 }
 
 //
@@ -831,6 +929,9 @@ void HeapShared::write_subgraph_info_table() {
     _archived_ArchiveHeapTestClass = array;
   }
 #endif
+  if (log_is_enabled(Info, cds, heap)) {
+    print_stats();
+  }
 }
 
 void HeapShared::serialize_root(SerializeClosure* soc) {
@@ -1125,9 +1226,11 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
         log_debug(cds, heap)("(%d) %s[" SIZE_FORMAT "] ==> " PTR_FORMAT " size " SIZE_FORMAT " %s", _level,
                              _orig_referencing_obj->klass()->external_name(), field_delta,
                              p2i(obj), obj->size() * HeapWordSize, obj->klass()->external_name());
-        LogTarget(Trace, cds, heap) log;
-        LogStream out(log);
-        obj->print_on(&out);
+        if (log_is_enabled(Trace, cds, heap)) {
+          LogTarget(Trace, cds, heap) log;
+          LogStream out(log);
+          obj->print_on(&out);
+        }
       }
 
       oop archived = HeapShared::archive_reachable_objects_from(
@@ -1179,25 +1282,6 @@ void HeapShared::check_closed_region_object(InstanceKlass* k) {
   }
 }
 
-void HeapShared::check_module_oop(oop orig_module_obj) {
-  assert(DumpSharedSpaces, "must be");
-  assert(java_lang_Module::is_instance(orig_module_obj), "must be");
-  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
-  if (orig_module_ent == NULL) {
-    // These special Module objects are created in Java code. They are not
-    // defined via Modules::define_module(), so they don't have a ModuleEntry:
-    //     java.lang.Module::ALL_UNNAMED_MODULE
-    //     java.lang.Module::EVERYONE_MODULE
-    //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
-    assert(java_lang_Module::name(orig_module_obj) == NULL, "must be unnamed");
-    log_info(cds, heap)("Module oop with No ModuleEntry* @[" PTR_FORMAT "]", p2i(orig_module_obj));
-  } else {
-    ClassLoaderData* loader_data = orig_module_ent->loader_data();
-    assert(loader_data->is_builtin_class_loader_data(), "must be");
-  }
-}
-
-
 // (1) If orig_obj has not been archived yet, archive it.
 // (2) If orig_obj has not been seen yet (since start_recording_subgraph() was called),
 //     trace all  objects that are reachable from it, and make sure these objects are archived.
@@ -1223,7 +1307,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
   //
   // If you get an error here, you probably made a change in the JDK library that has added a Class
   // object that is referenced (directly or indirectly) by static fields.
-  if (java_lang_Class::is_instance(orig_obj)) {
+  if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _default_subgraph_info) {
     log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
     os::_exit(1);
   }
@@ -1266,9 +1350,10 @@ oop HeapShared::archive_reachable_objects_from(int level,
     }
 
     if (java_lang_Module::is_instance(orig_obj)) {
-      check_module_oop(orig_obj);
+      if (Modules::check_module_oop(orig_obj)) {
+        Modules::update_oops_in_archived_module(orig_obj, append_root(archived_obj));
+      }
       java_lang_Module::set_module_entry(archived_obj, NULL);
-      java_lang_Module::set_loader(archived_obj, NULL);
     } else if (java_lang_ClassLoader::is_instance(orig_obj)) {
       // class_data will be restored explicitly at run time.
       guarantee(orig_obj == SystemDictionary::java_platform_loader() ||
@@ -1439,6 +1524,31 @@ void HeapShared::verify_reachable_objects_from(oop obj, bool is_archived) {
   }
 }
 #endif
+
+// The "default subgraph" contains special objects (see heapShared.hpp) that
+// can be accessed before we load any Java classes (including java/lang/Class).
+// Make sure that these are only instances of the very few specific types
+// that we can handle.
+void HeapShared::check_default_subgraph_classes() {
+  GrowableArray<Klass*>* klasses = _default_subgraph_info->subgraph_object_klasses();
+  int num = klasses->length();
+  for (int i = 0; i < num; i++) {
+    Klass* subgraph_k = klasses->at(i);
+    if (log_is_enabled(Info, cds, heap)) {
+      ResourceMark rm;
+      log_info(cds, heap)(
+          "Archived object klass (default subgraph %d) => %s",
+          i, subgraph_k->external_name());
+    }
+
+    guarantee(subgraph_k->name()->equals("java/lang/Class") ||
+              subgraph_k->name()->equals("java/lang/String") ||
+              subgraph_k->name()->equals("[Ljava/lang/Object;") ||
+              subgraph_k->name()->equals("[C") ||
+              subgraph_k->name()->equals("[B"),
+              "default subgraph can have only these objects");
+  }
+}
 
 HeapShared::SeenObjectsTable* HeapShared::_seen_objects_table = NULL;
 int HeapShared::_num_new_walked_objs;
@@ -1856,6 +1966,51 @@ ResourceBitMap HeapShared::calculate_ptrmap(MemRegion region) {
   } else {
     return ResourceBitMap(0);
   }
+}
+
+void HeapShared::count_allocation(size_t size) {
+  _total_obj_count ++;
+  _total_obj_size += size;
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    if (size <= (size_t(1) << i)) {
+      _alloc_count[i] ++;
+      _alloc_size[i] += size;
+      return;
+    }
+  }
+}
+
+static double avg_size(size_t size, size_t count) {
+  double avg = 0;
+  if (count > 0) {
+    avg = double(size * HeapWordSize) / double(count);
+  }
+  return avg;
+}
+
+void HeapShared::print_stats() {
+  size_t huge_count = _total_obj_count;
+  size_t huge_size = _total_obj_size;
+
+  for (int i = 0; i < ALLOC_STAT_SLOTS; i++) {
+    size_t byte_size_limit = (size_t(1) << i) * HeapWordSize;
+    size_t count = _alloc_count[i];
+    size_t size = _alloc_size[i];
+    log_info(cds, heap)(SIZE_FORMAT_W(8) " objects are <= " SIZE_FORMAT_W(-6)
+                        " bytes (total " SIZE_FORMAT_W(8) " bytes, avg %8.1f bytes)",
+                        count, byte_size_limit, size * HeapWordSize, avg_size(size, count));
+    huge_count -= count;
+    huge_size -= size;
+  }
+
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " huge  objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      huge_count, huge_size * HeapWordSize,
+                      avg_size(huge_size, huge_count));
+  log_info(cds, heap)(SIZE_FORMAT_W(8) " total objects               (total "  SIZE_FORMAT_W(8) " bytes"
+                      ", avg %8.1f bytes)",
+                      _total_obj_count, _total_obj_size * HeapWordSize,
+                      avg_size(_total_obj_size, _total_obj_count));
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

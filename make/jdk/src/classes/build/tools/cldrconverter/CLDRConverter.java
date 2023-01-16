@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.text.MessageFormat;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -609,16 +607,19 @@ public class CLDRConverter {
      * Translate the aliases into the real entries in the bundle map.
      */
     static void handleAliases(Map<String, Object> bundleMap) {
-        Set<String> bundleKeys = bundleMap.keySet();
-        try {
-            for (String key : aliases.keySet()) {
-                String targetKey = aliases.get(key);
-                if (bundleKeys.contains(targetKey)) {
-                    bundleMap.putIfAbsent(key, bundleMap.get(targetKey));
+        for (String key : aliases.keySet()) {
+            var source = bundleMap.get(aliases.get(key));
+            if (source != null) {
+                if (bundleMap.get(key) instanceof String[] sa) {
+                    // fill missing elements in case of String array
+                    for (int i = 0; i < sa.length; i++) {
+                        if (sa[i] == null && ((String[])source)[i] != null) {
+                            sa[i] = ((String[])source)[i];
+                        }
+                    }
                 }
+                bundleMap.putIfAbsent(key, source);
             }
-        } catch (Exception ex) {
-            Logger.getLogger(CLDRConverter.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -633,7 +634,7 @@ public class CLDRConverter {
     /**
      * Examine if the id includes the country (territory) code. If it does, it returns
      * the country code.
-     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
+     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it returns "SG".
      * It does NOT return UN M.49 code, e.g., '001', as those three digit numbers cannot
      * be translated into package names.
      */
@@ -645,11 +646,19 @@ public class CLDRConverter {
     /**
      * Examine if the id includes the region code. If it does, it returns
      * the region code.
-     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
+     * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it returns "SG".
      * It DOES return UN M.49 code, e.g., '001', as well as ISO 3166 two letter country codes.
      */
     static String getRegionCode(String id) {
         return Locale.forLanguageTag(id.replaceAll("_", "-")).getCountry();
+    }
+
+    /**
+     * Examine if the id includes the script code. If it does, it returns
+     * the script code.
+     */
+    static String getScriptCode(String id) {
+        return Locale.forLanguageTag(id.replaceAll("_", "-")).getScript();
     }
 
     private static class KeyComparator implements Comparator<String> {
@@ -1020,6 +1029,7 @@ public class CLDRConverter {
     private static void setupBaseLocales(String localeList) {
         Arrays.stream(localeList.split(","))
             .map(Locale::forLanguageTag)
+            .map(l -> new Locale.Builder().setLocale(l).setScript("Latn").build())
             .map(l -> Control.getControl(Control.FORMAT_DEFAULT)
                              .getCandidateLocales("", l))
             .forEach(BASE_LOCALES::addAll);

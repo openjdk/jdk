@@ -424,6 +424,7 @@ public sealed interface ValueLayout extends MemoryLayout {
          * restricted methods, and use safe and supported functionalities, where possible.
          *
          * @return an unbounded address layout with same characteristics as this layout.
+         * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
          * @see #isUnbounded()
          */
         @CallerSensitive

@@ -445,6 +445,47 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
   AC_SUBST(ASAN_ENABLED)
 ])
 
+###############################################################################
+#
+# UndefinedBehaviorSanitizer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
+[
+  # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
+  # Silence them for now.
+  UBSAN_CFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_LDFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero"
+  UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
+      DESC: [enable UndefinedBehaviorSanitizer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if UndefinedBehaviorSanitizer (ubsan) is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
+            test "x$TOOLCHAIN_TYPE" = "xclang"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        JVM_CFLAGS="$JVM_CFLAGS $UBSAN_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $UBSAN_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $UBSAN_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $UBSAN_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $UBSAN_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $UBSAN_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $UBSAN_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $UBSAN_LDFLAGS"
+      ])
+  if test "x$UBSAN_ENABLED" = xfalse; then
+    UBSAN_CFLAGS=""
+    UBSAN_LDFLAGS=""
+  fi
+  AC_SUBST(UBSAN_CFLAGS)
+  AC_SUBST(UBSAN_LDFLAGS)
+  AC_SUBST(UBSAN_ENABLED)
+])
+
 ################################################################################
 #
 # Static build support.  When enabled will generate static
@@ -781,7 +822,7 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
 
       # Check for user provided code signing identity.
       UTIL_ARG_WITH(NAME: macosx-codesign-identity, TYPE: string,
-          DEFAULT: openjdk_codesign, CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY,
+          DEFAULT: openjdk_codesign, CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY],
           DESC: [specify the macosx code signing identity],
           CHECKING_MSG: [for macosx code signing identity]
       )

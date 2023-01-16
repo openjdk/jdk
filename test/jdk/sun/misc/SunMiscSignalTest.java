@@ -95,7 +95,7 @@ public class SunMiscSignalTest {
 
     // Provider of signals to be tested with variations for -Xrs and
     // platform dependencies
-    // -Xrs restricted signals signals the VM will not handle SIGINT, SIGTERM, SIGHUP and others
+    // -Xrs restricted signals the VM will not handle SIGINT, SIGTERM, SIGHUP and others
     @DataProvider(name = "supportedSignals")
     static Object[][] supportedSignals() {
         RestrictedSignals rs = RUNNING_WITH_Xrs ? RestrictedSignals.XRS : RestrictedSignals.NORMAL;

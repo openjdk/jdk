@@ -472,8 +472,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_setCurrentThread:         return inline_native_setCurrentThread();
 
-  case vmIntrinsics::_extentLocalCache:          return inline_native_extentLocalCache();
-  case vmIntrinsics::_setExtentLocalCache:       return inline_native_setExtentLocalCache();
+  case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
+  case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
@@ -3350,45 +3350,47 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
     = make_load(NULL, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
   thread_obj_handle = _gvn.transform(thread_obj_handle);
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
-  // Stores of oops to native memory not supported yet by BarrierSetC2::store_at_resolved
-  // access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
-  store_to_memory(control(), thread_obj_handle, arr, T_OBJECT, adr_type, MemNode::unordered);
+  access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;
 }
 
-Node* LibraryCallKit::extentLocalCache_helper() {
+Node* LibraryCallKit::scopedValueCache_helper() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
 
   bool xk = etype->klass_is_exact();
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::extentLocalCache_offset()));
-  return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
-        TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
+  // We cannot use immutable_memory() because we might flip onto a
+  // different carrier thread, at which point we'll need to use that
+  // carrier thread's cache.
+  // return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
+  //       TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  return make_load(NULL, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
 }
 
-//------------------------inline_native_extentLocalCache------------------
-bool LibraryCallKit::inline_native_extentLocalCache() {
+//------------------------inline_native_scopedValueCache------------------
+bool LibraryCallKit::inline_native_scopedValueCache() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
-  // Because we create the extentLocal cache lazily we have to make the
+  // Because we create the scopedValue cache lazily we have to make the
   // type of the result BotPTR.
   bool xk = etype->klass_is_exact();
   const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
-  Node* cache_obj_handle = extentLocalCache_helper();
+  Node* cache_obj_handle = scopedValueCache_helper();
   set_result(access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE));
 
   return true;
 }
 
-//------------------------inline_native_setExtentLocalCache------------------
-bool LibraryCallKit::inline_native_setExtentLocalCache() {
+//------------------------inline_native_setScopedValueCache------------------
+bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
-  Node* cache_obj_handle = extentLocalCache_helper();
+  Node* cache_obj_handle = scopedValueCache_helper();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   store_to_memory(control(), cache_obj_handle, arr, T_OBJECT, adr_type,
@@ -3663,7 +3665,7 @@ bool LibraryCallKit::inline_Class_cast() {
       // Don't use intrinsic when class is not loaded.
       return false;
     } else {
-      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass()), tp->as_klass_type());
+      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass(), Type::trust_interfaces), tp->as_klass_type());
       if (static_res == Compile::SSC_always_true) {
         // isInstance() is true - fold the code.
         set_result(obj);
@@ -6999,7 +7001,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
 bool LibraryCallKit::inline_poly1305_processBlocks() {
   address stubAddr;
   const char *stubName;
-  assert(UsePolyIntrinsics, "need Poly intrinsics support");
+  assert(UsePoly1305Intrinsics, "need Poly intrinsics support");
   assert(callee()->signature()->size() == 5, "poly1305_processBlocks has %d parameters", callee()->signature()->size());
   stubAddr = StubRoutines::poly1305_processBlocks();
   stubName = "poly1305_processBlocks";
@@ -7231,7 +7233,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
                                                       BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
-  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->cast_to_exactness(false)->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
