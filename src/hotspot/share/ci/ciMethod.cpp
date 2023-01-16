@@ -151,7 +151,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   }
   if (_interpreter_invocation_count == 0)
     _interpreter_invocation_count = 1;
-  _instructions_size = -1;
   _inline_instructions_size = -1;
   if (ReplayCompiles) {
     ciReplay::initialize(this);
@@ -173,7 +172,6 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _method_data(            NULL),
   _method_blocks(          NULL),
   _intrinsic_id(           vmIntrinsics::_none),
-  _instructions_size(-1),
   _inline_instructions_size(-1),
   _can_be_statically_bound(false),
   _can_omit_stack_trace(true),
@@ -1112,7 +1110,7 @@ int ciMethod::code_size_for_inlining() {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::instructions_size
+// ciMethod::inline_instructions_size
 //
 // This is a rough metric for "fat" methods, compared before inlining
 // with InlineSmallCode.  The CodeBlob::code_size accessor includes
@@ -1320,7 +1318,7 @@ void ciMethod::dump_replay_data(outputStream* st) {
                mcs == NULL ? 0 : mcs->backedge_counter()->raw_counter(),
                interpreter_invocation_count(),
                interpreter_throwout_count(),
-               _instructions_size);
+               _inline_instructions_size);
 }
 
 // ------------------------------------------------------------------
