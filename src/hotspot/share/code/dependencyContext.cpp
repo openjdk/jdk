@@ -68,7 +68,7 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
   int found = 0;
   for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0 && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
+    if (b->count() > 0 && nm->check_dependency_on(changes)) {
       if (TraceDependencies) {
         ResourceMark rm;
         tty->print_cr("Marked for deoptimization");
@@ -189,7 +189,7 @@ int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
   int marked = 0;
   while (b != NULL) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0 && !nm->is_marked_for_deoptimization()) {
+    if (b->count() > 0) {
       nm->mark_for_deoptimization();
       marked++;
     }
