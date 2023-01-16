@@ -115,20 +115,16 @@ class Thread: public ThreadShadow {
 
   // On AArch64, the high order 32 bits are used by a "patching epoch" number
   // which reflects if this thread has executed the required fences, after
-  // an nmethod gets disarmed. The low order 32 bit denote the disarm value.
-  uint64_t _nmethod_disarm_value;
+  // an nmethod gets disarmed. The low order 32 bits denote the disarmed value.
+  uint64_t _nmethod_disarmed_guard_value;
 
  public:
-  int nmethod_disarm_value() {
-    return (int)(uint32_t)_nmethod_disarm_value;
+  void set_nmethod_disarmed_guard_value(int value) {
+    _nmethod_disarmed_guard_value = (uint64_t)(uint32_t)value;
   }
 
-  void set_nmethod_disarm_value(int value) {
-    _nmethod_disarm_value = (uint64_t)(uint32_t)value;
-  }
-
-  static ByteSize nmethod_disarmed_offset() {
-    ByteSize offset = byte_offset_of(Thread, _nmethod_disarm_value);
+  static ByteSize nmethod_disarmed_guard_value_offset() {
+    ByteSize offset = byte_offset_of(Thread, _nmethod_disarmed_guard_value);
     // At least on x86_64, nmethod entry barrier encodes disarmed value offset
     // in instruction as disp8 immed
     assert(in_bytes(offset) < 128, "Offset >= 128");
@@ -324,7 +320,6 @@ class Thread: public ThreadShadow {
   virtual bool is_Java_thread()     const            { return false; }
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_service_thread() const             { return false; }
-  virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   virtual bool is_Watcher_thread() const             { return false; }
@@ -363,7 +358,6 @@ class Thread: public ThreadShadow {
   static void check_for_dangling_thread_pointer(Thread *thread);
 #endif
   static void set_priority(Thread* thread, ThreadPriority priority);
-  static ThreadPriority get_priority(const Thread* const thread);
   static void start(Thread* thread);
 
   void set_native_thread_name(const char *name) {

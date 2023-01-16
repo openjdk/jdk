@@ -27,6 +27,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
@@ -2905,6 +2906,53 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    // No need to save PC on Arm
+    __ set_last_Java_frame(SP, FP, false, Rtemp);
+
+    __ enter();
+
+    __ add(Rtemp, SP, wordSize);  // Rtemp points to the saved lr
+    __ sub(SP, SP, 4 * wordSize); // four words for the returned {sp, fp, lr, pc}
+
+    const RegisterSet saved_regs = RegisterSet(R0, R10);
+    __ push(saved_regs);
+    __ fpush(FloatRegisterSet(D0, 16));
+
+    __ mov(c_rarg0, Rtemp);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), c_rarg0);
+
+    __ reset_last_Java_frame(Rtemp);
+
+    __ mov(Rtemp, R0);
+
+    __ fpop(FloatRegisterSet(D0, 16));
+    __ pop(saved_regs);
+
+    __ cbnz(Rtemp, deoptimize_label);
+
+    __ leave();
+    __ bx(LR);
+
+    __ BIND(deoptimize_label);
+
+    __ ldr(Rtemp, Address(SP, 0));
+    __ ldr(FP, Address(SP, wordSize));
+    __ ldr(LR, Address(SP, wordSize * 2));
+    __ ldr(R5, Address(SP, wordSize * 3));
+    __ mov(SP, Rtemp);
+    __ bx(R5);
+
+    return start;
+  }
+
 #define COMPILE_CRYPTO
 #include "stubRoutinesCrypto_arm.cpp"
 
@@ -3096,6 +3144,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
+    }
 
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code

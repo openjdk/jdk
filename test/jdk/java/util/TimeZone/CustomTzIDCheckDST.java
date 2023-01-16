@@ -33,32 +33,48 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 import java.time.DayOfWeek;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 public class CustomTzIDCheckDST {
-    private static String CUSTOM_TZ = "MEZ-1MESZ,M3.5.0,M10.5.0";
+    // Northern Hemisphere
+    private static String CUSTOM_TZ = "MEZ-1MESZ,M3.5.0,M10.5.0/3";
+    // Simulate Southern Hemisphere
+    private static String CUSTOM_TZ2 = "MEZ-1MESZ,M10.5.0,M3.5.0/3";
     public static void main(String args[]) throws Throwable {
         if (args.length == 0) {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest"));
             pb.environment().put("TZ", CUSTOM_TZ);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
+            pb.environment().put("TZ", CUSTOM_TZ2);
+            output = ProcessTools.executeProcess(pb);
+            output.shouldHaveExitValue(0);
         } else {
             runTZTest();
         }
     }
 
-    /* TZ code will always be set to "MEZ-1MESZ,M3.5.0,M10.5.0".
+    /* TZ is set to "MEZ-1MESZ,M3.5.0,M10.5.0/3", it will be the northern hemisphere.
      * This ensures the transition periods for Daylights Savings should be at March's last
      * Sunday and October's last Sunday.
      */
     private static void runTZTest() {
         Date time = new Date();
-        if (new SimpleTimeZone(3600000, "MEZ-1MESZ", Calendar.MARCH, -1, Calendar.SUNDAY, 0,
-                Calendar.OCTOBER, -1, Calendar.SUNDAY, 0).inDaylightTime(time)) {
+        String tzStr = System.getenv("TZ");
+        if (tzStr == null)
+            throw new RuntimeException("Got unexpected timezone information: TZ is null");
+        boolean nor = CUSTOM_TZ.equals(tzStr);
+        TimeZone tz = new SimpleTimeZone(3600000, tzStr,
+            nor ? Calendar.MARCH : Calendar.OCTOBER, -1,
+            Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
+            nor ? Calendar.OCTOBER : Calendar.MARCH, -1,
+            Calendar.SUNDAY, 3600000, SimpleTimeZone.UTC_TIME,
+            3600000);
+        if (tz.inDaylightTime(time)) {
             // We are in Daylight savings period.
             if (time.toString().endsWith("GMT+02:00 " + Integer.toString(time.getYear() + 1900)))
                 return;
@@ -68,7 +84,7 @@ public class CustomTzIDCheckDST {
         }
 
         // Reaching here means time zone did not match up as expected.
-        throw new RuntimeException("Got unexpected timezone information: " + time);
+        throw new RuntimeException("Got unexpected timezone information: " + tzStr + " " + time);
     }
 
     private static ZonedDateTime getLastSundayOfMonth(ZonedDateTime date) {

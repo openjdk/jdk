@@ -432,7 +432,7 @@ public abstract class BaseFileManager implements JavaFileManager {
             ByteBuffer result =
                 (cached != null && cached.capacity() >= capacity)
                 ? cached.clear()
-                : ByteBuffer.allocate(capacity + capacity>>1);
+                : ByteBuffer.allocate(capacity);
             cached = null;
             return result;
         }
