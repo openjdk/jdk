@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED
 #endif
 
-#ifndef PRAGMA_NONNULL_IGNORED
-#define PRAGMA_NONNULL_IGNORED
+#ifndef PRAGMA_NONnullptr_IGNORED
+#define PRAGMA_NONnullptr_IGNORED
 #endif
 
 // Support warnings for use of certain C functions, except where explicitly

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,22 +61,22 @@
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
 
-// NULL vs NULL_WORD:
-// On Linux NULL is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use NULL_WORD in places where a
+// nullptr vs nullptr_WORD:
+// On Linux nullptr is defined as a special type '__null'. Assigning __null to
+// integer variable will cause gcc warning. Use nullptr_WORD in places where a
 // pointer is stored as integer value.  On some platforms, sizeof(intptr_t) >
 // sizeof(void*), so here we want something which is integer type, but has the
 // same size as a pointer.
 #ifdef __GNUC__
   #ifdef _LP64
-    #define NULL_WORD  0L
+    #define nullptr_WORD  0L
   #else
     // Cast 0 to intptr_t rather than int32_t since they are not the same type
     // on platforms such as Mac OS X.
-    #define NULL_WORD  ((intptr_t)0)
+    #define nullptr_WORD  ((intptr_t)0)
   #endif
 #else
-  #define NULL_WORD  NULL
+  #define nullptr_WORD  nullptr
 #endif
 
 #if !defined(LINUX) && !defined(_ALLBSD_SOURCE)
@@ -139,7 +139,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
-// offset directly when base address is NULL. The -Wno-invalid-offsetof
+// offset directly when base address is nullptr. The -Wno-invalid-offsetof
 // option could be used to suppress this warning, but we instead just
 // avoid the use of offsetof().
 //

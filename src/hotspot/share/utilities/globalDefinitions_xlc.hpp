@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -72,22 +72,22 @@
 // XLC V10 and higher provide the prototype for __dcbtst (void *);
 #endif // USE_XLC_BUILTINS
 
-// NULL vs NULL_WORD:
-// Some platform/tool-chain combinations can't assign NULL to an integer
-// type so we define NULL_WORD to use in those contexts. For xlc they are the same.
-#define NULL_WORD  NULL
+// nullptr vs nullptr_WORD:
+// Some platform/tool-chain combinations can't assign nullptr to an integer
+// type so we define nullptr_WORD to use in those contexts. For xlc they are the same.
+#define nullptr_WORD  nullptr
 
-// AIX also needs a 64 bit NULL to work as a null address pointer.
+// AIX also needs a 64 bit nullptr to work as a null address pointer.
 // Most system includes on AIX would define it as an int 0 if not already defined with one
-// exception: /usr/include/dirent.h will unconditionally redefine NULL to int 0 again.
+// exception: /usr/include/dirent.h will unconditionally redefine nullptr to int 0 again.
 // In this case you need to copy the following defines to a position after #include <dirent.h>
 #include <dirent.h>
 #ifdef _LP64
-  #undef NULL
-  #define NULL 0L
+  #undef nullptr
+  #define nullptr 0L
 #else
-  #ifndef NULL
-    #define NULL 0
+  #ifndef nullptr
+    #define nullptr 0
   #endif
 #endif
 

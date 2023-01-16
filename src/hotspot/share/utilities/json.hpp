@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class JSON : public ResourceObj {
     JSON_NUMBER_FLOAT,
     JSON_TRUE,
     JSON_FALSE,
-    JSON_NULL
+    JSON_nullptr
   } JSON_TYPE;
 
   typedef union {

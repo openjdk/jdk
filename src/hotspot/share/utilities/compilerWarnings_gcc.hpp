@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 #endif
 
-#define PRAGMA_NONNULL_IGNORED \
+#define PRAGMA_NONnullptr_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #if defined(__clang_major__) && \
