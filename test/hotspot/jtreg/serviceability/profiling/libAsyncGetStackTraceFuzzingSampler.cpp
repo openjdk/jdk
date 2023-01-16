@@ -38,46 +38,7 @@
 #include <ucontext.h>
 #include "jvmti.h"
 #include "profile.h"
-
-static jvmtiEnv* jvmti;
-
-typedef void (*SigAction)(int, siginfo_t*, void*);
-typedef void (*SigHandler)(int);
-typedef void (*TimerCallback)(void*);
-
-template <class T>
-class JvmtiDeallocator {
- public:
-  JvmtiDeallocator() {
-    elem_ = NULL;
-  }
-
-  ~JvmtiDeallocator() {
-    jvmti->Deallocate(reinterpret_cast<unsigned char*>(elem_));
-  }
-
-  T* get_addr() {
-    return &elem_;
-  }
-
-  T get() {
-    return elem_;
-  }
-
- private:
-  T elem_;
-};
-
-static void GetJMethodIDs(jclass klass) {
-  jint method_count = 0;
-  JvmtiDeallocator<jmethodID*> methods;
-  jvmtiError err = jvmti->GetClassMethods(klass, &method_count, methods.get_addr());
-
-  // If ever the GetClassMethods fails, just ignore it, it was worth a try.
-  if (err != JVMTI_ERROR_NONE && err != JVMTI_ERROR_CLASS_NOT_PREPARED) {
-    fprintf(stderr, "GetJMethodIDs: Error in GetClassMethods: %d\n", err);
-  }
-}
+#include "util.hpp"
 
 // AsyncGetStackTrace needs class loading events to be turned on!
 static void JNICALL OnClassLoad(jvmtiEnv *jvmti, JNIEnv *jni_env,
@@ -107,18 +68,43 @@ static SigAction installSignalHandler(int signo, SigAction action, SigHandler ha
     return oldsa.sa_sigaction;
 }
 
+#ifdef ASSERT
 // max increase of sp
-int sp_max_fuzz = 250;
+const int sp_max_fuzz = 100;
 // max increase of fp
-int fp_max_fuzz = 250;
+const int fp_max_fuzz = 100;
+#else
+// max increase of sp
+const int sp_max_fuzz = 250;
+// max increase of fp
+const int fp_max_fuzz = 250;
+#endif
 
-int sp_max_random_fuzz = 1000000;
-int fp_max_random_fuzz = 1000000;
+const int sp_max_random_fuzz = 1000000;
+const int fp_max_random_fuzz = 1000000;
+
+const long random_interval_ns = 1000; // 1us
+
+const long iterative_interval_ns = random_interval_ns * sp_max_fuzz * fp_max_fuzz;
+
+const long duration_s = 100;
 
 bool iterative = false;
 
+long startTime = 0;
+
+bool ended = false;
+
 
 void iterativeFuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int options, void* ucontext) {
+  if (ended) {
+    return;
+  }
+  if (getSecondsSinceEpoch() - startTime > duration_s) {
+    ended = true;
+    fprintf(stderr, "ended at %ld\n", getSecondsSinceEpoch() - startTime);
+    return;
+  }
   ucontext_t uc = *((ucontext_t *)ucontext);
   AsyncGetStackTrace(trace, max_depth, &uc, options);
   long long initial_sp = uc.uc_mcontext.gregs[REG_RSP];
@@ -133,6 +119,9 @@ void iterativeFuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_dept
 }
 
 void fuzzingAsyncGetStackTraceLike(ASGST_CallTrace *trace, int max_depth, int options, int sp_add, int fp_add, void* ucontext) {
+  if (getSecondsSinceEpoch() - startTime > duration_s) {
+    return;
+  }
   ucontext_t uc = *((ucontext_t *)ucontext);
   AsyncGetStackTrace(trace, max_depth, &uc, options);
   uc.uc_mcontext.gregs[REG_RSP] += sp_add;
@@ -155,6 +144,7 @@ static void signalHandler(int signo, siginfo_t* siginfo, void* ucontext) {
 }
 
 static bool startITimerSampler(long interval_ns) {
+  startTime = getSecondsSinceEpoch();
   time_t sec = interval_ns / 1000000000;
   suseconds_t usec = (interval_ns % 1000000000) / 1000;
   struct itimerval tv = {{sec, usec}, {sec, usec}};
@@ -185,7 +175,7 @@ static void JNICALL OnVMInit(jvmtiEnv *jvmti, JNIEnv *jni_env, jthread thread) {
     GetJMethodIDs(classList[i]);
   }
 
-  startITimerSampler(1000); // 1us
+  startITimerSampler(iterative ? iterative_interval_ns : random_interval_ns);
 }
 
 

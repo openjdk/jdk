@@ -131,7 +131,7 @@ public class ASGSTIterativeFuzzingTest {
     String testCp = System.getProperty("test.class.path") +
                       File.pathSeparator + jarPath.toString();
     System.out.println("===> Classpath: " + testCp);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
       List.of(
         "-Xbootclasspath/a:./WhiteBox.jar",
         "-XX:+UnlockDiagnosticVMOptions",

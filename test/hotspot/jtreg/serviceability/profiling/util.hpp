@@ -29,6 +29,7 @@
 
 #include <array>
 #include <assert.h>
+#include <chrono>
 #include <signal.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -245,4 +246,8 @@ bool areFramesCPPFrames(ASGST_CallFrame *frames, int start, int inclEnd, const c
     }
   }
   return true;
+}
+
+long getSecondsSinceEpoch(){
+    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
