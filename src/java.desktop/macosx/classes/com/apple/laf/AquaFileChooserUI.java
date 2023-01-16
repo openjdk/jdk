@@ -593,6 +593,11 @@ public class AquaFileChooserUI extends FileChooserUI {
         return fApproveButton;
     }
 
+    @Override
+    public JButton getDefaultButton(JFileChooser fc) {
+        return getApproveButton(fc);
+    }
+
     public int getApproveButtonMnemonic(final JFileChooser fc) {
         return fSubPanel.getApproveButtonMnemonic(fc);
     }
