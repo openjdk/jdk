@@ -76,8 +76,8 @@ class MemReporterBase : public StackObj {
   int64_t diff_in_current_scale(size_t s1, size_t s2) const {
     assert(_scale != 0, "wrong scale");
 
-    LP64_ONLY(assert(s1 < INT64_MAX, "exceeded possible memory limits");)
-    LP64_ONLY(assert(s2 < INT64_MAX, "exceeded possible memory limits");)
+    assert(s1 < INT64_MAX, "exceeded possible memory limits");
+    assert(s2 < INT64_MAX, "exceeded possible memory limits");
 
     bool is_negative = false;
     if (s1 < s2) {
