@@ -23,8 +23,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
