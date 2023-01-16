@@ -166,7 +166,7 @@ PDH_STATUS PdhDll::PdhMakeCounterPath(PDH_COUNTER_PATH_ELEMENTS* pCounterPathEle
 }
 
 PDH_STATUS PdhDll::PdhExpandWildCardPath(LPCSTR szDataSource, LPCSTR szWildCardPath, PZZSTR mszExpandedPathList, LPDWORD pcchPathListLength, DWORD dwFlags) {
-  assert(_initialized && PdhExpandWildCardPath != NULL, "PdhAvailable() not yet called");
+  assert(_initialized && _PdhExpandWildCardPath != NULL, "PdhAvailable() not yet called");
   return _PdhExpandWildCardPath(szDataSource, szWildCardPath, mszExpandedPathList, pcchPathListLength, dwFlags);
 }
 
