@@ -32,10 +32,10 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
- * @bug 8299522
+ * @bug 8299522 8300084
  * @key headful
  * @summary JFileChooser Test to check for FileChooser's Approve Button Text
- *          when CUSTOM_DIALOG type is set.
+ *          when CUSTOM_DIALOG type is set and check getDefaultButton() (AquaL&F)
  * @run main CustomApproveButtonTest
  */
 
@@ -43,14 +43,10 @@ public class CustomApproveButtonTest {
     private JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        String aquaLAF = "com.apple.laf.AquaLookAndFeel";
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
                 for (UIManager.LookAndFeelInfo look : lookAndFeel) {
-                    if (look.getClassName().equals(aquaLAF)) {
-                        continue;
-                    }
                     new CustomApproveButtonTest(look.getClassName());
                 }
             }
