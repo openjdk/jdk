@@ -132,7 +132,7 @@ public class HsErrFileUtils {
             }
             // Found all positive pattern?
             if (!positivePatternStack.isEmpty()) {
-                throw new RuntimeException("hs-err file incomplete (first missing pattern: " + positivePatternStack.peek() + ")");
+                throw new RuntimeException("hs-err file incomplete (first missing pattern: " + currentPositivePattern.pattern() + ")");
             }
             if (checkEndMarker && !lastLine.equals("END.")) {
                 throw new RuntimeException("hs-err file incomplete (missing END marker.)");
