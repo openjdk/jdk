@@ -77,13 +77,7 @@ public final class SocketExceptions {
     }
 
     private static IOException ofUnixDomain(IOException e, UnixDomainSocketAddress addr) {
-        String path = addr.getPath().toString();
-        StringBuilder sb = new StringBuilder();
-        sb.append(e.getMessage());
-        sb.append(": ");
-        sb.append(path);
-        String enhancedMsg = sb.toString();
-        return create(e, enhancedMsg);
+        return create(e, String.join(": ", e.getMessage(), addr.toString()));
     }
 
     // return a new instance of the same type with the given detail
