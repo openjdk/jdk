@@ -141,6 +141,14 @@ bool isStubFrame(ASGST_CallFrame frame, const char* msg_prefix) {
   return true;
 }
 
+bool isCppFrame(ASGST_CallFrame frame, const char* msg_prefix) {
+  if (frame.type != ASGST_FRAME_CPP) {
+    fprintf(stderr, "%s: Expected CPP frame, got %d", msg_prefix, frame.type);
+    return false;
+  }
+  return true;
+}
+
 void printJavaFrame(FILE *stream, ASGST_JavaFrame frame) {
   JvmtiDeallocator<char*> name;
   jvmtiError err = jvmti->GetMethodName(frame.method_id, name.get_addr(), NULL, NULL);
