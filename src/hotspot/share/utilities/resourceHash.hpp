@@ -25,9 +25,7 @@
 #ifndef SHARE_UTILITIES_RESOURCEHASH_HPP
 #define SHARE_UTILITIES_RESOURCEHASH_HPP
 
-#include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
@@ -241,12 +239,6 @@ class ResourceHashtableBase : public STORAGE {
         --cnt;
       }
       ++bucket;
-    }
-
-    Thread* current = Thread::current_or_null();
-    // AsyncLog itself uses ResourceHashtable. We need to avoid recursion here.
-    if (current == nullptr || strcmp(current->name(), "AsyncLog Thread")) {
-      log_debug(hashtables)("ResourceHashtableBase table_size = %d, break at " INTX_FORMAT, sz, (bucket - table()));
     }
   }
 
