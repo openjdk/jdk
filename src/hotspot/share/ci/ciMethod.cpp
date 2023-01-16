@@ -1089,7 +1089,7 @@ bool ciMethod::can_be_compiled() {
 // ------------------------------------------------------------------
 // ciMethod::has_compiled_code
 bool ciMethod::has_compiled_code() {
-  return inline_instructions_size() > 0; 
+  return inline_instructions_size() > 0;
 }
 
 int ciMethod::highest_osr_comp_level() {
@@ -1119,7 +1119,7 @@ int ciMethod::code_size_for_inlining() {
 // junk like exception handler, stubs, and constant table, which are
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
-// Also some instructions inside the code are excluded from inline 
+// Also some instructions inside the code are excluded from inline
 // heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
