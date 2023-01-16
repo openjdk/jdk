@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ class ResourceHashtableBase : public STORAGE {
     Thread* current = Thread::current_or_null();
     // AsyncLog itself uses ResourceHashtable. We need to avoid recursion here.
     if (current == nullptr || strcmp(current->name(), "AsyncLog Thread")) {
-      log_debug(hashtables)("table_size = %d, break at %ld", sz, (bucket - table()));
+      log_debug(hashtables)("ResourceHashtableBase table_size = %d, break at " INTX_FORMAT, sz, (bucket - table()));
     }
   }
 
