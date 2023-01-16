@@ -166,8 +166,7 @@ public class LinuxRISCV64CallArranger {
         }
 
         Optional<VMStorage> regAlloc(int storageClass) {
-            var regsAvailable = MAX_REGISTER_ARGUMENTS - nRegs[storageClass];
-            if (regsAvailable > 0) {
+            if (nRegs[storageClass] < MAX_REGISTER_ARGUMENTS) {
                 VMStorage[] source = (forArguments ? CLinux.inputStorage : CLinux.outputStorage)[storageClass];
                 Optional<VMStorage> result = Optional.of(source[nRegs[storageClass]]);
                 nRegs[storageClass] += 1;
@@ -279,18 +278,15 @@ public class LinuxRISCV64CallArranger {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, carrier);
                 }
-
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);
                     bindings.vmStore(storage, carrier);
                 }
-
                 case POINTER -> {
                     bindings.unboxAddress();
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                 }
-
                 case STRUCT_REGISTER_X -> {
                     assert carrier == MemorySegment.class;
 
@@ -314,7 +310,6 @@ public class LinuxRISCV64CallArranger {
                         offset += copy;
                     }
                 }
-
                 case STRUCT_REGISTER_F -> {
                     assert carrier == MemorySegment.class;
                     List<FlattenedFieldDesc> descs = getFlattenedFields((GroupLayout) layout);
@@ -334,7 +329,6 @@ public class LinuxRISCV64CallArranger {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);
                     }
                 }
-
                 case STRUCT_REGISTER_XF -> {
                     assert carrier == MemorySegment.class;
                     if (storageCalculator.regsAvailable(1, 1)) {
@@ -359,7 +353,6 @@ public class LinuxRISCV64CallArranger {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);
                     }
                 }
-
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
@@ -367,9 +360,9 @@ public class LinuxRISCV64CallArranger {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     bindings.vmStore(storage, long.class);
                 }
-
                 default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);
             }
+
             return bindings.build();
         }
     }
@@ -396,18 +389,15 @@ public class LinuxRISCV64CallArranger {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, carrier);
                 }
-
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);
                     bindings.vmLoad(storage, carrier);
                 }
-
                 case POINTER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddressRaw(Utils.pointeeSize(layout));
                 }
-
                 case STRUCT_REGISTER_X -> {
                     assert carrier == MemorySegment.class;
 
@@ -429,7 +419,6 @@ public class LinuxRISCV64CallArranger {
                         offset += copy;
                     }
                 }
-
                 case STRUCT_REGISTER_F -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
@@ -446,7 +435,6 @@ public class LinuxRISCV64CallArranger {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);
                     }
                 }
-
                 case STRUCT_REGISTER_XF -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
@@ -470,14 +458,12 @@ public class LinuxRISCV64CallArranger {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);
                     }
                 }
-
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress(layout);
                 }
-
                 default -> throw new UnsupportedOperationException("Unhandled class " + argumentClass);
             }
 
