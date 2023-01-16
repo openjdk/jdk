@@ -260,7 +260,7 @@ class nmethod : public CompiledMethod {
   // Protected by CompiledMethod_lock
   volatile signed char _state;         // {not_installed, in_use, not_used, not_entrant}
 
-  int _post_call_nop_size;
+  int _skipped_instructions_size;
 
   // For native wrappers
   nmethod(Method* method,
@@ -395,7 +395,8 @@ class nmethod : public CompiledMethod {
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
-  int     post_call_nop_size    () const          { return           _post_call_nop_size                    ; }
+
+  int skipped_instructions_size () const          { return           _skipped_instructions_size             ; }
 
 #if INCLUDE_JVMCI
   address nul_chk_table_end     () const          { return           header_begin() + _speculations_offset  ; }

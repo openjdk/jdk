@@ -98,7 +98,7 @@ class CodeSection {
   address     _locs_point;      // last relocated position (grows upward)
   bool        _locs_own;        // did I allocate the locs myself?
   bool        _scratch_emit;    // Buffer is used for scratch emit, don't relocate.
-  int         _post_call_nop_size;
+  int         _skipped_instructions_size;
   char        _index;           // my section number (SECT_INST, etc.)
   CodeBuffer* _outer;           // enclosing CodeBuffer
 
@@ -115,7 +115,7 @@ class CodeSection {
     _locs_point    = NULL;
     _locs_own      = false;
     _scratch_emit  = false;
-    _post_call_nop_size = 0;
+    _skipped_instructions_size = 0;
     debug_only(_index = (char)-1);
     debug_only(_outer = (CodeBuffer*)badAddress);
   }
@@ -146,7 +146,7 @@ class CodeSection {
     _end        = cs->_end;
     _limit      = cs->_limit;
     _locs_point = cs->_locs_point;
-    _post_call_nop_size = cs->_post_call_nop_size;
+    _skipped_instructions_size = cs->_skipped_instructions_size;
   }
 
  public:
@@ -207,8 +207,8 @@ class CodeSection {
     _locs_point = pc;
   }
 
-  void count_post_call_nop(int size) {
-    _post_call_nop_size += size;
+  void register_skipped(int size) {
+    _skipped_instructions_size += size;
   }
 
   // Code emission
@@ -645,7 +645,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // allocated size of all relocation data, including index, rounded up
   csize_t total_relocation_size() const;
 
-  int total_post_call_nop_size() const;
+  int total_skipped_instructions_size() const;
 
   csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
 

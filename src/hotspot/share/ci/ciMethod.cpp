@@ -1089,7 +1089,7 @@ bool ciMethod::can_be_compiled() {
 // ------------------------------------------------------------------
 // ciMethod::has_compiled_code
 bool ciMethod::has_compiled_code() {
-  return instructions_size() > 0;
+  return inline_instructions_size() > 0; 
 }
 
 int ciMethod::highest_osr_comp_level() {
@@ -1119,26 +1119,14 @@ int ciMethod::code_size_for_inlining() {
 // junk like exception handler, stubs, and constant table, which are
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
-int ciMethod::instructions_size() {
-  if (_instructions_size == -1) {
-    GUARDED_VM_ENTRY(
-      CompiledMethod* code = get_Method()->code();
-      if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
-        _instructions_size = code->insts_end() - code->verified_entry_point();
-      } else {
-        _instructions_size = 0;
-      }
-    );
-  }
-  return _instructions_size;
-}
-
+// Also some instructions inside the code are excluded from inline 
+// heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
       CompiledMethod* code = get_Method()->code();
       if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->insts_end() - code->verified_entry_point() - code->post_call_nop_size();
+        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;

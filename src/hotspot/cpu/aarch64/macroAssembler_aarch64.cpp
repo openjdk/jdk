@@ -1101,11 +1101,11 @@ void MacroAssembler::post_call_nop() {
   }
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
-  PostCallNopCounter nopCounter(this);
+  InlineSkippedInstructionsCounter skipCounter(this);
   nop();
   movk(zr, 0);
   movk(zr, 0);
-  nopCounter.register_nop();
+  skipCounter.register_skipped();
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler

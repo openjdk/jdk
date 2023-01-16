@@ -596,12 +596,12 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
   return -1;
 }
 
-int CodeBuffer::total_post_call_nop_size() const {
+int CodeBuffer::total_skipped_instructions_size() const {
   int total_nop_size = 0;
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     const CodeSection* cur_cs = code_section(n);
     if (!cur_cs->is_empty()) {
-      total_nop_size += cur_cs->_post_call_nop_size;
+      total_nop_size += cur_cs->_skipped_instructions_size;
     }
   }
   return total_nop_size;

@@ -242,18 +242,19 @@ class AbstractAssembler : public ResourceObj  {
   };
   friend class InstructionMark;
 
-  class PostCallNopCounter: public StackObj {
+  // count size of instructions which are skipped from inline heuristics
+  class InlineSkippedInstructionsCounter: public StackObj {
    private:
     AbstractAssembler* _assm;
-    address _nop_start;
+    address _start;
    public:
-    PostCallNopCounter(AbstractAssembler* assm) : _assm(assm), _nop_start(assm->pc()) {
+    InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
     }
-    void register_nop() {
-      _assm->count_post_call_nop(_assm->pc() - _nop_start);
+    void register_skipped() {
+      _assm->register_skipped(_assm->pc() - _start);
     }
   };
-  friend class PostCallNopCounter;
+  friend class InlineSkippedInstructionsCounter;
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
@@ -346,7 +347,7 @@ class AbstractAssembler : public ResourceObj  {
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
-  void   count_post_call_nop(int size) { code_section()->count_post_call_nop(size); }
+  void   register_skipped(int size) { code_section()->register_skipped(size); }
 
   address       inst_mark() const { return code_section()->mark();       }
   void      set_inst_mark()       {        code_section()->set_mark();   }
