@@ -8675,7 +8675,7 @@ instruct minI_reg_reg(iRegINoSp dst, iRegI src)
     __ bind(Lskip);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_compare);
 %}
 
 instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
@@ -8696,7 +8696,7 @@ instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
     __ bind(Lskip);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_compare);
 %}
 
 // special case for comparing with zero
@@ -8706,6 +8706,7 @@ instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
 instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
 %{
   match(Set dst (MinI dst zero));
+  match(Set dst (MinI zero dst));
 
   ins_cost(BRANCH_COST + ALU_COST);
   format %{
@@ -8721,12 +8722,13 @@ instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
     __ bind(Lskip);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_compare);
 %}
 
 instruct maxI_reg_zero(iRegINoSp dst, immI0 zero)
 %{
   match(Set dst (MaxI dst zero));
+  match(Set dst (MaxI zero dst));
 
   ins_cost(BRANCH_COST + ALU_COST);
   format %{
@@ -8742,49 +8744,7 @@ instruct maxI_reg_zero(iRegINoSp dst, immI0 zero)
     __ bind(Lskip);
   %}
 
-  ins_pipe(pipe_class_default);
-%}
-
-instruct minI_zero_reg(iRegINoSp dst, immI0 zero)
-%{
-  match(Set dst (MinI zero dst));
-
-  ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "blez $dst, skip\t#@minI_zero_reg\n\t"
-    "mv   $dst, zr\n\t"
-    "skip:"
-  %}
-
-  ins_encode %{
-    Label Lskip;
-    __ blez(as_Register($dst$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), zr);
-    __ bind(Lskip);
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct maxI_zero_reg(iRegINoSp dst, immI0 zero)
-%{
-  match(Set dst (MaxI zero dst));
-
-  ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "bgez $dst, skip\t#@maxI_zero_reg\n\t"
-    "mv   $dst, zr\n\t"
-    "skip:"
-  %}
-
-  ins_encode %{
-    Label Lskip;
-    __ bgez(as_Register($dst$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), zr);
-    __ bind(Lskip);
-  %}
-
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_compare);
 %}
 
 instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
@@ -8813,7 +8773,7 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
     __ bind(Ldone);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_compare);
 %}
 
 instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
@@ -8843,7 +8803,7 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
 
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_class_compare);
 %}
 
 // ============================================================================
