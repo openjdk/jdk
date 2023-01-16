@@ -713,6 +713,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     MallocHeader* header = MallocTracker::malloc_header(memblock);
     header->assert_block_integrity(); // Assert block hasn't been tampered with.
     const MallocHeader::FreeInfo free_info = header->free_info();
+
     header->mark_block_as_dead();
 
     // the real realloc
@@ -732,7 +733,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
 #ifdef ASSERT
-    size_t old_size = free_info.size;
+    assert(old_size == free_info.size, "Sanity");
     if (old_size < size) {
       // We also zap the newly extended region.
       ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,10 @@ MallocLimitSet MallocLimitHandler::_limits;
 bool MallocLimitHandler::_have_limit = false;
 
 class ParserHelper {
+  // Start, end of parsed string.
   const char* const _s;
   const char* const _end;
+  // Current parse position.
   const char* _p;
 
 public:
@@ -49,17 +51,18 @@ public:
 
   // Check if string at position matches a malloclimit_mode_t.
   // Advance position on match.
-  bool match_mode_flag(malloclimit_mode_t* out) {
-    if (!eof()) {
-      if (strncasecmp(_p, "oom", 3) == 0) {
-        *out = malloclimit_mode_t::trigger_oom;
-        _p += 3;
-        return true;
-      } else if (strncasecmp(_p, "fatal", 5) == 0) {
-        *out = malloclimit_mode_t::trigger_fatal;
-        _p += 5;
-        return true;
-      }
+  bool match_mode_flag(MallocLimitMode* out) {
+    if (eof()) {
+      return false;
+    }
+    if (strncasecmp(_p, "oom", 3) == 0) {
+      *out = MallocLimitMode::trigger_oom;
+      _p += 3;
+      return true;
+    } else if (strncasecmp(_p, "fatal", 5) == 0) {
+      *out = MallocLimitMode::trigger_fatal;
+      _p += 5;
+      return true;
     }
     return false;
   }
@@ -67,19 +70,17 @@ public:
   // Check if string at position matches a category name.
   // Advances position on match.
   bool match_category(MEMFLAGS* out) {
-    if (!eof()) {
-      const char* end = strchr(_p, ':');
-      if (end == nullptr) {
-        end = _end;
-      }
-      stringStream ss;
-      ss.print("%.*s", (int)(end - _p), _p);
-      MEMFLAGS f = NMTUtil::string_to_flag(ss.base());
-      if (f != mtNone) {
-        *out = f;
-        _p = end;
-        return true;
-      }
+    if (eof()) {
+      return false;
+    }
+    const char* end = strchrnul(_p, ':');
+    stringStream ss;
+    ss.print("%.*s", (int)(end - _p), _p);
+    MEMFLAGS f = NMTUtil::string_to_flag(ss.base());
+    if (f != mtNone) {
+      *out = f;
+      _p = end;
+      return true;
     }
     return false;
   }
@@ -112,34 +113,34 @@ MallocLimitSet::MallocLimitSet() {
   reset();
 }
 
-void MallocLimitSet::set_global_limit(size_t s, malloclimit_mode_t flag) {
-  _glob.v = s; _glob.f = flag;
+void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
+  _glob.sz = s; _glob.mode = flag;
 }
 
-void MallocLimitSet::set_category_limit(MEMFLAGS f, size_t s, malloclimit_mode_t flag) {
+void MallocLimitSet::set_category_limit(MEMFLAGS f, size_t s, MallocLimitMode flag) {
   const int i = NMTUtil::flag_to_index(f);
-  _cat[i].v = s; _cat[i].f = flag;
+  _cat[i].sz = s; _cat[i].mode = flag;
 }
 
 void MallocLimitSet::reset() {
-  set_global_limit(0, malloclimit_mode_t::trigger_fatal);
-  _glob.v = 0; _glob.f = malloclimit_mode_t::trigger_fatal;
+  set_global_limit(0, MallocLimitMode::trigger_fatal);
+  _glob.sz = 0; _glob.mode = MallocLimitMode::trigger_fatal;
   for (int i = 0; i < mt_number_of_types; i++) {
-    set_category_limit(NMTUtil::index_to_flag(i), 0, malloclimit_mode_t::trigger_fatal);
+    set_category_limit(NMTUtil::index_to_flag(i), 0, MallocLimitMode::trigger_fatal);
   }
 }
 
 void MallocLimitSet::print_on(outputStream* st) const {
   static const char* flagnames[] = { "fatal", "oom" };
-  if (_glob.v > 0) {
-    st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.v),
-              flagnames[(int)_glob.f]);
+  if (_glob.sz > 0) {
+    st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
+              flagnames[(int)_glob.mode]);
   } else {
     for (int i = 0; i < mt_number_of_types; i++) {
-      if (_cat[i].v > 0) {
+      if (_cat[i].sz > 0) {
         st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
           NMTUtil::flag_to_enum_name(NMTUtil::index_to_flag(i)),
-          PROPERFMTARGS(_cat[i].v), flagnames[(int)_cat[i].f]);
+          PROPERFMTARGS(_cat[i].sz), flagnames[(int)_cat[i].mode]);
       }
     }
   }
@@ -162,11 +163,11 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
   BAIL_UNLESS(!sst.eof(), "Empty string");
 
   // Global form?
-  if (sst.match_size(&_glob.v)) {
+  if (sst.match_size(&_glob.sz)) {
     // Match optional mode flag (e.g. 1g:oom)
     if (!sst.eof()) {
       BAIL_UNLESS(sst.match_char(':'), "Expected colon");
-      BAIL_UNLESS(sst.match_mode_flag(&_glob.f), "Expected flag");
+      BAIL_UNLESS(sst.match_mode_flag(&_glob.mode), "Expected flag");
     }
   }
   // Category-specific form?
@@ -178,14 +179,14 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
       BAIL_UNLESS(sst.match_category(&f), "Expected category name");
       BAIL_UNLESS(sst.match_char(':'), "Expected colon following category");
 
-      malloclimit_t* const modified_limit = &_cat[NMTUtil::flag_to_index(f)];
+      malloclimit* const modified_limit = &_cat[NMTUtil::flag_to_index(f)];
 
       // Match size
-      BAIL_UNLESS(sst.match_size(&modified_limit->v), "Expected size");
+      BAIL_UNLESS(sst.match_size(&modified_limit->sz), "Expected size");
 
       // Match optional flag
       if (!sst.eof() && sst.match_char(':')) {
-        BAIL_UNLESS(sst.match_mode_flag(&modified_limit->f), "Expected flag");
+        BAIL_UNLESS(sst.match_mode_flag(&modified_limit->mode), "Expected flag");
       }
 
       // More to come?

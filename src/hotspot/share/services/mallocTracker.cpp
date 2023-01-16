@@ -83,13 +83,13 @@ void MallocMemorySummary::initialize() {
   MallocLimitHandler::initialize(MallocLimit);
 }
 
-void MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit_t* limit) {
+void MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->v)
+  PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
-  if (limit->f == malloclimit_mode_t::trigger_fatal) {
+  if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
   } else {
     log_warning(nmt)(FORMATTED);
@@ -98,13 +98,13 @@ void MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
 #undef FORMATTED
 }
 
-void MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit_t* limit) {
+void MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->v)
+  NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
-  if (limit->f == malloclimit_mode_t::trigger_fatal) {
+  if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
   } else {
     log_warning(nmt)(FORMATTED);

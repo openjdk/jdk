@@ -34,7 +34,7 @@
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
-struct malloclimit_t;
+struct malloclimit;
 
 /*
  * This counter class counts memory allocation and deallocation,
@@ -211,8 +211,8 @@ class MallocMemorySummary : AllStatic {
   static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
   static bool _have_limits;
 
-  static void total_limit_reached(size_t s, size_t so_far, const malloclimit_t* limit);
-  static void category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit_t* limit);
+  static void total_limit_reached(size_t s, size_t so_far, const malloclimit* limit);
+  static void category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
    static void initialize();

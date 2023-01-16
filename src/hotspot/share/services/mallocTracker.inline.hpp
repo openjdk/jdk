@@ -49,10 +49,10 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
   if (MallocLimitHandler::have_limit()) {
 
     // Global Limit ?
-    const malloclimit_t* l = MallocLimitHandler::global_limit();
-    if (l->v > 0) {
+    const malloclimit* l = MallocLimitHandler::global_limit();
+    if (l->sz > 0) {
       size_t so_far = as_snapshot()->total();
-      if ((so_far + s) > l->v) { // hit the limit
+      if ((so_far + s) > l->sz) { // hit the limit
         if (!suppress_limit_handling()) {
           total_limit_reached(s, so_far, l);
           return true;
@@ -61,10 +61,10 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
     } else {
       // Category Limit?
       l = MallocLimitHandler::category_limit(f);
-      if (l->v > 0) {
+      if (l->sz > 0) {
         const MallocMemory* mm = as_snapshot()->by_type(f);
         size_t so_far = mm->malloc_size() + mm->arena_size();
-        if ((so_far + s) > l->v) {
+        if ((so_far + s) > l->sz) {
           if (!suppress_limit_handling()) {
             category_limit_reached(f, s, so_far, l);
             return true;
