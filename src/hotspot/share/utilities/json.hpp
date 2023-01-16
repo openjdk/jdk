@@ -47,7 +47,7 @@ class JSON : public ResourceObj {
     JSON_NUMBER_FLOAT,
     JSON_TRUE,
     JSON_FALSE,
-    JSON_nullptr
+    JSON_NULL
   } JSON_TYPE;
 
   typedef union {

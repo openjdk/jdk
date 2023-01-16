@@ -120,7 +120,7 @@ template <MEMFLAGS F> int BasicHashtable<F>::calculate_resize(bool use_large_tab
 template <MEMFLAGS F> bool BasicHashtable<F>::resize(int new_size) {
 
   // Allocate new buckets
-  HashtableBucket<F>* buckets_new = NEW_C_HEAP_ARRAY2_RETURN_nullptr(HashtableBucket<F>, new_size, F, CURRENT_PC);
+  HashtableBucket<F>* buckets_new = NEW_C_HEAP_ARRAY2_RETURN_NULL(HashtableBucket<F>, new_size, F, CURRENT_PC);
   if (buckets_new == nullptr) {
     return false;
   }

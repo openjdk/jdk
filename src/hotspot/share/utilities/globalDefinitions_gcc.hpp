@@ -61,22 +61,22 @@
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
 
-// nullptr vs nullptr_WORD:
-// On Linux nullptr is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use nullptr_WORD in places where a
+// NULL vs NULL_WORD:
+// On Linux NULL is defined as a special type '__null'. Assigning __null to
+// integer variable will cause gcc warning. Use NULL_WORD in places where a
 // pointer is stored as integer value.  On some platforms, sizeof(intptr_t) >
 // sizeof(void*), so here we want something which is integer type, but has the
 // same size as a pointer.
 #ifdef __GNUC__
   #ifdef _LP64
-    #define nullptr_WORD  0L
+    #define NULL_WORD  0L
   #else
     // Cast 0 to intptr_t rather than int32_t since they are not the same type
     // on platforms such as Mac OS X.
-    #define nullptr_WORD  ((intptr_t)0)
+    #define NULL_WORD  ((intptr_t)0)
   #endif
 #else
-  #define nullptr_WORD  nullptr
+  #define NULL_WORD  NULL
 #endif
 
 #if !defined(LINUX) && !defined(_ALLBSD_SOURCE)

@@ -133,7 +133,7 @@ bool JSON::parse_json_value() {
       return parse_json_symbol("false", JSON_FALSE);
 
     case 'n':
-      return parse_json_symbol("null", JSON_nullptr);
+      return parse_json_symbol("null", JSON_NULL);
 
     case 0:
       error(SYNTAX_ERROR, "EOS was encountered when expecting a json value.");

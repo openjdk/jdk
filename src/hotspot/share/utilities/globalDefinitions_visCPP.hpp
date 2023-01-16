@@ -49,35 +49,35 @@
 # include <math.h>
 
 // 4810578: varargs unsafe on 32-bit integer/64-bit pointer architectures
-// When __cplusplus is defined, nullptr is defined as 0 (32-bit constant) in
+// When __cplusplus is defined, NULL is defined as 0 (32-bit constant) in
 // system header files.  On 32-bit architectures, there is no problem.
-// On 64-bit architectures, defining nullptr as a 32-bit constant can cause
+// On 64-bit architectures, defining NULL as a 32-bit constant can cause
 // problems with varargs functions: C++ integral promotion rules say for
-// varargs, we pass the argument 0 as an int.  So, if nullptr was passed to a
+// varargs, we pass the argument 0 as an int.  So, if NULL was passed to a
 // varargs function it will remain 32-bits.  Depending on the calling
 // convention of the machine, if the argument is passed on the stack then
-// only 32-bits of the "nullptr" pointer may be initialized to zero.  The
+// only 32-bits of the "NULL" pointer may be initialized to zero.  The
 // other 32-bits will be garbage.  If the varargs function is expecting a
 // pointer when it extracts the argument, then we may have a problem.
 //
-// Solution: For 64-bit architectures, redefine nullptr as 64-bit constant 0.
+// Solution: For 64-bit architectures, redefine NULL as 64-bit constant 0.
 #ifdef _LP64
-#undef nullptr
+#undef NULL
 // 64-bit Windows uses a P64 data model (not LP64, although we define _LP64)
 // Since longs are 32-bit we cannot use 0L here.  Use the Visual C++ specific
 // 64-bit integer-suffix (LL) instead.
-#define nullptr 0LL
+#define NULL 0LL
 #else
-#ifndef nullptr
-#define nullptr 0
+#ifndef NULL
+#define NULL 0
 #endif
 #endif
 
-// nullptr vs nullptr_WORD:
-// On Linux nullptr is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use nullptr_WORD in places where a
+// NULL vs NULL_WORD:
+// On Linux NULL is defined as a special type '__null'. Assigning __null to
+// integer variable will cause gcc warning. Use NULL_WORD in places where a
 // pointer is stored as integer value.
-#define nullptr_WORD nullptr
+#define NULL_WORD NULL
 
 #ifdef _WIN64
 typedef int64_t ssize_t;
