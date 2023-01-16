@@ -25,7 +25,9 @@
 #ifndef SHARE_UTILITIES_RESOURCEHASH_HPP
 #define SHARE_UTILITIES_RESOURCEHASH_HPP
 
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
@@ -228,14 +230,23 @@ class ResourceHashtableBase : public STORAGE {
   void iterate(Function function) const { // lambda enabled API
     Node* const* bucket = table();
     const unsigned sz = table_size();
-    while (bucket < bucket_at(sz)) {
+    int cnt = _number_of_entries;
+
+    while (cnt > 0 && bucket < bucket_at(sz)) {
       Node* node = *bucket;
       while (node != NULL) {
         bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
+        --cnt;
       }
       ++bucket;
+    }
+
+    Thread* current = Thread::current_or_null();
+    // AsyncLog itself uses ResourceHashtable. We need to avoid recursion here.
+    if (current == nullptr || strcmp(current->name(), "AsyncLog Thread")) {
+      log_debug(hashtables)("table_size = %d, break at %ld", sz, (bucket - table()));
     }
   }
 
