@@ -253,7 +253,7 @@ static void* checkForNonJava(void *arg) {
   AsyncGetStackTrace(&trace, MAX_DEPTH, &context,
     ASGST_INCLUDE_C_FRAMES | ASGST_INCLUDE_NON_JAVA_THREADS);
   if (trace.num_frames < 0) {
-    fprintf(stderr, "checkForNonJava: No frames found for non-java thread\n");
+    fprintf(stderr, "checkForNonJava: No frames found for non-java thread, error code %d\n", trace.num_frames);
     return NULL;
   }
   if (trace.kind != ASGST_CPP_TRACE) {
