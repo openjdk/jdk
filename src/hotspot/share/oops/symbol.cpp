@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,6 +292,25 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
     }
     first = false;
   }
+}
+
+void Symbol::print_as_field_external_type(outputStream *os) {
+  SignatureStream ss(this, false);
+  assert(!ss.is_done(), "must have at least one element in field ref");
+  assert(!ss.at_return_type(), "field ref cannot be a return type");
+  assert(!Signature::is_method(this), "field ref cannot be a method");
+
+  if (ss.is_array()) {
+    print_array(os, ss);
+  } else if (ss.is_reference()) {
+    print_class(os, ss);
+  } else {
+    os->print("%s", type2name(ss.type()));
+  }
+#ifdef ASSERT
+  ss.next();
+  assert(ss.is_done(), "must have at most one element in field ref");
+#endif
 }
 
 // Increment refcount while checking for zero.  If the Symbol's refcount becomes zero

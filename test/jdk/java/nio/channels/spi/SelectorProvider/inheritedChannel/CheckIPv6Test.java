@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_CONDITIONAL_HPP
-#define SHARE_METAPROGRAMMING_CONDITIONAL_HPP
+import java.io.IOException;
 
-#include "memory/allStatic.hpp"
+/**
+ * This test verifies that a service launched with IPv4 inherited channel
+ * can use IPv6 networking; this used to be impossible, see JDK-6914801
+ */
+public class CheckIPv6Test {
 
-// This trait evaluates its typedef called "type" to TrueType iff the condition
-// is true. Otherwise it evaluates to FalseType.
+    private static int failures = 0;
 
-template <bool condition, typename TrueType, typename FalseType>
-struct Conditional: AllStatic {
-  typedef TrueType type;
-};
+    private static final String SERVICE = "CheckIPv6Service";
 
-template <typename TrueType, typename FalseType>
-struct Conditional<false, TrueType, FalseType>: AllStatic {
-  typedef FalseType type;
-};
+    public static void main(String args[]) throws IOException {
 
-#endif // SHARE_METAPROGRAMMING_CONDITIONAL_HPP
+        if (!CheckIPv6Service.isIPv6Available()) {
+            System.out.println("IPv6 not available. Test skipped.");
+            return;
+        }
+
+        try {
+            EchoTest.TCPEchoTest(SERVICE);
+            System.out.println("IPv6 test passed.");
+        } catch (Exception x) {
+            System.err.println(x);
+            failures++;
+        }
+
+        if (failures > 0) {
+            throw new RuntimeException("Test failed - see log for details");
+        }
+    }
+
+}

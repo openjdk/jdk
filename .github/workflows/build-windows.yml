@@ -125,6 +125,7 @@ jobs:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
+        shell: env /usr/bin/bash --login -eo pipefail {0}
 
       - name: 'Build'
         id: build

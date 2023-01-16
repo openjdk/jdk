@@ -45,8 +45,6 @@ import javax.swing.text.View;
 public class SynthButtonUI extends BasicButtonUI implements SynthUI {
     private SynthStyle style;
 
-    private static final Object SYNTH_BUTTON_UI_KEY = new Object();
-
     private final PropertyChangeListener abstractButtonListener = e -> {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((AbstractButton) e.getSource());

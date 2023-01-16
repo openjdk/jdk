@@ -944,7 +944,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: input.build_cpu,
             dependencies: [
                 "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJdk,
-                testedProfileTest, testedProfile + ".jdk_symbols",
+                testedProfileTest,
             ],
             src: "src.conf",
             make_args: testOnlyMake,
@@ -958,6 +958,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             labels: "test"
         }
     };
+    if (!testedProfile.endsWith("-jcov")) {
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
+    }
 
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
@@ -987,7 +990,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: [ "lldb" ],
             environment_path: [
                 input.get("gnumake", "install_path") + "/bin",
-                input.get("lldb", "install_path") + "/Xcode.app/Contents/Developer/usr/bin",
+                input.get("lldb", "install_path") + "/Xcode/Contents/Developer/usr/bin",
             ],
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
@@ -1123,7 +1126,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-macosx" + (input.build_cpu == "x64" ? "_x64" : ""),
-            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.1" : devkit_platform_revisions[devkit_platform])
+            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.2" : devkit_platform_revisions[devkit_platform])
         },
 
         cups: {
@@ -1151,7 +1154,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-13-jdk-asm+1.0",
+            revision: "3.0-14-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },

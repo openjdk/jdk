@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
   }
 
   // Do the range check
-  if (GenerateRangeChecks && need_range_check) {
+  if (need_range_check) {
     Node* tst;
     if (sizetype->_hi <= 0) {
       // The greatest array bound is negative, so we can conclude that we're
