@@ -49,10 +49,12 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Verifies that the stack walking of AsyncGetStackTrace is save in a high-frequency signal sampler with randomly modifed stack and frame pointers
  * It is an adaptation of ASGSTStabilityTest.java to additionally fuzz the stack and frame pointers.
  *
- * It is known to fail at frame::verify_deopt_original_pc in debug builds, but this should be ignored.
- *
  * This tests simulates a tool like async-profiler which uses AsyncGetStackTrace to walk the stack and
  * moves the stack and frame pointers around a bit to get better results.
+ *
+ * The default length of this test is 300 seconds, but you can increase it by passing a new duration
+ * using the ASGST_FUZZING_TEST_DURATION environment variable (in seconds).
+ * Keep in mind that it cannot fuzz longer than the benchmark itself runs.
  *
  * @library /test/jdk/lib/testlibrary /test/lib
  * @compile ASGSTIterativeFuzzingTest.java

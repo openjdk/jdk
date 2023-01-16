@@ -25,7 +25,6 @@
 #if defined(LINUX) && defined(__x86_64__)
 
 #include <assert.h>
-#include <ctime>
 #include <dlfcn.h>
 #include <signal.h>
 #include <stdio.h>
@@ -85,9 +84,9 @@ const int fp_max_random_fuzz = 1000000;
 
 const long random_interval_ns = 1000; // 1us
 
-const long iterative_interval_ns = random_interval_ns * sp_max_fuzz * fp_max_fuzz;
+const long iterative_interval_ns = random_interval_ns * sp_max_fuzz * fp_max_fuzz / 100;
 
-const long duration_s = 100;
+long duration_s = 300;
 
 bool iterative = false;
 
@@ -191,6 +190,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     fprintf(stderr, "Unknown option: %s", options);
     return JNI_ERR;
   }
+
+  char* dur_env = getenv("ASGST_FUZZING_TEST_DURATION");
+  if (dur_env != NULL) {
+    duration_s = atoi(dur_env);
+  }
+
+
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
   if (res != JNI_OK || jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
