@@ -62,6 +62,8 @@ import java.net.http.HttpResponse.BodySubscribers;
 import  java.net.http.HttpResponse.BodySubscriber;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
+
+import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -91,6 +93,8 @@ public class MappingResponseSubscriber {
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = Executors.newCachedThreadPool();
+
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     @DataProvider(name = "variants")
     public Object[][] variants() {
@@ -126,15 +130,31 @@ public class MappingResponseSubscriber {
     public void testAsBytes(String uri, boolean sameClient) throws Exception {
         HttpClient client = null;
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = newHttpClient();
+            try {
+                if (!sameClient || client == null)
+                    client = newHttpClient();
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                                         .build();
-            BodyHandler<byte[]> handler = new CRSBodyHandler();
-            HttpResponse<byte[]> response = client.send(req, handler);
-            byte[] body = response.body();
-            assertEquals(body, bytes);
+                HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+                        .build();
+                BodyHandler<byte[]> handler = new CRSBodyHandler();
+                HttpResponse<byte[]> response = client.send(req, handler);
+                byte[] body = response.body();
+                assertEquals(body, bytes);
+            } finally {
+                if (sameClient) continue;
+                Tracker tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                AssertionError error = TRACKER.check(tracker, 1500);
+                if (error != null) throw error;
+            }
+        }
+        if (sameClient) {
+            Tracker tracker = TRACKER.getTracker(client);
+            client = null;
+            System.gc();
+            AssertionError error = TRACKER.check(tracker,1500);
+            if (error != null) throw error;
         }
     }
 
