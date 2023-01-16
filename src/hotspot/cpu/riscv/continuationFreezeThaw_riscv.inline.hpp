@@ -149,7 +149,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
-  // this line can be changed into an assert when we have fixed the "frame padding problem"
+  // this line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
   *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1;
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
@@ -305,7 +305,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
   // set relativized locals
-  // this line can be changed into an assert when we have fixed the "frame padding problem"
+  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
   *f.addr_at(frame::interpreter_frame_locals_offset) = (bottom - 1) - f.fp();
 }
 

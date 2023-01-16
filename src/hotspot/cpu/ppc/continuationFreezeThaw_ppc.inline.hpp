@@ -85,7 +85,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // There is alignment padding between vfp and f's locals array in the original
   // frame, therefore we cannot use it to relativize the locals pointer.
-  // This line can be changed into an assert when we have fixed the "frame padding problem".
+  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
   *hf.addr_at(ijava_idx(locals)) = frame::metadata_words + f.interpreter_frame_method()->max_locals() - 1;
   relativize_one(vfp, hfp, ijava_idx(monitors));
   relativize_one(vfp, hfp, ijava_idx(esp));
@@ -551,7 +551,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
   // set relativized locals
-  // this line can be changed into an assert when we have fixed the "frame padding problem"
+  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
   *f.addr_at(ijava_idx(locals)) = (bottom - 1) - f.fp();
 }
 
