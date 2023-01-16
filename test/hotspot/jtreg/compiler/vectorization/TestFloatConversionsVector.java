@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8294588
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs
  * @requires vm.compiler2.enabled
- * @requires os.simpleArch == "x64"
+ * @requires (os.simpleArch == "x64" & (vm.cpu.features ~= ".*avx512f.*" | vm.cpu.features ~= ".*f16c.*")) | os.arch == "aarch64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestFloatConversionsVector
  */
@@ -34,62 +34,73 @@
 package compiler.vectorization;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 public class TestFloatConversionsVector {
-  private static final int ARRLEN = 1024;
-  private static final int ITERS  = 11000;
-  private static float  [] finp;
-  private static short  [] sout;
-  private static short  [] sinp;
-  private static float  [] fout;
+    private static final int ARRLEN = 1024;
+    private static final int ITERS  = 11000;
+    private static float  [] finp;
+    private static short  [] sout;
+    private static short  [] sinp;
+    private static float  [] fout;
 
-  public static void main(String args[]) {
-      TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                 "-XX:CompileThresholdScaling=0.3");
-      System.out.println("PASSED");
-  }
+    public static void main(String args[]) {
+        TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "-XX:CompileThresholdScaling=0.3");
+        System.out.println("PASSED");
+    }
 
-  @Test
-  @IR(counts = {IRNode.VECTOR_CAST_F2HF, "> 0"}, applyIfCPUFeatureOr = {"avx512f", "true", "f16c", "true"})
-  public void test_float_float16(short[] sout, float[] finp) {
-      for (int i = 0; i < finp.length; i++) {
-          sout[i] = Float.floatToFloat16(finp[i]);
-      }
-  }
+    @Test
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, "> 0"})
+    public void test_float_float16(short[] sout, float[] finp) {
+        for (int i = 0; i < finp.length; i++) {
+            sout[i] = Float.floatToFloat16(finp[i]);
+        }
+    }
 
-  @Run(test = {"test_float_float16"}, mode = RunMode.STANDALONE)
-  public void kernel_test_float_float16() {
-      finp = new float[ARRLEN];
-      sout = new short[ARRLEN];
+    @Run(test = {"test_float_float16"}, mode = RunMode.STANDALONE)
+    public void kernel_test_float_float16() {
+        finp = new float[ARRLEN];
+        sout = new short[ARRLEN];
 
-      for (int i = 0; i < ARRLEN; i++) {
-          finp[i] = (float) i * 1.4f;
-      }
+        for (int i = 0; i < ARRLEN; i++) {
+            finp[i] = (float) i * 1.4f;
+        }
 
-      for (int i = 0; i < ITERS; i++) {
-         test_float_float16(sout, finp);
-      }
-  }
+        for (int i = 0; i < ITERS; i++) {
+            test_float_float16(sout, finp);
+        }
 
-  @Test
-  @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"}, applyIfCPUFeatureOr = {"avx512f", "true", "f16c", "true"})
-  public void test_float16_float(float[] fout, short[] sinp) {
-      for (int i = 0; i < sinp.length; i++) {
-          fout[i] = Float.float16ToFloat(sinp[i]);
-      }
-  }
+        // Verifying the result
+        for (int i = 0; i < ARRLEN; i++) {
+            Asserts.assertEquals(Float.floatToFloat16(finp[i]), sout[i]);
+        }
+    }
 
-  @Run(test = {"test_float16_float"}, mode = RunMode.STANDALONE)
-  public void kernel_test_float16_float() {
-      sinp = new short[ARRLEN];
-      fout = new float[ARRLEN];
+    @Test
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"})
+    public void test_float16_float(float[] fout, short[] sinp) {
+        for (int i = 0; i < sinp.length; i++) {
+            fout[i] = Float.float16ToFloat(sinp[i]);
+        }
+    }
 
-      for (int i = 0; i < ARRLEN; i++) {
-          sinp[i] = (short)i;
-      }
+    @Run(test = {"test_float16_float"}, mode = RunMode.STANDALONE)
+    public void kernel_test_float16_float() {
+        sinp = new short[ARRLEN];
+        fout = new float[ARRLEN];
 
-      for (int i = 0; i < ITERS; i++) {
-          test_float16_float(fout , sinp);
-      }
-  }
+        for (int i = 0; i < ARRLEN; i++) {
+            sinp[i] = (short)i;
+        }
+
+        for (int i = 0; i < ITERS; i++) {
+            test_float16_float(fout, sinp);
+        }
+
+        // Verifying the result
+        for (int i = 0; i < ARRLEN; i++) {
+            Asserts.assertEquals(Float.float16ToFloat(sinp[i]), fout[i]);
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * equal to the value of:
      *
      * <blockquote>
-     *  {@code new Short(Short.parseShort(s, radix))}
+     *  {@code Short.valueOf(Short.parseShort(s, radix))}
      * </blockquote>
      *
      * @param s         the string to be parsed
@@ -206,7 +206,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * equal to the value of:
      *
      * <blockquote>
-     *  {@code new Short(Short.parseShort(s))}
+     *  {@code Short.valueOf(Short.parseShort(s))}
      * </blockquote>
      *
      * @param s the string to be parsed

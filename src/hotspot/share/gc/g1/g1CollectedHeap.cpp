@@ -1855,12 +1855,7 @@ size_t G1CollectedHeap::recalculate_used() const {
 }
 
 bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause) {
-  switch (cause) {
-    case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
-    case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
-    case GCCause::_wb_conc_mark:                        return true;
-    default :                                           return false;
-  }
+  return GCCause::is_user_requested_gc(cause) && ExplicitGCInvokesConcurrent;
 }
 
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
