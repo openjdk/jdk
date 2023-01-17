@@ -38,7 +38,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -67,6 +66,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+
+#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -260,7 +261,7 @@ template <oop_kind oops, typename BarrierSetT>
 class Config {
 public:
   typedef Config<oops, BarrierSetT> SelfT;
-  typedef typename Conditional<oops == oop_kind::NARROW, narrowOop, oop>::type OopT;
+  using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static int freeze(JavaThread* thread, intptr_t* const sp) {
     return freeze_internal<SelfT>(thread, sp);
