@@ -497,32 +497,48 @@ class Stream<T> extends ExchangeImpl<T> {
         return rspHeadersConsumer;
     }
 
+    volatile boolean finalResponseCodeReceived = false;
+
     protected void handleResponse() throws IOException {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
-        responseCode = (int)responseHeaders
-                .firstValueAsLong(":status")
-                .orElseThrow(() -> new IOException("no statuscode in response"));
 
-        response = new Response(
-                request, exchange, responseHeaders, connection(),
-                responseCode, HttpClient.Version.HTTP_2);
+        if (!finalResponseCodeReceived) {
+            responseCode = (int) responseHeaders
+                    .firstValueAsLong(":status")
+                    .orElseThrow(() -> new IOException("no statuscode in response"));
+            // If informational code, response is partially complete
+            if (responseCode < 100 || responseCode > 199)
+                this.finalResponseCodeReceived = true;
+
+            response = new Response(
+                    request, exchange, responseHeaders, connection(),
+                    responseCode, HttpClient.Version.HTTP_2);
 
         /* TODO: review if needs to be removed
            the value is not used, but in case `content-length` doesn't parse as
            long, there will be NumberFormatException. If left as is, make sure
            code up the stack handles NFE correctly. */
-        responseHeaders.firstValueAsLong("content-length");
+            responseHeaders.firstValueAsLong("content-length");
 
-        if (Log.headers()) {
-            StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
-            Log.dumpHeaders(sb, "    ", responseHeaders);
-            Log.logHeaders(sb.toString());
+            if (Log.headers()) {
+                StringBuilder sb = new StringBuilder("RESPONSE HEADERS:\n");
+                Log.dumpHeaders(sb, "    ", responseHeaders);
+                Log.logHeaders(sb.toString());
+            }
+
+            // this will clear the response headers
+            rspHeadersConsumer.reset();
+
+            completeResponse(response);
+        } else {
+            if (Log.headers()) {
+                StringBuilder sb = new StringBuilder("TRAILING HEADERS:\n");
+                Log.dumpHeaders(sb, "    ", responseHeaders);
+                Log.logHeaders(sb.toString());
+            }
+            rspHeadersConsumer.reset();
         }
 
-        // this will clear the response headers
-        rspHeadersConsumer.reset();
-
-        completeResponse(response);
     }
 
     void incoming_reset(ResetFrame frame) {
