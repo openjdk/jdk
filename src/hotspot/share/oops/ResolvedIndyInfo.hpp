@@ -94,6 +94,13 @@ public:
 
     void metaspace_pointers_do(MetaspaceClosure* it);
 
+    void remove_unshareable_info() {
+        _number_of_parameters = 0;
+        _return_type = 0;
+        _has_appendix = false;
+        _method = nullptr;
+    }
+
     // Offsets
     static ByteSize method_offset()                    { return byte_offset_of(ResolvedIndyInfo, _method);                    }
     static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedIndyInfo, _resolved_references_index); }

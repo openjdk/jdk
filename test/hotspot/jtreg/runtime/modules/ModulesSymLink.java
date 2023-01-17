@@ -67,7 +67,7 @@ public class ModulesSymLink {
     static void constructTestJDK() throws Throwable {
         Path jlink = Paths.get(java_home, "bin", "jlink");
         System.out.println("Jlink = " + jlink);
-        OutputAnalyzer out = ProcessTools.executeProcess(jlink.toString(), "-Xint",
+        OutputAnalyzer out = ProcessTools.executeProcess(jlink.toString(),
                   "--output", test_jdk,
                   "--add-modules", "java.base");
         out.shouldHaveExitValue(0);

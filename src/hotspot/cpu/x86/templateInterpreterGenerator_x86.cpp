@@ -203,7 +203,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ MacroAssembler::verify_FPU(UseSSE >= 2 ? 0 : 1, "generate_return_entry_for in interpreter");
   }
 #endif // _LP64
-
+  // jlink fails HERE
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   // and NULL it as marker that esp is now tos until next java call
@@ -221,6 +221,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register cache = rbx;
   const Register index = rcx;
   if (UseNewIndyCode && index_size == sizeof(u4)) {
+    __ nop();
+    __ nop();
+    __ nop();
     // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
     __ get_cache_index_at_bcp(index, 1, index_size);
     // Get address of invokedynamic array
@@ -228,8 +231,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
     __ imull(index, index, sizeof(ResolvedIndyInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
     __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
-    __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyInfo::num_parameters_offset())));
-    __ lea(rsp, Address(rsp, index, Interpreter::stackElementScale()));
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyInfo::num_parameters_offset())));
+    __ lea(rsp, Address(rsp, cache, Interpreter::stackElementScale()));
   } else {
     __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
     Register flags = cache;

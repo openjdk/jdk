@@ -275,7 +275,6 @@ C2V_VMENTRY_NULL(jbyteArray, getBytecode, (JNIEnv* env, jobject, ARGUMENT_PAIR(m
         }
 
         case Bytecodes::_invokedynamic: {
-          fatal("jvmciCompilerToVM indy");
           int cp_index = Bytes::get_native_u4((address) reconstituted_code + (bci + 1));
           Bytes::put_Java_u4((address) reconstituted_code + (bci + 1), (u4) cp_index);
           break;
