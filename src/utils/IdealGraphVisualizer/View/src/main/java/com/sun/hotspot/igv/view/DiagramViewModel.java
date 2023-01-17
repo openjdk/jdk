@@ -143,7 +143,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         filterGraphs();
         selectGraph(currentGraph);
-        setSelectedNodes(selectedNodes);
     }
 
 
