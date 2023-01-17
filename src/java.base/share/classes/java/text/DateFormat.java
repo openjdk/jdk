@@ -698,7 +698,7 @@ public abstract class DateFormat extends Format {
      * Sets the time zone for the calendar of this {@code DateFormat} object.
      * This method is equivalent to the following call.
      * <blockquote>{@snippet lang=java :
-     * getCalendar().setTimeZone(zone)
+     * getCalendar().setTimeZone(zone);
      * }</blockquote>
      *
      * <p>The {@code TimeZone} set by this method is overwritten by a
@@ -718,7 +718,7 @@ public abstract class DateFormat extends Format {
      * Gets the time zone.
      * This method is equivalent to the following call.
      * <blockquote>{@snippet lang=java :
-     * getCalendar().getTimeZone()
+     * getCalendar().getTimeZone();
      * }</blockquote>
      *
      * @return the time zone associated with the calendar of DateFormat.
@@ -736,7 +736,7 @@ public abstract class DateFormat extends Format {
      *
      * <p>This method is equivalent to the following call.
      * <blockquote>{@snippet lang=java :
-     * getCalendar().setLenient(lenient)
+     * getCalendar().setLenient(lenient);
      * }</blockquote>
      *
      * <p>This leniency value is overwritten by a call to {@link
@@ -754,7 +754,7 @@ public abstract class DateFormat extends Format {
      * Tell whether date/time parsing is to be lenient.
      * This method is equivalent to the following call.
      * <blockquote>{@snippet lang=java :
-     * getCalendar().isLenient()
+     * getCalendar().isLenient();
      * }</blockquote>
      *
      * @return {@code true} if the {@link #calendar} is lenient;
