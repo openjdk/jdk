@@ -24,6 +24,15 @@
 package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.view.DiagramViewModel;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.openide.util.Lookup;
+import org.openide.windows.Mode;
+import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 public class GraphRemoveCookie implements RemoveCookie {
     private final InputGraph graph;
@@ -34,6 +43,38 @@ public class GraphRemoveCookie implements RemoveCookie {
 
     @Override
     public void remove() {
+        List<InputGraph> list = graph.getGroup().getGraphs();
+        WindowManager manager = WindowManager.getDefault();
+        for (Mode m : manager.getModes()) {
+            List<TopComponent> l = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(m)));
+            for (TopComponent t : l) {
+                if (t instanceof EditorTopComponent) {
+                    EditorTopComponent etc = (EditorTopComponent) t;
+                    InputGraph openedGraph = etc.getModel().getGraph();
+                    if (graph.equals(openedGraph) || ) {
+                        etc.close();
+                        continue;
+                    }
+                    if (openedGraph.isDiffGraph()) {
+                        if (graph.equals(openedGraph.getFirstGraph()) || graph.equals(openedGraph.getSecondGraph())) {
+                            etc.close();
+                            continue;
+                        }
+                    }
+                    DiagramViewModel model = etc.getModel();
+                    int firstPosition = model.getFirstPosition();
+                    int secondPosition = model.getSecondPosition();
+                    int targetPosition = list.indexOf(graph);
+                    if (targetPosition < firstPosition) {
+                        firstPosition--;
+                    }
+                    if (targetPosition < secondPosition) {
+                        secondPosition--;
+                    }
+                    model.setPositions(firstPosition, secondPosition);
+                }
+            }
+        }
         graph.getGroup().removeElement(graph);
     }
 }
