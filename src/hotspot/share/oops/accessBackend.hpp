@@ -1211,7 +1211,7 @@ namespace AccessInternal {
                         arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                         size_t length) {
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
-                   (std::is_void<T>::value || std::is_integral<T>::value) ||
+                   (std::is_same<T, void>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
     using DecayedT = std::decay_t<T>;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
