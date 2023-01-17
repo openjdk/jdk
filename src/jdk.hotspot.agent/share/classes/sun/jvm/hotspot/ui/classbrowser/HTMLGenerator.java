@@ -1133,7 +1133,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                   if (InstanceKlass.fieldIsInitialized(internalFlags)) crs.readInt(); // read initial value index
                   if (InstanceKlass.fieldIsGeneric(internalFlags))     crs.readInt(); // read generic signature index
                   if (InstanceKlass.fieldIsContended(internalFlags))   crs.readInt(); // read contended group
-                  Symbol f_name = kls.getSymbolFromIndex(index, nameIndex);
+                  Symbol f_name = kls.getSymbolFromIndex(nameIndex, InstanceKlass.fieldIsInjected(internalFlags));
                   AccessFlags access = new AccessFlags(accessFlags);
                   if (!access.isStatic()) {
                      ScopeValue svf = ov.getFieldAt(findex++);
@@ -1706,12 +1706,12 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
            if (klass.fieldIsInitialized(internalFlags)) crs.readInt();
            if (klass.fieldIsGeneric(internalFlags))     genericSignatureIndex = crs.readInt();
            if (klass.fieldIsContended(internalFlags))   crs.readInt();
-
-           String f_name = klass.getSymbolFromIndex(f, nameIndex).asString();
-           Symbol f_sig = klass.getSymbolFromIndex(f, signatureIndex);
+           boolean isInjected = klass.fieldIsInjected(internalFlags);
+           String f_name = klass.getSymbolFromIndex(nameIndex, isInjected).asString();
+           Symbol f_sig = klass.getSymbolFromIndex(signatureIndex, isInjected);
            Symbol f_genSig = null;
-           if (genericSignatureIndex != 0) {
-            f_genSig = klass.getSymbolFromIndex(f, genericSignatureIndex);
+           if (klass.fieldIsGeneric(internalFlags)) {
+            f_genSig = klass.getSymbolFromIndex(genericSignatureIndex, isInjected);
            }
            AccessFlags acc = new AccessFlags(accessFlags);
 
