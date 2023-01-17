@@ -780,6 +780,17 @@ public:
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
 
+  bool compute_has_range_checks() const;
+  bool range_checks_present() {
+    assert(_head->is_CountedLoop(), "");
+    has_range_checks();
+    bool res = _head->as_CountedLoop()->range_checks_present();
+    assert(res == compute_has_range_checks(), "");
+    return res;
+  }
+  // Check to see if do_range_check(...) cleaned the main loop of range-checks
+  void has_range_checks() ;
+
 #ifndef PRODUCT
   void dump_head() const;       // Dump loop head only
   void dump() const;            // Dump this loop recursively
@@ -1425,9 +1436,6 @@ public:
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
   int do_range_check( IdealLoopTree *loop, Node_List &old_new );
-
-  // Check to see if do_range_check(...) cleaned the main loop of range-checks
-  void has_range_checks(IdealLoopTree *loop);
 
   // Process post loops which have range checks and try to build a multi-version
   // guard to safely determine if we can execute the post loop which was RCE'd.

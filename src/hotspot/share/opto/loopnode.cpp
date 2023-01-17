@@ -4600,8 +4600,8 @@ void PhaseIdealLoop::build_and_optimize() {
             IdealLoopTree *lpt_next = lpt->_next;
             if (lpt_next && lpt_next->is_counted()) {
               CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              has_range_checks(lpt_next);
-              if (cl->is_post_loop() && cl->range_checks_present()) {
+              lpt_next->has_range_checks();
+              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
                 if (!cl->is_multiversioned()) {
                   if (multi_version_post_loops(lpt, lpt_next) == false) {
                     // Cause the rce loop to be optimized away if we fail
