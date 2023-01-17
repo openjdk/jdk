@@ -414,27 +414,27 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Can this expression node possibly leave a 'this' reference on the stack?
         boolean referenceExpressionNode;
         switch (tree.getTag()) {
-        case SWITCH_EXPRESSION:
-        case CONDEXPR:
-        case YIELD:
-        case APPLY:
-        case NEWCLASS:
-        case NEWARRAY:
-        case LAMBDA:
-        case PARENS:
-        case ASSIGN:
-        case TYPECAST:
-        case INDEXED:
-        case SELECT:
-        case REFERENCE:
-        case IDENT:
-        case NULLCHK:
-        case LETEXPR:
-            referenceExpressionNode = true;
-            break;
-        default:
-            referenceExpressionNode = false;
-            break;
+            case SWITCH_EXPRESSION:
+            case CONDEXPR:
+            case YIELD:
+            case APPLY:
+            case NEWCLASS:
+            case NEWARRAY:
+            case LAMBDA:
+            case PARENS:
+            case ASSIGN:
+            case TYPECAST:
+            case INDEXED:
+            case SELECT:
+            case REFERENCE:
+            case IDENT:
+            case NULLCHK:
+            case LETEXPR:
+                referenceExpressionNode = true;
+                break;
+            default:
+                referenceExpressionNode = false;
+                break;
         }
 
         // Scan node
