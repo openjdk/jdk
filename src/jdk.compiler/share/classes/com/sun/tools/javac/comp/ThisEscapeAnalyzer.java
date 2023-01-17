@@ -904,6 +904,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitAssert(JCAssert tree) {
         scan(tree.cond);
         refs.discardExprs(depth);
+        scan(tree.detail);
+        refs.discardExprs(depth);
     }
 
     @Override
