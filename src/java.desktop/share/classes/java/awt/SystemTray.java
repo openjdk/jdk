@@ -344,9 +344,9 @@ public class SystemTray {
 
     /**
      * Returns the size, in pixels, of the space that a tray icon will
-     * occupy in the system tray.  Developers may use this methods to
+     * occupy in the system tray. Developers may use this method to
      * acquire the preferred size for the image property of a tray icon
-     * before it is created.  For convenience, there is a similar
+     * before it is created. For convenience, there is a similar
      * method {@link TrayIcon#getSize} in the {@code TrayIcon} class.
      *
      * @return the default size of a tray icon, in pixels
