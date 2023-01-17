@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,7 @@ class Stream<T> extends ExchangeImpl<T> {
     private volatile boolean remotelyClosed;
     private volatile boolean closed;
     private volatile boolean endStreamSent;
+    private volatile boolean finalResponseCodeReceived = false;
     // Indicates the first reason that was invoked when sending a ResetFrame
     // to the server. A streamState of 0 indicates that no reset was sent.
     // (see markStream(int code)
@@ -496,8 +497,6 @@ class Stream<T> extends ExchangeImpl<T> {
     DecodingCallback rspHeadersConsumer() {
         return rspHeadersConsumer;
     }
-
-    volatile boolean finalResponseCodeReceived = false;
 
     protected void handleResponse() throws IOException {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
