@@ -49,5 +49,9 @@
 // Additionally we need to prevent ASan from handling SIGSEGV, so that Hotspot's crash handler is
 // used. You can override these options by setting the environment variable ASAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
-  return "detect_leaks=0,handle_segv=0";
+  return
+#ifndef LEAK_SANITIZER
+    "detect_leaks=0"
+#endif
+    ",handle_segv=0";
 }
