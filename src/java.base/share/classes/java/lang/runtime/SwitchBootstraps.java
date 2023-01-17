@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.PreviewFeature;
@@ -56,21 +57,27 @@ public class SwitchBootstraps {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final MethodHandle DO_ENUM_SWITCH;
     private static final MethodHandle INSTANCEOF_CHECK;
-    private static final MethodHandle EQ_CHECK;
+    private static final MethodHandle INTEGER_EQ_CHECK;
+    private static final MethodHandle OBJECT_EQ_CHECK;
     private static final MethodHandle NULL_CHECK;
+    private static final MethodHandle IS_ZERO;
+    private static final MethodHandle ENUM_LOOKUP;
 
     static {
         try {
-            DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doEnumSwitch",
-                                           MethodType.methodType(int.class, Enum.class, int.class, Object[].class));
             INSTANCEOF_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "instanceofCheck",
                                            MethodType.methodType(boolean.class, Object.class, Class.class));
-            EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "eqCheck",
+            INTEGER_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "integerEqCheck",
+                                           MethodType.methodType(boolean.class, Object.class, Integer.class));
+            OBJECT_EQ_CHECK = LOOKUP.findStatic(Objects.class, "equals",
                                            MethodType.methodType(boolean.class, Object.class, Object.class));
             NULL_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "nullCheck",
                                            MethodType.methodType(boolean.class, Object.class));
+            IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
+                                           MethodType.methodType(boolean.class, int.class));
+            ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "enumLookup",
+                                           MethodType.methodType(int.class, int[].class, Object.class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -137,7 +144,7 @@ public class SwitchBootstraps {
         labels = labels.clone();
         Stream.of(labels).forEach(SwitchBootstraps::verifyLabel);
 
-        MethodHandle target  = createMethodHandleSwitch(labels);
+        MethodHandle target = createMethodHandleSwitch(labels);
 
         return new ConstantCallSite(target);
     }
@@ -154,34 +161,43 @@ public class SwitchBootstraps {
         }
     }
 
+    private static MethodHandle createRepeatIndexSwitch(Object[] labels) {
+        MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, Object.class);
+        MethodHandle[] testChains = new MethodHandle[labels.length];
+        List<Object> labelsList = new ArrayList<>(Arrays.asList(labels));
+
+        Collections.reverse(labelsList);
+
+        for (int i = 0; i < labels.length; i++) {
+            MethodHandle test = def;
+            int idx = labels.length - 1;
+            List<Object> currentLabels = labelsList.subList(0, labels.length - i);
+
+            for (int j = 0; j < currentLabels.size(); j++, idx--) {
+                Object currentLabel = currentLabels.get(j);
+                if (j + 1 < currentLabels.size() && currentLabels.get(j + 1) == currentLabel) continue;
+                MethodHandle currentTest;
+                if (currentLabel instanceof Class<?>) {
+                    currentTest = INSTANCEOF_CHECK;
+                } else if (currentLabel instanceof Integer) {
+                    currentTest = INTEGER_EQ_CHECK;
+                } else {
+                    currentTest = OBJECT_EQ_CHECK;
+                }
+                test = MethodHandles.guardWithTest(MethodHandles.insertArguments(currentTest, 1, currentLabel),
+                                                   MethodHandles.dropArguments(MethodHandles.constant(int.class, idx), 0, Object.class),
+                                                   test);
+            }
+            testChains[i] = MethodHandles.dropArguments(test, 0, int.class);
+        }
+
+        return MethodHandles.tableSwitch(MethodHandles.dropArguments(def, 0, int.class), testChains);
+    }
     private static MethodHandle createMethodHandleSwitch(Object[] labels) {
         MethodHandle mainTest;
         MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, Object.class);
         if (labels.length > 0) {
-            MethodHandle[] testChains = new MethodHandle[labels.length];
-            List<Object> labelsList = new ArrayList<>(Arrays.asList(labels));
-            Collections.reverse(labelsList);
-            for (int i = 0; i < labels.length; i++) {
-                MethodHandle test = def;
-                int idx = labels.length - 1;
-                List<Object> currentLabels = labelsList.subList(0, labels.length - i);
-
-                for (int j = 0; j < currentLabels.size(); j++, idx--) {
-                    Object currentLabel = currentLabels.get(j);
-                    if (j + 1 < currentLabels.size() && currentLabels.get(j + 1) == currentLabel) continue;
-                    MethodHandle currentTest;
-                    if (currentLabel instanceof Class<?>) {
-                        currentTest = INSTANCEOF_CHECK;
-                    } else {
-                        currentTest = EQ_CHECK;
-                    }
-                    test = MethodHandles.guardWithTest(MethodHandles.insertArguments(currentTest, 1, currentLabel),
-                                                       MethodHandles.dropArguments(MethodHandles.constant(int.class, idx), 0, Object.class),
-                                                       test);
-                }
-                testChains[i] = MethodHandles.dropArguments(test, 0, int.class);
-            }
-            mainTest = MethodHandles.tableSwitch(MethodHandles.dropArguments(def, 0, int.class), testChains);
+            mainTest = createRepeatIndexSwitch(labels);
         } else {
             mainTest = MethodHandles.dropArguments(def, 0, int.class);
         }
@@ -196,14 +212,10 @@ public class SwitchBootstraps {
         return label.isAssignableFrom(value.getClass());
     }
 
-    private static boolean eqCheck(Object value, Object label) {
-        if (label instanceof Integer constant) {
-            if (value instanceof Number input && constant.intValue() == input.intValue()) {
-                return true;
-            } else if (value instanceof Character input && constant.intValue() == input.charValue()) {
-                return true;
-            }
-        } else if (label.equals(value)) {
+    private static boolean integerEqCheck(Object value, Integer constant) {
+        if (value instanceof Number input && constant.intValue() == input.intValue()) {
+            return true;
+        } else if (value instanceof Character input && constant.intValue() == input.charValue()) {
             return true;
         }
 
@@ -212,6 +224,10 @@ public class SwitchBootstraps {
 
     private static boolean nullCheck(Object value) {
         return value == null;
+    }
+
+    private static boolean isZero(int value) {
+        return value == 0;
     }
 
     /**
@@ -283,11 +299,54 @@ public class SwitchBootstraps {
         Class<?> enumClass = invocationType.parameterType(0);
         labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
 
-        MethodHandle target =
-                MethodHandles.insertArguments(DO_ENUM_SWITCH, 2, (Object) labels);
+        MethodHandle target;
+        boolean constantsOnly = Stream.of(labels).allMatch(l -> l == null || enumClass.isAssignableFrom(l.getClass()));
+
+        if (constantsOnly) {
+            long nonNullValues = Stream.of(labels).filter(l -> l != null).count();
+            long distinctNonNullValues = Stream.of(labels).filter(l -> l != null).distinct().count();
+
+            if (nonNullValues != distinctNonNullValues) {
+                constantsOnly = false;
+            }
+        }
+
+        if (labels.length > 0 && constantsOnly) {
+            MethodHandle[] map = new MethodHandle[enumClass.getEnumConstants().length];
+            MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, int.class, Object.class);
+            int ordinal = 0;
+
+            for (Object constant : enumClass.getEnumConstants()) {
+                map[ordinal] = def;
+
+                for (int i = 0; i < labels.length; i++) {
+                    if (labels[i] == constant) {
+                        map[ordinal] = MethodHandles.dropArguments(MethodHandles.constant(int.class, i), 0, int.class, Object.class);
+                        break;
+                    }
+                }
+
+                ordinal++;
+            }
+
+            MethodHandle body =
+                    MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
+                                                MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
+                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(IS_ZERO, 1, Object.class),
+                                                                            createRepeatIndexSwitch(labels),
+                                                                            MethodHandles.tableSwitch(def, map)));
+            target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
+        } else {
+            target = createMethodHandleSwitch(labels);
+        }
+
         target = target.asType(invocationType);
 
         return new ConstantCallSite(target);
+    }
+
+    private static int enumLookup(int[] map, Object label) {
+        return map[((Enum) label).ordinal()];
     }
 
     private static <E extends Enum<E>> Object convertEnumConstants(MethodHandles.Lookup lookup, Class<?> enumClassTemplate, Object label) {
