@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
+
+  case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
@@ -1065,6 +1067,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 
   return true;
 }
+
 
 //------------------------------inline_countPositives------------------------------
 bool LibraryCallKit::inline_countPositives() {
@@ -5920,6 +5923,38 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   set_control(exit_block);
   set_all_memory(memory_phi);
   set_result(result_phi);
+
+  return true;
+}
+
+//------------------------------inline_vectorizedHashcode----------------------------
+bool LibraryCallKit::inline_vectorizedHashCode() {
+  assert(UseVectorizedHashCodeIntrinsic, "not implemented on this platform");
+
+  assert(callee()->signature()->size() == 5, "vectorizedHashCode has 5 parameters");
+  Node* array          = argument(0);
+  Node* offset         = argument(1);
+  Node* length         = argument(2);
+  Node* initialValue   = argument(3);
+  Node* basic_type     = argument(4);
+
+  array = must_be_not_null(array, true);
+  if (basic_type == top()) {
+    return false; // failed input validation
+  }
+
+  const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
+  if (!basic_type_t->is_con()) {
+    return false; // Only intrinsify if mode argument is constant
+  }
+  BasicType bt = (BasicType)basic_type_t->get_con();
+
+  // Resolve address of first element
+  Node* array_start = array_element_address(array, offset, bt);
+
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+    array_start, length, initialValue, basic_type)));
+  clear_upper_avx();
 
   return true;
 }
