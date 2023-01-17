@@ -1048,7 +1048,7 @@ MethodCounters* ciMethod::ensure_method_counters() {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  MethodCounters* method_counters = mh->get_method_counters(CHECK_nullptr);
+  MethodCounters* method_counters = mh->get_method_counters(CHECK_NULL);
   return method_counters;
 }
 

@@ -379,7 +379,7 @@ class CompileReplay : public StackObj {
     oop obj = nullptr;
     char* ref = parse_string();
     if (strcmp(ref, "bci") == 0) {
-      Method* m = parse_method(CHECK_nullptr);
+      Method* m = parse_method(CHECK_NULL);
       if (m == nullptr) {
         return nullptr;
       }
@@ -396,7 +396,7 @@ class CompileReplay : public StackObj {
         return nullptr;
       }
 
-      ik->link_class(CHECK_nullptr);
+      ik->link_class(CHECK_NULL);
 
       Bytecode_invoke bytecode = Bytecode_invoke_check(caller, bci);
       if (!Bytecodes::is_defined(bytecode.code()) || !bytecode.is_valid()) {
@@ -409,13 +409,13 @@ class CompileReplay : public StackObj {
       ConstantPoolCacheEntry* cp_cache_entry = nullptr;
       CallInfo callInfo;
       Bytecodes::Code bc = bytecode.invoke_code();
-      LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_nullptr);
+      LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
       if (bytecode.is_invokedynamic()) {
         cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
         cp_cache_entry->set_dynamic_call(cp, callInfo);
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
-        Klass* holder = cp->klass_ref_at(index, CHECK_nullptr);
+        Klass* holder = cp->klass_ref_at(index, CHECK_NULL);
         Symbol* name = cp->name_ref_at(index);
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
@@ -442,7 +442,7 @@ class CompileReplay : public StackObj {
       } else if (strcmp(dyno_ref, "<bsm>") == 0) {
         int pool_index = cp_cache_entry->constant_pool_index();
         BootstrapInfo bootstrap_specifier(cp, pool_index, index);
-        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_nullptr);
+        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
       } else {
         report_error("unrecognized token");
         return nullptr;
@@ -454,7 +454,7 @@ class CompileReplay : public StackObj {
         return nullptr;
       }
 
-      Klass* k = parse_klass(CHECK_nullptr);
+      Klass* k = parse_klass(CHECK_NULL);
       if (k == nullptr) {
         return nullptr;
       }
@@ -471,8 +471,8 @@ class CompileReplay : public StackObj {
         report_error("no method handle found at cpi");
         return nullptr;
       }
-      ik->link_class(CHECK_nullptr);
-      obj = cp->resolve_possibly_cached_constant_at(cpi, CHECK_nullptr);
+      ik->link_class(CHECK_NULL);
+      obj = cp->resolve_possibly_cached_constant_at(cpi, CHECK_NULL);
     }
     if (obj == nullptr) {
       report_error("null cp object found");
@@ -534,7 +534,7 @@ class CompileReplay : public StackObj {
     bool cp_ref = (*_bufptr == '@');
     if (cp_ref) {
       ++_bufptr;
-      Klass* k = parse_cp_ref(CHECK_nullptr);
+      Klass* k = parse_cp_ref(CHECK_NULL);
       if (k != nullptr && !k->is_hidden()) {
         report_error("expected hidden class");
         return nullptr;
@@ -574,7 +574,7 @@ class CompileReplay : public StackObj {
 
   // Parse the standard tuple of <klass> <name> <signature>
   Method* parse_method(TRAPS) {
-    InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK_nullptr);
+    InstanceKlass* k = (InstanceKlass*)parse_klass(CHECK_NULL);
     if (k == nullptr) {
       report_error("Can't find holder klass");
       return nullptr;
@@ -712,7 +712,7 @@ class CompileReplay : public StackObj {
       if (cmd == nullptr || strcmp("compile", cmd) != 0) {
         return nullptr;
       }
-      process_compile(CHECK_nullptr);
+      process_compile(CHECK_NULL);
       if (had_error()) {
         tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
         tty->print_cr("%s", _buffer);
