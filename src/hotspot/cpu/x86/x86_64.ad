@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -889,7 +889,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   }
   if (C->stub_function() != NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
     st->print("\n\t");
-    st->print("cmpl    [r15_thread + #disarmed_offset], #disarmed_value\t");
+    st->print("cmpl    [r15_thread + #disarmed_guard_value_offset], #disarmed_guard_value\t");
     st->print("\n\t");
     st->print("je      fast_entry\t");
     st->print("\n\t");
@@ -6080,6 +6080,7 @@ instruct storeL(memory mem, rRegL src)
 // Store Pointer
 instruct storeP(memory mem, any_RegP src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(125); // XXX
@@ -6092,7 +6093,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6106,6 +6107,7 @@ instruct storeImmP0(memory mem, immP0 zero)
 // Store NULL Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(150); // XXX
