@@ -141,14 +141,12 @@ public class PendingBlocksJar {
 
         char[] pass = "changeit".toCharArray();
 
-        KeyStore ks = KeyStore.getInstance(
-                new File("ks"), pass);
-        PrivateKey pkr = (PrivateKey)ks.getKey("r", pass);
+        KeyStore ks = KeyStore.getInstance(new File("ks"), pass);
 
-        CertPath cp = CertificateFactory.getInstance("X.509")
-                .generateCertPath(Arrays.asList(ks.getCertificateChain("r")));
+        KeyStore.PrivateKeyEntry pke = (KeyStore.PrivateKeyEntry)
+                ks.getEntry("r", new KeyStore.PasswordProtection(pass));
 
-        JarSigner signer = new JarSigner.Builder(pkr, cp)
+        JarSigner signer = new JarSigner.Builder(pke)
                 .digestAlgorithm("SHA-256")
                 .signatureAlgorithm("SHA256withRSA")
                 .signerName("SIGNER")
