@@ -311,8 +311,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                     continue;
 
                 // Handle field initializers
-                if (defs.head.hasTag(VARDEF)) {
-                    JCVariableDecl vardef = (JCVariableDecl)defs.head;
+                if (defs.head instanceof JCVariableDecl vardef) {
                     visitTopLevel(klass, () -> {
                         scan(vardef);
                         copyPendingWarning();
@@ -321,8 +320,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 }
 
                 // Handle initialization blocks
-                if (defs.head.hasTag(BLOCK)) {
-                    JCBlock block = (JCBlock)defs.head;
+                if (defs.head instanceof JCBlock block) {
                     visitTopLevel(klass, () -> analyzeStatements(block.stats));
                     continue;
                 }
