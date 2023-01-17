@@ -39,33 +39,18 @@ import jdk.tools.jlink.internal.StringTable;
  *
  * ZIP and String Sharing compression plugin
  */
-public final class DefaultCompressPlugin extends AbstractPlugin implements ResourcePrevisitor {
-    public static final String FILTER = "filter";
-    public static final String LEVEL_0 = "0";
-    public static final String LEVEL_1 = "1";
-    public static final String LEVEL_2 = "2";
+public final class CompactConstantPoolsPlugin extends AbstractPlugin implements ResourcePrevisitor {
 
+    private static final String FILTER = "filter";
     private StringSharingPlugin ss;
-    private ZipPlugin zip;
 
-    public DefaultCompressPlugin() {
-        super("compress");
+    public CompactConstantPoolsPlugin() {
+        super("compact-constant-pools");
     }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        if (ss != null && zip != null) {
-            ResourcePoolManager resMgr = new ImagePluginStack.OrderedResourcePoolManager(
-                    in.byteOrder(), ((ResourcePoolImpl)in).getStringTable());
-            return zip.transform(ss.transform(in, resMgr.resourcePoolBuilder()), out);
-        } else if (ss != null) {
-            return ss.transform(in, out);
-        } else if (zip != null) {
-            return zip.transform(in, out);
-        } else {
-            in.transformAndCopy(Function.identity(), out);
-            return out.build();
-        }
+        return ss.transform(in, out);
     }
 
     @Override
@@ -88,31 +73,6 @@ public final class DefaultCompressPlugin extends AbstractPlugin implements Resou
     @Override
     public void configure(Map<String, String> config) {
         ResourceFilter resFilter = ResourceFilter.includeFilter(config.get(FILTER));
-        String level = config.get(getName());
-        if (level != null) {
-            switch (level) {
-                case LEVEL_0:
-                    ss = null;
-                    zip = null;
-                    break;
-                case LEVEL_1:
-                    ss = new StringSharingPlugin(resFilter);
-                    break;
-                case LEVEL_2:
-                    zip = new ZipPlugin(resFilter);
-                    break;
-                default:
-                    if (level.length() == 5 && level.startsWith("zip-")) {
-                        try {
-                            int zipLevel = Integer.parseInt(level.substring(4));
-                            zip = new ZipPlugin(resFilter, zipLevel);
-                            break;
-                        } catch (NumberFormatException ignored) {}
-                    }
-                    throw new IllegalArgumentException("Invalid compression level " + level);
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid compression level " + level);
-        }
+        ss = new StringSharingPlugin(resFilter);
     }
 }

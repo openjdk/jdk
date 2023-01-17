@@ -46,7 +46,7 @@ public final class ZipPlugin extends AbstractPlugin {
     private Predicate<String> predicate;
 
     private static final int DEFAULT_COMPRESSION = 6;
-    private int compressionLevel;
+    private final int compressionLevel;
 
     public ZipPlugin() {
         this((Predicate<String>) null);

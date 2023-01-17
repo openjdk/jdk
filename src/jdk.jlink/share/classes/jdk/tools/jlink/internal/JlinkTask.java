@@ -223,8 +223,6 @@ public class JlinkTask {
         boolean ignoreSigning = false;
         boolean bindServices = false;
         boolean suggestProviders = false;
-
-        int compressLevel;
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
