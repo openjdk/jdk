@@ -300,8 +300,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Analyze non-static field initializers and initialization blocks,
         // but only for classes having at least one analyzable constructor.
         methodMap.values().stream()
-                .filter(MethodInfo::isAnalyzable)
-                .map(MethodInfo::getDeclaringClass)
+                .filter(MethodInfo::analyzable)
+                .map(MethodInfo::declaringClass)
                 .distinct()
                 .forEach(klass -> {
             for (List<JCTree> defs = klass.defs; defs.nonEmpty(); defs = defs.tail) {
@@ -331,10 +331,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Analyze all of the analyzable constructors we found
         methodMap.values().stream()
-                .filter(MethodInfo::isAnalyzable)
+                .filter(MethodInfo::analyzable)
                 .forEach(methodInfo -> {
-            visitTopLevel(methodInfo.getDeclaringClass(),
-                () -> analyzeStatements(methodInfo.getDeclaration().body.stats));
+            visitTopLevel(methodInfo.declaringClass(),
+                () -> analyzeStatements(methodInfo.declaration().body.stats));
         });
 
         // Eliminate duplicate warnings. Warning B duplicates warning A if the stack trace of A is a prefix
@@ -525,7 +525,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Analyze method if possible, otherwise assume nothing
         MethodInfo methodInfo = methodMap.get(sym);
-        if (methodInfo != null && methodInfo.isInvokable())
+        if (methodInfo != null && methodInfo.invokable())
             invokeInvokable(site, args, receiverRefs, methodInfo);
         else
             invokeUnknown(site, args, receiverRefs);
@@ -534,10 +534,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
     // Handle the invocation of a local analyzable method or constructor
     private void invokeInvokable(JCTree site, List<JCExpression> args,
         RefSet<?> receiverRefs, MethodInfo methodInfo) {
-        Assert.check(methodInfo.isInvokable());
+        Assert.check(methodInfo.invokable());
 
         // Collect 'this' references found in method parameters
-        JCMethodDecl method = methodInfo.getDeclaration();
+        JCMethodDecl method = methodInfo.declaration();
         RefSet<VarRef> paramRefs = RefSet.newEmpty();
         List<JCVariableDecl> params = method.params;
         while (args.nonEmpty() && params.nonEmpty()) {
@@ -550,7 +550,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // "Invoke" the method
         JCClassDecl methodClassPrev = methodClass;
-        methodClass = methodInfo.getDeclaringClass();
+        methodClass = methodInfo.declaringClass();
         RefSet<Ref> refsPrev = refs;
         refs = RefSet.newEmpty();
         int depthPrev = depth;
@@ -612,7 +612,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     @Override
     public void visitNewClass(JCNewClass tree) {
         MethodInfo methodInfo = methodMap.get(tree.constructor);
-        if (methodInfo != null && methodInfo.isInvokable())
+        if (methodInfo != null && methodInfo.invokable())
             invokeInvokable(tree, tree.args, outerThisRefs(tree.encl, tree.clazz.type), methodInfo);
         else
             invokeUnknown(tree, tree.args, outerThisRefs(tree.encl, tree.clazz.type));
@@ -1447,44 +1447,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 // MethodInfo
 
     // Information about a constructor or method in the compilation unit
-    private static class MethodInfo {
-
-        private final JCClassDecl declaringClass;
-        private final JCMethodDecl declaration;
-        private final boolean analyzable;           // it's a constructor we should analyze
-        private final boolean invokable;            // it may be "invoked" during analysis
-
-        MethodInfo(JCClassDecl declaringClass, JCMethodDecl declaration,
-            boolean analyzable, boolean invokable) {
-            this.declaringClass = declaringClass;
-            this.declaration = declaration;
-            this.analyzable = analyzable;
-            this.invokable = invokable;
-        }
-
-        public JCClassDecl getDeclaringClass() {
-            return declaringClass;
-        }
-
-        public JCMethodDecl getDeclaration() {
-            return declaration;
-        }
-
-        public boolean isAnalyzable() {
-            return analyzable;
-        }
-
-        public boolean isInvokable() {
-            return invokable;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName()
-              + "[meth=" + declaringClass.name + "." + declaration.name + "()"
-              + (analyzable ? ",analyzable" : "")
-              + (invokable ? ",invokable" : "")
-              + "]";
-        }
+    private record MethodInfo(
+        JCClassDecl declaringClass,     // the class declaring "declaration"
+        JCMethodDecl declaration,       // the method or constructor itself
+        boolean analyzable,             // it's a constructor that we should analyze
+        boolean invokable) {            // it may be safely "invoked" during analysis
     }
 }
