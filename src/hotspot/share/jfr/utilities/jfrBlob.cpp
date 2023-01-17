@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ JfrBlob::JfrBlob(const u1* checkpoint, size_t size) :
   _next(),
   _size(size),
   _written(false) {
-  assert(_data != NULL, "invariant");
+  assert(_data != nullptr, "invariant");
   memcpy(const_cast<u1*>(_data), checkpoint, size);
 }
 
@@ -62,6 +62,6 @@ void JfrBlob::set_next(const JfrBlobHandle& ref) {
 
 JfrBlobHandle JfrBlob::make(const u1* data, size_t size) {
   const JfrBlob* const blob = new JfrBlob(data, size);
-  assert(blob != NULL, "invariant");
+  assert(blob != nullptr, "invariant");
   return JfrBlobReference::make(blob);
 }

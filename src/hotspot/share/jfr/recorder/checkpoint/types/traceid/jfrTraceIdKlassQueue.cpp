@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ static bool can_compress_element(traceid id) {
 }
 
 static size_t element_size(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   return element_size(can_compress_element(JfrTraceId::load_raw(klass)));
 }
 
@@ -117,7 +117,7 @@ static traceid read_uncompressed_element(const u1* pos, const Klass** klass) {
 }
 
 static traceid read_element(const u1* pos, const Klass** klass, bool compressed) {
-  assert(pos != NULL, "invariant");
+  assert(pos != nullptr, "invariant");
   return compressed ? read_compressed_element(pos, klass) : read_uncompressed_element(pos, klass);
 }
 
@@ -143,8 +143,8 @@ static void store_uncompressed_element(traceid id, const Klass* klass, u1* pos) 
 }
 
 static void store_element(const Klass* klass, u1* pos) {
-  assert(pos != NULL, "invariant");
-  assert(klass != NULL, "invariant");
+  assert(pos != nullptr, "invariant");
+  assert(klass != nullptr, "invariant");
   const traceid id = JfrTraceId::load_raw(klass);
   if (can_compress_element(id)) {
     store_compressed_element(id, klass, pos);
@@ -171,7 +171,7 @@ static bool _clear = false;
 
 template <typename Buffer>
 size_t JfrEpochQueueKlassPolicy<Buffer>::operator()(const u1* pos, KlassFunctor& callback, bool previous_epoch) {
-  assert(pos != NULL, "invariant");
+  assert(pos != nullptr, "invariant");
   const bool compressed = is_compressed(pos);
   const size_t size = ::element_size(compressed);
   if (_clear || is_unloaded(pos)) {
@@ -184,35 +184,35 @@ size_t JfrEpochQueueKlassPolicy<Buffer>::operator()(const u1* pos, KlassFunctor&
     set_unloaded(pos);
     return size;
   }
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   callback(const_cast<Klass*>(klass));
   return size;
 }
 
 template <typename Buffer>
 void JfrEpochQueueKlassPolicy<Buffer>::store_element(const Klass* klass, Buffer* buffer) {
-  assert(klass != NULL, "invariant");
-  assert(buffer != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
+  assert(buffer != nullptr, "invariant");
   assert(buffer->free_size() >= ::element_size(klass), "invariant");
   ::store_element(klass, buffer->pos());
 }
 
 template <typename Buffer>
 inline size_t JfrEpochQueueKlassPolicy<Buffer>::element_size(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   return ::element_size(klass);
 }
 
 template <typename Buffer>
 inline Buffer* JfrEpochQueueKlassPolicy<Buffer>::thread_local_storage(Thread* thread) const {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   JfrThreadLocal* tl = thread->jfr_thread_local();
   return JfrTraceIdEpoch::epoch() ? tl->_load_barrier_buffer_epoch_1 : tl->_load_barrier_buffer_epoch_0;
 }
 
 template <typename Buffer>
 inline void JfrEpochQueueKlassPolicy<Buffer>::set_thread_local_storage(Buffer* buffer, Thread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   JfrThreadLocal* tl = thread->jfr_thread_local();
   if (JfrTraceIdEpoch::epoch()) {
     tl->_load_barrier_buffer_epoch_1 = buffer;
@@ -228,22 +228,22 @@ JfrTraceIdKlassQueue::~JfrTraceIdKlassQueue() {
 }
 
 bool JfrTraceIdKlassQueue::initialize(size_t min_elem_size, size_t free_list_cache_count_limit, size_t cache_prealloc_count) {
-  assert(_queue == NULL, "invariant");
+  assert(_queue == nullptr, "invariant");
   _queue = new JfrEpochQueue<JfrEpochQueueKlassPolicy>();
-  return _queue != NULL && _queue->initialize(min_elem_size, free_list_cache_count_limit, cache_prealloc_count);
+  return _queue != nullptr && _queue->initialize(min_elem_size, free_list_cache_count_limit, cache_prealloc_count);
 }
 
 void JfrTraceIdKlassQueue::clear() {
-  if (_queue != NULL) {
+  if (_queue != nullptr) {
     _clear = true;
-    KlassFunctor functor(NULL);
+    KlassFunctor functor(nullptr);
     _queue->iterate(functor, true);
     _clear = false;
   }
 }
 
 void JfrTraceIdKlassQueue::enqueue(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   _queue->enqueue(klass);
 }
 

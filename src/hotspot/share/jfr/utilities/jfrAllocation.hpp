@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
  * We would not like a user dynamically starting Jfr to
  * tear down the VM she is about to inspect as a side effect.
  *
- * This allocator uses the RETURN_NULL capabilities
+ * This allocator uses the RETURN_nullptr capabilities
  * instead of calling vm_exit_out_of_memory() until Jfr is properly started.
  * This allows for controlled behaviour on allocation failures during startup,
  * which means we can take actions on failure, such as transactional rollback

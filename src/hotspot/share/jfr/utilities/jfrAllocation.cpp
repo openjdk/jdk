@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ static void hook_memory_deallocation(size_t dealloc_size) {
 #endif // ASSERT
 
 static void hook_memory_allocation(const char* allocation, size_t alloc_size) {
-  if (NULL == allocation) {
+  if (nullptr == allocation) {
     if (!JfrRecorder::is_created()) {
       log_warning(jfr, system)("Memory allocation failed for size [" SIZE_FORMAT "] bytes", alloc_size);
       return;
@@ -124,7 +124,7 @@ void JfrCHeapObj::operator delete[](void* p, size_t size) {
 }
 
 char* JfrCHeapObj::realloc_array(char* old, size_t size) {
-  char* const memory = ReallocateHeap(old, size, mtTracing, AllocFailStrategy::RETURN_NULL);
+  char* const memory = ReallocateHeap(old, size, mtTracing, AllocFailStrategy::RETURN_nullptr);
   hook_memory_allocation(memory, size);
   return memory;
 }
@@ -135,5 +135,5 @@ void JfrCHeapObj::free(void* p, size_t size) {
 }
 
 char* JfrCHeapObj::allocate_array_noinline(size_t elements, size_t element_size) {
-  return AllocateHeap(elements * element_size, mtTracing, CALLER_PC, AllocFailStrategy::RETURN_NULL);
+  return AllocateHeap(elements * element_size, mtTracing, CALLER_PC, AllocFailStrategy::RETURN_nullptr);
 }

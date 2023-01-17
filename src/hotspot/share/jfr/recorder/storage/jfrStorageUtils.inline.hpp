@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ inline bool DefaultDiscarder<T>::discard(T* t, const u1* data, size_t size) {
 
 template <typename Type>
 inline size_t get_unflushed_size(const u1* top, Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return Atomic::load_acquire(t->pos_address()) - top;
 }
 
@@ -78,7 +78,7 @@ inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
 
 template <typename Operation>
 inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   const u1* const top = t->top();
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
@@ -92,7 +92,7 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
 
 template <typename Type>
 static void retired_sensitive_acquire(Type* t, Thread* thread) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   assert(thread == Thread::current(), "invariant");
   if (t->retired()) {
@@ -118,7 +118,7 @@ inline bool ExclusiveOp<Operation>::process(typename Operation::Type* t) {
 
 template <typename Operation>
 inline bool DiscardOp<Operation>::process(typename Operation::Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   const u1* const top = _mode == concurrent ? t->acquire_critical_section_top() : t->top();
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
@@ -150,7 +150,7 @@ inline bool ExclusiveDiscardOp<Operation>::process(typename Operation::Type* t) 
 
 template <typename Operation>
 inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   const u1* const current_top = _previous_epoch ? t->start() : t->top();
   const size_t unflushed_size = Atomic::load_acquire(t->pos_address()) - current_top;
   assert((intptr_t)unflushed_size >= 0, "invariant");
@@ -164,7 +164,7 @@ inline bool EpochDispatchOp<Operation>::process(typename Operation::Type* t) {
 
 template <typename Operation>
 size_t EpochDispatchOp<Operation>::dispatch(bool previous_epoch, const u1* element, size_t size) {
-  assert(element != NULL, "invariant");
+  assert(element != nullptr, "invariant");
   const u1* const limit = element + size;
   size_t elements = 0;
   while (element < limit) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,14 +89,14 @@ class JfrCheckpointThreadClosure : public ThreadClosure {
 
 // Only static thread ids, virtual threads are handled dynamically.
 void JfrCheckpointThreadClosure::do_thread(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   ++_count;
   const traceid tid = JfrThreadId::jfr_id(t);
   assert(tid != 0, "invariant");
   _writer.write_key(tid);
   int length = -1;
   const char* const name = JfrThreadName::name(t, length);
-  assert(name != NULL, "invariant");
+  assert(name != nullptr, "invariant");
   _writer.write(name);
   _writer.write<traceid>(JfrThreadId::os_id(t));
   if (!t->is_Java_thread()) {
@@ -224,7 +224,7 @@ static const char* reference_type_to_string(ReferenceType rt) {
     case REF_PHANTOM: return "Phantom reference";
     default:
       ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -277,7 +277,7 @@ void JfrThreadConstant::write_name(JfrCheckpointWriter& writer, const char* name
 }
 
 void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
-  assert(_thread != NULL, "invariant");
+  assert(_thread != nullptr, "invariant");
   const bool vthread = _vthread != nullptr;
   writer.write_key(JfrThreadId::jfr_id(_thread, _tid));
   int length = -1;

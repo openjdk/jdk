@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_padded(T value) {
 template <typename BE, typename IE, typename WriterPolicyImpl >
 template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write_padded(const T* value, size_t len) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   assert(len > 0, "invariant");
   u1* const pos = ensure_size(sizeof(T) * len);
   if (pos) {
@@ -62,16 +62,16 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_padded(const T* value, s
 template <typename BE, typename IE, typename WriterPolicyImpl >
 template <typename T>
 inline u1* WriterHost<BE, IE, WriterPolicyImpl>::write_padded(const T* value, size_t len, u1* pos) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   assert(len > 0, "invariant");
-  assert(pos != NULL, "invariant");
+  assert(pos != nullptr, "invariant");
   return _compressed_integers ? IE::write_padded(value, len, pos) : BE::write_padded(value, len, pos);
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl >
 template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t len) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   assert(len > 0, "invariant");
   // Might need T + 1 size
   u1* const pos = ensure_size(sizeof(T) * len + len);
@@ -83,17 +83,17 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t l
 template <typename BE, typename IE, typename WriterPolicyImpl >
 template <typename T>
 inline u1* WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t len, u1* pos) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   assert(len > 0, "invariant");
-  assert(pos != NULL, "invariant");
+  assert(pos != nullptr, "invariant");
   return _compressed_integers ? IE::write(value, len, pos) : BE::write(value, len, pos);
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write_utf8(const char* value) {
-  if (NULL == value) {
-    // only write encoding byte indicating NULL string
-    write<u1>(NULL_STRING);
+  if (nullptr == value) {
+    // only write encoding byte indicating nullptr string
+    write<u1>(nullptr_STRING);
     return;
   }
   write<u1>(UTF8); // designate encoding
@@ -106,7 +106,7 @@ void WriterHost<BE, IE, WriterPolicyImpl>::write_utf8(const char* value) {
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write_utf16(const jchar* value, jint len) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   write((u1)UTF16); // designate encoding
   write(len);
   if (len > 0) {
@@ -123,7 +123,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::be_write(T value) {
 template <typename BE, typename IE, typename WriterPolicyImpl >
 template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::be_write(const T* value, size_t len) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   assert(len > 0, "invariant");
   // Might need T + 1 size
   u1* const pos = ensure_size(sizeof(T) * len + len);
@@ -163,12 +163,12 @@ template <typename BE, typename IE, typename WriterPolicyImpl>
 inline u1* WriterHost<BE, IE, WriterPolicyImpl>::ensure_size(size_t requested_size) {
   if (!this->is_valid()) {
     // cancelled
-    return NULL;
+    return nullptr;
   }
   if (this->available_size() < requested_size) {
     if (!this->accommodate(this->used_size(), requested_size)) {
       assert(!this->is_valid(), "invariant");
-      return NULL;
+      return nullptr;
     }
   }
   assert(requested_size <= this->available_size(), "invariant");
@@ -214,12 +214,12 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_empty_string() {
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
-  if (string == NULL) {
-    write<u1>(NULL_STRING);
+  if (string == nullptr) {
+    write<u1>(nullptr_STRING);
     return;
   }
   const oop string_oop = JNIHandles::resolve_external_guard(string);
-  assert(string_oop != NULL, "invariant");
+  assert(string_oop != nullptr, "invariant");
   const size_t length = (size_t)java_lang_String::length(string_oop);
   if (0 == length) {
     write_empty_string();
@@ -227,7 +227,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
   }
   const bool is_latin1_encoded = java_lang_String::is_latin1(string_oop);
   const typeArrayOop value = java_lang_String::value(string_oop);
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   if (is_latin1_encoded) {
     write<u1>(LATIN1);
     write<u4>((u4)length);
@@ -241,8 +241,8 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
 
 template <typename Writer, typename T>
 inline void tag_write(Writer* w, const T* t) {
-  assert(w != NULL, "invariant");
-  const traceid id = t == NULL ? 0 : JfrTraceId::load(t);
+  assert(w != nullptr, "invariant");
+  const traceid id = t == nullptr ? 0 : JfrTraceId::load(t);
   w->write(id);
 }
 
@@ -274,7 +274,7 @@ void WriterHost<BE, IE, WriterPolicyImpl>::write(const PackageEntry* package) {
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write(const Symbol* symbol) {
   ResourceMark rm;
-  write_utf8(symbol != NULL ? symbol->as_C_string() : NULL);
+  write_utf8(symbol != nullptr ? symbol->as_C_string() : nullptr);
 }
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
@@ -301,7 +301,7 @@ template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write_bytes(const void* buf, intptr_t len) {
   assert(len >= 0, "invariant");
   u1* const pos = this->ensure_size((size_t)len);
-  if (pos != NULL) {
+  if (pos != nullptr) {
     WriterPolicyImpl::write_bytes(pos, buf, len); // WriterPolicyImpl responsible for position update
   }
 }
@@ -310,7 +310,7 @@ void WriterHost<BE, IE, WriterPolicyImpl>::write_bytes(const void* buf, intptr_t
 template <typename BE, typename IE, typename WriterPolicyImpl>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write_utf8_u2_len(const char* value) {
   u2 len = 0;
-  if (value != NULL) {
+  if (value != nullptr) {
     len = MIN2<u2>(max_jushort, (u2)strlen(value));
   }
   write(len);
@@ -321,7 +321,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_utf8_u2_len(const char* 
 
 template <typename BE, typename IE, typename WriterPolicyImpl>
 inline int64_t WriterHost<BE, IE, WriterPolicyImpl>::reserve(size_t size) {
-  if (ensure_size(size) != NULL) {
+  if (ensure_size(size) != nullptr) {
     const int64_t reserved_offset = this->current_offset();
     this->set_current_pos(size);
     return reserved_offset;

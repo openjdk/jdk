@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class ResourceManager : public StackObj {
  public:
   ResourceManager(T* resource) : _resource(resource) {}
   ~ResourceManager() {
-    if (_resource != NULL) {
+    if (_resource != nullptr) {
       delete _resource;
     }
   }
@@ -49,7 +49,7 @@ class ResourceArrayManager : public StackObj {
  public:
   ResourceArrayManager(T* resource_array) : _resource_array(resource_array) {}
   ~ResourceArrayManager() {
-    if (_resource_array != NULL) {
+    if (_resource_array != nullptr) {
       delete [] _resource_array;
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
-static jobject chunk_monitor = NULL;
+static jobject chunk_monitor = nullptr;
 static int64_t threshold = 0;
 static bool rotate = false;
 
 static jobject install_chunk_monitor(JavaThread* thread) {
-  assert(chunk_monitor == NULL, "invariant");
+  assert(chunk_monitor == nullptr, "invariant");
   // read static field
   HandleMark hm(thread);
   static const char klass[] = "jdk/jfr/internal/JVM";
@@ -49,7 +49,7 @@ static jobject install_chunk_monitor(JavaThread* thread) {
 
 // lazy install
 static jobject get_chunk_monitor(JavaThread* thread) {
-  return chunk_monitor != NULL ? chunk_monitor : install_chunk_monitor(thread);
+  return chunk_monitor != nullptr ? chunk_monitor : install_chunk_monitor(thread);
 }
 
 static void notify() {

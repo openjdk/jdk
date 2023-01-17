@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
-  assert(env != NULL, "invariant");
+  assert(env != nullptr, "invariant");
   jclass jfr_clz = env->FindClass("jdk/jfr/internal/JVM");
-  if (jfr_clz != NULL) {
+  if (jfr_clz != nullptr) {
     JNINativeMethod method[] = {
       (char*)"beginRecording", (char*)"()V", (void*)jfr_begin_recording,
       (char*)"isRecording", (char*)"()Z", (void*)jfr_is_recording,
@@ -101,7 +101,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);
     if (env->RegisterNatives(jfr_clz, method, (jint)method_array_length) != JNI_OK) {
       JavaThread* jt = JavaThread::thread_from_jni_environment(env);
-      assert(jt != NULL, "invariant");
+      assert(jt != nullptr, "invariant");
       assert(jt->thread_state() == _thread_in_native, "invariant");
       ThreadInVMfromNative transition(jt);
       log_error(jfr, system)("RegisterNatives for JVM class failed!");

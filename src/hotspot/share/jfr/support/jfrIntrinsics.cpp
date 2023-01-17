@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 #ifdef ASSERT
 static void assert_precondition(JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_java(jt);)
   assert(jt->has_last_Java_frame(), "invariant");
 }
@@ -72,7 +72,7 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
 }
 
 void JfrIntrinsicSupport::load_barrier(const Klass* klass) {
-  assert(klass != NULL, "sanity");
+  assert(klass != nullptr, "sanity");
   JfrTraceIdLoadBarrier::load_barrier(klass);
 }
 

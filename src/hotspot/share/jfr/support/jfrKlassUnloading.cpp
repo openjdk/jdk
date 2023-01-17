@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,20 @@ static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
 }
 
 // Track the set of unloaded klasses during a chunk / epoch.
-static GrowableArray<traceid>* _unload_set_epoch_0 = NULL;
-static GrowableArray<traceid>* _unload_set_epoch_1 = NULL;
+static GrowableArray<traceid>* _unload_set_epoch_0 = nullptr;
+static GrowableArray<traceid>* _unload_set_epoch_1 = nullptr;
 
 static s8 event_klass_unloaded_count = 0;
 
 static GrowableArray<traceid>* unload_set_epoch_0() {
-  if (_unload_set_epoch_0 == NULL) {
+  if (_unload_set_epoch_0 == nullptr) {
     _unload_set_epoch_0 = c_heap_allocate_array<traceid>(initial_array_size);
   }
   return _unload_set_epoch_0;
 }
 
 static GrowableArray<traceid>* unload_set_epoch_1() {
-  if (_unload_set_epoch_1 == NULL) {
+  if (_unload_set_epoch_1 == nullptr) {
     _unload_set_epoch_1 = c_heap_allocate_array<traceid>(initial_array_size);
   }
   return _unload_set_epoch_1;
@@ -72,16 +72,16 @@ static GrowableArray<traceid>* get_unload_set_previous_epoch() {
 }
 
 static void sort_set(GrowableArray<traceid>* set) {
-  assert(set != NULL, "invariant");
+  assert(set != nullptr, "invariant");
   assert(set->is_nonempty(), "invariant");
   set->sort(sort_traceid);
 }
 
 static bool is_nonempty_set(u1 epoch) {
   if (epoch == 0) {
-    return _unload_set_epoch_0 != NULL && _unload_set_epoch_0->is_nonempty();
+    return _unload_set_epoch_0 != nullptr && _unload_set_epoch_0->is_nonempty();
   }
-  return _unload_set_epoch_1 != NULL && _unload_set_epoch_1->is_nonempty();
+  return _unload_set_epoch_1 != nullptr && _unload_set_epoch_1->is_nonempty();
 }
 
 void JfrKlassUnloading::sort(bool previous_epoch) {
@@ -104,7 +104,7 @@ void JfrKlassUnloading::clear() {
 static bool add_to_unloaded_klass_set(traceid klass_id, bool current_epoch) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   GrowableArray<traceid>* const unload_set = current_epoch ? get_unload_set() : get_unload_set_previous_epoch();
-  assert(unload_set != NULL, "invariant");
+  assert(unload_set != nullptr, "invariant");
   assert(unload_set->find(klass_id) == -1, "invariant");
   unload_set->append(klass_id);
   return true;
@@ -123,7 +123,7 @@ static void send_finalizer_event(const Klass* k) {
 #endif
 
 bool JfrKlassUnloading::on_unload(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   MANAGEMENT_ONLY(send_finalizer_event(k);)
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {

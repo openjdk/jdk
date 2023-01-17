@@ -67,7 +67,7 @@ inline int64_t estimate_tlab_size_bytes(Thread* thread) {
 }
 
 inline int64_t load_allocated_bytes(Thread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   const int64_t allocated_bytes = thread->allocated_bytes();
   if (allocated_bytes < _last_allocated_bytes) {
     // A hw thread can detach and reattach to the VM, and when it does,

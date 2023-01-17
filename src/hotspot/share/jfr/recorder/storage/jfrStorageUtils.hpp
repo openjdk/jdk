@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,18 +52,18 @@ class CompositeOperation {
   NextOperation* _next;
  public:
   CompositeOperation(Operation* op, NextOperation* next) : _op(op), _next(next) {
-    assert(_op != NULL, "invariant");
+    assert(_op != nullptr, "invariant");
   }
   typedef typename Operation::Type Type;
   bool process(Type* t) {
     const bool op_result = _op->process(t);
-    return _next == NULL ? op_result : TruthFunction::evaluate(op_result) ? _next->process(t) : op_result;
+    return _next == nullptr ? op_result : TruthFunction::evaluate(op_result) ? _next->process(t) : op_result;
   }
   size_t elements() const {
-    return _next == NULL ? _op->elements() : _op->elements() + _next->elements();
+    return _next == nullptr ? _op->elements() : _op->elements() + _next->elements();
   }
   size_t size() const {
-    return _next == NULL ? _op->size() : _op->size() + _next->size();
+    return _next == nullptr ? _op->size() : _op->size() + _next->size();
   }
 };
 
@@ -99,7 +99,7 @@ class Retired {
  public:
   typedef T Type;
   bool process(Type* t) {
-    assert(t != NULL, "invariant");
+    assert(t != nullptr, "invariant");
     return negation ? !t->retired() : t->retired();
   }
 };

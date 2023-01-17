@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,25 +47,25 @@ bool JfrStringPool::is_modified() {
   return _new_string.is_signaled_with_reset();
 }
 
-static JfrStringPool* _instance = NULL;
+static JfrStringPool* _instance = nullptr;
 
 JfrStringPool& JfrStringPool::instance() {
   return *_instance;
 }
 
 JfrStringPool* JfrStringPool::create(JfrChunkWriter& cw) {
-  assert(_instance == NULL, "invariant");
+  assert(_instance == nullptr, "invariant");
   _instance = new JfrStringPool(cw);
   return _instance;
 }
 
 void JfrStringPool::destroy() {
-  assert(_instance != NULL, "invariant");
+  assert(_instance != nullptr, "invariant");
   delete _instance;
-  _instance = NULL;
+  _instance = nullptr;
 }
 
-JfrStringPool::JfrStringPool(JfrChunkWriter& cw) : _mspace(NULL), _chunkwriter(cw) {}
+JfrStringPool::JfrStringPool(JfrChunkWriter& cw) : _mspace(nullptr), _chunkwriter(cw) {}
 
 JfrStringPool::~JfrStringPool() {
   delete _mspace;
@@ -75,13 +75,13 @@ static const size_t string_pool_cache_count = 2;
 static const size_t string_pool_buffer_size = 512 * K;
 
 bool JfrStringPool::initialize() {
-  assert(_mspace == NULL, "invariant");
+  assert(_mspace == nullptr, "invariant");
   _mspace = create_mspace<JfrStringPoolMspace>(string_pool_buffer_size,
                                                string_pool_cache_count, // cache limit
                                                string_pool_cache_count, // cache preallocate count
                                                false, // preallocate_to_free_list (== preallocate directly to live list)
                                                this);
-  return _mspace != NULL;
+  return _mspace != nullptr;
 }
 
 /*
@@ -91,7 +91,7 @@ bool JfrStringPool::initialize() {
 * and the caller should take means to ensure that it is not referenced any longer.
 */
 static void release(BufferPtr buffer, Thread* thread) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   assert(buffer->lease(), "invariant");
   assert(buffer->acquired_by_self(), "invariant");
   buffer->clear_lease();
@@ -103,27 +103,27 @@ static void release(BufferPtr buffer, Thread* thread) {
 }
 
 BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thread* thread) {
-  assert(old != NULL, "invariant");
+  assert(old != nullptr, "invariant");
   assert(old->lease(), "invariant");
   if (0 == requested) {
     // indicates a lease is being returned
     release(old, thread);
-    return NULL;
+    return nullptr;
   }
   // migration of in-flight information
   BufferPtr const new_buffer = lease(thread, used + requested);
-  if (new_buffer != NULL) {
+  if (new_buffer != nullptr) {
     migrate_outstanding_writes(old, new_buffer, used, requested);
   }
   release(old, thread);
-  return new_buffer; // might be NULL
+  return new_buffer; // might be nullptr
 }
 
 static const size_t lease_retry = 10;
 
 BufferPtr JfrStringPool::lease(Thread* thread, size_t size /* 0 */) {
   BufferPtr buffer = mspace_acquire_lease_with_retry(size, instance()._mspace, lease_retry, thread);
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     buffer = mspace_allocate_transient_lease_to_live_list(size,  instance()._mspace, thread);
   }
   assert(buffer->acquired_by_self(), "invariant");
@@ -132,7 +132,7 @@ BufferPtr JfrStringPool::lease(Thread* thread, size_t size /* 0 */) {
 }
 
 jboolean JfrStringPool::add(jlong id, jstring string, JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   {
     JfrStringPoolWriter writer(jt);
     writer.write(id);
@@ -209,7 +209,7 @@ size_t JfrStringPool::clear() {
 
 void JfrStringPool::register_full(BufferPtr buffer, Thread* thread) {
   // nothing here at the moment
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   assert(buffer->acquired_by(thread), "invariant");
   assert(buffer->retired(), "invariant");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class BigEndianEncoderImpl {
 
 template <typename T>
 inline size_t BigEndianEncoderImpl::encode(T value, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   switch (sizeof(T)) {
     case 1: {
       ShouldNotReachHere();
@@ -95,7 +95,7 @@ inline size_t BigEndianEncoderImpl::encode(T value, u1* dest) {
 
 template <typename T>
 inline size_t BigEndianEncoderImpl::encode(const T* src, size_t len, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   assert(len >= 1, "invariant");
   if (1 == sizeof(T)) {
     memcpy(dest, src, len);
@@ -117,7 +117,7 @@ inline size_t BigEndianEncoderImpl::encode_padded(T value, u1* dest) {
 
 template <typename T>
 inline size_t BigEndianEncoderImpl::encode_padded(const T* src, size_t len, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   assert(len >= 1, "invariant");
   if (1 == sizeof(T)) {
     memcpy(dest, src, len);
@@ -202,7 +202,7 @@ static const u1 ext_bit = 0x80;
 
 template <typename T>
 inline size_t Varint128EncoderImpl::encode(T value, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
 
   const u8 v = to_u8(value);
 
@@ -253,7 +253,7 @@ inline size_t Varint128EncoderImpl::encode(T value, u1* dest) {
 
 template <typename T>
 inline size_t Varint128EncoderImpl::encode(const T* src, size_t len, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   assert(len >= 1, "invariant");
   size_t size = encode(*src, dest);
   if (len > 1) {
@@ -266,7 +266,7 @@ inline size_t Varint128EncoderImpl::encode(const T* src, size_t len, u1* dest) {
 
 template <typename T>
 inline size_t Varint128EncoderImpl::encode_padded(T value, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   const u8 v = to_u8(value);
   switch (sizeof(T)) {
     case 1:
@@ -301,7 +301,7 @@ inline size_t Varint128EncoderImpl::encode_padded(T value, u1* dest) {
 
 template <typename T>
 inline size_t Varint128EncoderImpl::encode_padded(const T* src, size_t len, u1* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   assert(len >= 1, "invariant");
   size_t size = encode_padded(*src, dest);
   if (len > 1) {
