@@ -27,7 +27,6 @@ package sun.net.util;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.SocketAddress;
@@ -68,16 +67,17 @@ public final class SocketExceptions {
     }
 
     private static IOException ofInet(IOException e, InetSocketAddress addr) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(e.getMessage());
-        sb.append(": ");
-        sb.append(addr.toString());
-        String enhancedMsg = sb.toString();
-        return create(e, enhancedMsg);
+        return create(e, String.join(": ", e.getMessage(), addr.toString()));
     }
 
     private static IOException ofUnixDomain(IOException e, UnixDomainSocketAddress addr) {
-        return create(e, String.join(": ", e.getMessage(), addr.toString()));
+        String path = addr.getPath().toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.getMessage());
+        sb.append(": ");
+        sb.append(path);
+        String enhancedMsg = sb.toString();
+        return create(e, enhancedMsg);
     }
 
     // return a new instance of the same type with the given detail
