@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ static BasicType fixup_element_type(BasicType bt) {
 ciConstant ciArray::element_value_impl(BasicType elembt,
                                        arrayOop ary,
                                        int index) {
-  if (ary == NULL)
+  if (ary == nullptr)
     return ciConstant();
   assert(ary->is_array(), "");
   if (index < 0 || index >= ary->length())

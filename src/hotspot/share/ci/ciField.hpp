@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,10 +99,10 @@ public:
   ciSymbol* signature() const { return _signature; }
 
   // Of what type is this field?
-  ciType* type() { return (_type == NULL) ? compute_type() : _type; }
+  ciType* type() { return (_type == nullptr) ? compute_type() : _type; }
 
   // How is this field actually stored in memory?
-  BasicType layout_type() { return type2field[(_type == NULL) ? T_OBJECT : _type->basic_type()]; }
+  BasicType layout_type() { return type2field[(_type == nullptr) ? T_OBJECT : _type->basic_type()]; }
 
   // How big is this field in memory?
   int size_in_bytes() { return type2aelembytes(layout_type()); }
