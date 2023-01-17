@@ -210,6 +210,16 @@ class ThisEscapeAnalyzer extends TreeScanner {
         if (!lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
             return;
 
+        // Build a set of symbols for classes declared in this file
+        final Set<Symbol> classSyms = new HashSet<>();
+        new TreeScanner() {
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                classSyms.add(tree.sym);
+                super.visitClassDef(tree);
+            }
+        }.scan(env.tree);
+
         // Build a mapping from symbols of methods to their declarations.
         // Classify all ctors and methods as analyzable and/or invokable.
         // Track which constructors and fields have warnings suppressed.
@@ -290,13 +300,14 @@ class ThisEscapeAnalyzer extends TreeScanner {
             // Determines if the current class could be extended in some external compilation unit
             private boolean currentClassIsExternallyExtendable() {
                 return !currentClass.sym.isFinal() &&
-                  !(currentClass.sym.isSealed() && currentClass.permitting.isEmpty()) &&
+                  !(currentClass.sym.isSealed() &&
+                      currentClass.permitting.stream()
+                        .map(TreeInfo::symbolFor)
+                        .allMatch(classSyms::contains)) &&
                   !currentClass.sym.isDirectlyOrIndirectlyLocal() &&
                   !privateOuter;
             }
         }.scan(env.tree);
-
-        // TODO: eliminate sealed classes where all permitted subclasses are in this compilation unit
 
         // Analyze non-static field initializers and initialization blocks,
         // but only for classes having at least one analyzable constructor.

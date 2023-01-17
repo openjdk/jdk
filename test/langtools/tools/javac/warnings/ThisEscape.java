@@ -584,4 +584,21 @@ public class ThisEscape {
             new ThisEscapeNoEscapes();
         }
     }
+
+    // Verify 'this' escape detection doesn't warn for sealed classes with local permits
+    public static sealed class ThisEscapeSealed permits ThisEscapeSealed.Sub1, ThisEscapeSealed.Sub2 {
+
+        public ThisEscapeSealed() {
+            this.mightLeak();
+        }
+
+        public void mightLeak() {
+        }
+
+        public static final class Sub1 extends ThisEscapeSealed {
+        }
+
+        public static final class Sub2 extends ThisEscapeSealed {
+        }
+    }
 }
