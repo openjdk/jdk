@@ -51,7 +51,7 @@
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
   return
 #ifndef LEAK_SANITIZER
-    "detect_leaks=0"
+    "detect_leaks=0,"
 #endif
-    ",handle_segv=0";
+    "handle_segv=0";
 }
