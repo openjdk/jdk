@@ -433,7 +433,6 @@ class ContiguousSpace: public CompactibleSpace {
   void set_top(HeapWord* value)    { _top = value; }
 
   void set_saved_mark()            { _saved_mark_word = top();    }
-  void reset_saved_mark()          { _saved_mark_word = bottom(); }
 
   bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
