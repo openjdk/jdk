@@ -1257,7 +1257,7 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
   // for each tagged object check if the tag value matches
   // - if it matches then we create a JNI local reference to the object
   // and record the reference and tag value.
-  //
+  // Always return true so the iteration continues.
   bool do_entry(JvmtiTagMapKey& key, jlong& value) {
     for (int i = 0; i < _tag_count; i++) {
       if (_tags[i] == value) {
