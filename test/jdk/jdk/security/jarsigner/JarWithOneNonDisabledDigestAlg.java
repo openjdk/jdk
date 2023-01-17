@@ -27,6 +27,7 @@
  * @summary Check that jar entry with at least one non-disabled digest
  *          algorithm in manifest is treated as signed
  * @modules java.base/sun.security.tools.keytool
+ * @modules java.base/sun.security.util
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
  *        jdk.test.lib.security.SecurityUtils
@@ -39,17 +40,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSigner;
 import java.security.KeyStore;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.security.cert.CertPathValidatorException;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 import jdk.security.jarsigner.JarSigner;
 
 import jdk.test.lib.util.JarUtils;
-import jdk.test.lib.security.SecurityUtils;
+import sun.security.util.ConstraintsParameters;
+import sun.security.util.DisabledAlgorithmConstraints;
+import sun.security.util.JarConstraintsParameters;
 
 public class JarWithOneNonDisabledDigestAlg {
 
@@ -63,8 +64,9 @@ public class JarWithOneNonDisabledDigestAlg {
     private static final Path CURRENT_DIR = Path.of(".");
 
     public static void main(String[] args) throws Exception {
-        SecurityUtils.removeFromDisabledAlgs("jdk.jar.disabledAlgorithms",
-                List.of("SHA256"));
+        // Sanity check: Assert that MD5 is disabled, SHA-256 enabled
+        checkDigestAlgorithmPermits();
+
         // Create an unsigned JAR with a single file
         Files.write(TESTFILE1, TESTFILE1.toString().getBytes());
         JarUtils.createJarFile(UNSIGNED_JAR, CURRENT_DIR, TESTFILE1);
@@ -93,6 +95,22 @@ public class JarWithOneNonDisabledDigestAlg {
                 Map.of(TESTFILE1.toString(), 2,
                         TESTFILE2.toString(), 1)
         );
+    }
+
+    private static void checkDigestAlgorithmPermits() throws Exception {
+        ConstraintsParameters cp = new JarConstraintsParameters(Collections.emptyList(), new Date());
+        DisabledAlgorithmConstraints jarConstraints = DisabledAlgorithmConstraints.jarConstraints();
+        try {
+            jarConstraints.permits("MD5", cp, false);
+            throw new Exception("This test assumes that MD5 is disabled");
+        } catch (CertPathValidatorException e) {
+            // Ignore
+        }
+        try {
+            jarConstraints.permits("SHA256", cp, false);
+        } catch (CertPathValidatorException e) {
+            throw new Exception("This test assumes that SHA256 is enabled");
+        }
     }
 
     private static KeyStore loadKeyStore() throws Exception {
