@@ -772,6 +772,9 @@ instances of value-based classes.
 \f[V]text-blocks\f[R]: Warns about inconsistent white space characters
 in text block indentation.
 .IP \[bu] 2
+\f[V]this-escape\f[R]: Warns about superclass constructors leaking
+\f[V]this\f[R] prior to subclass initialization.
+.IP \[bu] 2
 \f[V]try\f[R]: Warns about the issues relating to the use of try blocks
 (that is, try-with-resources).
 .IP \[bu] 2
@@ -2207,6 +2210,47 @@ To resolve this issue, you can call the \f[V]static\f[R] method
 .PP
 Alternately, you can remove the \f[V]static\f[R] keyword from the
 declaration of the method \f[V]m1\f[R].
+.RE
+.TP
+\f[V]this\-escape\f[R]
+Warns about superclass constructors leaking \f[V]this\f[R] prior
+to subclass initialization.
+For example:
+.RS
+.IP
+.nf
+\f[CB]
+public class MyClass {
+
+   public MyClass() {
+       System.out.println("Hash = " + this.hashCode());
+   }
+}
+\f[R]
+.fi
+.PP
+The compiler generates the following warning:
+.IP
+.nf
+\f[CB]
+MyClass.java:4: warning: [this-escape] possible 'this' escape
+                         before subclass is fully initialized
+     System.out.println("Hash = " + this.hashCode());
+                                                 ^
+\f[R]
+.fi
+.PP
+Because calls to \f[V]super()\f[R] must precede other initialization,
+subclass fields are unintialized when the superclass constructor executes.
+If the superclass constructor uses the instance in a way that could
+possibly result a subclass method being invoked, that method would be
+operating on a partially initialized instance. In the above example,
+a subclass that overrides \f[V]hashCode()\f[R] in order to incorporate
+some of its own fields would generate an incorrect result.
+.PP
+Warnings are only generated when a potential subclass could exist
+outside of the current source file being compiled.
+For example, final and private classes never generate warnings.
 .RE
 .TP
 \f[V]try\f[R]
