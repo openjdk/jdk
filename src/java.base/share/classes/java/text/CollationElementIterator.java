@@ -77,14 +77,13 @@ import jdk.internal.icu.text.NormalizerBase;
  * Example of the iterator usage,
  * <blockquote>
  * {@snippet lang=java :
- *  String testString = "This is a test";
- *  Collator col = Collator.getInstance();
- *  if (col instanceof RuleBasedCollator) {
- *      RuleBasedCollator ruleBasedCollator = (RuleBasedCollator)col;
- *      CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
- *      int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
- *          :
- *  }
+ * String testString = "This is a test";
+ * Collator col = Collator.getInstance();
+ * if (col instanceof RuleBasedCollator) {
+ *     RuleBasedCollator ruleBasedCollator = (RuleBasedCollator)col;
+ *     CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
+ *     int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
+ * }
  * }
  * </blockquote>
  *
