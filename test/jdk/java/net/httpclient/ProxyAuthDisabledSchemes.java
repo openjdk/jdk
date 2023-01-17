@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@
  *          it verifies that the client honor the jdk.http.auth.*.disabledSchemes
  *          net properties.
  * @bug 8087112
- * @library /test/lib http2/server
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer DigestEchoClient
  *        ReferenceTracker ProxyAuthDisabledSchemes
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @modules java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack

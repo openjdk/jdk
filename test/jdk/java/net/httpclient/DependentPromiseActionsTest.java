@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @summary Verify that dependent synchronous actions added before the promise CF
  *          completes are executed either asynchronously in an executor when the
  *          CF later completes, or in the user thread that joins.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DependentPromiseActionsTest
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DependentPromiseActionsTest
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -84,6 +85,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.err;
 import static java.lang.System.out;

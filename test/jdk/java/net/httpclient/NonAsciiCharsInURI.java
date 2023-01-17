@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,8 @@
  *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @compile -encoding utf-8 NonAsciiCharsInURI.java
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=reqeusts,headers
@@ -58,6 +57,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;

@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Tests mapped response subscriber
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -64,6 +64,9 @@ import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;

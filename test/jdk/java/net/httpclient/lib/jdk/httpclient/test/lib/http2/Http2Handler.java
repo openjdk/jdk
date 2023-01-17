@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,22 @@
  * questions.
  */
 
-import java.io.*;
-import static java.lang.System.out;
+package jdk.httpclient.test.lib.http2;
 
-public class NoBodyHandler implements Http2Handler {
+import java.io.IOException;
 
-    @Override
-    public void handle(Http2TestExchange t) throws IOException {
-        try {
-            out.println("NoBodyHandler received request to " + t.getRequestURI());
-            try (InputStream is = t.getRequestBody()) {
-                byte[] ba = is.readAllBytes();
-                out.println(Thread.currentThread().getName() + ": Read " + ba.length);
-            }
-            t.sendResponseHeaders(200, 0);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw new IOException(e);
-        }
-    }
+/**
+ * A handler which is invoked to process HTTP exchanges. Each
+ * HTTP exchange is handled by one of these handlers.
+ */
+public interface Http2Handler {
+    /**
+     * Handles the given request and generate an appropriate response.
+     *
+     * @param exchange the exchange containing the request from the
+     *      client and used to send the response
+     * @throws NullPointerException if exchange is <code>null</code>
+     */
+    void handle (Http2TestExchange exchange) throws IOException;
 }
+

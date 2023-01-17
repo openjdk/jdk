@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 /*
  * @test
@@ -59,9 +61,10 @@ import java.util.function.Predicate;
  *          java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.hpack
  *
- * @library /test/lib http2/server
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport HttpServerAdapters
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors

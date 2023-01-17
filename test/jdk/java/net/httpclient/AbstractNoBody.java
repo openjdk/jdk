@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import java.net.http.HttpClient;
 import javax.net.ssl.SSLContext;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;

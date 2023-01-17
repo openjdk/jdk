@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package jdk.httpclient.test.lib.http2;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 
@@ -31,7 +33,7 @@ import jdk.internal.net.http.frame.DataFrame;
  * reader thread.
  */
 @SuppressWarnings({"rawtypes","unchecked"})
-class BodyOutputStream extends OutputStream {
+public class BodyOutputStream extends OutputStream {
     final static byte[] EMPTY_BARRAY = new byte[0];
 
     final int streamid;
@@ -72,7 +74,7 @@ class BodyOutputStream extends OutputStream {
         }
     }
 
-    void goodToGo() {
+    public void goodToGo() {
         goodToGo = true;
     }
 
@@ -116,7 +118,7 @@ class BodyOutputStream extends OutputStream {
         write(one, 0, 1);
     }
 
-    void closeInternal() {
+    public void markClosed() {
         closed = true;
     }
 
