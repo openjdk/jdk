@@ -77,6 +77,10 @@ void JvmtiTagMapTable::clear() {
       return true;
     }
   } remove_all;
+  // The unlink method of ResourceHashTable gets a pointer to a type whose 'do_entry(K,V)' method is callled
+  // while iterating over all the elements of the table. If the do_entry() method returns true the element
+  // will be removed.
+  // In this case, we always return true from do_entry to clear all the elements.
   _table.unlink(&remove_all);
 
   assert(_table.number_of_entries() == 0, "should have removed all entries");
@@ -98,7 +102,7 @@ jlong JvmtiTagMapTable::find(oop obj) {
 
   JvmtiTagMapKey jtme(obj);
   jlong* found = _table.get(jtme);
-  return found == NULL ? 0 : *found;
+  return found == nullptr ? 0 : *found;
 }
 
 void JvmtiTagMapTable::add(oop obj, jlong tag) {
