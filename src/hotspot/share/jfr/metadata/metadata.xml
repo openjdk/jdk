@@ -809,7 +809,7 @@
   </Event>
 
   <Event name="CPULoad" category="Operating System, Processor" label="CPU Load"
-         description="OS CPU Load values of the process, contains information about the recent cpu usage of the JVM process"
+         description="Contains information about the recent CPU usage of the JVM process"
          period="everyChunk">
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
