@@ -1187,7 +1187,6 @@ void MacroAssembler::post_call_nop() {
   }
   InlineSkippedInstructionsCounter skipCounter(this);
   nop();
-  skipCounter.register_skipped();
 }
 
 void MacroAssembler::call_VM_base(Register oop_result,

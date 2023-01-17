@@ -2041,7 +2041,6 @@ void MacroAssembler::post_call_nop() {
   emit_int8((int8_t)0x84);
   emit_int8((int8_t)0x00);
   emit_int32(0x00);
-  skipCounter.register_skipped();
 }
 
 // A 5 byte nop that is safe for patching (see patch_verified_entry)

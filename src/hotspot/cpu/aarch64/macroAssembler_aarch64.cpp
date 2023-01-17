@@ -1105,7 +1105,6 @@ void MacroAssembler::post_call_nop() {
   nop();
   movk(zr, 0);
   movk(zr, 0);
-  skipCounter.register_skipped();
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler

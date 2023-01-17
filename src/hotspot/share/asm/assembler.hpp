@@ -250,11 +250,10 @@ class AbstractAssembler : public ResourceObj  {
    public:
     InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
     }
-    void register_skipped() {
+    ~InlineSkippedInstructionsCounter() {
       _assm->register_skipped(_assm->pc() - _start);
     }
   };
-  friend class InlineSkippedInstructionsCounter;
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
