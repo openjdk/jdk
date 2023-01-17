@@ -72,10 +72,10 @@ void VM_Version::get_os_cpu_info() {
 
   // All Apple-darwin Arm processors have AES, PMULL, SHA1 and SHA2.
   // See https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm/commpage/commpage.c#L412
-  assert(cpu_has("hw.optional.arm.FEAT_AES"), "should be");
-  assert(cpu_has("hw.optional.arm.FEAT_PMULL"), "should be");
-  assert(cpu_has("hw.optional.arm.FEAT_SHA1"), "should be");
-  assert(cpu_has("hw.optional.arm.FEAT_SHA256"), "should be");
+  // Note that we ought to add assertions to check sysctlbyname parameters for
+  // these four CPU features, e.g., "hw.optional.arm.FEAT_AES", but the
+  // corresponding string names are not available before xnu-8019 version.
+  // Hence, assertions are omitted considering backward compatibility.
   _features |= CPU_AES | CPU_PMULL | CPU_SHA1 | CPU_SHA2;
 
   if (cpu_has("hw.optional.armv8_crc32")) {
