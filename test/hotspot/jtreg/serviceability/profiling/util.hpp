@@ -51,8 +51,10 @@
 #ifdef DEBUG
 // more space for debug info
 const int METHOD_HEADER_SIZE = 0x200;
+const int METHOD_PRE_HEADER_SIZE = 0x20;
 #else
 const int METHOD_HEADER_SIZE = 0x100;
+const int METHOD_PRE_HEADER_SIZE = 0x10;
 #endif
 
 static jvmtiEnv* jvmti;
@@ -104,7 +106,7 @@ template <typename T> bool doesFrameBelongToMethod(ASGST_CallFrame frame, T* met
   }
   ASGST_NonJavaFrame non_java_frame = frame.non_java_frame;
   size_t pc = (size_t)non_java_frame.pc;
-  size_t expected_pc_start = (size_t)method;
+  size_t expected_pc_start = (size_t)method - METHOD_PRE_HEADER_SIZE;
   size_t expected_pc_end = (size_t)method + METHOD_HEADER_SIZE;
   if (pc < expected_pc_start || pc > expected_pc_end) {
     fprintf(stderr, "%s: Expected PC in range [%p, %p], got %p\n", msg_prefix,
