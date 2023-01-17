@@ -1571,6 +1571,9 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       fi.set_generic_signature_index(generic_signature_index);
     }
     parsed_annotations.apply_to(&fi);
+    if (fi.field_flags().is_contended()) {
+      _has_contended_fields = true;
+    }
     _temp_field_info->append(fi);
   }
   assert(_temp_field_info->length() == length, "Must be");
@@ -2010,6 +2013,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
 
 void ClassFileParser::FieldAnnotationCollector::apply_to(FieldInfo* f) {
   if (is_contended())
+  // Setting the contended group also set the contended bit in field flags
     f->set_contended_group(contended_group());
   if (is_stable())
     (f->internal_flags_addr())->update_stable(true);
