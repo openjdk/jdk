@@ -56,13 +56,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -6744,14 +6738,14 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     private static List<Class<?>> longestParameterList(Stream<MethodHandle> mhs, int skipSize) {
-        return mhs.filter(Objects::nonNull).
+        return mhs.filter(Objects::nonNull)
                 // take only those that can contribute to a common suffix because they are longer than the prefix
-                        map(MethodHandle::type).
-                        filter(t -> t.parameterCount() > skipSize).
-                        map(MethodType::ptypes).
-                        reduce((p, q) -> p.length >= q.length ? p : q).
-                        map(longest -> List.of(Arrays.copyOfRange(longest, skipSize, longest.length))).
-                        orElse(List.of());
+                .map(MethodHandle::type)
+                .filter(t -> t.parameterCount() > skipSize)
+                .max(Comparator.comparing(MethodType::parameterCount))
+                .map(MethodType::ptypes)
+                .map(longest -> List.of(Arrays.copyOfRange(longest, skipSize, longest.length)))
+                .orElse(List.of());
     }
 
     private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
