@@ -91,8 +91,6 @@ import static java.lang.invoke.MethodType.methodType;
  */
 public class MethodHandles {
 
-    private static final Class<?>[] EMPTY = new Class<?>[0];
-
     private MethodHandles() { }  // do not instantiate
 
     static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
@@ -6746,13 +6744,14 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     private static List<Class<?>> longestParameterList(Stream<MethodHandle> mhs, int skipSize) {
-        final Class<?>[] longest = mhs.filter(Objects::nonNull).
+        return mhs.filter(Objects::nonNull).
                 // take only those that can contribute to a common suffix because they are longer than the prefix
                         map(MethodHandle::type).
                         filter(t -> t.parameterCount() > skipSize).
                         map(MethodType::ptypes).
-                        reduce((p, q) -> p.length >= q.length ? p : q).orElse(EMPTY);
-        return longest.length == 0 ? List.of() : List.of(longest).subList(skipSize, longest.length);
+                        reduce((p, q) -> p.length >= q.length ? p : q).
+                        map(longest -> List.of(Arrays.copyOfRange(longest, skipSize, longest.length))).
+                        orElse(List.of());
     }
 
     private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
