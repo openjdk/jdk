@@ -590,7 +590,6 @@ javax/net/ssl/SSLEngine/IllegalRecordVersion.java               8298873 generic-
 javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
 javax/net/ssl/SSLEngine/ConnectionTest.java                     8298869 generic-all
 javax/net/ssl/SSLEngine/CheckStatus.java                        8298872 generic-all
-javax/net/ssl/SSLEngine/Basics.java                             8298867 generic-all
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
