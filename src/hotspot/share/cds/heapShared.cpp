@@ -61,6 +61,7 @@
 #include "utilities/copy.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -289,6 +290,15 @@ void HeapShared::clear_root(int index) {
   }
 }
 
+bool HeapShared::is_too_large_to_archive(oop o) {
+  // TODO: To make the CDS heap mappable for all collectors, this function should
+  // reject objects that may be too large for *any* collector.
+  assert(UseG1GC, "implementation limitation");
+  size_t sz = align_up(o->size() * HeapWordSize, ObjectAlignmentInBytes);
+  size_t max = /*G1*/HeapRegion::min_region_size_in_words() * HeapWordSize;
+  return (sz > max);
+}
+
 oop HeapShared::archive_object(oop obj) {
   assert(DumpSharedSpaces, "dump-time only");
 
@@ -443,7 +453,14 @@ void HeapShared::archive_java_mirrors() {
       // archive the resolved_referenes array
       if (buffered_k->is_instance_klass()) {
         InstanceKlass* ik = InstanceKlass::cast(buffered_k);
-        ik->constants()->archive_resolved_references();
+        oop rr = ik->constants()->prepare_resolved_references_for_archiving();
+        if (rr != nullptr && !is_too_large_to_archive(rr)) {
+          oop archived_obj = HeapShared::archive_reachable_objects_from(1, _default_subgraph_info, rr,
+                                                                        /*is_closed_archive=*/false);
+          assert(archived_obj != NULL,  "already checked not too large to archive");
+          int root_index = append_root(archived_obj);
+          ik->constants()->cache()->set_archived_references(root_index);
+        }
       }
     }
   }
