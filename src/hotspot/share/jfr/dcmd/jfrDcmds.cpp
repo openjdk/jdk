@@ -182,7 +182,7 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
   assert(args->klass() != nullptr, "invariant");
   args->set_name("<init>");
   args->set_signature("()V");
-  JfrJavaSupport::new_object(args, CHECK_nullptr);
+  JfrJavaSupport::new_object(args, CHECK_NULL);
   return args->result()->get_oop();
 }
 

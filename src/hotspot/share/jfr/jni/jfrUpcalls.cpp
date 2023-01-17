@@ -76,9 +76,9 @@ static const typeArrayOop invoke(jlong trace_id,
                                  jint& new_bytes_length,
                                  TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  const Klass* klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK_nullptr);
+  const Klass* klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK_NULL);
   assert(klass != nullptr, "invariant");
-  typeArrayOop old_byte_array = oopFactory::new_byteArray(class_data_len, CHECK_nullptr);
+  typeArrayOop old_byte_array = oopFactory::new_byteArray(class_data_len, CHECK_NULL);
   memcpy(old_byte_array->byte_at_addr(0), class_data, class_data_len);
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, klass, method_sym, signature_sym);

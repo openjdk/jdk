@@ -212,7 +212,7 @@ static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TR
   static const char method[] = "<init>";
   static const char signature[] = "(JJJJZZ)V";
   JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, klass, method, signature, CHECK_nullptr);
+  JfrJavaArguments args(&result, klass, method, signature, CHECK_NULL);
 
   // parameters
   args.push_long((jlong)buffer->pos());
@@ -221,7 +221,7 @@ static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TR
   args.push_long((jlong)JfrThreadLocal::thread_id(THREAD));
   args.push_int((jint)JNI_TRUE); // valid
   args.push_int(tl->is_excluded() ? (jint)JNI_TRUE : (jint)JNI_FALSE); // excluded
-  JfrJavaSupport::new_object_global_ref(&args, CHECK_nullptr);
+  JfrJavaSupport::new_object_global_ref(&args, CHECK_NULL);
   return result.get_jobject();
 }
 
@@ -254,7 +254,7 @@ jobject JfrJavaEventWriter::new_event_writer(TRAPS) {
     JfrJavaSupport::throw_out_of_memory_error("OOME for thread local buffer", THREAD);
     return nullptr;
   }
-  jobject h_writer = create_new_event_writer(buffer, tl, CHECK_nullptr);
+  jobject h_writer = create_new_event_writer(buffer, tl, CHECK_NULL);
   tl->set_java_event_writer(h_writer);
   assert(tl->has_java_event_writer(), "invariant");
   return h_writer;

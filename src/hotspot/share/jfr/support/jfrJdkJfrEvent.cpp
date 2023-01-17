@@ -42,8 +42,8 @@ static jobject empty_java_util_arraylist = nullptr;
 static oop new_java_util_arraylist(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/util/ArrayList", "<init>", "()V", CHECK_nullptr);
-  JfrJavaSupport::new_object(&args, CHECK_nullptr);
+  JfrJavaArguments args(&result, "java/util/ArrayList", "<init>", "()V", CHECK_NULL);
+  JfrJavaSupport::new_object(&args, CHECK_NULL);
   return result.get_oop();
 }
 

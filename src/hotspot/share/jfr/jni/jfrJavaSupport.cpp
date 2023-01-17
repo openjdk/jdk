@@ -255,7 +255,7 @@ jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
 jobjectArray JfrJavaSupport::new_string_array(int length, TRAPS) {
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/lang/String", "<init>", "()V", CHECK_nullptr);
+  JfrJavaArguments args(&result, "java/lang/String", "<init>", "()V", CHECK_NULL);
   args.set_array_length(length);
   new_object_local_ref(&args, THREAD);
   return (jobjectArray)args.result()->get_jobject();
@@ -264,7 +264,7 @@ jobjectArray JfrJavaSupport::new_string_array(int length, TRAPS) {
 jobject JfrJavaSupport::new_java_lang_Boolean(bool value, TRAPS) {
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/lang/Boolean", "<init>", "(Z)V", CHECK_nullptr);
+  JfrJavaArguments args(&result, "java/lang/Boolean", "<init>", "(Z)V", CHECK_NULL);
   args.push_int(value ? (jint)JNI_TRUE : (jint)JNI_FALSE);
   new_object_local_ref(&args, THREAD);
   return args.result()->get_jobject();
@@ -273,7 +273,7 @@ jobject JfrJavaSupport::new_java_lang_Boolean(bool value, TRAPS) {
 jobject JfrJavaSupport::new_java_lang_Integer(jint value, TRAPS) {
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/lang/Integer", "<init>", "(I)V", CHECK_nullptr);
+  JfrJavaArguments args(&result, "java/lang/Integer", "<init>", "(I)V", CHECK_NULL);
   args.push_int(value);
   new_object_local_ref(&args, THREAD);
   return args.result()->get_jobject();
@@ -282,7 +282,7 @@ jobject JfrJavaSupport::new_java_lang_Integer(jint value, TRAPS) {
 jobject JfrJavaSupport::new_java_lang_Long(jlong value, TRAPS) {
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue result(T_OBJECT);
-  JfrJavaArguments args(&result, "java/lang/Long", "<init>", "(J)V", CHECK_nullptr);
+  JfrJavaArguments args(&result, "java/lang/Long", "<init>", "(J)V", CHECK_NULL);
   args.push_long(value);
   new_object_local_ref(&args, THREAD);
   return args.result()->get_jobject();
@@ -788,7 +788,7 @@ static const Klass* get_configuration_field_descriptor(const Handle& h_mirror, f
   assert(k->is_instance_klass(), "invariant");
   InstanceKlass* const ik = InstanceKlass::cast(k);
   if (ik->is_not_initialized()) {
-    ik->initialize(CHECK_nullptr);
+    ik->initialize(CHECK_NULL);
   }
   assert(ik->is_being_initialized() || ik->is_initialized(), "invariant");
   const Klass* const typed_field_holder = ik->find_field(vmSymbols::eventConfiguration_name(),

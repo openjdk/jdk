@@ -106,7 +106,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
       "Thread local allocation (native) of " SIZE_FORMAT " bytes failed "
       "in retransform classes", sizeof(jclass) * classes_count);
     log_error(jfr, system)("%s", error_buffer);
-    JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK_nullptr);
+    JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK_NULL);
   }
   return classes;
 }
