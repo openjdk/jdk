@@ -212,7 +212,6 @@ module java.base {
         java.management,
         java.naming,
         java.net.http,
-        java.prefs,
         java.rmi,
         java.security.jgss,
         jdk.attach,
