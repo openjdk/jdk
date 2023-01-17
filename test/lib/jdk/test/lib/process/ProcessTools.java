@@ -358,8 +358,12 @@ public final class ProcessTools {
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
 
-        args.add("-cp");
-        args.add(System.getProperty("java.class.path"));
+        String noCPString = System.getProperty("test.noclasspath", "false");
+        boolean noCP = Boolean.valueOf(noCPString);
+        if (!noCP) {
+            args.add("-cp");
+            args.add(System.getProperty("java.class.path"));
+        }
 
         String mainWrapper = System.getProperty("main.wrapper");
         if (mainWrapper != null) {
@@ -374,7 +378,12 @@ public final class ProcessTools {
             cmdLine.append(cmd).append(' ');
         System.out.println("Command line: [" + cmdLine.toString() + "]");
 
-        return new ProcessBuilder(args);
+        ProcessBuilder pb = new ProcessBuilder(args);
+        if (noCP) {
+            // clear CLASSPATH from the env
+            pb.environment().remove("CLASSPATH");
+        }
+        return pb;
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {

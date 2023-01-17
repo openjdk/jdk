@@ -35,6 +35,4 @@ class ArrayDims2 {
         [][][][][][][][][][]
         [][][][][][][][][][]
         [][][][][][] o; // 256 = too many
-    public static void main(String[] args) {
-    }
 }

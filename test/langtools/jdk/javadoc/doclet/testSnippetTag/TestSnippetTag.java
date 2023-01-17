@@ -85,7 +85,7 @@ import toolbox.ModuleBuilder;
 public class TestSnippetTag extends SnippetTester {
 
     public static void main(String... args) throws Exception {
-        new TestSnippetTag().runTests(m -> new Object[]{Paths.get(m.getName())});
+        new TestSnippetTag().runTests();
     }
 
     /*
