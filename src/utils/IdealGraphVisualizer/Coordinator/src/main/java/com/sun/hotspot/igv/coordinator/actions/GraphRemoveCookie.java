@@ -50,18 +50,10 @@ public class GraphRemoveCookie implements RemoveCookie {
             for (TopComponent t : l) {
                 if (t instanceof EditorTopComponent) {
                     EditorTopComponent etc = (EditorTopComponent) t;
-                    InputGraph openedGraph = etc.getModel().getGraph();
-                    if (graph.equals(openedGraph) || ) {
-                        etc.close();
+                    DiagramViewModel model = etc.getModel();
+                    if (!model.getGroup().getGraphs().contains(graph)) {
                         continue;
                     }
-                    if (openedGraph.isDiffGraph()) {
-                        if (graph.equals(openedGraph.getFirstGraph()) || graph.equals(openedGraph.getSecondGraph())) {
-                            etc.close();
-                            continue;
-                        }
-                    }
-                    DiagramViewModel model = etc.getModel();
                     int firstPosition = model.getFirstPosition();
                     int secondPosition = model.getSecondPosition();
                     int targetPosition = list.indexOf(graph);
