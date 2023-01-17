@@ -128,6 +128,7 @@ public:
 
   int has_been_range_checked() const { return _postloop_flags & LoopRCEChecked; }
   void set_has_been_range_checked() { _postloop_flags |= LoopRCEChecked; }
+  void clear_has_been_range_checks() { _postloop_flags &= ~LoopRCEChecked; }
   int is_rce_post_loop() const { return _postloop_flags & RCEPostLoop; }
   void set_is_rce_post_loop() { _postloop_flags |= RCEPostLoop; }
 

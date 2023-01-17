@@ -1732,6 +1732,20 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
         phase->is_IterGVN()->replace_node(head, new_head);
       }
     }
+    if (phase->is_IterGVN()) {
+      Node* c = this;
+      {
+        ResourceMark rm;
+        VectorSet seen;
+        while (c != NULL && c->is_IfProj() && !seen.test_set(c->_idx)) {
+          c = c->in(0)->in(0);
+        }
+      }
+      if (c != NULL && c->is_CountedLoop() && c->as_CountedLoop()->has_been_range_checked()) {
+        c->as_CountedLoop()->clear_has_been_range_checks();
+        c->as_CountedLoop()->clear_has_range_checks();
+      }
+    }
     return in(0)->in(0);
   }
   // no progress
