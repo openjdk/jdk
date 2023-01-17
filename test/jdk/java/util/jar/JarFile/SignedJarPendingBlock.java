@@ -24,7 +24,7 @@
 /**
  * @test
  * @modules java.base/sun.security.tools.keytool
- * @summary JARs with pending signature files (where .RSA comes before .SF) should verify correctly
+ * @summary JARs with pending block files (where .RSA comes before .SF) should verify correctly
  */
 
 import jdk.security.jarsigner.JarSigner;
