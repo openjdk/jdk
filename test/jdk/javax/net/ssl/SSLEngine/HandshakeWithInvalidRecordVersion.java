@@ -50,7 +50,7 @@ public class HandshakeWithInvalidRecordVersion implements SSLContextTemplate {
     private static final String TRUSTSTORE_PATH =
             System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
                     "/" + TRUSTSTORE_FILE;
-    
+
     public static void main(String [] args) throws Exception {
         var runner = new HandshakeWithInvalidRecordVersion();
         runner.executeTest("TLSv1.2",
