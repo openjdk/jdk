@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -6537,6 +6537,7 @@ instruct storeNKlass(memory dst, iRegN_P2N src) %{
 // Store Pointer
 instruct storeP(memoryAlg4 dst, iRegPsrc src) %{
   match(Set dst (StoreP dst src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "STD     $src, $dst \t// ptr" %}

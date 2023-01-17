@@ -5,7 +5,7 @@
  * @compile/fail/ref=TwrForVariable2.out -XDrawDiagnostics -Xlint:-options TwrForVariable2.java
  */
 public class TwrForVariable2 implements AutoCloseable {
-    public static void main(String... args) {
+    public static void meth() {
         TwrForVariable2 v = new TwrForVariable2();
         TwrForVariable3[] v2 = new TwrForVariable3[1];
         TwrForVariable3[][] v3 = new TwrForVariable3[1][1];

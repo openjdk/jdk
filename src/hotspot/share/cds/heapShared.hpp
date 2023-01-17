@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
+class KlassToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
@@ -156,6 +157,11 @@ public:
   }
 
   static bool is_subgraph_root_class(InstanceKlass* ik);
+
+  // Scratch objects for archiving Klass::java_mirror()
+  static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
@@ -247,6 +253,7 @@ private:
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
   static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
+  static void check_default_subgraph_classes();
 
   static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
@@ -269,8 +276,17 @@ private:
 
   static SeenObjectsTable *_seen_objects_table;
 
+  // The "default subgraph" is the root of all archived objects that do not belong to any
+  // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
+  //    - interned strings
+  //    - Klass::java_mirror()
+  //    - ConstantPool::resolved_references()
+  static KlassSubGraphInfo* _default_subgraph_info;
+
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
+  static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
+  static KlassToOopHandleTable* _scratch_java_mirror_table;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == NULL, "must be");
@@ -358,7 +374,7 @@ private:
   static oop find_archived_heap_object(oop obj);
   static oop archive_object(oop obj);
 
-  static void archive_klass_objects();
+  static void archive_java_mirrors();
 
   static void archive_objects(GrowableArray<MemRegion>* closed_regions,
                               GrowableArray<MemRegion>* open_regions);
@@ -373,6 +389,10 @@ private:
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
   static ResourceBitMap calculate_ptrmap(MemRegion region); // marks all the native pointers
   static void add_to_dumped_interned_strings(oop string);
+
+  // Scratch objects for archiving Klass::java_mirror()
+  static void set_scratch_java_mirror(Klass* k, oop mirror);
+  static void remove_scratch_objects(Klass* k);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
   // archived heap regions are not prematurely collected. These roots include:
@@ -403,6 +423,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void run_full_gc_in_vm_thread() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_heap_region(int idx) {

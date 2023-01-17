@@ -59,6 +59,11 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   # Add file macro mappings
   ADLC_CFLAGS += $(FILE_MACRO_CFLAGS)
 
+  ifeq ($(UBSAN_ENABLED), true)
+    ADLC_CFLAGS += $(UBSAN_CFLAGS)
+    ADLC_LDFLAGS += $(UBSAN_LDFLAGS)
+  endif
+
   $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
       NAME := adlc, \
       TYPE := EXECUTABLE, \

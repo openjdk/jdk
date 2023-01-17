@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
@@ -1855,12 +1855,7 @@ size_t G1CollectedHeap::recalculate_used() const {
 }
 
 bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause) {
-  switch (cause) {
-    case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
-    case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
-    case GCCause::_wb_conc_mark:                        return true;
-    default :                                           return false;
-  }
+  return GCCause::is_user_requested_gc(cause) && ExplicitGCInvokesConcurrent;
 }
 
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
@@ -2402,6 +2397,14 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
     default:                             ShouldNotReachHere();
   }
   return false; // keep some compilers happy
+}
+
+void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
 }
 
 void G1CollectedHeap::print_heap_regions() const {

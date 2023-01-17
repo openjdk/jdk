@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2793,7 +2793,7 @@ public class Arrays {
      * two array references are considered equal if both are {@code null}.
      *
      * Two doubles {@code d1} and {@code d2} are considered equal if:
-     * <pre>    {@code new Double(d1).equals(new Double(d2))}</pre>
+     * <pre>    {@code Double.valueOf(d1).equals(Double.valueOf(d2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0d unequal to -0.0d.)
      *
@@ -2826,7 +2826,7 @@ public class Arrays {
      * in the same order.
      *
      * <p>Two doubles {@code d1} and {@code d2} are considered equal if:
-     * <pre>    {@code new Double(d1).equals(new Double(d2))}</pre>
+     * <pre>    {@code Double.valueOf(d1).equals(Double.valueOf(d2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0d unequal to -0.0d.)
      *
@@ -2876,7 +2876,7 @@ public class Arrays {
      * two array references are considered equal if both are {@code null}.
      *
      * Two floats {@code f1} and {@code f2} are considered equal if:
-     * <pre>    {@code new Float(f1).equals(new Float(f2))}</pre>
+     * <pre>    {@code Float.valueOf(f1).equals(Float.valueOf(f2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0f unequal to -0.0f.)
      *
@@ -2909,7 +2909,7 @@ public class Arrays {
      * in the same order.
      *
      * <p>Two floats {@code f1} and {@code f2} are considered equal if:
-     * <pre>    {@code new Float(f1).equals(new Float(f2))}</pre>
+     * <pre>    {@code Float.valueOf(f1).equals(Float.valueOf(f2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0f unequal to -0.0f.)
      *
