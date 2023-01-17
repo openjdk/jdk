@@ -583,7 +583,7 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
     case JSON_NUMBER_FLOAT:
     case JSON_TRUE:
     case JSON_FALSE:
-    case JSON_nullptr:
+    case JSON_NULL:
       return set_option(t, v);
 
     default:
