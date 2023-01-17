@@ -204,6 +204,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Sanity check
         Assert.check(checkInvariants(false, false));
+        Assert.check(methodMap.isEmpty());      // we are not prepared to be used more than once
 
         // Short circuit if warnings are totally disabled
         if (!lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
