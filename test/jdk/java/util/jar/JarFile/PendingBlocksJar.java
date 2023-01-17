@@ -69,10 +69,10 @@ public class PendingBlocksJar {
     }
 
     private static void checkSigned(File b) throws Exception {
-        try(JarFile jf = new JarFile(b, true)) {
+        try (JarFile jf = new JarFile(b, true)) {
 
             JarEntry je = jf.getJarEntry("a.txt");
-            try(InputStream in = jf.getInputStream(je)) {
+            try (InputStream in = jf.getInputStream(je)) {
                 in.transferTo(OutputStream.nullOutputStream());
             }
         }
@@ -84,10 +84,10 @@ public class PendingBlocksJar {
     private static File invalidate(File s) throws Exception{
         File invalid = File.createTempFile("pending-block-file-invalidated-", ".jar");
 
-        try(ZipFile zip = new ZipFile(s);
+        try (ZipFile zip = new ZipFile(s);
             ZipOutputStream out = new ZipOutputStream(new FileOutputStream(invalid))) {
 
-            for(ZipEntry ze : Collections.list(zip.entries())) {
+            for (ZipEntry ze : Collections.list(zip.entries())) {
                 String name = ze.getName();
                 out.putNextEntry(new ZipEntry(name));
 
@@ -106,7 +106,7 @@ public class PendingBlocksJar {
 
     private static File moveBlockFirst(File s) throws Exception {
         File b = File.createTempFile("pending-block-file-blockfirst-", ".jar");
-        try(ZipFile in = new ZipFile(s);
+        try (ZipFile in = new ZipFile(s);
             ZipOutputStream out = new ZipOutputStream(new FileOutputStream(b))) {
 
             copy("META-INF/MANIFEST.MF", in, out);
@@ -125,7 +125,7 @@ public class PendingBlocksJar {
      */
     private static void copy(String name, ZipFile in, ZipOutputStream out) throws Exception {
         out.putNextEntry(new ZipEntry(name));
-        try(InputStream is = in.getInputStream(in.getEntry(name))) {
+        try (InputStream is = in.getInputStream(in.getEntry(name))) {
             is.transferTo(out);
         }
     }
@@ -152,7 +152,7 @@ public class PendingBlocksJar {
                 .signerName("SIGNER")
                 .build();
 
-        try(ZipFile in = new ZipFile(f);
+        try (ZipFile in = new ZipFile(f);
             OutputStream out = new FileOutputStream(s)) {
             signer.sign(in, out);
         }
@@ -167,7 +167,7 @@ public class PendingBlocksJar {
         File f = File.createTempFile("pending-block-file-", ".jar");
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        try(JarOutputStream out = new JarOutputStream(new FileOutputStream(f), manifest)) {
+        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(f), manifest)) {
             out.putNextEntry(new JarEntry("a.txt"));
             out.write("a".getBytes(StandardCharsets.UTF_8));
         }
