@@ -47,8 +47,6 @@ serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
-vmTestbase/nsk/jdi/ExceptionRequest/addInstanceFilter/instancefilter001/TestDescription.java 8298059 generic-x64
-vmTestbase/nsk/jdi/ExceptionRequest/addInstanceFilter/instancefilter004/TestDescription.java 8298059 generic-x64
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
 vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64
 vmTestbase/nsk/sysdict/vm/stress/chain/chain008/chain008.java 8298596 linux-x64
