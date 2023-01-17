@@ -161,6 +161,14 @@ public class SwitchBootstraps {
         }
     }
 
+    /*
+     * Construct test chains for labels inside switch, to handle switch repeats:
+     * switch (idx) {
+     *     case 0 -> if (selector matches label[0]) return 0; else if (selector matches label[1]) return 1; else ...
+     *     case 1 -> if (selector matches label[1]) return 1; else ...
+     *     ...
+     * }
+     */
     private static MethodHandle createRepeatIndexSwitch(Object[] labels) {
         MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, Object.class);
         MethodHandle[] testChains = new MethodHandle[labels.length];
@@ -193,6 +201,12 @@ public class SwitchBootstraps {
 
         return MethodHandles.tableSwitch(MethodHandles.dropArguments(def, 0, int.class), testChains);
     }
+
+    /*
+     * Construct code that maps the given selector and repeat index to a case label number:
+     * if (selector == null) return -1;
+     * else return "createRepeatIndexSwitch(labels)"
+     */
     private static MethodHandle createMethodHandleSwitch(Object[] labels) {
         MethodHandle mainTest;
         MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, Object.class);
@@ -312,6 +326,14 @@ public class SwitchBootstraps {
         }
 
         if (labels.length > 0 && constantsOnly) {
+            //If all labels are enum constants, construct an optimized handle for repeat index 0:
+            //if (selector == null) return -1
+            //else if (idx == 0) return switch (selector.ordinal()) {
+            //                              case <label1-ordinal>: return 0;
+            //                              case <label2-ordinal>: return 1;
+            //                              ...
+            //                          };
+            //else return "createRepeatIndexSwitch(labels)"
             MethodHandle[] map = new MethodHandle[enumClass.getEnumConstants().length];
             MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, int.class, Object.class);
             int ordinal = 0;
