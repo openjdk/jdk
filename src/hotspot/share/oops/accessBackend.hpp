@@ -30,7 +30,6 @@
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/isPointer.hpp"
-#include "metaprogramming/isSame.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
@@ -65,8 +64,8 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   struct MustConvertCompressedOop: public IntegralConstant<bool,
     HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
-    IsSame<typename HeapOopType<decorators>::type, narrowOop>::value &&
-    IsSame<T, oop>::value> {};
+    std::is_same<typename HeapOopType<decorators>::type, narrowOop>::value &&
+    std::is_same<T, oop>::value> {};
 
   // This metafunction returns an appropriate oop type if the value is oop-like
   // and otherwise returns the same type T.
@@ -1212,7 +1211,7 @@ namespace AccessInternal {
                         arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                         size_t length) {
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
-                   (IsSame<T, void>::value || std::is_integral<T>::value) ||
+                   (std::is_void<T>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
     using DecayedT = std::decay_t<T>;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
