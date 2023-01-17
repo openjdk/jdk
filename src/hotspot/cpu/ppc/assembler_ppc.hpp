@@ -95,7 +95,7 @@ class AddressLiteral {
 
  protected:
   // creation
-  AddressLiteral() : _address(NULL), _rspec(NULL) {}
+  AddressLiteral() : _address(NULL), _rspec() {}
 
  public:
   AddressLiteral(address addr, RelocationHolder const& rspec)

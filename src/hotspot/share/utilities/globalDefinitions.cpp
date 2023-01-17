@@ -78,35 +78,35 @@ extern bool signature_constants_sane();
 void basic_types_init() {
 #ifdef ASSERT
 #ifdef _LP64
-  assert(min_intx ==  (intx)CONST64(0x8000000000000000), "correct constant");
-  assert(max_intx ==  CONST64(0x7FFFFFFFFFFFFFFF), "correct constant");
-  assert(max_uintx == CONST64(0xFFFFFFFFFFFFFFFF), "correct constant");
-  assert( 8 == sizeof( intx),      "wrong size for basic type");
-  assert( 8 == sizeof( jobject),   "wrong size for basic type");
+  static_assert(min_intx ==  (intx)CONST64(0x8000000000000000), "correct constant");
+  static_assert(max_intx ==  CONST64(0x7FFFFFFFFFFFFFFF), "correct constant");
+  static_assert(max_uintx == CONST64(0xFFFFFFFFFFFFFFFF), "correct constant");
+  static_assert( 8 == sizeof( intx),      "wrong size for basic type");
+  static_assert( 8 == sizeof( jobject),   "wrong size for basic type");
 #else
-  assert(min_intx ==  (intx)0x80000000,  "correct constant");
-  assert(max_intx ==  0x7FFFFFFF,  "correct constant");
-  assert(max_uintx == 0xFFFFFFFF,  "correct constant");
-  assert( 4 == sizeof( intx),      "wrong size for basic type");
-  assert( 4 == sizeof( jobject),   "wrong size for basic type");
+  static_assert(min_intx ==  (intx)0x80000000,  "correct constant");
+  static_assert(max_intx ==  0x7FFFFFFF,  "correct constant");
+  static_assert(max_uintx == 0xFFFFFFFF,  "correct constant");
+  static_assert( 4 == sizeof( intx),      "wrong size for basic type");
+  static_assert( 4 == sizeof( jobject),   "wrong size for basic type");
 #endif
-  assert( (~max_juint) == 0,  "max_juint has all its bits");
-  assert( (~max_uintx) == 0,  "max_uintx has all its bits");
-  assert( (~max_julong) == 0, "max_julong has all its bits");
-  assert( 1 == sizeof( jbyte),     "wrong size for basic type");
-  assert( 2 == sizeof( jchar),     "wrong size for basic type");
-  assert( 2 == sizeof( jshort),    "wrong size for basic type");
-  assert( 4 == sizeof( juint),     "wrong size for basic type");
-  assert( 4 == sizeof( jint),      "wrong size for basic type");
-  assert( 1 == sizeof( jboolean),  "wrong size for basic type");
-  assert( 8 == sizeof( jlong),     "wrong size for basic type");
-  assert( 4 == sizeof( jfloat),    "wrong size for basic type");
-  assert( 8 == sizeof( jdouble),   "wrong size for basic type");
-  assert( 1 == sizeof( u1),        "wrong size for basic type");
-  assert( 2 == sizeof( u2),        "wrong size for basic type");
-  assert( 4 == sizeof( u4),        "wrong size for basic type");
-  assert(wordSize == BytesPerWord, "should be the same since they're used interchangeably");
-  assert(wordSize == HeapWordSize, "should be the same since they're also used interchangeably");
+  static_assert( (~max_juint) == 0,  "max_juint has all its bits");
+  static_assert( (~max_uintx) == 0,  "max_uintx has all its bits");
+  static_assert( (~max_julong) == 0, "max_julong has all its bits");
+  static_assert( 1 == sizeof( jbyte),     "wrong size for basic type");
+  static_assert( 2 == sizeof( jchar),     "wrong size for basic type");
+  static_assert( 2 == sizeof( jshort),    "wrong size for basic type");
+  static_assert( 4 == sizeof( juint),     "wrong size for basic type");
+  static_assert( 4 == sizeof( jint),      "wrong size for basic type");
+  static_assert( 1 == sizeof( jboolean),  "wrong size for basic type");
+  static_assert( 8 == sizeof( jlong),     "wrong size for basic type");
+  static_assert( 4 == sizeof( jfloat),    "wrong size for basic type");
+  static_assert( 8 == sizeof( jdouble),   "wrong size for basic type");
+  static_assert( 1 == sizeof( u1),        "wrong size for basic type");
+  static_assert( 2 == sizeof( u2),        "wrong size for basic type");
+  static_assert( 4 == sizeof( u4),        "wrong size for basic type");
+  static_assert(wordSize == BytesPerWord, "should be the same since they're used interchangeably");
+  static_assert(wordSize == HeapWordSize, "should be the same since they're also used interchangeably");
 
   assert(signature_constants_sane(), "");
 
@@ -155,11 +155,11 @@ void basic_types_init() {
     }
   }
   // These are assumed, e.g., when filling HeapWords with juints.
-  assert(is_power_of_2(sizeof(juint)), "juint must be power of 2");
-  assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
-  assert((size_t)HeapWordSize >= sizeof(juint),
-         "HeapWord should be at least as large as juint");
-  assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
+  static_assert(is_power_of_2(sizeof(juint)), "juint must be power of 2");
+  static_assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
+  static_assert((size_t)HeapWordSize >= sizeof(juint),
+                "HeapWord should be at least as large as juint");
+  static_assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
 #endif
 
   if( JavaPriority1_To_OSPriority != -1 )

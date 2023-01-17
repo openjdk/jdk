@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
-  product(bool, UsePolyIntrinsics, false, DIAGNOSTIC,                       \
+  product(bool, UsePoly1305Intrinsics, false, DIAGNOSTIC,                   \
           "Use intrinsics for sun.security.util.math.intpoly")              \
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
@@ -940,9 +940,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, GenerateSynchronizationCode, true,                          \
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \
-                                                                            \
-  develop(bool, GenerateRangeChecks, true,                                  \
-          "Generate range checks for array accesses")                       \
                                                                             \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \

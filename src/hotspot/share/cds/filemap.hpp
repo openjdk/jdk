@@ -593,6 +593,7 @@ public:
   address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   address heap_region_requested_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   address heap_region_mapped_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  narrowOop encoded_heap_region_dumptime_address(FileMapRegion* r);
 
 private:
 

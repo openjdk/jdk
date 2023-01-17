@@ -67,8 +67,8 @@ public class TestLinkPlatform extends JavadocTester {
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestLinkPlatform tester = new TestLinkPlatform();
-        tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+        var tester = new TestLinkPlatform();
+        tester.runTests();
     }
 
     final ToolBox tb;

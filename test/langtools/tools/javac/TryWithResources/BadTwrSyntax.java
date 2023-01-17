@@ -8,7 +8,7 @@
 
 import java.io.IOException;
 public class BadTwrSyntax implements AutoCloseable {
-    public static void main(String... args) throws Exception {
+    public static void meth() {
         // illegal double semicolon ending resources
         try(BadTwr twrflow = new BadTwr();;) {
             System.out.println(twrflow.toString());
