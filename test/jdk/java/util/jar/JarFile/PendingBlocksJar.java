@@ -30,15 +30,12 @@
 import jdk.security.jarsigner.JarSigner;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.CertPath;
-import java.security.cert.CertificateFactory;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.jar.*;
 import java.util.zip.ZipEntry;
@@ -48,10 +45,10 @@ import java.util.zip.ZipOutputStream;
 public class PendingBlocksJar {
 
     public static void main(String[] args) throws Exception {
-        File jar = createJarFile();
-        File signed = signJarFile(jar);
-        File pendingBlocks = moveBlockFirst(signed);
-        File invalid = invalidate(pendingBlocks);
+        Path jar = createJarFile();
+        Path signed = signJarFile(jar);
+        Path pendingBlocks = moveBlockFirst(signed);
+        Path invalid = invalidate(pendingBlocks);
 
         // 1: Regular signed JAR with no pending blocks should verify
         checkSigned(signed);
@@ -68,8 +65,8 @@ public class PendingBlocksJar {
         }
     }
 
-    private static void checkSigned(File b) throws Exception {
-        try (JarFile jf = new JarFile(b, true)) {
+    private static void checkSigned(Path b) throws Exception {
+        try (JarFile jf = new JarFile(b.toFile(), true)) {
 
             JarEntry je = jf.getJarEntry("a.txt");
             try (InputStream in = jf.getInputStream(je)) {
@@ -81,11 +78,11 @@ public class PendingBlocksJar {
     /**
      * Invalidate signed file by modifying the contents of "a.txt"
      */
-    private static File invalidate(File s) throws Exception{
-        File invalid = File.createTempFile("pending-block-file-invalidated-", ".jar");
+    private static Path invalidate(Path s) throws Exception{
+        Path invalid = Path.of("pending-block-file-invalidated.jar");
 
-        try (ZipFile zip = new ZipFile(s);
-            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(invalid))) {
+        try (ZipFile zip = new ZipFile(s.toFile());
+            ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(invalid))) {
 
             for (ZipEntry ze : Collections.list(zip.entries())) {
                 String name = ze.getName();
@@ -104,10 +101,10 @@ public class PendingBlocksJar {
         return invalid;
     }
 
-    private static File moveBlockFirst(File s) throws Exception {
-        File b = File.createTempFile("pending-block-file-blockfirst-", ".jar");
-        try (ZipFile in = new ZipFile(s);
-            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(b))) {
+    private static Path moveBlockFirst(Path s) throws Exception {
+        Path b = Path.of("pending-block-file-blockfirst.jar");
+        try (ZipFile in = new ZipFile(s.toFile());
+            ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(b))) {
 
             copy("META-INF/MANIFEST.MF", in, out);
 
@@ -130,10 +127,10 @@ public class PendingBlocksJar {
         }
     }
 
-    private static File signJarFile(File f) throws Exception {
-        File s = File.createTempFile("pending-block-file-signed-", ".jar");
+    private static Path signJarFile(Path j) throws Exception {
+        Path s = Path.of("pending-block-file-signed.jar");
 
-        new File("ks").delete();
+        Files.deleteIfExists(Path.of("ks"));
 
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit -dname" +
@@ -152,8 +149,8 @@ public class PendingBlocksJar {
                 .signerName("SIGNER")
                 .build();
 
-        try (ZipFile in = new ZipFile(f);
-            OutputStream out = new FileOutputStream(s)) {
+        try (ZipFile in = new ZipFile(j.toFile());
+            OutputStream out = Files.newOutputStream(s)) {
             signer.sign(in, out);
         }
 
@@ -163,14 +160,14 @@ public class PendingBlocksJar {
     /**
      * Create a jar file with single entry "a.txt" containing "a"
      */
-    private static File createJarFile() throws Exception {
-        File f = File.createTempFile("pending-block-file-", ".jar");
+    private static Path createJarFile() throws Exception {
+        Path jar = Path.of("pending-block-file.jar");
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(f), manifest)) {
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar),manifest)) {
             out.putNextEntry(new JarEntry("a.txt"));
             out.write("a".getBytes(StandardCharsets.UTF_8));
         }
-        return f;
+        return jar;
     }
 }
