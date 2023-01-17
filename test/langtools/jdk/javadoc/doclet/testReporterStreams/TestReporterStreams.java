@@ -59,8 +59,8 @@ import toolbox.ToolBox;
 public class TestReporterStreams extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestReporterStreams tester = new TestReporterStreams();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestReporterStreams();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();
