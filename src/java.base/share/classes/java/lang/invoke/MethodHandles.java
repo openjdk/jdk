@@ -56,7 +56,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.security.ProtectionDomain;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -6743,8 +6750,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 .map(MethodHandle::type)
                 .filter(t -> t.parameterCount() > skipSize)
                 .max(Comparator.comparing(MethodType::parameterCount))
-                .map(MethodType::ptypes)
-                .map(longest -> List.of(Arrays.copyOfRange(longest, skipSize, longest.length)))
+                .map(methodType -> List.of(Arrays.copyOfRange(methodType.ptypes(), skipSize, methodType.parameterCount())))
                 .orElse(List.of());
     }
 
